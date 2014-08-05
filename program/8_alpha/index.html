@@ -1,41 +1,41 @@
 <head>
-	<title>t-pot �wDirectX8.0 ����:�������ɂ��Ă݂�x</title>
+	<title>t-pot 『DirectX8.0 入門:半透明にしてみる』</title>
 	<link rel="stylesheet" type="text/css" href="../if.css">
 </head>
-<meta http-equiv=Content-Type content="text/html; charset=shift_jis">
+<meta http-equiv=Content-Type content="text/html; charset=UTF-8">
 <body>
 <div class="contents">
 <center>
 <BR CLEAR=ALL>
 <BR CLEAR=ALL>
-<h1>�������ɂ��Ă݂�</h1><br>
-<h3>�`���ꂢ�ȃ|���S���͍D���ł����H�`</h3>
+<h1>半透明にしてみる</h1><br>
+<h3>～きれいなポリゴンは好きですか？～</h3>
 <BR CLEAR=ALL>
 <BR CLEAR=ALL>
 <BR CLEAR=ALL>
 </center>
-<h2>������̃t�@�C����</h2>
+<h2>■今回のファイルは</h2>
 
 <p>
-����́A����ɁA�A���t�@�u�����f�B���O��p���āA���������������܂��B
+今回は、さらに、アルファブレンディングを用いて、半透明を実現します。
 </p>
 <right><image src = "alpha1.gif"></right>
 <p>
-���̃\�[�X���A�_�E�����[�h���Ă��������B
+次のソースを、ダウンロードしてください。
 <p>
 
 <ul style = "LIST-STYLE-TYPE:none">
-<li><a href="alpha.lzh">alpha.lzh (�A���t�@�u�����f�B���O���ă|���S����\������T���v���̃\�[�X)</a>
+<li><a href="alpha.lzh">alpha.lzh (アルファブレンディングしてポリゴンを表示するサンプルのソース)</a>
 </ul>
 
 <p>
-������Adraw.cpp �����������������ł��B
+今回も、draw.cpp を書き換えただけです。
 </p>
 
-<h2>���I�u�W�F�N�g</h2>
+<h2>■オブジェクト</h2>
 
 <p>
-����́A�Q���̃|���S�����g���܂��B���̂��߂ɁA�I�u�W�F�N�g���Q�{�A�p�ӂ��܂����B
+今回は、２枚のポリゴンを使います。そのために、オブジェクトを２倍、用意しました。
 </p>
 <pre class="CodeBlock">
 LPDIRECT3DVERTEXBUFFER8 pVB1 = NULL;
@@ -44,16 +44,16 @@ LPDIRECT3DTEXTURE8      pTexture1 = NULL;
 LPDIRECT3DTEXTURE8      pTexture2 = NULL;
 </pre>
 <p>
-�܂��A�e�N�X�`���[�摜�Ƃ��āA���̊G(sakura.bmp)�ƁATEST �Ə������G(test.bmp)��p�ӂ��܂����B<br>
-���̉摜�́A���n�ɂȂ��āA�ꕔ�B��Ă��镔�����Asakura.bmp �ŁA���F��TEST �Ə����ꂽ�摜�� test.bmp �ł��B
+また、テクスチャー画像として、桜の絵(sakura.bmp)と、TEST と書いた絵(test.bmp)を用意しました。<br>
+下の画像の、下地になって、一部隠れている部分が、sakura.bmp で、黄色くTEST と書かれた画像が test.bmp です。
 </p>
 <right><image src = "alpha0.gif"></right>
 
-<h2>��������</h2>
+<h2>■初期化</h2>
 
 <p>
-�Ƃɂ����A�Q�{�Q�{�ł��B<br>
-���ꂼ��A�F�������Ă݂܂����B
+とにかく、２倍２倍です。<br>
+それぞれ、色分けしてみました。
 </p>
 <pre class="CodeBlock">
 HRESULT InitRender(LPDIRECT3DDEVICE8 lpD3DDEV)
@@ -106,16 +106,16 @@ HRESULT InitRender(LPDIRECT3DDEVICE8 lpD3DDEV)
 }
 </pre>
 <p>
-�܂��ɁA�R�s�y�̗��ł��ˁB�����ƁA���ꂢ�ɂ܂Ƃ߂ď��������܂��傤�B<br>
-����AD3DCOLOR_RGBA �̑�l������ 0x80=128 �ɂȂ��Ă��܂��B
-���̒l���A���t�@�l�ŁA�������鎞�̊����i�Z���j�Ƃ��ėp�����܂��B
-255 �̂������������̒l�ŁA�����̋����ō�������邱�ƂɂȂ�܂��B
+まさに、コピペの嵐ですね。もっと、きれいにまとめて初期化しましょう。<br>
+今回、D3DCOLOR_RGBA の第四引数が 0x80=128 になっています。
+この値がアルファ値で、合成する時の割合（濃さ）として用いられます。
+255 のだいたい半分の値で、半分の強さで合成されることになります。
 </p>
 
-<h2>���`��</h2>
+<h2>■描画</h2>
 
 <p>
-����́A�������L���ł��B
+今回は、ここが豊かです。
 </p>
 
 <pre class="CodeBlock">
@@ -123,69 +123,69 @@ void Render(LPDIRECT3DDEVICE8 lpD3DDEV)
 {
     lpD3DDEV->SetVertexShader( D3DFVF_CUSTOMVERTEX );
     
-    <Font color = aquamarine><b>// �e�N�X�`���̃u�����f�B���O���@���`����
-    lpD3DDEV->SetTextureStageState( 0, D3DTSS_ALPHAOP, D3DTOP_MODULATE);// �����̐�������Z����
+    <Font color = aquamarine><b>// テクスチャのブレンディング方法を定義する
+    lpD3DDEV->SetTextureStageState( 0, D3DTSS_ALPHAOP, D3DTOP_MODULATE);// 引数の成分を乗算する
     lpD3DDEV->SetTextureStageState( 0, D3DTSS_COLORARG1, D3DTA_TEXTURE);
     lpD3DDEV->SetTextureStageState( 0, D3DTSS_COLORARG2, D3DTA_DIFFUSE);</b></Font>
     
-    <Font color = orange><b>// ���̃|���S����`��
+    <Font color = orange><b>// 桜のポリゴンを描く
     lpD3DDEV->SetTexture( 0, pTexture1);
     lpD3DDEV->SetStreamSource( 0, pVB1, sizeof(CUSTOMVERTEX) );
     lpD3DDEV->DrawPrimitive( D3DPT_TRIANGLESTRIP, 0, 2);</b></Font>
     
-    <Font color = aquamarine><b>// �A���t�@�����̐ݒ�
+    <Font color = aquamarine><b>// アルファ合成の設定
     lpD3DDEV->SetRenderState(D3DRS_ALPHABLENDENABLE, TRUE);
     lpD3DDEV->SetRenderState(D3DRS_DESTBLEND, D3DBLEND_INVSRCALPHA);
     lpD3DDEV->SetRenderState(D3DRS_SRCBLEND, D3DBLEND_SRCALPHA);</b></Font>
     
-    <Font color = yellow><b>// TEST�̃|���S����`��
+    <Font color = yellow><b>// TESTのポリゴンを描く
     lpD3DDEV->SetTexture( 0, pTexture2);
     lpD3DDEV->SetStreamSource( 0, pVB2, sizeof(CUSTOMVERTEX) );
     lpD3DDEV->DrawPrimitive( D3DPT_TRIANGLESTRIP, 0, 2);</b></Font>
     
-    <Font color = aquamarine><b>// ���̃|���S�����������ɂȂ�Ȃ��悤��
+    <Font color = aquamarine><b>// 次のポリゴンが半透明にならないように
     lpD3DDEV->SetRenderState(D3DRS_ALPHABLENDENABLE, FALSE);</b></Font>
 }
 </pre>
 <p>
-lpD3DDEV->SetVertexShader( D3DFVF_CUSTOMVERTEX );�́A�O������܂������A�|���S���̒��_�t�H�[�}�b�g��ݒ肵�܂��B
+lpD3DDEV->SetVertexShader( D3DFVF_CUSTOMVERTEX );は、前回もやりましたが、ポリゴンの頂点フォーマットを設定します。
 </p>
 <p>
-lpD3DDEV->SetTextureStageState(....);�́A�A���t�@�������鎞�ɁA�ǂ̂悤�ȐF��p���邩�A�w�肵�܂��B<br>
-����̐ݒ�ł́A�e�N�X�`���[�̐F�ƁA�|���S�����̂̐F���|�����l���g���܂��B
-�܂�A�e�N�X�`���[�̉摜�ł��A�|���S���̐F�ł��A�ǂ���ł��F�̎w�肪�\�ɂȂ�܂��B
+lpD3DDEV->SetTextureStageState(....);は、アルファ合成する時に、どのような色を用いるか、指定します。<br>
+今回の設定では、テクスチャーの色と、ポリゴン自体の色を掛けた値を使います。
+つまり、テクスチャーの画像でも、ポリゴンの色でも、どちらでも色の指定が可能になります。
 </p>
 <p>
-���̂��ƁA���̉摜��`�悵�܂��B�����́A�O�������Ƃ���ł��B
+そのあと、桜の画像を描画します。ここは、前回やったとおりです。
 </p>
 <p>
-���ɁA���悢�攼�����̐ݒ�ł��B<br>
-lpD3DDEV->SetRenderState(D3DRS_ALPHABLENDENABLE, TRUE); �ŁA�A���t�@�����̐؂�ւ������܂��B
-����ŁA���������g����悤�ɂȂ�܂����B<br>
-��� 2 �́A�ǂ̂悤�ɍ������邩��ݒ肵�܂��B<br>
-D3DRS_DESTBLEND �́A���n�̉摜�̍����@��ݒ肵�܂��B
-D3DBLEND_INVSRCALPHA �́A��ɕ`���|���S���̃A���t�@�l�̔Z���ɂ���āA���n�̕`��𔖂����܂��B
-��ɕ`���|���S���̃A���t�@�l�� 0 �̎��͂��̂܂ܕ`���A255 �̎��͕`���܂���i�����`���܂��j�B
-����ŁA��������̔Z������������܂��B<br>
-D3DRS_SRCBLEND �́A��ɏ����摜�̍����@��ݒ肵�܂��B
-D3DBLEND_SRCALPHA �́A�`���|���S���̃A���t�@�l�̔Z���ŕ`���܂��B
-�A���t�@�l�̒l��������΍����قǁA�Z���`���܂��B<br>
-����ŁA������悤�ȕ`�悪�ł���ݒ�ɂȂ�܂����B<br>
-��ŁA�ݒ��ς����ꍇ�ɁA�ǂ̂悤�ɂȂ邩���������܂��B
+次に、いよいよ半透明の設定です。<br>
+lpD3DDEV->SetRenderState(D3DRS_ALPHABLENDENABLE, TRUE); で、アルファ合成の切り替えをします。
+これで、半透明が使えるようになりました。<br>
+後の 2 つは、どのように合成するかを設定します。<br>
+D3DRS_DESTBLEND は、下地の画像の合成法を設定します。
+D3DBLEND_INVSRCALPHA は、上に描くポリゴンのアルファ値の濃さによって、下地の描画を薄くします。
+上に描くポリゴンのアルファ値が 0 の時はそのまま描き、255 の時は描きません（黒く描きます）。
+これで、透けた先の濃さが調整されます。<br>
+D3DRS_SRCBLEND は、上に書く画像の合成法を設定します。
+D3DBLEND_SRCALPHA は、描くポリゴンのアルファ値の濃さで描きます。
+アルファ値の値が高ければ高いほど、濃く描きます。<br>
+これで、透けるような描画ができる設定になりました。<br>
+後で、設定を変えた場合に、どのようになるかお見せします。
 </p>
 <p>
-�����āATEST �摜�̕`��ł��B<br>
-�`�掩�̂́A���̉摜��`�悵���̂ƕς��܂���B
-�܂�A���̑O�� SetRenderState ���A�������摜�̕`��̊̂ɂȂ��Ă��܂��B
+そして、TEST 画像の描画です。<br>
+描画自体は、桜の画像を描画したのと変わりません。
+つまり、その前の SetRenderState が、半透明画像の描画の肝になっています。
 </p>
 
 <p>
-�Ō�ɁA���̌�̃|���S�����������ŕ`�悳��Ȃ��悤�ɁA�A���t�@�������I�t���܂��B<br>
+最後に、この後のポリゴンが半透明で描画されないように、アルファ合成をオフします。<br>
 </p>
-<h2>����Еt��</h2>
+<h2>■後片付け</h2>
 
 <p>
-��Еt���́A�����̂悤�ɁA�g�������̂��J�����邾���ł��B
+後片付けは、いつものように、使ったものを開放するだけです。
 </p>
 
 <pre class="CodeBlock">
@@ -198,15 +198,15 @@ void CleanRender()
 }
 </pre>
 
-<h2>���o���G�[�V����</h2>
+<h2>■バリエーション</h2>
 <p>
-D3DRS_DESTBLEND ��AD3DRS_SRCBLEND ��ς��鎖�ɂ���āA�l�X�ȍ������s�����Ƃ��o���܂��B
-���Ƃ��āA���ɋ����Ă݂܂����B
+D3DRS_DESTBLEND や、D3DRS_SRCBLEND を変える事によって、様々な合成を行うことが出来ます。
+一例として、下に挙げてみました。
 </p>
 <p>
-<Font color = yellow><b>���}</b></Font>�F�F�K���X�݂����ɁA��낪�����Č�����\���ł��B
-�������̃|���S���̃A���t�@�l��ς��鎖�ɂ���āA�Z���𒲐��ł��܂�
-(0:�����`128:���̉摜�`255:�s����)�B
+<Font color = yellow><b>内挿</b></Font>：色ガラスみたいに、後ろが透けて見える表現です。
+半透明のポリゴンのアルファ値を変える事によって、濃さを調整できます
+(0:透明～128:下の画像～255:不透明)。
 </p>
 <pre class="CodeBlock">
     lpD3DDEV->SetRenderState(D3DRS_DESTBLEND, D3DBLEND_INVSRCALPHA);
@@ -214,7 +214,7 @@ D3DRS_DESTBLEND ��AD3DRS_SRCBLEND ��ς��鎖�ɂ���āA�l�X�ȍ������s�����Ƃ��o�
 </pre>
 <right><image src = "alpha1.gif"></right>
 <p>
-<Font color = yellow><b>���Z</b></Font>�F�|���S��������P���\�������鎞�Ɏg���܂��B
+<Font color = yellow><b>加算</b></Font>：ポリゴンが光り輝く表現をする時に使います。
 </p>
 <pre class="CodeBlock">
     lpD3DDEV->SetRenderState(D3DRS_DESTBLEND, D3DBLEND_ONE);
@@ -222,8 +222,8 @@ D3DRS_DESTBLEND ��AD3DRS_SRCBLEND ��ς��鎖�ɂ���āA�l�X�ȍ������s�����Ƃ��o�
 </pre>
 <right><image src = "alpha2.gif"></right>
 <p>
-<Font color = yellow><b>���Z���ǂ��i������Z�j</b></Font>�F�F�𒾂܂��������Ɏg���܂��B
-���̉摜�ł͉��F���e�N�X�`���[�𒣂������߂ɐ��Ȃ��Ă��܂����A�����e�N�X�`���[�𒣂�ƁA�����������Ȃ�܂��B
+<Font color = yellow><b>減算もどき（黒く乗算）</b></Font>：色を沈ませたい時に使えます。
+下の画像では黄色いテクスチャーを張ったために青くなっていますが、白いテクスチャーを張ると、そこが黒くなります。
 </p>
 <pre class="CodeBlock">
     lpD3DDEV->SetRenderState(D3DRS_DESTBLEND, D3DBLEND_INVSRCCOLOR);
@@ -231,7 +231,7 @@ D3DRS_DESTBLEND ��AD3DRS_SRCBLEND ��ς��鎖�ɂ���āA�l�X�ȍ������s�����Ƃ��o�
 </pre>
 <right><image src = "alpha3.gif"></right>
 <p>
-<Font color = yellow><b>�s����</b></Font>�F�A���t�@������ ON/OFF �̐؂�ւ��������ɁA�s�����̃|���S����\������̂Ɏg���܂��B
+<Font color = yellow><b>不透明</b></Font>：アルファ合成の ON/OFF の切り替えをせずに、不透明のポリゴンを表示するのに使います。
 </p>
 <pre class="CodeBlock">
     lpD3DDEV->SetRenderState(D3DRS_DESTBLEND, D3DBLEND_ZERO);
@@ -244,7 +244,7 @@ D3DRS_DESTBLEND ��AD3DRS_SRCBLEND ��ς��鎖�ɂ���āA�l�X�ȍ������s�����Ƃ��o�
 <BR CLEAR=ALL>
 <center>
 <hr>
-<p><a href="../index.html">���ǂ�</a></p>
+<p><a href="../index.html">もどる</a></p>
 <p><a href="mailto:imagire@gmail.com">imagire@gmail.com</a></p>
 </center>
 </body>

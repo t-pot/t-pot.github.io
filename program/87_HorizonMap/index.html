@@ -1,8 +1,8 @@
 <head>
-	<title>t-pot�w�n�����}�b�v�x</title>
+	<title>t-pot『地平線マップ』</title>
 	<link rel="stylesheet" type="text/css" href="../if.css">
 </head>
-<meta http-equiv=Content-Type content="text/html; charset=shift_jis">
+<meta http-equiv=Content-Type content="text/html; charset=UTF-8">
 <body>
 
 
@@ -10,8 +10,8 @@
 <center>
 <BR CLEAR=ALL>
 <BR CLEAR=ALL>
-<h1>�n�����}�b�v</h1><br>
-<h3>�` Horizon map �`</h3>
+<h1>地平線マップ</h1><br>
+<h3>～ Horizon map ～</h3>
 <BR CLEAR=ALL>
 <BR CLEAR=ALL>
 <BR CLEAR=ALL>
@@ -20,7 +20,7 @@
 <hr>
 <br>
 <p>
-���̉摜���N���b�N����ƁA�e�������A�j���[�V�����������܂�(����:4.92MB)�B<br>
+下の画像をクリックすると、影が動くアニメーションが見られます(注意:4.92MB)。<br>
 <a href="anim.gif"><image src = "01.gif" width = "64" height = "64"></a>
 </p>
 <hr>
@@ -28,85 +28,85 @@
 <div>
 
 
-<h2>���͂��߂�</h2>
+<h2>■はじめに</h2>
 
 
 <p>
-����́C�O��̃v���O������ύX���āA�n�����}�b�v�Ɏ��g��ł݂܂��B<br>
-����̓Z���t�\�t�g�V���h�E�̂��܂��t���ł��B
+今回は，前回のプログラムを変更して、地平線マップに取り組んでみます。<br>
+今回はセルフソフトシャドウのおまけ付きです。
 </p>
 <p>
-����̃v���O�����́A���̂��̂ł��B<br>
-������A�������ɏ������Ԃ�������܂��B
+今回のプログラムは、次のものです。<br>
+今回も、初期化に少し時間がかかります。
 </p>
 <ul style = "LIST-STYLE-TYPE:none">
-<li><a href="src.zip">src.zip (�n�����}�b�v:DirectX9(���_�V�F�[�_1.1,�s�N�Z���V�F�[�_2.0)</a>
+<li><a href="src.zip">src.zip (地平線マップ:DirectX9(頂点シェーダ1.1,ピクセルシェーダ2.0)</a>
 </ul>
 
 <p>
-�܂��A�����̂悤�ɓK���Ƀt�@�C���������Ă��܂��B<br>
-APP WIZARD ����o�͂����t���[�����[�N�̃t�@�C���͏Љ���Ȃ����Ă��������܂��B
+まぁ、いつものように適当にファイルが入っています。<br>
+APP WIZARD から出力されるフレームワークのファイルは紹介を省かせていただきます。
 </p>
 <table>
-<tr><td><a href="hlsl_fx.html">hlsl.fx</a></td><td>�V�F�[�_�̓������G�t�F�N�g�t�@�C��</td></tr>
-<tr><td><a href="main_h.html">main.h</a></td><td>�A�v���P�[�V�����̃w�b�_</td></tr>
-<tr><td><a href="main_cpp.html">main.cpp</a></td><td>�A�v���P�[�V�����̃\�[�X</td></tr>
+<tr><td><a href="hlsl_fx.html">hlsl.fx</a></td><td>シェーダの入ったエフェクトファイル</td></tr>
+<tr><td><a href="main_h.html">main.h</a></td><td>アプリケーションのヘッダ</td></tr>
+<tr><td><a href="main_cpp.html">main.cpp</a></td><td>アプリケーションのソース</td></tr>
 </table>
 
 <p>
-���ƁA���s�t�@�C���A���f���y�сA�v���W�F�N�g�t�@�C���������Ă��܂��B
+あと、実行ファイル、モデル及び、プロジェクトファイルが入っています。
 </p>
 
 
-<h2>��������Ă�́H</h2>
+<h2>■何やってるの？</h2>
 
 
 <p>
-�O��̎Օ��}�b�v�́A�}�b�v�����Ƃ��Ɍ����p�x���炸�ꂽ�p�x�ɑ΂��郌���_�����O�̂Ƃ��ɁA
-�Q�̃}�b�v�̐��^��Ԃ��g���Čv�Z���Ă������߂ɁA�Q�̉e���������Ă������Ƃ��΂�΂�ł����B<br>
-����͖��炩�ɕςȂ̂ŁA�e�����炩�Ɉړ�������@�ɂ��Ď��g��ł݂܂��B<br>
-���̕��@���n�����}�b�v�ł��B����́ADirectX 8.1 ����T���v���Ƃ��Ď��߂��Ă��܂����A
-CEDEC2002�� DirectX day �ł��Љ��Ă���̂ŁA���ƂȂ��ẮA���ɖڐV�����Z�p�ł͂���܂���B
+前回の遮蔽マップは、マップを作るときに見た角度からずれた角度に対するレンダリングのときに、
+２つのマップの線型補間を使って計算していたために、２つの影を合成していたことがばればれでした。<br>
+それは明らかに変なので、影が滑らかに移動する方法について取り組んでみます。<br>
+その方法が地平線マップです。これは、DirectX 8.1 からサンプルとして収められていますし、
+CEDEC2002の DirectX day でも紹介されているので、今となっては、特に目新しい技術ではありません。
 </p>
 <p>
-�n�����}�b�v�ƑO��̎Օ��}�b�v�̈Ⴂ�́A�}�b�v�Ƃ��Ċi�[����ϐ��̎�ނ��Ⴄ�Ƃ������Ƃł��B<br>
-�Օ��}�b�v�̎��ɂ́A���C�g�����Ă�ꂽ�Ƃ��ɁA���̕������e�ɂȂ邩�ǂ������i�[���܂����B<br>
-����́A�����̕����ɂ��āA��ԍ����R�̎R���܂ł̊p�x���}�b�v�ɕۑ����܂�
-�i����̃v���O�����ł́A���ۂɂ́A��ԍ��������܂ł̊p�x�̃^���W�F���g���i�[���܂����A�{���I�ɂ͓������ł��j�B
+地平線マップと前回の遮蔽マップの違いは、マップとして格納する変数の種類が違うということです。<br>
+遮蔽マップの時には、ライトが当てられたときに、その部分が影になるかどうかを格納しました。<br>
+今回は、視線の方向について、一番高い山の山頂までの角度をマップに保存します
+（今回のプログラムでは、実際には、一番高い部分までの角度のタンジェントを格納しますが、本質的には同じ事です）。
 </p>
 <image src = "ray.png">
 <p>
-����̃}�b�v������ƁA�O��̉e�̌`����������ƕ����o�Ă����}�b�v�Ƃ͈���āA�e�̋N��������ɒ��������m�F�ł��܂��B<br>
-����́A�u���������Ɉ�ԍ��������v�Ƃ������ƂŁA�P�����R������΁A���΂炭�͂��̎R�����������ɂȂ邩��ł��B<br>
-����́A�e�̗�����p�x�ƃ��C�g�̊p�x���r���邱�Ƃɂ���āA�e�ɂȂ邩���肷��̂ŁA���C�g�̊p�x�A���Ȃ킿�e�̒��������R�ɕς��邱�Ƃ��ł��܂��B<br>
-�������C�g�Ȃ�e��Z���A�Ⴂ���C�g�Ȃ�e�𒷂�����Ȃǂ̒������ȒP�ɍs�Ȃ��܂��B
+今回のマップを見ると、前回の影の形がくっきりと浮き出ていたマップとは違って、影の起きる方向に長い尾が確認できます。<br>
+これは、「視線方向に一番高い部分」ということで、１つ高い山があれば、しばらくはその山が高い部分になるからです。<br>
+今回は、影の落ちる角度とライトの角度を比較することによって、影になるか判定するので、ライトの角度、すなわち影の長さを自由に変えることができます。<br>
+高いライトなら影を短く、低いライトなら影を長くするなどの調整が簡単に行なえます。
 </p>
 <p>
-����́A�������R�Q�����ɔ�΂��āA���ꂼ��̕����ɑ΂���n�����}�b�v���쐬���܂��B<br>
-�P�̃}�b�v��RGBA�̂S�������g���āA�S�����̃}�b�v���i�[���܂��B
+今回は、視線も３２方向に飛ばして、それぞれの方向に対する地平線マップを作成します。<br>
+１つのマップにRGBAの４成分を使って、４方向のマップを格納します。
 </p>
 <image src = "map.png">
 <p>
-���̂R�Q�����̒��Ԃɂ��锼�[�Ȋp�x�̏ꍇ�ɂ́A�Q�̃}�b�v���������ĉe�����߂�̂ł����A
-����̏ꍇ�ɂ́A��ԍ��������Ƃ������̂���Ԃ����̂ŁA�r���̏�Ԃ����炩�Ȃ��̂ƂȂ�܂��B
+この３２方向の中間にある半端な角度の場合には、２つのマップを合成して影を求めるのですが、
+今回の場合には、一番高い部分というものが補間されるので、途中の状態も滑らかなものとなります。
 </p>
 
 
 
-<h2>���n�����}�b�v�̍쐬</h2>
+<h2>■地平線マップの作成</h2>
 
 
 <p>
-����ł́A�n�����}�b�v���쐬���܂��傤�B<br>
-�n�����}�b�v�́A�O��̎Օ��}�b�v�Ƃ���قǕς��܂���B<br>
-�������΂��āA�����̐�̂��ꂼ��̃e�N�Z���Ɋւ��āA���̍�����
-���_�̍������r���āA����������̃e�N�Z���܂ł̋����Ŋ����āAtan(�n�ʂ̍����̋p)���v�Z���܂��B
+それでは、地平線マップを作成しましょう。<br>
+地平線マップは、前回の遮蔽マップとそれほど変わりません。<br>
+視線を飛ばして、視線の先のそれぞれのテクセルに関して、その高さと
+視点の高さを比較して、それを視線のテクセルまでの距離で割って、tan(地面の高さの仰角)を計算します。
 </p>
 
 <pre class="CodeBlock">
 hlfx.fx
 <font color="deepskyblue">0236:</font> <font color="cyan">// ------------------------------------------------------------</font>
-<font color="deepskyblue">0237:</font> <font color="cyan">// �n�����}�b�v�쐬�s�N�Z���V�F�[�_�v���O����</font>
+<font color="deepskyblue">0237:</font> <font color="cyan">// 地平線マップ作成ピクセルシェーダプログラム</font>
 <font color="deepskyblue">0238:</font> <font color="cyan">// ------------------------------------------------------------</font>
 <font color="deepskyblue">0239:</font> <font color="blue">float</font>  fRayDist;
 <font color="deepskyblue">0240:</font> float4 PS_Cover(VS_OUTPUT In) : COLOR
@@ -123,21 +123,21 @@ hlfx.fx
 </pre>
 
 <p>
-��قǂ̌v�Z�ł́A��ԍ����ꏊ�̔���͂��Ă��܂���B<br>
-��ԍ����ꏊ���������邽�߂ɁA�A���t�@�������g���܂��B<br>
-�����_�����O�X�e�[�g�� D3DRS_BLENDOP �� D3DBLENDOP_MAX �Ƃ������̂�����܂��B<br>
-����́A�s�N�Z���V�F�[�_�̏o�͂ƁA���łɃ����_�����O���ꂽ�t���[���o�b�t�@�̒l���r���āA�l�̑傫�ȕ����t���[���o�b�t�@�ɏ������ނƂ������̂ł��B<br>
-�܂��A���̂��߂Ɏg���񂾂���Ȃ̂Ǝv���Ă����̂ł����A����Ȏg�����������ł��ˁB
+先ほどの計算では、一番高い場所の判定はしていません。<br>
+一番高い場所を検索するために、アルファ合成を使います。<br>
+レンダリングステートの D3DRS_BLENDOP に D3DBLENDOP_MAX というものがあります。<br>
+これは、ピクセルシェーダの出力と、すでにレンダリングされたフレームバッファの値を比較して、値の大きな方をフレームバッファに書き込むというものです。<br>
+まぁ、何のために使うんだこんなのと思っていたのですが、こんな使い道があるんですね。
 </p>
 <p>
-�܂��A�e�N�Z�������炵���ʂ��V�F�[�_�Ɉ����n���̂�Y��Ȃ��悤�ɂ��܂��傤�B
+また、テクセルをずらした量をシェーダに引き渡すのを忘れないようにしましょう。
 </p>
 
 <pre class="CodeBlock">
 main.cpp
 <font color="deepskyblue">0030:</font> <font color="blue">#define</font> RS   m_pd3dDevice-&gt;SetRenderState
 <font color="deepskyblue">0382:</font>             <font color="cyan">//-------------------------------------------------</font>
-<font color="deepskyblue">0383:</font>             <font color="cyan">// �Օ��}�b�v�̍쐬</font>
+<font color="deepskyblue">0383:</font>             <font color="cyan">// 遮蔽マップの作成</font>
 <font color="deepskyblue">0384:</font>             <font color="cyan">//-------------------------------------------------</font>
 <font color="deepskyblue">0385:</font>             <font color="blue">typedef</font> <font color="blue">struct</font> {FLOAT p[3]; FLOAT tu, tv;} TVERTEX3;
 <font color="deepskyblue">0386:</font>             TVERTEX3 Vertex[4] = {
@@ -165,15 +165,15 @@ main.cpp
 <font color="deepskyblue">0408:</font> 
 <font color="deepskyblue">0409:</font>                 RS(D3DRS_COLORWRITEENABLE,(1&lt;&lt;(i%4)));
 <font color="deepskyblue">0410:</font>                 <font color="blue">for</font>(j=1; j&lt;MAP_SIZE; j++){
-<font color="deepskyblue">0411:</font>                     <font color="cyan">// ���炵����</font>
+<font color="deepskyblue">0411:</font>                     <font color="cyan">// ずらした量</font>
 <font color="deepskyblue">0412:</font>                     <font color="yellow">FLOAT d = 10.0f*(FLOAT)j/MAP_SIZE + 0.0001f;</font>
 <font color="deepskyblue">0413:</font>                     m_pEffect-&gt;SetFloat("<font color="blue">fRayDist</font>", d);
-<font color="deepskyblue">0414:</font>                     <font color="cyan">// �e�N�X�`�������炷�ʒu</font>
+<font color="deepskyblue">0414:</font>                     <font color="cyan">// テクスチャをずらす位置</font>
 <font color="deepskyblue">0415:</font>                     D3DXVECTOR4 v = D3DXVECTOR4(
 <font color="deepskyblue">0416:</font>                             ray_dir[i][0]*j/MAP_SIZE,
 <font color="deepskyblue">0417:</font>                             ray_dir[i][1]*j/MAP_SIZE,0,0);
 <font color="deepskyblue">0418:</font>                     m_pEffect-&gt;SetVector("<font color="blue">vOffset</font>", &amp;v);
-<font color="deepskyblue">0419:</font>                     <font color="cyan">// �`��</font>
+<font color="deepskyblue">0419:</font>                     <font color="cyan">// 描画</font>
 <font color="deepskyblue">0420:</font>                     m_pd3dDevice-&gt;DrawPrimitiveUP( D3DPT_TRIANGLEFAN
 <font color="deepskyblue">0421:</font>                                 , 2, Vertex, <font color="blue">sizeof</font>( TVERTEX3 ) );
 <font color="deepskyblue">0422:</font>                 }
@@ -182,23 +182,23 @@ main.cpp
 
 
 
-<h2>���V�[���̕`��</h2>
+<h2>■シーンの描画</h2>
 
 
 <p>
-���āA����ł͒n�����}�b�v���g���ĉe�����܂��傤�B<br>
-��{�I�ɂ́A�O��̂悤�ɁA���ꂼ��̃}�b�v��ǂݍ���ō������A
-�e�s�N�Z��������������ɂ݂��n�ʂ̍������v�Z���āA
-���ꂪ���C�g�̍����i���̃v���O�����ł�<font color="orange">0.3</font>�j�Ɣ�r���āA�n�ʂ�������Γ����˂��Ȃ��e�i�Օ��ʂ��P�j�ɂȂ��āA�n�ʂ��Ⴏ��Γ����˂��܂��i�Օ��ʂ��O�j�B<br>
-���C�g�̍�����ς���΁A�e�̒����͕ς��܂��B<br>
-���Ƃ́A���̎Օ��ʂ��g���āA�Ɩ��v�Z�����܂��B
+さて、それでは地平線マップを使って影をつけましょう。<br>
+基本的には、前回のように、それぞれのマップを読み込んで合成し、
+各ピクセルから光源方向にみた地面の高さを計算して、
+それがライトの高さ（下のプログラムでは<font color="orange">0.3</font>）と比較して、地面が高ければ日が射さない影（遮蔽量が１）になって、地面が低ければ日が射します（遮蔽量が０）。<br>
+ライトの高さを変えれば、影の長さは変わります。<br>
+あとは、この遮蔽量を使って、照明計算をします。
 </p>
 <pre class="CodeBlock">
 float4 PS (VS_OUTPUT In) : COLOR
 {
     float4 Out;
     
-    <font color="cyan">// �Օ���</font>
+    <font color="cyan">// 遮蔽量</font>
     <font color="blue">float</font> Cover = dot(vWeight[0], tex2D( CoverSamp0, In.Tex0 ));
           Cover+= dot(vWeight[1], tex2D( CoverSamp1, In.Tex0 ));
           Cover+= dot(vWeight[2], tex2D( CoverSamp2, In.Tex0 ));
@@ -210,30 +210,30 @@ float4 PS (VS_OUTPUT In) : COLOR
 
     Cover = (Cover&lt;<font color="orange">0.3</font>)?1:0;
 
-    <font color="cyan">// �F</font>
+    <font color="cyan">// 色</font>
     Out = tex2D( SrcSamp, In.Tex0 ) *(Cover+0.3f);
 
     <font color="blue">return</font> Out;
 }
 </pre>
 <p>
-���āA���ꂾ���ł͂������肵���e�ɂȂ�̂ŁA�\�t�g�ɂ��܂��傤�B<br>
-�ڂ��肵���e�ɂ���ɂ́A���̓��˂��鍂���ƎR�̍������߂��s�N�Z���ɂ��āA
-�e�ɂȂ����Ƃ��Ă��A�^���Âɂ���̂ł͂Ȃ��āA���������Â�����悤�ɂ��܂��B<br>
-��̓I�ɂ́A�e�ɉB�ꂽ�Ƃ�(���̍���<���̕����̎R�̍���)�ɁA�����B�ꂽ����(���̕����̎R�̍���-���̍���)�ɉ����āA�Օ��ʂ��������Ƃɂ���āA�e�ɂȂ������������񂾂�ƈÂ����Ă����܂��B<br>
-�܂��A�Օ��ʂ��O��菬�����Ȃ邱�Ƃ͂Ȃ��̂ŁA0�ŃN�����v���܂��B
+さて、これだけではくっきりした影になるので、ソフトにしましょう。<br>
+ぼんやりした影にするには、光の入射する高さと山の高さが近いピクセルについて、
+影になったとしても、真っ暗にするのではなくて、少しだけ暗くするようにします。<br>
+具体的には、影に隠れたとき(光の高さ<光の方向の山の高さ)に、光が隠れた高さ(光の方向の山の高さ-光の高さ)に応じて、遮蔽量を減すことによって、影になった部分をだんだんと暗くしていきます。<br>
+また、遮蔽量が０より小さくなることはないので、0でクランプします。
 </p>
 <pre class="CodeBlock">
 hlfx.fx
 <font color="deepskyblue">0154:</font> <font color="cyan">// ------------------------------------------------------------</font>
-<font color="deepskyblue">0155:</font> <font color="cyan">// �Ɩ��v�Z�Ȃ��s�N�Z���V�F�[�_�v���O����</font>
+<font color="deepskyblue">0155:</font> <font color="cyan">// 照明計算なしピクセルシェーダプログラム</font>
 <font color="deepskyblue">0156:</font> <font color="cyan">// ------------------------------------------------------------</font>
 <font color="deepskyblue">0157:</font> float4 vWeight[8];
 <font color="deepskyblue">0158:</font> float4 PS (VS_OUTPUT In) : COLOR
 <font color="deepskyblue">0159:</font> {
 <font color="deepskyblue">0160:</font>     float4 Out;
 <font color="deepskyblue">0161:</font>     
-<font color="deepskyblue">0162:</font>     <font color="cyan">// �Օ���</font>
+<font color="deepskyblue">0162:</font>     <font color="cyan">// 遮蔽量</font>
 <font color="deepskyblue">0163:</font>     <font color="blue">float</font> Cover = dot(vWeight[0], tex2D( CoverSamp0, In.Tex0 ));
 <font color="deepskyblue">0164:</font>           Cover+= dot(vWeight[1], tex2D( CoverSamp1, In.Tex0 ));
 <font color="deepskyblue">0165:</font>           Cover+= dot(vWeight[2], tex2D( CoverSamp2, In.Tex0 ));
@@ -246,7 +246,7 @@ hlfx.fx
 <font color="deepskyblue">0172:</font>     <font color="yellow">Cover = (Cover&lt;0.3)?1:(1-5.0f*(Cover-0.3));
 <font color="deepskyblue">0173:</font>     <font color="blue">if</font>(Cover&lt;0) Cover=0;</font>
 <font color="deepskyblue">0174:</font>     
-<font color="deepskyblue">0175:</font>     <font color="cyan">// �F</font>
+<font color="deepskyblue">0175:</font>     <font color="cyan">// 色</font>
 <font color="deepskyblue">0176:</font>     Out = tex2D( SrcSamp, In.Tex0 ) *(Cover+0.3f);
 <font color="deepskyblue">0177:</font> 
 <font color="deepskyblue">0178:</font>     <font color="blue">return</font> Out;
@@ -256,38 +256,38 @@ hlfx.fx
 
 
 
-<h2>���}�b�v�̖����Ɋւ���l�@</h2>
+<h2>■マップの枚数に関する考察</h2>
 
 
 <p>
-CEDEC�̎��ɂ́A�n�����}�b�v�́A�W��������̃��C�e�B���O���L�q����Q���̃e�N�X�`�������ŏ\�����Ƃ����������Ȃ���܂����B<br>
-�������A����́A�W���̃e�N�X�`����ǉ����āA�R�Q��������̃��C�e�B���O���L�^���Ă��܂��B<br>
-���̖��������Ȃ��Ƃǂ��Ȃ�̂ł��傤���H<br>
-���߂��ɁA����̃v���O�����Ń}�b�v�̖������P���ɂ��Ă݂āA�S��������̌������l���Ȃ��ƁA���̃A�j���[�V�����ɂȂ�܂��B</p>
+CEDECの時には、地平線マップは、８方向からのライティングを記述する２枚のテクスチャだけで十分だという説明がなされました。<br>
+しかし、今回は、８枚のテクスチャを追加って、３２方向からのライティングを記録しています。<br>
+この枚数が少ないとどうなるのでしょうか？<br>
+ためしに、今回のプログラムでマップの枚数を１枚にしてみて、４方向からの光しか考えないと、次のアニメーションになります。</p>
 <a href="4way.gif"><image src = "01.gif" width = "64" height = "64"></a>
 <p>
-�S���������Օ��}�b�v���쐬���Ȃ��Ƃ��ɂ́A�����R�̉e�̓��C�g�������ƂP�T�������Ƃ��ɐ��^�̋O�Ղ�`���܂��B
+４方向しか遮蔽マップを作成しないときには、高い山の影はライトをぐるりと１週させたときに星型の軌跡を描きます。
 </p>
 <image src = "4shadow.png">
 <p>
-�]���āA�R�̍����������ƁA�}�b�v�̖��������Ȃ��Ƃ��ɂ͂������ȉe���ł��邱�Ƃ��킩��܂��B�B<br>
-�R�̍���������Ȃɍ����Ȃ��āA�e�����قǐL�тȂ��Ȃ�A�S������W�����ł��\���ȏꍇ�͂���ł��傤�B
+従って、山の高さが高いと、マップの枚数が少ないときにはおかしな影ができることがわかります。。<br>
+山の高さがそんなに高くなくて、影がさほど伸びないなら、４方向や８方向でも十分な場合はあるでしょう。
 </p>
 
 
-<h2>���Ō��</h2>
+<h2>■最後に</h2>
 
 
 <p>
-�O��ƍ���́A�e�N�X�`���ɎՕ����𖄂ߍ���Ń��C�e�B���O�����܂����B<br>
-����́A�Օ��}�b�v�����Ƃ��ƁA�V�[���̃����_�����O�ɓ������b�V�����g���܂������A
-�K�����������łȂ���΂����Ȃ��킯�ł͂���܂���B<br>
-�Ⴆ�΁A�|���S���P���g�������ł��A���������܂��ȉ�ʂ���邱�Ƃ��ł��܂��B
+前回と今回は、テクスチャに遮蔽情報を埋め込んでライティングをしました。<br>
+今回は、遮蔽マップを作るときと、シーンのレンダリングに同じメッシュを使いましたが、
+必ずしもそうでなければいけないわけではありません。<br>
+例えば、ポリゴン１枚使うだけでも、けっこうましな画面を作ることができます。
 </p>
 <image src="plane.png">
 <p>
-���ɉ����̌i�F�ŁA�ڍׂȏ�񂪗v��Ȃ��Ȃ�A����ŏ\���ł��傤�B<br>
-�������A�����̕����ɂ���āA�e��ω������邱�Ƃ��ł���̂ŁA�������ǂ����΂�����ł��B
+非常に遠くの景色で、詳細な情報が要らないなら、これで十分でしょう。<br>
+しかも、光源の方向によって、影を変化させることができるので、こけおどしもばっちりです。
 </p>
 
 </div>
@@ -296,7 +296,7 @@ CEDEC�̎��ɂ́A�n�����}�b�v�́A�W��������̃��C�e�B���O���L�q����Q���̃e�N�X�`�
 <BR CLEAR=ALL>
 <center>
 <hr>
-<p><a href="../index.html">���ǂ�</a></p>
+<p><a href="../index.html">もどる</a></p>
 <p><a href="mailto:imagire@gmail.com">imagire@gmail.com</a></p>
 </center>
 

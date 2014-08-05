@@ -1,64 +1,64 @@
 <head>
-	<title>t-pot �wDirectX8.0 ����:X�t�@�C���̕\���x</title>
+	<title>t-pot 『DirectX8.0 入門:Xファイルの表示』</title>
 	<link rel="stylesheet" type="text/css" href="../if.css">
 </head>
-<meta http-equiv=Content-Type content="text/html; charset=shift_jis">
+<meta http-equiv=Content-Type content="text/html; charset=UTF-8">
 <body>
 <div class="contents">
 <center>
 <BR CLEAR=ALL>
 <BR CLEAR=ALL>
-<h1>X�t�@�C���̕\��</h1><br>
-<h3>�`���������|���S���łȂ�Ă���Ă��܂��� �`</h3>
+<h1>Xファイルの表示</h1><br>
+<h3>～いちいちポリゴンでなんてやってられません ～</h3>
 <BR CLEAR=ALL>
 <BR CLEAR=ALL>
 <BR CLEAR=ALL>
 </center>
-<h2>���͂��߂�</h2>
+<h2>■はじめに</h2>
 
 <p>
-���āA���܂܂ł̂Ƃ���ŁA�|���S���͂��炩���\���ł���悤�ɂȂ����Ǝv���܂��B
-�ł����A���ۂɃQ�[�������悤�ɂȂ�ƁA�S���|���S���ŕ\������Ȃ�Ă���Ă��܂���B
-���ۂɂ͎����Ńt�H�[�}�b�g������āA�R���o�[�g�����̂������̂ł��傤���A
-�l������A�������Ɏ��Ԃ�������܂����A�p�t�H�[�}���X���o����@���l����̂͑�ςł��B
-����ɁA�������������̋ƊE�ł́A��N�O�Ƀp�t�H�[�}���X������d�l�����݂ł͌����������̂͂���ł��B
-�Ƃ������ƂŁA���łɂ���t�H�[�}�b�g�𗘗p���܂��B<br>
-DirectX �ŗL���ȃt�H�[�}�b�g�́AX�t�@�C���ł��B���̃t�@�C����\�����܂��B
+さて、いままでのところで、ポリゴンはあらかた表示できるようになったと思います。
+ですが、実際にゲームを作るようになると、全部ポリゴンで表示するなんてやってられません。
+実際には自分でフォーマットを作って、コンバートを作るのがいいのでしょうが、
+考えたり、作ったりに時間もかかりますし、パフォーマンスが出る方法を考えるのは大変です。
+さらに、動きが速いこの業界では、一年前にパフォーマンスがある仕様が現在では効率が悪いのはざらです。
+ということで、すでにあるフォーマットを利用します。<br>
+DirectX で有名なフォーマットは、Xファイルです。このファイルを表示します。
 </p>
 <right><image src = "xfile.gif"></right>
 
 <p>
-�����ʂ�A�ȉ��̃t�@�C�����_�E�����[�h���Ă��������B<br>
-����́A����� car.x �Ƃ����t�@�C���������Ă��܂��B
-���ꂪ X �t�@�C���ł��B<br>
-���� X �t�@�C���́ALightWave6.5 �ł������t�@�C�����AD-STORM ���񂩂痎�Ƃ��� DirectX Export �v���O�C���ŏo�͂��܂����B
+いつも通り、以下のファイルをダウンロードしてください。<br>
+今回は、さらに car.x というファイルが入っています。
+これが X ファイルです。<br>
+この X ファイルは、LightWave6.5 でつくったファイルを、D-STORM さんから落とした DirectX Export プラグインで出力しました。
 </p>
 <ul style = "LIST-STYLE-TYPE:none">
-<li><a href="xfile.lzh">xfile.lzh (X�t�@�C���̕\���̃T���v��)</a>
+<li><a href="xfile.lzh">xfile.lzh (Xファイルの表示のサンプル)</a>
 </ul>
 
-<h2>������̃I�u�W�F�N�g</h2>
+<h2>■今回のオブジェクト</h2>
 
 <p>
-���āAdraw.cpp �ł��B<br>
-����͐V�����I�u�W�F�N�g���炯�ł��B<br>
-X �t�@�C���̃��f���́A�w���b�V���x�ŊǗ�����܂��B
-���b�V�����̂̏�񂪁ApMesh �ɓ���܂��B
-pMeshMaterials �́A���C�g�ɑ΂��鉞���ɂ��Ċi�[����܂��B
-pMeshTextures �́A�e�N�X�`���[�̏��ł��B
-dwNumMaterials �́AX�t�@�C���̃��f���������ɕ�����Ă��邩���܂��Ă��܂��B
+さて、draw.cpp です。<br>
+今回は新しいオブジェクトだらけです。<br>
+X ファイルのモデルは、『メッシュ』で管理されます。
+メッシュ自体の情報が、pMesh に入ります。
+pMeshMaterials は、ライトに対する応答について格納されます。
+pMeshTextures は、テクスチャーの情報です。
+dwNumMaterials は、Xファイルのモデルがいくつに分かれているか収まっています。
 </p>
 <pre class="CodeBlock">
-LPD3DXMESH              pMesh           = NULL; // ���b�V��
-D3DMATERIAL8            *pMeshMaterials = NULL; // ���b�V���̎���
-LPDIRECT3DTEXTURE8      *pMeshTextures  = NULL; // ���b�V���̃e�N�X�`���[
-DWORD                   dwNumMaterials  = 0L;   // �}�e���A���̐�
+LPD3DXMESH              pMesh           = NULL; // メッシュ
+D3DMATERIAL8            *pMeshMaterials = NULL; // メッシュの質感
+LPDIRECT3DTEXTURE8      *pMeshTextures  = NULL; // メッシュのテクスチャー
+DWORD                   dwNumMaterials  = 0L;   // マテリアルの数
 </pre>
 
-<h2>��������</h2>
+<h2>■初期化</h2>
 
 <p>
-���������������ł��B
+次が初期化部分です。
 </p>
 
 <pre class="CodeBlock">
@@ -67,21 +67,21 @@ HRESULT InitRender(LPDIRECT3DDEVICE8 lpD3DDEV)
     HRESULT hr;
     LPD3DXBUFFER pD3DXMtrlBuffer;
 
-    // X �t�@�C���̃��[�h
+    // X ファイルのロード
     hr = D3DXLoadMeshFromX( "car.x", D3DXMESH_SYSTEMMEM, 
                                    lpD3DDEV, NULL, 
                                    &pD3DXMtrlBuffer, &dwNumMaterials, 
                                    &pMesh );
     if(FAILED(hr)) return E_FAIL;
 
-    // pD3DXMtrlBuffer ����A������e�N�X�`���[�̏���ǂݎ��
+    // pD3DXMtrlBuffer から、質感やテクスチャーの情報を読み取る
     D3DXMATERIAL* d3dxMaterials = (D3DXMATERIAL*)pD3DXMtrlBuffer->GetBufferPointer();
     pMeshMaterials = new D3DMATERIAL8[dwNumMaterials];
     pMeshTextures  = new LPDIRECT3DTEXTURE8[dwNumMaterials];
 
     for( DWORD i=0; i < dwNumMaterials; i++ ){
-        pMeshMaterials[i] = d3dxMaterials[i].MatD3D;// �����̃R�s�[
-        pMeshMaterials[i].Ambient = pMeshMaterials[i].Diffuse;// �}�e���A���̊��F��ݒ肷��
+        pMeshMaterials[i] = d3dxMaterials[i].MatD3D;// 質感のコピー
+        pMeshMaterials[i].Ambient = pMeshMaterials[i].Diffuse;// マテリアルの環境色を設定する
      
         hr = D3DXCreateTextureFromFile( lpD3DDEV, 
                                         d3dxMaterials[i].pTextureFilename, 
@@ -98,22 +98,22 @@ HRESULT InitRender(LPDIRECT3DDEVICE8 lpD3DDEV)
 }
 </pre>
 <p>
-D3DXLoadMeshFromX �ŁA�t�@�C�������[�h���܂��B
-���̂��ƁAX �t�@�C���̏������ɁA
-d3dxMaterials �Ɏ����̏���ݒ肵����A
-D3DXCreateTextureFromFile �Ńe�N�X�`���[�����[�h���܂��B
+D3DXLoadMeshFromX で、ファイルをロードします。
+そのあと、X ファイルの情報を元に、
+d3dxMaterials に質感の情報を設定したり、
+D3DXCreateTextureFromFile でテクスチャーをロードします。
 </p>
 <p>
-���ƁAZ �o�b�t�@�[��L���ɂ��āA�A���r�G���g���C�g�i���F�F���肩���l�ɂ����郉�C�g�j��ݒ肵�܂��B
+あと、Z バッファーを有効にして、アンビエントライト（環境色：周りから一様にあたるライト）を設定します。
 </p>
 
-<h2>���\��</h2>
+<h2>■表示</h2>
 
 <p>
-�\���ł��B�ŏ��̂ق��́A3D �|���S����\�������Ƃ��Ɠ����悤�ɁA
-�\���}�g���b�N�X�̐ݒ�ł��B
-�Ō�� for ���[�v�����f���̕\���ł��B
-�}�e���A�����ƂɁA������e�N�X�`���[��ݒ肵�Ă���\�����܂��B
+表示です。最初のほうは、3D ポリゴンを表示したときと同じように、
+表示マトリックスの設定です。
+最後の for ループがモデルの表示です。
+マテリアルごとに、質感やテクスチャーを設定してから表示します。
 </p>
 
 <pre class="CodeBlock">
@@ -126,10 +126,10 @@ void Render(LPDIRECT3DDEVICE8 lpD3DDEV)
                                 &D3DXVECTOR3( 0.0f, 0.0f, 0.0f ), 
                                 &D3DXVECTOR3( 0.0f, 1.0f, 0.0f ) );
     D3DXMatrixPerspectiveFovLH(&mProj
-        ,60.0f*PI/180.0f                        // ����p
-        ,1.0f                                    // �A�X�y�N�g��
-        ,0.01f                                    // �ŋߐڋ���
-        ,100.0f                                    // �ŉ�������
+        ,60.0f*PI/180.0f                        // 視野角
+        ,1.0f                                    // アスペクト比
+        ,0.01f                                    // 最近接距離
+        ,100.0f                                    // 最遠方距離
         );
     
     lpD3DDEV->SetTransform(D3DTS_WORLD, &mWorld);
@@ -144,10 +144,10 @@ void Render(LPDIRECT3DDEVICE8 lpD3DDEV)
 }
 </pre>
 
-<h2>����n��</h2>
+<h2>■後始末</h2>
 
 <p>
-��n���́A�쐬�����I�u�W�F�N�g���J�����܂��B
+後始末は、作成したオブジェクトを開放します。
 </p>
 <pre class="CodeBlock">
 void CleanRender()
@@ -166,8 +166,8 @@ void CleanRender()
 </pre>
 
 <p>
-����� X �t�@�C���́A�e�N�X�`���[�������Ă��܂��񂪁A�v���O�����́A�e�N�X�`���[�ɑΉ����Ă��܂��B
-���� X �t�@�C����ǂݍ���ł��A������ƕ\���ł���͂��ł��B
+今回の X ファイルは、テクスチャーが張っていませんが、プログラムは、テクスチャーに対応しています。
+他の X ファイルを読み込んでも、きちんと表示できるはずです。
 </p>
 
 <BR CLEAR=ALL>
@@ -175,7 +175,7 @@ void CleanRender()
 <BR CLEAR=ALL>
 <center>
 <hr>
-<p><a href="../index.html">���ǂ�</a></p>
+<p><a href="../index.html">もどる</a></p>
 <p><a href="mailto:imagire@gmail.com">imagire@gmail.com</a></p>
 </center>
 </body>

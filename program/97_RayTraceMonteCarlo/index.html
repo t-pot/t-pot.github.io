@@ -1,8 +1,8 @@
 <head>
-	<title>t-pot�wRay Tracing : Monte Carlo Method�x</title>
+	<title>t-pot『Ray Tracing : Monte Carlo Method』</title>
 	<link rel="stylesheet" type="text/css" href="../if.css">
 </head>
-<meta http-equiv=Content-Type content="text/html; charset=shift_jis">
+<meta http-equiv=Content-Type content="text/html; charset=UTF-8">
 <body>
 
 
@@ -10,8 +10,8 @@
 <center>
 <BR CLEAR=ALL>
 <BR CLEAR=ALL>
-<h1>���C�g���[�X�F�����e�J�����@</h1><br>
-<h3>�` Ray Tracing : Monte Carlo Method �`</h3>
+<h1>レイトレース：モンテカルロ法</h1><br>
+<h3>～ Ray Tracing : Monte Carlo Method ～</h3>
 <BR CLEAR=ALL>
 <BR CLEAR=ALL>
 <BR CLEAR=ALL>
@@ -23,114 +23,114 @@
 <div>
 
 
-<h2>���͂��߂�</h2>
+<h2>■はじめに</h2>
 
 
 <p>
-���܂ł̉摜�́A���C�e�B���O�������ɂ������L�����̂ł����B<br>
-���̓_���C�����āA���ʂ炵�������ڂɂȂ�悤�ɂ���΂��Č��܂��傤�B
+今までの画像は、ライティングがいかにもうそ臭いものでした。<br>
+この点も修正して、実写らしい見た目になるようにがんばって見ましょう。
 </p>
 
 <p>
-����̃v���O�����́A���̂��̂ł��B
+今回のプログラムは、次のものです。
 </p>
 <ul style = "LIST-STYLE-TYPE:none">
-<li><a href="src.zip">src.zip (���ˋ���:MFC, DirectX9)</a>
+<li><a href="src.zip">src.zip (反射屈折:MFC, DirectX9)</a>
 </ul>
 
 <p>
-�܂��A�����̂悤�ɓK���Ƀt�@�C���������Ă��܂��B<br>
-APP WIZARD ����o�͂����t���[�����[�N�̃t�@�C���͏Љ���Ȃ����Ă��������܂��B<br>
-���񂩂�A�I�u�W�F�N�g�̂��߂̃N���X��ʃt�@�C�� prim.h�Aprim.cpp �ɕ����܂����B
+まぁ、いつものように適当にファイルが入っています。<br>
+APP WIZARD から出力されるフレームワークのファイルは紹介を省かせていただきます。<br>
+今回から、オブジェクトのためのクラスを別ファイル prim.h、prim.cpp に分けました。
 </p>
 <table>
-<tr><td><a href="render_cpp.html">render.cpp</a></td><td>���C�g���p�̕`��֐��Q</td></tr>
-<tr><td><a href="render_h.html">render.h</a></td><td>���C�g���p�̕`��֐��Q</td></tr>
-<tr><td><a href="prim_cpp.html">prim.cpp</a></td><td>�I�u�W�F�N�g�̃f�[�^�̂��߂̊֐�</td></tr>
-<tr><td><a href="prim_h.html">prim.h</a></td><td>�I�u�W�F�N�g�̃f�[�^�̂��߂̊֐�</td></tr>
-<tr><td><a href="mainDlg_cpp.html">mainDlg.cpp</a></td><td>�_�C�A���O���Ǘ�����N���X�̃��\�b�h�������ꂽ�t�@�C��</td></tr>
-<tr><td><a href="mainDlg_h.html">mainDlg.h</a></td><td>�_�C�A���O���Ǘ�����N���X�̃w�b�_</td></tr>
+<tr><td><a href="render_cpp.html">render.cpp</a></td><td>レイトレ用の描画関数群</td></tr>
+<tr><td><a href="render_h.html">render.h</a></td><td>レイトレ用の描画関数群</td></tr>
+<tr><td><a href="prim_cpp.html">prim.cpp</a></td><td>オブジェクトのデータのための関数</td></tr>
+<tr><td><a href="prim_h.html">prim.h</a></td><td>オブジェクトのデータのための関数</td></tr>
+<tr><td><a href="mainDlg_cpp.html">mainDlg.cpp</a></td><td>ダイアログを管理するクラスのメソッドが書かれたファイル</td></tr>
+<tr><td><a href="mainDlg_h.html">mainDlg.h</a></td><td>ダイアログを管理するクラスのヘッダ</td></tr>
 </table>
 
 <p>
-���ƁA���s�t�@�C���A���\�[�X�t�@�C���A�v���W�F�N�g�t�@�C���������Ă��܂��B
+あと、実行ファイル、リソースファイル、プロジェクトファイルが入っています。
 </p>
 
 
-<h2>��������Ă�́H</h2>
+<h2>■何やってるの？</h2>
 
 
 <p>
-�����e�J�����@�Ƃ́A�������g���Čv�Z�����x���s���A���̌��ʂ̍��v�����s�񐔂Ŋ��������ρi�A���T���u�����ρj�𐳎��Ȍv�Z�̌��ʂƂ��Ďg���Ƃ������̂ł��B<br>
-���C�g���[�X�Ɋւ��Ă����΁A�{���́A���C�����̂ɂ��������Ƃ��́ABRDF�ɏ]���Ă��܂��܂ȕ�������̌����񂹏W�߂ă��C�ɓ��˂�������v�Z���Ȃ��Ă͂Ȃ�܂���B<br>
-����͂߂�ǂ������̂ŁA��܂��ɔ��ˁA���܂���ъg�U�̌��ۂɕ����āA�����̔��˗��ɏ]���ĂP�̃��C���΂��āA�F�����߂܂��B
-���̂Ƃ��A���ˁA���܁A�g�U�̂ǂ̎�ނ̔��˂�����̂��͗�����U��܂ł킩��Ȃ��̂ŁA���V�A�����[���b�g���̕��@�Ƃ��Ă΂�܂��B<br>
-����ɁA�g�U���˂̏ꍇ�ɂ́A�l�������̌��𒲂ׂȂ��Ă͂Ȃ�Ȃ��̂ł����A�����ɂ��m���I�ȍl������������܂��B��x�̎��s�ł́A�g�U���˂ɂ��Ăł����C���P��������������΂��܂���B�����������������_���ɂ��邱�Ƃɂ���đS���ʂ���̌���������܂��B
+モンテカルロ法とは、乱数を使って計算を何度も行い、その結果の合計を試行回数で割った平均（アンサンブル平均）を正式な計算の結果として使うというものです。<br>
+レイトレースに関していえば、本来は、レイが物体にあたったときは、BRDFに従ってさまざまな方向からの光を寄せ集めてレイに入射する光を計算しなくてはなりません。<br>
+それはめんどくさいので、大まかに反射、屈折および拡散の現象に分けて、それらの反射率に従って１つのレイを飛ばして、色を求めます。
+このとき、反射、屈折、拡散のどの種類の反射をするのかは乱数を振るまでわからないので、ロシアンルーレット式の方法とも呼ばれます。<br>
+さらに、拡散反射の場合には、四方八方の光を調べなくてはならないのですが、ここにも確率的な考え方を取り入れます。一度の試行では、拡散反射についてでもレイを１方向だけしか飛ばしません。ただし方向をランダムにすることによって全方位からの光を取り入れます。
 </p>
 <image src = "explain.png">
 <p>
-���Ƃ��΁A������Ƃ��ȕ������l���܂��B���Ƃ��΁A2:8�̊����Ō��𔖂����˂��镨�����Ƃ��܂��B<br>
+たとえば、ちょっとつるつるな物質を考えます。たとえば、2:8の割合で光を薄く反射する物質だとします。<br>
 </p>
 <pre class="CodeBlock">
-���ʔ��˗� : 0.2
-�g�U���˗� : 0.8
-���ܔ��˗� : 0.0
+鏡面反射率 : 0.2
+拡散反射率 : 0.8
+屈折反射率 : 0.0
 </pre>
 <p>
-���̕����Ƀ��C�����������Ƃ��A�܂��O�`�P�͈̔͂ŗ������v�Z���܂��B
-�����̒l�� 0.2 ���������Ȏ��́A���̃��C�͔��˃x�N�g���ɏ]���Ĕ��˂��܂��B
-�����̒l�� 0.2�`1.0�̎��́A�g�U���˂̌v�Z���s���܂��B
-�܂�A�Ă�ł΂�΂�ȕ����Ƀ��C���΂��đ��d�U���̌v�Z���s���܂��B
+この物質にレイがあたったとき、まず０～１の範囲で乱数を計算します。
+乱数の値が 0.2 よりも小さな時は、次のレイは反射ベクトルに従って反射します。
+乱数の値が 0.2～1.0の時は、拡散反射の計算を行います。
+つまり、てんでばらばらな方向にレイを飛ばして多重散乱の計算を行います。
 </p>
 <p>
-���ƁA���܂ŏo�Ă��Ȃ������ގ��ɂ��čl���Ȃ��Ă͂Ȃ�܂���A���C�g�̂悤�Ȍ��𔭂��镨���ł��B
-���̂悤�ȕ����փ��C�����������ꍇ�ɂ́A���������̓��C�͔��˂����ɁA���C�g�̐F�����C�ɓ��˂���F�ɗ^���āA�v�Z���I�����܂��B
+あと、今まで出てこなかった材質について考えなくてはなりません、ライトのような光を発する物質です。
+このような物質へレイがあたった場合には、そこから先はレイは反射せずに、ライトの色をレイに入射する色に与えて、計算を終了します。
 </p>
 <image src = "emit.png">
 <p>
-�Ƃ������A����́ABlinn-Phong�V�F�[�f�B���O�͎̂ċ����Ă��܂������̂ŁA���C�̌v�Z���I�����@�́i���C�����̂ɂ�����Ȃ��ŋ�Ԃ�˂��������ꍇ�ȊO�ɂ́j���˂��镨�̂֓����邵���ق��ɂ���܂���B<br>
-���_����o�����C�͂��낢��ȕ����𔽎˂��āA�Ō�Ƀ��C�g�Ɍ����������_�Ōv�Z�͏I�����A���̌o�H�ɂ킽�����F�����̎��s�̐F�Ƃ��č̗p����܂��B
-�Ƃ����Ă��A���x�����˂��Č��ɂ��ǂ蒅���Ȃ��ƌv�Z���Ԃ�H�������Ȃ̂ŁA�K���ȉ񐔂̔��˂Ōv�Z��ł��؂邱�Ƃɂ��܂��B
+というか、今回は、Blinn-Phongシェーディングは捨て去ってしまいたいので、レイの計算が終わる方法は（レイが物体にあたらないで空間を突き抜けた場合以外には）放射する物体へ当たるしかほかにありません。<br>
+視点から出たレイはいろいろな物質を反射して、最後にライトに交差した時点で計算は終了し、その経路にわたった色がその試行の色として採用されます。
+といっても、何度も反射して光にたどり着かないと計算時間を食うだけなので、適当な回数の反射で計算を打ち切ることにします。
 </p>
 <image src = "end.png">
 <p>
-�������ACG�I�ɂ́A���˂����𔽎˂���ގ�������ł��傤�B
-���������āA���˂̊������m�����ۂɊ܂߂�K�v������܂��B
+もちろん、CG的には、放射しつつ光を反射する材質もあるでしょう。
+したがって、放射の割合も確率事象に含める必要があります。
 </p>
 <p>
-�����e�J�����@�́A�����������̂悢���̂Ȃ�΁A���s�񐔂�N�Ƃ��� 1/��N �Ō덷�������Ă����A������̎��s���s�����Ƃ���ΐ������l�Ɏ������邱�Ƃ��m���Ă��܂��i�����Ɍ��藝�j�B<br>
-�ŁA���ۂɂ���Ă݂�ƁA�҂����Ԃɑς�������x�̎��s�񐔂ł̓m�C�Y���������񂾂Ȃ��ꂪ�c
+モンテカルロ法は、乱数が性質のよいものならば、試行回数をNとして 1/√N で誤差が消えていき、無限回の試行を行ったとすれば正しい値に収束することが知られています（中央極限定理）。<br>
+で、実際にやってみると、待ち時間に耐えられる程度の試行回数ではノイズがおおいんだなこれが…
 </p>
 
 
 
-<h2>�������f�[�^</h2>
+<h2>■質感データ</h2>
 
 
 <p>
-������A�������̍\���� Material ��ύX���܂����B<br>
-���C�g�̂悤�Ȍ����o���������v���~�e�B�u�ŕ\�����邱�Ƃɂ��܂��B���̂��߂́A�������ǂ̒��x�����o���Ă��邩��\�����邽�߂̃p�����[�^ emmisive ��ǉ����܂����B<br>
-�܂��ABlinn-Phong ���ʔ��˂͎g��Ȃ��̂ŁA�i��Ɂj�g�U���˂̂��߂̐F�̃p�����[�^���P�����c���Ă����܂����B
+今回も、質感情報の構造体 Material を変更しました。<br>
+ライトのような光を出す物質もプリミティブで表現することにします。そのための、物質がどの程度光を出しているかを表現するためのパラメータ emmisive を追加しました。<br>
+また、Blinn-Phong 鏡面反射は使わないので、（主に）拡散反射のための色のパラメータを１つだけ残しておきました。
 </p>
 
 <pre class="CodeBlock">
 prim.h
 <font color="deepskyblue">0021:</font> <font color="blue">typedef</font> <font color="blue">struct</font>{
 <font color="deepskyblue">0022:</font>     <font color="blue">float</font>   COLOR_DIF[4];
-<font color="deepskyblue">0023:</font>     <font color="blue">float</font>   reflection; <font color="cyan">// ���ʔ��˗�</font>
-<font color="deepskyblue">0024:</font>     <font color="blue">float</font>   refraction; <font color="cyan">// ���ܔ��˗�</font>
-<font color="deepskyblue">0025:</font>     <font color="blue">float</font>   diffuse;    <font color="cyan">// ���ܔ��˗�</font>
-<font color="deepskyblue">0026:</font>     <font color="blue">float</font>   emmisive;   <font color="cyan">// ���˗�</font>
+<font color="deepskyblue">0023:</font>     <font color="blue">float</font>   reflection; <font color="cyan">// 鏡面反射率</font>
+<font color="deepskyblue">0024:</font>     <font color="blue">float</font>   refraction; <font color="cyan">// 屈折反射率</font>
+<font color="deepskyblue">0025:</font>     <font color="blue">float</font>   diffuse;    <font color="cyan">// 屈折反射率</font>
+<font color="deepskyblue">0026:</font>     <font color="blue">float</font>   emmisive;   <font color="cyan">// 放射率</font>
 <font color="deepskyblue">0027:</font> }Material;
 </pre>
 <p>
-���Ƃ��΁A���̂悤�ȃf�[�^�ɂȂ�܂��B�g�U�┽�ˁA���܂������Ȃ����̂́Aemmisive �̍���0���ǉ�����邾���ł��B<br>
+たとえば、次のようなデータになります。拡散や反射、屈折しかしない物体は、emmisive の項に0が追加されるだけです。<br>
 </p>
 
 <pre class="CodeBlock">
 render.cpp
 <font color="deepskyblue">0072:</font> OBJ_DATA sphere_data[] = {
-<font color="deepskyblue">0073:</font> {<font color="cyan">// �������̂ɏ���Ă�ق�</font>
+<font color="deepskyblue">0073:</font> {<font color="cyan">// 小さいのに乗ってるほう</font>
 <font color="deepskyblue">0074:</font>     OBJ_TYPE_SPHERE,
 <font color="deepskyblue">0075:</font>     {
 <font color="deepskyblue">0076:</font>         {0.10f, 0.100f, 0.10f},
@@ -140,7 +140,7 @@ render.cpp
 <font color="deepskyblue">0080:</font> <font color="cyan">//      {185.5, 165+100,169},</font>
 <font color="deepskyblue">0081:</font>         100.0f,
 <font color="deepskyblue">0082:</font>     }
-<font color="deepskyblue">0083:</font> },{<font color="cyan">// �傫���̂ɏ���Ă�ق�</font>
+<font color="deepskyblue">0083:</font> },{<font color="cyan">// 大きいのに乗ってるほう</font>
 <font color="deepskyblue">0084:</font>     OBJ_TYPE_SPHERE,
 <font color="deepskyblue">0085:</font>     {
 <font color="deepskyblue">0086:</font>         {0.05f, 0.050f, 0.05f},
@@ -152,14 +152,14 @@ render.cpp
 <font color="deepskyblue">0092:</font> }};
 </pre>
 <p>
-���C�g�̃v���~�e�B�u�́Aemmisive ��1.0�ŁA���̑���0�ɂȂ�܂��B
-�܂��A�F�̃p�����[�^�����̋����ɂ��g�����Ƃɂ��܂����B
+ライトのプリミティブは、emmisive が1.0で、その他が0になります。
+また、色のパラメータを光の強さにも使うことにしました。
 </p>
 <pre class="CodeBlock">
 render.cpp
 <font color="deepskyblue">0093:</font> OBJ_DATA room_data[14] = {
 <font color="deepskyblue">0094:</font> {
-<font color="deepskyblue">0095:</font> <font color="cyan">// ���C�g�P</font>
+<font color="deepskyblue">0095:</font> <font color="cyan">// ライト１</font>
 <font color="deepskyblue">0096:</font>     OBJ_TYPE_TRIANGLE,
 <font color="deepskyblue">0097:</font>     {
 <font color="deepskyblue">0098:</font>         {100.0f*1.00f, 100.0f*0.90f, 100.0f*0.50f},
@@ -169,7 +169,7 @@ render.cpp
 <font color="deepskyblue">0102:</font>         {213.0, 548.799f, 332.0},
 <font color="deepskyblue">0103:</font>         {343.0, 548.799f, 227.0},
 <font color="deepskyblue">0104:</font>     }
-<font color="deepskyblue">0105:</font> },{<font color="cyan">// ���C�g�Q</font>
+<font color="deepskyblue">0105:</font> },{<font color="cyan">// ライト２</font>
 <font color="deepskyblue">0106:</font>     OBJ_TYPE_TRIANGLE,
 <font color="deepskyblue">0107:</font>     {
 <font color="deepskyblue">0108:</font>         {100.0f*1.00f, 100.0f*0.90f, 100.0f*0.50f},
@@ -179,7 +179,7 @@ render.cpp
 <font color="deepskyblue">0112:</font>         {213.0, 548.799f, 332.0},
 <font color="deepskyblue">0113:</font>         {343.0, 548.799f, 332.0},
 <font color="deepskyblue">0114:</font>     }
-<font color="deepskyblue">0115:</font> },{ <font color="cyan">// ���P</font>
+<font color="deepskyblue">0115:</font> },{ <font color="cyan">// 左１</font>
 <font color="deepskyblue">0116:</font>     OBJ_TYPE_TRIANGLE,
 <font color="deepskyblue">0117:</font>     {
 <font color="deepskyblue">0118:</font>         {0.70f, 0.15f, 0.15f},
@@ -193,13 +193,13 @@ render.cpp
 </pre>
 
 
-<h2>���F�̌v�Z</h2>
+<h2>■色の計算</h2>
 
 
 <p>
-���āA���C�g���[�X���镔�������Ă����܂��傤�B
-�܂��́A�T������[�����[���Ȃ肷�����Ƃ��ɓK���Ɍv�Z��ł��؂邽�߂̔�����s���܂��B<br>
-����́A���ˁA���܂̎��ɂ͐[���͐[�����Ȃ��ŁA�g�U���˂̂Ƃ������ċA�̐[�����[���Ȃ�悤�ɂ��܂����B
+さて、レイトレースする部分を見ていきましょう。
+まずは、探査する深さが深くなりすぎたときに適当に計算を打ち切るための判定を行います。<br>
+今回は、反射、屈折の時には深さは深くしないで、拡散反射のときだけ再帰の深さが深くなるようにしました。
 </p>
 <pre class="CodeBlock">
 render.cpp
@@ -208,23 +208,23 @@ render.cpp
 <font color="deepskyblue">0608:</font>     D3DXVECTOR3 diffuse_color=D3DXVECTOR3(0,0,0);
 <font color="deepskyblue">0609:</font> 
 <font color="deepskyblue">0615:</font>     <font color="cyan">// -----------------------------------------------------------------------</font>
-<font color="deepskyblue">0616:</font>     <font color="cyan">// �ċA���������ꍇ�͌����͂��Ă��Ȃ����̂ƍl����</font>
+<font color="deepskyblue">0616:</font>     <font color="cyan">// 再帰しすぎた場合は光が届いていないものと考える</font>
 <font color="deepskyblue">0617:</font>     <font color="cyan">// -----------------------------------------------------------------------</font>
 <font color="deepskyblue">0618:</font>     <font color="blue">const</font> <font color="blue">int</font> DEPTH_MAX = 3;
 <font color="deepskyblue">0619:</font>     <font color="blue">if</font>(DEPTH_MAX &lt;= depth) { *dest=D3DXVECTOR3(0,0,0); <font color="blue">return</font> FALSE;}
 </pre>
 <p>
-��������A��������ł��B
-�����͂��܂܂ł��o�Ă����悤�Ɍv�Z���܂��B
+そしたら、交差判定です。
+ここはいままでも出てきたように計算します。
 </p>
 <pre class="CodeBlock">
 render.cpp
 <font color="deepskyblue">0621:</font>     <font color="cyan">// -----------------------------------------------------------------------</font>
-<font color="deepskyblue">0622:</font>     <font color="cyan">// ���������_�����߂�</font>
+<font color="deepskyblue">0622:</font>     <font color="cyan">// 視線から交点を求める</font>
 <font color="deepskyblue">0623:</font>     <font color="cyan">// -----------------------------------------------------------------------</font>
 <font color="deepskyblue">0624:</font>     <font color="blue">float</font> t = CPrimitive::INFINTY_DIST;
 <font color="deepskyblue">0625:</font>     CPrimitive *pObj = NULL;
-<font color="deepskyblue">0626:</font>     D3DXVECTOR4 p, n;<font color="cyan">// ��_�̈ʒu�Ɩ@��</font>
+<font color="deepskyblue">0626:</font>     D3DXVECTOR4 p, n;<font color="cyan">// 交点の位置と法線</font>
 <font color="deepskyblue">0627:</font> 
 <font color="deepskyblue">0628:</font>     t = pShpereS   -&gt;IsAcross(t, &amp;n, &amp;p, &amp;pObj, x, v);
 <font color="deepskyblue">0629:</font>     t = pShpereT   -&gt;IsAcross(t, &amp;n, &amp;p, &amp;pObj, x, v);
@@ -232,56 +232,56 @@ render.cpp
 <font color="deepskyblue">0632:</font>     t = pBlockTall -&gt;IsAcross(t, &amp;n, &amp;p, &amp;pObj, x, v);
 </pre>
 <p>
-�I�u�W�F�N�g�ɂ�����Ȃ������ꍇ�́A�w�i�F���o�͂��܂��B
-�i����́A��O���ӂ����ł��܂����̂ŁA���̌��ʂ͎��ۂɂ͓����܂���j
+オブジェクトにあたらなかった場合は、背景色を出力します。
+（今回は、手前もふさいでしまったので、この効果は実際には働きません）
 </p>
 <pre class="CodeBlock">
 render.cpp
 <font color="deepskyblue">0634:</font>     <font color="blue">if</font>( NULL == pObj ){
-<font color="deepskyblue">0635:</font>         <font color="cyan">// �����̓I�u�W�F�N�g����O�ꂽ�I</font>
+<font color="deepskyblue">0635:</font>         <font color="cyan">// 視線はオブジェクトから外れた！</font>
 <font color="deepskyblue">0636:</font>         *dest = BG_COLOR;
 <font color="deepskyblue">0637:</font>         <font color="blue">return</font> TRUE;
 <font color="deepskyblue">0638:</font>     }
 </pre>
 <p>
-���ɁA���V�A�����[���b�g�����āA�ǂ̂悤�Ȕ��˂����邩���߂܂��B<br>
-���ˁA���܁A�g�U�A���˂̊e�m������A����̎��s���ǂ̃v���Z�X���s�������肵�܂��B<br>
-����̓I�ɂ́A���ꂼ��̊m���̘a���痐���̏�������肵�āA�����̓���ꂽ�l����ǂ̎�ނ̔��˂��s�������肵�܂��B
-���Ȃ݂ɁA�z������m���́A1-cd-cr-cn�ɂȂ�܂����A�z���̌��ʂ͍���̓��V�A�����[���b�g�ł͍l�������A�Ō�ɐF���o�͂���Ƃ��ɍl�����܂��B
+次に、ロシアンルーレットをして、どのような反射をするか決めます。<br>
+反射、屈折、拡散、放射の各確率から、今回の試行がどのプロセスを行うか決定します。<br>
+より具体的には、それぞれの確率の和から乱数の上限を決定して、乱数の得られた値からどの種類の反射を行うか決定します。
+ちなみに、吸収する確率は、1-cd-cr-cnになりますが、吸収の効果は今回はロシアンルーレットでは考慮せず、最後に色を出力するときに考慮します。
 </p>
 <pre class="CodeBlock">
 render.cpp
 <font color="deepskyblue">0640:</font>     <font color="cyan">// -----------------------------------------------------------------------</font>
-<font color="deepskyblue">0641:</font>     <font color="cyan">// ���˕��������V�A�����[���b�g�Ō��߂�</font>
+<font color="deepskyblue">0641:</font>     <font color="cyan">// 反射方向をロシアンルーレットで決める</font>
 <font color="deepskyblue">0642:</font>     <font color="cyan">// -----------------------------------------------------------------------</font>
-<font color="deepskyblue">0643:</font>     <font color="blue">float</font> cd = pObj-&gt;m_material.diffuse;    <font color="cyan">// �g�U��</font>
-<font color="deepskyblue">0644:</font>     <font color="blue">float</font> cr = pObj-&gt;m_material.reflection; <font color="cyan">// ���˗�</font>
-<font color="deepskyblue">0645:</font>     <font color="blue">float</font> cn = pObj-&gt;m_material.refraction; <font color="cyan">// ���ܗ�</font>
-<font color="deepskyblue">0646:</font>     <font color="blue">float</font> ce = pObj-&gt;m_material.emmisive;   <font color="cyan">// ���˗�</font>
+<font color="deepskyblue">0643:</font>     <font color="blue">float</font> cd = pObj-&gt;m_material.diffuse;    <font color="cyan">// 拡散率</font>
+<font color="deepskyblue">0644:</font>     <font color="blue">float</font> cr = pObj-&gt;m_material.reflection; <font color="cyan">// 反射率</font>
+<font color="deepskyblue">0645:</font>     <font color="blue">float</font> cn = pObj-&gt;m_material.refraction; <font color="cyan">// 屈折率</font>
+<font color="deepskyblue">0646:</font>     <font color="blue">float</font> ce = pObj-&gt;m_material.emmisive;   <font color="cyan">// 放射率</font>
 <font color="deepskyblue">0647:</font>     <font color="blue">float</font> total = cd+cr+cn+ce;
 <font color="deepskyblue">0648:</font>     <font color="blue">float</font> prob = total * frand();
 <font color="deepskyblue">0649:</font> 
-<font color="deepskyblue">0650:</font>     <font color="blue">int</font> type = 0;<font color="cyan">// �g�U</font>
-<font color="deepskyblue">0651:</font>     <font color="blue">if</font>(prob &lt; cr      ) type = 1; <font color="blue">else</font><font color="cyan">// ����</font>
-<font color="deepskyblue">0652:</font>     <font color="blue">if</font>(prob &lt; cr+cn   ) type = 2; <font color="blue">else</font><font color="cyan">// ����</font>
-<font color="deepskyblue">0653:</font>     <font color="blue">if</font>(prob &lt; cr+cn+ce) type = 3;     <font color="cyan">// ����</font>
+<font color="deepskyblue">0650:</font>     <font color="blue">int</font> type = 0;<font color="cyan">// 拡散</font>
+<font color="deepskyblue">0651:</font>     <font color="blue">if</font>(prob &lt; cr      ) type = 1; <font color="blue">else</font><font color="cyan">// 反射</font>
+<font color="deepskyblue">0652:</font>     <font color="blue">if</font>(prob &lt; cr+cn   ) type = 2; <font color="blue">else</font><font color="cyan">// 屈折</font>
+<font color="deepskyblue">0653:</font>     <font color="blue">if</font>(prob &lt; cr+cn+ce) type = 3;     <font color="cyan">// 放射</font>
 </pre>
 <p>
-�g�U���鎞�ɂ́A���C�̓����_���ɔ�΂��܂��B�������A���̂ɂ߂荞�ނ��Ƃ͂Ȃ��̂ŁA�V���ȃ��C�̕��� dir �ƁA�@���x�N�g�� n �̓��ς��v�Z���āA���C�̕������@���x�N�g���Ɣ��Ό����Ȃ�A���C�̌����𔽑΂ɂ��āA���̖̂ʂ̕����Ƀ��C���΂��悤�ɒ������܂��B<br>
-�����_���ȕ����Ƀ��C���΂��āA�ċA�I�ɓ����F�̐����́A���̂̐F�ƁA�@���x�N�g���ƃ��C�̕����̓��ς��|���ďo�͂���F�Ƃ��܂��B
-����́A�����o�[�g�̗]�������̂܂܂ł��B
+拡散する時には、レイはランダムに飛ばします。ただし、物体にめり込むことはないので、新たなレイの方向 dir と、法線ベクトル n の内積を計算して、レイの方向が法線ベクトルと反対向きなら、レイの向きを反対にして、物体の面の方向にレイを飛ばすように調整します。<br>
+ランダムな方向にレイを飛ばして、再帰的に得た色の成分は、物体の色と、法線ベクトルとレイの方向の内積を掛けて出力する色とします。
+これは、ランバートの余弦則そのままです。
 </p>
 <pre class="CodeBlock">
 render.cpp
 <font color="deepskyblue">0655:</font>     <font color="cyan">// -----------------------------------------------------------------------</font>
-<font color="deepskyblue">0656:</font>     <font color="cyan">// ��_���A�e�ɉB��Ă��邩�ǂ������ׂāA�g�U�����Z�o����</font>
+<font color="deepskyblue">0656:</font>     <font color="cyan">// 交点が、影に隠れているかどうか調べて、拡散光を算出する</font>
 <font color="deepskyblue">0657:</font>     <font color="cyan">// -----------------------------------------------------------------------</font>
 <font color="deepskyblue">0658:</font>     <font color="blue">if</font>(0==type){
 <font color="deepskyblue">0659:</font>         <font color="blue">if</font>(++depth&lt;DEPTH_MAX){
-<font color="deepskyblue">0660:</font>             <font color="cyan">// ����ɉ�������</font>
+<font color="deepskyblue">0660:</font>             <font color="cyan">// さらに奥を検索</font>
 <font color="deepskyblue">0661:</font>             D3DXVECTOR4 dir, pos;
 <font color="deepskyblue">0662:</font>             
-<font color="deepskyblue">0663:</font>             <font color="cyan">// �����I�Ƀ��C���΂�</font>
+<font color="deepskyblue">0663:</font>             <font color="cyan">// 等方的にレイを飛ばす</font>
 <font color="deepskyblue">0664:</font>             <font color="blue">float</font> theta =      D3DX_PI * frand();
 <font color="deepskyblue">0665:</font>             <font color="blue">float</font> phi   = 2.0f*D3DX_PI * frand();
 <font color="deepskyblue">0666:</font>             dir.x = sinf(theta) * cosf(phi);
@@ -289,7 +289,7 @@ render.cpp
 <font color="deepskyblue">0668:</font>             dir.z = cosf(theta);
 <font color="deepskyblue">0669:</font>             <font color="blue">float</font> dn = D3DXVec3Dot((D3DXVECTOR3 *)&amp;dir, (D3DXVECTOR3 *)&amp;n);
 <font color="deepskyblue">0670:</font>             <font color="blue">if</font>(dn&lt;0){
-<font color="deepskyblue">0671:</font>                 <font color="cyan">// �@���Ɣ��Ό����ɔ�Ԃ���Ȃ�A�����𔽑΂ɂ���</font>
+<font color="deepskyblue">0671:</font>                 <font color="cyan">// 法線と反対向きに飛ぶつもりなら、方向を反対にする</font>
 <font color="deepskyblue">0672:</font>                 dn = -dn;
 <font color="deepskyblue">0673:</font>                 dir.x *= -1;
 <font color="deepskyblue">0674:</font>                 dir.y *= -1;
@@ -298,7 +298,7 @@ render.cpp
 <font color="deepskyblue">0677:</font> 
 <font color="deepskyblue">0678:</font>             pos = p + 0.01f*(dir);
 <font color="deepskyblue">0679:</font>             GetColor(&amp;diffuse_color, &amp;pos, &amp;dir, depth);
-<font color="deepskyblue">0680:</font>             <font color="cyan">// �v���~�e�B�u�̐F��g�U���̗]������K�p</font>
+<font color="deepskyblue">0680:</font>             <font color="cyan">// プリミティブの色や拡散光の余弦側を適用</font>
 <font color="deepskyblue">0681:</font>             diffuse_color.x *= pObj-&gt;m_material.COLOR_DIF[0] * dn * 0.5f*D3DX_PI;
 <font color="deepskyblue">0682:</font>             diffuse_color.y *= pObj-&gt;m_material.COLOR_DIF[1] * dn * 0.5f*D3DX_PI;
 <font color="deepskyblue">0683:</font>             diffuse_color.z *= pObj-&gt;m_material.COLOR_DIF[2] * dn * 0.5f*D3DX_PI;
@@ -306,88 +306,88 @@ render.cpp
 <font color="deepskyblue">0685:</font>     }
 </pre>
 <p>
-���˂���ꍇ�́A���˃x�N�g�������߂āA����ɒT�����܂��B
+反射する場合は、反射ベクトルを求めて、さらに探索します。
 </p>
 <pre class="CodeBlock">
 render.cpp
 <font color="deepskyblue">0687:</font>     <font color="cyan">// -----------------------------------------------------------------------</font>
-<font color="deepskyblue">0688:</font>     <font color="cyan">// �ċA�I�Ɍ������΂��āA��荂���̔��˂��l���ɓ����</font>
+<font color="deepskyblue">0688:</font>     <font color="cyan">// 再帰的に光線を飛ばして、より高次の反射を考慮に入れる</font>
 <font color="deepskyblue">0689:</font>     <font color="cyan">// -----------------------------------------------------------------------</font>
-<font color="deepskyblue">0690:</font>     <font color="cyan">// ����</font>
+<font color="deepskyblue">0690:</font>     <font color="cyan">// 反射</font>
 <font color="deepskyblue">0691:</font>     D3DXVECTOR3 reflect_color=D3DXVECTOR3(0,0,0);
 <font color="deepskyblue">0692:</font>     <font color="blue">if</font>(1==type){
-<font color="deepskyblue">0693:</font>         <font color="cyan">// ���˃x�N�g��</font>
+<font color="deepskyblue">0693:</font>         <font color="cyan">// 反射ベクトル</font>
 <font color="deepskyblue">0694:</font>         D3DXVECTOR4 r = *v - 2.0f*D3DXVec3Dot((D3DXVECTOR3 *)&amp;n, (D3DXVECTOR3 *)v) * n;
-<font color="deepskyblue">0695:</font>         D3DXVECTOR4 pos = p + 0.01f*n;<font color="cyan">// ������ƕ�����</font>
+<font color="deepskyblue">0695:</font>         D3DXVECTOR4 pos = p + 0.01f*n;<font color="cyan">// ちょっと浮かす</font>
 <font color="deepskyblue">0696:</font>         <font color="blue">if</font>(!GetColor( &amp;reflect_color, &amp;pos, &amp;r, depth)){
-<font color="deepskyblue">0697:</font>             cr = 0;<font color="cyan">// ���ǁA�����͂��Ȃ�����</font>
+<font color="deepskyblue">0697:</font>             cr = 0;<font color="cyan">// 結局、光が届かなかった</font>
 <font color="deepskyblue">0698:</font>         }
 <font color="deepskyblue">0699:</font>     }
 </pre>
 <p>
-���܂̏ꍇ�́A���܃x�N�g�������߂āA�ċA�I�Ƀ��C�g���[�X���܂��B
+屈折の場合は、屈折ベクトルを求めて、再帰的にレイトレースします。
 </p>
 <pre class="CodeBlock">
 render.cpp
 <font color="deepskyblue">0701:</font>     <font color="cyan">// -----------------------------------------------------------------------</font>
-<font color="deepskyblue">0702:</font>     <font color="cyan">// ����</font>
+<font color="deepskyblue">0702:</font>     <font color="cyan">// 屈折</font>
 <font color="deepskyblue">0703:</font>     <font color="cyan">// -----------------------------------------------------------------------</font>
 <font color="deepskyblue">0704:</font>     D3DXVECTOR3 refract_color=D3DXVECTOR3(0,0,0);
 <font color="deepskyblue">0705:</font>     <font color="blue">if</font>(2==type){
-<font color="deepskyblue">0706:</font>         <font color="cyan">// ���܃x�N�g��</font>
+<font color="deepskyblue">0706:</font>         <font color="cyan">// 屈折ベクトル</font>
 <font color="deepskyblue">0707:</font>         D3DXVECTOR4 t, pos;
 <font color="deepskyblue">0708:</font>         <font color="blue">float</font> VN = D3DXVec3Dot((D3DXVECTOR3 *)v, (D3DXVECTOR3 *)&amp;n);
 <font color="deepskyblue">0709:</font>         <font color="blue">float</font> eta = 1.5f;
 <font color="deepskyblue">0710:</font>         <font color="blue">if</font>(VN&lt;0){
-<font color="deepskyblue">0711:</font>             <font color="cyan">// ����</font>
+<font color="deepskyblue">0711:</font>             <font color="cyan">// 入射</font>
 <font color="deepskyblue">0712:</font>             <font color="blue">float</font> D = 1-(1+VN)*(1+VN)/(eta*eta);
-<font color="deepskyblue">0713:</font>             <font color="blue">if</font>(D&lt;0){cn=0;<font color="blue">goto</font> no_refract;}<font color="cyan">// �S����</font>
+<font color="deepskyblue">0713:</font>             <font color="blue">if</font>(D&lt;0){cn=0;<font color="blue">goto</font> no_refract;}<font color="cyan">// 全反射</font>
 <font color="deepskyblue">0714:</font>             t = (-VN/eta-sqrtf(D))*n+(1/eta)*(*v);
-<font color="deepskyblue">0715:</font>             pos = p - 0.01f*n;<font color="cyan">// ������ƕ�����</font>
+<font color="deepskyblue">0715:</font>             pos = p - 0.01f*n;<font color="cyan">// ちょっと浮かす</font>
 <font color="deepskyblue">0716:</font>         }<font color="blue">else</font>{
-<font color="deepskyblue">0717:</font>             <font color="cyan">// �o�čs��</font>
+<font color="deepskyblue">0717:</font>             <font color="cyan">// 出て行く</font>
 <font color="deepskyblue">0718:</font>             <font color="blue">float</font> D = 1-(1-VN)*(1-VN)*(eta*eta);
-<font color="deepskyblue">0719:</font>             <font color="blue">if</font>(D&lt;0){cn=0;<font color="blue">goto</font> no_refract;}<font color="cyan">// �S����</font>
+<font color="deepskyblue">0719:</font>             <font color="blue">if</font>(D&lt;0){cn=0;<font color="blue">goto</font> no_refract;}<font color="cyan">// 全反射</font>
 <font color="deepskyblue">0720:</font>             t = -(VN*eta-sqrtf(D))*n+eta*(*v);
-<font color="deepskyblue">0721:</font>             pos = p + 0.01f*n;<font color="cyan">// ������ƕ�����</font>
+<font color="deepskyblue">0721:</font>             pos = p + 0.01f*n;<font color="cyan">// ちょっと浮かす</font>
 <font color="deepskyblue">0722:</font>         }
 <font color="deepskyblue">0723:</font>         D3DXVec3Normalize( (D3DXVECTOR3 *)&amp;t, (D3DXVECTOR3 *)&amp;t );
 <font color="deepskyblue">0724:</font>         <font color="blue">if</font>(!GetColor( &amp;refract_color, &amp;pos, &amp;t, depth)){
-<font color="deepskyblue">0725:</font>             cn = 0;<font color="cyan">// ���ǁA�����͂��Ȃ�����</font>
+<font color="deepskyblue">0725:</font>             cn = 0;<font color="cyan">// 結局、光が届かなかった</font>
 <font color="deepskyblue">0726:</font>         }
 <font color="deepskyblue">0727:</font>     }
 <font color="deepskyblue">0728:</font> no_refract:
 </pre>
 <p>
-���ˌ��́A�}�e���A���̐F���̂��̂ɂȂ�܂��B
+放射光は、マテリアルの色そのものになります。
 </p>
 <pre class="CodeBlock">
 render.cpp
 <font color="deepskyblue">0730:</font>     <font color="cyan">// -----------------------------------------------------------------------</font>
-<font color="deepskyblue">0731:</font>     <font color="cyan">// ����</font>
+<font color="deepskyblue">0731:</font>     <font color="cyan">// 放射</font>
 <font color="deepskyblue">0732:</font>     <font color="cyan">// -----------------------------------------------------------------------</font>
 <font color="deepskyblue">0733:</font>     D3DXVECTOR3 emmisive_color = *(D3DXVECTOR3*)&amp;pObj-&gt;m_material.COLOR_DIF;
 </pre>
 <p>
-�Ō�ɁA���܂łɌv�Z�����F�����ꂼ��̏󋵂ɉ����č������܂��B<br>
-���ˌ��ȊO�́Acd+cr+cn �̌W�����|���܂����B����́A1-cd+cr+cn �����̋z�����ɂȂ�̂ŁA�����łȂ��������o�͂���悤�ɒ������邽�߂ł��B
+最後に、今までに計算した色をそれぞれの状況に応じて合成します。<br>
+放射光以外は、cd+cr+cn の係数を掛けました。これは、1-cd+cr+cn が光の吸収率になるので、そうでない成分を出力するように調整するためです。
 </p>
 <pre class="CodeBlock">
 render.cpp
 <font color="deepskyblue">0735:</font>     <font color="cyan">// -----------------------------------------------------------------------</font>
-<font color="deepskyblue">0736:</font>     <font color="cyan">// �F���o�͂���</font>
+<font color="deepskyblue">0736:</font>     <font color="cyan">// 色を出力する</font>
 <font color="deepskyblue">0737:</font>     <font color="cyan">// -----------------------------------------------------------------------</font>
 <font color="deepskyblue">0738:</font>     <font color="blue">switch</font>(type){
-<font color="deepskyblue">0739:</font>     <font color="blue">case</font> 0:<font color="cyan">// �g�U</font>
+<font color="deepskyblue">0739:</font>     <font color="blue">case</font> 0:<font color="cyan">// 拡散</font>
 <font color="deepskyblue">0740:</font>         *dest = (cd+cr+cn) * diffuse_color;
 <font color="deepskyblue">0741:</font>         <font color="blue">break</font>;
-<font color="deepskyblue">0742:</font>     <font color="blue">case</font> 1:<font color="cyan">// ����</font>
+<font color="deepskyblue">0742:</font>     <font color="blue">case</font> 1:<font color="cyan">// 反射</font>
 <font color="deepskyblue">0743:</font>         *dest = (cd+cr+cn) * reflect_color;     
 <font color="deepskyblue">0744:</font>         <font color="blue">break</font>;
-<font color="deepskyblue">0745:</font>     <font color="blue">case</font> 2:<font color="cyan">// ����</font>
+<font color="deepskyblue">0745:</font>     <font color="blue">case</font> 2:<font color="cyan">// 屈折</font>
 <font color="deepskyblue">0746:</font>         *dest = (cd+cr+cn) * refract_color;
 <font color="deepskyblue">0747:</font>         <font color="blue">break</font>;
-<font color="deepskyblue">0748:</font>     <font color="blue">case</font> 3:<font color="cyan">// ����</font>
+<font color="deepskyblue">0748:</font>     <font color="blue">case</font> 3:<font color="cyan">// 放射</font>
 <font color="deepskyblue">0749:</font>         *dest = ce * emmisive_color;
 <font color="deepskyblue">0750:</font>         <font color="blue">break</font>;
 <font color="deepskyblue">0751:</font>     }
@@ -397,15 +397,15 @@ render.cpp
 </pre>
 
 
-<h2>����ʂ̍X�V</h2>
+<h2>■画面の更新</h2>
 
 
 <p>
-���āA�����e�J�����@�͉񐔂��d�˂�Ώd�˂�قǐ��m�ȉ摜�ɋ߂Â��Ă�����@�ł��B<br>
-���������āA���x�����x�������_�����O���邱�Ƃɂ��܂��B<br>
-����́A�P�b�ԏ���������I������悤�� Render() �֐������������܂����B
-timeGetTime() �֐����g���΁A�~���b�P�ʂŌ��ݎ�����m�邱�Ƃ��ł���̂ŁA�֐����Ă΂ꂽ������ۑ����Ă����āA�Z���������I���邽�тɎ��Ԃ��v�����A���̎��Ԃ��P�b�𒴂��Ă�����֐����I������悤�ɂ��܂��B
-�Ȃ��AtimeBeginPeriod() �ŁAtimeGetTime() �̎��ԕ���\��ύX�ł���̂ł����A���Ԃ����m�ł��قƂ�ǈӖ����Ȃ��̂ŁA0.5 �b�̎��ԕ���\�ɂ��܂����B
+さて、モンテカルロ法は回数を重ねれば重ねるほど正確な画像に近づいていく手法です。<br>
+したがって、何度も何度もレンダリングすることにします。<br>
+今回は、１秒間処理したら終了するように Render() 関数を書き換えました。
+timeGetTime() 関数を使えば、ミリ秒単位で現在時刻を知ることができるので、関数が呼ばれた時刻を保存しておいて、短い処理を終えるたびに時間を計測し、その時間が１秒を超えていたら関数を終了するようにします。
+なお、timeBeginPeriod() で、timeGetTime() の時間分解能を変更できるのですが、時間が正確でもほとんど意味がないので、0.5 秒の時間分解能にしました。
 </p>
 <pre class="CodeBlock">
 render.cpp
@@ -417,31 +417,31 @@ render.cpp
 <font color="deepskyblue">0549:</font>     D3DXVECTOR3 col;
 <font color="deepskyblue">0550:</font>     <font color="blue">int</font> ret = -1;
 <font color="deepskyblue">0551:</font> 
-<font color="deepskyblue">0552:</font>     <font color="yellow">timeBeginPeriod( 500 );</font><font color="cyan">// �^�C�}�[���x�̐ݒ�</font>
+<font color="deepskyblue">0552:</font>     <font color="yellow">timeBeginPeriod( 500 );</font><font color="cyan">// タイマー精度の設定</font>
 <font color="deepskyblue">0553:</font> 
 <font color="deepskyblue">0554:</font>     <font color="blue">for</font>(<font color="blue">unsigned</font> <font color="blue">long</font> <font color="yellow">t = timeGetTime()</font>
-<font color="deepskyblue">0555:</font>         ; <font color="yellow">timeGetTime()-t &lt; 1000 </font>       <font color="cyan">// 1�b��������</font>
-<font color="deepskyblue">0556:</font>         &amp;&amp; <font color="orange">STATE_IDLE</font>!=s_state;){       <font color="cyan">// �I��������</font>
+<font color="deepskyblue">0555:</font>         ; <font color="yellow">timeGetTime()-t &lt; 1000 </font>       <font color="cyan">// 1秒たったか</font>
+<font color="deepskyblue">0556:</font>         &amp;&amp; <font color="orange">STATE_IDLE</font>!=s_state;){       <font color="cyan">// 終了したか</font>
 <font color="deepskyblue">0557:</font> 
 <font color="deepskyblue">0558:</font>         <font color="blue">switch</font>(s_state){
-<font color="deepskyblue">0559:</font>         <font color="blue">case</font> <font color="orange">STATE_IDLE</font>:        <font color="cyan">// �ҋ@</font>
+<font color="deepskyblue">0559:</font>         <font color="blue">case</font> <font color="orange">STATE_IDLE</font>:        <font color="cyan">// 待機</font>
 <font color="deepskyblue">0560:</font>             <font color="blue">break</font>;
-<font color="deepskyblue">0561:</font>         <font color="blue">case</font> <font color="orange">STATE_RENDER_BEGIN</font>:<font color="cyan">// ������</font>
+<font color="deepskyblue">0561:</font>         <font color="blue">case</font> <font color="orange">STATE_RENDER_BEGIN</font>:<font color="cyan">// 初期化</font>
 <font color="deepskyblue">0562:</font>             s_x = 0;
 <font color="deepskyblue">0563:</font>             s_y = 0;
 <font color="deepskyblue">0564:</font>             render_cnt+=1.0f;
 <font color="deepskyblue">0565:</font>             s_state = <font color="orange">STATE_RENDER</font>;
 <font color="deepskyblue">0566:</font>             <font color="blue">break</font>;
-<font color="deepskyblue">0567:</font>         <font color="blue">case</font> <font color="orange">STATE_RENDER</font>:      <font color="cyan">// ��ʂ̕`��</font>
+<font color="deepskyblue">0567:</font>         <font color="blue">case</font> <font color="orange">STATE_RENDER</font>:      <font color="cyan">// 画面の描画</font>
 <font color="deepskyblue">0568:</font>             GetColor(&amp;col, ((<font color="blue">float</font>)s_x+frand())/(<font color="blue">float</font>)RENDER_WIDTH
 <font color="deepskyblue">0569:</font>                          , ((<font color="blue">float</font>)s_y+frand())/(<font color="blue">float</font>)RENDER_HEIGHT);
 <font color="deepskyblue">0570:</font>             s_total[4*(s_y*RENDER_WIDTH+s_x)+0]+=col.x;<font color="cyan">// R</font>
 <font color="deepskyblue">0571:</font>             s_total[4*(s_y*RENDER_WIDTH+s_x)+1]+=col.y;<font color="cyan">// G</font>
 <font color="deepskyblue">0572:</font>             s_total[4*(s_y*RENDER_WIDTH+s_x)+2]+=col.z;<font color="cyan">// B</font>
 <font color="deepskyblue">0573:</font> 
-<font color="deepskyblue">0574:</font>             <font color="cyan">// ���̃s�N�Z���Ɉړ�</font>
+<font color="deepskyblue">0574:</font>             <font color="cyan">// 次のピクセルに移動</font>
 <font color="deepskyblue">0575:</font>             <font color="blue">if</font>(RENDER_WIDTH&lt;=++s_x){
-<font color="deepskyblue">0576:</font>                 <font color="cyan">// �s��ς���</font>
+<font color="deepskyblue">0576:</font>                 <font color="cyan">// 行を変える</font>
 <font color="deepskyblue">0577:</font>                 s_x = 0;
 <font color="deepskyblue">0578:</font>                 <font color="blue">if</font>(RENDER_HEIGHT&lt;=++s_y){
 <font color="deepskyblue">0579:</font>                     s_state = <font color="orange">STATE_RENDER_END</font>;
@@ -449,8 +449,8 @@ render.cpp
 <font color="deepskyblue">0581:</font>                 }
 <font color="deepskyblue">0582:</font>             }
 <font color="deepskyblue">0583:</font>             <font color="blue">break</font>;
-<font color="deepskyblue">0584:</font>         <font color="blue">case</font> <font color="orange">STATE_RENDER_END</font>:  <font color="cyan">// �`��̏I��</font>
-<font color="deepskyblue">0585:</font>             <font color="cyan">// ��ʂ̔��f</font>
+<font color="deepskyblue">0584:</font>         <font color="blue">case</font> <font color="orange">STATE_RENDER_END</font>:  <font color="cyan">// 描画の終了</font>
+<font color="deepskyblue">0585:</font>             <font color="cyan">// 画面の反映</font>
 <font color="deepskyblue">0586:</font>             no = 0;
 <font color="deepskyblue">0587:</font>             <font color="blue">for</font>(j=0; j&lt;RENDER_HEIGHT; j++){
 <font color="deepskyblue">0588:</font>             <font color="blue">for</font>(i=0; i&lt;RENDER_WIDTH ; i++){
@@ -460,32 +460,32 @@ render.cpp
 <font color="deepskyblue">0592:</font>                 no += 4;
 <font color="deepskyblue">0593:</font>             }
 <font color="deepskyblue">0594:</font>             }
-<font color="deepskyblue">0595:</font>             s_state = <font color="orange">STATE_RENDER_BEGIN</font>;<font color="cyan">// �������[�v</font>
+<font color="deepskyblue">0595:</font>             s_state = <font color="orange">STATE_RENDER_BEGIN</font>;<font color="cyan">// 無限ループ</font>
 <font color="deepskyblue">0596:</font>             <font color="blue">break</font>;
 <font color="deepskyblue">0597:</font>         }
 <font color="deepskyblue">0598:</font>     }
 <font color="deepskyblue">0599:</font> 
-<font color="deepskyblue">0600:</font>     <font color="yellow">timeEndPeriod( 500 );<font color="cyan">// �^�C�}�[���x��߂�</font></font>
+<font color="deepskyblue">0600:</font>     <font color="yellow">timeEndPeriod( 500 );<font color="cyan">// タイマー精度を戻す</font></font>
 <font color="deepskyblue">0601:</font> 
 <font color="deepskyblue">0602:</font>     <font color="blue">return</font> ret;
 <font color="deepskyblue">0603:</font> }
 </pre>
 <p>
-Render() �֐��̒��ł́A�K���ɏ�Ԃ�ݒ肵�āA�����_�����O�̎菇�𐮓ڂ��Ă��܂��B<br>
-�ŏ��� STATE_IDLE �̏�Ԃɂ��܂��B�����ŁA�{�^�����������̂�҂��܂��B<br>
-�{�^���������ꂽ��A��Ԃ� STATE_RENDER_BEGIN �ɂȂ�܂��BSTATE_RENDER_BEGIN �ł́A���C�ƃ��[�X����s�N�Z��������ɐݒ肷��Ȃǂ̂��Ƃ����Ă��܂��B<br>
-����������ASTATE_RENDER �ֈڂ�܂��BSTATE_RENDER �ł́A�s�N�Z�����ƂɃ��C�g���[�X�����܂��B
-����ꂽ�f�[�^�́A�s�N�Z�����Ƃɒl��z�� s_total �ɉ��Z���Ă����܂��B
-���C�g���[�X���I������玟�̃s�N�Z�����w�肷�邩�A��ʂ��ʂ����C�g���[�X�����玟�̏�� STATE_RENDER_END �ֈڂ�܂��B<br>
-STATE_RENDER_END �ł́A���܂ł̌��ʂ�`��񐔂Ŋ����āA�t���[���o�b�t�@�ɐF���o�͂��܂��BSTATE_RENDER_END ��ʉ߂��Ȃ������ʂ͍X�V����Ȃ��̂ŁA����͂P�s�N�Z�����ƂɃ����_�����O����p�͌���܂���BSTATE_RENDER_END �̎��́A�Ă�STATE_RENDER_BEGIN �ֈڂ��Ď��̃p�X�������_�����O���܂��B
+Render() 関数の中では、適当に状態を設定して、レンダリングの手順を整頓しています。<br>
+最初に STATE_IDLE の状態にいます。ここで、ボタンが押されるのを待ちます。<br>
+ボタンが押されたら、状態は STATE_RENDER_BEGIN になります。STATE_RENDER_BEGIN では、レイとレースするピクセルを左上に設定するなどのことをしています。<br>
+そうしたら、STATE_RENDER へ移ります。STATE_RENDER では、ピクセルごとにレイトレースをします。
+得られたデータは、ピクセルごとに値を配列 s_total に加算していきます。
+レイトレースが終わったら次のピクセルを指定するか、一通り画面をレイトレースしたら次の状態 STATE_RENDER_END へ移ります。<br>
+STATE_RENDER_END では、今までの結果を描画回数で割って、フレームバッファに色を出力します。STATE_RENDER_END を通過しない限り画面は更新されないので、今回は１ピクセルごとにレンダリングする姿は見れません。STATE_RENDER_END の次は、再びSTATE_RENDER_BEGIN へ移って次のパスをレンダリングします。
 </p>
 <image src = "state.png">
 <p>
-�܂��A����͉��x�������_�����O����̂ł����A���̕��@�ɓs���������A���`�G�C���A�X�����݂܂����B<br>
-����́A���C���΂��Ƃ��ɁA�s�N�Z���̒��������_���ɔ�΂����@�ł��B<br>
-�����̓s�N�Z���̒����ɑ΂��ă��C���΂��̂ł����A
-�s�N�Z���̒���K���ɂ��炵�ă��C���T���v�����O�����ق����A���`�G�C���A�X���������萳�m�ȉ摜�ɂȂ�܂��B<br>
-�{���̓T���v�����O����ꏊ���K���Ɍ��߂��ق��������̂ł����A�����e�J�����@��M����Ȃ�A�����̃��C���΂����A���T���u�����ς̓s�N�Z���̒�����l�Ƀ��C���΂������ʂƓ������Ȃ�̂ŁA����̓��C�������_���ɔ�΂��ăT���v�����O���܂��B
+また、今回は何度もレンダリングするのですが、この方法に都合がいいアンチエイリアスも試みました。<br>
+それは、レイを飛ばすときに、ピクセルの中をランダムに飛ばす方法です。<br>
+いつもはピクセルの中央に対してレイを飛ばすのですが、
+ピクセルの中を適当にずらしてレイをサンプリングしたほうがアンチエイリアスがかかりより正確な画像になります。<br>
+本当はサンプリングする場所も適当に決めたほうがいいのですが、モンテカルロ法を信じるなら、多くのレイを飛ばしたアンサンブル平均はピクセルの中を一様にレイを飛ばした結果と等しくなるので、今回はレイをランダムに飛ばしてサンプリングします。
 </p>
 <pre class="CodeBlock">
 render.cpp
@@ -495,9 +495,9 @@ render.cpp
 <image src = "samplingpoint.png">
 
 <p>
-Render() �֐����̂��P�b���ƂɋA���Ă���֐��ɂȂ����̂ŁA�A�v���P�[�V�����̌Ăяo�������ύX���܂��傤�B<br>
-Render::Begin() �֐��ŕ`����n�߂�͓̂����ł����A����� Render() �֐����A���Ă����Ƃ��ɁA�C�x���g�̏������ʂ̍ĕ`������Ă��܂��B<br>
-�܂��A���݉���ڂ̃����_�����O�����Ă��邩�ǂ������E�B���h�E�̃^�C�g���ɕ\������悤�ɂ��܂����BSetWindowText() ���\�b�h�Ń^�C�g����ύX���邱�Ƃ��ł���̂ŁA�����_�����O�񐔂������ł���֐�������Ă����āA��ʂ��X�V���邽�тɃ^�C�g�������������܂����B
+Render() 関数自体が１秒ごとに帰ってくる関数になったので、アプリケーションの呼び出し側も変更しましょう。<br>
+Render::Begin() 関数で描画を始めるのは同じですが、今回は Render() 関数が帰ってきたときに、イベントの処理や画面の再描画をしています。<br>
+また、現在何回目のレンダリングをしているかどうかをウィンドウのタイトルに表示するようにしました。SetWindowText() メソッドでタイトルを変更することができるので、レンダリング回数を所得できる関数を作っておいて、画面を更新するたびにタイトルを書き換えました。
 </p>
 <pre class="CodeBlock">
 mainDlg.cpp
@@ -505,15 +505,15 @@ mainDlg.cpp
 <font color="deepskyblue">0211:</font> {
 <font color="deepskyblue">0212:</font>     bQuit = FALSE;
 <font color="deepskyblue">0213:</font> 
-<font color="deepskyblue">0214:</font>     <font color="cyan">// TODO: ���̈ʒu�ɃR���g���[���ʒm�n���h���p�̃R�[�h��ǉ����Ă�������</font>
+<font color="deepskyblue">0214:</font>     <font color="cyan">// TODO: この位置にコントロール通知ハンドラ用のコードを追加してください</font>
 <font color="deepskyblue">0215:</font>     <font color="yellow"><font color="blue">for</font>(Render::Begin(); Render::Render(); <font color="blue">this</font>-&gt;OnPaint())</font>{
-<font color="deepskyblue">0216:</font>         <font color="cyan">// �^�C�g���ύX</font>
+<font color="deepskyblue">0216:</font>         <font color="cyan">// タイトル変更</font>
 <font color="deepskyblue">0217:</font>         <font color="blue">char</font> title[256];
-<font color="deepskyblue">0218:</font>         sprintf(title, "<font color="blue">%d���</font>", Render::GetRenderCount());
+<font color="deepskyblue">0218:</font>         sprintf(title, "<font color="blue">%d回目</font>", Render::GetRenderCount());
 <font color="deepskyblue">0219:</font>         SetWindowText(title);
-<font color="deepskyblue">0220:</font>         <font color="cyan">// ���b�Z�[�W�̏���</font>
+<font color="deepskyblue">0220:</font>         <font color="cyan">// メッセージの処理</font>
 <font color="deepskyblue">0221:</font>         PumpMessages();
-<font color="deepskyblue">0222:</font>         <font color="cyan">// �I������</font>
+<font color="deepskyblue">0222:</font>         <font color="cyan">// 終了判定</font>
 <font color="deepskyblue">0223:</font>         <font color="blue">if</font>(bQuit) <font color="blue">return</font>;
 <font color="deepskyblue">0224:</font>     }
 <font color="deepskyblue">0225:</font>     <font color="blue">this</font>-&gt;OnPaint();
@@ -521,104 +521,104 @@ mainDlg.cpp
 </pre>
 
 
-<h2>�������_�����O�񐔂ƌ����ڂ̕ω�</h2>
+<h2>■レンダリング回数と見た目の変化</h2>
 
 
 <p>
-���āA���񃌃��_�����O����Ƃǂ̂悤�ȊG���ł���̂ł��傤���H<br>
-���Ȃ݂� 256x256�̑傫���� Athron 2000+ �łW�O���łP�O�O�O�O����x�����_�����O�ł��܂����B
+さて、何回レンダリングするとどのような絵ができるのでしょうか？<br>
+ちなみに 256x256の大きさで Athron 2000+ で８０分で１００００回程度レンダリングできました。
 </p>
 <table>
 <tr><td>
 <image src = "1.png">
 </td><td>
-�P��̃����_�����O�ł́A�܂΂�ɂ����_������܂���B�܂�A�قƂ�ǂ̌v�Z�����ʂɂȂ��Ă��܂�<br>
+１回のレンダリングでは、まばらにしか点がありません。つまり、ほとんどの計算が無駄になっています<br>
 </td></tr>
 </table>
 <table>
 <tr><td>
 <image src = "10.png">
 </td><td>
-�P�O��̃����_�����O�ł́A��������ƐF�������܂����A�T�v�͑S�R�킩��܂���B<br>
+１０回のレンダリングでは、うっすらと色が見えますが、概要は全然わかりません。<br>
 </td></tr>
 </table>
 <table>
 <tr><td>
 <image src = "50.png">
 </td><td>
-�T�O��̃����_�����O�ł́A�Ȃ�ƂȂ��`�������Ă��܂����B<br>
-�W�����ʂ͂��̎��_�ł��͂�����킩��܂�
+５０回のレンダリングでは、なんとなく形が見えてきました。<br>
+集光効果はこの時点でもはっきりわかります
 </td></tr>
 </table>
 <table>
 <tr><td>
 <image src = "100.png">
 </td><td>
-�P�O�O��̃����_�����O�ł́A�����`���킩��܂��B
+１００回のレンダリングでは、もう形がわかります。
 </td></tr>
 </table>
 <table>
 <tr><td>
 <image src = "500.png">
 </td><td>
-�T�O�O��̃����_�����O�ł́A�`���͂�����Ƃ킩��܂��B
-���ꂩ�炪�m�C�Y�Ƃ̐킢�ł��B
+５００回のレンダリングでは、形がはっきりとわかります。
+これからがノイズとの戦いです。
 </td></tr>
 </table>
 <table>
 <tr><td>
 <image src = "1000.png">
 </td><td>
-�P�O�O�O��̃����_�����O�ł́A�����ȋ����͂����肵�����Ă��܂��B�B
+１０００回のレンダリングでは、透明な球もはっきりしだしています。。
 </td></tr>
 </table>
 <table>
 <tr><td>
 <image src = "5000.png">
 </td><td>
-�T�O�O�O��̃����_�����O�ł́A���񂾂�m�C�Y�����Ă��܂����B
+５０００回のレンダリングでは、だんだんノイズも取れてきました。
 </td></tr>
 </table>
 <table>
 <tr><td>
 <image src = "13000.png">
 </td><td>
-�P�R�O�O�O��̃����_�����O�ł́A�����Ԃ��ׂ��ׂł��B
-�ł��A�m�C�Y�͖ڗ����܂��ˁB
+１３０００回のレンダリングでは、だいぶすべすべです。
+でも、ノイズは目立ちますね。
 </td></tr>
 </table>
 <table>
 <tr><td>
 <image src = "50000.png">
 </td><td>
-�T�O�O�O�O��̃����_�����O�ł́A���悭�Ȃ��Ă��܂����B
-�m�C�Y������C�͂��܂���c
+５００００回のレンダリングでは、よりよくなっていますが。
+ノイズが取れる気はしません…
 </td></tr>
 </table>
 
 <p>
-���̌�A�W�O�O�O�O��قǃ����_�����O������A�}�V�����t���[�Y���Ă��܂��܂����B
+この後、８００００回ほどレンダリングしたら、マシンがフリーズしてしまいました。
 </p>
 
 
 <p>
-��r�Ƃ��āA�v�Z�ł��؂�[�x��[�����Čv�Z���Ă݂܂����B
-�P�O�O��A���C�𔽎ˁA���܂����Ă������ɂ��ǂ蒅���Ȃ������Ƃ��ɁA�v�Z����߂�悤�ɕύX���āA�v���O�������܂킵�Ă݂���T�O�O�O�W��܂킵�����_�Ŏ��̂悤�ɂȂ�܂����B
+比較として、計算打ち切り深度を深くして計算してみました。
+１００回、レイを反射、屈折させても光源にたどり着かなかったときに、計算をやめるように変更して、プログラムをまわしてみたら５０００８回まわした時点で次のようになりました。
 </p>
 <image src = "100-50008.png">
 <p>
-������̂ق����Ԑڌ��������o�Ă���J�i�H
+こちらのほうが間接光が強く出ているカナ？
 </p>
 
 
-<h2>���Ō��</h2>
+<h2>■最後に</h2>
 
 
 <p>
-����ŃO���[�o���C���~�l�[�V��������荞�ނ��Ƃ��ł��܂����B<br>
-�Ƃ����Ă��ԐڏƖ��͂��Ȃ�ア�ł��ˁB<br>
-���̃����e�J�����@�̓m�C�Y���������Ŏ��Ԃ�������܂��B
-���̂܂܂ł́A�ƂĂ����A���^�C���ɂ͂Ȃ肻��������܂���c
+これでグローバルイルミネーションを取り込むことができました。<br>
+といっても間接照明はかなり弱いですね。<br>
+このモンテカルロ法はノイズが多すぎで時間もかかります。
+このままでは、とてもリアルタイムにはなりそうもありません…
 </p>
 
 
@@ -628,7 +628,7 @@ mainDlg.cpp
 <BR CLEAR=ALL>
 <center>
 <hr>
-<p><a href="../index.html">���ǂ�</a></p>
+<p><a href="../index.html">もどる</a></p>
 <p><a href="mailto:imagire@gmail.com">imagire@gmail.com</a></p>
 </center>
 

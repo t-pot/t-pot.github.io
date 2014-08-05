@@ -1,8 +1,8 @@
 <head>
-	<title>t-pot�wGPU�ɂ��p�[�e�B�N���x</title>
+	<title>t-pot『GPUによるパーティクル』</title>
 	<link rel="stylesheet" type="text/css" href="../if.css">
 </head>
-<meta http-equiv=Content-Type content="text/html; charset=shift_jis">
+<meta http-equiv=Content-Type content="text/html; charset=UTF-8">
 <body>
 
 
@@ -10,8 +10,8 @@
 <center>
 <BR CLEAR=ALL>
 <BR CLEAR=ALL>
-<h1>GPU�ɂ��p�[�e�B�N��</h1><br>
-<h3>�` GPU particle �`</h3>
+<h1>GPUによるパーティクル</h1><br>
+<h3>～ GPU particle ～</h3>
 <BR CLEAR=ALL>
 <BR CLEAR=ALL>
 <BR CLEAR=ALL>
@@ -20,7 +20,7 @@
 <hr>
 <br>
 <p>
-���̉摜���N���b�N����ƁA�p�[�e�B�N������ђ��˂�A�j���[�V�����������܂��B<br>
+下の画像をクリックすると、パーティクルが飛び跳ねるアニメーションが見られます。<br>
 <a href="anim.gif"><image src = "01.gif" width = "10%" height = "10%"></a>
 </p>
 <hr>
@@ -28,77 +28,77 @@
 <div>
 
 
-<h2>���͂��߂�</h2>
+<h2>■はじめに</h2>
 
 
 <p>
-�܂��A<a href="http://spin.s2c.ne.jp/">spin</a>�l�^�ŋ��k�ł����AGPU���g�����p�[�e�B�N���̎��Ԕ��W�̃v���O�����ł��B<br>
-�ŋ߂�3D API���A������Ƃł�����������̂���l�Ȃ�΋C�Â��Ă���Ǝv���܂����A
-���݂̃O���t�B�b�N�p�C�v���C���̗���́ACPU�ŕϊ��s��Ȃǂ�ݒ肵�Ă����āA
-���Ƃ͍ŏI�I�ȃt���[���o�b�t�@�ւ̃����_�����O�܂�GPU�ɂ��C������̂���{�I�ȗ���ɂȂ��Ă��܂��B<br>
-�܂�A�f�[�^�̗���́ACPU����GPU�Ɉ���I�ɗ������̂ł����āAGPU����CPU�ւ̃f�[�^�̗���͍l�����Ă��܂���B<br>
-CPU��GPU�̌��ʂ��g�����߂ɂ́AGPU�ō쐬�����e�N�X�`�������b�N���Ă���ǂݍ��ގ菇���K�v�ɂȂ�܂��B<br>
-�������A���̕��@�́A�{���̃f�[�^�̗���Ƃ͈Ⴄ���̂Ȃ̂ŁA�����͔��ɒᑬ�ł��B<br>
-�����ŁAGPU�őS�Ă̏������s�����@�Ƃ��āA���ʂ̓��C���������ɒu���p�[�e�B�N���̍��W���e�N�X�`���ɂ����A
-�p�[�e�B�N���̎��Ԕ��W�܂�GPU�ɂ�点�悤�Ƃ����l�������R�ɕ�����ł��܂��B<br>
-�ŋ߂ł́A<a href="http://developer.nvidia.com/view.asp?IO=demo_cloth_simulation">GDC2003�ł́wCloth Simulation�x</a>��<a href="http://www.cs.caltech.edu/~eitan/">SIGGRAPH2003�́wThe GPU as Numerical Simulation Engine�x</a>�Ȃǂ̂����Ɋւ���_������o����Ă��܂��B<br>
-���̃v���O������g�񂾂Ƃ��ɂ́A�����̘_���͒m��Ȃ��������Ȃ̂ŁA
-�����̕��@�Ƃ͈Ⴄ���@�ɂȂ�܂����AGPU���g���ăp�[�e�B�N�����΂��Ă݂܂��B
+また、<a href="http://spin.s2c.ne.jp/">spin</a>ネタで恐縮ですが、GPUを使ったパーティクルの時間発展のプログラムです。<br>
+最近の3D APIを、ちょっとでもさわった事のある人ならば気づいていると思いますが、
+現在のグラフィックパイプラインの流れは、CPUで変換行列などを設定しておいて、
+あとは最終的なフレームバッファへのレンダリングまでGPUにお任せするのが基本的な流れになっています。<br>
+つまり、データの流れは、CPUからGPUに一方的に流れるものであって、GPUからCPUへのデータの流れは考えられていません。<br>
+CPUでGPUの結果を使うためには、GPUで作成したテクスチャをロックしてから読み込む手順が必要になります。<br>
+しかし、この方法は、本来のデータの流れとは違うものなので、処理は非常に低速です。<br>
+そこで、GPUで全ての処理を行う方法として、普通はメインメモリに置くパーティクルの座標をテクスチャにおき、
+パーティクルの時間発展までGPUにやらせようという考えが自然に浮かんできます。<br>
+最近では、<a href="http://developer.nvidia.com/view.asp?IO=demo_cloth_simulation">GDC2003での『Cloth Simulation』</a>や<a href="http://www.cs.caltech.edu/~eitan/">SIGGRAPH2003の『The GPU as Numerical Simulation Engine』</a>などのそれらに関する論文が提出されています。<br>
+このプログラムを組んだときには、これらの論文は知らなかった時なので、
+それらの方法とは違う方法になりますが、GPUを使ってパーティクルを飛ばしてみます。
 </p>
 <p>
-����̃v���O�����́A���̂��̂ł��B<br>
-�Ȃ��A�f�B�X�v���[�X�����g�}�b�s���O�ƕ��������_���o�b�t�@���g���̂ŁA
-HAL�Ŏ��s�ł�����͂��̐��ɂ͑��݂��܂���B
+今回のプログラムは、次のものです。<br>
+なお、ディスプレースメントマッピングと浮動小数点数バッファを使うので、
+HALで実行できる環境はこの世には存在しません。
 </p>
 <ul style = "LIST-STYLE-TYPE:none">
-<li><a href="src.zip">src.zip (GPU �p�[�e�B�N��:DirectX9)</a>
+<li><a href="src.zip">src.zip (GPU パーティクル:DirectX9)</a>
 </ul>
 
 <p>
-�܂��A�����̂悤�ɓK���Ƀt�@�C���������Ă��܂��B<br>
-APP WIZARD ����o�͂����t���[�����[�N�̃t�@�C���͏Љ���Ȃ����Ă��������܂��B
+まぁ、いつものように適当にファイルが入っています。<br>
+APP WIZARD から出力されるフレームワークのファイルは紹介を省かせていただきます。
 </p>
 <table>
-<tr><td><a href="hlsl_fx.html">hlsl.fx</a></td><td>�V�F�[�_�̓������G�t�F�N�g�t�@�C��</td></tr>
-<tr><td><a href="main_h.html">main.h</a></td><td>�A�v���P�[�V�����̃w�b�_</td></tr>
-<tr><td><a href="main_cpp.html">main.cpp</a></td><td>�A�v���P�[�V�����̃\�[�X</td></tr>
+<tr><td><a href="hlsl_fx.html">hlsl.fx</a></td><td>シェーダの入ったエフェクトファイル</td></tr>
+<tr><td><a href="main_h.html">main.h</a></td><td>アプリケーションのヘッダ</td></tr>
+<tr><td><a href="main_cpp.html">main.cpp</a></td><td>アプリケーションのソース</td></tr>
 </table>
 
 <p>
-���ƁA���s�t�@�C���A���f���y�сA�v���W�F�N�g�t�@�C���������Ă��܂��B
+あと、実行ファイル、モデル及び、プロジェクトファイルが入っています。
 </p>
 
 
-<h2>���p�[�e�B�N�X���΂����@</h2>
+<h2>■パーティクスを飛ばす方法</h2>
 
 <p>
-�ŋ߂ł́AGPU �͋��͂Ȓ�SIMD�v�Z�@���Ƃ������Ƃ��F�������悤�ɂȂ��ė��܂����B<br>
-����́A�e�N�X�`����z��ƍl���āA�e�N�X�`�����d�˂���s�N�Z���V�F�[�_���g�����Ƃɂ���āA
-�z��S�ĂɊւ��Ĉ�x�ɓ����v�Z���ł���Ƃ������Ƃł��B<br>
-���̎g�����ň�ԒP���ɍl������̂́A�e�N�X�`���̃e�N�Z�����p�[�e�B�N���̈ʒu���W�Ƃ݂Ȃ��āA
-���ɑ����̃p�[�e�B�N���̌v�Z����x�ɍs�����Ƃł��B<br>
-����́A�܂��ɂ��̕��@�����H���܂��B
+最近では、GPU は強力な超SIMD計算機だということが認識されるようになって来ました。<br>
+それは、テクスチャを配列と考えて、テクスチャを重ねたりピクセルシェーダを使うことによって、
+配列全てに関して一度に同じ計算ができるということです。<br>
+この使い道で一番単純に考えられるのは、テクスチャのテクセルをパーティクルの位置座標とみなして、
+非常に多くのパーティクルの計算を一度に行うことです。<br>
+今回は、まさにその方法を実践します。
 </p>
 <p>
-�p�[�e�B�N���̕ϐ����e�N�X�`���Ɋm�ۂ��܂��i�����ł́Aparticle map �Ƃł����Â��܂��傤�j�B<br>
-�Ⴆ�΁A�e�N�X�`���̈�ԏ�̒i�Ɉʒu���W�A�Q�i�ڂɑ��x�A�����ĂR�i�ڂɉ����x���������܂��B<br>
-�܂��A�ʂ̃p�[�e�B�N���͉��ɕ��ׂ܂��B����́A64�̃p�[�e�B�N�����΂��܂����B</p>
+パーティクルの変数をテクスチャに確保します（ここでは、particle map とでも名づけましょう）。<br>
+例えば、テクスチャの一番上の段に位置座標、２段目に速度、そして３段目に加速度を準備します。<br>
+また、別のパーティクルは横に並べます。今回は、64個のパーティクルを飛ばしました。</p>
 <image src = "param.png">
 <p>
-�܂��A����́A���ꂼ��̃e�N�Z���ɂ��āA0.5�̐F�l���x�N�g����0�ɂ���B
-�������X�P�[�����O�̕��@�����܂����B<br>
-����́A�f�B�X�v���[�X�����g�}�b�s���O�̃e�N�X�`�����ǂݍ��܂ꂽ���̒l�͈̔͂�0�`1�̊ԂɃN�����v����Ă��܂����̂ŁA0.5�𒆐S�Ɏ����Ă���悤�ɂ��邽�߂ł��B<br>
-�����I�ɁAvs_3_0�Ńe�N�X�`����ǂݍ��߂�悤�ɂȂ�΁A���������_���o�b�t�@�̒l���̂��̂��x�N�g���Ƃ��Ďg����悤�ɂȂ�ł��傤�B
+また、今回は、それぞれのテクセルについて、0.5の色値をベクトルの0にする。
+符号化スケーリングの方法を取りました。<br>
+これは、ディスプレースメントマッピングのテクスチャが読み込まれた時の値の範囲が0～1の間にクランプされてしまったので、0.5を中心に持ってくるようにするためです。<br>
+将来的に、vs_3_0でテクスチャを読み込めるようになれば、浮動小数点数バッファの値そのものをベクトルとして使えるようになるでしょう。
 </p>
 
 <p>
-�ʒu�A���x�A�����x�ƕ��ׂĂ����ƁA�����������Ƃ����ƁA���ꂼ��̃e�N�Z���̉��̒i�́A���̕ϐ��̎��Ԕ����ɂȂ��Ă���̂ŁA�c�ɂ��炵���e�N�X�`�����d�˂邾���ŁA�p�[�e�B�N���̎��Ԕ��W���\�ɂȂ�܂��B<br>
-�܂�A���Ԕ��W�̌v�Z�����̂悤�ȃ|���S�����P������v�Z�ōς�ł��܂��܂��B
+位置、速度、加速度と並べておくと、何がいいかというと、それぞれのテクセルの下の段は、その変数の時間微分になっているので、縦にずらしたテクスチャを重ねるだけで、パーティクルの時間発展が可能になります。<br>
+つまり、時間発展の計算が次のようなポリゴンを１枚張る計算で済んでしまいます。
 </p>
 <pre class="CodeBlock">
 main.cpp
 <font color="deepskyblue">0207:</font>     <font color="cyan">//-----------------------------------------------------</font>
-<font color="deepskyblue">0208:</font>     <font color="cyan">// �ړ�</font>
+<font color="deepskyblue">0208:</font>     <font color="cyan">// 移動</font>
 <font color="deepskyblue">0209:</font>     <font color="cyan">//-----------------------------------------------------</font>
 <font color="deepskyblue">0216:</font>     m_pd3dDevice-&gt;SetFVF( D3DFVF_XYZRHW | D3DFVF_TEX2 | D3DFVF_TEXCOORDSIZE2(0) | D3DFVF_TEXCOORDSIZE2(1) );
 <font color="deepskyblue">0217:</font>     m_pEffect-&gt;SetTechnique( m_hTechnique );
@@ -118,8 +118,8 @@ main.cpp
 </pre>
 
 <p>
-�V�F�[�_���g���Ă���̂́A�x�N�g���̂O�_���O�ɂ��邽�߂ɁA�����v�Z���K�v����������ŁA��{�I�ɂ́A���Z�����ł��B<br>
-���Ȃ݂ɁA�����Ă���V�F�[�_�͎��̂悤�ɂȂ�܂��B
+シェーダを使っているのは、ベクトルの０点を０にするために、少し計算が必要だったからで、基本的には、加算合成です。<br>
+ちなみに、つかっているシェーダは次のようになります。
 </p>
 
 <pre class="CodeBlock">
@@ -130,33 +130,33 @@ hlsl.fx
 <font color="deepskyblue">0122:</font>     
 <font color="deepskyblue">0123:</font>     Color  =  tex2D( ParticleSamp, In.x )
 <font color="deepskyblue">0124:</font>             + tex2D( ParticleSamp, In.dx )
-<font color="deepskyblue">0125:</font>             - 0.502;<font color="cyan">// 0.5�𒆉��ɂ���B0.002�́H�H�H</font>
+<font color="deepskyblue">0125:</font>             - 0.502;<font color="cyan">// 0.5を中央にする。0.002は？？？</font>
 <font color="deepskyblue">0126:</font>     <font color="blue">return</font> Color;
 <font color="deepskyblue">0127:</font> }
 </pre>
 <p>
-�܂��A���ۂɂ́A0.5�łȂ��āA0.502�������ăx�N�g���̂O�_�����킹�Ă��܂��B
-����0.002�̈Ⴂ�́A�悭������܂���B���ۂ̓��������Ēl�𒲐����܂����B
-���������_���o�b�t�@���g���Ă���̂ɁA�ǂ����Ăł��傤�H<br>
-�����ł́A���Ԕ����̕ϐ������̂܂܉����Ă��܂����A
-���̂܂܂ł�FPS�Ɉˑ����Ă��܂��̂ŁA
-�C�ɂȂ���́A�萔���W�X�^�ɑO�̃t���[������̎��ԍ������Ă����āA
-���̎��ԍ����|���Ă����đ������ނƁA���ǂ��Ȃ�Ǝv���܂��B
+まぁ、実際には、0.5でなくて、0.502を引いてベクトルの０点を合わせています。
+この0.002の違いは、よく分かりません。実際の動きを見て値を調整しました。
+浮動小数点数バッファを使っているのに、どうしてでしょう？<br>
+ここでは、時間微分の変数をそのまま加えていますが、
+このままではFPSに依存してしまうので、
+気になる方は、定数レジスタに前のフレームからの時間差を入れておいて、
+その時間差を掛けておいて足しこむと、より良くなると思います。
 </p>
 
 <p>
-���ۂɃp�[�e�B�N���𓮂����̂́A�����_�ł͑��ɕ��@�������̂ŁA�f�B�X�v���[�X�����g�}�b�s���O���g���܂����B<br>
-�f�B�X�v���[�X�����g�}�b�s���O�ł́AHLSL���g���Ȃ��̂ŁA���݂��ɃA�Z���u���������܂��B<br>
-���_�f�[�^�ł́A�ǂݍ��񂾃f�B�X�v���[�X�����g�}�b�v�̒l�𕄍����X�P�[�����O���Ē��_���W�ɑ������݂܂��B<br>
-����́A-1�`1�̊Ԃ̔��̒��ɕ����߂��̂ŁA�����������l�����̂܂܎g���܂������A
-������͈͂����͈̔͂����傫���ꍇ�́A�f�B�X���[�X�����g�}�b�v�̒l��K���ɃX�P�[�����O���Ďg���܂��B
+実際にパーティクルを動かすのは、現時点では他に方法が無いので、ディスプレースメントマッピングを使いました。<br>
+ディスプレースメントマッピングでは、HLSLが使えないので、じみちにアセンブラを書きます。<br>
+頂点データでは、読み込んだディスプレースメントマップの値を符号化スケーリングして頂点座標に足しこみます。<br>
+今回は、-1～1の間の箱の中に閉じ込めたので、符号化した値をそのまま使いましたが、
+動ける範囲がこの範囲よりも大きい場合は、ディスレースメントマップの値を適当にスケーリングして使います。
 </p>
 <pre class="CodeBlock">
 hlsl.fx
 <font color="deepskyblue">0064:</font> <font color="cyan">// -------------------------------------------------------------</font>
-<font color="deepskyblue">0065:</font> <font color="cyan">// �p�[�e�B�N���̕`��</font>
+<font color="deepskyblue">0065:</font> <font color="cyan">// パーティクルの描画</font>
 <font color="deepskyblue">0066:</font> <font color="cyan">// </font>
-<font color="deepskyblue">0067:</font> <font color="cyan">//  c0 - c3 - ���W�ϊ�</font>
+<font color="deepskyblue">0067:</font> <font color="cyan">//  c0 - c3 - 座標変換</font>
 <font color="deepskyblue">0068:</font> <font color="cyan">//  c12     - (0.0, 0.5, 1.0, 2.0)</font>
 <font color="deepskyblue">0069:</font> <font color="cyan">// -------------------------------------------------------------</font>
 <font color="deepskyblue">0070:</font> VertexShader DisplacementVS = asm
@@ -171,48 +171,48 @@ hlsl.fx
 <font color="deepskyblue">0079:</font>     def c12, 0.0f ,0.5f, 1.0f, 2.0f
 <font color="deepskyblue">0080:</font>     
 <font color="deepskyblue">0081:</font>     <font color="yellow">mad r0, v3, c12.w, -c12.z</font>
-<font color="deepskyblue">0082:</font>     add r0, v0, r0      <font color="cyan">// �f�B�X�v���[�X�����g�̗ʂ𒸓_�ɒǉ�</font>
+<font color="deepskyblue">0082:</font>     add r0, v0, r0      <font color="cyan">// ディスプレースメントの量を頂点に追加</font>
 <font color="deepskyblue">0083:</font>     mov r0.w, v0.w      <font color="cyan">// w=1</font>
-<font color="deepskyblue">0084:</font>     m4x4 oPos, r0, c0   <font color="cyan">// �X�N���[�����W��</font>
+<font color="deepskyblue">0084:</font>     m4x4 oPos, r0, c0   <font color="cyan">// スクリーン座標へ</font>
 <font color="deepskyblue">0085:</font>     
-<font color="deepskyblue">0086:</font>     mov oT0, v2         <font color="cyan">// �e�N�X�`�����W</font>
+<font color="deepskyblue">0086:</font>     mov oT0, v2         <font color="cyan">// テクスチャ座標</font>
 <font color="deepskyblue">0087:</font> };
 </pre>
 
 <p>
-�`�悷��Ƃ��ɂ́A�e�b�Z���[�^��N�p�b�`�ɂ��Ă���`�悵�܂��B<br>
-�}�ł́u�_�v��\�����Ă���悤�Ɍ����܂����A���ʂɃ��b�V����\�����Ă��܂��B<br>
-�傫�����邱�Ƃ��ł��܂����A�x���Ȃ�̂ť��
+描画するときには、テッセレータをNパッチにしてから描画します。<br>
+図では「点」を表示しているように見えますが、普通にメッシュを表示しています。<br>
+大きくすることもできますが、遅くなるので･･･
 </p>
 <pre class="CodeBlock">
 main.cpp
 <font color="deepskyblue">0651:</font>         <font color="cyan">//-------------------------------------------------------------------------</font>
-<font color="deepskyblue">0652:</font>         <font color="cyan">// �f�B�X�v���[�X�����g�}�b�s���O���g���ăp�[�e�B�N����`�悷��</font>
+<font color="deepskyblue">0652:</font>         <font color="cyan">// ディスプレースメントマッピングを使ってパーティクルを描画する</font>
 <font color="deepskyblue">0653:</font>         <font color="cyan">//-------------------------------------------------------------------------</font>
 <font color="deepskyblue">0654:</font>         m_pEffect-&gt;SetTechnique( m_hTechnique );
 <font color="deepskyblue">0655:</font>         m_pEffect-&gt;Begin( NULL, 0 );
 <font color="deepskyblue">0656:</font>         m_pEffect-&gt;Pass( 0 );
 <font color="deepskyblue">0657:</font> 
-<font color="deepskyblue">0658:</font>         <font color="cyan">// �ϊ��s��</font>
+<font color="deepskyblue">0658:</font>         <font color="cyan">// 変換行列</font>
 <font color="deepskyblue">0659:</font>         m = m_mView * m_mProj;
 <font color="deepskyblue">0660:</font>         m_pEffect-&gt;SetMatrix( m_hmWVP, &amp;m );
-<font color="deepskyblue">0661:</font>         <font color="cyan">// �e�N�X�`��</font>
+<font color="deepskyblue">0661:</font>         <font color="cyan">// テクスチャ</font>
 <font color="deepskyblue">0662:</font>         m_pEffect-&gt;SetTexture("<font color="blue">DecaleMap</font>", m_pParticle-&gt;GetObj(0)-&gt;GetMesh()-&gt;m_pTextures[0] );
 <font color="deepskyblue">0663:</font> 
-<font color="deepskyblue">0664:</font>         <font color="yellow">m_pd3dDevice-&gt;SetNPatchMode(1); </font><font color="cyan">// �f�B�X�v���[�X�����g�}�b�v���g�p����</font>
+<font color="deepskyblue">0664:</font>         <font color="yellow">m_pd3dDevice-&gt;SetNPatchMode(1); </font><font color="cyan">// ディスプレースメントマップを使用する</font>
 <font color="deepskyblue">0665:</font>         m_pd3dDevice-&gt;SetVertexDeclaration( m_pDecl );
 <font color="deepskyblue">0666:</font>         m_pd3dDevice-&gt;SetTexture(D3DDMAPSAMPLER, m_pParticleTex);
 <font color="deepskyblue">0667:</font>         <font color="blue">for</font>(DWORD i=0;i&lt;PARTICLE_MAX;i++){
 <font color="deepskyblue">0668:</font>             m_pParticle-&gt;GetObj(i)-&gt;GetMesh()-&gt;Render( m_pd3dDevice );
 <font color="deepskyblue">0669:</font>         }
-<font color="deepskyblue">0670:</font>         <font color="yellow">m_pd3dDevice-&gt;SetNPatchMode(0);</font> <font color="cyan">// �f�B�X�v���[�X�����g����߂�</font>
+<font color="deepskyblue">0670:</font>         <font color="yellow">m_pd3dDevice-&gt;SetNPatchMode(0);</font> <font color="cyan">// ディスプレースメントをやめる</font>
 <font color="deepskyblue">0671:</font>         m_pEffect-&gt;End();
 </pre>
 
 <p>
-�Ȃ��A���b�V���ɂ́A�p�[�e�B�N�����Ƃɐ�p�̂��̂�p�ӂ��Ă��܂��B<br>
-�Ⴂ�́A�f�B�X�v���[�X�����g�}�b�v���w�肷��e�N�X�`�����W�ł��B<br>
-���ꂼ��̃��b�V���̑S�Ă̒��_�Ɋւ��āA�S�ē���Particle map �̈ʒu���W���w�肵�܂��B
+なお、メッシュには、パーティクルごとに専用のものを用意しています。<br>
+違いは、ディスプレースメントマップを指定するテクスチャ座標です。<br>
+それぞれのメッシュの全ての頂点に関して、全て同じParticle map の位置座標を指定します。
 </p>
 <pre class="CodeBlock">
 main.cpp
@@ -225,7 +225,7 @@ main.cpp
 <font color="deepskyblue">0088:</font>             <font color="blue">return</font>;
 <font color="deepskyblue">0089:</font>         D3DXComputeNormals( pMesh-&gt;m_pLocalMesh, NULL );
 <font color="deepskyblue">0090:</font>         
-<font color="deepskyblue">0091:</font>         <font color="cyan">// �f�B�X�v���[�X�����g�}�b�v�̍��W���w�肷��</font>
+<font color="deepskyblue">0091:</font>         <font color="cyan">// ディスプレースメントマップの座標を指定する</font>
 <font color="deepskyblue">0092:</font>         MESH_VERTEX* pVertices;
 <font color="deepskyblue">0093:</font>         pMesh-&gt;m_pLocalMesh-&gt;LockVertexBuffer( 0L, (LPVOID*)&amp;pVertices );
 <font color="deepskyblue">0094:</font>         <font color="blue">for</font>(DWORD i=0;i&lt;pMesh-&gt;m_pLocalMesh-&gt;GetNumVertices();i++){
@@ -236,25 +236,25 @@ main.cpp
 <font color="deepskyblue">0099:</font>     }
 </pre>
 <p>
-DirectX9����́A���_�f�[�^�̃}���`�X�g���[�����ł���̂ŁA
-������ƍ��΃f�B�X�v���[�X�����g�}�b�v�̃f�[�^������ʂɂł���Ǝv���܂��B
+DirectX9からは、頂点データのマルチストリームができるので、
+きちんと作ればディスプレースメントマップのデータだけを別にできると思います。
 </p>
 
 
-<h2>����������l�̃��Z�b�g</h2>
+<h2>■初期化や値のリセット</h2>
 
 
 <p>
-���ƁA�K���K�v�ɂȂ��Ă���̂��������ł��B<br>
-�p�[�e�B�N�X�̈ʒu�̏������Ȃǂ́A�Ή�����e�N�Z���Ƀ|���S������h�肷�邱�Ƃɂ���ĉ\�ł��B<br>
-����́A�ʒu�Ƒ��x�Ɋւ��ē����悤�ȗ������g���āA�e�N�Z���̈���h��Ԃ����Ƃɂ���ď��������܂����B<br>
-�����l�́A���x�������Ȃ��悤�Ƀs�N�Z���V�F�[�_�̒萔�Ƃ��ăV�F�[�_�ɓn���܂����B<br>
-���̂悤�ɂP�_�P�_�Âݒ肷��Ȃ�΁A�|���S���łȂ��āA�|�C���g���X�g���g�����ق��������I��������܂���B
+あと、必ず必要になってくるのが初期化です。<br>
+パーティクスの位置の初期化などは、対応するテクセルにポリゴンを上塗りすることによって可能です。<br>
+今回は、位置と速度に関して同じような乱数を使って、テクセルの一つ一つを塗りつぶすことによって初期化しました。<br>
+初期値は、精度が落ちないようにピクセルシェーダの定数としてシェーダに渡しました。<br>
+このように１点１点づつ設定するならば、ポリゴンでなくて、ポイントリストを使ったほうが効率的かもしれません。
 </p>
 <pre class="CodeBlock">
 main.cpp
 <font color="deepskyblue">0140:</font>     <font color="cyan">//-------------------------------------------------------------------------</font>
-<font color="deepskyblue">0141:</font>     <font color="cyan">// �ʒu�A���x�̏�����</font>
+<font color="deepskyblue">0141:</font>     <font color="cyan">// 位置、速度の初期化</font>
 <font color="deepskyblue">0142:</font>     <font color="cyan">//-------------------------------------------------------------------------</font>
 <font color="deepskyblue">0143:</font>     LVERTEX Vertex[4] = {
 <font color="deepskyblue">0144:</font>         <font color="cyan">//        x                  y           z</font>
@@ -290,7 +290,7 @@ main.cpp
 <font color="deepskyblue">0174:</font>     m_pEffect-&gt;End();
 </pre>
 <p>
-�s�N�Z���V�F�[�_�ł́A�P���ɒ萔���o�͂��܂��B
+ピクセルシェーダでは、単純に定数を出力します。
 </p>
 <pre class="CodeBlock">
 hlsl.fx
@@ -301,18 +301,18 @@ hlsl.fx
 </pre>
 
 <p>
-���ɂ��A�f�[�^���㏑�����Đݒ肵�Ă��镔���Ƃ��āA
-���t���[���A�����x��^���镔��������܂��B<br>
-����́A�����x�����ō���Ă���̂ŁA���t���[���ݒ肷��K�v�͖����̂ł����A
-��ʓI�ȏꍇ���l���āA���t���[�����������܂����B<br>
-���̓h��Ԃ��́A�P���̃|���S���őS�Ẵp�[�e�B�N���̐ݒ肪�\�Ȃ̂ŁA
-GPU�ɂ��p�C�v���C���̕��񓮍�̌��ʂ�����ł��܂��B
+他にも、データを上書きして設定している部分として、
+毎フレーム、加速度を与える部分があります。<br>
+今回は、加速度が一定で作っているので、毎フレーム設定する必要は無いのですが、
+一般的な場合を考えて、毎フレーム初期化しました。<br>
+この塗りつぶしは、１枚のポリゴンで全てのパーティクルの設定が可能なので、
+GPUによるパイプラインの並列動作の効果を授受できます。
 </p>
 
 <pre class="CodeBlock">
 main.cpp
 <font color="deepskyblue">0259:</font>     <font color="cyan">//-----------------------------------------------------</font>
-<font color="deepskyblue">0260:</font>     <font color="cyan">// �����x�̍Đݒ�</font>
+<font color="deepskyblue">0260:</font>     <font color="cyan">// 加速度の再設定</font>
 <font color="deepskyblue">0261:</font>     <font color="cyan">//-----------------------------------------------------</font>
 <font color="deepskyblue">0262:</font>     m_pd3dDevice-&gt;SetTextureStageState(0,D3DTSS_COLOROP,    D3DTOP_SELECTARG1);
 <font color="deepskyblue">0263:</font>     m_pd3dDevice-&gt;SetTextureStageState(0,D3DTSS_COLORARG1,  D3DTA_DIFFUSE);
@@ -329,33 +329,33 @@ main.cpp
 <font color="deepskyblue">0274:</font>     m_pd3dDevice-&gt;DrawPrimitiveUP( D3DPT_TRIANGLESTRIP, 2, ClearVertex, <font color="blue">sizeof</font>( LVERTEX ) );
 </pre>
 <p>
-���Ȃ݂ɁAy���������h��Ԃ��Ƃ��̒l���������Ȃ��Ă��܂��B<br>
-����́A�������ɏd�͉����x�����邽�߂̂��̂ł��B
+ちなみに、y成分だけ塗りつぶすときの値が小さくなっています。<br>
+これは、下方向に重力加速度をつけるためのものです。
 </p>
 
 
-<h2>�������蔻��</h2>
+<h2>■当たり判定</h2>
 
 
 <p>
-�p�[�e�B�N�����΂��̂͂����ł����A���R�C�܂܂ɔ�΂��ƁA�ǂ����ɔ��ł����Ă��܂��̂ŁA
-�����蔻�������āA��΂Ȃ��悤�ɂ��܂��B<br>
-����́A[-1,+1]�̑傫���̔��̒��Ƀp�[�e�B�N��������߂܂����B<br>
-�����߂邽�߂ɂQ�̏��������܂��B<br>
-�P�D���̊O�ɂ����瑬�x�x�N�g���̌����𔽓]����<br>
-�Q�D���̊O�ɂ�����ǂ܂Ńp�[�e�B�N���������߂��B<br>
-���Ȃ݂ɁA�P�ƂQ�̏��Ԃ͓���ւ��邱�Ƃ��ł��܂���B<br>
-����ւ��Ă��܂��ƁA�Q�̔���ɂ���ĉ����߂��ꂽ�ʒu�Ōv�Z�����Ƃ��ɁA
-�u�O�ɂ����v�Ɣ��肳��Ȃ��Ȃ�\�������邩��ł��B<br>
-���ꂼ��̉ߒ��́A�e�N�X�`���̈ʒu�Ƒ��x�̂��ꂼ��̕����Ƀ|���S���𒣂邱�Ƃɂ���ď�������܂��B
+パーティクルを飛ばすのはいいですが、自由気ままに飛ばすと、どこかに飛んでいってしまうので、
+当たり判定をいれて、飛ばないようにします。<br>
+今回は、[-1,+1]の大きさの箱の中にパーティクルを閉じ込めました。<br>
+閉じ込めるために２つの処理をします。<br>
+１．箱の外にいたら速度ベクトルの向きを反転する<br>
+２．箱の外にいたら壁までパーティクルを押し戻す。<br>
+ちなみに、１と２の順番は入れ替えることができません。<br>
+入れ替えてしまうと、２の判定によって押し戻された位置で計算したときに、
+「外にいた」と判定されなくなる可能性があるからです。<br>
+それぞれの過程は、テクスチャの位置と速度のそれぞれの部分にポリゴンを張ることによって処理されます。
 </p>
 <pre class="CodeBlock">
 main.cpp
 <font color="deepskyblue">0232:</font>     <font color="cyan">//-----------------------------------------------------</font>
-<font color="deepskyblue">0233:</font>     <font color="cyan">// ���˕Ԃ�</font>
+<font color="deepskyblue">0233:</font>     <font color="cyan">// 跳ね返り</font>
 <font color="deepskyblue">0234:</font>     <font color="cyan">//-----------------------------------------------------</font>
 <font color="deepskyblue">0235:</font> 
-<font color="deepskyblue">0236:</font>     <font color="cyan">// ���x����</font>
+<font color="deepskyblue">0236:</font>     <font color="cyan">// 速度調整</font>
 <font color="deepskyblue">0237:</font>     T2VERTEX TVertexV[4] = {
 <font color="deepskyblue">0238:</font>         <font color="cyan">//         x         y  z rhw             tu1                     tv1                        tu2                     tv2</font>
 <font color="deepskyblue">0239:</font>         {{                0, 1, 0, 1}, 0+0.5f/PARTICLEMAP_WIDTH, 0.5f/PARTICLEMAP_HEIGHT, 0+0.5f/PARTICLEMAP_WIDTH, 1.5f/PARTICLEMAP_HEIGHT,},
@@ -365,7 +365,7 @@ main.cpp
 <font color="deepskyblue">0243:</font>     };
 <font color="deepskyblue">0244:</font>     m_pEffect-&gt;Pass( 3 );
 <font color="deepskyblue">0245:</font>     m_pd3dDevice-&gt;DrawPrimitiveUP( D3DPT_TRIANGLESTRIP, 2, TVertexV, <font color="blue">sizeof</font>( T2VERTEX ) );
-<font color="deepskyblue">0246:</font>     <font color="cyan">// �ʒu����</font>
+<font color="deepskyblue">0246:</font>     <font color="cyan">// 位置調整</font>
 <font color="deepskyblue">0247:</font>     T2VERTEX TVertexX[4] = {
 <font color="deepskyblue">0248:</font>         <font color="cyan">//         x         y  z rhw             tu1                     tv1                        tu2                     tv2</font>
 <font color="deepskyblue">0249:</font>         {{                0, 0, 0, 1}, 0+0.5f/PARTICLEMAP_WIDTH, 0.5f/PARTICLEMAP_HEIGHT, 0+0.5f/PARTICLEMAP_WIDTH, 1.5f/PARTICLEMAP_HEIGHT,},
@@ -377,20 +377,20 @@ main.cpp
 <font color="deepskyblue">0255:</font>     m_pd3dDevice-&gt;DrawPrimitiveUP( D3DPT_TRIANGLESTRIP, 2, TVertexX, <font color="blue">sizeof</font>( T2VERTEX ) );
 </pre>
 <p>
-�Ƃ��ɁA�e�N�X�`�����W�̂P�߂ɁA�p�[�e�B�N���̈ʒu���W�A�Q�߂ɑ��x���w�肵�ĕ`�悵�܂��B<br>
-���ꂼ��̃p�X�Ŏw�肳�ꂽ�V�F�[�_�̒��g�������蔻��݂̂��ł��B<br>
-�Ƃ����Ă�����قǕ��G�ł͂���܂���B<br>
-�P���ɐ������ƂɊO�ɂ��邩�ǂ����𔻒肵�āA�O�ɏo�Ă�����A����Ȃ�̏��������邾���ł��B<br>
+ともに、テクスチャ座標の１つめに、パーティクルの位置座標、２つめに速度を指定して描画します。<br>
+それぞれのパスで指定されたシェーダの中身が当たり判定のみそです。<br>
+といってもそれほど複雑ではありません。<br>
+単純に成分ごとに外にあるかどうかを判定して、外に出ていたら、それなりの処理をするだけです。<br>
 </p>
 <p>
-�P�߂̑��x�̏ꍇ�ɂ́A�������Ƃɂ͂ݏo���������ς��܂��B<br>
-���Ȃ݂ɁA����������ς��������ł́A���̌�̈ʒu�̈ړ��Ƃ����܂��āA
-�������ǂ�ǂ񑬂��Ȃ��Ă��܂��̂ŁA���˕Ԃ�萔�����Ĕ��U����������悤�ɂ��Ă��܂��B
+１つめの速度の場合には、成分ごとにはみ出たら向きを変えます。<br>
+ちなみに、ただ向きを変えただけでは、この後の位置の移動とあいまって、
+速さがどんどん速くなってしまうので、跳ね返り定数を入れて発散を押さえるようにしています。
 </p>
 <pre class="CodeBlock">
 main.cpp
 <font color="deepskyblue">0130:</font> <font color="cyan">// -------------------------------------------------------------</font>
-<font color="deepskyblue">0131:</font> <font color="cyan">// ���˕Ԃ�(���x)</font>
+<font color="deepskyblue">0131:</font> <font color="cyan">// 跳ね返り(速度)</font>
 <font color="deepskyblue">0132:</font> <font color="cyan">// -------------------------------------------------------------</font>
 <font color="deepskyblue">0133:</font> float4 ReflectVPS ( REFLECT_VS_OUTPUT In ) : COLOR0
 <font color="deepskyblue">0134:</font> {
@@ -405,12 +405,12 @@ main.cpp
 <font color="deepskyblue">0143:</font> }
 </pre>
 <p>
-�ʒu�̂ق����A�͂ݏo�Ă�����A���E�����Ɉʒu���N�����v����悤�ɂ��܂��B
+位置のほうも、はみ出ていたら、境界部分に位置をクランプするようにします。
 </p>
 <pre class="CodeBlock">
 main.cpp
 <font color="deepskyblue">0144:</font> <font color="cyan">// -------------------------------------------------------------</font>
-<font color="deepskyblue">0145:</font> <font color="cyan">// ���˕Ԃ�(�ʒu)</font>
+<font color="deepskyblue">0145:</font> <font color="cyan">// 跳ね返り(位置)</font>
 <font color="deepskyblue">0146:</font> <font color="cyan">// -------------------------------------------------------------</font>
 <font color="deepskyblue">0147:</font> float4 ReflectXPS ( REFLECT_VS_OUTPUT In ) : COLOR0
 <font color="deepskyblue">0148:</font> {
@@ -429,21 +429,21 @@ main.cpp
 </pre>
 
 <p>
-����́A�����蔻��͔��̒��ɂ���������g���܂������A
-�����蔻��V�F�[�_�̋Z�p�����p����΁A��蕡�G�Ȓn�`�ɑ΂��ē����蔻����s�Ȃ����Ƃ��ł��܂��B<br>
-�܂��A����͂̂��̂��Љ�Ă����܂��B
+今回は、当たり判定は箱の中にいる条件を使いましたが、
+当たり判定シェーダの技術を応用すれば、より複雑な地形に対して当たり判定を行なうことができます。<br>
+まぁ、それはのちのち紹介していきます。
 </p>
 
 
 
-<h2>���Ō��</h2>
+<h2>■最後に</h2>
 
 
 <p>
-�Ƃ������ƂŁAGPU���g�����p�[�e�B�N���̌v�Z�ł��B<br>
-�d���̂Ő����ȕ]���͂ł��܂��񂪁A����́Avs_3_0���g����悤�ɂȂ鎞�܂łƂ��Ă����܂��傤�B<br>
-����ɂ��Ă��AOpenGL���ƁA���̃��x���̃V�F�[�_�����A���^�C���Ɏ��s�ł����ł���ˁB<br>
-�ŐV��API��OpenGL���Ƃ����̂́A�ςȎ���ɂȂ�܂����B
+ということで、GPUを使ったパーティクルの計算です。<br>
+重いので正当な評価はできませんが、それは、vs_3_0が使えるようになる時までとっておきましょう。<br>
+それにしても、OpenGLだと、このレベルのシェーダがリアルタイムに実行できるんですよね。<br>
+最新のAPIがOpenGLだというのは、変な時代になりました。
 </p>
 
 </div>
@@ -452,7 +452,7 @@ main.cpp
 <BR CLEAR=ALL>
 <center>
 <hr>
-<p><a href="../index.html">���ǂ�</a></p>
+<p><a href="../index.html">もどる</a></p>
 <p><a href="mailto:imagire@gmail.com">imagire@gmail.com</a></p>
 </center>
 

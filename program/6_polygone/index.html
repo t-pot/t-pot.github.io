@@ -1,5 +1,5 @@
 <head>
-	<title>t-pot �wDirectX8.0 ����:�|���S���̕\���x</title>
+	<title>t-pot 『DirectX8.0 入門:ポリゴンの表示』</title>
 	<link rel="stylesheet" type="text/css" href="../if.css">
 </head>
 <body>
@@ -7,73 +7,73 @@
 <center>
 <BR CLEAR=ALL>
 <BR CLEAR=ALL>
-<h1>�|���S���̕\��</h1><br>
-<h3>�`�Ƃ肠�����ˁ`</h3>
+<h1>ポリゴンの表示</h1><br>
+<h3>～とりあえずね～</h3>
 <BR CLEAR=ALL>
 <BR CLEAR=ALL>
 <BR CLEAR=ALL>
 </center>
-<h2>������̃t�@�C����</h2>
+<h2>■今回のファイルは</h2>
 
 <p>
-����ƁA�|���S����\���ł���悤�ɂȂ�܂��B
-�Ƃ肠�����A3�p�`�|���S����\�����܂��B
+やっと、ポリゴンを表示できるようになります。
+とりあえず、3角形ポリゴンを表示します。
 </p>
 <right><image src = "polygon.jpg" width = 256 height = 192></right>
 <p>
-���̃\�[�X���A�_�E�����[�h���Ă��������B
+次のソースを、ダウンロードしてください。
 <p>
 
 <ul style = "LIST-STYLE-TYPE:none">
-<li><a href="polygon.lzh">polygon.lzh (�|���S���\���T���v���̃\�[�X)</a>
+<li><a href="polygon.lzh">polygon.lzh (ポリゴン表示サンプルのソース)</a>
 </ul>
 
-����́A�`���p�� draw.cpp, draw.h �̃t�@�C����ǉ����܂����B<br>
-draw.cpp �ɂ���֐��́A
+今回は、描画専用に draw.cpp, draw.h のファイルを追加しました。<br>
+draw.cpp にある関数は、
 <pre class="CodeBlock">
-HRESULT InitRender(LPDIRECT3DDEVICE8 lpD3DDEV); // ������
-void Render(LPDIRECT3DDEVICE8 lpD3DDEV);        // �`��
-void CleanRender();                             // ��Еt��
+HRESULT InitRender(LPDIRECT3DDEVICE8 lpD3DDEV); // 初期化
+void Render(LPDIRECT3DDEVICE8 lpD3DDEV);        // 描画
+void CleanRender();                             // 後片付け
 </pre>
-�ł��B
+です。
 
-<h2>�����_�̒�`</h2>
+<h2>■頂点の定義</h2>
 
-DirectX �ł́A���_�̏��������Ŏw�肵�܂��B
-����́A���_�ɐF���������̂�\�����܂��B<br>
-���́A�e�ʒu�ƐF�Ȃ̂ŁA���̂悤�ɂȂ�܂��B
+DirectX では、頂点の情報を自分で指定します。
+今回は、頂点に色をつけたものを表示します。<br>
+情報は、各位置と色なので、次のようになります。
 <pre class="CodeBlock">
-// ���_�̒�`
+// 頂点の定義
 typedef struct {
-    FLOAT x, y, z, rhw;  // �ʒu
-    DWORD color;         // �F
+    FLOAT x, y, z, rhw;  // 位置
+    DWORD color;         // 色
 } CUSTOMVERTEX;
 
 #define D3DFVF_CUSTOMVERTEX (D3DFVF_XYZRHW | D3DFVF_DIFFUSE)
 </pre>
-�܂��A���㈵���₷���悤�ɁA���_�t�H�[�}�b�g�̍\���� define �� D3DFVF_CUSTOMVERTEX �����܂����B
+また、今後扱いやすいように、頂点フォーマットの構成に define 名 D3DFVF_CUSTOMVERTEX をつけました。
 
-<h2>���e�֐�</h2>
+<h2>■各関数</h2>
 
 <p>
-�|���S����`�悷��̂ɕK�v�ȃI�u�W�F�N�g�� LPDIRECT3DVERTEXBUFFER8 �ł��B
-���_�o�b�t�@�̏�񂪂����Ɋi�[����܂��B
+ポリゴンを描画するのに必要なオブジェクトは LPDIRECT3DVERTEXBUFFER8 です。
+頂点バッファの情報がここに格納されます。
 </p>
 <pre class="CodeBlock">
-LPDIRECT3DVERTEXBUFFER8 pVB = NULL; // ���_�o�b�t�@�Ɏg���I�u�W�F�N�g
+LPDIRECT3DVERTEXBUFFER8 pVB = NULL; // 頂点バッファに使うオブジェクト
 </pre>
 
 <p>
-���āA�������ł��B<br>
-CreateVertexBuffer �Œ��_�o�b�t�@�ɂ��Ă̏����������āA
-�������ރ��������ꎞ�I�Ƀ��b�N������A���_�̏����R�s�[���܂��B<br>
-CreateVertexBuffer �̈����̈�ڂ́A���_�o�b�t�@�̃T�C�Y�i������3�͂R���_�̈Ӗ��ł���j�A
-2�ڂ͊e��t���O�A3�ڂ́A���_�t�H�[�}�b�g�̎�ށA4�߂́A�ǂ̃������ɏ���u�������w�肵�܂��B
-�Ō�́A����������������ꏊ�ł��B<br>
-���̌�̃������̃��b�N�́A�w�������ނ̂ŁA�������̓��e���ω�����r���ł���x���Ƃ��A���̃A�v���P�[�V�����ɓ`���āA
-�g�킹�Ȃ��悤�ɂ��܂��B<br>
-���b�N������ɁA���[�J���ϐ��Ƃ��Ċm�ۂ��Ă��� vertices �̓��e���Amemcpy �ŃR�s�[���܂��B
-vertices �͐�قǒ�`�������ԂŁA����ł��܂��B
+さて、初期化です。<br>
+CreateVertexBuffer で頂点バッファについての初期化をして、
+書き込むメモリを一時的にロックした後、頂点の情報をコピーします。<br>
+CreateVertexBuffer の引数の一つ目は、頂点バッファのサイズ（数字の3は３頂点の意味である）、
+2つ目は各種フラグ、3つ目は、頂点フォーマットの種類、4つめは、どのメモリに情報を置くかを指定します。
+最後は、生成した情報を入れる場所です。<br>
+その後のメモリのロックは、『書き込むので、メモリの内容が変化する途中である』ことを、他のアプリケーションに伝えて、
+使わせないようにします。<br>
+ロックした後に、ローカル変数として確保している vertices の内容を、memcpy でコピーします。
+vertices は先ほど定義した順番で、並んでいます。
 </p>
 
 <pre class="CodeBlock">
@@ -102,10 +102,10 @@ HRESULT InitRender(LPDIRECT3DDEVICE8 lpD3DDEV)
 </pre>
 
 <p>
-���Ɏ��ۂ̕`��ł��B<br>
-SetStreamSource �ŁA���_�����w�肵�܂��B<br>
-���Ƃ́ASetVertexShader �ŁA���_�t�H�[�}�b�g���w�肵�����ƁA
-DrawPrimitive �ŕ`�悵�܂��B
+次に実際の描画です。<br>
+SetStreamSource で、頂点情報を指定します。<br>
+あとは、SetVertexShader で、頂点フォーマットを指定したあと、
+DrawPrimitive で描画します。
 </p>
 
 <pre class="CodeBlock">
@@ -118,7 +118,7 @@ void Render(LPDIRECT3DDEVICE8 lpD3DDEV)
 </pre>
 
 <p>
-��Еt���́ACreateVertexBuffer �Ŋm�ۂ������������J�����邾���ł��B<br>
+後片付けは、CreateVertexBuffer で確保したメモリを開放するだけです。<br>
 </p>
 
 <pre class="CodeBlock">
@@ -128,47 +128,47 @@ void CleanRender()
 }
 </pre>
 
-<h2>���g�ݍ���</h2>
+<h2>■組み込み</h2>
 
-main.cpp ����Adraw.h �̊e�֐����Ăяo���܂��B
-���̃v���O�����́AWinMain �̃E�B���h�E�̏��������I�������ł��B
+main.cpp から、draw.h の各関数を呼び出します。
+次のプログラムは、WinMain のウィンドウの初期化が終わった後です。
 <pre class="CodeBlock">
-// Direct3D �̏�����
+// Direct3D の初期化
 if(SUCCEEDED(InitD3D(hWnd))){
     
-<Font color = orange><b>    if(FAILED(InitRender(s_lpD3DDEV))) s_end = true;// ���������� �|���S���`��̏�����</b></Font>
+<Font color = orange><b>    if(FAILED(InitRender(s_lpD3DDEV))) s_end = true;// ★★★★★ ポリゴン描画の初期化</b></Font>
 
     ShowWindow(hWnd, SW_SHOW);
     UpdateWindow(hWnd);
 
-    // ���C�����[�v
+    // メインループ
     MSG msg;
     while (!s_end)
     {
         if (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE)){
-            // ���b�Z�[�W�̏���
+            // メッセージの処理
         }else{
-            // Direct3D �̕`��
-            // �o�b�N�o�b�t�@�� Z �o�b�t�@���N���A
+            // Direct3D の描画
+            // バックバッファと Z バッファをクリア
             s_lpD3DDEV->Clear(0,NULL,D3DCLEAR_TARGET | D3DCLEAR_ZBUFFER,D3DCOLOR_XRGB(0,0,0),1.0f,0);
-            // �V�[���J�n
+            // シーン開始
             s_lpD3DDEV->BeginScene();
             
-            // �`��Ȃǂ̏���
-<Font color = orange><b>           Render(s_lpD3DDEV);// ���������� �|���S���̕`��</b></Font>
+            // 描画などの処理
+<Font color = orange><b>           Render(s_lpD3DDEV);// ★★★★★ ポリゴンの描画</b></Font>
             
-            // �V�[���I��
+            // シーン終了
             s_lpD3DDEV->EndScene();
             if (FAILED(s_lpD3DDEV->Present(NULL,NULL,NULL,NULL)))
-                s_lpD3DDEV->Reset(&s_d3dpp);// �o�b�N�o�b�t�@���v���C�}���o�b�t�@�ɃR�s�[
+                s_lpD3DDEV->Reset(&s_d3dpp);// バックバッファをプライマリバッファにコピー
         }
     }
 }
 
-�������Ɏ��s�����Ƃ��́A�I���t���O�𗧂Ăă��C�����[�v��ʂ�Ȃ��悤�ɂ��܂����B
+初期化に失敗したときは、終了フラグを立ててメインループを通らないようにしました。
 
-// �I��
-<Font color = orange><b>CleanRender();    // ���������� �`��̌ォ������</b></Font>
+// 終了
+<Font color = orange><b>CleanRender();    // ★★★★★ 描画の後かたずけ</b></Font>
 RELEASE(s_lpD3DDEV);
 RELEASE(s_lpD3D);
 
@@ -182,7 +182,7 @@ return 0;
 <BR CLEAR=ALL>
 <center>
 <hr>
-<p><a href="../index.html">���ǂ�</a></p>
+<p><a href="../index.html">もどる</a></p>
 <p><a href="mailto:imagire@gmail.com">imagire@gmail.com</a></p>
 </center>
 </body>

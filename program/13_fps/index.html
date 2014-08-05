@@ -1,47 +1,47 @@
 <head>
-	<title>t-pot �wDirectX8.0 ����:fps�̕\���x</title>
+	<title>t-pot 『DirectX8.0 入門:fpsの表示』</title>
 	<link rel="stylesheet" type="text/css" href="../if.css">
 </head>
-<meta http-equiv=Content-Type content="text/html; charset=shift_jis">
+<meta http-equiv=Content-Type content="text/html; charset=UTF-8">
 <body>
 <div class="contents">
 <center>
 <BR CLEAR=ALL>
 <BR CLEAR=ALL>
-<h1>fps�̕\��</h1><br>
-<h3>�`�ǂ̂��炢�����H�`</h3>
+<h1>fpsの表示</h1><br>
+<h3>～どのくらい速い？～</h3>
 <BR CLEAR=ALL>
 <BR CLEAR=ALL>
 <BR CLEAR=ALL>
 </center>
-<h2>��fps ���ĉ��H</h2>
+<h2>■fps って何？</h2>
 
 <p>
-fps �l �Ƃ́Aframes per second�A�܂��b�Ԃɉ�ʂ��X�V�����񐔂ł��B
-���̉񐔂������ƁA�Q�[�������炩�ɓ����܂��B
-TV �́A�ʏ� 60fps �ōX�V����A30fps ��菬�����ƁA�������K�^�K�^���܂��B
-�A�N�V�����Q�[���Ȃ�A60fps ���x�ARPG�Ȃ� 30fps ��S�����܂��傤�B
+fps 値 とは、frames per second、つまり一秒間に画面を更新した回数です。
+この回数が多いと、ゲームが滑らかに動きます。
+TV は、通常 60fps で更新され、30fps より小さいと、動きがガタガタします。
+アクションゲームなら、60fps 程度、RPGなら 30fps を心がけましょう。
 </p>
 
-<h2>�������Ȃ�v���O����</h2>
+<h2>■いきなりプログラム</h2>
 
 <p>
-����̃v���O�����́A���̂��̂ł��B�}���`���f�B�A�^�C�}�[���g���܂��̂ŁA
-winmm.lib �������N�̃��C�u�������W���[���ɒǉ����Ă��������B
+今回のプログラムは、下のものです。マルチメディアタイマーを使いますので、
+winmm.lib をリンクのライブラリモジュールに追加してください。
 </p>
 <ul style = "LIST-STYLE-TYPE:none">
-<li><a href="fps.lzh">fps.lzh (Windows �A�v���P�[�V�����̐��^�̃\�[�X)</a>
+<li><a href="fps.lzh">fps.lzh (Windows アプリケーションの雛型のソース)</a>
 </ul>
 
 
 <p>
-������\���p�ɗp�ӂ����ϐ��͎��̂Ƃ���ł��B
-���̊֐� BeginScene �� EndScene �̊ԂŁA���t���[���Ăяo���܂��B
+文字列表示用に用意した変数は次のとおりです。
+この関数 BeginScene と EndScene の間で、毎フレーム呼び出します。
 </p>
 <pre class="CodeBlock">
 // ----------------------------------------------------------------------------
 // Name: fps_disp()
-// Desc: �t���[�����̕\��
+// Desc: フレーム数の表示
 //-----------------------------------------------------------------------------
 #include &ltstdio.h&gt
 static void fps_disp()
@@ -54,7 +54,7 @@ static void fps_disp()
     current = timeGetTime();
     frames++;
     
-    if(500 <= current - last) {// 0.5�b���ɍX�V
+    if(500 <= current - last) {// 0.5秒毎に更新
         float dt = (float)(current - last) / 1000.0f;
         float fps = (float)frames / dt;
         last = current;
@@ -65,12 +65,12 @@ static void fps_disp()
 }
 </pre>
 <p>
-�}���`���f�B�A�^�C�}�[�� timeGetTime() �Ō��ݎ����𒲂ׂ܂��B
-timeGetTime() �́A1/1000�b�P�ʂ̐��x�������܂��B<br>
-���t���[���v�Z���Ă����ׂɂȂ邾���Ȃ̂ŁA500ms (0.5�b) ���ƂɌv�Z���܂��B<br>
-fps �̌v�Z���@�́A���Ԃ�����̍X�V���ł�����A�X�V�񐔂��o�ߎ��ԁi��b�Ŋ��Z�������́j�Ŋ���܂��B<br>
-��́A���̌v�Z�̂��߂ɁA���Ԃ�ۑ����āA�t���[�������N���A���܂��B<br>
-�����āA�\���̂��߂ɁA�O��� CMyFont �ɕ������n���܂��B
+マルチメディアタイマーの timeGetTime() で現在時刻を調べます。
+timeGetTime() は、1/1000秒単位の精度を持ちます。<br>
+毎フレーム計算しても負荷になるだけなので、500ms (0.5秒) ごとに計算します。<br>
+fps の計算方法は、時間あたりの更新数ですから、更新回数を経過時間（を秒で換算したもの）で割ります。<br>
+後は、次の計算のために、時間を保存して、フレーム数をクリアします。<br>
+そして、表示のために、前回の CMyFont に文字列を渡します。
 </p>
 
 
@@ -79,7 +79,7 @@ fps �̌v�Z���@�́A���Ԃ�����̍X�V���ł�����A�X�V�񐔂��o�ߎ��ԁi��b�Ŋ��Z����
 <BR CLEAR=ALL>
 <center>
 <hr>
-<p><a href="../index.html">���ǂ�</a></p>
+<p><a href="../index.html">もどる</a></p>
 <p><a href="mailto:imagire@gmail.com">imagire@gmail.com</a></p>
 </center>
 </body>

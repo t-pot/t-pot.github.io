@@ -1,8 +1,8 @@
 <head>
-	<title>t-pot�w�Օ��}�b�v�x</title>
+	<title>t-pot『遮蔽マップ』</title>
 	<link rel="stylesheet" type="text/css" href="../if.css">
 </head>
-<meta http-equiv=Content-Type content="text/html; charset=shift_jis">
+<meta http-equiv=Content-Type content="text/html; charset=UTF-8">
 <body>
 
 
@@ -10,8 +10,8 @@
 <center>
 <BR CLEAR=ALL>
 <BR CLEAR=ALL>
-<h1>�Օ��}�b�v</h1><br>
-<h3>�` Covering ray map �`</h3>
+<h1>遮蔽マップ</h1><br>
+<h3>～ Covering ray map ～</h3>
 <BR CLEAR=ALL>
 <BR CLEAR=ALL>
 <BR CLEAR=ALL>
@@ -20,7 +20,7 @@
 <hr>
 <br>
 <p>
-���̉摜���N���b�N����ƁA�e�������A�j���[�V�����������܂�(����:3.21MB)�B<br>
+下の画像をクリックすると、影が動くアニメーションが見られます(注意:3.21MB)。<br>
 <a href="anim.gif"><image src = "01.gif" width = "64" height = "64"></a>
 </p>
 <hr>
@@ -28,101 +28,101 @@
 <div>
 
 
-<h2>���͂��߂�</h2>
+<h2>■はじめに</h2>
 
 
 <p>
-�����P�N�A�e�N�X�`���ɉe�̏����i�[���ă��C�e�B���O�����@�����s���n�߂Ă��܂��B<br>
-DirectX�̃T���v���Ō����΁ABumpSelfShadow�̃T���v��������ɂ�����܂��B<br>
-�ŋ߂ł́A���ʒ��a�֐�(Spherical Harmonics)���g������@�����W���[�ɂȂ����̂ł����A�}�ɂ���ȓ�����Ƃ�����Ă��₯���킩��Ȃ��Ȃ�̂��I�`�Ȃ̂ŁA
-�ȒP�ȉe�̃v���O�����ɒ��킵�Ă݂܂��傤�B
+ここ１年、テクスチャに影の情報を格納してライティングする手法が流行し始めています。<br>
+DirectXのサンプルで言えば、BumpSelfShadowのサンプルがそれにあたります。<br>
+最近では、球面調和関数(Spherical Harmonics)を使った手法がメジャーになりつつあるのですが、急にそんな難しいことをやってもやけがわからなくなるのがオチなので、
+簡単な影のプログラムに挑戦してみましょう。
 </p>
 <p>
-����̃v���O�����́A���̂��̂ł��B<br>
-����́A�������ɏ������Ԃ�������܂��B
+今回のプログラムは、次のものです。<br>
+今回は、初期化に少し時間がかかります。
 </p>
 <ul style = "LIST-STYLE-TYPE:none">
-<li><a href="src.zip">src.zip (�Օ��}�b�v:DirectX9(���_�V�F�[�_1.1,�s�N�Z���V�F�[�_2.0))</a>
+<li><a href="src.zip">src.zip (遮蔽マップ:DirectX9(頂点シェーダ1.1,ピクセルシェーダ2.0))</a>
 </ul>
 
 <p>
-�܂��A�����̂悤�ɓK���Ƀt�@�C���������Ă��܂��B<br>
-APP WIZARD ����o�͂����t���[�����[�N�̃t�@�C���͏Љ���Ȃ����Ă��������܂��B
+まぁ、いつものように適当にファイルが入っています。<br>
+APP WIZARD から出力されるフレームワークのファイルは紹介を省かせていただきます。
 </p>
 <table>
-<tr><td><a href="hlsl_fx.html">hlsl.fx</a></td><td>�V�F�[�_�̓������G�t�F�N�g�t�@�C��</td></tr>
-<tr><td><a href="main_h.html">main.h</a></td><td>�A�v���P�[�V�����̃w�b�_</td></tr>
-<tr><td><a href="main_cpp.html">main.cpp</a></td><td>�A�v���P�[�V�����̃\�[�X</td></tr>
+<tr><td><a href="hlsl_fx.html">hlsl.fx</a></td><td>シェーダの入ったエフェクトファイル</td></tr>
+<tr><td><a href="main_h.html">main.h</a></td><td>アプリケーションのヘッダ</td></tr>
+<tr><td><a href="main_cpp.html">main.cpp</a></td><td>アプリケーションのソース</td></tr>
 </table>
 
 <p>
-���ƁA���s�t�@�C���A���f���y�сA�v���W�F�N�g�t�@�C���������Ă��܂��B
+あと、実行ファイル、モデル及び、プロジェクトファイルが入っています。
 </p>
 
 
-<h2>��������Ă�́H</h2>
+<h2>■何やってるの？</h2>
 
 
 <p>
-����̕��@�́A����̕�������������Ă����ɂ��炩���߉e�ɂȂ镔�����e�N�X�`���i�Օ��}�b�v�j�Ɋi�[���Ă����A
-���ۂ̃����_�����O�̎��ɂ́A���̃e�N�X�`�������Ԃ��邱�Ƃɂ��e�̉A�e�����o���܂��B<br>
-���̕��@�́A�Z���t�V���h�E���쐬����̂ɓK���Ă��āA���낢��ȕ�������������������ꍇ�̉e���쐬���Ă����A
-���������ŕ�Ԃ���΁A�Z���t�V���h�E�̉e�����A���^�C���ɓ��������Ƃ��ł��܂��B
+今回の方法は、特定の方向から光をあてた時にあらかじめ影になる部分をテクスチャ（遮蔽マップ）に格納しておき、
+実際のレンダリングの時には、そのテクスチャをかぶせることにより影の陰影を作り出します。<br>
+この方法は、セルフシャドウを作成するのに適していて、いろいろな方向から光があたった場合の影を作成しておき、
+いい感じで補間すれば、セルフシャドウの影をリアルタイムに動かすことができます。
 </p>
 <p>
-�Օ��}�b�v�̍쐬���@�͂�����Ɩʓ|�ł��B<br>
-���̕����Ɍ��������邩�ǂ������v�Z���Ȃ��Ă͂Ȃ�܂���B<br>
-����́A�f�J�[���e�N�X�`����xz���ʂɂׂ����ƒ����Ă��郂�f���Ōv�Z���܂����B<br>
-���̃��f���ł́A���f����^�ォ�猩����Ԃƃf�J�[���e�N�X�`�����Ή����Ă��āA
-�f�J�[���e�N�X�`����ł܂������Ȓ����́A���f���̃��[�J�����W�n�̂������ʂł��܂������ɐL�т܂��B<br>
-���ۂɉe���������Ă��邩�ǂ����𒲂ׂ���@�ł����A�����������Ă��邩�ł͂Ȃ��A
-���_������̕����������Ƃ��ɁA�Օ��������邩�ǂ����Ō��������邩�ǂ����𔻒肵�܂��B<br>
-���ꂼ��̃e�N�Z�������_�Ƃ��āA�K���ȕ����Ɍ������΂��܂��B<br>
-���̌������r���ł�荂���e�N�Z���ɂ���������΁A���͓͂��Ȃ��̂ŉe�ɂȂ�܂��B
+遮蔽マップの作成方法はちょっと面倒です。<br>
+その部分に光があたるかどうかを計算しなくてはなりません。<br>
+今回は、デカールテクスチャをxz平面にべたっと張っているモデルで計算しました。<br>
+このモデルでは、モデルを真上から見た状態とデカールテクスチャが対応していて、
+デカールテクスチャ上でまっすぐな直線は、モデルのローカル座標系のｘｚ平面でもまっすぐに伸びます。<br>
+実際に影があたっているかどうかを調べる方法ですが、光があたっているかではなく、
+視点から光の方向を見たときに、遮蔽物があるかどうかで光があたるかどうかを判定します。<br>
+それぞれのテクセルを視点として、適当な方向に光線を飛ばします。<br>
+その光線が途中でより高いテクセルにさえぎられれば、光は届かないので影になります。
 </p>
 <image src = "ray.png">
 <p>
-����́A�������R�Q�����ɔ�΂��āA���ꂼ��̕����ɑ΂���e�����߂Ă����A
-���Ԃ̊p�x�͂����̉e��⊮������@�ŉe���v�Z���܂��B<br>
-�R�Q�����̉e���i�[���邽�߂ɁARGBA�̂��ꂼ��̐������P���̕����Ƃ��āA
-�P�̃e�N�X�`���ɂS�̕������i�[���āA�v�W���̃e�N�X�`�����쐬���܂��B<br>
-���̃e�N�X�`���͂P�x���߂�΁A���t���[���쐬���Ȃ��Ă��ǂ��̂ŁA
-�������̒i�K�Ńe�N�X�`�����쐬���܂��B�������A���ۂ̐��i�Ŏg���Ƃ��ɂ́A�O�����ăe�N�X�`�����v�Z���Ă����A
-���ۂ̕\���̂Ƃ��́A���̃e�N�X�`����ǂݍ��ނ����ɂ���̂��ǂ��ł��傤�B
+今回は、視線を３２方向に飛ばして、それぞれの方向に対する影を求めておき、
+中間の角度はぞれらの影を補完する方法で影を計算します。<br>
+３２方向の影を格納するために、RGBAのそれぞれの成分を１枚の方向として、
+１つのテクスチャに４つの方向を格納して、計８枚のテクスチャを作成します。<br>
+このテクスチャは１度求めれば、枚フレーム作成しなくても良いので、
+初期化の段階でテクスチャを作成します。もちろん、実際の製品で使うときには、前もってテクスチャを計算しておき、
+実際の表示のときは、そのテクスチャを読み込むだけにするのが良いでしょう。
 </p>
 <image src = "map.png">
 
 
-<h2>�������}�b�v�̍쐬</h2>
+<h2>■高さマップの作成</h2>
 
 
 <p>
-�Օ��}�b�v���쐬����̂ł����A���̑O�ɂ��ꂼ��̈ʒu�ł̍������i�[���������}�b�v���쐬���܂��B<br>
-�Օ��}�b�v�́A���ꂼ��̈ʒu����������΂����Ƃ��ɂ��̌������������邩�Ԃ��邩�������}�b�v���猟�����܂��B<br>
-�����}�b�v�́A�͗l�Ƃ��Ă͂�f�J�[���}�b�v�Ɠ����e�N�X�`�����W���g���Ă͂��悤�ɒ������܂��A<br>
-�ʒu���W�Ƀe�N�X�`�����W�̒l�𕄍����X�P�[�����O�����l���o�͂��܂��B�������A�����W�͏㉺���Ђ�����Ԃ�̂ŁA�������ς��܂��B<br>
-��́A�F�����Ƀ��[�J�����W�ł̍������o�͂��܂��B
-�K�v�Ȃ�΁A0����1�͈̔͂ɍ��������܂�悤�ɃX�P�[�����O�����܂��傤�B
+遮蔽マップを作成するのですが、その前にそれぞれの位置での高さを格納した高さマップを作成します。<br>
+遮蔽マップは、それぞれの位置から光線を飛ばしたときにその光がさえぎられるかぶつかるかを高さマップから検索します。<br>
+高さマップは、模様としてはるデカールマップと同じテクスチャ座標を使ってはれるように調整します、<br>
+位置座標にテクスチャ座標の値を符号化スケーリングした値を出力します。ただし、ｙ座標は上下がひっくり返るので、符号が変わります。<br>
+後は、色成分にローカル座標での高さを出力します。
+必要ならば、0から1の範囲に高さが収まるようにスケーリングをしましょう。
 </p>
 <pre class="CodeBlock">
 hlsl.fx
 <font color="deepskyblue">0177:</font> <font color="cyan">// ------------------------------------------------------------</font>
-<font color="deepskyblue">0178:</font> <font color="cyan">// �����}�b�v�쐬���_�V�F�[�_�v���O����</font>
+<font color="deepskyblue">0178:</font> <font color="cyan">// 高さマップ作成頂点シェーダプログラム</font>
 <font color="deepskyblue">0179:</font> <font color="cyan">// ------------------------------------------------------------</font>
 <font color="deepskyblue">0180:</font> VS_OUTPUT VS_Height (
-<font color="deepskyblue">0181:</font>       float4 Pos    : POSITION           <font color="cyan">// ���f���̒��_</font>
-<font color="deepskyblue">0182:</font>     , float4 Normal : NORMAL             <font color="cyan">// �@���x�N�g��</font>
-<font color="deepskyblue">0183:</font>     , float4 Tex0   : TEXCOORD0          <font color="cyan">// �e�N�X�`�����W</font>
+<font color="deepskyblue">0181:</font>       float4 Pos    : POSITION           <font color="cyan">// モデルの頂点</font>
+<font color="deepskyblue">0182:</font>     , float4 Normal : NORMAL             <font color="cyan">// 法線ベクトル</font>
+<font color="deepskyblue">0183:</font>     , float4 Tex0   : TEXCOORD0          <font color="cyan">// テクスチャ座標</font>
 <font color="deepskyblue">0184:</font> ){
-<font color="deepskyblue">0185:</font>     VS_OUTPUT Out = (VS_OUTPUT)0;        <font color="cyan">// �o�̓f�[�^</font>
+<font color="deepskyblue">0185:</font>     VS_OUTPUT Out = (VS_OUTPUT)0;        <font color="cyan">// 出力データ</font>
 <font color="deepskyblue">0186:</font>     
-<font color="deepskyblue">0189:</font>     <font color="cyan">// �ʒu���W</font>
+<font color="deepskyblue">0189:</font>     <font color="cyan">// 位置座標</font>
 <font color="deepskyblue">0190:</font>     Out.Pos = 2.0 * Tex0 - 1.0;
 <font color="deepskyblue">0191:</font>     Out.Pos.y *= -1;
 <font color="deepskyblue">0192:</font>     Out.Pos.z = 0.5;
 <font color="deepskyblue">0193:</font>     Out.Pos.w = 1;
 <font color="deepskyblue">0194:</font>     
-<font color="deepskyblue">0195:</font>     <font color="cyan">// �F</font>
+<font color="deepskyblue">0195:</font>     <font color="cyan">// 色</font>
 <font color="deepskyblue">0196:</font>     Out.Color = Pos.y;
 <font color="deepskyblue">0197:</font> 
 <font color="deepskyblue">0198:</font>     <font color="blue">return</font> Out;
@@ -130,18 +130,18 @@ hlsl.fx
 </pre>
 
 <p>
-�s�N�Z���V�F�[�_�ł́A�F�����̂܂܏o�͂��܂��B
+ピクセルシェーダでは、色をそのまま出力します。
 </p>
 <pre class="CodeBlock">
 hlsl.fx
 <font color="deepskyblue">0201:</font> <font color="cyan">// ------------------------------------------------------------</font>
-<font color="deepskyblue">0202:</font> <font color="cyan">// �����}�b�v�쐬�s�N�Z���V�F�[�_�v���O����</font>
+<font color="deepskyblue">0202:</font> <font color="cyan">// 高さマップ作成ピクセルシェーダプログラム</font>
 <font color="deepskyblue">0203:</font> <font color="cyan">// ------------------------------------------------------------</font>
 <font color="deepskyblue">0204:</font> float4 PS_Height (VS_OUTPUT In) : COLOR
 <font color="deepskyblue">0205:</font> {
 <font color="deepskyblue">0206:</font>     float4 Out;
 <font color="deepskyblue">0207:</font>     
-<font color="deepskyblue">0208:</font>     <font color="cyan">// �����_�����O�^�[�Q�b�g</font>
+<font color="deepskyblue">0208:</font>     <font color="cyan">// レンダリングターゲット</font>
 <font color="deepskyblue">0209:</font>     Out = In.Color;
 <font color="deepskyblue">0210:</font> 
 <font color="deepskyblue">0211:</font>     <font color="blue">return</font> Out;
@@ -149,66 +149,66 @@ hlsl.fx
 </pre>
 
 <p>
-�A�v���P�[�V�������ł́A�����_�����O�^�[�Q�b�g�������}�b�v�̃T�[�t�F�X�ɐ؂�ւ���
-�Ƃ肠����z�e�X�g��J�����O�͂��Ȃ��悤�ɂ��ă����_�����O���܂��B
+アプリケーション側では、レンダリングターゲットを高さマップのサーフェスに切り替えて
+とりあえずzテストやカリングはしないようにしてレンダリングします。
 </p>
 
 <pre class="CodeBlock">
 amin.cpp
 <font color="deepskyblue">0348:</font>             <font color="cyan">//-------------------------------------------------</font>
-<font color="deepskyblue">0349:</font>             <font color="cyan">// �����_�����O�^�[�Q�b�g�̕ύX</font>
+<font color="deepskyblue">0349:</font>             <font color="cyan">// レンダリングターゲットの変更</font>
 <font color="deepskyblue">0350:</font>             <font color="cyan">//-------------------------------------------------</font>
 <font color="deepskyblue">0351:</font>             m_pd3dDevice-&gt;SetRenderTarget(0, m_pHeightSurf);
 <font color="deepskyblue">0352:</font>             m_pd3dDevice-&gt;SetDepthStencilSurface(NULL);
-<font color="deepskyblue">0353:</font>             <font color="cyan">// �r���[�|�[�g�̕ύX</font>
-<font color="deepskyblue">0354:</font>             D3DVIEWPORT9 viewport_height = {0,0      <font color="cyan">// ����̍��W</font>
-<font color="deepskyblue">0355:</font>                             , MAP_SIZE  <font color="cyan">// ��</font>
-<font color="deepskyblue">0356:</font>                             , MAP_SIZE <font color="cyan">// ����</font>
-<font color="deepskyblue">0357:</font>                             , 0.0f,1.0f};     <font color="cyan">// �O�ʁA���</font>
+<font color="deepskyblue">0353:</font>             <font color="cyan">// ビューポートの変更</font>
+<font color="deepskyblue">0354:</font>             D3DVIEWPORT9 viewport_height = {0,0      <font color="cyan">// 左上の座標</font>
+<font color="deepskyblue">0355:</font>                             , MAP_SIZE  <font color="cyan">// 幅</font>
+<font color="deepskyblue">0356:</font>                             , MAP_SIZE <font color="cyan">// 高さ</font>
+<font color="deepskyblue">0357:</font>                             , 0.0f,1.0f};     <font color="cyan">// 前面、後面</font>
 <font color="deepskyblue">0358:</font>             m_pd3dDevice-&gt;SetViewport(&amp;viewport_height);
 <font color="deepskyblue">0359:</font> 
 <font color="deepskyblue">0365:</font>             <font color="cyan">//-------------------------------------------------</font>
-<font color="deepskyblue">0366:</font>             <font color="cyan">// �����}�b�v�̍쐬</font>
+<font color="deepskyblue">0366:</font>             <font color="cyan">// 高さマップの作成</font>
 <font color="deepskyblue">0367:</font>             <font color="cyan">//-------------------------------------------------</font>
 <font color="deepskyblue">0368:</font>             RS( D3DRS_ZENABLE, FALSE );
 <font color="deepskyblue">0369:</font>             RS( D3DRS_CULLMODE, D3DCULL_NONE );
 <font color="deepskyblue">0370:</font>             m_pEffect-&gt;Pass( 0 );
 <font color="deepskyblue">0371:</font>             
-<font color="deepskyblue">0372:</font>             <font color="cyan">// �w�i�̕`��</font>
+<font color="deepskyblue">0372:</font>             <font color="cyan">// 背景の描画</font>
 <font color="deepskyblue">0373:</font>             pMtrl = m_pMeshBg-&gt;m_pMaterials;
 <font color="deepskyblue">0374:</font>             <font color="blue">for</font>( i=0; i&lt;m_pMeshBg-&gt;m_dwNumMaterials; i++ ) {
 <font color="deepskyblue">0375:</font>                 m_pEffect-&gt;SetTexture(m_htSrcTex, m_pMeshBg-&gt;m_pTextures[i] );
-<font color="deepskyblue">0376:</font>                 m_pMeshBg-&gt;m_pLocalMesh-&gt;DrawSubset( i );   <font color="cyan">// �`��</font>
+<font color="deepskyblue">0376:</font>                 m_pMeshBg-&gt;m_pLocalMesh-&gt;DrawSubset( i );   <font color="cyan">// 描画</font>
 <font color="deepskyblue">0377:</font>                 pMtrl++;
 <font color="deepskyblue">0378:</font>             }
 </pre>
 
 
 
-<h2>���Օ��}�b�v�̍쐬</h2>
+<h2>■遮蔽マップの作成</h2>
 
 
 <p>
-�����}�b�v���쐬������A���͍����}�b�v����Օ��}�b�v���쐬���܂��B<br>
-�Օ��}�b�v�̍쐬�́A�����}�b�v����̂P�΂P�̑Ή��Ƃ��ĕϊ��ł��܂��B<br>
-�Օ��}�b�v���쐬����̂́A�e�e�N�Z���ɑ΂��āA���������ɂ��炵���e�N�Z���Ɣ�r���āA
-���炵���e�N�Z���̍�������������L�т����������������ǂ������r�����ƂɂȂ�܂��B<br>
-�ŏ���Clear���߂��g���āA��ʂ𔒂��h��Ԃ��Ă����܂��B<br>
-���ɁA����������������悤�ɐݒ肵�܂��B�����������̕��@�͏o�͂����F�ł̏�Z�����ł��B<br>
-���̍���������ƁA�e�ɂȂ镔���͍����o�͂��āA���邢�����͔����o�͂��邱�Ƃɂ��A
-�ŏI�I�Ɍ����˂������͔����A�ǂ����ł��������镔���͍����Ȃ�܂��B<br>
-���ɁA���񂪂�`�悵�Ă����܂��B<br>
-RGBA�̂S���̃��C���[�ɐF���o�͂���̂ŁA�`��񐔂̓}�b�v�̖���x4�ɂȂ�܂��B<br>
-���ɁA���ꂼ��̐��������ɏ������݂���悤�ɁA�������݃}�X�ND3DRS_COLORWRITEENABLE��ݒ肵�܂��B<br>
-���Ƃ́A�����Âe�N�X�`�������炵�Ȃ���`�悵�܂��B<br>
-�e�N�X�`�������炷�ʂ��V�F�[�_�̕ϐ� vOffset �ɓ���܂��B
-���炷�ʂ́A���C���[���Ƃɐݒ肳�ꂽ���炷�����i�����j�̃x�N�g��ray_dir[i]�ɂ��̕`��񐔂ɔ�Ⴗ��ʂłÂ炵�Ă����܂��B<br>
-�܂��A��r�̂��߂ɁA�e�N�Z������������΂����Ƃ��̌�������ԍ�����fRayHeight�Ɋi�[���܂��B
+高さマップを作成したら、次は高さマップから遮蔽マップを作成します。<br>
+遮蔽マップの作成は、高さマップからの１対１の対応として変換できます。<br>
+遮蔽マップを作成するのは、各テクセルに対して、視線方向にずらしたテクセルと比較して、
+ずらしたテクセルの高さが自分から伸びた視線よりも高いかどうかを比較する作業になります。<br>
+最初にClear命令を使って、画面を白く塗りつぶしておきます。<br>
+次に、半透明合成をするように設定します。半透明合成の方法は出力した色での乗算合成です。<br>
+この合成をすると、影になる部分は黒く出力して、明るい部分は白く出力することにより、
+最終的に光が射す部分は白く、どこかでさえぎられる部分は黒くなります。<br>
+次に、がんがん描画していきます。<br>
+RGBAの４枚のレイヤーに色を出力するので、描画回数はマップの枚数x4になります。<br>
+次に、それぞれの成分だけに書き込みするように、書き込みマスクD3DRS_COLORWRITEENABLEを設定します。<br>
+あとは、少しづつテクスチャをずらしながら描画します。<br>
+テクスチャをずらす量をシェーダの変数 vOffset に入れます。
+すらす量は、レイヤーごとに設定されたずらす方向（視線）のベクトルray_dir[i]にその描画回数に比例する量でづらしていきます。<br>
+また、比較のために、テクセルから光線を飛ばしたときの光線が飛ぶ高さをfRayHeightに格納します。
 </p>
 <pre class="CodeBlock">
 main.cpp
 <font color="deepskyblue">0380:</font>             <font color="cyan">//-------------------------------------------------</font>
-<font color="deepskyblue">0381:</font>             <font color="cyan">// �Օ��}�b�v�̍쐬</font>
+<font color="deepskyblue">0381:</font>             <font color="cyan">// 遮蔽マップの作成</font>
 <font color="deepskyblue">0382:</font>             <font color="cyan">//-------------------------------------------------</font>
 <font color="deepskyblue">0383:</font>             <font color="blue">typedef</font> <font color="blue">struct</font> {FLOAT p[3]; FLOAT tu, tv;} TVERTEX3;
 <font color="deepskyblue">0384:</font>             TVERTEX3 Vertex[4] = {
@@ -235,15 +235,15 @@ main.cpp
 <font color="deepskyblue">0405:</font> 
 <font color="deepskyblue">0406:</font>                 RS(D3DRS_COLORWRITEENABLE,(1&lt;&lt;(i%4)));
 <font color="deepskyblue">0407:</font>                 <font color="blue">for</font>(j=1; j&lt;MAP_SIZE; j++){
-<font color="deepskyblue">0408:</font>                     <font color="cyan">// ���C�̍���</font>
+<font color="deepskyblue">0408:</font>                     <font color="cyan">// レイの高さ</font>
 <font color="deepskyblue">0409:</font>                     FLOAT d = 2.0f*(FLOAT)j/MAP_SIZE + 0.0001f;
 <font color="deepskyblue">0410:</font>                     m_pEffect-&gt;SetFloat("<font color="blue">fRayHeight</font>", d);
-<font color="deepskyblue">0411:</font>                     <font color="cyan">// �e�N�X�`�������炷�ʒu</font>
+<font color="deepskyblue">0411:</font>                     <font color="cyan">// テクスチャをずらす位置</font>
 <font color="deepskyblue">0412:</font>                     D3DXVECTOR4 v = D3DXVECTOR4(
 <font color="deepskyblue">0413:</font>                             ray_dir[i][0]*j/MAP_SIZE,
 <font color="deepskyblue">0414:</font>                             ray_dir[i][1]*j/MAP_SIZE,0,0);
 <font color="deepskyblue">0415:</font>                     m_pEffect-&gt;SetVector("<font color="blue">vOffset</font>", &amp;v);
-<font color="deepskyblue">0416:</font>                     <font color="cyan">// �`��</font>
+<font color="deepskyblue">0416:</font>                     <font color="cyan">// 描画</font>
 <font color="deepskyblue">0417:</font>                     m_pd3dDevice-&gt;DrawPrimitiveUP( D3DPT_TRIANGLEFAN
 <font color="deepskyblue">0418:</font>                                 , 2, Vertex, <font color="blue">sizeof</font>( TVERTEX3 ) );
 <font color="deepskyblue">0419:</font>                 }
@@ -251,16 +251,16 @@ main.cpp
 </pre>
 
 <p>
-�Օ��}�b�v���v�Z���鎋���̕����́A�R�Q�����̂��ꂼ��̕����̒P�ʃx�N�g���ɂȂ�܂��B<br>
-�܂��Asin��cos�̊�{�I�Ȏg�����őS�����R�Q�������邾���ł��B
+遮蔽マップを計算する視線の方向は、３２方向のそれぞれの方向の単位ベクトルになります。<br>
+まあ、sinとcosの基本的な使い方で全周を３２等分するだけです。
 </p>
 
 <pre class="CodeBlock">
 main.cpp
 <font color="deepskyblue">0054:</font> <font color="cyan">//-------------------------------------------------------------</font>
-<font color="deepskyblue">0055:</font> <font color="cyan">// ���[�J���ϐ�</font>
+<font color="deepskyblue">0055:</font> <font color="cyan">// ローカル変数</font>
 <font color="deepskyblue">0056:</font> <font color="cyan">//-------------------------------------------------------------</font>
-<font color="deepskyblue">0057:</font> <font color="cyan">// ���C�̕���</font>
+<font color="deepskyblue">0057:</font> <font color="cyan">// レイの方向</font>
 <font color="deepskyblue">0058:</font> <font color="blue">static</font> FLOAT ray_dir[4*COVER_MAPS][2] = {
 <font color="deepskyblue">0059:</font>     { cosf(D3DX_PI* 0/(2*COVER_MAPS)), sinf(D3DX_PI* 0/(2*COVER_MAPS))},
 <font color="deepskyblue">0060:</font>     { cosf(D3DX_PI* 1/(2*COVER_MAPS)), sinf(D3DX_PI* 1/(2*COVER_MAPS))},
@@ -298,26 +298,26 @@ main.cpp
 </pre>
 
 <p>
-���Ƃ́A�V�F�[�_�ł̂��b�ɂȂ�܂��B<br>
-�V�F�[�_�ł́A���炵���ʒu�̃e�N�X�`���̍��W�Ɣ�r�̌��ɂȂ錻�݂̃e�N�Z���̃e�N�X�`�����W���o�͂��܂��B
+あとは、シェーダでのお話になります。<br>
+シェーダでは、ずらした位置のテクスチャの座標と比較の元になる現在のテクセルのテクスチャ座標を出力します。
 </p>
 
 <pre class="CodeBlock">
 hlsl.fx
 <font color="deepskyblue">0213:</font> <font color="cyan">// ------------------------------------------------------------</font>
-<font color="deepskyblue">0214:</font> <font color="cyan">// �Օ��}�b�v�쐬���_�V�F�[�_�v���O����</font>
+<font color="deepskyblue">0214:</font> <font color="cyan">// 遮蔽マップ作成頂点シェーダプログラム</font>
 <font color="deepskyblue">0215:</font> <font color="cyan">// ------------------------------------------------------------</font>
 <font color="deepskyblue">0216:</font> float4 vOffset;
 <font color="deepskyblue">0217:</font> VS_OUTPUT VS_Cover (
-<font color="deepskyblue">0218:</font>       float4 Pos    : POSITION           <font color="cyan">// ���f���̒��_</font>
-<font color="deepskyblue">0219:</font>     , float2 Tex0   : TEXCOORD0          <font color="cyan">// �e�N�X�`�����W</font>
+<font color="deepskyblue">0218:</font>       float4 Pos    : POSITION           <font color="cyan">// モデルの頂点</font>
+<font color="deepskyblue">0219:</font>     , float2 Tex0   : TEXCOORD0          <font color="cyan">// テクスチャ座標</font>
 <font color="deepskyblue">0220:</font> ){
-<font color="deepskyblue">0221:</font>     VS_OUTPUT Out = (VS_OUTPUT)0;        <font color="cyan">// �o�̓f�[�^</font>
+<font color="deepskyblue">0221:</font>     VS_OUTPUT Out = (VS_OUTPUT)0;        <font color="cyan">// 出力データ</font>
 <font color="deepskyblue">0222:</font>     
-<font color="deepskyblue">0223:</font>     <font color="cyan">// ���_���W </font>
+<font color="deepskyblue">0223:</font>     <font color="cyan">// 頂点座標 </font>
 <font color="deepskyblue">0224:</font>     Out.Pos = Pos;
 <font color="deepskyblue">0225:</font>     
-<font color="deepskyblue">0226:</font>     <font color="cyan">// �F</font>
+<font color="deepskyblue">0226:</font>     <font color="cyan">// 色</font>
 <font color="deepskyblue">0227:</font>     Out.Tex0 = Tex0;
 <font color="deepskyblue">0228:</font>     Out.Tex1 = Tex0+vOffset.xy;
 <font color="deepskyblue">0229:</font> 
@@ -325,15 +325,15 @@ hlsl.fx
 <font color="deepskyblue">0231:</font> }
 </pre>
 <p>
-�s�N�Z���V�F�[�_���厖�Ȕ�r�̃��[�`���ł��B<br>
-���̈ʒu�ƁA�����̔��ł����ʒu�̍����������}�b�v����ǂݍ���ŁA
-���ꂪ�A�����̖{���̈ʒu����������΁i��������������΁j�����o�͂��A
-���������̏ꏊ�ɂ�����Ȃ���Δ����o�͂��܂��B
+ピクセルシェーダが大事な比較のルーチンです。<br>
+元の位置と、光線の飛んでいく位置の高さを高さマップから読み込んで、
+それが、光線の本来の位置よりも高ければ（光線をさえぎれば）黒を出力し、
+光線がその場所にあたらなければ白を出力します。
 </p>
 <pre class="CodeBlock">
 hlsl.fx
 <font color="deepskyblue">0233:</font> <font color="cyan">// ------------------------------------------------------------</font>
-<font color="deepskyblue">0234:</font> <font color="cyan">// �Օ��}�b�v�쐬�s�N�Z���V�F�[�_�v���O����</font>
+<font color="deepskyblue">0234:</font> <font color="cyan">// 遮蔽マップ作成ピクセルシェーダプログラム</font>
 <font color="deepskyblue">0235:</font> <font color="cyan">// ------------------------------------------------------------</font>
 <font color="deepskyblue">0236:</font> <font color="blue">float</font>  fRayHeight;
 <font color="deepskyblue">0237:</font> float4 PS_Cover(VS_OUTPUT In) : COLOR
@@ -352,33 +352,33 @@ hlsl.fx
 
 
 
-<h2>���V�[���̕`��</h2>
+<h2>■シーンの描画</h2>
 
 
 <p>
-���āA�Օ��}�b�v���ł�����A�}�b�v���g���Ēn�ʂ�`�悵�܂��傤�B<br>
-��{�I�ɁA���_�V�F�[�_�͓������܂���B���ʂɃe�N�X�`���𒣂�܂��B<br>
-�����ŁA�f�J�[���̃e�N�X�`���ƁA�Օ��}�b�v�ɓ����e�N�X�`�����W���g���܂��B<br>
-�s�N�Z���V�F�[�_2.0�ł́A�����e�N�X�`�����W�ŉ������e�N�X�`���𒣂��̂ŁA
-����͂P�����e�N�X�`�����W���o�͂��܂��񂪁A���_�V�F�[�_1.1�����g���Ƃ��́A
-���ꂼ��̍��W��ʁX�ɏo�͂���K�v������܂��B
+さて、遮蔽マップができたら、マップを使って地面を描画しましょう。<br>
+基本的に、頂点シェーダは難しくありません。普通にテクスチャを張ります。<br>
+ここで、デカールのテクスチャと、遮蔽マップに同じテクスチャ座標を使います。<br>
+ピクセルシェーダ2.0では、同じテクスチャ座標で何枚もテクスチャを張れるので、
+今回は１つしかテクスチャ座標を出力しませんが、頂点シェーダ1.1等を使うときは、
+それぞれの座標を別々に出力する必要があります。
 <p>
 
 <pre class="CodeBlock">
 hlsl.fx
 <font color="deepskyblue">0135:</font> <font color="cyan">// ------------------------------------------------------------</font>
-<font color="deepskyblue">0136:</font> <font color="cyan">// ���_�V�F�[�_�v���O����</font>
+<font color="deepskyblue">0136:</font> <font color="cyan">// 頂点シェーダプログラム</font>
 <font color="deepskyblue">0137:</font> <font color="cyan">// ------------------------------------------------------------</font>
 <font color="deepskyblue">0138:</font> VS_OUTPUT VS (
-<font color="deepskyblue">0139:</font>       float4 Pos    : POSITION           <font color="cyan">// ���f���̒��_</font>
-<font color="deepskyblue">0140:</font>      ,float4 Normal : NORMAL             <font color="cyan">// �@���x�N�g��</font>
-<font color="deepskyblue">0141:</font>      ,float4 Tex0   : TEXCOORD0          <font color="cyan">// �e�N�X�`�����W</font>
+<font color="deepskyblue">0139:</font>       float4 Pos    : POSITION           <font color="cyan">// モデルの頂点</font>
+<font color="deepskyblue">0140:</font>      ,float4 Normal : NORMAL             <font color="cyan">// 法線ベクトル</font>
+<font color="deepskyblue">0141:</font>      ,float4 Tex0   : TEXCOORD0          <font color="cyan">// テクスチャ座標</font>
 <font color="deepskyblue">0142:</font> ){
-<font color="deepskyblue">0143:</font>     VS_OUTPUT Out = (VS_OUTPUT)0;        <font color="cyan">// �o�̓f�[�^</font>
+<font color="deepskyblue">0143:</font>     VS_OUTPUT Out = (VS_OUTPUT)0;        <font color="cyan">// 出力データ</font>
 <font color="deepskyblue">0144:</font>     
 <font color="deepskyblue">0145:</font>     float4 pos = mul( Pos, mWVP );
 <font color="deepskyblue">0146:</font>     
-<font color="deepskyblue">0147:</font>     <font color="cyan">// �ʒu���W</font>
+<font color="deepskyblue">0147:</font>     <font color="cyan">// 位置座標</font>
 <font color="deepskyblue">0148:</font>     Out.Pos = pos;
 <font color="deepskyblue">0149:</font>     
 <font color="deepskyblue">0150:</font>     Out.Tex0 = Tex0;
@@ -388,19 +388,19 @@ hlsl.fx
 </pre>
 
 <p>
-�s�N�Z���V�F�[�_�ł́A�Օ��}�b�v���疾�邳�����߂āA���̐F���g�U���ɗp���܂��B
+ピクセルシェーダでは、遮蔽マップから明るさを求めて、その色を拡散光に用います。
 </p>
 <pre class="CodeBlock">
 hlsl.fx
 <font color="deepskyblue">0154:</font> <font color="cyan">// ------------------------------------------------------------</font>
-<font color="deepskyblue">0155:</font> <font color="cyan">// �s�N�Z���V�F�[�_�v���O����</font>
+<font color="deepskyblue">0155:</font> <font color="cyan">// ピクセルシェーダプログラム</font>
 <font color="deepskyblue">0156:</font> <font color="cyan">// ------------------------------------------------------------</font>
 <font color="deepskyblue">0157:</font> float4 vWeight[8];
 <font color="deepskyblue">0158:</font> float4 PS (VS_OUTPUT In) : COLOR
 <font color="deepskyblue">0159:</font> {
 <font color="deepskyblue">0160:</font>     float4 Out;
 <font color="deepskyblue">0161:</font>     
-<font color="deepskyblue">0162:</font>     <font color="cyan">// �Օ���</font>
+<font color="deepskyblue">0162:</font>     <font color="cyan">// 遮蔽量</font>
 <font color="deepskyblue">0163:</font>     <font color="blue">float</font> Cover = dot(vWeight[0], tex2D( CoverSamp0, In.Tex0 ));
 <font color="deepskyblue">0164:</font>           Cover+= dot(vWeight[1], tex2D( CoverSamp1, In.Tex0 ));
 <font color="deepskyblue">0165:</font>           Cover+= dot(vWeight[2], tex2D( CoverSamp2, In.Tex0 ));
@@ -410,20 +410,20 @@ hlsl.fx
 <font color="deepskyblue">0169:</font>           Cover+= dot(vWeight[6], tex2D( CoverSamp6, In.Tex0 ));
 <font color="deepskyblue">0170:</font>           Cover+= dot(vWeight[7], tex2D( CoverSamp7, In.Tex0 ));
 <font color="deepskyblue">0171:</font>           
-<font color="deepskyblue">0172:</font>     <font color="cyan">// �F</font>
+<font color="deepskyblue">0172:</font>     <font color="cyan">// 色</font>
 <font color="deepskyblue">0173:</font>     Out = tex2D( SrcSamp, In.Tex0 ) *(Cover+0.3f);
 <font color="deepskyblue">0174:</font> 
 <font color="deepskyblue">0175:</font>     <font color="blue">return</font> Out;
 <font color="deepskyblue">0176:</font> }
 </pre>
 <p>
-���邳�̋��ߕ��́A���ꂼ��̎Օ��}�b�v�̋������d�݂Ő��^�������܂��B<br>
-�d�݂́A���̂���������Ɉˑ����邻�ꂼ��̃}�b�v�̉e���x�ł��B<br>
-�d�݂̓A�v���P�[�V�������ŋ��߂�̂ŁA�����ł͒P���ɎՕ��}�b�v�ɂ��e�̏��
-�d�݂ő������킳��邾���̌v�Z�ɂȂ�܂��B
+明るさの求め方は、それぞれの遮蔽マップの強さを重みで線型合成します。<br>
+重みは、光のあたる方向に依存するそれぞれのマップの影響度です。<br>
+重みはアプリケーション側で求めるので、ここでは単純に遮蔽マップによる影の情報が
+重みで足しあわされるだけの計算になります。
 </p>
 <pre class="CodeBlock">
-           �d��        �Օ��}�b�v�̊e�����̖��邳
+           重み        遮蔽マップの各方向の明るさ
 Cover = vWeight[0].x * tex2D( CoverSamp1, In.Tex0 ).r
       + vWeight[0].y * tex2D( CoverSamp1, In.Tex0 ).g
       + vWeight[0].z * tex2D( CoverSamp1, In.Tex0 ).b
@@ -433,25 +433,25 @@ Cover = vWeight[0].x * tex2D( CoverSamp1, In.Tex0 ).r
 </pre>
 
 <p>
-�d�݂̌v�Z�́A���C�g�̕�������A�v�Z���܂��B<br>
-���̃v���O�����ŁAdir�����f���̃��[�J�����W�n�ł�XZ���ʂł̃��C�g�̕����i�������́A���������݂�������j�ɂȂ�܂��B<br>
-����̎Օ��}�b�v�ł́A���̓��˂��鍂���͏��Ƃ��ē���Ȃ��̂ŁA�Q�����̃x�N�g���ɂȂ�܂��B<br>
-���ɁA���ς��g���āA�ˉe�}�b�v���쐬�����Ƃ��̎����̕���ray_dir�ƃ��C�g���ǂ̂��炢�����Ă���̂��𒲂ׂ܂��B<br>
-���ς��g���Ă���̂ŁA���C�g�̃x�N�g���Ǝ����x�N�g�������������������Ă���Ƃ��́A1�ɂȂ�܂��B
-�����āA����Ă����Γ��ς̒l�͒i�X�Ə������Ȃ�܂��B<br>
-�����܂ŉe�������邩�Ƃ����̂����ɂȂ�̂ł����A�����ł́A�ׂ̎Օ��}�b�v�̎����̕������������Ƃ��ɂ́A
-�e�����O�ɂȂ�悤�ɂ��܂��B<br>
-�܂�A����́A�R�Q�����Ɏ������΂��̂ŁA���ς̒l��cos(2��/32)�����������Ƃ��ɉe����0�ɂȂ�悤�ɂ��܂��B<br>
-�����ŁA���ς̒l����cos(2��/32)�������āA���̒l�����̕����ɂ����Օ��}�b�v�̉e�����o��悤�ɒl�𒲐����܂��B<br>
-�Ō�ɁA�e���̑��a���P�ɂȂ�悤�ɁA�d�݂̒l�����v���āA�S�Ă̏d�݂����̍��v�Ŋ���Ƃ����K�i�������܂��B
+重みの計算は、ライトの方向から、計算します。<br>
+下のプログラムで、dirがモデルのローカル座標系でのXZ平面でのライトの方向（正しくは、光源が存在する方向）になります。<br>
+今回の遮蔽マップでは、光の入射する高さは情報として入らないので、２次元のベクトルになります。<br>
+次に、内積を使って、射影マップを作成したときの視線の方向ray_dirとライトがどのくらい向いているのかを調べます。<br>
+内積を使っているので、ライトのベクトルと視線ベクトルが同じ向きを向いているときは、1になります。
+そして、それていけば内積の値は段々と小さくなります。<br>
+何所まで影響させるかというのが問題になるのですが、ここでは、隣の遮蔽マップの視線の方向を向いたときには、
+影響が０になるようにします。<br>
+つまり、今回は、３２方向に視線を飛ばすので、内積の値がcos(2π/32)よりも小さいときに影響が0になるようにします。<br>
+そこで、内積の値からcos(2π/32)を引いて、その値が正の部分にだけ遮蔽マップの影響が出るように値を調整します。<br>
+最後に、影響の総和を１になるように、重みの値を合計して、全ての重みをその合計で割るという規格化をします。
 </p>
 
 <pre class="CodeBlock">
 main.cpp
 <font color="deepskyblue">0541:</font>             <font color="cyan">//-------------------------------------------------</font>
-<font color="deepskyblue">0542:</font>             <font color="cyan">// �V�[���̕`��</font>
+<font color="deepskyblue">0542:</font>             <font color="cyan">// シーンの描画</font>
 <font color="deepskyblue">0543:</font>             <font color="cyan">//-------------------------------------------------</font>
-<font color="deepskyblue">0544:</font>             <font color="cyan">// �Օ��}�b�v����������d��</font>
+<font color="deepskyblue">0544:</font>             <font color="cyan">// 遮蔽マップを合成する重み</font>
 <font color="deepskyblue">0545:</font>             D3DXVECTOR4 array[COVER_MAPS];
 <font color="deepskyblue">0546:</font>             <font color="blue">float</font> acc=0;
 <font color="deepskyblue">0547:</font>             <font color="blue">float</font> theta = fmod(0.5*<font color="blue">this</font>-&gt;m_fTime, 2.0*D3DX_PI);
@@ -474,11 +474,11 @@ main.cpp
 <font color="deepskyblue">0564:</font>             m_pEffect-&gt;SetVectorArray("<font color="blue">vWeight</font>", array, COVER_MAPS);
 </pre>
 <p>
-��́A�ˉe�}�b�v��ݒ肵�āA�V�F�[�_���g���ĕ`�悷�邾���ł��B
+後は、射影マップを設定して、シェーダを使って描画するだけです。
 </p>
 <pre class="CodeBlock">
 main.cpp
-<font color="deepskyblue">0567:</font>             <font color="cyan">// �ϊ��s��</font>
+<font color="deepskyblue">0567:</font>             <font color="cyan">// 変換行列</font>
 <font color="deepskyblue">0568:</font>             m = m_mWorld * m_mView * m_mProj;
 <font color="deepskyblue">0569:</font>             m_pEffect-&gt;SetMatrix( m_hmWVP, &amp;m );
 <font color="deepskyblue">0570:</font>             
@@ -491,26 +491,26 @@ main.cpp
 <font color="deepskyblue">0577:</font>             m_pEffect-&gt;SetTexture("<font color="blue">CoverTex6</font>", m_pCoverTex[6]);
 <font color="deepskyblue">0578:</font>             m_pEffect-&gt;SetTexture("<font color="blue">CoverTex7</font>", m_pCoverTex[7]);
 <font color="deepskyblue">0579:</font> 
-<font color="deepskyblue">0580:</font>             <font color="cyan">// �w�i�̕`��</font>
+<font color="deepskyblue">0580:</font>             <font color="cyan">// 背景の描画</font>
 <font color="deepskyblue">0581:</font>             pMtrl = m_pMeshBg-&gt;m_pMaterials;
 <font color="deepskyblue">0582:</font>             <font color="blue">for</font>( i=0; i&lt;m_pMeshBg-&gt;m_dwNumMaterials; i++ ) {
 <font color="deepskyblue">0583:</font>                 m_pEffect-&gt;SetTexture(m_htSrcTex, m_pMeshBg-&gt;m_pTextures[i] );
-<font color="deepskyblue">0584:</font>                 m_pMeshBg-&gt;m_pLocalMesh-&gt;DrawSubset( i );   <font color="cyan">// �`��</font>
+<font color="deepskyblue">0584:</font>                 m_pMeshBg-&gt;m_pLocalMesh-&gt;DrawSubset( i );   <font color="cyan">// 描画</font>
 <font color="deepskyblue">0585:</font>                 pMtrl++;
 <font color="deepskyblue">0586:</font>             }
 </pre>
 
 
 
-<h2>���Ō��</h2>
+<h2>■最後に</h2>
 
 
 <p>
-�e���ڂ��Ȃ��ƕ����ɂ��؂�ւ����s���R�ɂ������肵�܂��ˁB<br>
-�F�X�ȕ����Ɍ������΂����Y��ɂȂ�Ǝv���܂����A
-�ŏ����畡�G�ȃv���O�����ɂ��Ă����傤�������̂ŁA���ꂮ�炢�ɂƂǂ߂܂��傤�B<br>
-���񂾂�ƃo�[�W�����A�b�v���Ă����܂��傤�B<br>
-�܂��A���͐������}�b�v�ł����ˁB
+影がぼけないと方向による切り替えが不自然にくっきりしますね。<br>
+色々な方向に光線を飛ばせば綺麗になると思いますが、
+最初から複雑なプログラムにしてもしょうが無いので、これぐらいにとどめましょう。<br>
+だんだんとバージョンアップしていきましょう。<br>
+まあ、次は水平線マップですかね。
 </p>
 
 </div>
@@ -519,7 +519,7 @@ main.cpp
 <BR CLEAR=ALL>
 <center>
 <hr>
-<p><a href="../index.html">���ǂ�</a></p>
+<p><a href="../index.html">もどる</a></p>
 <p><a href="mailto:imagire@gmail.com">imagire@gmail.com</a></p>
 </center>
 

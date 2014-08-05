@@ -1,8 +1,8 @@
 <head>
-	<title>t-pot�wRay Tracing : Lighting�x</title>
+	<title>t-pot『Ray Tracing : Lighting』</title>
 	<link rel="stylesheet" type="text/css" href="../if.css">
 </head>
-<meta http-equiv=Content-Type content="text/html; charset=shift_jis">
+<meta http-equiv=Content-Type content="text/html; charset=UTF-8">
 <body>
 
 
@@ -10,8 +10,8 @@
 <center>
 <BR CLEAR=ALL>
 <BR CLEAR=ALL>
-<h1>���C�g���[�X�F�Ɩ��v�Z</h1><br>
-<h3>�` Ray Tracing : Lighting �`</h3>
+<h1>レイトレース：照明計算</h1><br>
+<h3>～ Ray Tracing : Lighting ～</h3>
 <BR CLEAR=ALL>
 <BR CLEAR=ALL>
 <BR CLEAR=ALL>
@@ -23,75 +23,75 @@
 <div>
 
 
-<h2>���͂��߂�</h2>
+<h2>■はじめに</h2>
 
 
 <p>
-�������肪�ł���悤�ɂȂ�����A���悢�惌�C�g���[�X�����Č��܂��傤�B<br>
-����́A���˂���܂��镨�̂͂���܂���B�܂��ABlinn-Phong �̋��ʔ��ˑ����g���ă��C�g���[�X�����܂��B
+交差判定ができるようになったら、いよいよレイトレースをして見ましょう。<br>
+今回は、反射や屈折する物体はありません。また、Blinn-Phong の鏡面反射則を使ってレイトレースをします。
 </p>
 
 <p>
-����̃v���O�����́A���̂��̂ł��B
+今回のプログラムは、次のものです。
 </p>
 <ul style = "LIST-STYLE-TYPE:none">
-<li><a href="src.zip">src.zip (�Ɩ��v�Z:MFC, DirectX9)</a>
+<li><a href="src.zip">src.zip (照明計算:MFC, DirectX9)</a>
 </ul>
 
 <p>
-�܂��A�����̂悤�ɓK���Ƀt�@�C���������Ă��܂��B<br>
-APP WIZARD ����o�͂����t���[�����[�N�̃t�@�C���͏Љ���Ȃ����Ă��������܂��B
+まぁ、いつものように適当にファイルが入っています。<br>
+APP WIZARD から出力されるフレームワークのファイルは紹介を省かせていただきます。
 </p>
 <table>
-<tr><td><a href="render_cpp.html">render.cpp</a></td><td>���C�g���p�̕`��֐��Q</td></tr>
-<tr><td><a href="render_h.html">render.h</a></td><td>���C�g���p�̕`��֐��Q</td></tr>
-<tr><td><a href="mainDlg_cpp.html">mainDlg.cpp</a></td><td>�_�C�A���O���Ǘ�����N���X�̃��\�b�h�������ꂽ�t�@�C��</td></tr>
-<tr><td><a href="mainDlg_h.html">mainDlg.h</a></td><td>�_�C�A���O���Ǘ�����N���X�̃w�b�_</td></tr>
+<tr><td><a href="render_cpp.html">render.cpp</a></td><td>レイトレ用の描画関数群</td></tr>
+<tr><td><a href="render_h.html">render.h</a></td><td>レイトレ用の描画関数群</td></tr>
+<tr><td><a href="mainDlg_cpp.html">mainDlg.cpp</a></td><td>ダイアログを管理するクラスのメソッドが書かれたファイル</td></tr>
+<tr><td><a href="mainDlg_h.html">mainDlg.h</a></td><td>ダイアログを管理するクラスのヘッダ</td></tr>
 </table>
 
 <p>
-���ƁA���s�t�@�C���A���\�[�X�t�@�C���A�v���W�F�N�g�t�@�C���������Ă��܂��B
+あと、実行ファイル、リソースファイル、プロジェクトファイルが入っています。
 </p>
 
 
-<h2>��������Ă�́H</h2>
+<h2>■何やってるの？</h2>
 
 
 <p>
-����̕��@�ł����A�ŏ��Ɏ������烌�C���΂��āA���C���ǂ����ɂԂ���΁A
-���̓_�Ɋւ���Blinn-Phong�̋��ʔ��ˑ��ɂ�閾�邳�����߂āA�F��h��܂��B<br>
-�]���āA����̌����́A�ʌ����Ɍ����܂����A���͓_�����ł��B
+今回の方法ですが、最初に視線からレイを飛ばして、レイがどこかにぶつかれば、
+その点に関するBlinn-Phongの鏡面反射則による明るさを求めて、色を塗ります。<br>
+従って、今回の光源は、面光源に見えますが、実は点光源です。
 </p>
 <image src = "explain.png">
 <p>
-���ۂɌ����𒲂ו����ł����A���b�V���P�ʂŃN���XCObj�����A
-��������h���������e�I�u�W�F�N�g�Ɋւ��Č�������𒲂ׂ�֐� IsAcross ������āA
-���C�̎n�_�ƕ�������Փ˂������ǂ������������܂��B<br>
-IsAcross �̈����ɂ́A�Փ˂�����E�̋�����^���܂��B
-IsAcross ���ł́A�I�u�W�F�N�g�ɏՓ˂����ʒu���Փ˂�����E�̋�������������΁A�Փ˂��Ă��Ȃ����̂Ƃ݂Ȃ��܂��B
-���ۂɎg���Ƃ��ɂ́A�ŏ��ɔ��ɑ傫�Ȓl��^���Ă����āA�Փ˂����������Ƃ���ŐV�����Փ˂̋����ƒu�������܂��B
-���̕��@�ɂ���āA�Փ˂����_�ň�ԋ߂��I�u�W�F�N�g���������܂��B<br>
-�܂��AIsAcross �ɂ́A�Փ˂����ʒu�x�N�g���Ɩ@���x�N�g�����i�[����|�C���^��^���A
-�Փ˂�����̏Ɩ��v�Z�⍡��̔��ˌv�Z���ł���悤�ɐ݌v���܂����B
+実際に交差を調べ部分ですが、メッシュ単位でクラスCObjを作り、
+そこから派生させた各オブジェクトに関して交差判定を調べる関数 IsAcross を作って、
+レイの始点と方向から衝突したかどうかを検索します。<br>
+IsAcross の引数には、衝突する限界の距離を与えます。
+IsAcross 内では、オブジェクトに衝突した位置が衝突する限界の距離よりも遠ければ、衝突していないものとみなします。
+実際に使うときには、最初に非常に大きな値を与えておいて、衝突が発生したところで新しい衝突の距離と置き換えます。
+この方法によって、衝突した点で一番近いオブジェクトを検索します。<br>
+また、IsAcross には、衝突した位置ベクトルと法線ベクトルを格納するポインタを与え、
+衝突した後の照明計算や今後の反射計算ができるように設計しました。
 </p>
 <pre class="CodeBlock">
 render.cpp
 <font color="deepskyblue">0707:</font> D3DXVECTOR3 *GetColor(D3DXVECTOR3 *dest, D3DXVECTOR4 *x, D3DXVECTOR4 *v)
 <font color="deepskyblue">0708:</font> {
-<font color="deepskyblue">0709:</font>     D3DXVECTOR4 light_pos   = D3DXVECTOR4(278.f, 548.8f, 279.5f,1);<font color="cyan">// �����̈ʒu</font>
-<font color="deepskyblue">0710:</font>     D3DXVECTOR3 light_color = D3DXVECTOR3( 10.f,   9.0f,   5.0f);  <font color="cyan">// �����̐F</font>
+<font color="deepskyblue">0709:</font>     D3DXVECTOR4 light_pos   = D3DXVECTOR4(278.f, 548.8f, 279.5f,1);<font color="cyan">// 光源の位置</font>
+<font color="deepskyblue">0710:</font>     D3DXVECTOR3 light_color = D3DXVECTOR3( 10.f,   9.0f,   5.0f);  <font color="cyan">// 光源の色</font>
 <font color="deepskyblue">0711:</font> 
 <font color="deepskyblue">0712:</font>     <font color="blue">float</font> ttmp;
 <font color="deepskyblue">0713:</font>     D3DXVECTOR4 ptmp;
 <font color="deepskyblue">0714:</font>     D3DXVECTOR4 ntmp;
 <font color="deepskyblue">0715:</font>     <font color="blue">int</font> i;
 <font color="deepskyblue">0716:</font>     
-<font color="deepskyblue">0717:</font>     <font color="blue">float</font> t = CObject::INFINTY_DIST;    <font color="cyan">// �ŋߐڃI�u�W�F�N�g�Ƃ̋���</font>
-<font color="deepskyblue">0718:</font>     D3DXVECTOR4 p;                      <font color="cyan">// �ŋߐړ_</font>
-<font color="deepskyblue">0719:</font>     D3DXVECTOR4 n;                      <font color="cyan">// �ŋߐړ_�ł̖@��</font>
-<font color="deepskyblue">0720:</font>     CObject *pObj = NULL;               <font color="cyan">// �ŋߐڃI�u�W�F�N�g</font>
+<font color="deepskyblue">0717:</font>     <font color="blue">float</font> t = CObject::INFINTY_DIST;    <font color="cyan">// 最近接オブジェクトとの距離</font>
+<font color="deepskyblue">0718:</font>     D3DXVECTOR4 p;                      <font color="cyan">// 最近接点</font>
+<font color="deepskyblue">0719:</font>     D3DXVECTOR4 n;                      <font color="cyan">// 最近接点での法線</font>
+<font color="deepskyblue">0720:</font>     CObject *pObj = NULL;               <font color="cyan">// 最近接オブジェクト</font>
 <font color="deepskyblue">0721:</font> 
-<font color="deepskyblue">0722:</font>     <font color="cyan">// ��ԋ߂��ɂ���I�u�W�F�N�g����������</font>
+<font color="deepskyblue">0722:</font>     <font color="cyan">// 一番近くにあるオブジェクトを検索する</font>
 <font color="deepskyblue">0723:</font>     ttmp = sphere.IsAcross(&amp;ntmp, &amp;ptmp, x, v);
 <font color="deepskyblue">0724:</font>     <font color="blue">if</font>(0&lt;=ttmp &amp;&amp; ttmp&lt;t){
 <font color="deepskyblue">0725:</font>         t = ttmp;
@@ -138,29 +138,29 @@ render.cpp
 <font color="deepskyblue">0766:</font> 
 </pre>
 <p>
-���C���Փ˂��Ă���I�u�W�F�N�g������������A���������ꏊ�ƌ����̈ʒu��������x�N�g����n�[�t�x�N�g�������߂āA
-�����x�N�g���Ɩ@���x�N�g���̓��� LN ��A�n�[�t�x�N�g���Ɩ@���x�N�g���̓��� HN �v�Z���āA���̂̐F�����߂܂��B<br>
-�ڂɌ�����F�́A���̐F�ɍ��E�����̂ŁA���̂̐F�ɂ���Ɍ��̐F����������A�����̂Q��Ŕ��߂��肵�܂��B<br>
-�܂��A����́A�_�����Ƃ����Ă����ʂȏƖ��ɂ��܂����B�����̋�����y���ƌ����x�N�g����cos�Ƃɔ�Ⴓ���Ă��܂��B
-����́A���͔��ɖ��邭�A�V��͈Â��������������邽�߂̐ݒ�ł��B�S���Ƃ����Ă悢�قǌ����ڂ̖��ŁA�C�ɓ���Ȃ���� 798 �s�ڂ̍��͓����K�v�͂���܂���B<br>
-���C���S�Ă̕��̂Ɠ�����Ȃ�������A�w�i�F��Ԃ��܂��B
+レイが衝突しているオブジェクトが分かったら、当たった場所と光源の位置から光源ベクトルやハーフベクトルを求めて、
+光源ベクトルと法線ベクトルの内積 LN や、ハーフベクトルと法線ベクトルの内積 HN 計算して、物体の色を求めます。<br>
+目に見える色は、光の色に左右されるので、物体の色にさらに光の色をかけたり、距離の２乗で薄めたりします。<br>
+また、今回は、点光源といっても特別な照明にしました。光源の強さをy軸と光線ベクトルのcosθに比例させています。
+これは、床は非常に明るく、天井は暗い光源を実現するための設定です。全くといってよいほど見た目の問題で、気に入らなければ 798 行目の項は入れる必要はありません。<br>
+レイが全ての物体と当たらなかったら、背景色を返します。
 </p>
 <pre class="CodeBlock">
 render.cpp
 <font color="deepskyblue">0767:</font>     <font color="blue">if</font>( pObj ){
-<font color="deepskyblue">0768:</font>         <font color="cyan">// ������</font>
+<font color="deepskyblue">0768:</font>         <font color="cyan">// 当たり</font>
 <font color="deepskyblue">0769:</font>         
-<font color="deepskyblue">0770:</font>         <font color="cyan">// �I�u�W�F�N�g�̐F��Blinn-Phong�̋��ʔ��˂Ōv�Z����</font>
+<font color="deepskyblue">0770:</font>         <font color="cyan">// オブジェクトの色をBlinn-Phongの鏡面反射で計算する</font>
 <font color="deepskyblue">0771:</font>         D3DXVECTOR4 l = light_pos-p;
 <font color="deepskyblue">0772:</font>         <font color="blue">float</font> L2 = D3DXVec3Dot((D3DXVECTOR3 *)&amp;l, (D3DXVECTOR3 *)&amp;l);
 <font color="deepskyblue">0773:</font>         D3DXVec3Normalize((D3DXVECTOR3 *)&amp;l, (D3DXVECTOR3 *)&amp;l);
 <font color="deepskyblue">0774:</font> 
 <font color="deepskyblue">0775:</font>         D3DXVECTOR3 dir, H;
-<font color="deepskyblue">0776:</font>         <font color="cyan">// �����̌v�Z</font>
+<font color="deepskyblue">0776:</font>         <font color="cyan">// 視線の計算</font>
 <font color="deepskyblue">0777:</font>         camera.GetFrom(&amp;dir);
 <font color="deepskyblue">0778:</font>         dir = dir - *(D3DXVECTOR3 *)&amp;p;
 <font color="deepskyblue">0779:</font>         D3DXVec3Normalize(&amp;dir, &amp;dir);
-<font color="deepskyblue">0780:</font>         <font color="cyan">// �n�[�t�x�N�g��</font>
+<font color="deepskyblue">0780:</font>         <font color="cyan">// ハーフベクトル</font>
 <font color="deepskyblue">0781:</font>         H = dir+*(D3DXVECTOR3 *)&amp;l;
 <font color="deepskyblue">0782:</font>         D3DXVec3Normalize((D3DXVECTOR3 *)&amp;H, (D3DXVECTOR3 *)&amp;H);
 <font color="deepskyblue">0783:</font> 
@@ -171,17 +171,17 @@ render.cpp
 <font color="deepskyblue">0788:</font> 
 <font color="deepskyblue">0789:</font>         pObj-&gt;GetColor(dest, LN, HN);
 <font color="deepskyblue">0790:</font>         
-<font color="deepskyblue">0791:</font>         <font color="cyan">// �����̐F�̔��f</font>
+<font color="deepskyblue">0791:</font>         <font color="cyan">// 光源の色の反映</font>
 <font color="deepskyblue">0792:</font>         dest-&gt;x *= light_color.x;
 <font color="deepskyblue">0793:</font>         dest-&gt;y *= light_color.y;
 <font color="deepskyblue">0794:</font>         dest-&gt;z *= light_color.z;
 <font color="deepskyblue">0795:</font>         
-<font color="deepskyblue">0796:</font>         <font color="cyan">// ���̋����̓K���ȕ␳</font>
-<font color="deepskyblue">0797:</font>         *dest *= min(1.5f, 500000.0f/(10000.0f+L2)); <font color="cyan">// �����ɂ��␳</font>
-<font color="deepskyblue">0798:</font>         *dest *= min(1, l.y+0.1f);                  <font color="cyan">// ���̌�����cos�Ƃ̊֐��ɂ���</font>
+<font color="deepskyblue">0796:</font>         <font color="cyan">// 光の強さの適当な補正</font>
+<font color="deepskyblue">0797:</font>         *dest *= min(1.5f, 500000.0f/(10000.0f+L2)); <font color="cyan">// 距離による補正</font>
+<font color="deepskyblue">0798:</font>         *dest *= min(1, l.y+0.1f);                  <font color="cyan">// 光の向きをcosθの関数にする</font>
 <font color="deepskyblue">0799:</font>         
 <font color="deepskyblue">0800:</font>     }<font color="blue">else</font>{
-<font color="deepskyblue">0801:</font>         <font color="cyan">// �O��</font>
+<font color="deepskyblue">0801:</font>         <font color="cyan">// 外れ</font>
 <font color="deepskyblue">0802:</font>         *dest = BG_COLOR;
 <font color="deepskyblue">0803:</font>     }
 <font color="deepskyblue">0804:</font> 
@@ -191,16 +191,16 @@ render.cpp
 </pre>
 
 
-<h2>���I�u�W�F�N�g</h2>
+<h2>■オブジェクト</h2>
 
 
 <p>
-����A�R�[�l�������������_�����O����ɂ������āA�I�u�W�F�N�g�̐��������Ă����̂ŁA�I�u�W�F�N�g�N���X�����܂����B<br>
-���ۂɂ́A���N���X CObject ������āA�h���N���X�Ƃ��āA�������N���X CSphere �ƁA�R�p�`�����N���X CTriangle �������܂����B<br>
+今回、コーネル部屋をレンダリングするにあたって、オブジェクトの数が増えてきたので、オブジェクトクラスを作りました。<br>
+実際には、基底クラス CObject を作って、派生クラスとして、球を持つクラス CSphere と、３角形を持つクラス CTriangle を持ちました。<br>
 </p>
 <image src = "class.png">
 <p>
-��{�N���X�́A�Ƃ肠�����A���̍\���ɂ��܂����B
+基本クラスは、とりあえず、次の構成にしました。
 </p>
 <pre class="CodeBlock">
 render.h
@@ -208,22 +208,22 @@ render.h
 <font color="deepskyblue">0082:</font> {
 <font color="deepskyblue">0083:</font> <font color="blue">public</font>:
 <font color="deepskyblue">0084:</font>     <font color="blue">enum</font> {
-<font color="deepskyblue">0085:</font>         INFINTY_DIST = 10000,   <font color="cyan">// ������Ƃ݂Ȃ�����x�̋���</font>
+<font color="deepskyblue">0085:</font>         INFINTY_DIST = 10000,   <font color="cyan">// 無限大とみなせる程度の距離</font>
 <font color="deepskyblue">0086:</font>     };
 <font color="deepskyblue">0087:</font>     <font color="blue">int</font> m_type;                 <font color="cyan">// OBJ_TYPE_????</font>
-<font color="deepskyblue">0088:</font>     Material m_material;        <font color="cyan">// ����</font>
+<font color="deepskyblue">0088:</font>     Material m_material;        <font color="cyan">// 質感</font>
 <font color="deepskyblue">0089:</font> 
-<font color="deepskyblue">0090:</font>     <font color="cyan">// ������</font>
+<font color="deepskyblue">0090:</font>     <font color="cyan">// 初期化</font>
 <font color="deepskyblue">0091:</font>     <font color="blue">void</font> Init(OBJ_DATA *pData);
-<font color="deepskyblue">0092:</font>     <font color="cyan">// ����������</font>
+<font color="deepskyblue">0092:</font>     <font color="cyan">// 交差したか</font>
 <font color="deepskyblue">0093:</font>     <font color="blue">float</font> IsAcross(D3DXVECTOR4 *n, D3DXVECTOR4 *p, <font color="blue">const</font> D3DXVECTOR4 *x, <font color="blue">const</font> D3DXVECTOR4 *v){<font color="blue">return</font> INFINTY_DIST;}
-<font color="deepskyblue">0094:</font>     <font color="cyan">// �����f�[�^����A�I�u�W�F�N�g�̐F�𓾂�</font>
+<font color="deepskyblue">0094:</font>     <font color="cyan">// 質感データから、オブジェクトの色を得る</font>
 <font color="deepskyblue">0095:</font>     D3DXVECTOR3 *GetColor(D3DXVECTOR3 *dest, <font color="blue">float</font> LN, <font color="blue">float</font> HN );
 <font color="deepskyblue">0096:</font> };
 </pre>
 <p>
-�����ŁAm_type �́A���N���X����h���N���X�𔻒肷�邽�߂̌^�����i�[���܂��B<br>
-�Ƃ肠�����A���ƂR�p�`�����Ȃ��̂ŁA
+ここで、m_type は、基底クラスから派生クラスを判定するための型情報を格納します。<br>
+とりあえず、球と３角形しかないので、
 </p>
 <pre class="CodeBlock">
 render.h
@@ -233,23 +233,23 @@ render.h
 <font color="deepskyblue">0048:</font> };
 </pre>
 <p>
-�������L���ł��B<br>
-�����̏�� Material �́A���̍\���Ƃ��Ă��܂��B
-D3DMATERIAL9 �����Q�l�ɂ���̂��ǂ��ł��傤�B
+だけが有効です。<br>
+質感の情報 Material は、次の構造としています。
+D3DMATERIAL9 等を参考にするのも良いでしょう。
 </p>
 <pre class="CodeBlock">
 render.h
-<font color="deepskyblue">0053:</font> <font color="cyan">// ����</font>
+<font color="deepskyblue">0053:</font> <font color="cyan">// 質感</font>
 <font color="deepskyblue">0054:</font> <font color="blue">typedef</font> <font color="blue">struct</font>{
-<font color="deepskyblue">0055:</font>     <font color="blue">float</font>   COLOR_AMB[4];   <font color="cyan">// ���F</font>
-<font color="deepskyblue">0056:</font>     <font color="blue">float</font>   COLOR_DIF[4];   <font color="cyan">// �g�U�F</font>
-<font color="deepskyblue">0057:</font>     <font color="blue">float</font>   COLOR_SPE[4];   <font color="cyan">// ���ʔ��ːF</font>
-<font color="deepskyblue">0058:</font>     <font color="blue">float</font>   speq_power;     <font color="cyan">// ���ʔ��˂̋���</font>
+<font color="deepskyblue">0055:</font>     <font color="blue">float</font>   COLOR_AMB[4];   <font color="cyan">// 環境色</font>
+<font color="deepskyblue">0056:</font>     <font color="blue">float</font>   COLOR_DIF[4];   <font color="cyan">// 拡散色</font>
+<font color="deepskyblue">0057:</font>     <font color="blue">float</font>   COLOR_SPE[4];   <font color="cyan">// 鏡面反射色</font>
+<font color="deepskyblue">0058:</font>     <font color="blue">float</font>   speq_power;     <font color="cyan">// 鏡面反射の強さ</font>
 <font color="deepskyblue">0059:</font> }Material;
 </pre>
 <p>
-����́A���ł��R�p�`�ł��A����񂪓����Ȃ瓯���F��Ԃ��̂ŁA
-���N���X�ŁA�F�����߂�֐����`���Ă��܂��B
+今回は、球でも３角形でも、質環情報が同じなら同じ色を返すので、
+基底クラスで、色を求める関数を定義しています。
 </p>
 <pre class="CodeBlock">
 render.cpp
@@ -263,20 +263,20 @@ render.cpp
 <font color="deepskyblue">0586:</font> }
 </pre>
 <p>
-���̔h���N���X CSphere �́A���̂悤�Ɋ��I�u�W�F�N�g���g�����܂����B<br>
-���̎��􉽊w�I�ȏ��́A���̔��a�Ƃ��̒��S�ł����A�v�Z�ɕ֗��Ȃ悤�ɁA���a�̂Q��Ƌ��̒��S���p�����[�^�ɂ��܂����B<br>
-�������֐� Init ���������̊֐� IsAcross ���A����������悤�Ɋg�����Ă��܂��B
+球の派生クラス CSphere は、次のように基底オブジェクトを拡張しました。<br>
+球の持つ幾何学的な情報は、球の半径とその中心ですが、計算に便利なように、半径の２乗と球の中心をパラメータにしました。<br>
+初期化関数 Init や交差判定の関数 IsAcross も、球を扱えるように拡張しています。
 </p>
 <pre class="CodeBlock">
 render.h
 <font color="deepskyblue">0097:</font> <font color="cyan">// ---------------------------------------------------------------------------</font>
-<font color="deepskyblue">0098:</font> <font color="cyan">// ��</font>
+<font color="deepskyblue">0098:</font> <font color="cyan">// 球</font>
 <font color="deepskyblue">0099:</font> <font color="cyan">// ---------------------------------------------------------------------------</font>
 <font color="deepskyblue">0100:</font> <font color="blue">class</font> CSphere : <font color="blue">public</font> CObject
 <font color="deepskyblue">0101:</font> {
 <font color="deepskyblue">0102:</font> <font color="blue">private</font>:
-<font color="deepskyblue">0103:</font>     D3DXVECTOR4 center; <font color="cyan">// ���S</font>
-<font color="deepskyblue">0104:</font>     <font color="blue">float</font> radius_sq;    <font color="cyan">// ���a</font>
+<font color="deepskyblue">0103:</font>     D3DXVECTOR4 center; <font color="cyan">// 中心</font>
+<font color="deepskyblue">0104:</font>     <font color="blue">float</font> radius_sq;    <font color="cyan">// 半径</font>
 <font color="deepskyblue">0105:</font> 
 <font color="deepskyblue">0106:</font> <font color="blue">public</font>:
 <font color="deepskyblue">0107:</font>     CSphere();
@@ -286,19 +286,19 @@ render.h
 <font color="deepskyblue">0111:</font> };
 </pre>
 <p>
-�R�p�`�̃N���X�́A���̂悤�ɂȂ�܂��B<br>
-�R�p�`�̏ꍇ�́A�e���_�Ɩ@���x�N�g�������悤�ɂ��܂����B
+３角形のクラスは、次のようになります。<br>
+３角形の場合は、各頂点と法線ベクトルを持つようにしました。
 </p>
 <pre class="CodeBlock">
 render.h
 <font color="deepskyblue">0113:</font> <font color="cyan">// ---------------------------------------------------------------------------</font>
-<font color="deepskyblue">0114:</font> <font color="cyan">// �R�p�`</font>
+<font color="deepskyblue">0114:</font> <font color="cyan">// ３角形</font>
 <font color="deepskyblue">0115:</font> <font color="cyan">// ---------------------------------------------------------------------------</font>
 <font color="deepskyblue">0116:</font> <font color="blue">class</font> CTriangle : <font color="blue">public</font> CObject
 <font color="deepskyblue">0117:</font> {
 <font color="deepskyblue">0118:</font> <font color="blue">private</font>:
-<font color="deepskyblue">0119:</font>     D3DXVECTOR4 pos[3];         <font color="cyan">// ���_���W</font>
-<font color="deepskyblue">0120:</font>     D3DXVECTOR4 normal;         <font color="cyan">// �@���x�N�g��</font>
+<font color="deepskyblue">0119:</font>     D3DXVECTOR4 pos[3];         <font color="cyan">// 頂点座標</font>
+<font color="deepskyblue">0120:</font>     D3DXVECTOR4 normal;         <font color="cyan">// 法線ベクトル</font>
 <font color="deepskyblue">0121:</font> 
 <font color="deepskyblue">0122:</font> <font color="blue">public</font>:
 <font color="deepskyblue">0123:</font>     CTriangle();
@@ -310,9 +310,9 @@ render.h
 <font color="deepskyblue">0129:</font> };<font color="cyan">// namespace Render</font>
 </pre>
 <p>
-�����̃I�u�W�F�N�g�����������邽�߂ɁA�������p�̋��ʍ\���̂��`���܂����B<br>
-�Ƃ����Ă��A���p�̕ϐ��ƂR�p�`�p�̕ϐ��𗼕������Ă���̂ŁA�����͂����������ł��B<br>
-����͉��Ƃ��������Ȃ��E�E�E
+これらのオブジェクトを初期化するために、初期化用の共通構造体を定義しました。<br>
+といっても、球用の変数と３角形用の変数を両方持っているので、効率はすごく悪いです。<br>
+これは何とかしたいなぁ・・・
 </p>
 <pre class="CodeBlock">
 render.h
@@ -322,28 +322,28 @@ render.h
 <font color="deepskyblue">0064:</font>     Material material;
 <font color="deepskyblue">0065:</font>     
 <font color="deepskyblue">0066:</font>     <font color="blue">struct</font>{
-<font color="deepskyblue">0067:</font>         <font color="cyan">// 3�p�`</font>
-<font color="deepskyblue">0068:</font>         <font color="blue">float</font> x0[3];    <font color="cyan">// ���W�P</font>
-<font color="deepskyblue">0069:</font>         <font color="blue">float</font> x1[3];    <font color="cyan">// ���W�Q</font>
-<font color="deepskyblue">0070:</font>         <font color="blue">float</font> x2[3];    <font color="cyan">// ���W�R</font>
+<font color="deepskyblue">0067:</font>         <font color="cyan">// 3角形</font>
+<font color="deepskyblue">0068:</font>         <font color="blue">float</font> x0[3];    <font color="cyan">// 座標１</font>
+<font color="deepskyblue">0069:</font>         <font color="blue">float</font> x1[3];    <font color="cyan">// 座標２</font>
+<font color="deepskyblue">0070:</font>         <font color="blue">float</font> x2[3];    <font color="cyan">// 座標３</font>
 <font color="deepskyblue">0071:</font>     } triangle;
 <font color="deepskyblue">0072:</font>     <font color="blue">struct</font> {
-<font color="deepskyblue">0073:</font>         <font color="cyan">// �ʗp</font>
-<font color="deepskyblue">0074:</font>         <font color="blue">float</font> center[3];<font color="cyan">// ���S</font>
-<font color="deepskyblue">0075:</font>         <font color="blue">float</font> radius;   <font color="cyan">// ���a</font>
+<font color="deepskyblue">0073:</font>         <font color="cyan">// 玉用</font>
+<font color="deepskyblue">0074:</font>         <font color="blue">float</font> center[3];<font color="cyan">// 中心</font>
+<font color="deepskyblue">0075:</font>         <font color="blue">float</font> radius;   <font color="cyan">// 半径</font>
 <font color="deepskyblue">0076:</font>     } sphere;
 <font color="deepskyblue">0077:</font> 
 <font color="deepskyblue">0078:</font> }OBJ_DATA;
 </pre>
 <p>
-���ۂ̃f�[�^�͎��̂悤�ɂȂ�܂��B<br>
-��������������Ƃ��ɂ́A3�p�`�̏������̕ϐ������̕ϐ��̑O�ɂ��܂��̂ŁA�K���ȃ_�~�[�f�[�^�𗬂��܂��B<br>
-���Ȃ݂ɁA����̃��C���̃t�@�C���ł��� render.cpp �́A�����ȏオ���̃I�u�W�F�N�g�̃f�[�^�ɂȂ��Ă��܂��B
+実際のデータは次のようになります。<br>
+球を初期化するときには、3角形の初期化の変数が球の変数の前にきますので、適当なダミーデータを流します。<br>
+ちなみに、今回のメインのファイルである render.cpp は、半分以上がこのオブジェクトのデータになっています。
 </p>
 <pre class="CodeBlock">
 render.cpp
 <font color="deepskyblue">0057:</font> OBJ_DATA sphere_data[] = {
-<font color="deepskyblue">0058:</font> {<font color="cyan">// �������̂ɏ���Ă�ق�</font>
+<font color="deepskyblue">0058:</font> {<font color="cyan">// 小さいのに乗ってるほう</font>
 <font color="deepskyblue">0059:</font>     OBJ_TYPE_SPHERE,
 <font color="deepskyblue">0060:</font>     {
 <font color="deepskyblue">0061:</font>         {0.01f, 0.05f, 0.02f },
@@ -354,7 +354,7 @@ render.cpp
 <font color="deepskyblue">0066:</font>         {185.5, 165+100,169},
 <font color="deepskyblue">0067:</font>         100.0f,
 <font color="deepskyblue">0068:</font>     }
-<font color="deepskyblue">0069:</font> },{<font color="cyan">// �傫���̂ɏ���Ă�ق�</font>
+<font color="deepskyblue">0069:</font> },{<font color="cyan">// 大きいのに乗ってるほう</font>
 <font color="deepskyblue">0070:</font>     OBJ_TYPE_SPHERE,
 <font color="deepskyblue">0071:</font>     {
 <font color="deepskyblue">0072:</font>         {0.02f, 0.01f, 0.05f},
@@ -367,9 +367,9 @@ render.cpp
 <font color="deepskyblue">0079:</font>     }
 <font color="deepskyblue">0080:</font> }};
 <font color="deepskyblue">0081:</font> <font color="cyan">// ---------------------------------------------------------------------------</font>
-<font color="deepskyblue">0082:</font> <font color="cyan">// ����</font>
+<font color="deepskyblue">0082:</font> <font color="cyan">// 部屋</font>
 <font color="deepskyblue">0083:</font> OBJ_DATA room_data[12] = {
-<font color="deepskyblue">0084:</font> {<font color="cyan">// ���C�g�P</font>
+<font color="deepskyblue">0084:</font> {<font color="cyan">// ライト１</font>
 <font color="deepskyblue">0085:</font>     OBJ_TYPE_TRIANGLE,
 <font color="deepskyblue">0086:</font>     {
 <font color="deepskyblue">0087:</font>         {100.0f, 100.0f, 100.0f},
@@ -381,7 +381,7 @@ render.cpp
 <font color="deepskyblue">0093:</font>         {213.0, 548.799f, 332.0},
 <font color="deepskyblue">0094:</font>         {343.0, 548.799f, 227.0},
 <font color="deepskyblue">0095:</font>     }
-<font color="deepskyblue">0096:</font> },{<font color="cyan">// ���C�g�Q</font>
+<font color="deepskyblue">0096:</font> },{<font color="cyan">// ライト２</font>
 <font color="deepskyblue">0097:</font>     OBJ_TYPE_TRIANGLE,
 <font color="deepskyblue">0098:</font>     {
 <font color="deepskyblue">0099:</font>         {100.0f, 100.0f, 100.0f},
@@ -393,7 +393,7 @@ render.cpp
 <font color="deepskyblue">0105:</font>         {213.0, 548.799f, 332.0},
 <font color="deepskyblue">0106:</font>         {343.0, 548.799f, 332.0},
 <font color="deepskyblue">0107:</font>     }
-<font color="deepskyblue">0108:</font> },{<font color="cyan">// ���P</font>
+<font color="deepskyblue">0108:</font> },{<font color="cyan">// 左１</font>
 <font color="deepskyblue">0109:</font>     OBJ_TYPE_TRIANGLE,
 <font color="deepskyblue">0110:</font>     {
 <font color="deepskyblue">0111:</font>         {0.05f, 0.01f, 0.01f},
@@ -406,7 +406,7 @@ render.cpp
 <font color="deepskyblue">0118:</font>         {549.6f,   0.0f, 559.2f},
 <font color="deepskyblue">0119:</font>     }
 <font color="deepskyblue">0120:</font> 
-<font color="deepskyblue">0121:</font> },{<font color="cyan">// ���Q</font>
+<font color="deepskyblue">0121:</font> },{<font color="cyan">// 左２</font>
 <font color="deepskyblue">0122:</font>     OBJ_TYPE_TRIANGLE,
 <font color="deepskyblue">0123:</font>     {
 <font color="deepskyblue">0124:</font>         {0.05f, 0.01f, 0.01f},
@@ -419,7 +419,7 @@ render.cpp
 <font color="deepskyblue">0131:</font>         {556.0f, 548.8f, 559.2f},
 <font color="deepskyblue">0132:</font>     }
 <font color="deepskyblue">0133:</font> 
-<font color="deepskyblue">0134:</font> },{<font color="cyan">// �E�P</font>
+<font color="deepskyblue">0134:</font> },{<font color="cyan">// 右１</font>
 <font color="deepskyblue">0135:</font>     OBJ_TYPE_TRIANGLE,
 <font color="deepskyblue">0136:</font>     {
 <font color="deepskyblue">0137:</font>         {0.01f, 0.01f, 0.05f},
@@ -432,24 +432,24 @@ render.cpp
 <font color="deepskyblue">0144:</font>         {0.0f, 548.8f,   0.0f},
 <font color="deepskyblue">0145:</font>     }
 <font color="deepskyblue">0146:</font> 
-�ȉ��ȗ�
+以下省略
 </pre>
 <p>
-���ۂɎg���Ƃ��ɂ́A�����̃N���X��K�v�Ȑ������p�ӂ��āA�������֐����������֐������s���܂��B
+実際に使うときには、これらのクラスを必要な数だけ用意して、初期化関数や交差判定関数を実行します。
 </p>
 <pre class="CodeBlock">
 render.cpp
-<font color="deepskyblue">0049:</font> <font color="yellow">CTriangle  room[12];    <font color="cyan">// ����</font>
-<font color="deepskyblue">0050:</font> CTriangle  blocks[10];  <font color="cyan">// �Ⴂ��</font>
-<font color="deepskyblue">0051:</font> CTriangle  blockt[10];  <font color="cyan">// ������</font>
-<font color="deepskyblue">0052:</font> CSphere sphere;         <font color="cyan">// �Ⴂ�Ƃ���ɂ����</font>
-<font color="deepskyblue">0053:</font> CSphere tphere;         <font color="cyan">// �����Ƃ���ɂ����</font></font>
+<font color="deepskyblue">0049:</font> <font color="yellow">CTriangle  room[12];    <font color="cyan">// 部屋</font>
+<font color="deepskyblue">0050:</font> CTriangle  blocks[10];  <font color="cyan">// 低い箱</font>
+<font color="deepskyblue">0051:</font> CTriangle  blockt[10];  <font color="cyan">// 高い箱</font>
+<font color="deepskyblue">0052:</font> CSphere sphere;         <font color="cyan">// 低いところにある玉</font>
+<font color="deepskyblue">0053:</font> CSphere tphere;         <font color="cyan">// 高いところにある玉</font></font>
 
 <font color="deepskyblue">0514:</font> <font color="blue">void</font> Init()
 <font color="deepskyblue">0515:</font> {
 <font color="deepskyblue">0516:</font>     <font color="blue">int</font> i,j;
 <font color="deepskyblue">0517:</font> 
-<font color="deepskyblue">0518:</font>     <font color="cyan">// �t���[���o�b�t�@�̏�����</font>
+<font color="deepskyblue">0518:</font>     <font color="cyan">// フレームバッファの初期化</font>
 <font color="deepskyblue">0519:</font>     <font color="blue">for</font>(j=0;j&lt;RENDER_HEIGHT;j++){
 <font color="deepskyblue">0520:</font>     <font color="blue">for</font>(i=0;i&lt;RENDER_WIDTH ;i++){
 <font color="deepskyblue">0521:</font>         s_data[4*(j*RENDER_WIDTH+i)+0]=(<font color="blue">char</font>)255;<font color="cyan">// R</font>
@@ -458,7 +458,7 @@ render.cpp
 <font color="deepskyblue">0524:</font>     }
 <font color="deepskyblue">0525:</font>     }
 <font color="deepskyblue">0526:</font>     
-<font color="deepskyblue">0527:</font>     <font color="cyan">// �J�����̐ݒ�</font>
+<font color="deepskyblue">0527:</font>     <font color="cyan">// カメラの設定</font>
 <font color="deepskyblue">0528:</font>     camera.SetFrom  (&amp;D3DXVECTOR3(278,273,-800));
 <font color="deepskyblue">0529:</font>     camera.SetLookAt(&amp;D3DXVECTOR3(278,273,0));
 <font color="deepskyblue">0530:</font>     camera.SetUp    (&amp;D3DXVECTOR3(0,1,0));
@@ -468,7 +468,7 @@ render.cpp
 <font color="deepskyblue">0534:</font>     camera.SetFar   (100.0f);
 <font color="deepskyblue">0535:</font>     camera.Update();
 <font color="deepskyblue">0536:</font> <font color="yellow">
-<font color="deepskyblue">0537:</font>     <font color="cyan">// �I�u�W�F�N�g�̏�����</font>
+<font color="deepskyblue">0537:</font>     <font color="cyan">// オブジェクトの初期化</font>
 <font color="deepskyblue">0538:</font>     sphere.Init(&amp;sphere_data[0]);
 <font color="deepskyblue">0539:</font>     tphere.Init(&amp;sphere_data[1]);
 <font color="deepskyblue">0540:</font>     <font color="blue">for</font>(i=0;i&lt;12;i++){
@@ -483,12 +483,12 @@ render.cpp
 <font color="deepskyblue">0549:</font> }</pre>
 
 
-<h2>���Ō��</h2>
+<h2>■最後に</h2>
 
 
 <p>
-���̂܂܂ł́A���ʂɃ����_�����O����̂ƂȂ�犷��肠��܂���B<br>
-���̌�A�F�X�ȍ���ǉ����āA�O���[�o���C���~�l�[�V�����ۂ����Ă����܂��傤�B
+このままでは、普通にレンダリングするのとなんら換わりありません。<br>
+この後、色々な項を追加して、グローバルイルミネーションぽくしていきましょう。
 </p>
 
 
@@ -498,7 +498,7 @@ render.cpp
 <BR CLEAR=ALL>
 <center>
 <hr>
-<p><a href="../index.html">���ǂ�</a></p>
+<p><a href="../index.html">もどる</a></p>
 <p><a href="mailto:imagire@gmail.com">imagire@gmail.com</a></p>
 </center>
 

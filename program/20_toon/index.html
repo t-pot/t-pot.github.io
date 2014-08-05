@@ -1,128 +1,128 @@
 <head>
-	<title>t-pot �wVertex Shader:�g�D�[���V�F�[�_�[�x</title>
+	<title>t-pot 『Vertex Shader:トゥーンシェーダー』</title>
 	<link rel="stylesheet" type="text/css" href="../if.css">
 </head>
-<meta http-equiv=Content-Type content="text/html; charset=shift_jis">
+<meta http-equiv=Content-Type content="text/html; charset=UTF-8">
 <body>
 <div class="contents">
 <center>
 <BR CLEAR=ALL>
 <BR CLEAR=ALL>
-<h1>�g�D�[���V�F�[�_�[</h1><br>
-<h3>�`�͂����񂾂��ˁ`</h3>
+<h1>トゥーンシェーダー</h1><br>
+<h3>～はやりもんだしね～</h3>
 <BR CLEAR=ALL>
 <BR CLEAR=ALL>
 <BR CLEAR=ALL>
 </center>
-<h2>���͂��߂�</h2>
+<h2>■はじめに</h2>
 
 <p>
-�ŋ߂̃e���r�A�j���ł́A�����ɂ��|���S�����f�����g�������̂������Ă��܂����B
-�����̃��f���́A����̃Z����ƂȂ��ނ悤�ɓ���ȏ������Ă��܂��B
-�g�D�[�������_�����O�ƌĂ΂����̂ł��B<br>
-����́A������ DirectX �ŕ\������g�D�[���V�F�[�_�[���s���܂��B
+最近のテレビアニメでは、いかにもポリゴンモデルを使ったものが増えてきました。
+それらのモデルは、周りのセル画となじむように特殊な処理しています。
+トゥーンレンダリングと呼ばれるものです。<br>
+今回は、それらを DirectX で表現するトゥーンシェーダーを行います。
 </p>
 <right><image src = "toon.gif"></right>
 <p>
-��ʂɁA�g�D�[�������_�����O�ƌĂ΂����̂͂Q�̌��ʂ�����܂��B<br>
+一般に、トゥーンレンダリングと呼ばれるものは２つの効果があります。<br>
 </p>
 <table>
-<tr><td>I</td><td>�i�K�I�ȐF����</td><td>:</td><td>�Q�A�R�K���̐F�ŁA�A�e������</td>
+<tr><td>I</td><td>段階的な色分け</td><td>:</td><td>２、３階調の色で、陰影をつける</td>
 </tr>
-<tr><td>II</td><td>�֊s���o</td><td>:</td><td>�S�̂̊O���ɍ����g������</td>
+<tr><td>II</td><td>輪郭抽出</td><td>:</td><td>全体の外側に黒い枠線がつく</td>
 </tr>
 </table>
 
 <p>
-�ł��B<br>
-����́A�����̂����A�w�i�K�I�ȐF�����x�����܂��B
+です。<br>
+今回は、それらのうち、『段階的な色分け』をします。
 </p>
 
 <p>
-�����ʂ�A�ȉ��̃t�@�C�����_�E�����[�h���Ă��������B<br>
-����́Atoon.bmp �Ƃ����t�@�C���������Ă��܂��B���ꂪ�ǂ̂悤�Ȓi�K�I�ȓh�蕪�������邩���䂵�܂��B
+いつも通り、以下のファイルをダウンロードしてください。<br>
+今回は、toon.bmp というファイルが入っています。これがどのような段階的な塗り分けをするか制御します。
 </p>
 <ul style = "LIST-STYLE-TYPE:none">
-<li><a href="toon.lzh">toon.lzh (�g�D�[���V�F�[�_�[�̃T���v��)</a>
+<li><a href="toon.lzh">toon.lzh (トゥーンシェーダーのサンプル)</a>
 </ul>
 
-<h2>���o�[�e�b�N�X�V�F�[�_�[(vs.vsh)</h2>
+<h2>■バーテックスシェーダー(vs.vsh)</h2>
 
 <p>
-���āA�����Ȃ�j�S�����̃o�[�e�b�N�X�V�F�[�_�[�v���O���������Ă݂܂��傤�B<br>
-���̂悤�ɂȂ��Ă��܂��B
+さて、いきなり核心部分のバーテックスシェーダープログラムを見てみましょう。<br>
+次のようになっています。
 </p>
 <pre class="CodeBlock">
 vs.1.0
 
-; c0-3   -- world + �r���[ + �����ϊ��s��
-; c8-11  -- world �̋t�]�u�s��
+; c0-3   -- world + ビュー + 透視変換行列
+; c8-11  -- world の逆転置行列
 ; c12    -- {0.0, 0.5, 1.0, -1.0}
-; c13    -- ���C�g�̃x�N�g��
-; c15    -- ���b�V���̐F
+; c13    -- ライトのベクトル
+; c15    -- メッシュの色
 ;
-; v0	���_�̍��W�l
-; v3	�@���x�N�g��
-; v7	�e�N�X�`�����W0
-; v8	�e�N�X�`�����W1
+; v0	頂点の座標値
+; v3	法線ベクトル
+; v7	テクスチャ座標0
+; v8	テクスチャ座標1
 
-;���W�ϊ�
+;座標変換
 dp4 oPos.x, v0,  c0
 dp4 oPos.y, v0,  c1
 dp4 oPos.z, v0,  c2
 dp4 oPos.w, v0,  c3
 
-<Font color = orange><b>;�@���̕ϊ�
+<Font color = orange><b>;法線の変換
 dp3 r0.x,   v3,  c8
 dp3 r0.y,   v3,  c9
 dp3 r0.z,   v3,  c10
 
-;�@���̐��K��
+;法線の正規化
 dp3 r0.w,   r0,  r0
 rsq r0.w,   r0.w
 mul r0,     r0,  r0.w
 
-; l dot n (���C�e�B���O)
+; l dot n (ライティング)
 dp3 r0,     r0,  c13
 add r0,     r0,  c12.z ; r0=r0+1.0f (0<=r0<=2.0f)
 mul oT0.x,  r0,  c12.y ; r0=r0*0.5f (0<=r0<=1.0f)</b></Font>
 
-; ���b�V���̃e�N�X�`���[
+; メッシュのテクスチャー
 mov oT1,    v8
 
-; ���b�V���̐F
+; メッシュの色
 mov oD0,    c15
 </pre>
 
 <p>
-�ŏ��̍��W�ϊ��́A���łɏo�Ă����A�I�u�W�F�N�g����ʂł̈ʒu�ɕϊ����܂��B<br>
-���ɁA���C�e�B���O���s���܂��B�������A����̃~�\�ł��B<br>
-�O��́A���C�g�x�N�g���Ƀ��[���h�s��̋t�s����|�����x�N�g�����Œ背�W�X�^�ɑ�����܂������A
-����́A������o�[�e�b�N�X�V�F�[�_�[�v���O�������ŁA�v�Z���Ă��܂��B<br>
-�������A���̌v�Z��@���ɓK�p���Ă��܂��B���K���́Arsq���� (1/Sqrt(r0.w)���v�Z����)�ł��܂��B<br>
-����́A����� oD0 �ɓ���܂���B���C�g�Ɩ@������ċ��߂�ꂽ���ʂ� oT0.x �܂�A�e�N�X�`���[�� U �ɓ���܂��B<br>
-���̃e�N�X�`���[�ɗp����̂��Atoon.bmp �ł��B����́A
+最初の座標変換は、すでに出てきた、オブジェクトを画面での位置に変換します。<br>
+次に、ライティングを行います。ここが、今回のミソです。<br>
+前回は、ライトベクトルにワールド行列の逆行列を掛けたベクトルを固定レジスタに代入しましたが、
+今回は、それをバーテックスシェーダープログラム内で、計算しています。<br>
+ただし、その計算を法線に適用しています。正規化は、rsq命令 (1/Sqrt(r0.w)を計算する)でします。<br>
+今回は、それを oD0 に入れません。ライトと法線よって求められた結果は oT0.x つまり、テクスチャーの U に入れます。<br>
+このテクスチャーに用いるのが、toon.bmp です。これは、
 </p>
 <right><image src = "toonbmp.gif"></right>
 <p>
-�̌`�����Ă��܂��B<br>
-oT0.x �͉����̒l�Ȃ̂ŁA���ς̒l���傫����Δ����i���邭�j�A��������ΈÂ��i�����j�Ȃ�܂��B<br>
-���ꂪ�A�i�K�I�ɂȂ��Ă���̂ŁA���������Ƃ��ɒi�K�I�ȐF�������\������܂��B<br>
-���ۂɂ́A���̃e�N�X�`���[�ł����ł͂Ȃ��āAxfile �Őݒ肳�ꂽ�e�N�X�`���[������܂��B<br>
-���̓����������āA�A�e�̂��������_�����O�������܂��B
-���Ȃ݂ɁAtoon.bmp �����̂悤�ȘA���I�ȃe�N�X�`���[�ɂ����ꍇ�ɂ́A���ʂ̃��C�e�B���O�Ɠ������ʂ������܂��B
+の形をしています。<br>
+oT0.x は横軸の値なので、内積の値が大きければ白く（明るく）、小さければ暗く（黒く）なります。<br>
+それが、段階的になっているので、合成したときに段階的な色合いが表現されます。<br>
+実際には、このテクスチャーでだけではなくて、xfile で設定されたテクスチャーも張ります。<br>
+その二つが合成されて、陰影のついたレンダリングが得られます。
+ちなみに、toon.bmp を下のような連続的なテクスチャーにした場合には、普通のライティングと同じ結果が得られます。
 </p>
 <right><image src = "toondef.gif"></right>
 <p>
-oD0 �ɂ́Axfile ����ǂݎ�������b�V���̐F�����̂܂ܓ���܂��i�Ō�̍s�j�B<br>
-�܂��AoT1 �� xfile �̃e�N�X�`���[�����̂܂ܒ���܂��B
+oD0 には、xfile から読み取ったメッシュの色をそのまま入れます（最後の行）。<br>
+また、oT1 に xfile のテクスチャーをそのまま張ります。
 </p>
 
-<h2>���I�u�W�F�N�g</h2>
+<h2>■オブジェクト</h2>
 
 <p>
-���āAdraw.cpp �����܂��B<br>
-����̃I�u�W�F�N�g�́A�����ł��B
+さて、draw.cpp を見ます。<br>
+今回のオブジェクトは、多いです。
 </p>
 <pre class="CodeBlock">
 LPDIRECT3DVERTEXBUFFER8    pMeshVB = NULL;
@@ -130,32 +130,32 @@ LPDIRECT3DINDEXBUFFER8     pMeshIndex = NULL;
 D3DXATTRIBUTERANGE        *pSubsetTable = NULL;
 DWORD                      nMeshFaces = 0;
 DWORD                      nMeshVertices = 0;
-D3DMATERIAL8              *pMeshMaterials = NULL;        // ���b�V���̎���
-LPDIRECT3DTEXTURE8        *pMeshTextures  = NULL;        // ���b�V���̃e�N�X�`���[
-DWORD                      dwNumMaterials = 0L;        // �}�e���A���̐�
+D3DMATERIAL8              *pMeshMaterials = NULL;        // メッシュの質感
+LPDIRECT3DTEXTURE8        *pMeshTextures  = NULL;        // メッシュのテクスチャー
+DWORD                      dwNumMaterials = 0L;        // マテリアルの数
 
-LPDIRECT3DTEXTURE8         pTexture  = NULL;            // �G�t�F�N�g�p�̃e�N�X�`���[
+LPDIRECT3DTEXTURE8         pTexture  = NULL;            // エフェクト用のテクスチャー
 DWORD                      hVertexShader=~0;
 </pre>
 <p>
-�O���́Axfile �p�̃I�u�W�F�N�g�ł��BIndex buffer ���g���Ă��܂��B<br>
-�Q�l�Ɍ����v���O�������g���Ă�������Ƃ������R�͔閧�ł��B<br>
-pTexture �� toon.bmp�AhVertexShader �� vs.vsh �̃I�u�W�F�N�g�ł��B
+前半は、xfile 用のオブジェクトです。Index buffer を使っています。<br>
+参考に見たプログラムが使っていたからという理由は秘密です。<br>
+pTexture は toon.bmp、hVertexShader は vs.vsh のオブジェクトです。
 </p>
 
 
-<h2>�����_</h2>
+<h2>■頂点</h2>
 
 <p>
-����͂Q�g���܂��B�ЂƂ� (D3DVERTEX) �́Axfile �ɓ����Ă�����ŁA
-�����ЂƂ� (D3D_CUSTOMVERTEX) �́A�o�[�e�b�N�X�V�F�[�_�[�Ŏ�舵���t�H�[�}�b�g�ł��B<br>
-�o�[�e�b�N�X�V�F�[�_�[�ł́A���ʂ̃e�N�X�`���[�ƁA�g�D�[���V�F�[�f�B���O�p�̃e�N�X�`���[�̂Q���g���̂ŁA
-�e�N�X�`���[���Q���t�H�[�}�b�g���g���܂��B<br>
-���ꂼ��AD3DVSDE_??? ����`����Ă��܂����̂ŁA�g���܂����B<br>
-v0, v3, v7, v8 �Ŏg���Ă�����́A���� D3D_CUSTOMVERTEX �̂��̂ł��B
+今回は２つ使います。ひとつ (D3DVERTEX) は、xfile に入っている情報で、
+もうひとつ (D3D_CUSTOMVERTEX) は、バーテックスシェーダーで取り扱うフォーマットです。<br>
+バーテックスシェーダーでは、普通のテクスチャーと、トゥーンシェーディング用のテクスチャーの２つを使うので、
+テクスチャーを２つ持つフォーマットを使います。<br>
+それぞれ、D3DVSDE_??? が定義されていましたので、使いました。<br>
+v0, v3, v7, v8 で使っている情報は、この D3D_CUSTOMVERTEX のものです。
 </p>
 <pre class="CodeBlock">
-// xfile �Ɏ��߂�ꂽ���
+// xfile に収められた情報
 typedef struct {
     float x,y,z;
     float nx,ny,nz;
@@ -163,7 +163,7 @@ typedef struct {
 }D3DVERTEX;
 #define D3DFVF_VERTEX         (D3DFVF_XYZ | D3DFVF_NORMAL | D3DFVF_TEX1)
 
-// �o�[�e�b�N�X�V�F�[�_�[�̃t�H�[�}�b�g
+// バーテックスシェーダーのフォーマット
 typedef struct {
     float x,y,z;
     float nx,ny,nz;
@@ -183,13 +183,13 @@ DWORD dwDecl[] = {
 </pre>
 
 
-<h2>��������</h2>
+<h2>■初期化</h2>
 
 <p>
-�ł́A�������ł��B<br>
-xfile �̕����͒����̂ŁALoadXFile �Ƃ����ʊ֐��ɂ��܂����B<br>
-���Ƃ́A���łɏo�Ă����A�e�N�X�`���[�̓ǂݍ��݂ƁA�o�[�e�b�N�X�V�F�[�_�[�̐����ł��B<br>
-�܂��AZ�o�b�t�@�[���g���āA�w�i�F���ݒ肵�Ă����܂��B
+では、初期化です。<br>
+xfile の部分は長いので、LoadXFile という別関数にしました。<br>
+あとは、すでに出てきた、テクスチャーの読み込みと、バーテックスシェーダーの生成です。<br>
+また、Zバッファーを使って、背景色も設定しておきます。
 </p>
 
 <pre class="CodeBlock">
@@ -200,12 +200,12 @@ HRESULT InitRender(LPDIRECT3DDEVICE8 lpD3DDEV)
     hr = LoadXFile("car.x", lpD3DDEV);
     if ( FAILED(hr) ) return hr;
  
-    // ���F�e�N�X�`���[�̓ǂݍ���
+    // 虹色テクスチャーの読み込み
     D3DXCreateTextureFromFileEx(lpD3DDEV, "toon.bmp",0,0,0,0,D3DFMT_A8R8G8B8,
                                 D3DPOOL_MANAGED, D3DX_FILTER_LINEAR, D3DX_FILTER_LINEAR,
                                 0, NULL, NULL, &pTexture);
 
-    // �o�[�e�b�N�X�V�F�[�_�[���쐬����
+    // バーテックスシェーダーを作成する
     ID3DXBuffer*    pshader;
     hr = D3DXAssembleShaderFromFile("vs.vsh", 0,NULL,&pshader,NULL);
     if ( FAILED(hr) ) return hr;
@@ -213,7 +213,7 @@ HRESULT InitRender(LPDIRECT3DDEVICE8 lpD3DDEV)
     RELEASE(pshader);
     if ( FAILED(hr) ) return hr;
     
-    // �����_�����O�̏�Ԃ̐ݒ�
+    // レンダリングの状態の設定
     lpD3DDEV->SetRenderState( D3DRS_ZENABLE, TRUE);
     lpD3DDEV->SetRenderState( D3DRS_AMBIENT, 0xff808080);
     
@@ -222,7 +222,7 @@ HRESULT InitRender(LPDIRECT3DDEVICE8 lpD3DDEV)
 </pre>
 
 <p>
-�ŁA�̐S�� xfile �̏������ł��B
+で、肝心の xfile の初期化です。
 </p>
 
 <pre class="CodeBlock">
@@ -239,22 +239,22 @@ HRESULT LoadXFile(char* filename, LPDIRECT3DDEVICE8 lpD3DDEV)
                                 &pMesh);
     if(FAILED(hr)) return E_FAIL;
 
-    // ���b�V���̖ʂ���ђ��_�̏��ԕύX�𐧌䂵�A�p�t�H�[�}���X���œK��
+    // メッシュの面および頂点の順番変更を制御し、パフォーマンスを最適化
     pMesh->Optimize(D3DXMESHOPT_ATTRSORT, NULL, NULL, NULL, NULL, &pMeshOpt);
     RELEASE(pMesh);
 
-    //�A�g���r���[�g�e�[�u��
+    //アトリビュートテーブル
     pMeshOpt->GetAttributeTable(NULL,&dwNumMaterials);
     pSubsetTable = new D3DXATTRIBUTERANGE[dwNumMaterials];
     pMeshOpt->GetAttributeTable(pSubsetTable, &dwNumMaterials);
 
-    // �_��Ȓ��_�t�H�[�}�b�g (FVF) �R�[�h���g�p���ă��b�V���̃R�s�[���쐬����
+    // 柔軟な頂点フォーマット (FVF) コードを使用してメッシュのコピーを作成する
     hr = pMeshOpt->CloneMeshFVF(pMeshOpt->GetOptions(), D3DFVF_VERTEX, lpD3DDEV, &pMesh);
     if(FAILED(hr)) return E_FAIL;
     RELEASE(pMeshOpt);
     D3DXComputeNormals(pMesh);
 <Font color = orange><b>
-    //Vertex Buffer�ɃR�s�[����
+    //Vertex Bufferにコピーする
     D3DVERTEX* pSrc;
     D3D_CUSTOMVERTEX* pDest;
     LPDIRECT3DINDEXBUFFER8 pSrcIndex;
@@ -286,7 +286,7 @@ HRESULT LoadXFile(char* filename, LPDIRECT3DDEVICE8 lpD3DDEV)
     pVB->Release();
     pMeshVB->Unlock();
 
-    //�C���f�b�N�X�̃R�s�[
+    //インデックスのコピー
     pMesh->GetIndexBuffer(&pSrcIndex);
     pSrcIndex->Lock(0,0,(BYTE**)&pISrc,0);
     pMeshIndex->Lock(0,0,(BYTE**)&pIDest,0);
@@ -295,7 +295,7 @@ HRESULT LoadXFile(char* filename, LPDIRECT3DDEVICE8 lpD3DDEV)
     pMeshIndex->Unlock();
     pSrcIndex->Release();
 </b></Font>
-    // pD3DXMtrlBuffer ����A������e�N�X�`���[�̏���ǂݎ��
+    // pD3DXMtrlBuffer から、質感やテクスチャーの情報を読み取る
     D3DXMATERIAL* d3dxMaterials = (D3DXMATERIAL*)pD3DXMtrlBuffer->GetBufferPointer();
     pMeshTextures = new LPDIRECT3DTEXTURE8[dwNumMaterials];
     pMeshMaterials = new D3DMATERIAL8[dwNumMaterials];
@@ -316,45 +316,45 @@ HRESULT LoadXFile(char* filename, LPDIRECT3DDEVICE8 lpD3DDEV)
 }
 </pre>
 <p>
-�悸�AD3DXLoadMeshFromX �ŁA�t�@�C�������[�h���܂��B<br>
-���ɁAOptimize �ŁA�p�t�H�[�}���X���オ��悤�ɍ��ς��Ă��炢�܂��B<br>
-�����āAGetAttributeTable �ŁA�����i�e�N�X�`���A�����_�����O �X�e�[�g�A�}�e���A���̎�ށj���������邩�𐔂��A
-�����֐����i�[����̈���쐬���Ă���Ăяo���āA���e��ǂݍ��݂܂��B<br>
-���ɁAD3DFVF_VERTEX �ɁA�t�H�[�}�b�g��ϊ����āA�@�����v�Z���܂��B<br>
-����ŁA��ɂȂ�f�[�^���o���܂����B
+先ず、D3DXLoadMeshFromX で、ファイルをロードします。<br>
+次に、Optimize で、パフォーマンスが上がるように作り変えてもらいます。<br>
+そして、GetAttributeTable で、属性（テクスチャ、レンダリング ステート、マテリアルの種類）がいくつあるかを数え、
+同じ関数を格納する領域を作成してから呼び出して、内容を読み込みます。<br>
+次に、D3DFVF_VERTEX に、フォーマットを変換して、法線を計算します。<br>
+これで、基になるデータが出来ました。
 </p>
 <p>
-���ɁA���_�t�H�[�}�b�g��ϊ����܂��B<br>
-CreateVertexBuffer �y�сACreateIndexBuffer �ŁA���_�o�b�t�@�A�C���f�b�N�X �o�b�t�@���m�ۂ��܂��B<br>
-���̌�ɁApVB ���� xfile �̒��_����ǂݍ���ŁA�V���������������_ pDest �ɂЂ����珑�����݂܂��B
-�C���f�b�N�X �o�b�t�@�́A�ς��Ȃ��̂ŁA�P���Ƀ������R�s�[���܂��B
+次に、頂点フォーマットを変換します。<br>
+CreateVertexBuffer 及び、CreateIndexBuffer で、頂点バッファ、インデックス バッファを確保します。<br>
+その後に、pVB から xfile の頂点情報を読み込んで、新しく生成した頂点 pDest にひたすら書き込みます。
+インデックス バッファは、変わらないので、単純にメモリコピーします。
 </p>
 <p>
-���Ƃ́A�ȑO�s����xfile �̕\���@�Ɠ����悤�ɁA�e�N�X�`���[��ǂݍ��݂܂��B
+あとは、以前行ったxfile の表示法と同じように、テクスチャーを読み込みます。
 </p>
 
-<h2>���\��</h2>
+<h2>■表示</h2>
 
 <p>
-�ł́A�`�敔���ł��B<br>
-mWorld, mView, mProj �́A�����ǂ���ł��B<br>
-�����āA������ SetVertexShaderConstant �ŁA�o�[�e�b�N�X�V�F�[�_�[�̒萔���W�X�^�ɓ���܂��B
-�萔���W�X�^�ɓ��ꂽ�����́A���F���F���������܂����̂ŁA�o�[�e�b�N�X�V�F�[�_�[�v���O�����ƁA��r���Ȃ��璭�߂Ă��������B<br>
+では、描画部分です。<br>
+mWorld, mView, mProj は、いつもどおりです。<br>
+そして、それらを SetVertexShaderConstant で、バーテックスシェーダーの定数レジスタに入れます。
+定数レジスタに入れた部分は、黄色く色分けをしましたので、バーテックスシェーダープログラムと、比較しながら眺めてください。<br>
 </p>
 <p>
-�e�N�X�`���[��0�Ԃ� pTexture (toon.bmp)�A1�Ԃ� pMeshTextures[i] (xfile�ɒ���ꂽ�e�N�X�`���[)��ݒ肵�܂��B
-����ŁAoT0 �Ƀg�D�[���̃e�N�X�`���[�AoT1 �� xfile �̃e�N�X�`���[���o�͂���܂��B
+テクスチャーの0番に pTexture (toon.bmp)、1番に pMeshTextures[i] (xfileに張られたテクスチャー)を設定します。
+これで、oT0 にトゥーンのテクスチャー、oT1 が xfile のテクスチャーが出力されます。
 </p>
 <p>
-���Ƃ́A���Ƃ��Ƃ��ASetTextureStageState �ŁA�e�N�X�`���[�̒�����̐ݒ�����Ă��܂��B
-���ꂼ��̕��������Ă��������B<br>
-������A���̃\�[�X������������Ă��āA���̂܂܎g���Ă���̂́A�����ł��B<br>
-���M���� State �́A�e�N�X�`���[1�� D3DTSS_COLORARG2 �ł��B
-�����ɂ́A�e�N�X�`���[0�Ōv�Z���ꂽ���ʂ����܂��B
-���̌��ʂƁA�e�N�X�`���[1�̒l����Z���邱�Ƃɂ��A�e�N�X�`���[����������܂��B
+あとは、ことごとく、SetTextureStageState で、テクスチャーの張り方の設定をしています。
+それぞれの部分を見てください。<br>
+今回も、他のソースから引っ張ってきて、そのまま使っているのは、内緒です。<br>
+特筆する State は、テクスチャー1の D3DTSS_COLORARG2 です。
+ここには、テクスチャー0で計算された結果が来ます。
+この結果と、テクスチャー1の値を乗算することにより、テクスチャーが合成されます。
 </p>
 <p>
-���Ƃ́A���񏉓o��� DrawIndexedPrimitive �ŕ`�悵�܂��BSetIndices �Őݒ肷��̂��A�V���ɒǉ����ꂽ�����ł��B
+あとは、今回初登場の DrawIndexedPrimitive で描画します。SetIndices で設定するのが、新たに追加された部分です。
 </p>
 
 <pre class="CodeBlock">
@@ -371,42 +371,42 @@ void Render(LPDIRECT3DDEVICE8 lpD3DDEV)
                                 &D3DXVECTOR3( 0.0f, 1.0f, 0.0f ) );
         
     D3DXMatrixPerspectiveFovLH(&mProj
-        ,60.0f*PI/180.0f                        // ����p
-        ,(float)WIDTH/(float)HEIGHT                // �A�X�y�N�g��
-        ,0.01f                                    // �ŋߐڋ���
-        ,100.0f                                    // �ŉ�������
+        ,60.0f*PI/180.0f                        // 視野角
+        ,(float)WIDTH/(float)HEIGHT                // アスペクト比
+        ,0.01f                                    // 最近接距離
+        ,100.0f                                    // 最遠方距離
         );
     <Font color = yellow><b>
     D3DXMATRIX  m = mWorld * mView * mProj;
     D3DXMatrixTranspose( &m ,  &m);
-    lpD3DDEV->SetVertexShaderConstant(0,&m, 4);           // c0�`c3 : mWorld * mView * mProj
+    lpD3DDEV->SetVertexShaderConstant(0,&m, 4);           // c0～c3 : mWorld * mView * mProj
     D3DXMatrixTranspose( &m ,  &mWorld);
-    lpD3DDEV->SetVertexShaderConstant(4, &m, 4);          // c4�`c7 : mWorld
+    lpD3DDEV->SetVertexShaderConstant(4, &m, 4);          // c4～c7 : mWorld
     D3DXMatrixInverse( &m,  NULL, &mWorld);
-    lpD3DDEV->SetVertexShaderConstant(8, &m, 4);          // c8�`c11 : mWorld �̋t�s��
+    lpD3DDEV->SetVertexShaderConstant(8, &m, 4);          // c8～c11 : mWorld の逆行列
                                                           // c12 : (0.0f, 0.5f, 1.0f, -1.0f)
     lpD3DDEV->SetVertexShaderConstant(12, D3DXVECTOR4(0.0f, 0.5f, 1.0f, -1.0f), 1);
     D3DXVECTOR4 lightDir(1.0f, 1.0f, 0.5f, 0.0f);
     D3DXVec4Normalize(&lightDir, &lightDir);
-    lpD3DDEV->SetVertexShaderConstant(13, &lightDir, 1);  // c13 : ���C�g�̕���
+    lpD3DDEV->SetVertexShaderConstant(13, &lightDir, 1);  // c13 : ライトの方向
     </b></Font>
     lpD3DDEV->SetVertexShader(hVertexShader);
-    lpD3DDEV->SetRenderState(D3DRS_WRAP0, D3DWRAP_U | D3DWRAP_V);             // U,V �������ɁA���[�v�����e�N�X�`���[�Ƃ��Ĉ���
-    lpD3DDEV->SetRenderState(D3DRS_WRAP1, D3DWRAP_U | D3DWRAP_V);             // ��̃e�N�X�`���[�P�Ɋւ���ݒ�
-    lpD3DDEV->SetTextureStageState(0, D3DTSS_COLOROP,      D3DTOP_MODULATE);  // �|���S���̐F = ARG1 * ARG2
-    lpD3DDEV->SetTextureStageState(0, D3DTSS_COLORARG1,    D3DTA_TEXTURE);    // ARG1 �̓e�N�X�`���[�̐F
-    lpD3DDEV->SetTextureStageState(0, D3DTSS_COLORARG2,    D3DTA_DIFFUSE);    // ARG2 �̓|���S���̒��_�F
-    lpD3DDEV->SetTextureStageState(0, D3DTSS_MAGFILTER,    D3DTEXF_LINEAR);   // �e�N�X�`�����g�傷�鎞�̕��@���o�C���j�A���
-    lpD3DDEV->SetTextureStageState(0, D3DTSS_MINFILTER,    D3DTEXF_LINEAR);   // �e�N�X�`�����k�����鎞�̕��@���o�C���j�A���
-    lpD3DDEV->SetTextureStageState(0, D3DTSS_ADDRESSU,     D3DTADDRESS_CLAMP);// U,V �l��0�y��1����͂ݏo�������́A���̋��E�̒l�ɂ���
+    lpD3DDEV->SetRenderState(D3DRS_WRAP0, D3DWRAP_U | D3DWRAP_V);             // U,V 方向共に、ループしたテクスチャーとして扱う
+    lpD3DDEV->SetRenderState(D3DRS_WRAP1, D3DWRAP_U | D3DWRAP_V);             // 上のテクスチャー１に関する設定
+    lpD3DDEV->SetTextureStageState(0, D3DTSS_COLOROP,      D3DTOP_MODULATE);  // ポリゴンの色 = ARG1 * ARG2
+    lpD3DDEV->SetTextureStageState(0, D3DTSS_COLORARG1,    D3DTA_TEXTURE);    // ARG1 はテクスチャーの色
+    lpD3DDEV->SetTextureStageState(0, D3DTSS_COLORARG2,    D3DTA_DIFFUSE);    // ARG2 はポリゴンの頂点色
+    lpD3DDEV->SetTextureStageState(0, D3DTSS_MAGFILTER,    D3DTEXF_LINEAR);   // テクスチャを拡大する時の方法がバイリニア補間
+    lpD3DDEV->SetTextureStageState(0, D3DTSS_MINFILTER,    D3DTEXF_LINEAR);   // テクスチャを縮小する時の方法がバイリニア補間
+    lpD3DDEV->SetTextureStageState(0, D3DTSS_ADDRESSU,     D3DTADDRESS_CLAMP);// U,V 値が0及び1からはみ出した時は、その境界の値にする
     lpD3DDEV->SetTexture(0,pTexture);
 
-    //���b�V���̕`��
+    //メッシュの描画
     lpD3DDEV->SetStreamSource(0, pMeshVB, sizeof(D3D_CUSTOMVERTEX));
     lpD3DDEV->SetIndices(pMeshIndex,0);
     for(DWORD i=0;i < dwNumMaterials;i++){
         <Font color = yellow><b>
-        //�F���Z�b�g
+        //色をセット
         D3DXVECTOR4 vl;
         vl.x = pMeshMaterials[i].Diffuse.r;
         vl.y = pMeshMaterials[i].Diffuse.g;
@@ -414,11 +414,11 @@ void Render(LPDIRECT3DDEVICE8 lpD3DDEV)
         lpD3DDEV->SetVertexShaderConstant(15,&vl,1);</b></Font>
 
         lpD3DDEV->SetTexture(1,pMeshTextures[i]);
-        lpD3DDEV->SetTextureStageState(1, D3DTSS_COLOROP,   D3DTOP_MODULATE); // �|���S���̐F = ARG1 * ARG2
-        lpD3DDEV->SetTextureStageState(1, D3DTSS_COLORARG1, D3DTA_TEXTURE);   // ARG1 �̓e�N�X�`���[�̐F
-        <Font color = orange><b>lpD3DDEV->SetTextureStageState(1, D3DTSS_COLORARG2, D3DTA_CURRENT);   // ARG2 �͑O�̃u�����f�B���O �X�e�[�W(oT0)�̌���</b></Font>
-        lpD3DDEV->SetTextureStageState(1, D3DTSS_MAGFILTER, D3DTEXF_LINEAR);  // �e�N�X�`�����g�傷�鎞�̕��@���o�C���j�A���
-        lpD3DDEV->SetTextureStageState(1, D3DTSS_MINFILTER, D3DTEXF_LINEAR);  // �e�N�X�`�����k�����鎞�̕��@���o�C���j�A���
+        lpD3DDEV->SetTextureStageState(1, D3DTSS_COLOROP,   D3DTOP_MODULATE); // ポリゴンの色 = ARG1 * ARG2
+        lpD3DDEV->SetTextureStageState(1, D3DTSS_COLORARG1, D3DTA_TEXTURE);   // ARG1 はテクスチャーの色
+        <Font color = orange><b>lpD3DDEV->SetTextureStageState(1, D3DTSS_COLORARG2, D3DTA_CURRENT);   // ARG2 は前のブレンディング ステージ(oT0)の結果</b></Font>
+        lpD3DDEV->SetTextureStageState(1, D3DTSS_MAGFILTER, D3DTEXF_LINEAR);  // テクスチャを拡大する時の方法がバイリニア補間
+        lpD3DDEV->SetTextureStageState(1, D3DTSS_MINFILTER, D3DTEXF_LINEAR);  // テクスチャを縮小する時の方法がバイリニア補間
 
         lpD3DDEV->DrawIndexedPrimitive(D3DPT_TRIANGLELIST, 
                                         pSubsetTable[i].VertexStart,
@@ -430,11 +430,11 @@ void Render(LPDIRECT3DDEVICE8 lpD3DDEV)
     lpD3DDEV->SetTexture(0, NULL);
 }</pre>
 
-<h2>����n��</h2>
+<h2>■後始末</h2>
 
 <p>
-���āA�g�����������̊J���ł��B<br>
-����́Axfile �p�ɁADeleteMeshObject() �����܂����B��́A�o�[�e�b�N�X�V�F�[�_�[�� toon.bmp ���J�����܂��B
+さて、使ったメモリの開放です。<br>
+今回は、xfile 用に、DeleteMeshObject() を作りました。後は、バーテックスシェーダーと toon.bmp を開放します。
 </p>
 <pre class="CodeBlock">
 void CleanRender(LPDIRECT3DDEVICE8 lpD3DDEV)
@@ -451,7 +451,7 @@ void CleanRender(LPDIRECT3DDEVICE8 lpD3DDEV)
 </pre>
 
 <p>
-DeleteMeshObject() �́A�����ɁA�g�������������J�����܂��B
+DeleteMeshObject() は、純粋に、使ったメモリを開放します。
 </p>
 
 <pre class="CodeBlock">
@@ -472,19 +472,19 @@ void DeleteMeshObject(void)
 </pre>
 
 <p>
-�ȏ�ł��B����͒����Ĕ��܂����ˁB
+以上です。今回は長くて疲れましたね。
 </p>
 
-<h2>���Ō��</h2>
+<h2>■最後に</h2>
 
 <p>
-�y�[�W�̃g�b�v�ɂ��� car.x �ł́A�g�D�[���̌��ʂ�������ɂ����̂ŁA
-DirectX �̃T���v���ɂ���Atiger.x �������_�����O���Ă݂܂����i�T���v���v���O������ car.x �� tiger.x �ɏ��������Ă��������j�B<br>
-����Ȃ�A������ۂ�������Ǝv���̂ł����A�������ł��傤���H
+ページのトップにある car.x では、トゥーンの効果が分かりにくいので、
+DirectX のサンプルにある、tiger.x をレンダリングしてみました（サンプルプログラムの car.x を tiger.x に書き換えてください）。<br>
+これなら、それっぽく見えると思うのですが、いかがでしょうか？
 </p>
 <right><image src = "toontiger.gif"></right>
 <p>
-���ꂩ����A���̂悤�ȃ����_�����O�̗������Ă������Ǝv���܂��B
+これからも、このようなレンダリングの例をやっていこうと思います。
 </p>
 
 <BR CLEAR=ALL>
@@ -492,7 +492,7 @@ DirectX �̃T���v���ɂ���Atiger.x �������_�����O���Ă݂܂����i�T���v���v���O����
 <BR CLEAR=ALL>
 <center>
 <hr>
-<p><a href="../index.html">���ǂ�</a></p>
+<p><a href="../index.html">もどる</a></p>
 <p><a href="mailto:imagire@gmail.com">imagire@gmail.com</a></p>
 </center>
 </body>

@@ -1,35 +1,35 @@
 <head>
-	<title>t-pot �wDirectX8.0 ����:������̕\���x</title>
+	<title>t-pot 『DirectX8.0 入門:文字列の表示』</title>
 	<link rel="stylesheet" type="text/css" href="../if.css">
 </head>
-<meta http-equiv=Content-Type content="text/html; charset=shift_jis">
+<meta http-equiv=Content-Type content="text/html; charset=UTF-8">
 <body>
 <div class="contents">
 <center>
 <BR CLEAR=ALL>
 <BR CLEAR=ALL>
-<h1>������̕\��</h1><br>
-<h3>�`�f�o�b�O�̂��߂ɂ��K�v����ˁ`</h3>
+<h1>文字列の表示</h1><br>
+<h3>～デバッグのためにも必要だよね～</h3>
 <BR CLEAR=ALL>
 <BR CLEAR=ALL>
 <BR CLEAR=ALL>
 </center>
-<h2>���͂��߂�</h2>
+<h2>■はじめに</h2>
 
 <p>
-fps �l (frames per second:��b�Ԃɉ�ʂ��X�V������) ��\�����邽�߂ɕK�v�Ȃ̂ŁA
-�f�o�b�O�p�̕����\���Ƃ��āA������̕\����p�ӂ��܂����B<br>
-����́A���̃\�[�X���g���܂��B
+fps 値 (frames per second:一秒間に画面を更新した回数) を表示するために必要なので、
+デバッグ用の文字表示として、文字列の表示を用意しました。<br>
+今回は、次のソースを使います。
 </p>
 <ul style = "LIST-STYLE-TYPE:none">
-<li><a href="font.lzh">font.lzh (�t�H���g�\���̃T���v��)</a>
+<li><a href="font.lzh">font.lzh (フォント表示のサンプル)</a>
 </ul>
 
-<h2>���t�H���g�\���N���X</h2>
+<h2>■フォント表示クラス</h2>
 
 <p>
-����́A�Ɨ������l���āA�N���X�����Ă݂܂����B
-������\���p�ɒ�`�����N���X�͎��̂Ƃ���ł��B
+今回は、独立性を考えて、クラス化してみました。
+文字列表示用に定義したクラスは次のとおりです。
 </p>
 <pre class="CodeBlock">
 class CMyFont{
@@ -37,75 +37,75 @@ private:
     LPD3DXFONT  m_lpFont;
 public:
     CMyFont(){m_lpFont = NULL;};
-    virtual void Init(LPDIRECT3DDEVICE8 lpD3DDEV, int w, int h);               // ������ (DirectX �̏������̌�ɌĂ�)
-    virtual void Print(char *str, int x, int y, D3DCOLOR color=0xffffffff);    // �\��
-    virtual void Clean();                                                      // �I�u�W�F�N�g�̊J��
+    virtual void Init(LPDIRECT3DDEVICE8 lpD3DDEV, int w, int h);               // 初期化 (DirectX の初期化の後に呼ぶ)
+    virtual void Print(char *str, int x, int y, D3DCOLOR color=0xffffffff);    // 表示
+    virtual void Clean();                                                      // オブジェクトの開放
 };
 </pre>
 <p>
-�t�H���g�ׂ̈̃C���^�[�t�F�C�X�́ALPD3DXFONT �ł��B
-���̃|�C���^���A�����o�[�ϐ��Ƃ��ĕ\���I�u�W�F�N�g���Ƃɗp�ӂ��܂��B<br>
-�\������Ƃ��́APrint �𖈃t���[���g���܂��B������ str �ƁA�ʒu x, y ���w�肵�܂��B
-���ȊO�̐F�ŕ�����\���������Ƃ��ɂ́A����� D3DCOLOR �^�ŐF���w�肵�܂��B
+フォントの為のインターフェイスは、LPD3DXFONT です。
+このポインタを、メンバー変数として表示オブジェクトごとに用意します。<br>
+表示するときは、Print を毎フレーム使います。文字列 str と、位置 x, y を指定します。
+白以外の色で文字を表示したいときには、さらに D3DCOLOR 型で色を指定します。
 </p>
 
-<h2>���g����</h2>
+<h2>■使い方</h2>
 
 <p>
-���ۂɎg���Ƃ��ɂ́A���̂悤�Ɏg���܂��B
-���肪���� Hello world ������Ă݂܂����B
-���̊֐��́AWinMain �̃E�B���h�E���쐬������ł��B
+実際に使うときには、次のように使います。
+ありがちな Hello world を作ってみました。
+次の関数は、WinMain のウィンドウを作成した後です。
 </p>
 <pre class="CodeBlock">
-// Direct3D �̏�����
+// Direct3D の初期化
 if(SUCCEEDED(InitD3D(hWnd))){
     
-<Font color = orange><b>    sFont.Init(s_lpD3DDEV, 12, 24);// ���������� Direct3D �̏�����</b></Font>
+<Font color = orange><b>    sFont.Init(s_lpD3DDEV, 12, 24);// ★★★★★ Direct3D の初期化</b></Font>
 
     ShowWindow(hWnd, SW_SHOW);
     UpdateWindow(hWnd);
 
-    // ���C�����[�v
+    // メインループ
     MSG msg;
     while (!s_end)
     {
         if (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE)){
-            // ���b�Z�[�W�̏���
+            // メッセージの処理
         }else{
-            // Direct3D �̕`��
-            // �o�b�N�o�b�t�@�� Z �o�b�t�@���N���A
+            // Direct3D の描画
+            // バックバッファと Z バッファをクリア
             s_lpD3DDEV->Clear(0,NULL,D3DCLEAR_TARGET | D3DCLEAR_ZBUFFER,D3DCOLOR_XRGB(0,0,0),1.0f,0);
-            // �V�[���J�n
+            // シーン開始
             s_lpD3DDEV->BeginScene();
             
-            // �`��Ȃǂ̏���
-<Font color = orange><b>            sFont.Print("Hello world!", 0,0);// ���������� �t�H���g�̕`��</b></Font>
+            // 描画などの処理
+<Font color = orange><b>            sFont.Print("Hello world!", 0,0);// ★★★★★ フォントの描画</b></Font>
             
-            // �V�[���I��
+            // シーン終了
             s_lpD3DDEV->EndScene();
             if (FAILED(s_lpD3DDEV->Present(NULL,NULL,NULL,NULL)))
-                s_lpD3DDEV->Reset(&s_d3dpp);// �o�b�N�o�b�t�@���v���C�}���o�b�t�@�ɃR�s�[
+                s_lpD3DDEV->Reset(&s_d3dpp);// バックバッファをプライマリバッファにコピー
         }
     }
 }
 
-// �I��
-<Font color = orange><b>sFont.Clean();    // ���������� �t�H���g�̌ォ������</b></Font>
+// 終了
+<Font color = orange><b>sFont.Clean();    // ★★★★★ フォントの後かたずけ</b></Font>
 RELEASE(s_lpD3DDEV);
 RELEASE(s_lpD3D);
 
 return 0;
 </pre>
 <p>
-DirectX �Ƃ��ĕ\������̂ŁABeginScene �ƁAEndScene �̊Ԃŕ\�����܂��B
+DirectX として表示するので、BeginScene と、EndScene の間で表示します。
 </p>
 
-<h2>���֐��̒��g</h2>
+<h2>■関数の中身</h2>
 
 <p>
-���́A����������ԑ�؂ł��B<br>
-�����ŁA�t�H���g�̎�ދy�сA�T�C�Y���w�肵�܂��B
-CreateFont �Ńt�H���g��ݒ�A�쐬������ɁAD3DXCreateFont �ŁADirectX �Ŏg����悤�ɐݒ肵�܂��B
+実は、初期化が一番大切です。<br>
+ここで、フォントの種類及び、サイズを指定します。
+CreateFont でフォントを設定、作成した後に、D3DXCreateFont で、DirectX で使えるように設定します。
 </p>
 
 <pre class="CodeBlock">
@@ -123,7 +123,7 @@ void CMyFont::Init(LPDIRECT3DDEVICE8 lpD3DDEV, int w, int h)
                       CLIP_DEFAULT_PRECIS,
                       DEFAULT_QUALITY,
                       DEFAULT_PITCH,
-                      "�l�r �S�V�b�N"
+                      "ＭＳ ゴシック"
                       );
     if(!hFont) return;
     hOldFont = (HFONT)SelectObject(hTextDC, hFont);
@@ -137,7 +137,7 @@ void CMyFont::Init(LPDIRECT3DDEVICE8 lpD3DDEV, int w, int h)
 }
 </pre>
 <p>
-�\������Ƃ��ɂ́ARECT �^�̒����`�ŁA�\���̈��ݒ肵�āADrawText �ŕ\�����܂��B
+表示するときには、RECT 型の長方形で、表示領域を設定して、DrawText で表示します。
 </p>
 <pre class="CodeBlock">
 void CMyFont::Print( char *str, int x, int y, D3DCOLOR color )
@@ -148,7 +148,7 @@ void CMyFont::Print( char *str, int x, int y, D3DCOLOR color )
     rect.top = y;
     rect.bottom = HEIGHT;
 
-    // �f�o�C�X��ɁA���`���� �e�L�X�g��`�悷��
+    // デバイス上に、整形した テキストを描画する
     m_lpFont->DrawText(str, -1, &rect
                     ,DT_LEFT | DT_EXPANDTABS
                     ,color
@@ -156,7 +156,7 @@ void CMyFont::Print( char *str, int x, int y, D3DCOLOR color )
 }
 </pre>
 <p>
-��n���́A�쐬�����I�u�W�F�N�g���J�����܂��B
+後始末は、作成したオブジェクトを開放します。
 </p>
 <pre class="CodeBlock">
 void CMyFont::Clean()
@@ -171,7 +171,7 @@ void CMyFont::Clean()
 <BR CLEAR=ALL>
 <center>
 <hr>
-<p><a href="../index.html">���ǂ�</a></p>
+<p><a href="../index.html">もどる</a></p>
 <p><a href="mailto:imagire@gmail.com">imagire@gmail.com</a></p>
 </center>
 </body>

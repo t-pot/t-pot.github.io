@@ -1,8 +1,8 @@
 <head>
-	<title>t-pot�w���I�@���}�b�v�x</title>
+	<title>t-pot『動的法線マップ』</title>
 	<link rel="stylesheet" type="text/css" href="../if.css">
 </head>
-<meta http-equiv=Content-Type content="text/html; charset=shift_jis">
+<meta http-equiv=Content-Type content="text/html; charset=UTF-8">
 <body>
 
 
@@ -10,8 +10,8 @@
 <center>
 <BR CLEAR=ALL>
 <BR CLEAR=ALL>
-<h1>���I�@���}�b�v</h1><br>
-<h3>�` Dynamic normal map �`</h3>
+<h1>動的法線マップ</h1><br>
+<h3>～ Dynamic normal map ～</h3>
 <BR CLEAR=ALL>
 <BR CLEAR=ALL>
 <BR CLEAR=ALL>
@@ -22,53 +22,53 @@
 <div>
 
 
-<h2>���͂��߂�</h2>
+<h2>■はじめに</h2>
 
 
 <p>
-����́A����Ă������ł���Ă��Ȃ������@���}�b�v�����A���^�C���Ɍv�Z���܂��B<br>
-�悭����g�̃V�~�����[�V���������āA���̍�������@���}�b�v�𐶐����āA�t�H���̋��ʔ��ˑ��Ń��C�e�B���O���Ă��܂��B<br>
-��̊G�̍���̂悭�킩��Ȃ������g�̃V�~�����[�V�����ŁA�ԐF�������������A�ΐF�����������̕ω����鑬�x�ɂȂ��Ă��܂��B<br>
-���̉����A���̍����Ɋւ���@���}�b�v�ł��B<br>
-�w�i�̓r�b�g�}�b�v��\�����āA���C�g�̈ʒu�͓K���ɒ������܂����B
+今回は、やっていそうでやっていなかった法線マップをリアルタイムに計算します。<br>
+よくある波のシミュレーションをして、その高さから法線マップを生成して、フォンの鏡面反射則でライティングしています。<br>
+上の絵の左上のよくわからない物が波のシミュレーションで、赤色成分が高さ情報、緑色成分が高さの変化する速度になっています。<br>
+その下が、その高さに関する法線マップです。<br>
+背景はビットマップを表示して、ライトの位置は適当に調整しました。
 </p>
 <p>
-���̃t�@�C�����\�[�X�Ǝ��s�t�@�C���ł��B
+下のファイルがソースと実行ファイルです。
 </p>
 <ul style = "LIST-STYLE-TYPE:none">
-<li><a href="src.lzh">src.lzh (���I�@���}�b�v�̃T���v��:OpenGL & Cg����)</a>
+<li><a href="src.lzh">src.lzh (動的法線マップのサンプル:OpenGL & Cg言語)</a>
 </ul>
 
 <p>
-�܂��A�����̂悤�ɓK���Ƀt�@�C���������Ă��܂��B<br>
+まぁ、いつものように適当にファイルが入っています。<br>
 </p>
 <table>
-<tr><td><a href="wave_cg.html">wave.cg</a></td><td>�g�̃V�~�����[�V�����̃t���O�����g�v���O�����B</td></tr>
-<tr><td><a href="normal_cg.html">normal.cg</a></td><td>�@���v���O�����̐����̃t���O�����g�v���O�����B</td></tr>
-<tr><td><a href="vp_cg.html">vp.cg</a></td><td>�Ɩ��v�Z�̒��_�v���O�����B</td></tr>
-<tr><td><a href="fp_cg.html">fp.cg</a></td><td>�Ɩ��v�Z�̃t���O�����g�v���O�����B</td></tr>
-<tr><td><a href="main_cpp.html">main.cpp</a></td><td>���C�����[�v�B</td></tr>
-<tr><td><a href="CBitmap_h.html">CBitmap.h</a></td><td>�r�b�g�}�b�v�t�@�C���̓ǂݍ��݁B</td></tr>
-<tr><td><a href="CBitmap_cpp.html">CBitmap.cpp</a></td><td>�r�b�g�}�b�v�t�@�C���̓ǂݍ��݁B</td></tr>
+<tr><td><a href="wave_cg.html">wave.cg</a></td><td>波のシミュレーションのフラグメントプログラム。</td></tr>
+<tr><td><a href="normal_cg.html">normal.cg</a></td><td>法線プログラムの生成のフラグメントプログラム。</td></tr>
+<tr><td><a href="vp_cg.html">vp.cg</a></td><td>照明計算の頂点プログラム。</td></tr>
+<tr><td><a href="fp_cg.html">fp.cg</a></td><td>照明計算のフラグメントプログラム。</td></tr>
+<tr><td><a href="main_cpp.html">main.cpp</a></td><td>メインループ。</td></tr>
+<tr><td><a href="CBitmap_h.html">CBitmap.h</a></td><td>ビットマップファイルの読み込み。</td></tr>
+<tr><td><a href="CBitmap_cpp.html">CBitmap.cpp</a></td><td>ビットマップファイルの読み込み。</td></tr>
 </table>
 <image src = "sky_bmp.jpg" width="64" height="64">sky.bmp
 <p>
-���ƁA���s�t�@�C���y�сA�v���W�F�N�g�t�@�C���������Ă��܂��B
+あと、実行ファイル及び、プロジェクトファイルが入っています。
 </p>
 
 
-<h2>���g�̎葱���e�N�X�`���̐���</h2>
+<h2>■波の手続きテクスチャの生成</h2>
 
 
 <p>
-�ŏ��ɔg�̍�����������܂��傤�B<br>
-Game Programming Gems �ɕ��@�͍ڂ��Ă����܂����A�茳�ɖ{���Ȃ��̂ŁA�K���Ƀv���O���~���O���Ă݂܂��B<br>
-�g�́A�e�N�X�`���̂��ꂼ��̃e�N�Z�����΂˂łȂ������q�̏W�܂�ƍl���܂��B
+最初に波の作り方を説明しましょう。<br>
+Game Programming Gems に方法は載っていいますが、手元に本がないので、適当にプログラミングしてみます。<br>
+波は、テクスチャのそれぞれのテクセルをばねでつないだ粒子の集まりと考えます。
 </p>
 <image src = "spring.png">
 <p>
-�A���A�΂˂̓��������͍������������ɂ��������Ȃ����Ƃɂ��܂�(�����I�ɂ͉��g�������������ƂɂȂ�܂��B�����ɂ͂��̂悤�Ȕ}���͑��݂��܂��񂪁A���̔��˂Ɋ�^���镔���������o�����ƍl����΂悢�Ǝv���܂�)�B<br>
-(i,j)�̈ʒu�ɂ���΂˂̉^���������́A�������������ɒ��ڂ���ƁA
+但し、ばねの動く方向は高さ方向だけにしか動かないことにします(物理的には横波だけを扱うことになります。現実にはそのような媒質は存在しませんが、光の反射に寄与する部分だけ抽出したと考えればよいと思います)。<br>
+(i,j)の位置にあるばねの運動方程式は、高さ方向だけに注目すると、
 </p>
 <pre class="CodeBlock">
 dx<sub>ij</sub> = v<sub>ij</sub> dt
@@ -77,18 +77,18 @@ dv<sub>ij</sub> = F<sub>ij</sub>/m dt
      = -(k/m)(4x<sub>ij</sub>-x<sub>i-1j</sub>-x<sub>i+1j</sub>-x<sub>ij-1</sub>-x<sub>ij+1</sub>) dt
 </pre>
 <p>
-�ɂȂ�܂��B<br>
-�^���������ɂ́A�ʒu�Ƒ��x�̂Q�̎��R�x������̂ŁA�Q�̃o�b�t�@�ɒl��ۑ����܂��B<br>
-�ʒu���e�N�X�`���̐ԐF�����A���x���e�N�X�`���̗ΐF�̐����ɓ���܂��B<br>
-�Ƃ��ɂO����Q�T�T�̒l�����̂ŁA�P�Q�W�̎�����_�Ƃ��āA
-�P�Q�W����̍��ō����⑬�x��\�����܂��B
+になります。<br>
+運動方程式には、位置と速度の２つの自由度があるので、２つのバッファに値を保存します。<br>
+位置をテクスチャの赤色成分、速度をテクスチャの緑色の成分に入れます。<br>
+ともに０から２５５の値を持つので、１２８の時を基準点として、
+１２８からの差で高さや速度を表現します。
 </p>
 
 <image src = "red.png">
 <image src = "green.png">
 
 <p>
-���ۂ̃V�F�[�_�v���O�����ł́A�ŋߐڂS�ߖT�̃f�[�^�����o���āA
+実際のシェーダプログラムでは、最近接４近傍のデータを取り出して、
 </p>
 
 <pre class="CodeBlock">
@@ -106,32 +106,32 @@ wave.cg
 <font color="deepskyblue">0028:</font>     float3 tex4 = f3tex2D( SrcTex, I.tcoords.xy+shift4 );
 </pre>
 <p>
-�ʒu�ɂ͑��x���i0.5�ň�����1�A�F�̋�����128�̎��ɕω�0�ɂȂ�悤�ɂ��āj�����܂��B<br>
-���x�́A�����̍��𑫂�����ŁA�ω������܂��B
+位置には速度を（0.5で引いて1、色の強さが128の時に変化0になるようにして）足します。<br>
+速度は、高さの差を足しこんで、変化させます。
 </p>
 <pre class="CodeBlock">
 wave.cg
-<font color="deepskyblue">0030:</font>     O.col.x = tex0.x + tex0.y - 0.5f;                               <font color="cyan">// �����ω�</font>
-<font color="deepskyblue">0031:</font>     O.col.y = tex0.y                                                <font color="cyan">// ���̑��x</font>
-<font color="deepskyblue">0032:</font>                  + tex1.x + tex2.x + tex3.x + tex4.x - 4.0f*tex0.x; <font color="cyan">// �����x</font>
+<font color="deepskyblue">0030:</font>     O.col.x = tex0.x + tex0.y - 0.5f;                               <font color="cyan">// 高さ変化</font>
+<font color="deepskyblue">0031:</font>     O.col.y = tex0.y                                                <font color="cyan">// 元の速度</font>
+<font color="deepskyblue">0032:</font>                  + tex1.x + tex2.x + tex3.x + tex4.x - 4.0f*tex0.x; <font color="cyan">// 加速度</font>
 </pre>
 <p>
-����́A�t���O�����g�v���O�����������g���܂������A���_�v���O�����ƃt���O�����g�v���O�������g���΁A�������I��(DirectX8����̏�����)�v���O�������ł��܂��B
+今回は、フラグメントプログラムだけを使いましたが、頂点プログラムとフラグメントプログラムを使えば、より効率的に(DirectX8世代の処理で)プログラムができます。
 </p>
 
 
-<h2>���@���}�b�v�̐���</h2>
+<h2>■法線マップの生成</h2>
 
 
 <p>
-���ɁA�g�̃V�~�����[�V�����ŋ��߂�ꂽ������񂩂�A�@���}�b�v�����܂��B<br>
-�@���}�b�v�́A�@���x�N�g�����e�N�X�`���Ȃǂ̃}�b�v�ɗ��Ƃ����񂾂��̂ł��B<br>
-�@���x�N�g���̋��ߕ��ł����A�ڃx�N�g�����@���x�N�g���ɒ��s���邱�Ƃ𗘗p���܂��B<br>
-����̏ꍇ�́A������񂾂������ω����Ȃ��̂ŁAX���y��Z���̕����Ɋւ��鍂���̕Δ������ڃx�N�g���̕����ɂȂ�܂��B
+次に、波のシミュレーションで求められた高さ情報から、法線マップを作ります。<br>
+法線マップは、法線ベクトルをテクスチャなどのマップに落とし込んだものです。<br>
+法線ベクトルの求め方ですが、接ベクトルが法線ベクトルに直行することを利用します。<br>
+今回の場合は、高さ情報だけしか変化しないので、X軸及びZ軸の方向に関する高さの偏微分が接ベクトルの方向になります。
 </p>
 <image src = "diff.png">
 <p>
-��̐}�̂悤�ɁA�������ω�����ꍇ�ɁAx���y��z�������̍����ω��ɂ��đO��̌��z�̕��ς����ƁA
+上の図のように、高さが変化する場合に、x軸及びz軸方向の高さ変化について前後の勾配の平均を取ると、
 </p>
 <pre class="CodeBlock">
       (y<sub>i+1j</sub>-y<sub>ij</sub>) + (y<sub>ij</sub>-y<sub>i-1j</sub>)    y<sub>i+1j</sub> - y<sub>i-1j</sub>
@@ -143,7 +143,7 @@ dy<sub>z</sub> = ---------------------- = -------------
                 2                    2
 </pre>
 <p>
-�ɂȂ�܂��B���������āA�@���x�N�g���́A���̌��z����A
+になります。したがって、法線ベクトルは、この勾配から、
 </p>
 <pre class="CodeBlock">
 n = normalize(du x dv)
@@ -151,10 +151,10 @@ du = (1, dy<sub>x</sub>, 0)
 dv = (0, dy<sub>z</sub>, 1)
 </pre>
 <p>
-�̎��ɂ���ċ��߂��܂��i������W�n�ł��ˁj�B
+の式によって求められます（左手座標系ですね）。
 </p>
 <p>
-�V�F�[�_�v���O�����ł́A�אڂ���S�_�̃e�N�Z�����獂���������o���ā|�P����P�܂ł͈̔͂ɕϊ����āA�����̍�������ڃx�N�g�����쐬������ɁA�O�ρA���K���v�Z���Ė@���x�N�g�����쐬���܂��B
+シェーダプログラムでは、隣接する４点のテクセルから高さ情報を取り出して－１から１までの範囲に変換して、それらの差分から接ベクトルを作成した後に、外積、正規化計算して法線ベクトルを作成します。
 </p>
 <pre class="CodeBlock">
 wave.cg
@@ -184,14 +184,14 @@ wave.cg
 
 
 
-<h2>�����C�e�B���O</h2>
+<h2>■ライティング</h2>
 
 
 <p>
-���̒i�K�́A�@���}�b�v���g�������ʔ��ˌ��̌v�Z�ł��B<br>
-����́A��𔲂��āA�Ȗʌv�Z���Ȃ��ĕ��ʂ𒣂�܂����B
-�Ƃ������ƂŁA���_�v���O�����̏o�͂́A�����x�N�g���ƌ����x�N�g���y�і@���}�b�v�̂��߂̃e�N�X�`�����W���e�N�X�`�����W�o�͂ɓf���o���܂��B<br>
-�����x�N�g��������x�N�g���̓��[�J�����W�Ŏ�舵���܂��B
+次の段階は、法線マップを使った鏡面反射光の計算です。<br>
+今回は、手を抜いて、曲面計算を省いて平面を張りました。
+ということで、頂点プログラムの出力は、視線ベクトルと光源ベクトル及び法線マップのためのテクスチャ座標をテクスチャ座標出力に吐き出します。<br>
+視線ベクトルや光源ベクトルはローカル座標で取り扱います。
 </p>
 <pre class="CodeBlock">
 vp.cg
@@ -203,27 +203,27 @@ vp.cg
 <font color="deepskyblue">0029:</font> {
 <font color="deepskyblue">0030:</font>     vertout OUT;
 <font color="deepskyblue">0031:</font> 
-<font color="deepskyblue">0032:</font>     <font color="cyan">// ���W�ϊ�</font>
+<font color="deepskyblue">0032:</font>     <font color="cyan">// 座標変換</font>
 <font color="deepskyblue">0033:</font>     OUT.hpos = mul(ModelViewProj, IN.position);
 <font color="deepskyblue">0034:</font> 
-<font color="deepskyblue">0035:</font>     <font color="cyan">// �����x�N�g��</font>
+<font color="deepskyblue">0035:</font>     <font color="cyan">// 視線ベクトル</font>
 <font color="deepskyblue">0036:</font>     OUT.eye = EyePos - IN.position;
 <font color="deepskyblue">0037:</font>     
-<font color="deepskyblue">0038:</font>     <font color="cyan">// �����x�N�g��</font>
+<font color="deepskyblue">0038:</font>     <font color="cyan">// 光源ベクトル</font>
 <font color="deepskyblue">0039:</font>     OUT.light = LightPos - IN.position;
 <font color="deepskyblue">0040:</font>     
-<font color="deepskyblue">0041:</font>     <font color="cyan">// �e�N�X�`�����W</font>
+<font color="deepskyblue">0041:</font>     <font color="cyan">// テクスチャ座標</font>
 <font color="deepskyblue">0042:</font>     OUT.tcoords.xy = IN.texcoord;
 <font color="deepskyblue">0043:</font> 
 <font color="deepskyblue">0044:</font>     <font color="blue">return</font> OUT;
 <font color="deepskyblue">0045:</font> }
 </pre>
 <p>
-�t���O�����g�v���O�����ł́A�@���x�N�g�������o������A�e��x�N�g���𐳋K�����ĒP�ʃx�N�g������ɓ���܂��B<br>
-���ɔ��˃x�N�g�����������ɁA���˃x�N�g����@���x�N�g���ƌ����x�N�g���̓��ς��v�Z���āA�����v�Z�ɕK�v�ȗʂ���ɓ���܂��B<br>
-�Ō�ɂ��ꂼ��̐F�̋��������̋��x�Ɋ|���āA�ŏI�I�ȐF���Z�o���܂��B<br>
-�����Ƃ��ẮA���ʔ��ːF�����F�ɂ��Ă���̂ł����A�O�a�����Ĕ����F�����o���Ă��܂��B<br>
-HDR ���g���΁A�ق��킵�������Ƀt���A���|���Ă��ʔ������ʂ��_����Ǝv���܂��B
+フラグメントプログラムでは、法線ベクトルを取り出したり、各種ベクトルを正規化して単位ベクトルを手に入れます。<br>
+次に反射ベクトルを作った後に、反射ベクトルや法線ベクトルと光源ベクトルの内積を計算して、光源計算に必要な量を手に入れます。<br>
+最後にそれぞれの色の強さを光の強度に掛けて、最終的な色を算出します。<br>
+特徴としては、鏡面反射色を黄色にしているのですが、飽和させて白い色を作り出しています。<br>
+HDR を使えば、ほうわした部分にフレアを掛けてより面白い効果が狙えると思います。
 </p>
 <pre class="CodeBlock">
 fp.cg
@@ -233,19 +233,19 @@ fp.cg
 <font color="deepskyblue">0017:</font> {
 <font color="deepskyblue">0018:</font>     fragout O;
 <font color="deepskyblue">0019:</font>     
-<font color="deepskyblue">0020:</font>     float3 N = - 2.0f * f3tex2D( SrcTex, I.tcoords.xy ) + 1.0f;<font color="cyan">// �@���x�N�g��</font>
-<font color="deepskyblue">0021:</font>     float3 E = normalize(I.eye.xyz);        <font color="cyan">// �����x�N�g��</font>
-<font color="deepskyblue">0022:</font>     float3 R = -E + 2.0f * dot(E, N) * N;   <font color="cyan">// ���˃x�N�g��</font>
-<font color="deepskyblue">0023:</font>     float3 L = normalize(I.light.xyz);      <font color="cyan">// �����x�N�g��</font>
+<font color="deepskyblue">0020:</font>     float3 N = - 2.0f * f3tex2D( SrcTex, I.tcoords.xy ) + 1.0f;<font color="cyan">// 法線ベクトル</font>
+<font color="deepskyblue">0021:</font>     float3 E = normalize(I.eye.xyz);        <font color="cyan">// 視線ベクトル</font>
+<font color="deepskyblue">0022:</font>     float3 R = -E + 2.0f * dot(E, N) * N;   <font color="cyan">// 反射ベクトル</font>
+<font color="deepskyblue">0023:</font>     float3 L = normalize(I.light.xyz);      <font color="cyan">// 光源ベクトル</font>
 <font color="deepskyblue">0024:</font> 
-<font color="deepskyblue">0025:</font>     <font color="blue">float</font> RL = max(dot(R,L), 0.0f);         <font color="cyan">// (����,����)</font>
-<font color="deepskyblue">0026:</font>     <font color="blue">float</font> NL = max(dot(N,L), 0.0f);         <font color="cyan">// (�@��,����)</font>
+<font color="deepskyblue">0025:</font>     <font color="blue">float</font> RL = max(dot(R,L), 0.0f);         <font color="cyan">// (反射,光源)</font>
+<font color="deepskyblue">0026:</font>     <font color="blue">float</font> NL = max(dot(N,L), 0.0f);         <font color="cyan">// (法線,光源)</font>
 <font color="deepskyblue">0027:</font> 
-<font color="deepskyblue">0028:</font>     float4 amb = {0.1f, 0.05f,  0.04f, 1};  <font color="cyan">// ���F</font>
-<font color="deepskyblue">0029:</font>     float4 dif = {1.0f, 0.6f, 0.4f, 1};     <font color="cyan">// �g�U�F</font>
-<font color="deepskyblue">0030:</font>     float4 spe = {2.0f, 1.8f, 1.2f, 1};     <font color="cyan">// ���ːF</font>
+<font color="deepskyblue">0028:</font>     float4 amb = {0.1f, 0.05f,  0.04f, 1};  <font color="cyan">// 環境色</font>
+<font color="deepskyblue">0029:</font>     float4 dif = {1.0f, 0.6f, 0.4f, 1};     <font color="cyan">// 拡散色</font>
+<font color="deepskyblue">0030:</font>     float4 spe = {2.0f, 1.8f, 1.2f, 1};     <font color="cyan">// 反射色</font>
 <font color="deepskyblue">0031:</font> 
-<font color="deepskyblue">0032:</font>     <font color="cyan">// �t�H���X�y�L�����[</font>
+<font color="deepskyblue">0032:</font>     <font color="cyan">// フォンスペキュラー</font>
 <font color="deepskyblue">0033:</font>     O.col = amb + dif*NL + spe*pow(RL, 64);
 <font color="deepskyblue">0034:</font>     
 <font color="deepskyblue">0035:</font>     <font color="blue">return</font> O;
@@ -253,17 +253,17 @@ fp.cg
 </pre>
 
 
-<h2>���Ō��</h2>
+<h2>■最後に</h2>
 
 
 <p>
-����̃v���O�����͂ق����Ēu���ƁA�ǂ�ǂ�g�������Ă����܂��B<br>
-���x����������ł��傤���A�����ɃN�����v��������̂������Ƃ͎v���܂����A
-������ӂ��������Ȃ��ƌ����ɂ͎g���܂���ˁB
+今回のプログラムはほおって置くと、どんどん波が減っていきます。<br>
+精度落ちもあるでしょうし、高さにクランプがかかるのも原因とは思いますが、
+そこら辺を解消しないと現実には使えませんね。
 </p>
 <p>
-�t���l�����ʂ����Ă��Ȃ��̂ł����A�c�ɐL�т���̋؂��ώ@�ł��܂��B<br>
-�g�����v���O������@�������v���O�����ɂ́A�������̗ǂ��A���S���Y��������܂����A�Ƃ肠������{�Ƃ��āc
+フレネル効果を入れていないのですが、縦に伸びる光の筋が観察できます。<br>
+波を作るプログラムや法線を作るプログラムには、より効率の良いアルゴリズムがありますが、とりあえず基本として…
 </p>
 
 </div>
@@ -272,7 +272,7 @@ fp.cg
 <BR CLEAR=ALL>
 <center>
 <hr>
-<p><a href="../index.html">���ǂ�</a></p>
+<p><a href="../index.html">もどる</a></p>
 <p><a href="mailto:imagire@gmail.com">imagire@gmail.com</a></p>
 </center>
 

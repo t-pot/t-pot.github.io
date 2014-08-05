@@ -1,8 +1,8 @@
 <head>
-	<title>t-pot�w�o�R����ԃT���v�����O�x</title>
+	<title>t-pot『双３次補間サンプリング』</title>
 	<link rel="stylesheet" type="text/css" href="../if.css">
 </head>
-<meta http-equiv=Content-Type content="text/html; charset=shift_jis">
+<meta http-equiv=Content-Type content="text/html; charset=UTF-8">
 <body>
 
 
@@ -10,8 +10,8 @@
 <center>
 <BR CLEAR=ALL>
 <BR CLEAR=ALL>
-<h1>�o�R����ԃT���v�����O</h1><br>
-<h3>�` Bi-cubic sampling �`</h3>
+<h1>双３次補間サンプリング</h1><br>
+<h3>～ Bi-cubic sampling ～</h3>
 <BR CLEAR=ALL>
 <BR CLEAR=ALL>
 <BR CLEAR=ALL>
@@ -22,90 +22,90 @@
 <div>
 
 
-<h2>���͂��߂�</h2>
+<h2>■はじめに</h2>
 
 
 <p>
-���肩��uGPU�Ńo�C�L���[�r�b�N���炢�ł��邾��v����ꂽ�̂ł��܂����B<br>
-��ԉE�̃e�N�X�`�����o�C�L���[�r�b�N�T���v�����O�������̂ł��i������Ă��镶���ɓ��ɈӖ��͂���܂���j�B
+周りから「GPUでバイキュービックぐらいできるだろ」いわれたのでやりました。<br>
+一番右のテクスチャがバイキュービックサンプリングしたものです（書かれている文字に特に意味はありません）。
 </p>
 <p>
-�o�C���j�A���S�̓I�ɂڂ���̂ɑ΂��āA�o�C�L���[�r�b�N�́u���܂肪����v�ڂ����ɂȂ�܂��B<br>
-�܂��A����̕��@�ł́A�S�T�x�̃��C�����Y��Ȓ����ɂȂ�܂��B
+バイリニアが全体的にぼけるのに対して、バイキュービックは「しまりがある」ぼかしになります。<br>
+また、今回の方法では、４５度のラインが綺麗な直線になります。
 </p>
 <image src = "tree.png">
 <p>
-�������A�S�p�`�Ȃǂ̊p�ł́A�t�ɓ������ςɂւ��񂾂肵�܂��B
+ただし、４角形などの角では、逆に内側が変にへこんだりします。
 </p>
 <image src = "square.png">
 <p>
-�܂��A�����͕�Ԋ֐��Œ������\�Ȃ̂ŁA���ɋC�ɂ��Ȃ��ōs���܂��傤�B
+まぁ、これらは補間関数で調整が可能なので、特に気にしないで行きましょう。
 </p>
 
 <p>
-�ŁA�����̂悤�Ƀv���O�����ł��B<br>
+で、いつものようにプログラムです。<br>
 </p>
 <ul style = "LIST-STYLE-TYPE:none">
-<li><a href="src.zip">src.zip (�o�R����ԃT���v�����O:DirectX9 [Pixel shader 2_0])</a>
+<li><a href="src.zip">src.zip (双３次補間サンプリング:DirectX9 [Pixel shader 2_0])</a>
 </ul>
 <p>
-�\�[�X�ɂ́A�����̂悤�ɓK���Ƀt�@�C���������Ă��܂��B
-�厖�ȃt�@�C���͎��̂��̂ł��B
+ソースには、いつものように適当にファイルが入っています。
+大事なファイルは次のものです。
 </p>
 <table>
-<tr><td><a href="main_h.html">main.h</a></td><td>�A�v���P�[�V�����̃w�b�_</td></tr>
-<tr><td><a href="main_cpp.html">main.cpp</a></td><td>�A�v���P�[�V�����̃\�[�X</td></tr>
-<tr><td><a href="hlsl_fx.html">hlsl.fx</a></td><td>�V�F�[�_�v���O����</td></tr>
+<tr><td><a href="main_h.html">main.h</a></td><td>アプリケーションのヘッダ</td></tr>
+<tr><td><a href="main_cpp.html">main.cpp</a></td><td>アプリケーションのソース</td></tr>
+<tr><td><a href="hlsl_fx.html">hlsl.fx</a></td><td>シェーダプログラム</td></tr>
 </table>
 
 
-<h2>����������Ă����</h2>
+<h2>■何をやっているの</h2>
 
 
 <p>
-���i�A�e�N�X�`�����T���v�����O���鎞�ɂ́A�|�C���g�T���v�����O����`�T���v�����O���g���̂ł����A
-�����������x�ȕ��@�Ƃ��āA�R���Ȑ����g���Ď��ӂ̃e�N�Z���̒l����ǂݍ��ރe�N�X�`���̐F�����肷����@���R����Ԃł��B<br>
-�e�N�X�`���Ɏg���Ƃ��ɂ́A�c�Ɖ��̂Q�������獇��������̂ŁA�u�Q�v���Ӗ�����o(Bi)�����āA�o�R����ԂƂ����܂��B
+普段、テクスチャをサンプリングする時には、ポイントサンプリングや線形サンプリングを使うのですが、
+もう少し高度な方法として、３次曲線を使って周辺のテクセルの値から読み込むテクスチャの色を決定する方法が３次補間です。<br>
+テクスチャに使うときには、縦と横の２方向から合成をするので、「２」を意味する双(Bi)をつけて、双３次補間といいます。
 </p>
 <p>
-���ʂ́A�o�R����Ԃ�����Ƃ��ɂ́A�e�N�X�`�����W�̎��͂P�U�_�̃T���v�����O�_����e�N�Z����ǂݍ���ŁA�c�Ɖ������ɂR����Ԃ��{���܂��B
+普通は、双３次補間をするときには、テクスチャ座標の周囲１６点のサンプリング点からテクセルを読み込んで、縦と横方向に３次補間を施します。
 </p>
 <image src = "cubic.png">
 <p>
 </p>
 <p>
-�����ŕ\������ƁA��ԑ�������W�A�e�N�X�`�����W�̍���̃T���v�����O�|�C���g����̋�����u,v�Ƃ��āA�e�T���v�����O�_�ł̐F��c<sub>ij</sub>�Ƃ���΁A�o�R����ԃT���v�����O�͎��̂悤�ɂȂ�܂��B
+数式で表現すると、補間多項式をW、テクスチャ座標の左上のサンプリングポイントからの距離をu,vとして、各サンプリング点での色をc<sub>ij</sub>とすれば、双３次補間サンプリングは次のようになります。
 </p>
 <image src = "eq.png">
 <p>
-�Ȃ��Au��v�́A�ŋߐڃe�N�Z���Ԃ̋������P�ɂȂ�悤�ȋ����Ő��K������܂��B<br>
-���̕�Ԋ֐�W�́A��ʓI�ɂ͔C�ӂł��B
-�������A�c�����Ɖ������œ�����ԑ��������g�����Ƃɒ��ڂ��܂��傤�B<br>
-���̂悤�Ȏ��̏ꍇ�A�a�͂Q�̎�
+なお、uやvは、最近接テクセル間の距離が１になるような距離で正規化されます。<br>
+この補間関数Wは、一般的には任意です。
+ただし、縦方向と横方向で同じ補間多項式を使うことに注目しましょう。<br>
+このような式の場合、和は２つの式
 </p>
 <image src = "eq1.png">
 <p>
-�ɕ������邱�Ƃ��ł��܂��B<br>
-����́A�������ɁA�c�����̕�Ԃ��s������ɁA�������́i�����W���́j��Ԃ��s���΍ŏI�I�Ȓl��������Ƃ����Ӗ��ŁA�������Ă��������ό`�ł��i�K�E�X�ڂ����̕����Ɠ����悤�Ȃ���ł��j�B<br>
-��Ԋ֐�W�́A�C�ӂȂ̂ł����A����͎��̂悤�ȕ�ԑ��������g���܂����B
+に分離することができます。<br>
+これは、実装時に、縦方向の補間を行った後に、横方向の（同じ係数の）補間を行えば最終的な値が得られるという意味で、押さえておきたい変形です（ガウスぼかしの分解と同じようなもんです）。<br>
+補間関数Wは、任意なのですが、今回は次のような補間多項式を使いました。
 </p>
 <image src = "eq2.png">
 <p>
-����́APerlin�m�C�Y�̕׋��̂Ƃ��Ɍ����������Ȃ̂ł����ACatmull-Rom �Ȑ��̒[�_�ł̌X�����Q�{�ɂȂ������̂ɂȂ��Ă��܂��B
-�ŏ��́ACatmull-Rom �����̂܂܎g�����̂ł����A���ʂɊ��炩�ɂȂ��Ă܂�Ȃ������̂ŁA
-���̂悤�ȋȐ����̗p���܂����i�܂�A�X���𒲐�����΁A��Ԃ̋����̒������ł���Ƃ������Ƃł��j�B
+これは、Perlinノイズの勉強のときに見かけ多識なのですが、Catmull-Rom 曲線の端点での傾きが２倍になったものになっています。
+最初は、Catmull-Rom をそのまま使ったのですが、普通に滑らかになってつまらなかったので、
+このような曲線を採用しました（つまり、傾きを調整すれば、補間の強さの調整ができるということです）。
 </p>
 
-<h2>���V�F�[�_�v���O����</h2>
+<h2>■シェーダプログラム</h2>
 
 
 <p>
-����́A�s�N�Z���V�F�[�_�����̎����ɂȂ��Ă��܂��B<br>
-�V�F�[�_�v���O�����́A��ɂR�̕����ɕ�����܂��B<br>
-�P�́A��������d�݂��v�Z���镔���ł��B<br>
-�ŏ��Ɏw�肳�ꂽ�e�N�X�`�����W���A�e�N�Z�����̂ǂ̂��w�����Ă���̂����ׂ܂��B
-���ɁA�����̈ʒu���R��܂ł���Ƌ��ɁA�d�݂����č������܂��B<br>
-���̏d�݂́A��قǂ̎������������ƕ������ċ��߂܂��B
+今回は、ピクセルシェーダだけの実装になっています。<br>
+シェーダプログラムは、主に３つの部分に分かれます。<br>
+１つは、合成する重みを計算する部分です。<br>
+最初に指定されたテクスチャ座標が、テクセル内のどのを指示しているのか調べます。
+次に、それらの位置を３乗まですると共に、重みをつけて合成します。<br>
+この重みは、先ほどの式をしこしこと分解して求めます。
 </p>
 <pre class="CodeBlock">
 hlsl.fx
@@ -116,22 +116,22 @@ hlsl.fx
 <font color="deepskyblue">0045:</font>     <font color="blue">const</font> float4 w1 = float4(-1, 0, 1, 0);
 <font color="deepskyblue">0046:</font>     <font color="blue">const</font> float4 w0 = float4( 0, 1, 0, 0);
 <font color="deepskyblue">0048:</font>     
-<font color="deepskyblue">0049:</font>     float2 fUV = frac (In.Tex5 * vSize);    <font color="cyan">// �T�u�e�N�Z����0�`1�̃p�����[�^��</font>
-<font color="deepskyblue">0050:</font>     float2 fUV2 = fUV * fUV;                <font color="cyan">// fUV �̂Q��</font>
-<font color="deepskyblue">0051:</font>     float2 fUV3 = fUV * fUV2;               <font color="cyan">// fUV �̂R��</font>
+<font color="deepskyblue">0049:</font>     float2 fUV = frac (In.Tex5 * vSize);    <font color="cyan">// サブテクセルを0～1のパラメータ化</font>
+<font color="deepskyblue">0050:</font>     float2 fUV2 = fUV * fUV;                <font color="cyan">// fUV の２乗</font>
+<font color="deepskyblue">0051:</font>     float2 fUV3 = fUV * fUV2;               <font color="cyan">// fUV の３乗</font>
 <font color="deepskyblue">0052:</font>     float4 u, v;
 <font color="deepskyblue">0053:</font>     u = fUV3.x * w3 + fUV2.x * w2 + fUV.x * w1 + w0;
 <font color="deepskyblue">0054:</font>     v = fUV3.y * w3 + fUV2.y * w2 + fUV.y * w1 + w0;
 </pre>
 <p>
-���ɁA�e�N�X�`�����T���v�����O���܂��B<br>
-�������ƁA�V�F�[�_���߂̍팸�̂��߂ɁA�e�N�X�`�����W��8�̍��W���A�v���P�[�V�������Ő�Ɍv�Z���āA�����̈ʒu�ŃT���v�����O����Ƌ��ɁA
-�c��̂W�_�͈�l�ɂ��炵�ăe�N�X�`�����W�Ƃ��܂��B<br>
-����́A�|�C���g�T���v�����O���g���āA���[�Ȉʒu�̃e�N�X�`����ǂݍ���ł��A����Ȃ�̒l��������悤�ɂ��Ă��܂��B
+次に、テクスチャをサンプリングします。<br>
+高速化と、シェーダ命令の削減のために、テクスチャ座標は8つの座標をアプリケーション側で先に計算して、それらの位置でサンプリングすると共に、
+残りの８点は一様にずらしてテクスチャ座標とします。<br>
+今回は、ポイントサンプリングを使って、半端な位置のテクスチャを読み込んでも、それなりの値が得られるようにしています。
 </p>
 <pre class="CodeBlock">
 hlsl.fx
-<font color="deepskyblue">0056:</font>     <font color="cyan">// �e�N�X�`�����班�����炵�ăT���v�����O</font>
+<font color="deepskyblue">0056:</font>     <font color="cyan">// テクスチャから少しずらしてサンプリング</font>
 <font color="deepskyblue">0057:</font>     float4 col00 = tex2D( SrcSamp, In.Tex0 );
 <font color="deepskyblue">0058:</font>     float4 col01 = tex2D( SrcSamp, In.Tex1 );
 <font color="deepskyblue">0059:</font>     float4 col02 = tex2D( SrcSamp, In.Tex2 );
@@ -154,8 +154,8 @@ hlsl.fx
 </pre>
 <image src = "samp.png">
 <p>
-�Ō�ɁA�v�Z�����d�݂ƃT���v�����O�����F�ō������܂��B<br>
-�͂��߂ɁA�������ɍ������Ă���A��ŏc�����ɍ������܂��B
+最後に、計算した重みとサンプリングした色で合成します。<br>
+はじめに、横方向に合成してから、後で縦方向に合成します。
 </p>
 <pre class="CodeBlock">
 hlsl.fx
@@ -169,12 +169,12 @@ hlsl.fx
 </pre>
 
 
-<h2>���e�N�X�`�����W</h2>
+<h2>■テクスチャ座標</h2>
 
 
 <p>
-�A�v���P�[�V�������ł́A�e�N�X�`�����W���w�肵�ĕ`�悵�܂��B<br>
-�V�F�[�_�v���O�����ɗ������ރf�[�^�́A���̂悤�ȂW�̃e�N�X�`�����W�����\���̂ł��B
+アプリケーション側では、テクスチャ座標を指定して描画します。<br>
+シェーダプログラムに流し込むデータは、次のような８つのテクスチャ座標を持つ構造体です。
 </p>
 <pre class="CodeBlock">
 main.cpp
@@ -191,8 +191,8 @@ main.cpp
 <font color="deepskyblue">0050:</font> } TVERTEX8;
 </pre>
 <p>
-��́A�ׂ��ɍ\���̂Ƀf�[�^�𗬂����݂܂��B<br>
-�e�N�Z���P�ʂł��炷�l�Ƃ��āA�e�N�Z�����̋t��(du,dv)���v�Z���Ă����āA�e�e�N�X�`�����W���e�N�Z�����Ƃɂ��炵�܂��B
+後は、べたに構造体にデータを流し込みます。<br>
+テクセル単位でずらす値として、テクセル幅の逆数(du,dv)を計算しておいて、各テクスチャ座標をテクセルごとにずらします。
 </p>
 <pre class="CodeBlock">
 main.cpp
@@ -209,7 +209,7 @@ main.cpp
 <font color="deepskyblue">0306:</font>             };
 </pre>
 <p>
-��́A�V�F�[�_��ݒ肵�ĕ`��ł��B
+後は、シェーダを設定して描画です。
 </p>
 <pre class="CodeBlock">
 main.cpp
@@ -226,12 +226,12 @@ main.cpp
 </pre>
 
 
-<h2>���Ō��</h2>
+<h2>■最後に</h2>
 
 
 <p>
-���_�́A�o�R����Ԃ����邾���ŁA���ɂ͂قƂ�ǉ����ł��Ȃ��Ȃ邱�Ƃł��傤���B<br>
-����ۂǏꏊ����؂�Ύg���邩������܂���ˁB
+欠点は、双３次補間をするだけで、他にはほとんど何もできなくなることでしょうか。<br>
+よっぽど場所を区切れば使えるかもしれませんね。
 </p>
 
 
@@ -243,7 +243,7 @@ main.cpp
 <BR CLEAR=ALL>
 <center>
 <hr>
-<p><a href="../index.html">���ǂ�</a></p>
+<p><a href="../index.html">もどる</a></p>
 <p><a href="mailto:imagire@gmail.com">imagire@gmail.com</a></p>
 </center>
 

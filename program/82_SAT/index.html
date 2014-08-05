@@ -1,8 +1,8 @@
 <head>
-	<title>t-pot�w�͈͑��a�e�[�u���x</title>
+	<title>t-pot『範囲総和テーブル』</title>
 	<link rel="stylesheet" type="text/css" href="../if.css">
 </head>
-<meta http-equiv=Content-Type content="text/html; charset=shift_jis">
+<meta http-equiv=Content-Type content="text/html; charset=UTF-8">
 <body>
 
 
@@ -10,8 +10,8 @@
 <center>
 <BR CLEAR=ALL>
 <BR CLEAR=ALL>
-<h1>�͈͑��a�e�[�u��</h1><br>
-<h3>�` Summed Area Tables �`</h3>
+<h1>範囲総和テーブル</h1><br>
+<h3>～ Summed Area Tables ～</h3>
 <BR CLEAR=ALL>
 <BR CLEAR=ALL>
 <BR CLEAR=ALL>
@@ -22,54 +22,54 @@
 <div>
 
 
-<h2>���͂��߂�</h2>
+<h2>■はじめに</h2>
 
 
 <p>
-����́ASimon Green����GDC2003�Ŕ��\���ꂽ�i�炵���B�s���ĂȂ��̂Œm��Ȃ��j�ASummed Area Table(SAT)���������Ă݂܂����B
+今回は、Simon Green氏がGDC2003で発表された（らしい。行ってないので知らない）、Summed Area Table(SAT)を実装してみました。
 </p>
 <ul style = "LIST-STYLE-TYPE:none">
-<li><a href="src.zip">src.zip (�͈͑��a�e�[�u��:DirectX9)</a>
+<li><a href="src.zip">src.zip (範囲総和テーブル:DirectX9)</a>
 </ul>
 
 <p>
-�܂��A�����̂悤�ɓK���Ƀt�@�C���������Ă��܂��B<br>
-APP WIZARD ����o�͂����t���[�����[�N�̃t�@�C���͏Љ���Ȃ����Ă��������܂��B
+まぁ、いつものように適当にファイルが入っています。<br>
+APP WIZARD から出力されるフレームワークのファイルは紹介を省かせていただきます。
 </p>
 <table>
-<tr><td><a href="hlsl_fx.html">hlsl.fx</a></td><td>�V�F�[�_�̓������G�t�F�N�g�t�@�C��</td></tr>
-<tr><td><a href="main_h.html">main.h</a></td><td>�A�v���P�[�V�����̃w�b�_</td></tr>
-<tr><td><a href="main_cpp.html">main.cpp</a></td><td>�A�v���P�[�V�����̃\�[�X</td></tr>
+<tr><td><a href="hlsl_fx.html">hlsl.fx</a></td><td>シェーダの入ったエフェクトファイル</td></tr>
+<tr><td><a href="main_h.html">main.h</a></td><td>アプリケーションのヘッダ</td></tr>
+<tr><td><a href="main_cpp.html">main.cpp</a></td><td>アプリケーションのソース</td></tr>
 </table>
 
 <p>
-���ƁA���s�t�@�C���A���f���y�сA�v���W�F�N�g�t�@�C���������Ă��܂��B
+あと、実行ファイル、モデル及び、プロジェクトファイルが入っています。
 </p>
 
 
-<h2>���͈͑��a�e�[�u���Ƃ�</h2>
+<h2>■範囲総和テーブルとは</h2>
 
 
 <p>
-���āA����̌������́ANVIDIA�Ђ�<a href="http://developer.nvidia.com/view.asp?IO=presentations">GDC 2003 Presentations�̃y�[�W</a>�́uAdvanced OpenGL Game Programming�v�̍��ڂɂ���uSummed Area Tables using Graphics Hardware�v�ł��B<br>
-�͈͑��a�e�[�u���Ƃ́A1984�N��Frank Crow���l�Ă����ϕ��v�Z�����e�N�X�`����p�����t�B���^�����O�̕��@�ł��B
+さて、今回の元資料は、NVIDIA社の<a href="http://developer.nvidia.com/view.asp?IO=presentations">GDC 2003 Presentationsのページ</a>の「Advanced OpenGL Game Programming」の項目にある「Summed Area Tables using Graphics Hardware」です。<br>
+範囲総和テーブルとは、1984年にFrank Crowが考案した積分計算したテクスチャを用いたフィルタリングの方法です。
 </p>
 <p>
-�l���P�̌��̃e�N�X�`������SAT������Č��܂��傤�B<br>
-�ŏ��ɁA�������Ɍ��݂̃s�N�Z���̐F�ɁA���̃s�N�Z���̍��ɂ���s�N�Z���̍��v�𑫂��܂��B
-���̎菇�ŁA�s�N�Z���̒l�́A���̃s�N�Z����U���W�̒l�ɂȂ�܂��B<br>
-���ɁA�c�����Ɍ��݂̃s�N�Z���̒l�ɁA���̃s�N�Z���̏�̃s�N�Z���̍��v�𑫂��܂��B<br>
-���̌��ʁA�s�N�Z���̒l�́A���̃s�N�Z����U���W*V���W�ɂȂ�܂��B<br>
-���̒l�́A�����Ƃ����Ɋւ��đΏ̂Ȃ̂ŁA���͏c�����Ɖ������̍����̏��Ԃ����ւ��Ă����ʂ͕ς��܂���B
+値が１の元のテクスチャからSATを作って見ましょう。<br>
+最初に、横方向に現在のピクセルの色に、そのピクセルの左にあるピクセルの合計を足します。
+この手順で、ピクセルの値は、そのピクセルのU座標の値になります。<br>
+次に、縦方向に現在のピクセルの値に、そのピクセルの上のピクセルの合計を足します。<br>
+この結果、ピクセルの値は、そのピクセルのU座標*V座標になります。<br>
+この値は、ｘ軸とｙ軸に関して対称なので、実は縦方向と横方向の合成の順番を入れ替えても結果は変わりません。
 </p>
 <image src = "how2.png">
 <p>
-�Ⴆ�΁A32x32�̑傫����SAT�͎��̂悤�ɂȂ�܂��i�������A(�ԁA�΁A��)=(3,2,1)�̊����ŐF�����Ă��܂��j�B
+例えば、32x32の大きさのSATは次のようになります（ただし、(赤、緑、青)=(3,2,1)の割合で色をつけています）。
 </p>
 <image src = "sat.jpg">
 <p>
-���āA�e�N�X�`���̒l�́AT[U,V] = U * V �ɂȂ�̂ł����A
-���̃e�N�X�`�����g�����v�Z�ɁA���̓��������藧���܂��B
+さて、テクスチャの値は、T[U,V] = U * V になるのですが、
+このテクスチャを使った計算に、次の等式が成り立ちます。
 </p>
 <pre class="CodeBlock">
 S[U+a, V+b] - S[U+a, V] - S[U, V+b] + S[U, V]
@@ -81,15 +81,15 @@ S[U+a, V+b] - S[U+a, V] - S[U, V+b] + S[U, V]
 = ab
 </pre>
 <p>
-�܂�A
+つまり、
 </p>
 <pre class="CodeBlock">
-S[U+a, V+b] - S[U+a, V] - S[U, V+b] + S[U, V] = [U+a, V+b]����[U, V]�͈̖̔͂ʐ�
+S[U+a, V+b] - S[U+a, V] - S[U, V+b] + S[U, V] = [U+a, V+b]から[U, V]の範囲の面積
 </pre>
 <p>
-�����藧���܂��B<br>
-���ɁA���̃e�N�X�`���̒l��t<sub>UV</sub>�ŗ^������ꍇ���l���Č��܂��傤�B<br>
-���̎��A�Ⴆ�΁A�S���S�̃T�C�Y��SAT�̒[�̒l���v�Z����ƁA
+が成り立ちます。<br>
+次に、元のテクスチャの値がt<sub>UV</sub>で与えられる場合を考えて見ましょう。<br>
+この時、例えば、４ｘ４のサイズのSATの端の値を計算すると、
 </p>
 <pre class="CodeBlock">
 S[3, 3] = t<sub>00</sub> + t<sub>01</sub> + t<sub>02</sub> + t<sub>03</sub>
@@ -101,7 +101,7 @@ S[0, 3] = t<sub>00</sub> + t<sub>01</sub> + t<sub>02</sub> + t<sub>03</sub>
 S[0, 0] = t<sub>00</sub>
 </pre>
 <p>
-�ɂȂ�̂ŁA(U,V)=(0,0)�A(a,b)=(3,3)�̏ꍇ�ɁA��قǂ̌v�Z�́A
+になるので、(U,V)=(0,0)、(a,b)=(3,3)の場合に、先ほどの計算は、
 </p>
 <pre class="CodeBlock">
 S[U+a, V+b] - S[U+a, V] - S[U, V+b] + S[U, V]
@@ -110,31 +110,31 @@ S[U+a, V+b] - S[U+a, V] - S[U, V+b] + S[U, V]
  + t<sub>31</sub> + t<sub>32</sub> + t<sub>33</sub>
 </pre>
 <p>
-�ƂȂ�܂��B���̒l�́A�I�������͈͂̍��v�Ȃ̂ŁA�͈̖͂ʐςŊ���ƁA�͈͂̕��ϒl�����߂��܂��B��ʉ����āA���Ƃ��Ă܂Ƃ߂�ƁA
+となります。この値は、選択した範囲の合計なので、範囲の面積で割ると、範囲の平均値が求められます。一般化して、式としてまとめると、
 </p>
 <pre class="CodeBlock">
-(S[U+a, V+b] - S[U+a, V] - S[U, V+b] + S[U, V])/(a*b) = [U+a, V+b]����[U, V]�̃e�N�X�`���̕���
+(S[U+a, V+b] - S[U+a, V] - S[U, V+b] + S[U, V])/(a*b) = [U+a, V+b]から[U, V]のテクスチャの平均
 </pre>
 <p>
-�ƁA�������Ƃ��ł��܂��B<br>
-��xSAT�����߂Ă��܂��΁A�S�_���T���v�����O���邾���ŁA���^�̕��ς���邱�Ƃ��ł��܂��B<br>
-����ɁA(a,b)�̒l�͎��R�Ɏ���̂ŁA�ڂ����ʂ��s�N�Z���P�ʂɎ��R�ɒ������邱�Ƃ��ȒP�ɂł��܂��B
+と、書くことができます。<br>
+一度SATを求めてしまえば、４点をサンプリングするだけで、箱型の平均を取ることができます。<br>
+さらに、(a,b)の値は自由に取れるので、ぼかす量をピクセル単位に自由に調整することも簡単にできます。
 </p>
 
 
-<h2>���͈͑��a�e�[�u���̍쐬</h2>
+<h2>■範囲総和テーブルの作成</h2>
 
 
 <p>
-SAT�́A���������_���o�b�t�@���g����悤�ɂȂ��ď��߂Ď����ł�����@�ł��B<br>
-����g�p����̂́AIEEE �t�H�[�}�b�g�̈���ґ��D3DFMT_A32B32G32R32F�ł��B<br>
-����ȊO��D3DFMT_A16B16G16R16F���̃t�H�[�}�b�g�ł́A���x���s�����ď\���Ȍ��ʂ������܂���ł���(GeForce FX�łǂ̂悤�Ȍ��ʂ�������̂��͂킩��܂��񂪁i�ʎ����Ă�l���߂��ā`�j)�B<br>
-�Ƃ������ƂŁA�ŏ��ɂ���̂́A�����_�����O�^�[�Q�b�g���m�ۂ��邱�Ƃł��B<br>
-���������_���̃����_�����O�^�[�Q�b�g���쐬���܂��B
+SATは、浮動小数点数バッファが使えるようになって初めて実現できた手法です。<br>
+今回使用するのは、IEEE フォーマットの一番贅沢なD3DFMT_A32B32G32R32Fです。<br>
+これ以外のD3DFMT_A16B16G16R16F等のフォーマットでは、精度が不足して十分な結果が得られませんでした(GeForce FXでどのような結果が得られるのかはわかりませんが（缶持ってる人ためして～）)。<br>
+ということで、最初にするのは、レンダリングターゲットを確保することです。<br>
+浮動小数点数のレンダリングターゲットを作成します。
 </p>
 <pre class="CodeBlock">
 main.cpp
-<font color="deepskyblue">0262:</font>     <font color="cyan">// �����_�����O�^�[�Q�b�g�̐���</font>
+<font color="deepskyblue">0262:</font>     <font color="cyan">// レンダリングターゲットの生成</font>
 <font color="deepskyblue">0263:</font>     <font color="blue">if</font> (FAILED(m_pd3dDevice-&gt;CreateDepthStencilSurface(MAP_WIDTH, MAP_HEIGHT, 
 <font color="deepskyblue">0264:</font>         D3DFMT_D16, D3DMULTISAMPLE_NONE, 0, TRUE, &amp;m_pMapZ, NULL)))
 <font color="deepskyblue">0265:</font>         <font color="blue">return</font> E_FAIL;
@@ -146,58 +146,58 @@ main.cpp
 <font color="deepskyblue">0271:</font>         <font color="blue">return</font> E_FAIL;
 </pre>
 <p>
-�`��̍ŏ��̎菇�͌��ɂȂ�摜���쐬���邱�Ƃł��B<br>
-��{�I�ɂ́A���}�b�v�쐬���̂悤�ɁA�����_�����O�^�[�Q�b�g��؂�ւ��āA���ʂɕ`�悵�܂��B
+描画の最初の手順は元になる画像を作成することです。<br>
+基本的には、環境マップ作成時のように、レンダリングターゲットを切り替えて、普通に描画します。
 </p>
 <pre class="CodeBlock">
 main.cpp
-<font color="deepskyblue">0029:</font> <font color="cyan">// ��������Z�k�`������Ă݂�</font>
+<font color="deepskyblue">0029:</font> <font color="cyan">// 長いから短縮形を作ってみた</font>
 <font color="deepskyblue">0030:</font> <font color="blue">#define</font> RS   m_pd3dDevice-&gt;SetRenderState
 <font color="deepskyblue">0031:</font> <font color="blue">#define</font> TSS  m_pd3dDevice-&gt;SetTextureStageState
 <font color="deepskyblue">0032:</font> <font color="blue">#define</font> SAMP m_pd3dDevice-&gt;SetSamplerState
 <font color="deepskyblue">0362:</font>         <font color="cyan">//-----------------------------------------------------</font>
-<font color="deepskyblue">0363:</font>         <font color="cyan">// �����_�����O�^�[�Q�b�g�̕ۑ�</font>
+<font color="deepskyblue">0363:</font>         <font color="cyan">// レンダリングターゲットの保存</font>
 <font color="deepskyblue">0364:</font>         <font color="cyan">//-----------------------------------------------------</font>
 <font color="deepskyblue">0365:</font>         m_pd3dDevice-&gt;GetRenderTarget(0, &amp;pOldBackBuffer);
 <font color="deepskyblue">0366:</font>         m_pd3dDevice-&gt;GetDepthStencilSurface(&amp;pOldZBuffer);
 <font color="deepskyblue">0367:</font>         m_pd3dDevice-&gt;GetViewport(&amp;oldViewport);
 <font color="deepskyblue">0368:</font> 
 <font color="deepskyblue">0369:</font>         <font color="cyan">//-----------------------------------------------------</font>
-<font color="deepskyblue">0370:</font>         <font color="cyan">// �����_�����O�^�[�Q�b�g�̕ύX</font>
+<font color="deepskyblue">0370:</font>         <font color="cyan">// レンダリングターゲットの変更</font>
 <font color="deepskyblue">0371:</font>         <font color="cyan">//-----------------------------------------------------</font>
 <font color="deepskyblue">0372:</font>         m_pd3dDevice-&gt;SetRenderTarget(0, m_pSatSurf);
 <font color="deepskyblue">0373:</font>         m_pd3dDevice-&gt;SetDepthStencilSurface(m_pMapZ);
-<font color="deepskyblue">0374:</font>         <font color="cyan">// �r���[�|�[�g�̕ύX</font>
-<font color="deepskyblue">0375:</font>         D3DVIEWPORT9 viewport = {0,0 <font color="cyan">// ����̍��W</font>
-<font color="deepskyblue">0376:</font>                         , MAP_WIDTH  <font color="cyan">// ��</font>
-<font color="deepskyblue">0377:</font>                         , MAP_HEIGHT <font color="cyan">// ����</font>
-<font color="deepskyblue">0378:</font>                         , 0.0f,1.0f};<font color="cyan">// �O�ʁA���</font>
+<font color="deepskyblue">0374:</font>         <font color="cyan">// ビューポートの変更</font>
+<font color="deepskyblue">0375:</font>         D3DVIEWPORT9 viewport = {0,0 <font color="cyan">// 左上の座標</font>
+<font color="deepskyblue">0376:</font>                         , MAP_WIDTH  <font color="cyan">// 幅</font>
+<font color="deepskyblue">0377:</font>                         , MAP_HEIGHT <font color="cyan">// 高さ</font>
+<font color="deepskyblue">0378:</font>                         , 0.0f,1.0f};<font color="cyan">// 前面、後面</font>
 <font color="deepskyblue">0379:</font>         m_pd3dDevice-&gt;SetViewport(&amp;viewport);
 <font color="deepskyblue">0380:</font> 
-<font color="deepskyblue">0381:</font>         <font color="cyan">// �N���A</font>
+<font color="deepskyblue">0381:</font>         <font color="cyan">// クリア</font>
 <font color="deepskyblue">0382:</font>         m_pd3dDevice-&gt;Clear(0L, NULL
 <font color="deepskyblue">0383:</font>                         , D3DCLEAR_TARGET | D3DCLEAR_ZBUFFER
 <font color="deepskyblue">0384:</font>                         , 0, 1.0f, 0L);
 
-���ʂɕ`��
+普通に描画
 
 <font color="deepskyblue">0410:</font>         m_pd3dDevice-&gt;EndScene();
 </pre>
 <p>
-���āA���悢��STA�̍쐬�ł��B<br>
-����́Ax�����̂ڂ����̂��߂ɁA�c�����e�N�X�`���̃T�C�Y�̐����������A
-�ׂ̃s�N�Z�������Z���邱�ƂŁA���̍��ɂ���s�N�Z���̍��v���v�Z���܂����B<br>
-y�����̂ڂ����ɂ́A�����𓯂��悤�Ɉ����܂��B
+さて、いよいよSTAの作成です。<br>
+今回は、x方向のぼかしのために、縦線をテクスチャのサイズの数だけ引き、
+隣のピクセルを加算することで、その左にあるピクセルの合計を計算しました。<br>
+y方向のぼかしには、横線を同じように引きます。
 </p>
 <image src = "step.png">
 <p>
-��{�I�ɂ́A�O�̐��̕`��̊�����҂��Ȃ��Ă͂����Ȃ��̂ŁABeginScene/EndScene�ŕ`��̏I����҂��܂��B<br>
-�����������_�����쐬���Ă��܂����A���_�o�b�t�@��p�ӂ��Ă����ĕ`�悷��Ƒ����Ȃ邩������܂���ˁB
+基本的には、前の線の描画の完了を待たなくてはいけないので、BeginScene/EndSceneで描画の終了を待ちます。<br>
+いちいち頂点情報を作成していますが、頂点バッファを用意しておいて描画すると早くなるかもしれませんね。
 </p>
 <pre class="CodeBlock">
 main.cpp
 <font color="deepskyblue">0412:</font>         <font color="cyan">// ----------------------------------------------------</font>
-<font color="deepskyblue">0413:</font>         <font color="cyan">// SAT �v�Z</font>
+<font color="deepskyblue">0413:</font>         <font color="cyan">// SAT 計算</font>
 <font color="deepskyblue">0414:</font>         <font color="cyan">// ----------------------------------------------------</font>
 <font color="deepskyblue">0415:</font>         RS( D3DRS_ZENABLE, FALSE );
 <font color="deepskyblue">0416:</font>         RS( D3DRS_LIGHTING, FALSE );
@@ -241,21 +241,21 @@ main.cpp
 <font color="deepskyblue">0454:</font>         m_pEffect-&gt;End();
 </pre>
 <p>
-���_�V�F�[�_�ł́A���_�ʒu�̃e�N�Z���ƁA�P�ƂȂ�̃e�N�Z�����e�N�X�`�����W�Ƃ��Ďw�肵�ďo�͂��܂��B<br>
-�e�N�Z�����S���e�N�X�`�����W�ɂ�����ƍ��킹�ďo�͂��܂��B
+頂点シェーダでは、頂点位置のテクセルと、１つとなりのテクセルをテクスチャ座標として指定して出力します。<br>
+テクセル中心をテクスチャ座標にきちんと合わせて出力します。
 </p>
 <pre class="CodeBlock">
 hlsl.fx
 <font color="deepskyblue">0047:</font> <font color="cyan">// -------------------------------------------------------------</font>
-<font color="deepskyblue">0048:</font> <font color="cyan">// ���_�V�F�[�_�v���O����</font>
+<font color="deepskyblue">0048:</font> <font color="cyan">// 頂点シェーダプログラム</font>
 <font color="deepskyblue">0049:</font> <font color="cyan">// -------------------------------------------------------------</font>
 <font color="deepskyblue">0050:</font> VS_OUTPUT VS_sat_x (
-<font color="deepskyblue">0051:</font>       float4 Pos    : POSITION,          <font color="cyan">// ���f���̒��_</font>
-<font color="deepskyblue">0052:</font>       float4 Tex    : TEXCOORD0          <font color="cyan">// �e�N�X�`�����W</font>
+<font color="deepskyblue">0051:</font>       float4 Pos    : POSITION,          <font color="cyan">// モデルの頂点</font>
+<font color="deepskyblue">0052:</font>       float4 Tex    : TEXCOORD0          <font color="cyan">// テクスチャ座標</font>
 <font color="deepskyblue">0053:</font> ){
-<font color="deepskyblue">0054:</font>     VS_OUTPUT Out = (VS_OUTPUT)0;        <font color="cyan">// �o�̓f�[�^</font>
+<font color="deepskyblue">0054:</font>     VS_OUTPUT Out = (VS_OUTPUT)0;        <font color="cyan">// 出力データ</font>
 <font color="deepskyblue">0055:</font>     
-<font color="deepskyblue">0056:</font>     <font color="cyan">// �ʒu���W</font>
+<font color="deepskyblue">0056:</font>     <font color="cyan">// 位置座標</font>
 <font color="deepskyblue">0057:</font>     Out.Pos = Pos;
 <font color="deepskyblue">0058:</font>     
 <font color="deepskyblue">0059:</font>     Out.Tex0 = Tex + float2( 0.5f/MAP_WIDTH, 0.5f/MAP_HEIGHT );
@@ -265,14 +265,14 @@ hlsl.fx
 <font color="deepskyblue">0063:</font> }
 </pre>
 <p>
-�s�N�Z���V�F�[�_�ł́A�����_�����O�^�[�Q�b�g���g���e�N�X�`���Ƃ��āA
-���ꂼ��̃e�N�Z����ǂݏo���܂��B<br>
-����̃v���O�����ł́A�덷�����炷�悤�ɁA�F�̒l0.5�𒆐S�ɏ㉺�ɕ����ɒl���ω�����悤�ɂ��܂����B
+ピクセルシェーダでは、レンダリングターゲット自身をテクスチャとして、
+それぞれのテクセルを読み出します。<br>
+今回のプログラムでは、誤差を減らすように、色の値0.5を中心に上下に平等に値が変化するようにしました。
 </p>
 <pre class="CodeBlock">
 hlsl.fx
 <font color="deepskyblue">0083:</font> <font color="cyan">// -------------------------------------------------------------</font>
-<font color="deepskyblue">0084:</font> <font color="cyan">// �s�N�Z���V�F�[�_�v���O����</font>
+<font color="deepskyblue">0084:</font> <font color="cyan">// ピクセルシェーダプログラム</font>
 <font color="deepskyblue">0085:</font> <font color="cyan">// -------------------------------------------------------------</font>
 <font color="deepskyblue">0086:</font> float4 PS_sat(VS_OUTPUT In) : COLOR
 <font color="deepskyblue">0087:</font> {   
@@ -284,21 +284,21 @@ hlsl.fx
 <font color="deepskyblue">0093:</font> }
 </pre>
 <p>
-���������̂ڂ����̏ꍇ�ɂ́A���炷�ʒu��ς���悤�ɒ��_�V�F�[�_��ύX���܂��B<br>
-���_�f�[�^�������玝���Ă����΁A�V�F�[�_��؂�ւ��邱�ƂȂ��i�Œ�@�\���g����ł��傤�j���s���邱�Ƃ��ł���ł��傤�B
+ｙ軸方向のぼかしの場合には、ずらす位置を変えるように頂点シェーダを変更します。<br>
+頂点データを元から持っておけば、シェーダを切り替えることなく（固定機能も使えるでしょう）実行することもできるでしょう。
 </p>
 <pre class="CodeBlock">
 hlsl.fx
 <font color="deepskyblue">0065:</font> <font color="cyan">// -------------------------------------------------------------</font>
-<font color="deepskyblue">0066:</font> <font color="cyan">// ���_�V�F�[�_�v���O����</font>
+<font color="deepskyblue">0066:</font> <font color="cyan">// 頂点シェーダプログラム</font>
 <font color="deepskyblue">0067:</font> <font color="cyan">// -------------------------------------------------------------</font>
 <font color="deepskyblue">0068:</font> VS_OUTPUT VS_sat_y (
-<font color="deepskyblue">0069:</font>       float4 Pos    : POSITION,          <font color="cyan">// ���f���̒��_</font>
-<font color="deepskyblue">0070:</font>       float4 Tex    : TEXCOORD0          <font color="cyan">// �e�N�X�`�����W</font>
+<font color="deepskyblue">0069:</font>       float4 Pos    : POSITION,          <font color="cyan">// モデルの頂点</font>
+<font color="deepskyblue">0070:</font>       float4 Tex    : TEXCOORD0          <font color="cyan">// テクスチャ座標</font>
 <font color="deepskyblue">0071:</font> ){
-<font color="deepskyblue">0072:</font>     VS_OUTPUT Out = (VS_OUTPUT)0;        <font color="cyan">// �o�̓f�[�^</font>
+<font color="deepskyblue">0072:</font>     VS_OUTPUT Out = (VS_OUTPUT)0;        <font color="cyan">// 出力データ</font>
 <font color="deepskyblue">0073:</font>     
-<font color="deepskyblue">0074:</font>     <font color="cyan">// �ʒu���W</font>
+<font color="deepskyblue">0074:</font>     <font color="cyan">// 位置座標</font>
 <font color="deepskyblue">0075:</font>     Out.Pos = Pos;
 <font color="deepskyblue">0076:</font>     
 <font color="deepskyblue">0077:</font>     Out.Tex0 = Tex + float2( 0.5f/MAP_WIDTH, 0.5f/MAP_HEIGHT );
@@ -308,22 +308,22 @@ hlsl.fx
 <font color="deepskyblue">0081:</font> }
 </pre>
 <p>
-���̍H���̌��ʁASAT�́A���̂悤�ȉ摜�ɂȂ�܂�(���������_���o�b�t�@�̒l�����̂܂܏o�͂��Ă���̂ŁA�l���P���傫�ȕ����͖O�a���Ă��܂�)�B
+この工程の結果、SATは、次のような画像になります(浮動小数点数バッファの値をそのまま出力しているので、値が１より大きな部分は飽和しています)。
 </p>
 <image src = "pass01.png">
 <p>
 
 
-<h2>���͈͑��a�e�[�u�����g�����ڂ���</h2>
+<h2>■範囲総和テーブルを使ったぼかし</h2>
 
 
 <p>
-SAT���ł�����A������g���Ăڂ������摜���g���܂��B<br>
-��{�I�ɂ́A�����_�����O�^�[�Q�b�g���t���[���o�b�t�@�ɖ߂��Ă���A�l�p�`��`�悷�邾���ł��B
+SATができたら、それを使ってぼかした画像を使います。<br>
+基本的には、レンダリングターゲットをフレームバッファに戻してから、四角形を描画するだけです。
 </p>
 <pre class="CodeBlock">
 <font color="deepskyblue">0456:</font>         <font color="cyan">//-----------------------------------------------------</font>
-<font color="deepskyblue">0457:</font>         <font color="cyan">// �����_�����O�^�[�Q�b�g�����ɖ߂�</font>
+<font color="deepskyblue">0457:</font>         <font color="cyan">// レンダリングターゲットを元に戻す</font>
 <font color="deepskyblue">0458:</font>         <font color="cyan">//-----------------------------------------------------</font>
 <font color="deepskyblue">0459:</font>         m_pd3dDevice-&gt;SetRenderTarget(0, pOldBackBuffer);
 <font color="deepskyblue">0460:</font>         m_pd3dDevice-&gt;SetDepthStencilSurface(pOldZBuffer);
@@ -333,7 +333,7 @@ SAT���ł�����A������g���Ăڂ������摜���g���܂��B<br>
 <font color="deepskyblue">0464:</font>     }
 <font color="deepskyblue">0465:</font>     <font color="blue">if</font>( SUCCEEDED( m_pd3dDevice-&gt;BeginScene() ) )
 <font color="deepskyblue">0466:</font>     {
-<font color="deepskyblue">0467:</font>         <font color="cyan">// �o�b�t�@�̃N���A</font>
+<font color="deepskyblue">0467:</font>         <font color="cyan">// バッファのクリア</font>
 <font color="deepskyblue">0468:</font>         m_pd3dDevice-&gt;Clear( 0L, NULL
 <font color="deepskyblue">0469:</font>                         , D3DCLEAR_TARGET|D3DCLEAR_ZBUFFER
 <font color="deepskyblue">0470:</font>                         , 0x00404080, 1.0f, 0L );
@@ -341,7 +341,7 @@ SAT���ł�����A������g���Ăڂ������摜���g���܂��B<br>
 <font color="deepskyblue">0472:</font>         <font color="blue">if</font>( m_pEffect != NULL ) 
 <font color="deepskyblue">0473:</font>         {
 <font color="deepskyblue">0474:</font>             <font color="cyan">//-------------------------------------------------</font>
-<font color="deepskyblue">0475:</font>             <font color="cyan">// �V�F�[�_�̐ݒ�</font>
+<font color="deepskyblue">0475:</font>             <font color="cyan">// シェーダの設定</font>
 <font color="deepskyblue">0476:</font>             <font color="cyan">//-------------------------------------------------</font>
 <font color="deepskyblue">0477:</font>             m_pEffect-&gt;SetTechnique( m_hTechnique );
 <font color="deepskyblue">0478:</font>             m_pEffect-&gt;Begin( NULL, 0 );
@@ -367,21 +367,21 @@ SAT���ł�����A������g���Ăڂ������摜���g���܂��B<br>
 <font color="deepskyblue">0498:</font>         }
 </pre>
 <p>
-����́A40x40�e�N�Z�������ڂ����ďo�͂��܂��B<br>
-���_�V�F�[�_�ł́A�e�N�Z���̏㉺���E�̋��̃e�N�Z�����w�肵�܂��B
+今回は、40x40テクセル分をぼかして出力します。<br>
+頂点シェーダでは、テクセルの上下左右の隅のテクセルを指定します。
 </p>
 <pre class="CodeBlock">
 hlsl.fx
 <font color="deepskyblue">0101:</font> <font color="cyan">// -------------------------------------------------------------</font>
-<font color="deepskyblue">0102:</font> <font color="cyan">// ���_�V�F�[�_�v���O����</font>
+<font color="deepskyblue">0102:</font> <font color="cyan">// 頂点シェーダプログラム</font>
 <font color="deepskyblue">0103:</font> <font color="cyan">// -------------------------------------------------------------</font>
 <font color="deepskyblue">0104:</font> VS_OUTPUT VS_out (
-<font color="deepskyblue">0105:</font>       float4 Pos    : POSITION,          <font color="cyan">// ���f���̒��_</font>
-<font color="deepskyblue">0106:</font>       float4 Tex    : TEXCOORD0          <font color="cyan">// �e�N�X�`�����W</font>
+<font color="deepskyblue">0105:</font>       float4 Pos    : POSITION,          <font color="cyan">// モデルの頂点</font>
+<font color="deepskyblue">0106:</font>       float4 Tex    : TEXCOORD0          <font color="cyan">// テクスチャ座標</font>
 <font color="deepskyblue">0107:</font> ){
-<font color="deepskyblue">0108:</font>     VS_OUTPUT Out = (VS_OUTPUT)0;        <font color="cyan">// �o�̓f�[�^</font>
+<font color="deepskyblue">0108:</font>     VS_OUTPUT Out = (VS_OUTPUT)0;        <font color="cyan">// 出力データ</font>
 <font color="deepskyblue">0109:</font>     
-<font color="deepskyblue">0110:</font>     <font color="cyan">// �ʒu���W</font>
+<font color="deepskyblue">0110:</font>     <font color="cyan">// 位置座標</font>
 <font color="deepskyblue">0111:</font>     Out.Pos = Pos;
 <font color="deepskyblue">0112:</font>     
 <font color="deepskyblue">0113:</font>     Out.Tex0 = Tex + float2( - 19.5f/MAP_WIDTH, -19.5f/MAP_HEIGHT );
@@ -393,14 +393,14 @@ hlsl.fx
 <font color="deepskyblue">0119:</font> }
 </pre>
 <p>
-�s�N�Z���V�F�[�_�ł́A�����ɉ����ăe�N�Z�����T���v�����O����Ƌ��ɁA
-�T���v�����O�����͈̖͂ʐςŌ��ʂ�����܂��B<br>
-�Ō�ɁA�����҂���0.5�̕���������̂�Y��Ȃ��悤�ɂ��܂��傤�B
+ピクセルシェーダでは、公式に沿ってテクセルをサンプリングすると共に、
+サンプリングした範囲の面積で結果を割ります。<br>
+最後に、差っぴいた0.5の分を加えるのを忘れないようにしましょう。
 </p>
 <pre class="CodeBlock">
 hlsl.fx
 <font color="deepskyblue">0121:</font> <font color="cyan">// -------------------------------------------------------------</font>
-<font color="deepskyblue">0122:</font> <font color="cyan">// �s�N�Z���V�F�[�_�v���O����</font>
+<font color="deepskyblue">0122:</font> <font color="cyan">// ピクセルシェーダプログラム</font>
 <font color="deepskyblue">0123:</font> <font color="cyan">// -------------------------------------------------------------</font>
 <font color="deepskyblue">0124:</font> float4 PS_out(VS_OUTPUT In) : COLOR
 <font color="deepskyblue">0125:</font> {   
@@ -417,18 +417,18 @@ hlsl.fx
 
 
 
-<h2>���Ō��</h2>
+<h2>■最後に</h2>
 
 
 <p>
-�������ɉ��x��BeginScene/EndScene���Ă�̂ŁA�d���ł��ˁB
-�d���Ǝv���Ă����K�E�X�t�B���^�����d�����ł��c<br>
-�ł��A�ϕ��v�Z���Ă�Ǝv���΃o�N���͈̔͂ł��傤���B
+さすがに何度もBeginScene/EndSceneしてるので、重いですね。
+重いと思っていたガウスフィルタよりも重たいです…<br>
+でも、積分計算してると思えばバク速の範囲でしょうか。
 </p>
 <p>
-����̃v���O�����́A�s�������_���o�b�t�@���g���܂����A�V�F�[�_���̂�vs_1_1�Aps_1_1�ŉ\�ɂȂ��Ă��܂��B<br>
-���ǂ̓|�X�g�G�t�F�N�g�Ȃ̂ŁA�`�揇���Ɉˑ�����悤�ȏ����Ɏg���͓̂�����ł��ˁB<br>
-�Ƃ������ƂŁA�A���`�G�C���A�X�Ɏg���͓̂���C�����܂����c
+今回のプログラムは、不動小数点数バッファを使いますが、シェーダ自体はvs_1_1、ps_1_1で可能になっています。<br>
+結局はポストエフェクトなので、描画順序に依存するような処理に使うのは難しそうですね。<br>
+ということで、アンチエイリアスに使うのは難しい気がしますが…
 </p>
 
 </div>
@@ -437,7 +437,7 @@ hlsl.fx
 <BR CLEAR=ALL>
 <center>
 <hr>
-<p><a href="../index.html">���ǂ�</a></p>
+<p><a href="../index.html">もどる</a></p>
 <p><a href="mailto:imagire@gmail.com">imagire@gmail.com</a></p>
 </center>
 

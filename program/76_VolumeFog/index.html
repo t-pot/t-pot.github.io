@@ -1,8 +1,8 @@
 <head>
-	<title>t-pot�w�{�����[�����x</title>
+	<title>t-pot『ボリューム霧』</title>
 	<link rel="stylesheet" type="text/css" href="../if.css">
 </head>
-<meta http-equiv=Content-Type content="text/html; charset=shift_jis">
+<meta http-equiv=Content-Type content="text/html; charset=UTF-8">
 <body>
 
 
@@ -10,8 +10,8 @@
 <center>
 <BR CLEAR=ALL>
 <BR CLEAR=ALL>
-<h1>�{�����[����</h1><br>
-<h3>�` Volume fog �`</h3>
+<h1>ボリューム霧</h1><br>
+<h3>～ Volume fog ～</h3>
 <BR CLEAR=ALL>
 <BR CLEAR=ALL>
 <BR CLEAR=ALL>
@@ -22,196 +22,196 @@
 <div>
 
 
-<h2>���͂��߂�</h2>
+<h2>■はじめに</h2>
 
 
 <p>
-���āA���������_���e�ł͖�������IEEE�t�H�[�}�b�g�̃e�N�X�`�����g���ĉ������ʂ��o�����A�c�O�������̂ł����A
-�����������b���󂯂邱�Ƃ�����Ă݂܂��傤�B<br>
-����́A�{�����[�����ɒ��킵�Ă݂܂��B<br>
-��̉摜�̓{�N�Z���\�����ꂽ UFO �����𕂂��Ă��܂��B<br>
-�{�����[�����́A���ł�CEDEC2002�ł��Љ��āA�����͂��łɔ����̉��ɂ��炳��Ă����ł����A
-DirectX9 ����ɓ����āA��茻���I�ȃG�t�F�N�g�ɂȂ��Ă��܂����B<br>
-����́AIEEE �t�H�[�}�b�g���g���������łȂ��AMRT(Multi rendering target�F�����̃����_�����O�^�[�Q�b�g�֓����Ƀ����_�����O����)���g���ăp�X�������炷���Ƃ��s���Ă��܂��B
+さて、浮動小数点数影では無理してIEEEフォーマットのテクスチャを使って何も成果が出せず、残念だったのですが、
+もう少し恩恵を受けることをやってみましょう。<br>
+今回は、ボリューム霧に挑戦してみます。<br>
+上の画像はボクセル表現された UFO が宙を浮いています。<br>
+ボリューム霧は、すでにCEDEC2002でも紹介されて、やり方はすでに白日の下にさらされている訳ですが、
+DirectX9 世代に入って、より現実的なエフェクトになってきました。<br>
+今回は、IEEE フォーマットを使っただけでなく、MRT(Multi rendering target：複数のレンダリングターゲットへ同時にレンダリングする)を使ってパス数を減らすことも行っています。
 </p>
 <ul style = "LIST-STYLE-TYPE:none">
-<li><a href="src.zip">src.zip (�{�����[����:DirectX9)</a>
+<li><a href="src.zip">src.zip (ボリューム霧:DirectX9)</a>
 </ul>
 
 <p>
-�܂��A�����̂悤�ɓK���Ƀt�@�C���������Ă��܂��B<br>
-APP WIZARD ����o�͂����t���[�����[�N�̃t�@�C���͏Љ���Ȃ����Ă��������܂��B
+まぁ、いつものように適当にファイルが入っています。<br>
+APP WIZARD から出力されるフレームワークのファイルは紹介を省かせていただきます。
 </p>
 <table>
-<tr><td><a href="hlsl_fx.html">hlsl.fx</a></td><td>�V�F�[�_�̓������G�t�F�N�g�t�@�C��</td></tr>
-<tr><td><a href="main_h.html">main.h</a></td><td>�A�v���P�[�V�����̃w�b�_</td></tr>
-<tr><td><a href="main_cpp.html">main.cpp</a></td><td>�A�v���P�[�V�����̃\�[�X</td></tr>
+<tr><td><a href="hlsl_fx.html">hlsl.fx</a></td><td>シェーダの入ったエフェクトファイル</td></tr>
+<tr><td><a href="main_h.html">main.h</a></td><td>アプリケーションのヘッダ</td></tr>
+<tr><td><a href="main_cpp.html">main.cpp</a></td><td>アプリケーションのソース</td></tr>
 </table>
 <p>
-���ƁA���s�t�@�C���A�\���p���f���y�сA�v���W�F�N�g�t�@�C���������Ă��܂��B</p>
+あと、実行ファイル、表示用モデル及び、プロジェクトファイルが入っています。</p>
 
 
-<h2>���{�����[�����̍l����</h2>
+<h2>■ボリューム霧の考え方</h2>
 
 
 <p>
-�{�����[�����ł����A�l�����̓V���v���ł��B<br>
-���������A���i�p���Ă��閶�́A���ݎ���������_���畨�̂��`�����_�܂ŊԂ̕s�����ɂ����̎U�����V�~�����[�g���Ă��܂��B<br>
-�s�������q������̊Ԃɂ������݂��Ȃ���Ԃ��{�����[�����ł��B<br>
-�{�����[�������Č�����ɂ́A�{�����[���̉��܂ł̖��̔Z�x����A��O�̔Z�x�܂ł̍����v�Z����΂悢�ł��傤�B
+ボリューム霧ですが、考え方はシンプルです。<br>
+そもそも、普段用いている霧は、現在自分がいる点から物体が描かれる点まで間の不純物による光の散乱をシミュレートしています。<br>
+不純物粒子が特定の間にしか存在しない状態がボリューム霧です。<br>
+ボリューム霧を再現するには、ボリュームの奥までの霧の濃度から、手前の濃度までの差を計算すればよいでしょう。
 </p>
 <image src = "howto.png">
 <p>
-���āA�����Œ��ӂ���_�́A���̒��ɕs�����ȕ��̂��������Ƃ��ł��B<br>
-���̎��A�s�����ȕ��̂̐�ɂ���s�����͌����܂��񂩂�A�s�������̂𖶂̈�Ԑ�̏ꏊ�Ƃ݂Ȃ��Čv�Z���܂��B
+さて、ここで注意する点は、霧の中に不透明な物体があったときです。<br>
+この時、不透明な物体の先にある不純物は見えませんから、不透明物体を霧の一番先の場所とみなして計算します。
 </p>
 <image src = "howto2.png">
 <p>
-����̕`��̎菇�ł����A���͂S�p�X�ł�(������MRT���g���Ă������c)�B<br>
-1�p�X�ڂŁA�l�q�s���g���āA�{�����[�����̖�����Ԃ̐F�Ɛ[�x�������_�����O���܂��B<br>
-����A�[�x��R23F�t�H�[�}�b�g�Ń����_�����O���܂������A�����͕ʂ�R8G8B8A8�ł������Ǝv���܂��B<br>
-�Q�p�X�ڂƂR�p�X�ڂŁA�t�H�O�̌��݂������_�����O���܂��B<br>
-�Q�p�X�ڂŕ\���̐[�x�����Z�ŁA�R�p�X�ڂŗ����̐[�x�����Z�Ń����_�����O���܂��B<br>
-�Ō�ɂS�p�X�ڂŁA�v�Z���ꂽ�t�H�O�̌��݂���A�|�X�g�����Ńt�H�O�̌v�Z�����ă{�����[�������_�����O���镨�̂𕂂��яオ�点�܂��B
+今回の描画の手順ですが、実は４パスです(しかもMRTを使ってさえも…)。<br>
+1パス目で、ＭＲＴを使って、ボリューム霧の無い状態の色と深度をレンダリングします。<br>
+今回、深度をR23Fフォーマットでレンダリングしましたが、ここは別にR8G8B8A8でもいいと思います。<br>
+２パス目と３パス目で、フォグの厚みをレンダリングします。<br>
+２パス目で表側の深度を加算で、３パス目で裏側の深度を減算でレンダリングします。<br>
+最後に４パス目で、計算されたフォグの厚みから、ポスト処理でフォグの計算をしてボリュームレンダリングする物体を浮かび上がらせます。
 </p>
 <image src = "pass.png">
 <p>
-�t�H�O�̌��݂��v��o�b�t�@�́A���������_���o�b�t�@�Ȃ̂ł����A���������_���o�b�t�@�̓A���t�@�������g���Ȃ��̂ŁA
-���ݏ�������ł���o�b�t�@���e�N�X�`���Ƃ��ă����_�����O���Ă��܂��B<br>
-���̕��@�͋ւ���̂P�ł��B���̃����_�����O�����邽�߂ɁA�P�̃I�u�W�F�N�g�i�̃T�u�Z�b�g�j�������_�����O���邽�тɁA
-BeginScene/EndScene �ŕ`��̏I����҂��܂����B���ʂ̃t�H�[�}�b�g���ƁA�������������g����̂ł��̏󋵂͊y�Ȃ̂ł����A
-���x�͐��x������Ȃ��Ȃ�̂ň꒷��Z�ł��B<br>
-�����Y��܂������A����̕��@�́u�\�|���v���v�Z����̂ŁA�u�����v���f���Ŗ����Ƃ��߂ł��B<br>
-�܂��A�ʂȃ��f���łȂ��ƁA�����_�����O�p�C�v���C���̖��Ő���Ɍv�Z�ł��Ȃ��̂ŁA
-���f���͓ʂ̃T�u�Z�b�g�ɕ����Ēu���Ă��������B
+フォグの厚みを計るバッファは、浮動小数点数バッファなのですが、浮動小数点数バッファはアルファ合成が使えないので、
+現在書き込んでいるバッファをテクスチャとしてレンダリングしています。<br>
+この方法は禁じ手の１つです。このレンダリングをするために、１つのオブジェクト（のサブセット）をレンダリングするたびに、
+BeginScene/EndScene で描画の終了を待ちました。普通のフォーマットだと、半透明合成が使えるのでこの状況は楽なのですが、
+今度は精度が足りなくなるので一長一短です。<br>
+いい忘れましたが、今回の方法は「表－裏」を計算するので、「閉じた」モデルで無いとだめです。<br>
+また、凸なモデルでないと、レンダリングパイプラインの問題で正常に計算できないので、
+モデルは凸のサブセットに分けて置いてください。
 </p>
 
 
-<h2>���p�X�P�F���Ȃ��V�[���̃����_�����O</h2>
+<h2>■パス１：霧なしシーンのレンダリング</h2>
 
 
 <p>
-����́A�p�X���ƂɌ��Ă����܂��傤�B<br>
-�ŏ��̃����_�����O�́A�F�Ɛ[�x�̕`��ł��B<br>
-���̂Q�̃V�[���Ɋւ��ẮA������������̕`��Ȃ̂ŁAMRT���g���ĂP�x�ɏ������ł��܂��B<br>
-MRT���g�����߂̏����́AD3DCAPS9 �ɁANumSimultaneousRTs �Ƃ��������Ƀ����_�����O�ł��閇�����i�[�����ϐ�������̂ŁA���̒l���m�F���܂��B
+今回は、パスごとに見ていきましょう。<br>
+最初のレンダリングは、色と深度の描画です。<br>
+この２つのシーンに関しては、同じ方向からの描画なので、MRTを使って１度に処理ができます。<br>
+MRTを使うための条件は、D3DCAPS9 に、NumSimultaneousRTs という同時にレンダリングできる枚数を格納した変数があるので、この値を確認します。
 </p>
 <pre class="CodeBlock">
 main.cpp
 <font color="deepskyblue">0128:</font> <font color="cyan">//-------------------------------------------------------------</font>
 <font color="deepskyblue">0129:</font> <font color="cyan">// Name: ConfirmDevice()</font>
-<font color="deepskyblue">0130:</font> <font color="cyan">// Desc: �������̎��ɌĂ΂�܂��B�K�v�Ȕ\�͂��`�F�b�N���܂��B</font>
+<font color="deepskyblue">0130:</font> <font color="cyan">// Desc: 初期化の時に呼ばれます。必要な能力をチェックします。</font>
 <font color="deepskyblue">0131:</font> <font color="cyan">//-------------------------------------------------------------</font>
 <font color="deepskyblue">0132:</font> HRESULT CMyD3DApplication::ConfirmDevice( D3DCAPS9* pCaps
 <font color="deepskyblue">0133:</font>                         , DWORD dwBehavior, D3DFORMAT Format )
 <font color="deepskyblue">0134:</font> {
-<font color="deepskyblue">0139:</font>     <font color="cyan">// �V�F�[�_�̃`�F�b�N</font>
+<font color="deepskyblue">0139:</font>     <font color="cyan">// シェーダのチェック</font>
 <font color="deepskyblue">0140:</font>     <font color="blue">if</font>( pCaps-&gt;VertexShaderVersion &lt; D3DVS_VERSION(1,1) &amp;&amp;
 <font color="deepskyblue">0141:</font>       !(dwBehavior &amp; D3DCREATE_SOFTWARE_VERTEXPROCESSING ) )
-<font color="deepskyblue">0142:</font>         <font color="blue">return</font> E_FAIL;  <font color="cyan">// ���_�V�F�[�_</font>
+<font color="deepskyblue">0142:</font>         <font color="blue">return</font> E_FAIL;  <font color="cyan">// 頂点シェーダ</font>
 <font color="deepskyblue">0143:</font>     
 <font color="deepskyblue">0144:</font>     <font color="blue">if</font>( pCaps-&gt;PixelShaderVersion &lt; D3DPS_VERSION(2,0))
-<font color="deepskyblue">0145:</font>         <font color="blue">return</font> E_FAIL;  <font color="cyan">// �s�N�Z���V�F�[�_</font>
+<font color="deepskyblue">0145:</font>         <font color="blue">return</font> E_FAIL;  <font color="cyan">// ピクセルシェーダ</font>
 <font color="deepskyblue">0146:</font> 
-<font color="deepskyblue">0147:</font>     <font color="cyan">// MRT ���Q���g��</font><font color="yellow">
+<font color="deepskyblue">0147:</font>     <font color="cyan">// MRT を２枚使う</font><font color="yellow">
 <font color="deepskyblue">0148:</font>     <font color="blue">if</font>(pCaps-&gt;NumSimultaneousRTs &lt; 2) <font color="blue">return</font> E_FAIL;</font>
 <font color="deepskyblue">0149:</font> 
 <font color="deepskyblue">0150:</font>     <font color="blue">return</font> S_OK;
 <font color="deepskyblue">0151:</font> }
 </pre>
 <p>
-�ł́A�V�F�[�_�����Ă݂܂��傤�B<br>
-���̃����_�����O�ł́A�����̃����_�����O�̑��ɐ[�x���������݂܂��̂ŁA
-�[�x���i�e�N�X�`�����W�Ƃ��āj������葽�߂ɏo�͂��܂��B
+では、シェーダを見てみましょう。<br>
+このレンダリングでは、いつものレンダリングの他に深度を書き込みますので、
+深度を（テクスチャ座標として）いつもより多めに出力します。
 </p>
 <pre class="CodeBlock">
 hlsh.fx
 <font color="deepskyblue">0048:</font> <font color="cyan">// -------------------------------------------------------------</font>
-<font color="deepskyblue">0049:</font> <font color="cyan">// ���_�V�F�[�_�v���O����</font>
+<font color="deepskyblue">0049:</font> <font color="cyan">// 頂点シェーダプログラム</font>
 <font color="deepskyblue">0050:</font> <font color="cyan">// -------------------------------------------------------------</font>
 <font color="deepskyblue">0051:</font> VS_OUTPUT VS (
-<font color="deepskyblue">0052:</font>       float4 Pos    : POSITION          <font color="cyan">// ���_�ʒu</font>
-<font color="deepskyblue">0053:</font>     , float4 Normal : NORMAL            <font color="cyan">// �@���x�N�g��</font>
-<font color="deepskyblue">0054:</font>     , float4 Tex    : TEXCOORD0         <font color="cyan">// �e�N�X�`�����W</font>
+<font color="deepskyblue">0052:</font>       float4 Pos    : POSITION          <font color="cyan">// 頂点位置</font>
+<font color="deepskyblue">0053:</font>     , float4 Normal : NORMAL            <font color="cyan">// 法線ベクトル</font>
+<font color="deepskyblue">0054:</font>     , float4 Tex    : TEXCOORD0         <font color="cyan">// テクスチャ座標</font>
 <font color="deepskyblue">0055:</font> ){
-<font color="deepskyblue">0056:</font>     VS_OUTPUT Out = (VS_OUTPUT)0;        <font color="cyan">// �o�̓f�[�^</font>
+<font color="deepskyblue">0056:</font>     VS_OUTPUT Out = (VS_OUTPUT)0;        <font color="cyan">// 出力データ</font>
 <font color="deepskyblue">0057:</font>     
-<font color="deepskyblue">0058:</font>     <font color="cyan">// ���W�ϊ�</font>
+<font color="deepskyblue">0058:</font>     <font color="cyan">// 座標変換</font>
 <font color="deepskyblue">0059:</font>     float4 pos = mul( Pos, mWVP );
 <font color="deepskyblue">0060:</font>     
-<font color="deepskyblue">0061:</font>     <font color="cyan">// �ʒu���W</font>
+<font color="deepskyblue">0061:</font>     <font color="cyan">// 位置座標</font>
 <font color="deepskyblue">0062:</font>     Out.Pos = pos;
 <font color="deepskyblue">0063:</font>     
-<font color="deepskyblue">0064:</font>     <font color="cyan">// �Ɩ��v�Z</font>
+<font color="deepskyblue">0064:</font>     <font color="cyan">// 照明計算</font>
 <font color="deepskyblue">0065:</font>     Out.Col = vCol * max( dot(vLightDir, Normal), 0);
 <font color="deepskyblue">0066:</font>     
-<font color="deepskyblue">0067:</font>     <font color="cyan">// �e�N�X�`�����W</font>
+<font color="deepskyblue">0067:</font>     <font color="cyan">// テクスチャ座標</font>
 <font color="deepskyblue">0068:</font>     Out.Tex = Tex;
 <font color="deepskyblue">0069:</font>     
-<font color="deepskyblue">0070:</font>     <font color="cyan">// �[�x</font>
+<font color="deepskyblue">0070:</font>     <font color="cyan">// 深度</font>
 <font color="deepskyblue">0071:</font>     Out.Depth = pos.z / pos.w;
 <font color="deepskyblue">0072:</font>     
 <font color="deepskyblue">0073:</font>     <font color="blue">return</font> Out;
 <font color="deepskyblue">0074:</font> }
 </pre>
 <p>
-����́A�l�q�s���g���̂ŁA�s�N�Z���V�F�[�_�̏o�͂������̒P���ȐF�̃x�N�g���ł͂Ȃ��A�\���̂ɂȂ�܂��B<br>
-2�̐F�̏o�͂ɁA�[�x�Ƃ����̃����_�����O���ʂ��o�͂��܂��B
+今回は、ＭＲＴを使うので、ピクセルシェーダの出力がいつもの単純な色のベクトルではなく、構造体になります。<br>
+2つの色の出力に、深度といつものレンダリング結果を出力します。
 </p>
 <pre class="CodeBlock">
 hlsh.fx
 <font color="deepskyblue">0075:</font> <font color="cyan">// -------------------------------------------------------------</font>
-<font color="deepskyblue">0076:</font> <font color="cyan">// �s�N�Z���V�F�[�_�o�̓f�[�^</font>
+<font color="deepskyblue">0076:</font> <font color="cyan">// ピクセルシェーダ出力データ</font>
 <font color="deepskyblue">0077:</font> <font color="cyan">// -------------------------------------------------------------</font>
 <font color="deepskyblue">0078:</font> <font color="blue">struct</font> PS_OUTPUT {
 <font color="deepskyblue">0079:</font>     float4 Color : COLOR0;
 <font color="deepskyblue">0080:</font>     float4 Depth : COLOR1;
 <font color="deepskyblue">0081:</font> };
 <font color="deepskyblue">0082:</font> <font color="cyan">// -------------------------------------------------------------</font>
-<font color="deepskyblue">0083:</font> <font color="cyan">// �s�N�Z���V�F�[�_�v���O����</font>
+<font color="deepskyblue">0083:</font> <font color="cyan">// ピクセルシェーダプログラム</font>
 <font color="deepskyblue">0084:</font> <font color="cyan">// -------------------------------------------------------------</font>
 <font color="deepskyblue">0085:</font> PS_OUTPUT PS ( VS_OUTPUT In ) {
 <font color="deepskyblue">0086:</font>     
 <font color="deepskyblue">0087:</font>     PS_OUTPUT Out = ( PS_OUTPUT ) 0;
 <font color="deepskyblue">0088:</font>     
-<font color="deepskyblue">0089:</font>     <font color="cyan">// �ʏ�F</font>
+<font color="deepskyblue">0089:</font>     <font color="cyan">// 通常色</font>
 <font color="deepskyblue">0090:</font>     Out.Color = In.Col * tex2D( DecaleMapSamp, In.Tex );
 <font color="deepskyblue">0091:</font>     
-<font color="deepskyblue">0092:</font>     <font color="cyan">// �[�x</font>
+<font color="deepskyblue">0092:</font>     <font color="cyan">// 深度</font>
 <font color="deepskyblue">0093:</font>     Out.Depth.x = In.Depth;
 <font color="deepskyblue">0094:</font> 
 <font color="deepskyblue">0095:</font>     <font color="blue">return</font> Out;
 <font color="deepskyblue">0096:</font> }
 </pre>
 <p>
-�ł́A�V�F�[�_���Ăяo���A�v���P�[�V�������̃v���O�����ł��B<br>
-�l�q�s�̐ݒ�͊ȒP�ł��BSetRenderTarget �̂P�߂̈�����ς��āA�Q��Ăяo�������ł��B<br>
-��́A�����ǂ���ł��B�V�F�[�_�̐؂�ւ������āA�ϐ����V�F�[�_�ɐݒ肵�Ă���`�悵�܂��B
+では、シェーダを呼び出すアプリケーション側のプログラムです。<br>
+ＭＲＴの設定は簡単です。SetRenderTarget の１つめの引数を変えて、２回呼び出すだけです。<br>
+後は、いつもどおりです。シェーダの切り替えをして、変数をシェーダに設定してから描画します。
 </p>
 <pre class="CodeBlock">
 main.cpp
 <font color="deepskyblue">0382:</font>             <font color="cyan">//-------------------------------------------------</font>
-<font color="deepskyblue">0383:</font>             <font color="cyan">// �����_�����O�^�[�Q�b�g�̕ۑ�</font>
+<font color="deepskyblue">0383:</font>             <font color="cyan">// レンダリングターゲットの保存</font>
 <font color="deepskyblue">0384:</font>             <font color="cyan">//-------------------------------------------------</font>
 <font color="deepskyblue">0385:</font>             m_pd3dDevice-&gt;GetRenderTarget(0, &amp;pOldBackBuffer);
 <font color="deepskyblue">0386:</font>             m_pd3dDevice-&gt;GetDepthStencilSurface(&amp;pOldZBuffer);
 <font color="deepskyblue">0387:</font>             m_pd3dDevice-&gt;GetViewport(&amp;oldViewport);
 <font color="deepskyblue">0388:</font> 
 <font color="deepskyblue">0389:</font>             <font color="cyan">//-------------------------------------------------</font>
-<font color="deepskyblue">0390:</font>             <font color="cyan">// �����_�����O�^�[�Q�b�g�̕ύX</font>
+<font color="deepskyblue">0390:</font>             <font color="cyan">// レンダリングターゲットの変更</font>
 <font color="deepskyblue">0391:</font>             <font color="cyan">//-------------------------------------------------</font>
 <font color="deepskyblue">0392:</font>             <font color="yellow">m_pd3dDevice-&gt;SetRenderTarget(0, m_pColorMapSurf);
 <font color="deepskyblue">0393:</font>             m_pd3dDevice-&gt;SetRenderTarget(1, m_pDepthMapSurf);</font>
 <font color="deepskyblue">0394:</font>             m_pd3dDevice-&gt;SetDepthStencilSurface(m_pMapZ);
 <font color="deepskyblue">0395:</font>             m_pd3dDevice-&gt;SetViewport(&amp;viewport);
 <font color="deepskyblue">0396:</font> 
-<font color="deepskyblue">0397:</font>             <font color="cyan">// �����_�����O�^�[�Q�b�g�̃N���A</font>
+<font color="deepskyblue">0397:</font>             <font color="cyan">// レンダリングターゲットのクリア</font>
 <font color="deepskyblue">0398:</font>             m_pd3dDevice-&gt;Clear(0L, NULL,
 <font color="deepskyblue">0399:</font>                             D3DCLEAR_TARGET | D3DCLEAR_ZBUFFER,
 <font color="deepskyblue">0400:</font>                             0xffffff, 1.0f, 0L);
 <font color="deepskyblue">0401:</font> 
 <font color="deepskyblue">0402:</font>             <font color="cyan">//-------------------------------------------------</font>
-<font color="deepskyblue">0403:</font>             <font color="cyan">// �V�F�[�_�̐ݒ�</font>
+<font color="deepskyblue">0403:</font>             <font color="cyan">// シェーダの設定</font>
 <font color="deepskyblue">0404:</font>             <font color="cyan">//-------------------------------------------------</font>
 <font color="deepskyblue">0405:</font>             hTechnique = m_pEffect-&gt;GetTechniqueByName( "<font color="blue">TShader</font>" );
 <font color="deepskyblue">0406:</font>             m_pEffect-&gt;SetTechnique( hTechnique );
@@ -219,34 +219,34 @@ main.cpp
 <font color="deepskyblue">0408:</font>             m_pEffect-&gt;Pass( 0 );
 <font color="deepskyblue">0409:</font>             
 <font color="deepskyblue">0410:</font>             <font color="cyan">//-------------------------------------------------</font>
-<font color="deepskyblue">0411:</font>             <font color="cyan">// �V�F�[�_�萔�̐ݒ�</font>
+<font color="deepskyblue">0411:</font>             <font color="cyan">// シェーダ定数の設定</font>
 <font color="deepskyblue">0412:</font>             <font color="cyan">//-------------------------------------------------</font>
-<font color="deepskyblue">0413:</font>             <font color="cyan">// ���W�ϊ�</font>
+<font color="deepskyblue">0413:</font>             <font color="cyan">// 座標変換</font>
 <font color="deepskyblue">0414:</font>             m = m_mWorld * m_mView * m_mProj;
 <font color="deepskyblue">0415:</font>             m_pEffect-&gt;SetMatrix( m_hmWVP, &amp;m );
 <font color="deepskyblue">0416:</font> 
-<font color="deepskyblue">0417:</font>             <font color="cyan">// ���C�g</font>
+<font color="deepskyblue">0417:</font>             <font color="cyan">// ライト</font>
 <font color="deepskyblue">0418:</font>             D3DXMatrixInverse( &amp;m, NULL, &amp;m_mWorld);
 <font color="deepskyblue">0419:</font>             D3DXVec4Transform( &amp;v, &amp;m_LightDir, &amp;m );
 <font color="deepskyblue">0420:</font>             D3DXVec4Normalize( &amp;v, &amp;v );v.w = 0.3f;
 <font color="deepskyblue">0421:</font>             m_pEffect-&gt;SetVector( m_hvDir, &amp;v );
 <font color="deepskyblue">0422:</font> 
 <font color="deepskyblue">0423:</font>             <font color="cyan">//-------------------------------------------------</font>
-<font color="deepskyblue">0424:</font>             <font color="cyan">// �`��</font>
+<font color="deepskyblue">0424:</font>             <font color="cyan">// 描画</font>
 <font color="deepskyblue">0425:</font>             <font color="cyan">//-------------------------------------------------</font>
 <font color="deepskyblue">0426:</font>             D3DMATERIAL9 *pMtrl = m_pMeshBg-&gt;m_pMaterials;
 <font color="deepskyblue">0427:</font>             <font color="blue">for</font>( i=0; i&lt;m_pMeshBg-&gt;m_dwNumMaterials; i++ ) {
-<font color="deepskyblue">0428:</font>                 <font color="cyan">// ���b�V���̐F</font>
+<font color="deepskyblue">0428:</font>                 <font color="cyan">// メッシュの色</font>
 <font color="deepskyblue">0429:</font>                 v.x = pMtrl-&gt;Diffuse.r;
 <font color="deepskyblue">0430:</font>                 v.y = pMtrl-&gt;Diffuse.g;
 <font color="deepskyblue">0431:</font>                 v.z = pMtrl-&gt;Diffuse.b;
 <font color="deepskyblue">0432:</font>                 v.w = pMtrl-&gt;Diffuse.a;
 <font color="deepskyblue">0433:</font>                 m_pEffect-&gt;SetVector( m_hvCol, &amp;v );
-<font color="deepskyblue">0434:</font>                 <font color="cyan">// �e�N�X�`��</font>
+<font color="deepskyblue">0434:</font>                 <font color="cyan">// テクスチャ</font>
 <font color="deepskyblue">0435:</font>                 m_pEffect-&gt;SetTexture("<font color="blue">DecaleMap</font>"
 <font color="deepskyblue">0436:</font>                                 , m_pMeshBg-&gt;m_pTextures[i]);
 <font color="deepskyblue">0437:</font> 
-<font color="deepskyblue">0438:</font>                 m_pMeshBg-&gt;m_pLocalMesh-&gt;DrawSubset( i ); <font color="cyan">// �`��</font>
+<font color="deepskyblue">0438:</font>                 m_pMeshBg-&gt;m_pLocalMesh-&gt;DrawSubset( i ); <font color="cyan">// 描画</font>
 <font color="deepskyblue">0439:</font>                 pMtrl++;
 <font color="deepskyblue">0440:</font>             }
 <font color="deepskyblue">0441:</font> 
@@ -256,50 +256,50 @@ main.cpp
 </p>
 
 
-<h2>���p�X�Q�A�R�F���{�����[���̃����_�����O</h2>
+<h2>■パス２、３：霧ボリュームのレンダリング</h2>
 
 <p>
-���āA���̃{�����[�����v�Z���܂��B<br>
-�Q�p�X�ڂƂR�p�X�ڂł͂���Ă��邱�Ƃ͂قƂ�Ǖς��܂���B<br>
-�������_�V�F�[�_���g���܂��B
+さて、霧のボリュームを計算します。<br>
+２パス目と３パス目ではやっていることはほとんど変わりません。<br>
+同じ頂点シェーダを使います。
 </p>
 <pre class="CodeBlock">
 hlsh.fx
 <font color="deepskyblue">0155:</font> <font color="cyan">// -------------------------------------------------------------</font>
-<font color="deepskyblue">0156:</font> <font color="cyan">// ���_�V�F�[�_�v���O����</font>
+<font color="deepskyblue">0156:</font> <font color="cyan">// 頂点シェーダプログラム</font>
 <font color="deepskyblue">0157:</font> <font color="cyan">// -------------------------------------------------------------</font>
 <font color="deepskyblue">0158:</font> VS_OUTPUT_VOLUME VS_VOLUME (
-<font color="deepskyblue">0159:</font>       float4 Pos    : POSITION          <font color="cyan">// ���_�ʒu</font>
-<font color="deepskyblue">0160:</font>     , float4 Tex    : TEXCOORD0         <font color="cyan">// �e�N�X�`�����W</font>
+<font color="deepskyblue">0159:</font>       float4 Pos    : POSITION          <font color="cyan">// 頂点位置</font>
+<font color="deepskyblue">0160:</font>     , float4 Tex    : TEXCOORD0         <font color="cyan">// テクスチャ座標</font>
 <font color="deepskyblue">0161:</font> ){
-<font color="deepskyblue">0162:</font>     VS_OUTPUT_VOLUME Out = (VS_OUTPUT_VOLUME)0;        <font color="cyan">// �o�̓f�[�^</font>
+<font color="deepskyblue">0162:</font>     VS_OUTPUT_VOLUME Out = (VS_OUTPUT_VOLUME)0;        <font color="cyan">// 出力データ</font>
 <font color="deepskyblue">0163:</font>     
-<font color="deepskyblue">0164:</font>     <font color="cyan">// ���W�ϊ�</font>
+<font color="deepskyblue">0164:</font>     <font color="cyan">// 座標変換</font>
 <font color="deepskyblue">0165:</font>     float4 pos = mul( Pos, mWVP );
 <font color="deepskyblue">0166:</font>     
-<font color="deepskyblue">0167:</font>     <font color="cyan">// �ʒu���W</font>
+<font color="deepskyblue">0167:</font>     <font color="cyan">// 位置座標</font>
 <font color="deepskyblue">0168:</font>     Out.Pos = pos;
 <font color="deepskyblue">0169:</font>     
-<font color="deepskyblue">0170:</font>     <font color="cyan">// �[�x</font>
+<font color="deepskyblue">0170:</font>     <font color="cyan">// 深度</font>
 <font color="deepskyblue">0171:</font>     Out.Depth = pos.z / pos.w;
 <font color="deepskyblue">0172:</font>     
-<font color="deepskyblue">0173:</font>     <font color="cyan">// �e�N�X�`�����W</font>
+<font color="deepskyblue">0173:</font>     <font color="cyan">// テクスチャ座標</font>
 <font color="deepskyblue">0174:</font>     Out.Tex = mul(Pos, mWVPT);
 <font color="deepskyblue">0175:</font>     
 <font color="deepskyblue">0176:</font>     <font color="blue">return</font> Out;
 <font color="deepskyblue">0177:</font> }
 </pre>
 <p>
-�Q�p�X�ڂƂR�p�X�ڂ̈Ⴂ�́A�\�ʂƗ��ʂ�؂�ւ��āA�[�x�������_�����O���邱�Ƃł��B<br>
-����́A�P�̃e�N�X�`�����g���ă����_�����O���܂��B<br>
-�ŏ��ɁA�\�ʂ����Z�Ń����_�����O���܂��B���̎��A������₷���悤�ɂ��łɕ`���ꂽ�Օ����̐[�x����̍��i��K���ȃX�P�[�����O�������́j��`�悵�܂��B<br>
-�[�x�̉��ɂ��镔���͉e������Ȃ��͂��Ȃ̂ŁA���̎��ɂ͒l���O�ɂ��āA�ŏI�I�ȉe�����o�Ȃ��悤�ɏC�����܂��B<br>
-�R�p�X�ڂł́A���ʂ����Z�œ��l�Ƀ����_�����O���܂��B
+２パス目と３パス目の違いは、表面と裏面を切り替えて、深度をレンダリングすることです。<br>
+今回は、１つのテクスチャを使ってレンダリングします。<br>
+最初に、表面を加算でレンダリングします。この時、分かりやすいようにすでに描かれた遮蔽物の深度からの差（を適当なスケーリングしたもの）を描画します。<br>
+深度の奥にある部分は影響されないはずなので、その時には値を０にして、最終的な影響が出ないように修正します。<br>
+３パス目では、裏面を減算で同様にレンダリングします。
 </p>
 <pre class="CodeBlock">
 hlsh.fx
 <font color="deepskyblue">0178:</font> <font color="cyan">// -------------------------------------------------------------</font>
-<font color="deepskyblue">0179:</font> <font color="cyan">// �s�N�Z���V�F�[�_�v���O����</font>
+<font color="deepskyblue">0179:</font> <font color="cyan">// ピクセルシェーダプログラム</font>
 <font color="deepskyblue">0180:</font> <font color="cyan">// -------------------------------------------------------------</font>
 <font color="deepskyblue">0181:</font> float4 PS_VOLUME1( VS_OUTPUT_VOLUME In) : COLOR
 <font color="deepskyblue">0182:</font> {
@@ -311,7 +311,7 @@ hlsh.fx
 <font color="deepskyblue">0188:</font> }
 <font color="deepskyblue">0189:</font> 
 <font color="deepskyblue">0190:</font> <font color="cyan">// -------------------------------------------------------------</font>
-<font color="deepskyblue">0191:</font> <font color="cyan">// �s�N�Z���V�F�[�_�v���O����</font>
+<font color="deepskyblue">0191:</font> <font color="cyan">// ピクセルシェーダプログラム</font>
 <font color="deepskyblue">0192:</font> <font color="cyan">// -------------------------------------------------------------</font>
 <font color="deepskyblue">0193:</font> float4 PS_VOLUME2 ( VS_OUTPUT_VOLUME In) : COLOR
 <font color="deepskyblue">0194:</font> {
@@ -323,13 +323,13 @@ hlsh.fx
 <font color="deepskyblue">0200:</font> }
 </pre>
 <p>
-�\�ʂƗ��ʂ̐؂�ւ��̓G�t�F�N�g�t�@�C�����łł��܂��B<br>
-���ꂼ��̃p�X�ŁAD3DRS_������������ϐ��Œl��ݒ肷��ƁA�����_�����O�X�e�[�g�̐ݒ肪�ł��܂��B
+表面と裏面の切り替えはエフェクトファイル内でできます。<br>
+それぞれのパスで、D3DRS_を取っ払った変数で値を設定すると、レンダリングステートの設定ができます。
 </p>
 <pre class="CodeBlock">
 hlsh.fx
 <font color="deepskyblue">0202:</font> <font color="cyan">// -------------------------------------------------------------</font>
-<font color="deepskyblue">0203:</font> <font color="cyan">// �e�N�j�b�N</font>
+<font color="deepskyblue">0203:</font> <font color="cyan">// テクニック</font>
 <font color="deepskyblue">0204:</font> <font color="cyan">// -------------------------------------------------------------</font>
 <font color="deepskyblue">0205:</font> technique TVolume
 <font color="deepskyblue">0206:</font> {
@@ -338,11 +338,11 @@ hlsh.fx
 <font color="deepskyblue">0209:</font>         Sampler[0] = (DepthMapSamp);
 <font color="deepskyblue">0210:</font>         Sampler[1] = (FrameBufferSamp);
 <font color="deepskyblue">0211:</font>         
-<font color="deepskyblue">0212:</font>         <font color="cyan">// �����_�����O�X�e�[�g</font>
+<font color="deepskyblue">0212:</font>         <font color="cyan">// レンダリングステート</font>
 <font color="deepskyblue">0213:</font>         <font color="yellow">CullMode = CCW;</font>
 <font color="deepskyblue">0214:</font>         Zenable = False;
 <font color="deepskyblue">0215:</font>         
-<font color="deepskyblue">0216:</font>         <font color="cyan">// �V�F�[�_</font>
+<font color="deepskyblue">0216:</font>         <font color="cyan">// シェーダ</font>
 <font color="deepskyblue">0217:</font>         VertexShader = compile vs_1_1 VS_VOLUME ();
 <font color="deepskyblue">0218:</font>         PixelShader  = compile ps_2_0 PS_VOLUME1();
 <font color="deepskyblue">0219:</font> 
@@ -352,36 +352,36 @@ hlsh.fx
 <font color="deepskyblue">0223:</font>         Sampler[0] = (DepthMapSamp);
 <font color="deepskyblue">0224:</font>         Sampler[1] = (FrameBufferSamp);
 <font color="deepskyblue">0225:</font>         
-<font color="deepskyblue">0226:</font>         <font color="cyan">// �����_�����O�X�e�[�g</font>
+<font color="deepskyblue">0226:</font>         <font color="cyan">// レンダリングステート</font>
 <font color="deepskyblue">0227:</font>         <font color="yellow">CullMode = CW;</font>
 <font color="deepskyblue">0228:</font>         Zenable = False;
 <font color="deepskyblue">0229:</font>         
-<font color="deepskyblue">0230:</font>         <font color="cyan">// �V�F�[�_</font>
+<font color="deepskyblue">0230:</font>         <font color="cyan">// シェーダ</font>
 <font color="deepskyblue">0231:</font>         VertexShader = compile vs_1_1 VS_VOLUME ();
 <font color="deepskyblue">0232:</font>         PixelShader  = compile ps_2_0 PS_VOLUME2();
 <font color="deepskyblue">0233:</font>     }
 <font color="deepskyblue">0234:</font> }
 </pre>
 <p>
-�Ăяo���v���O�����ł����A����Ȃɖʔ������̂ł͂���܂���B<br>
-SetRenderTarget(1, NULL)�ŁAMRT��؂�̂�Y��Ȃ��悤�ɂ��܂��傤�B<br>
-��́A�����_�����O�^�[�Q�b�g���e�N�X�`���Ɏg���Ƃ����댯�ȋZ���g�����߂ɁAEndScene�ŕ`�����؂�_�����ʂł��傤���B
+呼び出しプログラムですが、そんなに面白いものではありません。<br>
+SetRenderTarget(1, NULL)で、MRTを切るのを忘れないようにしましょう。<br>
+後は、レンダリングターゲットをテクスチャに使うという危険な技を使うために、EndSceneで描画を区切る点が特別でしょうか。
 </p>
 <pre class="CodeBlock">
 main.cpp
 <font color="deepskyblue">0450:</font>             <font color="cyan">//-------------------------------------------------</font>
-<font color="deepskyblue">0451:</font>             <font color="cyan">// �����_�����O�^�[�Q�b�g�̕ύX</font>
+<font color="deepskyblue">0451:</font>             <font color="cyan">// レンダリングターゲットの変更</font>
 <font color="deepskyblue">0452:</font>             <font color="cyan">//-------------------------------------------------</font>
 <font color="deepskyblue">0453:</font>             m_pd3dDevice-&gt;SetRenderTarget(0, m_pFogMapSurf);
 <font color="deepskyblue">0454:</font>             <font color="yellow">m_pd3dDevice-&gt;SetRenderTarget(1, NULL);</font>
 <font color="deepskyblue">0455:</font>             m_pd3dDevice-&gt;SetViewport(&amp;viewport);
-<font color="deepskyblue">0456:</font>             <font color="cyan">// �����_�����O�^�[�Q�b�g�̃N���A</font>
+<font color="deepskyblue">0456:</font>             <font color="cyan">// レンダリングターゲットのクリア</font>
 <font color="deepskyblue">0457:</font>             m_pd3dDevice-&gt;Clear(0L, NULL,
 <font color="deepskyblue">0458:</font>                             D3DCLEAR_TARGET | D3DCLEAR_ZBUFFER,
 <font color="deepskyblue">0459:</font>                             0x0, 1.0f, 0L);
 <font color="deepskyblue">0460:</font> 
 <font color="deepskyblue">0461:</font>             <font color="cyan">//-------------------------------------------------</font>
-<font color="deepskyblue">0462:</font>             <font color="cyan">// �V�F�[�_�̐ݒ�</font>
+<font color="deepskyblue">0462:</font>             <font color="cyan">// シェーダの設定</font>
 <font color="deepskyblue">0463:</font>             <font color="cyan">//-------------------------------------------------</font>
 <font color="deepskyblue">0464:</font>             hTechnique = m_pEffect-&gt;GetTechniqueByName( "<font color="blue">TVolume</font>" );
 <font color="deepskyblue">0465:</font>             m_pEffect-&gt;SetTechnique( hTechnique );
@@ -397,7 +397,7 @@ main.cpp
 <font color="deepskyblue">0475:</font>             
 <font color="deepskyblue">0476:</font>             <font color="blue">for</font>( i=0 ; i&lt;2 ; i++ ){
 <font color="deepskyblue">0477:</font>                 <font color="blue">for</font>( DWORD j=0; j&lt;m_pMesh-&gt;m_dwNumMaterials; j++ ){
-<font color="deepskyblue">0478:</font>                     <font color="cyan">// ��x�`����I��点�čăX�^�[�g</font>
+<font color="deepskyblue">0478:</font>                     <font color="cyan">// 一度描画を終わらせて再スタート</font>
 <font color="deepskyblue">0479:</font>                     <font color="yellow">m_pd3dDevice-&gt;EndScene();
 <font color="deepskyblue">0480:</font>                     m_pd3dDevice-&gt;BeginScene();</font>
 <font color="deepskyblue">0481:</font>                     m_pEffect-&gt;Begin( NULL, 0 );
@@ -411,44 +411,44 @@ main.cpp
 
 
 
-<h2>���p�X�S�F�{�����[�����̍���</h2>
+<h2>■パス４：ボリューム霧の合成</h2>
 
 
 <p>
-���悢��Ō�̃p�X�ł��B<br>
-��{�I�ɂ́A�f�o�b�t�@(�􉽃o�b�t�@�F���炩���߂Q�����e�N�X�`���Ƀ����_�����O�ɕK�v�ȕϐ��𗎂Ƃ�����ł����āA
-���̗̂��ɉB��镔���̏��������S�ɏȂ�)�̍l�����𓥏P���āA�Q�����̑S��ʃ|���S�����P�����邾���ł��B<br>
-���_�V�F�[�_�͂��������������Ƀs�N�Z���V�F�[�_�ɑ���܂��B
+いよいよ最後のパスです。<br>
+基本的には、Ｇバッファ(幾何バッファ：あらかじめ２次元テクスチャにレンダリングに必要な変数を落とし込んでおいて、
+物体の裏に隠れる部分の処理を完全に省く)の考え方を踏襲して、２次元の全画面ポリゴンを１枚張るだけです。<br>
+頂点シェーダはそれらを何もせずにピクセルシェーダに送ります。
 </p>
 <pre class="CodeBlock">
 hlsh.fx
 <font color="deepskyblue">0276:</font> <font color="cyan">// -------------------------------------------------------------</font>
-<font color="deepskyblue">0277:</font> <font color="cyan">// ���_�V�F�[�_�v���O����</font>
+<font color="deepskyblue">0277:</font> <font color="cyan">// 頂点シェーダプログラム</font>
 <font color="deepskyblue">0278:</font> <font color="cyan">// -------------------------------------------------------------</font>
 <font color="deepskyblue">0279:</font> VS_OUTPUT_FINAL VS_FINAL (
-<font color="deepskyblue">0280:</font>       float4 Pos    : POSITION          <font color="cyan">// ���_�ʒu</font>
-<font color="deepskyblue">0281:</font>     , float2 Tex    : TEXCOORD0         <font color="cyan">// �e�N�X�`�����W</font>
+<font color="deepskyblue">0280:</font>       float4 Pos    : POSITION          <font color="cyan">// 頂点位置</font>
+<font color="deepskyblue">0281:</font>     , float2 Tex    : TEXCOORD0         <font color="cyan">// テクスチャ座標</font>
 <font color="deepskyblue">0282:</font> ){
-<font color="deepskyblue">0283:</font>     VS_OUTPUT_FINAL Out;        <font color="cyan">// �o�̓f�[�^</font>
+<font color="deepskyblue">0283:</font>     VS_OUTPUT_FINAL Out;        <font color="cyan">// 出力データ</font>
 <font color="deepskyblue">0284:</font>     
-<font color="deepskyblue">0285:</font>     <font color="cyan">// �ʒu���W</font>
+<font color="deepskyblue">0285:</font>     <font color="cyan">// 位置座標</font>
 <font color="deepskyblue">0286:</font>     Out.Pos = Pos;
 <font color="deepskyblue">0287:</font>     
-<font color="deepskyblue">0288:</font>     <font color="cyan">// �e�N�X�`�����W</font>
+<font color="deepskyblue">0288:</font>     <font color="cyan">// テクスチャ座標</font>
 <font color="deepskyblue">0289:</font>     Out.Tex = Tex;
 <font color="deepskyblue">0290:</font>     
 <font color="deepskyblue">0291:</font>     <font color="blue">return</font> Out;
 <font color="deepskyblue">0292:</font> }
 </pre>
 <p>
-�s�N�Z���V�F�[�_�ł́A�t�H�O�̑̐ς������_�����O�����ufog_map�v�������p�����[�^�Ƃ��āA�P�p�X�ڂŃ����_�����O�������ʂƃt�H�O�̐F���������܂��B<br>
-�v�Z���̂͒P���Ȑ��`�t�H�O�ł��B<br>
-�D���ȕ��́A���D���Ȃ悤�ɍ������@��ς��Ă��������B
+ピクセルシェーダでは、フォグの体積をレンダリングした「fog_map」を合成パラメータとして、１パス目でレンダリングした結果とフォグの色を合成します。<br>
+計算自体は単純な線形フォグです。<br>
+好きな方は、お好きなように合成方法を変えてください。
 </p>
 <pre class="CodeBlock">
 hlsh.fx
 <font color="deepskyblue">0293:</font> <font color="cyan">// -------------------------------------------------------------</font>
-<font color="deepskyblue">0294:</font> <font color="cyan">// �s�N�Z���V�F�[�_�v���O����</font>
+<font color="deepskyblue">0294:</font> <font color="cyan">// ピクセルシェーダプログラム</font>
 <font color="deepskyblue">0295:</font> <font color="cyan">// -------------------------------------------------------------</font>
 <font color="deepskyblue">0296:</font> float4 PS_FINAL ( VS_OUTPUT_FINAL In) : COLOR
 <font color="deepskyblue">0297:</font> {
@@ -459,13 +459,13 @@ hlsh.fx
 <font color="deepskyblue">0302:</font>     <font color="blue">return</font> lerp(col_map, fog_color, fog_map);
 </pre>
 <p>
-�A�v���P�[�V������������Ȃɂ����������Ƃ͂���܂���B<br>
-�����Č����΁AD3DFVF_XYZRHW ��DirectX8�ƈ���Đ����������ł���悤�ɂȂ��Ă���̂ŁA�I�[���h�^�C�v�̕��͋C�����Ă��������B
+アプリケーション側もそんなにたいしたことはありません。<br>
+しいて言えば、D3DFVF_XYZRHW がDirectX8と違って正しく処理できるようになっているので、オールドタイプの方は気をつけてください。
 </p>
 <pre class="CodeBlock">
 main.cpp
 <font color="deepskyblue">0495:</font>             <font color="cyan">//-------------------------------------------------</font>
-<font color="deepskyblue">0496:</font>             <font color="cyan">// �����_�����O�^�[�Q�b�g�����ɖ߂�</font>
+<font color="deepskyblue">0496:</font>             <font color="cyan">// レンダリングターゲットを元に戻す</font>
 <font color="deepskyblue">0497:</font>             <font color="cyan">//-------------------------------------------------</font>
 <font color="deepskyblue">0498:</font>             m_pd3dDevice-&gt;SetRenderTarget(0, pOldBackBuffer);
 <font color="deepskyblue">0499:</font>             m_pd3dDevice-&gt;SetDepthStencilSurface(pOldZBuffer);
@@ -474,7 +474,7 @@ main.cpp
 <font color="deepskyblue">0502:</font>             pOldZBuffer-&gt;Release();
 <font color="deepskyblue">0503:</font> 
 <font color="deepskyblue">0504:</font>             <font color="cyan">//-------------------------------------------------</font>
-<font color="deepskyblue">0505:</font>             <font color="cyan">// �V�F�[�_�̐ݒ�</font>
+<font color="deepskyblue">0505:</font>             <font color="cyan">// シェーダの設定</font>
 <font color="deepskyblue">0506:</font>             <font color="cyan">//-------------------------------------------------</font>
 <font color="deepskyblue">0507:</font>             hTechnique = m_pEffect-&gt;GetTechniqueByName( "<font color="blue">TFinal</font>" );
 <font color="deepskyblue">0508:</font>             m_pEffect-&gt;SetTechnique( hTechnique );
@@ -483,7 +483,7 @@ main.cpp
 <font color="deepskyblue">0511:</font>             m_pEffect-&gt;SetTexture( "<font color="blue">FogMap</font>",   m_pFogMap );
 <font color="deepskyblue">0512:</font>             m_pEffect-&gt;SetTexture( "<font color="blue">ColorMap</font>", m_pColorMap );
 <font color="deepskyblue">0513:</font> 
-<font color="deepskyblue">0514:</font>             <font color="cyan">// �o�b�t�@�̃N���A</font>
+<font color="deepskyblue">0514:</font>             <font color="cyan">// バッファのクリア</font>
 <font color="deepskyblue">0515:</font>             m_pd3dDevice-&gt;Clear( 0L, NULL,
 <font color="deepskyblue">0516:</font>                             D3DCLEAR_TARGET|D3DCLEAR_ZBUFFER,
 <font color="deepskyblue">0517:</font>                             0x00404080, 1.0f, 0L );
@@ -503,20 +503,20 @@ main.cpp
 <font color="deepskyblue">0531:</font>             m_pEffect-&gt;End();
 </pre>
 <p>
-ds�Adt �́A�e�N�Z�����S�����炷���߂́u0.5/�e�N�X�`���T�C�Y�v�ł��B<br>
-����A�e�N�X�`���̃T�C�Y���r���[�|�[�g�̑傫���ȏ��2<sup>n</sup>�̑傫���ɂ��܂���
-(GeForce3�̂悤��2<sup>n</sup>�ȊO�̃T�C�Y�̃����_�����O�^�[�Q�b�g�����Ȃ��ꍇ������܂������)�B<br>
-�e�N�X�`����r���[�|�[�g�̌v�Z�������ʓ|�������Ȃ��Ă���̂ŁA�\�[�X��������͒��ӂ��Ă��������B
+ds、dt は、テクセル中心をずらすための「0.5/テクスチャサイズ」です。<br>
+今回、テクスチャのサイズをビューポートの大きさ以上の2<sup>n</sup>の大きさにしました
+(GeForce3のような2<sup>n</sup>以外のサイズのレンダリングターゲットを作れない場合もありますからね)。<br>
+テクスチャやビューポートの計算が少し面倒くさくなっているので、ソースを見る方は注意してください。
 </p>
 
 
 
-<h2>���Ō��</h2>
+<h2>■最後に</h2>
 
 
 <p>
-�ނނށA���������_���o�b�t�@�̓A���t�@�������ł��Ȃ��̂ŁA�ӊO�ƕs�ւł����B<br>
-�����A���̒l��ۑ��ł��Ēl�͈̔͂��傫���Ȃ�ƁA���̃t�H�[�}�b�g���L���Ȃ̂ł���ɂ��������Ƃ͖����ł��B
+むむむ、浮動小数点数バッファはアルファ合成ができないので、意外と不便でした。<br>
+ただ、負の値を保存できて値の範囲が大きくなると、このフォーマットが有利なのであるにこしたことは無いです。
 </p>
 
 </div>
@@ -525,7 +525,7 @@ ds�Adt �́A�e�N�Z�����S�����炷���߂́u0.5/�e�N�X�`���T�C�Y�v�ł��B<br>
 <BR CLEAR=ALL>
 <center>
 <hr>
-<p><a href="../index.html">���ǂ�</a></p>
+<p><a href="../index.html">もどる</a></p>
 <p><a href="mailto:imagire@gmail.com">imagire@gmail.com</a></p>
 </center>
 

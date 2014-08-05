@@ -1,8 +1,8 @@
 <head>
-	<title>t-pot�w�K�E�X�t�B���^�x</title>
+	<title>t-pot『ガウスフィルタ』</title>
 	<link rel="stylesheet" type="text/css" href="../if.css">
 </head>
-<meta http-equiv=Content-Type content="text/html; charset=shift_jis">
+<meta http-equiv=Content-Type content="text/html; charset=UTF-8">
 <body>
 
 
@@ -10,8 +10,8 @@
 <center>
 <BR CLEAR=ALL>
 <BR CLEAR=ALL>
-<h1>�K�E�X�t�B���^</h1><br>
-<h3>�` Gaussian Filter �`</h3>
+<h1>ガウスフィルタ</h1><br>
+<h3>～ Gaussian Filter ～</h3>
 <BR CLEAR=ALL>
 <BR CLEAR=ALL>
 <BR CLEAR=ALL>
@@ -22,151 +22,151 @@
 </center>
 <div>
 
-<h2>���͂��߂�</h2>
+<h2>■はじめに</h2>
 
 
 <p>
-�`�s�h�̃l�b�g�Z�~�i�[�ŏЉ��Ă����A�Q�p�X���g�����K�E�X�^�̃u���[�t�B���^�ł��B<br>
-����̃v���O�����́A�P�T�^�b�v�R�O�s�N�Z���̃T���v�����O�ƁA�`�s�h�̂��̂����T���v�����O���������Ă��邱�Ƃ������ł��傤���i�Ƃ������A�Ȃ�ł`�s�h�͏��Ȃ��́H�j�B
+ＡＴＩのネットセミナーで紹介されていた、２パスを使ったガウス型のブラーフィルタです。<br>
+今回のプログラムは、１５タップ３０ピクセルのサンプリングと、ＡＴＩのものよりもサンプリング数が増えていることが特徴でしょうか（というか、なんでＡＴＩは少ないの？）。
 </p>
 <ul style = "LIST-STYLE-TYPE:none">
-<li><a href="src.zip">src.zip (�K�E�X�t�B���^:DirectX9)</a>
+<li><a href="src.zip">src.zip (ガウスフィルタ:DirectX9)</a>
 </ul>
 
 <p>
-�܂��A�����̂悤�ɓK���Ƀt�@�C���������Ă��܂��B<br>
-APP WIZARD ����o�͂����t���[�����[�N�̃t�@�C���͏Љ���Ȃ����Ă��������܂��B
+まぁ、いつものように適当にファイルが入っています。<br>
+APP WIZARD から出力されるフレームワークのファイルは紹介を省かせていただきます。
 </p>
 <table>
-<tr><td><a href="hlsl_fx.html">hlsl.fx</a></td><td>�V�F�[�_�̓������G�t�F�N�g�t�@�C��</td></tr>
-<tr><td><a href="main_h.html">main.h</a></td><td>�A�v���P�[�V�����̃w�b�_</td></tr>
-<tr><td><a href="main_cpp.html">main.cpp</a></td><td>�A�v���P�[�V�����̃\�[�X</td></tr>
+<tr><td><a href="hlsl_fx.html">hlsl.fx</a></td><td>シェーダの入ったエフェクトファイル</td></tr>
+<tr><td><a href="main_h.html">main.h</a></td><td>アプリケーションのヘッダ</td></tr>
+<tr><td><a href="main_cpp.html">main.cpp</a></td><td>アプリケーションのソース</td></tr>
 </table>
-<image src = "map_bmp.png" width = "64" height = "64">map.bmp:�f�J�[���e�N�X�`��
+<image src = "map_bmp.png" width = "64" height = "64">map.bmp:デカールテクスチャ
 
 <p>
-���ƁA���s�t�@�C���A���f���y�сA�v���W�F�N�g�t�@�C���������Ă��܂��B
+あと、実行ファイル、モデル及び、プロジェクトファイルが入っています。
 </p>
 
 
-<h2>���K�E�X�t�B���^�Ƃ�</h2>
+<h2>■ガウスフィルタとは</h2>
 
 
 <p>
-�K�E�X�t�B���^�Ƃ́A�K�E�X�֐����g�����ڂ����t�B���^�ł��B<br>
-�K�E�X�֐��Ƃ́A�w���֐��I�Ȍ`�������֐��ŁA���̌`�����Ă��܂��B
+ガウスフィルタとは、ガウス関数を使ったぼかしフィルタです。<br>
+ガウス関数とは、指数関数的な形をした関数で、次の形をしています。
 </p>
 <pre class="CodeBlock">
        1         x<sup>2</sup>
-f(x) = - exp(- �\�\ )
-       N        2��<sup>2</sup>
+f(x) = - exp(- ―― )
+       N        2σ<sup>2</sup>
 </pre>
 <p>
-N�͋K�i���ϐ��ŁA��<sup>2</sup>�͕��U�ł��B���U�Ƃ́A����&ltx&gt����̂���̂Q����Ғl
+Nは規格化変数で、σ<sup>2</sup>は分散です。分散とは、平均&ltx&gtからのずれの２乗期待値
 </p>
 <pre class="CodeBlock">
                    1         x<sup>2</sup>
-��<sup>2</sup> = ��dx (x-&ltx&gt)<sup>2</sup> - exp(- �\�\ )
-                   N        2��<sup>2</sup>
+σ<sup>2</sup> = ∫dx (x-&ltx&gt)<sup>2</sup> - exp(- ―― )
+                   N        2σ<sup>2</sup>
 </pre>
 <p>
-�ŁA�Ⴆ�΁A���U��<sup>2</sup>=5<sup>2</sup>�̋K�i���萔N���������O���t�́A���̂悤�ɂȂ�܂��B
+で、例えば、分散σ<sup>2</sup>=5<sup>2</sup>の規格化定数Nを除いたグラフは、次のようになります。
 </p>
 <image src = "2D.png" width = "80%" height = "80%">
 <p>
-���U��<sup>2</sup>�́A�����悻�̃O���t�̕�������킵�Ax=�Ђ̏ꏊ�ŁAexp(-0.5)=0.6065�ɂȂ�܂��B���U���傫����Α傫���قǊ֐��̎R�͊ɂ₩�ɂȂ�A�t�ɏ������Ȃ�΁A�s���j�̂悤�Ȍ`�ɂȂ�܂��B
+分散σ<sup>2</sup>は、おおよそのグラフの幅をあらわし、x=σの場所で、exp(-0.5)=0.6065になります。分散が大きければ大きいほど関数の山は緩やかになり、逆に小さくなれば、鋭い針のような形になります。
 </p>
 
 <p>
-�K�E�X�֐����t�B���^�����O�Ɏg���Ƃ����̂́A�s�N�Z�����������鎞�̏d�݂𒆐S�̃s�N�Z������̋����ɉ����ăK�E�X�֐��Ō��肷��Ƃ������Ƃł��B<br>
-���A��̓I�ɂ́A�s�N�Z���̂����A�����ɑΉ����ĂQ�����̍���
+ガウス関数をフィルタリングに使うというのは、ピクセルを合成する時の重みを中心のピクセルからの距離に応じてガウス関数で決定するということです。<br>
+より、具体的には、ピクセルのｘ軸、ｙ軸に対応して２次元の合成
 </p>
 <pre class="CodeBlock">
            1            (x<sub>i</sub>-x<sub>a</sub>)<sup>2</sup>       (y<sub>j</sub>-y<sub>b</sub>)<sup>2</sup>
-p(x<sub>a</sub>,y<sub>b</sub>) = �\ ����exp(- �\�\�\ ) exp(- �\�\�\ ) p(x<sub>i</sub>,y<sub>j</sub>)
-           N<sup>2</sup>  i j        2��<sup>2</sup>            2��<sup>2</sup>
+p(x<sub>a</sub>,y<sub>b</sub>) = ― ∑∑exp(- ――― ) exp(- ――― ) p(x<sub>i</sub>,y<sub>j</sub>)
+           N<sup>2</sup>  i j        2σ<sup>2</sup>            2σ<sup>2</sup>
 </pre>
 <p>
-�̌����ɂ��������āA�s�N�Z������������܂��B<br>
-�����ŁAi,j�ɂ킽��a�̓s�N�Z���̎��ӂ̓K���Ȍ��̃T���v�����O�ŁA�K�i���萔N�́A���ׂẴs�N�Z���������F��������A�ڂ�������������F�ɂȂ�悤��
+の公式にしたがって、ピクセルが合成されます。<br>
+ここで、i,jにわたる和はピクセルの周辺の適当な個数のサンプリングで、規格化定数Nは、すべてのピクセルが同じ色だったら、ぼかした後も同じ色になるように
 </p>
 <pre class="CodeBlock">
               (x<sub>i</sub>-x<sub>a</sub>)<sup>2</sup>        (y<sub>j</sub>-y<sub>b</sub>)<sup>2</sup>
-N<sup>2</sup> = ����exp(- �\�\�\ ) exp(- �\�\�\ )
-     i j        2��<sup>2</sup>            2��<sup>2</sup>
+N<sup>2</sup> = ∑∑exp(- ――― ) exp(- ――― )
+     i j        2σ<sup>2</sup>            2σ<sup>2</sup>
 </pre>
 <p>
-�ɂȂ�܂��B
+になります。
 </p>
 <p>
-�K�E�X�֐��ɂ�鍇���̓����̂P�́A�Q�p�X�ɂ��ꂢ�ɏ����𕪗��ł��邱�Ƃł��B
-�����悭���ĕ�������ƁA���������ƁA���������̘a�ɂ��ꂢ�ɕ����邱�Ƃ��ł��܂��B
+ガウス関数による合成の特徴の１つは、２パスにきれいに処理を分離できることです。
+式をよく見て分解すると、ｘ軸方向と、ｙ軸方向の和にきれいに分けることができます。
 </p>
 <pre class="CodeBlock">
            1         (x<sub>i</sub>-x<sub>a</sub>)<sup>2</sup>
-p(x<sub>a</sub>,y<sub>j</sub>) = - ��exp(- �\�\�\ ) p(x<sub>i</sub>,y<sub>j</sub>)
-           N  i        2��<sup>2</sup>
+p(x<sub>a</sub>,y<sub>j</sub>) = - ∑exp(- ――― ) p(x<sub>i</sub>,y<sub>j</sub>)
+           N  i        2σ<sup>2</sup>
 
            1         (y<sub>j</sub>-y<sub>b</sub>)<sup>2</sup>
-p(x<sub>a</sub>,y<sub>b</sub>) = - ��exp(- �\�\�\ ) p(x<sub>a</sub>,y<sub>j</sub>)
-           N  j        2��<sup>2</sup>
+p(x<sub>a</sub>,y<sub>b</sub>) = - ∑exp(- ――― ) p(x<sub>a</sub>,y<sub>j</sub>)
+           N  j        2σ<sup>2</sup>
 </pre>
 <p>
-���̎�������̂ŁA�ŏ��ɂ��������̃T���v�����O���s���Ă���A���������̃T���v�����O��ʂɍs���Ƃ������@������������܂��B
+この式があるので、最初にｘ軸方向のサンプリングを行ってから、ｙ軸方向のサンプリングを別に行うという方法が正当化されます。
 </p>
 <p>
-�����ЂƂ̓����́A�~�`�ɃT���v�����O�ł���Ƃ������Ƃł��B<br>
-���W�ϊ�
+もうひとつの特徴は、円形にサンプリングできるということです。<br>
+座標変換
 </p>
 <pre class="CodeBlock">
-x-x<sub>a</sub> = r cos��
-y-y<sub>b</sub> = r sin��
+x-x<sub>a</sub> = r cosθ
+y-y<sub>b</sub> = r sinθ
 </pre>
 <p>
-������ƁA�����̎��́A
+をすると、合成の式は、
 </p>
 <pre class="CodeBlock">
            1               r<sup>2</sup>
-p(x<sub>a</sub>,y<sub>b</sub>) = �\ ����r exp(- �\�\ ) p(x<sub>i</sub>,y<sub>j</sub>)
-           N<sup>2</sup> �� r         2��<sup>2</sup>
+p(x<sub>a</sub>,y<sub>b</sub>) = ― ∑∑r exp(- ―― ) p(x<sub>i</sub>,y<sub>j</sub>)
+           N<sup>2</sup> θ r         2σ<sup>2</sup>
 </pre>
 <p>
-�ɂȂ�A�d�݂̎����̂ɂ́A�p�x�Ƃ̌W��������Ȃ��̂ŁA���S�̃s�N�Z�����瓯�������ɂ���s�N�Z���͓����d�݂ō�������܂�<br>
-�t�̎��_�Ō���΁A��̓_���T���v�����O����鎞�ɁA�����������ɂ���s�N�Z���͓����d�݂ŃT���v�����O����̂ŁA�s�N�Z���̐F�͉~�`�ɍL���邱�ƂɂȂ�܂��B<br>
-���̂悤�Ȋ֐��́A�d�݂�r�̊֐��ɂ���Ή\�ł����A�Q�p�X�ɂ��ꂢ�ɕ�������֐��͏��Ȃ��Ǝv���̂ŁA�K�E�X�֐��͗L�p�Ȋ֐��̂P�ł���ƒf�肷�邱�Ƃ��ł��܂��B
+になり、重みの式自体には、角度θの係数が入らないので、中心のピクセルから同じ距離にあるピクセルは同じ重みで合成されます<br>
+逆の視点で見れば、一つの点がサンプリングされる時に、等しい距離にあるピクセルは同じ重みでサンプリングするので、ピクセルの色は円形に広がることになります。<br>
+このような関数は、重みをrの関数にすれば可能ですが、２パスにきれいに分けられる関数は少ないと思うので、ガウス関数は有用な関数の１つであると断定することができます。
 </p>
 <p>
-��̓I�ɃO���t�����Ă��A�d�݂��~�`�ɍL�����Ă���̂��m�F�ł���ł��傤�B
+具体的にグラフを見ても、重みが円形に広がっているのが確認できるでしょう。
 </p>
 
 <image src = "3D.png">
 
 
 
-<h2>���v���O����</h2>
+<h2>■プログラム</h2>
 
 
 <p>
-�ł́A�v���O���������Ă����܂��傤�B<br>
-���_�V�F�[�_�v���O�������ŏ��Ɍ��܂��傤�B<br>
-�ŏ��́A���������ɂڂ����������܂�<br>
-��{�I�ɂ́A���S�̃e�N�Z�����W���s�N�Z���V�F�[�_�ɑ��邾���ł��B
-���̂Ƃ��ɁA������0.5�e�N�Z�����������܂����B
-����́A��X�������Ƃ��Ƀe�N�Z�����S�������̂�h�����߂̂��̂ł����A
-����Ƃ��ɒ��ӂ���΁A���炳�Ȃ��ق����A���ڂ���̂ł�����������܂���B
+では、プログラムを見ていきましょう。<br>
+頂点シェーダプログラムを最初に見ましょう。<br>
+最初は、ｘ軸方向にぼかしをかけます<br>
+基本的には、中心のテクセル座標をピクセルシェーダに送るだけです。
+そのときに、ｙ軸を0.5テクセルだけ下げました。
+これは、後々張ったときにテクセル中心がずれるのを防ぐためのものですが、
+張るときに注意すれば、ずらさないほうが、よりぼけるのでいいかもしれません。
 </p>
 <pre class="CodeBlock">
 hlsl.fx
 <font color="deepskyblue">0042:</font> <font color="cyan">// -------------------------------------------------------------</font>
-<font color="deepskyblue">0043:</font> <font color="cyan">// ���_�V�F�[�_�v���O����</font>
+<font color="deepskyblue">0043:</font> <font color="cyan">// 頂点シェーダプログラム</font>
 <font color="deepskyblue">0044:</font> <font color="cyan">// -------------------------------------------------------------</font>
 <font color="deepskyblue">0045:</font> VS_OUTPUT VS_pass1 (
-<font color="deepskyblue">0046:</font>       float4 Pos    : POSITION,          <font color="cyan">// ���f���̒��_</font>
-<font color="deepskyblue">0047:</font>       float4 Tex    : TEXCOORD0          <font color="cyan">// �e�N�X�`�����W</font>
+<font color="deepskyblue">0046:</font>       float4 Pos    : POSITION,          <font color="cyan">// モデルの頂点</font>
+<font color="deepskyblue">0047:</font>       float4 Tex    : TEXCOORD0          <font color="cyan">// テクスチャ座標</font>
 <font color="deepskyblue">0048:</font> ){
-<font color="deepskyblue">0049:</font>     VS_OUTPUT Out = (VS_OUTPUT)0;        <font color="cyan">// �o�̓f�[�^</font>
+<font color="deepskyblue">0049:</font>     VS_OUTPUT Out = (VS_OUTPUT)0;        <font color="cyan">// 出力データ</font>
 <font color="deepskyblue">0050:</font>     
-<font color="deepskyblue">0051:</font>     <font color="cyan">// �ʒu���W</font>
+<font color="deepskyblue">0051:</font>     <font color="cyan">// 位置座標</font>
 <font color="deepskyblue">0052:</font>     Out.Pos = Pos;
 <font color="deepskyblue">0053:</font>     
 <font color="deepskyblue">0054:</font>     Out.Tex = Tex + float2( 0, 0.5f/MAP_HEIGHT );
@@ -175,16 +175,16 @@ hlsl.fx
 <font color="deepskyblue">0057:</font> }
 </pre>
 <p>
-�s�N�Z���V�F�[�_�ł��悢��T���v�����O�ł��B<br>
-����́A�e�N�Z�����S�����傤�ǃe�N�Z���̐^�񒆂ɂ���ʒu�ŃT���v�����O���܂����B<br>
-�P�T��̃T���v�����O�ŁA�R�O�e�N�Z���̃T���v�����O�����܂��B<br>
-�K�E�X�֐��̏d�݂͒萔�z��weight�Ƃ��ė^���܂��B���Ȃ݂ɁA�������قȂ铯�������ɂ���e�N�Z���͓����d�݂̒l���g����̂ŁA�萔�͂W�p�ӂ���Ύ�����܂��B
+ピクセルシェーダでいよいよサンプリングです。<br>
+今回は、テクセル中心をちょうどテクセルの真ん中にする位置でサンプリングしました。<br>
+１５回のサンプリングで、３０テクセルのサンプリングをします。<br>
+ガウス関数の重みは定数配列weightとして与えます。ちなみに、符号が異なる同じ距離にあるテクセルは同じ重みの値が使えるので、定数は８つ用意すれば事足ります。
 </p>
 <image src = "sampling.png">
 <pre class="CodeBlock">
 hlsl.fx
 <font color="deepskyblue">0059:</font> <font color="cyan">// -------------------------------------------------------------</font>
-<font color="deepskyblue">0060:</font> <font color="cyan">// �s�N�Z���V�F�[�_�v���O����</font>
+<font color="deepskyblue">0060:</font> <font color="cyan">// ピクセルシェーダプログラム</font>
 <font color="deepskyblue">0061:</font> <font color="cyan">// -------------------------------------------------------------</font>
 <font color="deepskyblue">0062:</font> float4 PS_pass1(VS_OUTPUT In) : COLOR
 <font color="deepskyblue">0063:</font> {   
@@ -217,12 +217,12 @@ hlsl.fx
 <font color="deepskyblue">0090:</font> }
 </pre>
 <p>
-���������̂ڂ����́A�����萔���g���āA���炷�������������炙���ɕύX���邾���ł��B
+ｙ軸方向のぼかしは、同じ定数を使って、ずらす方向をｘ軸からｙ軸に変更するだけです。
 </p>
 <pre class="CodeBlock">
 hlsl.fx
 <font color="deepskyblue">0112:</font> <font color="cyan">// -------------------------------------------------------------</font>
-<font color="deepskyblue">0113:</font> <font color="cyan">// �s�N�Z���V�F�[�_�v���O����</font>
+<font color="deepskyblue">0113:</font> <font color="cyan">// ピクセルシェーダプログラム</font>
 <font color="deepskyblue">0114:</font> <font color="cyan">// -------------------------------------------------------------</font>
 <font color="deepskyblue">0115:</font> float4 PS_pass2(VS_OUTPUT In) : COLOR
 <font color="deepskyblue">0116:</font> {   
@@ -255,14 +255,14 @@ hlsl.fx
 <font color="deepskyblue">0143:</font> }
 </pre>
 <p>
-���Ȃ݂ɁA�d�݂̌v�Z�ł����A�A�v���P�[�V�������ŏ���������ݒ肪�ύX���ꂽ�Ƃ��ɂ��Ă��܂��Bm_tbl[i]�ɂ��ꂼ��̏d�݂��K�E�X�֐�����v�Z���A�Ō�ɋK�i���萔�Ŋ����Đ��K�����܂��B<br>
-�d�݂́A�����̂P�������Q�e�N�Z���̃T���v�����O�Ɏg���A���͂S�e�N�Z���̃T���v�����O������̂ŁA�K�i���̂��߂̌W���̏d�݂��l���Ȃ��Ă͂Ȃ�܂���B
+ちなみに、重みの計算ですが、アプリケーション側で初期化時や設定が変更されたときにしています。m_tbl[i]にそれぞれの重みをガウス関数から計算し、最後に規格化定数で割って正規化します。<br>
+重みは、中央の１つだけが２テクセルのサンプリングに使われ、他は４テクセルのサンプリングをするので、規格化のための係数の重みを考えなくてはなりません。
 </p>
 <pre class="CodeBlock">
 main.cpp
 <font color="deepskyblue">0173:</font> <font color="cyan">//-------------------------------------------------------------</font>
 <font color="deepskyblue">0174:</font> <font color="cyan">// Name: UpdateWeight()</font>
-<font color="deepskyblue">0175:</font> <font color="cyan">// Desc: �d�݂̌v�Z</font>
+<font color="deepskyblue">0175:</font> <font color="cyan">// Desc: 重みの計算</font>
 <font color="deepskyblue">0176:</font> <font color="cyan">//-------------------------------------------------------------</font>
 <font color="deepskyblue">0177:</font> VOID CMyD3DApplication::UpdateWeight( FLOAT dispersion )
 <font color="deepskyblue">0178:</font> {
@@ -274,11 +274,11 @@ main.cpp
 <font color="deepskyblue">0184:</font>         <font color="blue">if</font>(0==i){
 <font color="deepskyblue">0185:</font>             total += m_tbl[i];
 <font color="deepskyblue">0186:</font>         }<font color="blue">else</font>{
-<font color="deepskyblue">0187:</font>             <font color="cyan">// ���S�ȊO�́A�Q�񓯂��W�����g���̂łQ�{</font>
+<font color="deepskyblue">0187:</font>             <font color="cyan">// 中心以外は、２回同じ係数を使うので２倍</font>
 <font color="deepskyblue">0188:</font>             total += 2.0f*m_tbl[i];
 <font color="deepskyblue">0189:</font>         }
 <font color="deepskyblue">0190:</font>     }
-<font color="deepskyblue">0191:</font>     <font color="cyan">// �K�i��</font>
+<font color="deepskyblue">0191:</font>     <font color="cyan">// 規格化</font>
 <font color="deepskyblue">0192:</font>     <font color="blue">for</font>( i=0; i&lt;WEIGHT_MUN; i++ ) m_tbl[i] /= total;
 <font color="deepskyblue">0193:</font> 
 <font color="deepskyblue">0194:</font>     <font color="blue">if</font>(m_pEffect) m_pEffect-&gt;SetFloatArray(m_hafWeight
@@ -291,68 +291,68 @@ main.cpp
 
 
 
-<h2>�����łɃt���A</h2>
+<h2>■ついでにフレア</h2>
 
 
 <p>
-����̃t�B���^���g���āA�[���t���A�G�t�F�N�g���쐬���܂����B<br>
-�t���A�̑傫����傫�����邽�߂ɁA�S���̂P�̏k���o�b�t�@�ɖ��邢�����𒊏o���Ăڂ����܂����B
+今回のフィルタを使って、擬似フレアエフェクトを作成しました。<br>
+フレアの大きさを大きくするために、４分の１の縮小バッファに明るい部分を抽出してぼかしました。
 </p>
 <image src = "flare.jpg">
 
 
-<h2>���Ō��</h2>
+<h2>■最後に</h2>
 
 
 <p>
-���A�������E�E�E<br>
-�g���Ă悢�̂��킩��Ȃ��d���ł��ˁB
+お、おもい・・・<br>
+使ってよいのかわからない重さですね。
 </p>
 
 
-<h2>�������� (2003 Feb. 11�ǉ�)</h2>
+<h2>■高速化 (2003 Feb. 11追加)</h2>
 
 
 <p>
-<a href="http://www.daionet.gr.jp/~masa/">Masa����</a>�̌f���ŁA<br>
-�u�������g���������ł́A<br>
-�K�E�X�t�B���^���͓̂��ɏd���Ȃ��Ă��܂���ˁB�v<br>
-�����Ă��܂����̂ŁA���������Ă݂܂����B<br>
-�O��80FPS���x���������̂��A�����120FPS���x�ɂȂ�܂����B
+<a href="http://www.daionet.gr.jp/~masa/">Masaさん</a>の掲示板で、<br>
+「私が今使った感じでは、<br>
+ガウスフィルタ自体は特に重くなっていませんね。」<br>
+いわれてしまったので、高速化してみました。<br>
+前回80FPS程度だったものが、今回は120FPS程度になりました。
 </p>
 <ul style = "LIST-STYLE-TYPE:none">
-<li><a href="src.zip">src2.zip (�K�E�X�t�B���^������ƍ�����:DirectX9)</a>
+<li><a href="src.zip">src2.zip (ガウスフィルタちょっと高速版:DirectX9)</a>
 </ul>
 <table>
-<tr><td><a href="src2/hlsl_fx.html">hlsl.fx</a></td><td>�V�F�[�_�̓������G�t�F�N�g�t�@�C��</td></tr>
-<tr><td><a href="src2/main_h.html">main.h</a></td><td>�A�v���P�[�V�����̃w�b�_</td></tr>
-<tr><td><a href="src2/main_cpp.html">main.cpp</a></td><td>�A�v���P�[�V�����̃\�[�X</td></tr>
+<tr><td><a href="src2/hlsl_fx.html">hlsl.fx</a></td><td>シェーダの入ったエフェクトファイル</td></tr>
+<tr><td><a href="src2/main_h.html">main.h</a></td><td>アプリケーションのヘッダ</td></tr>
+<tr><td><a href="src2/main_cpp.html">main.cpp</a></td><td>アプリケーションのソース</td></tr>
 </table>
 <p>
-�O��̃v���O�������s�N�Z���V�F�[�_���ߐ��� 15(texture) + 59(arithmetic) ���߂������Ƃ����16 + 25 ���߂ɂ��܂����B<br>
-����́A�e�N�Z�����W�����炵�āA�P�T���v���łS�e�N�Z���ǂݍ��ނ悤�ɂ��āA
-���A���S�̃^�b�v�����炵�ĂQ�ǂނ悤�ɂ��Ă��܂��B
+前回のプログラムがピクセルシェーダ命令数で 15(texture) + 59(arithmetic) 命令だったところを16 + 25 命令にしました。<br>
+今回は、テクセル座標をずらして、１サンプルで４テクセル読み込むようにして、
+かつ、中心のタップもずらして２つ読むようにしています。
 </p>
 <image src = "sampling2.png">
 <p>
-�قƂ�ǂ킩��܂��񂪁A���ڂ��Ă���͂��ł��B
+ほとんどわかりませんが、よりぼけているはずです。
 </p>
 <p>
-�v���O�����̍������ł����A�s�N�Z���V�F�[�_�v���O�����𒸓_�V�F�[�_��A�v���P�[�V�����̃v���O�����ɉ������ތ`�Ői�߂Ă����܂����B<br>
-ps.2.0�ł́A�W�̃e�N�X�`�����W��n����̂ŁA�Е��̃e�N�X�`�����W��n���܂��B
+プログラムの高速化ですが、ピクセルシェーダプログラムを頂点シェーダやアプリケーションのプログラムに押し込む形で進めていきました。<br>
+ps.2.0では、８つのテクスチャ座標を渡せるので、片方のテクスチャ座標を渡します。
 </p>
 <pre class="CodeBlock">
 hlsl.fx
 <font color="deepskyblue">0052:</font> <font color="cyan">// -------------------------------------------------------------</font>
-<font color="deepskyblue">0053:</font> <font color="cyan">// ���_�V�F�[�_�v���O����</font>
+<font color="deepskyblue">0053:</font> <font color="cyan">// 頂点シェーダプログラム</font>
 <font color="deepskyblue">0054:</font> <font color="cyan">// -------------------------------------------------------------</font>
 <font color="deepskyblue">0055:</font> VS_OUTPUT VS_pass1 (
-<font color="deepskyblue">0056:</font>       float4 Pos    : POSITION,          <font color="cyan">// ���f���̒��_</font>
-<font color="deepskyblue">0057:</font>       float4 Tex    : TEXCOORD0          <font color="cyan">// �e�N�X�`�����W</font>
+<font color="deepskyblue">0056:</font>       float4 Pos    : POSITION,          <font color="cyan">// モデルの頂点</font>
+<font color="deepskyblue">0057:</font>       float4 Tex    : TEXCOORD0          <font color="cyan">// テクスチャ座標</font>
 <font color="deepskyblue">0058:</font> ){
-<font color="deepskyblue">0059:</font>     VS_OUTPUT Out = (VS_OUTPUT)0;        <font color="cyan">// �o�̓f�[�^</font>
+<font color="deepskyblue">0059:</font>     VS_OUTPUT Out = (VS_OUTPUT)0;        <font color="cyan">// 出力データ</font>
 <font color="deepskyblue">0060:</font>     
-<font color="deepskyblue">0061:</font>     <font color="cyan">// �ʒu���W</font>
+<font color="deepskyblue">0061:</font>     <font color="cyan">// 位置座標</font>
 <font color="deepskyblue">0062:</font>     Out.Pos = Pos;
 <font color="deepskyblue">0063:</font>     
 <font color="deepskyblue">0064:</font>     Out.Tex0 = Tex + float2( - 1.0f/MAP_WIDTH, 0.0f/MAP_HEIGHT );
@@ -368,14 +368,14 @@ hlsl.fx
 <font color="deepskyblue">0074:</font> }
 </pre>
 <p>
-�s�N�Z���V�F�[�_�ł́A���_�V�F�[�_������͂��ꂽ�e�N�Z�����W�ƁA�萔�𑫂�����ŋ��߂����Α�����̃e�N�Z�����W����T���v�����O���ďd�݂��|�����킹�đ������݂܂��B<br>
-�e�N�X�`�����W�����炷�萔�́A�e�N�X�`���̍L�����狁�܂�̂ł����A���ߐ������炷���߂ɁA�s�N�Z���V�F�[�_�Ōv�Z���Ȃ��ŁA�A�v���P�[�V����������ݒ肵�āA���ߐ����҂��܂����B<br>
-�܂��A�萔�𑫂��ăe�N�X�`�����W�����炵���̂ŁA�O���ɂ������s�N�Z���͓����Ɉړ��������Ƃɒ��ӂ��Ă��������B
+ピクセルシェーダでは、頂点シェーダから入力されたテクセル座標と、定数を足しこんで求めた反対側からのテクセル座標からサンプリングして重みを掛け合わせて足し込みます。<br>
+テクスチャ座標をずらす定数は、テクスチャの広さから求まるのですが、命令数を減らすために、ピクセルシェーダで計算しないで、アプリケーション側から設定して、命令数を稼ぎました。<br>
+また、定数を足してテクスチャ座標をずらしたので、外側にあったピクセルは内側に移動したことに注意してください。
 </p>
 <pre class="CodeBlock">
 hlsl.fx
 <font color="deepskyblue">0076:</font> <font color="cyan">// -------------------------------------------------------------</font>
-<font color="deepskyblue">0077:</font> <font color="cyan">// �s�N�Z���V�F�[�_�v���O����</font>
+<font color="deepskyblue">0077:</font> <font color="cyan">// ピクセルシェーダプログラム</font>
 <font color="deepskyblue">0078:</font> <font color="cyan">// -------------------------------------------------------------</font>
 <font color="deepskyblue">0079:</font> float4 PS_pass1(VS_OUTPUT In) : COLOR
 <font color="deepskyblue">0080:</font> {   
@@ -405,8 +405,8 @@ hlsl.fx
 </pre>
 
 <p>
-���ꂮ�炢�̍������ł́A����ς�d���Ɗ����Ă��܂��E�E�E<br>
-�K�E�X�t�B���^�����Ȃ���400FPS�ɂȂ��Ă���̂ŁA�g���Ƃ��͏k���o�b�t�@���g��Ȃ��Ă͑ʖڂł͂Ȃ��ł��傤���B
+これぐらいの高速化では、やっぱり重いと感じてしまう・・・<br>
+ガウスフィルタかけないと400FPSになっているので、使うときは縮小バッファを使わなくては駄目ではないでしょうか。
 </p>
 
 </div>
@@ -415,7 +415,7 @@ hlsl.fx
 <BR CLEAR=ALL>
 <center>
 <hr>
-<p><a href="../index.html">���ǂ�</a></p>
+<p><a href="../index.html">もどる</a></p>
 <p><a href="mailto:imagire@gmail.com">imagire@gmail.com</a></p>
 </center>
 

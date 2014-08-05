@@ -1,68 +1,68 @@
 <head>
-	<title>t-pot �wDirectX8.0 ����:Vertex Shader ����x</title>
+	<title>t-pot 『DirectX8.0 入門:Vertex Shader 入門』</title>
 	<link rel="stylesheet" type="text/css" href="../if.css">
 </head>
-<meta http-equiv=Content-Type content="text/html; charset=shift_jis">
+<meta http-equiv=Content-Type content="text/html; charset=UTF-8">
 <body>
 
 <div class="contents">
 <center>
 <BR CLEAR=ALL>
 <BR CLEAR=ALL>
-<h1>Vertex Shader ����</h1><br>
-<h3>�`������T&L�`</h3>
+<h1>Vertex Shader 入門</h1><br>
+<h3>～自分でT&L～</h3>
 <BR CLEAR=ALL>
 <BR CLEAR=ALL>
 <BR CLEAR=ALL>
 </center>
-<h2>������̃t�@�C����</h2>
+<h2>■今回のファイルは</h2>
 
 <p>
-Pixel Shader �����Ɏ�舵���܂������A���A�����L���邽�߂ɁA
-�����ŁA�o�[�e�b�N�X�V�F�[�_�[������Ă������Ǝv���܂��B<br>
-�o�[�e�b�N�X�V�F�[�_�[�́A���O�ō��W�v�Z�ƁA���C�e�B���O�����邽�߂̎d�g�݂ł��B<br>
-Pixel Shader �ł́A�`�̕ό`�͏o���܂��񂪁A�o�[�e�b�N�X�V�F�[�_�[�̓|���S�����̂��̂��䂪�܂��邱�Ƃ��ł��܂��B<br>
-�܂��A�ŏI�I�ɂ� Displacement Mapping ���Ȃ킿 Per Vertex( & Pixel) Shader �ɓ��������ł��傤���A
-�������̘b�����Ă����傤���Ȃ��̂ŁA���ł��邱�Ƃ����܂��B
+Pixel Shader を既に取り扱いましたが、より、幅を広げるために、
+ここで、バーテックスシェーダーをやっておこうと思います。<br>
+バーテックスシェーダーは、自前で座標計算と、ライティングをするための仕組みです。<br>
+Pixel Shader では、形の変形は出来ませんが、バーテックスシェーダーはポリゴンそのものをゆがませることができます。<br>
+まぁ、最終的には Displacement Mapping すなわち Per Vertex( & Pixel) Shader に統合されるでしょうが、
+数世代先の話をしてもしょうがないので、今できることをします。
 </p>
 <p>
-���̃\�[�X���A�_�E�����[�h���Ă��������B
+次のソースを、ダウンロードしてください。
 <p>
 
 <ul style = "LIST-STYLE-TYPE:none">
-<li><a href="vs.lzh">vs.lzh �o�[�e�b�N�X�V�F�[�_�[���g�p����T���v���̃\�[�X)</a>
+<li><a href="vs.lzh">vs.lzh バーテックスシェーダーを使用するサンプルのソース)</a>
 </ul>
 
 <p>
-����́A�e�N�X�`���[�𒣂����R�����|���S����\�����܂��B<br>
-���Ɏ�舵�������ł����A���̕��o�[�e�b�N�X�V�F�[�_�[�̎g������������Ǝv���܂��B
+今回は、テクスチャーを張った３次元ポリゴンを表示します。<br>
+既に取り扱った例題ですが、その分バーテックスシェーダーの使い方が分かると思います。
 </p>
 
 <right><image src = "vs.gif"></right>
 
-<h2>������̃I�u�W�F�N�g</h2>
+<h2>■今回のオブジェクト</h2>
 
 <p>
-��ɂ���āAdraw.cpp �����Ă����܂��B<br>
-����ǉ������I�u�W�F�N�g�́AhVertexShader �ł��B
-������n���h���ƌ����z�ŁA�o�[�e�b�N�X�V�F�[�_�[�����ʂ���̂� Windows �̓����Ŏg���܂��B
+例によって、draw.cpp を見ていきます。<br>
+今回追加したオブジェクトは、hVertexShader です。
+いわゆるハンドルと言う奴で、バーテックスシェーダーを識別するのに Windows の内部で使われます。
 <br>
 </p>
 <pre class="CodeBlock">
-LPDIRECT3DVERTEXBUFFER8     pVB            = NULL; // ���_�o�b�t�@
-LPDIRECT3DTEXTURE8          pTexture       = NULL; // �e�N�X�`���[
-<Font color = orange><b>DWORD                    hVertexShader  = ~0; // �V�F�[�_�[�v���O�����̏��</b></Font>
+LPDIRECT3DVERTEXBUFFER8     pVB            = NULL; // 頂点バッファ
+LPDIRECT3DTEXTURE8          pTexture       = NULL; // テクスチャー
+<Font color = orange><b>DWORD                    hVertexShader  = ~0; // シェーダープログラムの情報</b></Font>
 </pre>
 <p>
-hVertexShader �� ~0 (=0xffffffff) �ŏ��������܂��B
-���̃T���v���Ȃǂ�����ƁA�ǂ����A���ꂪ�����ȃn���h���̒l�炵���ł��B
-���̂܂܎g���܂��傤�B
+hVertexShader は ~0 (=0xffffffff) で初期化します。
+他のサンプルなどを見ると、どうやら、これが無効なハンドルの値らしいです。
+このまま使いましょう。
 </p>
 
-<h2>��������</h2>
+<h2>■初期化</h2>
 
 <p>
-����́A���_�o�b�t�@��A�e�N�X�`���[��ݒ肵����ɁA�o�[�e�b�N�X�V�F�[�_�[�̏�����������܂��B<br>
+今回は、頂点バッファや、テクスチャーを設定した後に、バーテックスシェーダーの初期化が入ります。<br>
 </p>
 
 <pre class="CodeBlock">
@@ -92,7 +92,7 @@ HRESULT InitRender(LPDIRECT3DDEVICE8 lpD3DDEV)
                                 D3DPOOL_MANAGED, D3DX_FILTER_LINEAR, D3DX_FILTER_LINEAR,
                                 0, NULL, NULL, &pTexture);
 <Font color = orange><b>
-    // �o�[�e�b�N�X�V�F�[�_�[���쐬����
+    // バーテックスシェーダーを作成する
     DWORD dwDecl[] =
     {
         D3DVSD_STREAM(0),
@@ -108,48 +108,48 @@ HRESULT InitRender(LPDIRECT3DDEVICE8 lpD3DDEV)
     if ( FAILED(hr) ) return hr;
 </b></font>
     lpD3DDEV->SetRenderState( D3DRS_ZENABLE,  TRUE );
-    lpD3DDEV->SetRenderState( D3DRS_LIGHTING, FALSE );        // ���_�̐F���g���̂ŁA���C�g�͎g��Ȃ�
-    lpD3DDEV->SetRenderState( D3DRS_CULLMODE, D3DCULL_NONE );    // ���ʕ\��
+    lpD3DDEV->SetRenderState( D3DRS_LIGHTING, FALSE );        // 頂点の色を使うので、ライトは使わない
+    lpD3DDEV->SetRenderState( D3DRS_CULLMODE, D3DCULL_NONE );    // 両面表示
     
     return S_OK;
 }
 </pre>
 <p>
-D3DXAssembleShader ����オ�A�o�[�e�b�N�X�V�F�[�_�[�̕����ł��B<br>
-D3DXAssembleShader �Ńv���O������ǂݍ��݂܂��B�ǂ񂾏�� pshader �ɓ���܂��B<br>
-����́A�\�[�X���̕�����ł���Aconst char VertexShader[] ���g���܂����B
-�v���O�������A������邩�́A���ɐ������܂��B
-�����ł́AD3DXAssembleShader ���o�[�e�b�N�X�V�F�[�_�[�̃v���O������ǂݍ��ނƂ��낾�Ɗo���Ă��������B
+D3DXAssembleShader から後が、バーテックスシェーダーの部分です。<br>
+D3DXAssembleShader でプログラムを読み込みます。読んだ情報が pshader に入ります。<br>
+今回は、ソース中の文字列である、const char VertexShader[] を使いました。
+プログラムが、何をやるかは、次に説明します。
+ここでは、D3DXAssembleShader がバーテックスシェーダーのプログラムを読み込むところだと覚えてください。
 </p>
 <p>
-�ǂݍ��񂾂�ACreateVertexShader �Ńv���O��������V�F�[�_�[�𐶐����܂��B
-�ł����V�F�[�_�[�́ACreateVertexShader �Őݒ肷��΁A�g����悤�ɂȂ�܂��B
-�E�B���h�E�Y���犄�蓖�Ă�ꂽ���������A�n���h���Ƃ��� hVertexShader �ɓn����܂��B
-��Őݒ肷��Ƃ��ɁA���̃n���h�����g���܂��B
+読み込んだら、CreateVertexShader でプログラムからシェーダーを生成します。
+できたシェーダーは、CreateVertexShader で設定すれば、使えるようになります。
+ウィンドウズから割り当てられたメモリが、ハンドルとして hVertexShader に渡されます。
+後で設定するときに、このハンドルを使います。
 </p>
 
 <p>
-CreateVertexShader �ŁAdwDecl �Ƃ����ADWORD �z����g���Ă��܂��B
-����́A�|���S���̃t�H�[�}�b�g���o�[�e�b�N�X�V�F�[�_�[�̃v���O�����ɋ����܂��B<br>
-�o�[�e�b�N�X�V�F�[�_�[�́A����g���Ă��钸�_�t�H�[�}�b�g
+CreateVertexShader で、dwDecl という、DWORD 配列を使っています。
+これは、ポリゴンのフォーマットをバーテックスシェーダーのプログラムに教えます。<br>
+バーテックスシェーダーは、今回使っている頂点フォーマット
 </p>
 <pre class="CodeBlock">
 struct CUSTOMVERTEX
 {
-    FLOAT x, y, z;  // �ʒu
-    FLOAT tu, tv;	// �e�N�X�`���[�̉摜�̈ʒu
+    FLOAT x, y, z;  // 位置
+    FLOAT tu, tv;	// テクスチャーの画像の位置
 };
 </pre>
 <p>
-���A�\���̂Ƃ��Ă� CUSTOMVERTEX ��A
+を、構造体としての CUSTOMVERTEX や、
 </p>
 <pre class="CodeBlock">
 #define D3DFVF_CUSTOMVERTEX (D3DFVF_XYZ | D3DFVF_TEX1)
 </pre>
 <p>
-�̌`�ŁA�������邱�Ƃ��o���܂���B�͂����肢���āA���o�J����ł��B<br>
-����ꂪ�������Ȃ��Ă͂����Ȃ���B
-���ꂪ�AdwDecl �ł��B
+の形で、理解することが出来ません。はっきりいって、おバカさんです。<br>
+われわれが調教しなくてはいけなせん。
+それが、dwDecl です。
 </p>
 <pre class="CodeBlock">
 DWORD dwDecl[] = {
@@ -160,79 +160,79 @@ DWORD dwDecl[] = {
 };
 </pre>
 <p>
-dwDecl �́AD3DVSD_STREAM(0) �Ŏn�܂�AD3DVSD_END() �ŏI���܂��B
-�܂��A�����g�����́A�R�s�[���y�[�X�g���܂��傤�B<br>
-���̊Ԃ��A���_�t�H�[�}�b�g�̎w��ł��B
-CUSTOMVERTEX �̒��g�̏��Ԓʂ�Ɏw�肵�܂��B<br>
-�ŏ��́A���W�� x, y, z �ł��Bfloat �^ 3 ���AD3DVSDT_FLOAT3 �Ƃ��Ďw�肵�܂��B
-������́A���W�Ȃ̂ŁAD3DVSDE_POSITION �Ŏw�肵�܂��B<br>
-���Ƃ̓e�N�X�`���[���W�ł��Btu, tv ��float �^ 2 �Ȃ̂ŁAD3DVSDT_FLOAT2 �Ŏw�肵�܂��B
-�P�ڂ́i�P�����Ȃ��ł����A�j�e�N�X�`���[���W�Ȃ̂ŁAD3DVSDE_TEXCOORD0 �ɐݒ肵�܂��B<br>
-�ȏ�ł��B<br>
-�����ŁAD3DVSDE_POSITION�y�сAD3DVSDE_TEXCOORD0 ���g���܂������A
-����́ADirectX ������ɒ�`���Ă����`���ł��B���ڐ����ŁAD3DVSD_REG(3, D3DVSDT_FLOAT3 ) ��
-���Ă��\���܂���B
-���̏ꍇ�́A�o�[�e�b�N�X�V�F�[�_�[�v���O�����ł́Av3 �ɍ��W������̂ŁAv3 ���|���S���̒��_���W�Ƃ��Ĉ����΃o�b�`���ł��B
-�܂��A�ǂ݂₷���̓_���猾���Ă��A��`�����g���Ă����ق����������������Ƃ͎v���܂��B
+dwDecl は、D3DVSD_STREAM(0) で始まり、D3DVSD_END() で終わります。
+まぁ、いつも使う時は、コピー＆ペーストしましょう。<br>
+その間が、頂点フォーマットの指定です。
+CUSTOMVERTEX の中身の順番通りに指定します。<br>
+最初は、座標の x, y, z です。float 型 3 つを、D3DVSDT_FLOAT3 として指定します。
+こいつらは、座標なので、D3DVSDE_POSITION で指定します。<br>
+あとはテクスチャー座標です。tu, tv のfloat 型 2 つなので、D3DVSDT_FLOAT2 で指定します。
+１つ目の（１つしかないですが、）テクスチャー座標なので、D3DVSDE_TEXCOORD0 に設定します。<br>
+以上です。<br>
+ここで、D3DVSDE_POSITION及び、D3DVSDE_TEXCOORD0 を使いましたが、
+これは、DirectX が勝手に定義している定義名です。直接数字で、D3DVSD_REG(3, D3DVSDT_FLOAT3 ) と
+しても構いません。
+その場合は、バーテックスシェーダープログラムでは、v3 に座標が入るので、v3 をポリゴンの頂点座標として扱えばバッチリです。
+まぁ、読みやすさの点から言っても、定義名を使っていくほうがいい事が多いとは思います。
 </p>
 <p>
-�ƌ����킯�ŁAVertexShader[] ��AdwDecl ���g���āA�o�[�e�b�N�X�V�F�[�_�[���쐬�����̂ŁA���̌�̕`��Ŏg���܂��傤�B
+と言うわけで、VertexShader[] や、dwDecl を使って、バーテックスシェーダーを作成したので、この後の描画で使いましょう。
 </p>
 
-<h2>���V�F�[�_�[�v���O���� (VertexShader[])</h2>
+<h2>■シェーダープログラム (VertexShader[])</h2>
 
 <p>
-�����ŁA�V�F�[�_�[�v���O���������܂��傤�B<br>
-�v���O�����R�[�h�́A���̂悤�ɂȂ��Ă��܂��B
-�����񂪂��̂܂܃v���O�����ɂȂ��Ă��܂��B
-" �� \n ���Ȃ��ƍl���āA�v���O�������l���Ă��������B
+ここで、シェーダープログラムを見ましょう。<br>
+プログラムコードは、次のようになっています。
+文字列がそのままプログラムになっています。
+" や \n がないと考えて、プログラムを考えてください。
 </p>
 
 <pre class="CodeBlock">
 const char VertexShader[] =
-"vs.1.0                             // �o�[�W�������            \n"\
-"dp4     oPos.x , v0   , c4         // x�����̓����ϊ�           \n"\
-"dp4     oPos.y , v0   , c5         // y�����̓����ϊ�           \n"\
-"dp4     oPos.z , v0   , c6         // z�����̓����ϊ�           \n"\
-"dp4     oPos.w , v0   , c7         // w�����̓����ϊ�           \n"\
-"mov     oT0.xy , v7                // �e�N�X�`���[��UV�l���R�s�[\n";
+"vs.1.0                             // バージョン情報            \n"\
+"dp4     oPos.x , v0   , c4         // x成分の透視変換           \n"\
+"dp4     oPos.y , v0   , c5         // y成分の透視変換           \n"\
+"dp4     oPos.z , v0   , c6         // z成分の透視変換           \n"\
+"dp4     oPos.w , v0   , c7         // w成分の透視変換           \n"\
+"mov     oT0.xy , v7                // テクスチャーのUV値をコピー\n";
 </pre>
 
 <p>
-1 �s�ڂ� �o�[�e�b�N�X�V�F�[�_�[�̃o�[�W�����ݒ�ł��B<br>
-2 �s�ڂ���A3�s�ڂŁA�����ϊ������܂��B
-v0 �Ƀ|���S���̍��W������悤�� D3DVSD_REG �ŁAD3DVSDE_POSITION(=0) �ɐݒ肵�܂����B
-oPos �������ϊ�������ɏo�͂���ꏊ�ł��B���ƂŁAc4�`c7 �ɕϊ��s������܂��B
-�s��v�Z�Ƃ��ċL���ƁA���̂悤�ɂȂ�܂��B
+1 行目は バーテックスシェーダーのバージョン設定です。<br>
+2 行目から、3行目で、透視変換をします。
+v0 にポリゴンの座標が入るように D3DVSD_REG で、D3DVSDE_POSITION(=0) に設定しました。
+oPos が透視変換した後に出力する場所です。あとで、c4～c7 に変換行列を入れます。
+行列計算として記すと、次のようになります。
 </p>
 <pre class="CodeBlock">
-                                                     ��c4.x c5.x c6.x c7.x ��
-[oPos.x oPos.y oPos.z oPos.w] = [v0.x v0.y v0.z v0.w]�bc4.y c5.y c6.y c7.y ��
-                                                     ��c4.z c5.z c6.z c7.z ��
-                                                     ��c4.w c5.w c6.w c7.w ��
+                                                     ┌c4.x c5.x c6.x c7.x ┐
+[oPos.x oPos.y oPos.z oPos.w] = [v0.x v0.y v0.z v0.w]｜c4.y c5.y c6.y c7.y │
+                                                     │c4.z c5.z c6.z c7.z │
+                                                     └c4.w c5.w c6.w c7.w ┘
 
 </pre>
 <p>
-���Ƃ́A�e�N�X�`���[�ŁAmov ���߂ŁAv7 �� xy �����������A���̂܂܃R�s�[���܂��B
-v7 �͏������̎��_�ŁA�e�N�X�`���[��uv�l������悤�ɁA(D3DVSDE_TEXCOORD0(=7))�Ƃ��Đݒ肵�܂����B<br>
-�ȏオ�A�o�[�e�b�N�X�V�F�[�_�[�̌v�Z�ł��B��X�A���킵������Ă����܂��傤�B
+あとは、テクスチャーで、mov 命令で、v7 の xy 成分だけを、そのままコピーします。
+v7 は初期化の時点で、テクスチャーのuv値が入るように、(D3DVSDE_TEXCOORD0(=7))として設定しました。<br>
+以上が、バーテックスシェーダーの計算です。後々、くわしくやっていきましょう。
 </p>
 
-<h2>���`��</h2>
+<h2>■描画</h2>
 
 <p>
-���悢��A�\���̕����ł��B<br>
-����́A�R�����|���S����\���������̂悤�ɁAmWorld, mView, mProj �����߂܂����A
-���̌�ASetTransform �͂��܂���B<br>
-�S�Ă��|���āA�P�̍s��ɂ�����ASetVertexShaderConstant �ŁA�o�[�e�b�N�X�V�F�[�_�[�̒萔���W�X�^�ɂق��肱�݂܂��B
-���́A�ʏ�̃|���S���̌v�Z���A�����ŁAmWorld, mView, mProj �𓯂��悤�Ɋ|���āA��ɂ܂Ƃ߂Čv�Z���܂��B<br>
-�Ȃ��ASetTransform �łR��ʁX�ɂ��邩�ƌ����΁A�l�Ԃɂ킩��₷������ł�
-(���ɂ��A�J�����𕡐����̂ɕ֗����Ƃ��A�X�|�b�g���C�g�̌v�Z�ɕ֗����Ƃ�����܂����A�{���I�ɂP�̍s��ŏ\���ł�)�B
+いよいよ、表示の部分です。<br>
+今回は、３次元ポリゴンを表示した時のように、mWorld, mView, mProj を求めますが、
+その後、SetTransform はしません。<br>
+全てを掛けて、１つの行列にした後、SetVertexShaderConstant で、バーテックスシェーダーの定数レジスタにほおりこみます。
+実は、通常のポリゴンの計算も、内部で、mWorld, mView, mProj を同じように掛けて、一つにまとめて計算します。<br>
+なぜ、SetTransform で３つを別々にするかと言えば、人間にわかりやすいからです
+(他にも、カメラを複数持つのに便利だとか、スポットライトの計算に便利だとかありますが、本質的に１つの行列で十分です)。
 </p>
 <p>
-����Ȃ���ȂŁASetVertexShaderConstant �ŁA�ϊ��Ɏg���s���ݒ肵����A
-SetVertexShader �ŁA�o�[�e�b�N�X�V�F�[�_�[�v���O�����𓧎��ϊ��Ɏg���悤�ɐݒ肵�܂��B<br>
-���Ƃ́A���ʂɕ\������΁A�o�[�e�b�N�X�V�F�[�_�[���g�������ʂ������܂��B
+そんなこんなで、SetVertexShaderConstant で、変換に使う行列を設定した後、
+SetVertexShader で、バーテックスシェーダープログラムを透視変換に使うように設定します。<br>
+あとは、普通に表示すれば、バーテックスシェーダーを使った結果が得られます。
 </p>
 
 <pre class="CodeBlock">
@@ -245,26 +245,26 @@ void Render(LPDIRECT3DDEVICE8 lpD3DDEV)
     D3DXMatrixRotationX(&mRotX, 0.0f);
     mWorld = mRotX * mRotY * mTrans;
     
-    // ���[���h�A�r���[���W�n�̕ϊ�
+    // ワールド、ビュー座標系の変換
     D3DXMATRIX mView, mProj;
     D3DXMatrixLookAtLH(&mView
-                    ,&D3DXVECTOR3(0,0.0f,-50.0f)  // �J�����ʒu
-                    ,&D3DXVECTOR3(0,0,0)          // �J�����̒��ړ_
-                    ,&D3DXVECTOR3(0,1,0)          // ��̌���
+                    ,&D3DXVECTOR3(0,0.0f,-50.0f)  // カメラ位置
+                    ,&D3DXVECTOR3(0,0,0)          // カメラの注目点
+                    ,&D3DXVECTOR3(0,1,0)          // 上の向き
                     );
     
-    // �r���[�A�X�N���[�����W�n�̕ϊ�
+    // ビュー、スクリーン座標系の変換
     D3DXMatrixPerspectiveFovLH(&mProj
-        ,60.0f*D3DX_PI/180.0f                   // ����p
-        ,(float)WIDTH/(float)HEIGHT             // �A�X�y�N�g��
-        ,0.01f                                  // �ŋߐڋ���
-        ,100.0f                                 // �ŉ�������
+        ,60.0f*D3DX_PI/180.0f                   // 視野角
+        ,(float)WIDTH/(float)HEIGHT             // アスペクト比
+        ,0.01f                                  // 最近接距離
+        ,100.0f                                 // 最遠方距離
         );
     <Font color = orange><b>
     D3DXMATRIX  m = mWorld * mView * mProj;
     D3DXMATRIX  trans;
     D3DXMatrixTranspose( &trans ,  &m);
-    lpD3DDEV->SetVertexShaderConstant( 4 , &trans , 4 );    // �o�[�e�b�N�X�V�F�[�_�[�� c4 �` c7 ���W�X�^�̐ݒ�
+    lpD3DDEV->SetVertexShaderConstant( 4 , &trans , 4 );    // バーテックスシェーダーの c4 ～ c7 レジスタの設定
     lpD3DDEV->SetVertexShader( hVertexShader );
     </b></font>
     lpD3DDEV->SetTexture( 0, pTexture);
@@ -275,10 +275,10 @@ void Render(LPDIRECT3DDEVICE8 lpD3DDEV)
 }
 </pre>
 
-<h2>����Еt��</h2>
+<h2>■後片付け</h2>
 
 <p>
-��Еt���ɁAhVertexShader �Ŏg�����������̊J����ǉ����܂��B
+後片付けに、hVertexShader で使ったメモリの開放を追加します。
 </p>
 
 <pre class="CodeBlock">
@@ -294,14 +294,14 @@ void CleanRender(LPDIRECT3DDEVICE8 lpD3DDEV)
 </pre>
 
 <p>
-���Ƃ́A�����ƕς�肠��܂���B
+あとは、いつもと変わりありません。
 </p>
 
-<h2>������</h2>
+<h2>■今後</h2>
 
 <p>
-�����A�o�[�e�b�N�X�V�F�[�_�[���g����悤�ɂȂ�܂����B
-����A(Pixel Shader �Ƃ̕����Z���܂߂�)�o���G�[�V�����𑝂₵�Ă����܂��傤 �B
+さぁ、バーテックスシェーダーが使えるようになりました。
+今後、(Pixel Shader との複合技を含めて)バリエーションを増やしていきましょう 。
 </p>
 
 <BR CLEAR=ALL>
@@ -309,7 +309,7 @@ void CleanRender(LPDIRECT3DDEVICE8 lpD3DDEV)
 <BR CLEAR=ALL>
 <center>
 <hr>
-<p><a href="../index.html">���ǂ�</a></p>
+<p><a href="../index.html">もどる</a></p>
 <p><a href="mailto:imagire@gmail.com">imagire@gmail.com</a></p>
 </body>
 </html>

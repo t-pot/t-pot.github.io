@@ -1,8 +1,8 @@
 <head>
-	<title>t-pot�w�d�S���o�x</title>
+	<title>t-pot『重心抽出』</title>
 	<link rel="stylesheet" type="text/css" href="../if.css">
 </head>
-<meta http-equiv=Content-Type content="text/html; charset=shift_jis">
+<meta http-equiv=Content-Type content="text/html; charset=UTF-8">
 <body>
 
 
@@ -10,8 +10,8 @@
 <center>
 <BR CLEAR=ALL>
 <BR CLEAR=ALL>
-<h1>�d�S���o</h1><br>
-<h3>�` Extraction of the center of mass �`</h3>
+<h1>重心抽出</h1><br>
+<h3>～ Extraction of the center of mass ～</h3>
 <BR CLEAR=ALL>
 <BR CLEAR=ALL>
 <BR CLEAR=ALL>
@@ -22,79 +22,79 @@
 <div>
 
 
-<h2>���͂��߂�</h2>
+<h2>■はじめに</h2>
 
 
 <p>
-<a href="http://www.igda.jp/modules/xfsection/article.php?articleid=40">SIG-GT2</a>�̍u����<a href="http://masafumi-t.cool.ne.jp/">���� ���j</a>����<a href="http://www.jaist.ac.jp/~masa-t/publications.htm">���摜�����ւ�GPU�̉��p���@</a>�Ƃ����u�����s���Ă����̂ł����A
-���̒��ŁA�uGPU�Ɍ����Ȃ��摜�����v�Ƃ��āA�u�T�[�t�F�X�F�̔C�ӐF�̍��W�l�̏����v���������Ă��܂����B<br>
-�l�I�ɂ́A����̐F�̒��S�����߂�̂͂f�o�t������Ă������x���Ȃ��Ǝv���܂��B<br>
-�Ƃ������ƂŁA�e�X�g�v���O�����������Ă݂܂����B
+<a href="http://www.igda.jp/modules/xfsection/article.php?articleid=40">SIG-GT2</a>の講演で<a href="http://masafumi-t.cool.ne.jp/">高橋 誠史</a>さんが<a href="http://www.jaist.ac.jp/~masa-t/publications.htm">動画像処理へのGPUの応用方法</a>という講演を行っていたのですが、
+その中で、「GPUに向かない画像処理」として、「サーフェス色の任意色の座標値の所得」をあげられていました。<br>
+個人的には、特定の色の中心を求めるのはＧＰＵがやっても差し支えないと思います。<br>
+ということで、テストプログラムを書いてみました。
 </p>
 
 <p>
-�ŁA�����̂悤�Ƀv���O�����ł��B<br>
+で、いつものようにプログラムです。<br>
 </p>
 <ul style = "LIST-STYLE-TYPE:none">
-<li><a href="src.zip">src.zip (�d�S���o:DirectX9 [Vertex shader 1_1, Pixel shader 2_0])</a>
+<li><a href="src.zip">src.zip (重心抽出:DirectX9 [Vertex shader 1_1, Pixel shader 2_0])</a>
 </ul>
 <p>
-���h���b�O�Ŕ�������`���܂��B���̒��S��Ԃ��^�[�Q�b�g���w���܂��B<br>
+左ドラッグで白い線を描きます。その中心を赤いターゲットが指します。<br>
 </p>
 <p>
-�\�[�X�ɂ́A�����̂悤�ɓK���Ƀt�@�C���������Ă��܂��B
-�厖�ȃt�@�C���͎��̂��̂ł��B
+ソースには、いつものように適当にファイルが入っています。
+大事なファイルは次のものです。
 </p>
 <table>
-<tr><td><a href="main_h.html">main.h</a></td><td>�A�v���P�[�V�����̃w�b�_</td></tr>
-<tr><td><a href="main_cpp.html">main.cpp</a></td><td>�A�v���P�[�V�����̃\�[�X</td></tr>
-<tr><td><a href="hlsl_fx.html">hlsl.fx</a></td><td>�V�F�[�_�v���O����</td></tr>
+<tr><td><a href="main_h.html">main.h</a></td><td>アプリケーションのヘッダ</td></tr>
+<tr><td><a href="main_cpp.html">main.cpp</a></td><td>アプリケーションのソース</td></tr>
+<tr><td><a href="hlsl_fx.html">hlsl.fx</a></td><td>シェーダプログラム</td></tr>
 </table>
 
 
-<h2>����������Ă���́H</h2>
+<h2>■何をやっているの？</h2>
 
 <p>
-���āA�d�S�����߂܂��B�d�S�Ƃ͗L���ȉ�fi�̈ʒux<sub>i</sub>�̕���
+さて、重心を求めます。重心とは有効な画素iの位置x<sub>i</sub>の平均
 </p>
 <pre class="CodeBlock">
-    �� x<sub>i</sub>
+    Σ x<sub>i</sub>
 X = ----
-    �� 1
+    Σ 1
 </pre>
 <p>
-�ɂȂ�܂��B<br>
-���̎�����ʉ�����ƁA��f���L���ȂƂ��ɂ�1�A�����ȂƂ��ɂ�0�ƂȂ�悤�ȏd��w<sub>i</sub>���`���邱�Ƃɂ���āA�S��f�̍��v���������
+になります。<br>
+この式を一般化すると、画素が有効なときには1、無効なときには0となるような重みw<sub>i</sub>を定義することによって、全画素の合計を取った式
 </p>
 <pre class="CodeBlock">
-    �� w<sub>i</sub>x<sub>i</sub>
+    Σ w<sub>i</sub>x<sub>i</sub>
 X = ------
-     �� w<sub>i</sub>
+     Σ w<sub>i</sub>
 </pre>
 <p>
-�ɏ����������Ƃ��ł��܂��B
-�Ȃ��Aw<sub>i</sub>�́A�O�ƂP�����ł͂Ȃ��A���̒��Ԃł��悭�A���̏ꍇ�ɂ́A��f���L���x�����̂悤�ȈӖ����t���ł��傤�B
+に書き直すことができます。
+なお、w<sub>i</sub>は、０と１だけではなく、その中間でもよく、その場合には、画素が有効度合いのような意味が付くでしょう。
 </p>
 <p>
-���āA���̎��́Aw<sub>i</sub>x<sub>i</sub> �� w<sub>i</sub> �Ɋւ��đS��f�̍��v���Ƃ�A���̌��ʂ�����Ƃ����������ɂȂ��Ă��܂��B<br>
-�Ƃ����Ă��A���ۂɂ͍��v���Ƃ鏈���Ɋւ��Ĉ�l�ȃX�P�[�����O�����Ă����ʂ��ς��Ȃ��̂ŁA�u���v�v���Ƃ�̂ł��A�u���ρv���Ƃ�̂ł����̌��ʂ͂����Ȃ��Ƃ������ƂɂȂ�܂��B<br>
-�S��f�̕��ς����Ƃ����̂́A������u���[���Ō�܂łƂ邱�Ƃł��B
-����̓~�b�v�}�b�v�Ƃ���CG�ł悭�m���Ă�����@�ŏ����ł��܂��B<br>
-�Ƃ������ƂŁA�e��f�Ɋւ���w<sub>i</sub>x<sub>i</sub> �� w<sub>i</sub>���v�Z���A�����̕��ς��~�b�v�}�b�v�����邱�Ƃɂ���Ă��Ƃ߁A�Ō�ɂ��̌��ʂ�����Ɨ~�����d�S�����܂�܂��B
+さて、この式は、w<sub>i</sub>x<sub>i</sub> と w<sub>i</sub> に関して全画素の合計をとり、その結果を割るといった処理になっています。<br>
+といっても、実際には合計をとる処理に関して一様なスケーリングをしても結果が変わらないので、「合計」をとるのでも、「平均」をとるのでもその結果はかわらないということになります。<br>
+全画素の平均を取るというのは、いわゆるブラーを最後までとることです。
+これはミップマップとしてCGでよく知られている方法で処理できます。<br>
+ということで、各画素に関してw<sub>i</sub>x<sub>i</sub> と w<sub>i</sub>を計算し、それらの平均をミップマップをすることによってもとめ、最後にその結果を割ると欲しい重心が求まります。
 </p>
 <image src = "how2.png">
 <p>
-����̃v���O�����ł́Ar�y��g������w<sub>i</sub>x<sub>i</sub>���Aa������w<sub>i</sub>���i�[���Čv�Z���܂��B
-�Ȃ��Aw<sub>i</sub>�́A�d�S����肽�����摜�̔����̔Z�x�ɑ��Ȃ�܂���B
+今回のプログラムでは、r及びg成分にw<sub>i</sub>x<sub>i</sub>を、a成分にw<sub>i</sub>を格納して計算します。
+なお、w<sub>i</sub>は、重心を取りたい元画像の白黒の濃度に他なりません。
 </p>
 
 
-<h2>�����摜���g�����e�e�N�Z����xy���W�̖��ߍ���</h2>
+<h2>■元画像を使った各テクセルのxy座標の埋め込み</h2>
 
 
 <p>
-�ŏ��̃X�e�b�v�́A��摜�ɍ��W�l���|���āA�s�N�Z�����Ƃɍ��������̐��l�𓱏o���邱�Ƃł��B<br>
-���W�l�́A���オ(0,0)�A�E����(1,1)�ɂȂ�悤�ɁA�ˉe��Ԃ̍��W�l���X�P�[�����O���܂��B
+最初のステップは、基画像に座標値を掛けて、ピクセルごとに合成する基の数値を導出することです。<br>
+座標値は、左上が(0,0)、右下が(1,1)になるように、射影空間の座標値をスケーリングします。
 </p>
 <pre class="CodeBlock">
 hlsl.fx
@@ -106,21 +106,21 @@ hlsl.fx
 <font color="deepskyblue">0044:</font> };
 <font color="deepskyblue">0045:</font> <font color="cyan">// ------------------------------------------------------------</font>
 <font color="deepskyblue">0046:</font> FRAGMENT0 VS0 (
-<font color="deepskyblue">0047:</font>       float4 Pos    : POSITION           <font color="cyan">// (���f���̒��_)</font>
-<font color="deepskyblue">0048:</font>     , float2 Tex    : TEXCOORD0          <font color="cyan">// (�e�N�X�`�����W)</font>
+<font color="deepskyblue">0047:</font>       float4 Pos    : POSITION           <font color="cyan">// (モデルの頂点)</font>
+<font color="deepskyblue">0048:</font>     , float2 Tex    : TEXCOORD0          <font color="cyan">// (テクスチャ座標)</font>
 <font color="deepskyblue">0049:</font>       )
 <font color="deepskyblue">0050:</font> {
 <font color="deepskyblue">0051:</font>     FRAGMENT0 Out = (FRAGMENT0)0;
 <font color="deepskyblue">0052:</font>     
-<font color="deepskyblue">0053:</font>     <font color="cyan">// Position(�ʒu���W)</font>
+<font color="deepskyblue">0053:</font>     <font color="cyan">// Position(位置座標)</font>
 <font color="deepskyblue">0054:</font>     Out.Pos = Pos;
 <font color="deepskyblue">0055:</font>     
-<font color="deepskyblue">0056:</font>     <font color="cyan">// [0,1]�ɂ����ʒu</font>
+<font color="deepskyblue">0056:</font>     <font color="cyan">// [0,1]にした位置</font>
 <font color="deepskyblue">0057:</font>     Out.XY = 1;
 <font color="deepskyblue">0058:</font>     Out.XY.x = (  0.5 * Pos.x + 0.5);
 <font color="deepskyblue">0059:</font>     Out.XY.y = (- 0.5 * Pos.y + 0.5);
 <font color="deepskyblue">0060:</font>     
-<font color="deepskyblue">0061:</font>     <font color="cyan">// �e�N�X�`�����W</font>
+<font color="deepskyblue">0061:</font>     <font color="cyan">// テクスチャ座標</font>
 <font color="deepskyblue">0062:</font>     Out.Tex = Tex;
 <font color="deepskyblue">0063:</font>     
 <font color="deepskyblue">0064:</font>     <font color="blue">return</font> Out;
@@ -136,15 +136,15 @@ hlsl.fx
 <font color="deepskyblue">0074:</font> }
 </pre>
 <p>
-�A�v���P�[�V�����v���O�������ł́A��摜�̃e�N�X�`����ǂݍ��݃e�N�X�`���Ƃ��āA�|���S����S��ʂŕ`�悵�܂��B<br>
-���Ȃ݂ɁA�o�C���j�A��Ԃ��������邽�߂ɁA�P�e�N�Z���������W�l�����炵�ĕ`�悵�܂��B
+アプリケーションプログラム側では、基画像のテクスチャを読み込みテクスチャとして、ポリゴンを全画面で描画します。<br>
+ちなみに、バイリニア補間を効かせるために、１テクセルだけ座標値をずらして描画します。
 </p>
 <pre class="CodeBlock">
 main.cpp
 <font color="deepskyblue">0464:</font>             m_pEffect-&gt;SetTechnique( m_hTechnique );
 <font color="deepskyblue">0465:</font>             m_pEffect-&gt;Begin( NULL, 0 );
 <font color="deepskyblue">0466:</font> 
-<font color="deepskyblue">0467:</font>             <font color="cyan">// 0 ��</font>
+<font color="deepskyblue">0467:</font>             <font color="cyan">// 0 へ</font>
 <font color="deepskyblue">0468:</font>             m_pEffect-&gt;Pass( 0 );
 <font color="deepskyblue">0469:</font>             m_pd3dDevice-&gt;SetRenderTarget( 0, m_pSurf[0] );
 <font color="deepskyblue">0470:</font>             m_pd3dDevice-&gt;SetFVF( D3DFVF_XYZ | D3DFVF_TEX1 );
@@ -160,13 +160,13 @@ main.cpp
 </pre>
 
 
-<h2>���u���[</h2>
+<h2>■ブラー</h2>
 
 
 <p>
-�~�b�v�}�b�v�̌v�Z�́A�P�U�{�b�N�X�T���v�����O�ōs���܂����B<br>
-���x�̖��ŁA�k���o�b�t�@�ɕ��������_�o�b�t�@���g���܂����B
-RADEON9600�ł͕��������_�o�b�t�@�Ƀo�C���j�A��Ԃ��g���Ȃ��̂łP��̃T���v�����O�łP�U�e�N�Z���̏�񂵂��E���܂���BGeForce 6800 �ł́A�P�U�{�b�N�X�T���v�����O�łU�S�e�N�Z���̏����E�����Ƃ��ł���ł��傤�B
+ミップマップの計算は、１６ボックスサンプリングで行いました。<br>
+精度の問題で、縮小バッファに浮動小数点バッファを使いました。
+RADEON9600では浮動小数点バッファにバイリニア補間が使えないので１回のサンプリングで１６テクセルの情報しか拾えません。GeForce 6800 では、１６ボックスサンプリングで６４テクセルの情報を拾うこともできるでしょう。
 </p>
 <pre class="CodeBlock">
 hlsl.fx
@@ -184,16 +184,16 @@ hlsl.fx
 <font color="deepskyblue">0092:</font> };
 <font color="deepskyblue">0093:</font> <font color="cyan">// ------------------------------------------------------------</font>
 <font color="deepskyblue">0094:</font> FRAGMENT1 VS1 (
-<font color="deepskyblue">0095:</font>       float4 Pos    : POSITION           <font color="cyan">// (���f���̒��_)</font>
-<font color="deepskyblue">0096:</font>     , float2 Tex    : TEXCOORD0          <font color="cyan">// (�e�N�X�`�����W)</font>
+<font color="deepskyblue">0095:</font>       float4 Pos    : POSITION           <font color="cyan">// (モデルの頂点)</font>
+<font color="deepskyblue">0096:</font>     , float2 Tex    : TEXCOORD0          <font color="cyan">// (テクスチャ座標)</font>
 <font color="deepskyblue">0097:</font>       )
 <font color="deepskyblue">0098:</font> {
 <font color="deepskyblue">0099:</font>     FRAGMENT1 Out = (FRAGMENT1)0;
 <font color="deepskyblue">0100:</font>     
-<font color="deepskyblue">0101:</font>     <font color="cyan">// Position(�ʒu���W)</font>
+<font color="deepskyblue">0101:</font>     <font color="cyan">// Position(位置座標)</font>
 <font color="deepskyblue">0102:</font>     Out.Pos = Pos;
 <font color="deepskyblue">0103:</font>     
-<font color="deepskyblue">0104:</font>     <font color="cyan">// �e�N�X�`�����W</font>
+<font color="deepskyblue">0104:</font>     <font color="cyan">// テクスチャ座標</font>
 <font color="deepskyblue">0105:</font>     Out.Tex0 = Tex + float2( 0.5*inv_size, 0.5*inv_size );
 <font color="deepskyblue">0106:</font>     Out.Tex1 = Tex + float2( 1.5*inv_size, 0.5*inv_size );
 <font color="deepskyblue">0107:</font>     Out.Tex2 = Tex + float2( 2.5*inv_size, 0.5*inv_size );
@@ -231,7 +231,7 @@ hlsl.fx
 <font color="deepskyblue">0139:</font> }
 </pre>
 <p>
-�A�v���P�[�V�����v���O�������ł́A�����_�����O�^�[�Q�b�g��ς��ă|���S����S��ʂɕ\�����܂��B
+アプリケーションプログラム側では、レンダリングターゲットを変えてポリゴンを全画面に表示します。
 </p>
 <pre class="CodeBlock">
 main.cpp
@@ -256,18 +256,18 @@ main.cpp
 </pre>
 
 
-<h2>���^�[�Q�b�g�X�R�[�v�̕\��</h2>
+<h2>■ターゲットスコープの表示</h2>
 
 
 <p>
-�Ō�ɁA�P�e�N�Z���܂ŗ��Ƃ�����񂩂畽�ς̍��W�l�����߂āAw����(�L���ȃe�N�Z����)�Ŋ��邱�Ƃɂ���āA�d�S���v�Z���܂��B<br>
-�^�[�Q�b�g�𓮂����̂ɁA�\������^�[�Q�b�g�̃e�N�X�`�����W�����炷���@���̗p���܂����B���̕��@�ł́A�^�[�Q�b�g��\�����邽�߂ɁA�S��ʂ̃|���S����\������K�v������܂��B�����A���̕��@���̗p���邮�炢�Ȃ�A���̕��@�̂ق��������Ɗ������̂ŁA���̕��@���̗p���܂����B<br>
-����́A�^�[�Q�b�g�̑傫����32�s�N�Z���ŁA��ʂ̑傫����512�s�N�Z���ɂ��܂����B���̏ꍇ�ɂ́A�e�N�X�`�����\��512/32=16�̂Ƃ��Ƀ^�[�Q�b�g�͉�ʂ̒[�ɍs���܂��B�ʒu���W��512/32�{���Ă���̂́A0�`1�͈̔͂œ����^�[�Q�b�g����ʂ̑傫���ɒ�������X�P�[�����O�̂��߂ł��B
+最後に、１テクセルまで落とした情報から平均の座標値を求めて、w成分(有効なテクセル数)で割ることによって、重心を計算します。<br>
+ターゲットを動かすのに、表示するターゲットのテクスチャ座標をずらす方法を採用しました。この方法では、ターゲットを表示するために、全画面のポリゴンを表示する必要があります。ただ、他の方法を採用するぐらいなら、この方法のほうが速いと感じたので、この方法を採用しました。<br>
+今回は、ターゲットの大きさが32ピクセルで、画面の大きさは512ピクセルにしました。この場合には、テクスチャ座表が512/32=16のときにターゲットは画面の端に行きます。位置座標に512/32倍しているのは、0～1の範囲で動くターゲットを画面の大きさに調整するスケーリングのためです。
 </p>
 <pre class="CodeBlock">
 hlsl.fx
 <font color="deepskyblue">0142:</font> <font color="cyan">// ------------------------------------------------------------</font>
-<font color="deepskyblue">0143:</font> <font color="cyan">// �^�[�Q�b�g�𓮂���</font>
+<font color="deepskyblue">0143:</font> <font color="cyan">// ターゲットを動かす</font>
 <font color="deepskyblue">0144:</font> <font color="cyan">// ------------------------------------------------------------</font>
 <font color="deepskyblue">0145:</font> <font color="blue">struct</font> FRAGMENT2
 <font color="deepskyblue">0146:</font> {
@@ -290,7 +290,7 @@ hlsl.fx
 <font color="deepskyblue">0165:</font> }
 </pre>
 <p>
-�A�v���P�[�V�������ł́A�^�[�Q�b�g�̒��S�����_�i����j�ɂȂ�悤�ɒ������āA�S��ʂɃ|���S����\�����܂��B
+アプリケーション側では、ターゲットの中心が原点（左上）になるように調整して、全画面にポリゴンを表示します。
 </p>
 <pre class="CodeBlock">
 main.cpp
@@ -322,23 +322,23 @@ main.cpp
 </pre>
 
 
-<h2>��CPU�ŏd�S���g���Ƃ��ɂ́H</h2>
+<h2>■CPUで重心を使うときには？</h2>
 
 
 <p>
-���āA����̌��ʂ�CPU�Ŏg�������Ƃ��ł����A1x1�e�N�Z���܂ŗ��Ƃ����e�N�X�`�������b�N���ēǂݍ��߂΂悢�Ƃ������ƂɂȂ�܂��B<br>
-���R�A���̕��@�ɂ̓y�i���e�B���t���̂ŁA1x1�̃e�N�X�`���͕����p�ӂ��ăo�b�t�@�����O���ׂ��ł��傤�B<br>
-���A���^�C���Ō��ʂ𔽉f�����Ȃ���΂Ȃ�Ȃ��Ƃ���́A����̃^�[�Q�b�g�̕\�������̂悤�ɏ�������Ζ��Ȃ��ł��ˁB<br>
+さて、今回の結果をCPUで使いたいときですが、1x1テクセルまで落としたテクスチャをロックして読み込めばよいということになります。<br>
+当然、その方法にはペナルティが付くので、1x1のテクスチャは複数用意してバッファリングすべきでしょう。<br>
+リアルタイムで結果を反映させなければならないところは、今回のターゲットの表示部分のように処理すれば問題ないですね。<br>
 <br>
-�Ƃ������ƂŁA���ϑ��삮�炢�́A���͂�f�o�t�ŏ������Ă������̂ł͂Ȃ����Ǝv���܂��B
+ということで、平均操作ぐらいは、もはやＧＰＵで処理してもいいのではないかと思います。
 </p>
 
 
-<h2>���Ō��</h2>
+<h2>■最後に</h2>
 
 
 <p>
-����̃l�^�́AShaderX<sup>2</sup>�̏Ă����������A�V�������Ƃ͂Ȃɂ��Ȃ��ˁB
+今回のネタは、ShaderX<sup>2</sup>の焼き直しだし、新しいことはなにもないね。
 </p>
 
 
@@ -350,7 +350,7 @@ main.cpp
 <BR CLEAR=ALL>
 <center>
 <hr>
-<p><a href="../index.html">���ǂ�</a></p>
+<p><a href="../index.html">もどる</a></p>
 <p><a href="mailto:imagire@gmail.com">imagire@gmail.com</a></p>
 </center>
 

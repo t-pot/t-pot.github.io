@@ -1,101 +1,101 @@
 <head>
-	<title>t-pot�wDirectX 8.1:��ʊE�[�x (Depth of Field)�x</title>
+	<title>t-pot『DirectX 8.1:被写界深度 (Depth of Field)』</title>
 	<link rel="stylesheet" type="text/css" href="../if.css">
 </head>
-<meta http-equiv=Content-Type content="text/html; charset=shift_jis">
+<meta http-equiv=Content-Type content="text/html; charset=UTF-8">
 <body text=#ffffff>
 
 <div class="contents">
 <center>
 <BR CLEAR=ALL>
 <BR CLEAR=ALL>
-<h1>DirectX 8.1:��ʊE�[�x (Depth of Field)</h1><br>
-<h3>�`�O��܂ł̓��́A�����֌q����H�`</h3>
+<h1>DirectX 8.1:被写界深度 (Depth of Field)</h1><br>
+<h3>～前回までの道は、ここへ繋がる？～</h3>
 <BR CLEAR=ALL>
 <BR CLEAR=ALL>
 <BR CLEAR=ALL>
 </center>
 
-<h2>���͂��߂�</h2>
+<h2>■はじめに</h2>
 <p>
-����́A��ʊE�[�x�ł��B<br>
-���̊G�����Ă��������B���S�̃N���}�͂͂�����ƌ����Ă��܂����A��O�̃N���}�̓{�P�Ă��܂��B�܂��A�w�i�̉����̂ق����{�P�Ă��܂��B<br>
-�[�x�����ăs���g�����킹��̂��A��ʊE�[�x�ł��B
+今回は、被写界深度です。<br>
+下の絵を見てください。中心のクルマははっきりと見えていますが、手前のクルマはボケています。また、背景の遠くのほうもボケています。<br>
+深度を見てピントを合わせるのが、被写界深度です。
 </p>
 
 <image src = "title.jpg">
 
 <p>
-����̃\�[�X�́A���̂��̂ł��B
+今回のソースは、次のものです。
 </p>
 <ul style = "LIST-STYLE-TYPE:none">
-<li><a href="dof.lzh">dof.lzh (��ʊE�[�x�T���v���̃\�[�X)</a>
+<li><a href="dof.lzh">dof.lzh (被写界深度サンプルのソース)</a>
 </ul>
 
 <p>
-���e�͎��̂Ƃ���ɂȂ��Ă��܂��B
+内容は次のとおりになっています。
 </p>
 <table>
-<tr><td><a href="dof_psh.html">dof.psh</a></td><td>�s�N�Z���V�F�[�_�[�v���O�����B�{�P�Ă��ʂƕ��ʂ̉�ʂ���������B</td></tr>
-<tr><td><a href="draw_h.html">draw.h</a></td><td>�`��̊e�֐��̒�`�B���ɈӖ������̂ŏo�Ԗ����B</td></tr>
-<tr><td><a href="draw_cpp.html">draw.cpp</a></td><td>���C���̕`�敔���B</td></tr>
-<tr><td><a href="blur_psh.html">blur.psh</a></td><td>�s�N�Z���V�F�[�_�[�v���O�����B�{�P����ʂ����B</td></tr>
-<tr><td><a href="blur_vsh.html">blur.vsh</a></td><td>���_�V�F�[�_�[�v���O�����B�{�P����ʂ����B</td></tr>
-<tr><td><a href="bg_cpp.html">bg.cpp</a></td><td>�w�i�\���B�������C�e�B���O�̎��̂��̂Ɠ���</td></tr>
-<tr><td><a href="vs_vsh.html">vs.vsh</a></td><td>���_�V�F�[�_�[�v���O�����B�������������ݕt�����s�������C�g�B</td></tr>
-<tr><td><a href="ps_psh.html">ps.psh</a></td><td>���_�V�F�[�_�[�v���O�����B���s�������C�g�B</td></tr>
-<tr><td><a href="load_cpp.html">load.cpp</a></td><td>�V�F�[�_�[��e�N�X�`���[�̃��[�h�J��</td></tr>
-<tr><td><a href="load_h.html">load.h</a></td><td>�V�F�[�_�[��e�N�X�`���[�̃��[�h�J��</td></tr>
-<tr><td><a href="main_cpp.html">main.cpp</a></td><td>�`��Ɋ֌W���Ȃ��V�X�e���I�ȕ����B�ύX�������̂ŁA�o�Ԗ����B</td></tr>
-<tr><td><a href="main_h.html">main.h</a></td><td>��{�I�Ȓ萔�ȂǁB�������ʃT�C�Y��512x512�ł��B</td></tr>
+<tr><td><a href="dof_psh.html">dof.psh</a></td><td>ピクセルシェーダープログラム。ボケてる画面と普通の画面を合成する。</td></tr>
+<tr><td><a href="draw_h.html">draw.h</a></td><td>描画の各関数の定義。特に意味無いので出番無し。</td></tr>
+<tr><td><a href="draw_cpp.html">draw.cpp</a></td><td>メインの描画部分。</td></tr>
+<tr><td><a href="blur_psh.html">blur.psh</a></td><td>ピクセルシェーダープログラム。ボケた画面を作る。</td></tr>
+<tr><td><a href="blur_vsh.html">blur.vsh</a></td><td>頂点シェーダープログラム。ボケた画面を作る。</td></tr>
+<tr><td><a href="bg_cpp.html">bg.cpp</a></td><td>背景表示。半球ライティングの時のものと同じ</td></tr>
+<tr><td><a href="vs_vsh.html">vs.vsh</a></td><td>頂点シェーダープログラム。α成分書き込み付き平行光源ライト。</td></tr>
+<tr><td><a href="ps_psh.html">ps.psh</a></td><td>頂点シェーダープログラム。平行光源ライト。</td></tr>
+<tr><td><a href="load_cpp.html">load.cpp</a></td><td>シェーダーやテクスチャーのロード開放</td></tr>
+<tr><td><a href="load_h.html">load.h</a></td><td>シェーダーやテクスチャーのロード開放</td></tr>
+<tr><td><a href="main_cpp.html">main.cpp</a></td><td>描画に関係しないシステム的な部分。変更が無いので、出番無し。</td></tr>
+<tr><td><a href="main_h.html">main.h</a></td><td>基本的な定数など。今回も画面サイズは512x512です。</td></tr>
 </table>
-<image src = "tile_bmp.jpg" width = 64 height=64>tile.bmp (���f�J�[��)<br>
-<image src = "sky_bmp.jpg" width = 64 height=64>sky.bmp (��f�J�[��)<br>
+<image src = "tile_bmp.jpg" width = 64 height=64>tile.bmp (床デカール)<br>
+<image src = "sky_bmp.jpg" width = 64 height=64>sky.bmp (空デカール)<br>
 <p>
-���ƁA���f���Ƃ��āAnsx.x�ƁA���s�t�@�C���� MyBase.exe �y�сA
-VC++ �ŃR���p�C�����邽�߂̃v���W�F�N�g�t�@�C�� MyBase.dsw MyBase.dsp �������Ă��܂��B
+あと、モデルとして、nsx.xと、実行ファイルの MyBase.exe 及び、
+VC++ でコンパイルするためのプロジェクトファイル MyBase.dsw MyBase.dsp が入っています。
 </p>
 
-<h2>�����@</h2>
+<h2>■方法</h2>
 
 <p>
-������A�O��̃t�H�[�J�X�Ɠ����悤�Ƀ{�P���摜�Ƃ͂����肵���摜���������܂��B<br>
-�Ⴂ�͐[�x�������p�̃p�����[�^�ɗp���邱�Ƃł��B<br>
-�[�x���摜�ɂ���ƁA���̗p�ɂȂ�܂�(�����ꏊ�����A�߂������ł�)�B
+今回も、前回のフォーカスと同じようにボケた画像とはっきりした画像を合成します。<br>
+違いは深度を合成用のパラメータに用いることです。<br>
+深度を画像にすると、下の用になります(遠い場所が白、近くが黒です)。
 </p>
-<image src = "t0a.jpg" width = 256 height=256>�[�x�̊G
+<image src = "t0a.jpg" width = 256 height=256>深度の絵
 <p>
-�O��́A�͂����肵�����������A�{�P�����������ł����B<br>
-�����̎Ԃ��͂����肳�������̂ŁA���������A��O�Ɖ��������Ȃ�悤�ɕϊ����܂��B<br>
-�}�ŋL���ƁA���̕ϊ������܂��B
+前回は、はっきりした部分が白、ボケた部分が黒でした。<br>
+中央の車をはっきりさせたいので、中央が白、手前と奥が黒くなるように変換します。<br>
+図で記すと、次の変換をします。
 </p>
-<image src = "x2.gif">�[�x�̕ϊ�
+<image src = "x2.gif">深度の変換
 <p>
-�ȏ�̕ϊ�������Ɛ[�x�͎��̂悤�ɂȂ�܂��B
+以上の変換をすると深度は次のようになります。
 </p>
-<image src = "zx2.jpg" width = 256 height=256>�ϊ������[�x
+<image src = "zx2.jpg" width = 256 height=256>変換した深度
 
 <p>
-���̃e�N�X�`���[�������p�����[�^�Ɏg�����摜�����̂悤�ɂȂ�܂��B
+このテクスチャーを合成パラメータに使った画像が次のようになります。
 </p>
-<image src = "x2.jpg">��̉摜���g������ʊE�[�x�B
+<image src = "x2.jpg">上の画像を使った被写界深度。
 <p>
-����Ă݂����z�ł����A�s���g�̂��������������Ȃ��A�����̎Ԏ��̂ɂ��{�P�����������݂��܂��B<br>
-�����ŁA�����̕�����傫�����āA�s���g�̍��������𑝂₵�܂��B
+作ってみた感想ですが、ピントのあった部分が少なく、中央の車自体にもボケた部分が存在します。<br>
+そこで、中央の部分を大きくして、ピントの合う部分を増やします。
 </p>
-<image src = "x4.gif">�������L���[�x�̕ϊ�
+<image src = "x4.gif">中央が広い深度の変換
 <p>
-���̉摜�����ł��B
+その画像が下です。
 </p>
-<image src = "zx4.jpg" width = 256 height=256>�����̕������L�����[�x�B
+<image src = "zx4.jpg" width = 256 height=256>中央の部分を広げた深度。
 <p>
-���̃e�N�X�`���[���g�p���č��������G���ŏ��̉摜�ł��B<br>
-�������A���̂̕��@�ł͐��`�ϊ����L�̋}�ȕω����o�����Ȃ̂ŁA�K�E�Y�^�t�B���^�i����exp(-c z^2)�j��p����ƁA����ɂ悢���ʂ������邩������܂���B</p>
+このテクスチャーを使用して合成した絵が最初の画像です。<br>
+ただし、このの方法では線形変換特有の急な変化が出がちなので、ガウズ型フィルタ（α∝exp(-c z^2)）を用いると、さらによい結果が得られるかもしれません。</p>
 
-<h2>���������� pixel shader �v���O����</h2>
+<h2>■合成する pixel shader プログラム</h2>
 
 <p>
-�����ɗp����s�N�Z���V�F�[�_�[�v���O�����͎�(dof.psh)�ł��B
+合成に用いるピクセルシェーダープログラムは次(dof.psh)です。
 </p>
 
 <pre class="CodeBlock">
@@ -106,112 +106,112 @@ VC++ �ŃR���p�C�����邽�߂̃v���W�F�N�g�t�@�C�� MyBase.dsw MyBase.dsp �������Ă�
 <font color = deepskyblue>0005: </font>
 <font color = deepskyblue>0006: </font>def c0, 0.0f, 0.0f, 0.0f, 0.5f
 <font color = deepskyblue>0007: </font>
-<font color = deepskyblue>0008: </font><font color = cyan>; �e�N�X�`���[�̐F�����������Ă���</font>
-<font color = deepskyblue>0009: </font>tex t0                              <font color = cyan>; ���e�N�X�`���[</font>
-<font color = deepskyblue>0010: </font>tex t1                              <font color = cyan>; �{�P�e�N�X�`���[</font>
-<font color = deepskyblue>0011: </font>tex t2                              <font color = cyan>; ��{�P�e�N�X�`���[</font>
+<font color = deepskyblue>0008: </font><font color = cyan>; テクスチャーの色を引っ張ってくる</font>
+<font color = deepskyblue>0009: </font>tex t0                              <font color = cyan>; 元テクスチャー</font>
+<font color = deepskyblue>0010: </font>tex t1                              <font color = cyan>; ボケテクスチャー</font>
+<font color = deepskyblue>0011: </font>tex t2                              <font color = cyan>; 大ボケテクスチャー</font>
 <font color = deepskyblue>0012: </font>
-<font color = deepskyblue>0013: </font><font color = cyan>; ���������̐[�x����������</font>
-<font color = deepskyblue>0014: </font><font color = yellow>lrp         r0.a,   c0, t0, t2</font>      <font color = cyan>; �[�x�͂͂����肵�����̂ƁA��{�P�̂��̂̕��ς����</font>
-<font color = deepskyblue>0015: </font>cnd_x4_sat  r0.a, r0.a, 1-r0.a, r0.a<font color = cyan>; 0.5 �̎��ɂ͂�����Ȃ�悤�ɂ���</font>
+<font color = deepskyblue>0013: </font><font color = cyan>; いい感じの深度を引っ張る</font>
+<font color = deepskyblue>0014: </font><font color = yellow>lrp         r0.a,   c0, t0, t2</font>      <font color = cyan>; 深度ははっきりしたものと、大ボケのものの平均を取る</font>
+<font color = deepskyblue>0015: </font>cnd_x4_sat  r0.a, r0.a, 1-r0.a, r0.a<font color = cyan>; 0.5 の時にはっきりなるようにする</font>
 <font color = deepskyblue>0016: </font>
-<font color = deepskyblue>0017: </font><font color = cyan>; 0.0��0.5 �̐��������</font>
-<font color = deepskyblue>0018: </font>mov_x2_sat  r1.a,   r0.a            <font color = cyan>; t0.a  : 0.0��0.5��1.0</font>
-<font color = deepskyblue>0019: </font>                                    <font color = cyan>; r1.a  : 0.0��1.0��1.0 (r0.a �� 0.0 ���� 0.5 �̉��������A0.0 ���� 1.0 �ɂȂ�)</font>
-<font color = deepskyblue>0020: </font>lrp         r1.rgb, r1.a, t1, t2    <font color = cyan>; t0.a  : 0.0��0.5��1.0</font>
-<font color = deepskyblue>0021: </font>                                    <font color = cyan>; r1.rgb: t2 ��t1 ��t1  (r0.a �� 0.0 ���� 0.5 �̉��������A t2 ����  t1 �ɂȂ�)</font>
+<font color = deepskyblue>0017: </font><font color = cyan>; 0.0→0.5 の成分を作る</font>
+<font color = deepskyblue>0018: </font>mov_x2_sat  r1.a,   r0.a            <font color = cyan>; t0.a  : 0.0→0.5→1.0</font>
+<font color = deepskyblue>0019: </font>                                    <font color = cyan>; r1.a  : 0.0→1.0→1.0 (r0.a が 0.0 から 0.5 の下半分が、0.0 から 1.0 になる)</font>
+<font color = deepskyblue>0020: </font>lrp         r1.rgb, r1.a, t1, t2    <font color = cyan>; t0.a  : 0.0→0.5→1.0</font>
+<font color = deepskyblue>0021: </font>                                    <font color = cyan>; r1.rgb: t2 →t1 →t1  (r0.a が 0.0 から 0.5 の下半分が、 t2 から  t1 になる)</font>
 <font color = deepskyblue>0022: </font>
-<font color = deepskyblue>0023: </font><font color = cyan>; 0.5��1.0 �̐��������</font>
-<font color = deepskyblue>0024: </font>mov_sat     r1.a,   r0_bx2.a        <font color = cyan>; t0.a  : 0.0��0.5��1.0</font>
-<font color = deepskyblue>0025: </font>                                    <font color = cyan>; r1.a  : 0.0��0.0��1.0 (r0.a �� 0.5 ���� 1.0 �̏㔼�����A0.0 ���� 1.0 �ɂȂ�)</font>
-<font color = deepskyblue>0026: </font>lrp         r0.rgb, r1.a, t0, t1    <font color = cyan>; t0.a  : 0.0��0.5��1.0</font>
-<font color = deepskyblue>0027: </font>                                    <font color = cyan>; r0.rgb: t1 ��t1 ��t0  (r0.a �� 0.5 ���� 1.0 �̏㔼�����A t1 ����  t0 �ɂȂ�)</font>
+<font color = deepskyblue>0023: </font><font color = cyan>; 0.5→1.0 の成分を作る</font>
+<font color = deepskyblue>0024: </font>mov_sat     r1.a,   r0_bx2.a        <font color = cyan>; t0.a  : 0.0→0.5→1.0</font>
+<font color = deepskyblue>0025: </font>                                    <font color = cyan>; r1.a  : 0.0→0.0→1.0 (r0.a が 0.5 から 1.0 の上半分が、0.0 から 1.0 になる)</font>
+<font color = deepskyblue>0026: </font>lrp         r0.rgb, r1.a, t0, t1    <font color = cyan>; t0.a  : 0.0→0.5→1.0</font>
+<font color = deepskyblue>0027: </font>                                    <font color = cyan>; r0.rgb: t1 →t1 →t0  (r0.a が 0.5 から 1.0 の上半分が、 t1 から  t0 になる)</font>
 <font color = deepskyblue>0028: </font>
-<font color = deepskyblue>0029: </font><font color = cyan>; �����肭������</font>
+<font color = deepskyblue>0029: </font><font color = cyan>; 二つを上手く混ぜる</font>
 <font color = deepskyblue>0030: </font>cnd         r0.rgb, r0.a, r0, r1    <font color = cyan>; r0.rgb = (0.5 < r0.a) ? r0 : r1</font>
-<font color = deepskyblue>0031: </font>                                    <font color = cyan>; t0.a  : 0.0��0.5��1.0</font>
-<font color = deepskyblue>0032: </font>                                    <font color = cyan>; r0.rgb: t2 ��t1 ��t0  ( 0.0 ���� 0.5 �� r1�A0.5 ���� 1.0 �� r0 �����)</font>
+<font color = deepskyblue>0031: </font>                                    <font color = cyan>; t0.a  : 0.0→0.5→1.0</font>
+<font color = deepskyblue>0032: </font>                                    <font color = cyan>; r0.rgb: t2 →t1 →t0  ( 0.0 から 0.5 は r1、0.5 から 1.0 は r0 を取る)</font>
 </pre>
 <p>
-�悸�Atex �R�}���h�ŁA�e�N�X�`���[��ǂݍ��݂܂��B<br>
-t0 �Ɍ��̉摜�At1�At2 �ɂ��񂾂�傫���{�P���摜����͂��܂��B<br>
-���ꂼ��̉摜�ɂ̓������ɐ[�x�������Ă��܂��B
+先ず、tex コマンドで、テクスチャーを読み込みます。<br>
+t0 に元の画像、t1、t2 にだんだん大きくボケた画像を入力します。<br>
+それぞれの画像にはα成分に深度が入っています。
 </p>
 <p>
-���āA���̉��F�̕����́A���܂łɏo�Ă��Ȃ����������ł��B<br>
-����Ă��邱�Ƃ́A�����ɗp����[�x���A�͂����肵���e�N�X�`���[�ƈ�ԃ{�P���e�N�X�`���[�̕��ςɐݒ肵�܂��B
+さて、次の黄色の部分は、今までに出てこなかった事柄です。<br>
+やっていることは、合成に用いる深度を、はっきりしたテクスチャーと一番ボケたテクスチャーの平均に設定します。
 </p>
 <pre class="CodeBlock">
-�@�@�@ t0.a + t2.a
+　　　 t0.a + t2.a
 r0.a = ------------
-�@�@�@�@�@�@2
+　　　　　　2
 </pre>
 <p>
-���ۂ̉摜�Ƃ��ĕ\������ƁA���̂悤�ɂȂ�܂��B
+実際の画像として表現すると、次のようになります。
 </p>
 <image src = "t0a.jpg" width = 256 height=256> +
 <image src = "t2a.jpg" width = 256 height=256> =
 <image src = "r0a.jpg" width = 256 height=256>
 <p>
-�Ⴂ�́A���̉摜�ł������肵�Ă����[�̕������A�K�x�Ƀ{�P�Ă��邱�Ƃł��B<br>
-���ꂪ�Ȃ��ƁA�[�x���}���ɕω����Ă��镔���ŁA�{�P��ׂ������ɂ������肵���摜�̐F���N�H���Ă���̂ŁA
-�V���[�v�ȉ摜�������܂���B<br>
-���ς��Ƃ��Ă��A�N�H�͔������Ȃ��̂ł����A�����͂��܂������Ƃ��ł��܂��B
+違いは、元の画像でくっきりしていた端の部分が、適度にボケていることです。<br>
+これがないと、深度が急激に変化している部分で、ボケるべき部分にくっきりした画像の色が侵食してくるので、
+シャープな画像が得られません。<br>
+平均をとっても、侵食は避けられないのですが、多少はごまかすことができます。
 </p>
 <p>
-���� cnd_x4_sat ���߂��A�������L���[�x�̕ϊ������܂��B<br>
-cnd ���߂́Ar0.a �� 0.5 �����傫�����͂R���ځA���������͂S���ڂ�ǂݎ��܂��B<br>
-�]���āA���̖��߂��g���΁A0.5 �Ő܂�Ԃ��R�Ȃ�̌`�������܂��B
+次の cnd_x4_sat 命令が、中央が広い深度の変換をします。<br>
+cnd 命令は、r0.a が 0.5 よりも大きい時は３項目、小さい時は４項目を読み取ります。<br>
+従って、次の命令を使えば、0.5 で折り返す山なりの形が得られます。
 </p>
 <pre class="CodeBlock">
 cnd r0.a, r0.a, 1-r0, r0
 
-r0.a |0.0 �� 0.5 �� 1.0
+r0.a |0.0 → 0.5 → 1.0
 -----------------------------
-�o�� |0.0 �� 0.5 �� 0.0
+出力 |0.0 → 0.5 → 0.0
 </pre>
 <p>
-���Ƃ́Ax4 �́A�S�{���� 0.25 �̎��� 1.0 �ɂȂ�悤�ɒ������܂��B<br>
-����ɁAsat ���߂��g���āA0.0 ���� 1.0 �ɒl�𐧌����邱�Ƃɂ���āA��`�Ȍ`�̕ϊ������邱�Ƃ��ł��܂��B
+あとの、x4 は、４倍して 0.25 の時に 1.0 になるように調整します。<br>
+さらに、sat 命令を使って、0.0 から 1.0 に値を制限することによって、台形な形の変換をすることができます。
 </p>
 <p>
-�c��̓e�N�X�`���[�̍����ł��B<br>
-<A HREF="http://www.dodgson.org/">�h�W��</A>�̖Y�N��̎���<A HREF="http://www.daionet.gr.jp/~masa/">Masa����</a>����A
-�w�e�N�X�`���[�͂R���ō�������Ƃ�����x�ƁA����ꂽ�̂ŁA�����3���ō������܂����B
+残りはテクスチャーの合成です。<br>
+<A HREF="http://www.dodgson.org/">ドジ研</A>の忘年会の時に<A HREF="http://www.daionet.gr.jp/~masa/">Masaさん</a>から、
+『テクスチャーは３枚で合成するといいよ』と、いわれたので、今回は3枚で合成しました。
 </p>
 
-<image src = "t012.gif">3���̉摜�̍���
+<image src = "t012.gif">3枚の画像の合成
 <p>
-���@�Ƃ��ẮAlrp ���߂��g���āAr0.a �� 0 ���� 0.5 �̎��ɁAt2 ���� t1 ���������� r1.rgb �ƁA<br>
-0.5 ���� 1.0 �̎��� t1 ���� t0 ���������� r0.rgb ��p�ӂ��āA<br>
-cnd ���߂��g���čŏI�I�ɍ������܂��B
+方法としては、lrp 命令を使って、r0.a が 0 から 0.5 の時に、t2 から t1 を合成した r1.rgb と、<br>
+0.5 から 1.0 の時に t1 から t0 を合成した r0.rgb を用意して、<br>
+cnd 命令を使って最終的に合成します。
 </p>
 
-<h2>�����̃\�[�X</h2>
+<h2>■他のソース</h2>
 
 <p>
-�ł́A����ȊO�̃\�[�X�ŁA�t�H�[�J�X�̎��Ƃ͈Ⴄ������������܂��B<br>
-�悸�́A�������ł��B<br>
-����́A�u���[�p�̃e�N�X�`���[���R���p�ӂ��܂��inBlurTex=3�j�B<br>
-���̏����������͎��̂悤�ɂȂ�܂��B
+では、それ以外のソースで、フォーカスの時とは違う部分を説明します。<br>
+先ずは、初期化です。<br>
+今回は、ブラー用のテクスチャーを３枚用意します（nBlurTex=3）。<br>
+その初期化部分は次のようになります。
 </p>
 <pre class="CodeBlock">
 <font color = deepskyblue>0166:</font> <font color = cyan>//-----------------------------------------------------------------------------</font>
 <font color = deepskyblue>0167:</font> <font color = cyan>// Name: InitBlurTexture()</font>
-<font color = deepskyblue>0168:</font> <font color = cyan>// Desc: �{�P���e�N�X�`���[�p�̉�����</font>
+<font color = deepskyblue>0168:</font> <font color = cyan>// Desc: ボケたテクスチャー用の下準備</font>
 <font color = deepskyblue>0169:</font> <font color = cyan>//-----------------------------------------------------------------------------</font>
 <font color = deepskyblue>0170:</font> HRESULT InitBlurTexture(LPDIRECT3DDEVICE8 lpD3DDev)
 <font color = deepskyblue>0171:</font> {
 <font color = deepskyblue>0172:</font>     HRESULT hr;
 <font color = deepskyblue>0173:</font>     DWORD i;
 <font color = deepskyblue>0174:</font>     
-<font color = deepskyblue>0175:</font>     <font color = cyan>// ���_�o�b�t�@�̍쐬 </font>
+<font color = deepskyblue>0175:</font>     <font color = cyan>// 頂点バッファの作成 </font>
 <font color = deepskyblue>0176:</font>     D3D_BLUR_VERTEX *pBlurDest;
 <font color = deepskyblue>0177:</font>     WORD *pIndex;
 <font color = deepskyblue>0178:</font>     lpD3DDev->CreateVertexBuffer( 4 * sizeof(D3D_BLUR_VERTEX),
 <font color = deepskyblue>0179:</font>                                 D3DUSAGE_WRITEONLY, D3DFVF_BLUR_VERTEX, D3DPOOL_MANAGED,
 <font color = deepskyblue>0180:</font>                                 &pBlurVB );
-<font color = deepskyblue>0181:</font>     <font color = cyan>// ���_���Z�b�g�A�b�v</font>
+<font color = deepskyblue>0181:</font>     <font color = cyan>// 頂点をセットアップ</font>
 <font color = deepskyblue>0182:</font>     pBlurVB->Lock ( 0, 0, (BYTE**)&pBlurDest, 0 );
 <font color = deepskyblue>0183:</font>     for (i = 0; i < 4; i++) {
 <font color = deepskyblue>0184:</font>         pBlurDest->x   = (i == 0 || i == 1)?-1:(float)1;
@@ -222,7 +222,7 @@ cnd ���߂��g���čŏI�I�ɍ������܂��B
 <font color = deepskyblue>0189:</font>         pBlurDest++;
 <font color = deepskyblue>0190:</font>     }       
 <font color = deepskyblue>0191:</font>     pBlurVB->Unlock ();
-<font color = deepskyblue>0192:</font>     <font color = cyan>// �C���f�b�N�X���Z�b�g�A�b�v</font>
+<font color = deepskyblue>0192:</font>     <font color = cyan>// インデックスをセットアップ</font>
 <font color = deepskyblue>0193:</font>     lpD3DDev->CreateIndexBuffer( 6 * sizeof(WORD),
 <font color = deepskyblue>0194:</font>                                0,
 <font color = deepskyblue>0195:</font>                                D3DFMT_INDEX16, D3DPOOL_MANAGED,
@@ -232,44 +232,44 @@ cnd ���߂��g���čŏI�I�ɍ������܂��B
 <font color = deepskyblue>0199:</font>     pIndex[3] = 1;  pIndex[4] = 3;  pIndex[5] = 2;
 <font color = deepskyblue>0200:</font>     pBlurIB->Unlock ();
 <font color = deepskyblue>0201:</font> 
-<font color = deepskyblue>0202:</font>     <font color = cyan>// �`��p�e�N�X�`���[��p�ӂ���</font>
+<font color = deepskyblue>0202:</font>     <font color = cyan>// 描画用テクスチャーを用意する</font>
 <font color = deepskyblue>0203:</font>     D3DSURFACE_DESC Desc;
 <font color = deepskyblue>0204:</font>     LPDIRECT3DSURFACE8 lpZbuffer = NULL;
 <font color = deepskyblue>0205:</font>     if( FAILED(hr = lpD3DDev->GetRenderTarget(&pBackbuffer))) return hr;
 <font color = deepskyblue>0206:</font>     if( FAILED(hr = pBackbuffer->GetDesc( &Desc ))) return hr;
 <font color = deepskyblue>0207:</font> 
-<font color = deepskyblue>0208:</font>     <font color = cyan>// �[�x�o�b�t�@�̃T�[�t�F�X���m�ۂ���</font>
+<font color = deepskyblue>0208:</font>     <font color = cyan>// 深度バッファのサーフェスを確保する</font>
 <font color = deepskyblue>0209:</font>     if( FAILED(hr = lpD3DDev->GetDepthStencilSurface( &lpZbuffer ))) return hr;
 <font color = deepskyblue>0210:</font>     
 <font color = deepskyblue>0211:</font>     for(i = 0; i < nBlurTex; i ++){
-<font color = deepskyblue>0212:</font>         <font color = cyan>// �e�N�X�`���[�̐���</font>
+<font color = deepskyblue>0212:</font>         <font color = cyan>// テクスチャーの生成</font>
 <font color = deepskyblue>0213:</font>         if( FAILED(hr = lpD3DDev->CreateTexture(Desc.Width, Desc.Height, 1
 <font color = deepskyblue>0214:</font>                                 , D3DUSAGE_RENDERTARGET, <font color = yellow>D3DFMT_A8R8G8B8</font>, D3DPOOL_DEFAULT, &pTexture[i]))) return hr;
-<font color = deepskyblue>0215:</font>         <font color = cyan>// �e�N�X�`���[�ƃT�[�t�F�X���֘A�Â���</font>
+<font color = deepskyblue>0215:</font>         <font color = cyan>// テクスチャーとサーフェスを関連づける</font>
 <font color = deepskyblue>0216:</font>         if( FAILED(hr = pTexture[i]->GetSurfaceLevel(0,&pTextureSurface[i]))) return hr;
-<font color = deepskyblue>0217:</font>         <font color = cyan>// �e�N�X�`���[�p�̕`��Ɛ[�x�o�b�t�@���֘A�t����i�ꖇ�ڂ����[�x�����j</font>
+<font color = deepskyblue>0217:</font>         <font color = cyan>// テクスチャー用の描画と深度バッファを関連付ける（一枚目だけ深度を持つ）</font>
 <font color = deepskyblue>0218:</font>         if( FAILED(hr = lpD3DDev->SetRenderTarget(pTextureSurface[i], (i==0)?lpZbuffer:NULL ))) return hr;
 <font color = deepskyblue>0219:</font>     }
-<font color = deepskyblue>0220:</font>     <font color = cyan>// �ڂ��e�N�X�`���[�쐬�p�̃��\�[�X���m�ۂ���</font>
+<font color = deepskyblue>0220:</font>     <font color = cyan>// ぼけテクスチャー作成用のリソースを確保する</font>
 <font color = deepskyblue>0221:</font>     for (i = 0; i < nTempTex; ++i) {
-<font color = deepskyblue>0222:</font>         <font color = cyan>// �e�N�X�`���[�̐���</font>
+<font color = deepskyblue>0222:</font>         <font color = cyan>// テクスチャーの生成</font>
 <font color = deepskyblue>0223:</font>         if( FAILED(hr = lpD3DDev->CreateTexture(Desc.Width, Desc.Height, 1
 <font color = deepskyblue>0224:</font>                                 , D3DUSAGE_RENDERTARGET, <font color = yellow>D3DFMT_A8R8G8B8</font>, D3DPOOL_DEFAULT, &pTmpTexture[i]))) return hr;
-<font color = deepskyblue>0225:</font>         <font color = cyan>// �e�N�X�`���[�ƃT�[�t�F�X���֘A�Â���</font>
+<font color = deepskyblue>0225:</font>         <font color = cyan>// テクスチャーとサーフェスを関連づける</font>
 <font color = deepskyblue>0226:</font>         if( FAILED(hr = pTmpTexture[i]->GetSurfaceLevel(0,&pTmpSurface[i]))) return hr;
-<font color = deepskyblue>0227:</font>         <font color = cyan>// �e�N�X�`���[�p�̕`��Ɛ[�x�o�b�t�@���֘A�t����</font>
+<font color = deepskyblue>0227:</font>         <font color = cyan>// テクスチャー用の描画と深度バッファを関連付ける</font>
 <font color = deepskyblue>0228:</font>         if( FAILED(hr = lpD3DDev->SetRenderTarget(pTmpSurface[i], NULL ))) return hr;
 <font color = deepskyblue>0229:</font>     }
 <font color = deepskyblue>0230:</font> 
-<font color = deepskyblue>0231:</font>     <font color = cyan>// �`������̉�ʂɖ߂�</font>
+<font color = deepskyblue>0231:</font>     <font color = cyan>// 描画を元の画面に戻す</font>
 <font color = deepskyblue>0232:</font>     lpD3DDev->SetRenderTarget(pBackbuffer, lpZbuffer );
 <font color = deepskyblue>0233:</font>     
-<font color = deepskyblue>0234:</font>     <font color = cyan>// �V�F�|�_�[�̃��[�h</font>
+<font color = deepskyblue>0234:</font>     <font color = cyan>// シェ－ダーのロード</font>
 <font color = deepskyblue>0235:</font>     if ( FAILED(CVertexShaderMgr::Load(lpD3DDev, "blur.vsh",     &hBlurVertexShader, dwBlurDecl)) ) return hr;
 <font color = deepskyblue>0236:</font>     if ( FAILED( CPixelShaderMgr::Load(lpD3DDev, "blur.psh",     &hBlurPixelShader)) ) return hr;
 <font color = deepskyblue>0237:</font>     if ( FAILED( CPixelShaderMgr::Load(lpD3DDev, "dof.psh",    &hFocusPixelShader)) ) return hr;
 <font color = deepskyblue>0238:</font>     
-<font color = deepskyblue>0239:</font>     <font color = cyan>// �萔���W�X�^�̐ݒ�</font>
+<font color = deepskyblue>0239:</font>     <font color = cyan>// 定数レジスタの設定</font>
 <font color = deepskyblue>0240:</font>     float const s = 4.0f/3.0f;
 <font color = deepskyblue>0241:</font>     float const inv_w = s / (float)WIDTH;
 <font color = deepskyblue>0242:</font>     float const inv_h = s / (float)HEIGHT;
@@ -282,13 +282,13 @@ cnd ���߂��g���čŏI�I�ɍ������܂��B
 <font color = deepskyblue>0249:</font> }
 </pre>
 <p>
-���͑O��Ƃ̈Ⴂ�͈�ӏ��ł��B�e�N�X�`���[�𐶐����� CreateTexture �̈����̃t�H�[�}�b�g������ D3DFMT_A8R8G8B8 �ɂȂ��Ă��܂��B<br>
-���̃t�H�[�}�b�g���w�肷�邱�Ƃɂ��A�������ɏ������݂��s�����Ƃ��ł��܂��B
+実は前回との違いは一箇所です。テクスチャーを生成する CreateTexture の引数のフォーマット部分が D3DFMT_A8R8G8B8 になっています。<br>
+このフォーマットを指定することにより、α成分に書き込みを行うことができます。
 </p>
 <p>
-���ɕ`�敔���ł��B<br>
-�Ⴂ�͒萔���W�X�^�̐ݒ肪������Ă��鎖�ƁA�e�N�X�`���[�̐ݒ���R�s���Ă��邱�Ƃł��B<br>
-��́A�{�P���摜�������@�͑O��Ɠ����ł��B
+次に描画部分です。<br>
+違いは定数レジスタの設定が一つ増えている事と、テクスチャーの設定を３つ行っていることです。<br>
+後は、ボケた画像を作る方法は前回と同じです。
 </p>
 <pre class="CodeBlock">
 <font color = deepskyblue>0282:</font> <font color = cyan>//-----------------------------------------------------------------------------</font>
@@ -307,21 +307,21 @@ cnd ���߂��g���čŏI�I�ɍ������܂��B
 <font color = deepskyblue>0295:</font>     lpD3DDev->SetRenderTarget(pTextureSurface[0], lpZbuffer);
 <font color = deepskyblue>0296:</font>     lpD3DDev->Clear(0,NULL,D3DCLEAR_TARGET | D3DCLEAR_ZBUFFER, D3DCOLOR_XRGB(0,0,0),1.0f,0);
 <font color = deepskyblue>0297:</font> 
-<font color = deepskyblue>0298:</font>     <font color = cyan>// �r���[�s��</font>
+<font color = deepskyblue>0298:</font>     <font color = cyan>// ビュー行列</font>
 <font color = deepskyblue>0299:</font>     D3DXVECTOR3 eye    = D3DXVECTOR3(0.0f,1.4f*MeshRadius,2.5f*MeshRadius);
 <font color = deepskyblue>0300:</font>     D3DXVECTOR3 lookAt = D3DXVECTOR3(0.0f,  0.0f,  0.0f);
 <font color = deepskyblue>0301:</font>     D3DXVECTOR3 up     = D3DXVECTOR3(0.0f,  1.0f,  0.0f);
-<font color = deepskyblue>0302:</font>     <font color = cyan>// �ʏ�\��</font>
+<font color = deepskyblue>0302:</font>     <font color = cyan>// 通常表示</font>
 <font color = deepskyblue>0303:</font>     D3DXMatrixLookAtLH(&mView, &eye, &lookAt, &up);
 <font color = deepskyblue>0304:</font> 
 <font color = deepskyblue>0305:</font>     const float min =   0.01f;
 <font color = deepskyblue>0306:</font>     const float max  = 100.0f;
 <font color = deepskyblue>0307:</font>     D3DXMatrixPerspectiveFovLH(&mProj
-<font color = deepskyblue>0308:</font>         ,60.0f*PI/180.0f                        <font color = cyan>// ����p</font>
-<font color = deepskyblue>0309:</font>         ,(float)WIDTH/(float)HEIGHT             <font color = cyan>// �A�X�y�N�g��</font>
-<font color = deepskyblue>0310:</font>         ,min,max                                <font color = cyan>// �ŋߐڋ���,�ŉ�������</font>
+<font color = deepskyblue>0308:</font>         ,60.0f*PI/180.0f                        <font color = cyan>// 視野角</font>
+<font color = deepskyblue>0309:</font>         ,(float)WIDTH/(float)HEIGHT             <font color = cyan>// アスペクト比</font>
+<font color = deepskyblue>0310:</font>         ,min,max                                <font color = cyan>// 最近接距離,最遠方距離</font>
 <font color = deepskyblue>0311:</font>         );
-<font color = deepskyblue>0312:</font>     <font color = cyan>// z�l��0.0f����1.0f�ɕ␳����萔</font>
+<font color = deepskyblue>0312:</font>     <font color = cyan>// z値を0.0fから1.0fに補正する定数</font>
 <font color = deepskyblue>0313:</font>     <font color = yellow>lpD3DDev->SetVertexShaderConstant(15, &D3DXVECTOR4(3.0f/(max-min), -0.45f*max/(max-min), 0.0f, 0.0f), 1);</font>
 <font color = deepskyblue>0314:</font>     
 <font color = deepskyblue>0315:</font>     lpD3DDev->SetRenderState( D3DRS_ALPHABLENDENABLE, FALSE);
@@ -329,53 +329,53 @@ cnd ���߂��g���čŏI�I�ɍ������܂��B
 <font color = deepskyblue>0317:</font>     lpD3DDev->SetPixelShader(hPixelShader);
 <font color = deepskyblue>0318:</font> 
 <font color = deepskyblue>0319:</font>     <font color = cyan>//</font>
-<font color = deepskyblue>0320:</font>     <font color = cyan>// �w�i�`��</font>
+<font color = deepskyblue>0320:</font>     <font color = cyan>// 背景描画</font>
 <font color = deepskyblue>0321:</font>     <font color = cyan>// </font>
 
-�����Ȃ̂ŏȗ�
+同じなので省略
 
 <font color = deepskyblue>0433:</font>     <font color = cyan>// </font>
-<font color = deepskyblue>0434:</font>     <font color = cyan>// ���������ꖇ�G��`�悷��</font>
+<font color = deepskyblue>0434:</font>     <font color = cyan>// 完成した一枚絵を描画する</font>
 <font color = deepskyblue>0435:</font>     <font color = cyan>// </font>
 <font color = deepskyblue>0436:</font>     lpD3DDev->SetRenderState( D3DRS_ALPHABLENDENABLE, FALSE);
-<font color = deepskyblue>0437:</font>     lpD3DDev->SetRenderTarget(pBackbuffer, lpZbuffer );                 <font color = cyan>// �`����o�b�N�o�b�t�@�ɖ߂�</font>
+<font color = deepskyblue>0437:</font>     lpD3DDev->SetRenderTarget(pBackbuffer, lpZbuffer );                 <font color = cyan>// 描画をバックバッファに戻す</font>
 <font color = deepskyblue>0438:</font>     lpD3DDev->SetPixelShader(hFocusPixelShader);    
-<font color = deepskyblue>0439:</font>     <font color = yellow>lpD3DDev->SetTexture( 0, pTexture[0] );</font>                 <font color = cyan>// ���e�N�X�`���[</font>
-<font color = deepskyblue>0440:</font>     <font color = yellow>lpD3DDev->SetTexture( 1, pTexture[1] );</font>                 <font color = cyan>// �{�P�e�N�X�`���[</font>
-<font color = deepskyblue>0441:</font>     <font color = yellow>lpD3DDev->SetTexture( 2, pTexture[2] );</font>                 <font color = cyan>// ��{�P�e�N�X�`���[</font>
+<font color = deepskyblue>0439:</font>     <font color = yellow>lpD3DDev->SetTexture( 0, pTexture[0] );</font>                 <font color = cyan>// 元テクスチャー</font>
+<font color = deepskyblue>0440:</font>     <font color = yellow>lpD3DDev->SetTexture( 1, pTexture[1] );</font>                 <font color = cyan>// ボケテクスチャー</font>
+<font color = deepskyblue>0441:</font>     <font color = yellow>lpD3DDev->SetTexture( 2, pTexture[2] );</font>                 <font color = cyan>// 大ボケテクスチャー</font>
 <font color = deepskyblue>0442:</font>     lpD3DDev->DrawIndexedPrimitive( D3DPT_TRIANGLELIST, 0, 4, 0, 2 );
 <font color = deepskyblue>0443:</font>     <font color = cyan>//</font>
-<font color = deepskyblue>0444:</font>     <font color = cyan>// �������ɖ߂�</font>
+<font color = deepskyblue>0444:</font>     <font color = cyan>// 環境を元に戻す</font>
 <font color = deepskyblue>0445:</font>     <font color = cyan>//</font>
 <font color = deepskyblue>0446:</font>     lpD3DDev->SetPixelShader(NULL); 
 <font color = deepskyblue>0447:</font>     lpD3DDev->SetRenderState(D3DRS_ZENABLE, TRUE);
 <font color = deepskyblue>0448:</font> }
 </pre>
 <p>
-���_�V�F�[�_�[�� c15 ���W�X�^�̐ݒ�́A���f����`�悷�鎞�ɔ��f����܂��B<br>
-����A�`��Ɋւ��Ēn�ʂ��̃��f�����A�ԂƓ��������_�����O���s���Ă��܂��B<br>
-�����_�����O�̃v���O�����́A���ɂȂ�܂��B
+頂点シェーダーの c15 レジスタの設定は、モデルを描画する時に反映されます。<br>
+今回、描画に関して地面や空のモデルも、車と同じレンダリングを行っています。<br>
+レンダリングのプログラムは、次になります。
 </p>
 <pre class="CodeBlock">
-<font color = deepskyblue>0001:</font> <font color = cyan>; c0-3   -- world + �r���[ + �����ϊ��s��</font>
-<font color = deepskyblue>0002:</font> <font color = cyan>; c12    -- {0.0, 0.5, 1.0, 2.0}    N.B. ����o�Ԗ���</font>
-<font color = deepskyblue>0003:</font> <font color = cyan>; c13    -- ���C�g�̃x�N�g�� (w�����͊����̋���)</font>
-<font color = deepskyblue>0004:</font> <font color = cyan>; c14    -- ���C�g�̐F(���b�V���̐F)</font>
-<font color = deepskyblue>0005:</font> <font color = cyan>; c15    -- �[�x�ϊ��p�����[�^</font>
+<font color = deepskyblue>0001:</font> <font color = cyan>; c0-3   -- world + ビュー + 透視変換行列</font>
+<font color = deepskyblue>0002:</font> <font color = cyan>; c12    -- {0.0, 0.5, 1.0, 2.0}    N.B. 今回出番無し</font>
+<font color = deepskyblue>0003:</font> <font color = cyan>; c13    -- ライトのベクトル (w成分は環境光の強さ)</font>
+<font color = deepskyblue>0004:</font> <font color = cyan>; c14    -- ライトの色(メッシュの色)</font>
+<font color = deepskyblue>0005:</font> <font color = cyan>; c15    -- 深度変換パラメータ</font>
 <font color = deepskyblue>0006:</font> <font color = cyan>;</font>
-<font color = deepskyblue>0007:</font> <font color = cyan>; v0    ���_�̍��W�l</font>
-<font color = deepskyblue>0008:</font> <font color = cyan>; v3    �@���x�N�g�� (w������1.0f)</font>
-<font color = deepskyblue>0009:</font> <font color = cyan>; v7    �e�N�X�`�����W</font>
+<font color = deepskyblue>0007:</font> <font color = cyan>; v0    頂点の座標値</font>
+<font color = deepskyblue>0008:</font> <font color = cyan>; v3    法線ベクトル (w成分は1.0f)</font>
+<font color = deepskyblue>0009:</font> <font color = cyan>; v7    テクスチャ座標</font>
 <font color = deepskyblue>0010:</font> 
 <font color = deepskyblue>0011:</font> vs.1.0
 <font color = deepskyblue>0012:</font> 
-<font color = deepskyblue>0013:</font> <font color = cyan>;���W�ϊ�</font>
+<font color = deepskyblue>0013:</font> <font color = cyan>;座標変換</font>
 <font color = deepskyblue>0014:</font> dp4 oPos.x, v0,   c0
 <font color = deepskyblue>0015:</font> dp4 oPos.y, v0,   c1
 <font color = deepskyblue>0016:</font> dp4 oPos.z, v0,   c2
 <font color = deepskyblue>0017:</font> dp4 oPos.w, v0,   c3
 <font color = deepskyblue>0018:</font> 
-<font color = deepskyblue>0019:</font> <font color = cyan>; ((l,n) + l.w)*c14 (���s�����̃��C�e�B���O)</font>
+<font color = deepskyblue>0019:</font> <font color = cyan>; ((l,n) + l.w)*c14 (平行光源のライティング)</font>
 <font color = deepskyblue>0020:</font> dp4 r0.w,   v3,   c13
 <font color = deepskyblue>0021:</font> mul oD0,    r0.w, c14
 <font color = deepskyblue>0022:</font> 
@@ -383,13 +383,13 @@ cnd ���߂��g���čŏI�I�ɍ������܂��B
 <font color = deepskyblue>0024:</font> <font color = yellow>mad oD0.w,  r0,   c15.x, c15.y</font>
 <font color = deepskyblue>0025:</font> 
 <font color = deepskyblue>0026:</font> 
-<font color = deepskyblue>0027:</font> <font color = cyan>; �e�N�X�`���[�𒣂�</font>
+<font color = deepskyblue>0027:</font> <font color = cyan>; テクスチャーを張る</font>
 <font color = deepskyblue>0028:</font> mov oT0,    v7
 </pre>
 <p>
-���F�����������񔽉f���ꂽ�������ւ̐[�x�̏������݂ł��B<br>
-dp4 ���߂ŁA���l�����߁ioPos.z�Ɠ����l�j�A���`�������ēK���ɕϊ����܂��B<br>
-�����ł́A���̂悤�ɕ\����܂��B
+黄色い部分が今回反映されたα成分への深度の書き込みです。<br>
+dp4 命令で、ｚ値を求め（oPos.zと同じ値）、線形合成して適当に変換します。<br>
+数式では、次のように表されます。
 </p>
 <pre class="CodeBlock">
 oD0.w = c15.x * r0.w + c15.y
@@ -399,22 +399,22 @@ oD0.w = c15.x * r0.w + c15.y
            max  -  min
 </pre>
 <p>
-max - min ��p���邱�Ƃɂ���āA�y�l�� 0.0�`1.0 �͈̔͂ɃX�P�[�����O���܂��B<br>
-����ȊO�ɂR�{������A0.45 max ���������肵�Ă��܂����A����͊��S�ɖڂ��킹���B<br>
-�o�͂����摜�����������ɂȂ�悤�ɒ������܂����B
+max - min を用いることによって、Ｚ値を 0.0～1.0 の範囲にスケーリングします。<br>
+それ以外に３倍したり、0.45 max を引いたりしていますが、これは完全に目あわせす。<br>
+出力される画像がいい感じになるように調整しました。
 </p>
 
 <p>
-�܂��APixel Shader �v���O�����͎��̂悤�ɂȂ�܂��B<br>
-�e�N�X�`���[�������ꍇ�i�ԁj��A���s�����ɉe������Ȃ��ꍇ�i��j�ł�������Ɠ����悤�ɁA
-�F�̓e�N�X�`���[�ƒ��_�F�����Z�������A�������͏�̒��_�V�F�[�_�[�v���O�����œ���ꂽ���_�F��p���Ă��܂��B
+また、Pixel Shader プログラムは次のようになります。<br>
+テクスチャーが無い場合（車）や、平行光源に影響されない場合（空）でもきちんと動くように、
+色はテクスチャーと頂点色を加算合成し、α成分は上の頂点シェーダープログラムで得られた頂点色を用いています。
 </p>
 
 <pre class="CodeBlock">
 <font color = deepskyblue>0001:</font> <font color = cyan>; ps.psh</font>
 <font color = deepskyblue>0002:</font> ps.1.0
 <font color = deepskyblue>0003:</font> 
-<font color = deepskyblue>0004:</font> <font color = cyan>; �e�N�X�`���[�̐F�����������Ă���</font>
+<font color = deepskyblue>0004:</font> <font color = cyan>; テクスチャーの色を引っ張ってくる</font>
 <font color = deepskyblue>0005:</font> tex t0
 <font color = deepskyblue>0006:</font> 
 <font color = deepskyblue>0007:</font> add r0,   v0, t0
@@ -422,24 +422,24 @@ max - min ��p���邱�Ƃɂ���āA�y�l�� 0.0�`1.0 �͈̔͂ɃX�P�[�����O���܂��B<br>
 </pre>
 
 <p>
-�ȏオ�O�񂩂�̈Ⴂ�ł��B
+以上が前回からの違いです。
 </p>
 
 
-<h2>���Ō��</h2>
+<h2>■最後に</h2>
 
 <p>
-��ʊE�[�x���������܂����B<br>
-��ʊE�[�x�́APS2 �́w�{�N�Ɩ����x���������ɁA�����������炸���������̂��o���Ă��܂��B<br>
-�e�N�X�`���[�ւ̃����_�����O��A�O��̃t�H�[�J�X�͍���ׂ̈̑O�����Ƃ����Ă��ߌ��ł͂���܂���B<br>
-�������K�v�Ȃ̂ŁA�v���Ƃ���Ɏg���͓̂����������܂��񂪁A�����_�����O�̌��ʂ̈�Ƃ��Ďg���Ă݂Ă͂������ł��傤���B
+被写界深度を実装しました。<br>
+被写界深度は、PS2 の『ボクと魔王』を見た時に、やり方が分からず驚愕したのを覚えています。<br>
+テクスチャーへのレンダリングや、前回のフォーカスは今回の為の前準備といっても過言ではありません。<br>
+調整が必要なので、思うとおりに使うのは難しいかもしれませんが、レンダリングの効果の一つとして使ってみてはいかがでしょうか。
 </p>
 
 <BR CLEAR=ALL>
 <BR CLEAR=ALL>
 <BR CLEAR=ALL>
 <center>
-<p><a href="../index.html">���ǂ�</a></p>
+<p><a href="../index.html">もどる</a></p>
 <p><a href="mailto:imagire@gmail.com">imagire@gmail.com</a></p>
 </center>
 </body>

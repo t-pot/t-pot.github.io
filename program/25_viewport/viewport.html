@@ -1,72 +1,72 @@
 <head>
-	<title>t-pot�wDirect X8.0 : �o�b�N�~���[�x</title>
+	<title>t-pot『Direct X8.0 : バックミラー』</title>
 	<link rel="stylesheet" type="text/css" href="../if.css">
 </head>
-<meta http-equiv=Content-Type content="text/html; charset=shift_jis">
+<meta http-equiv=Content-Type content="text/html; charset=UTF-8">
 <body text=#ffffff>
 
 <div class="contents">
 <center>
 <BR CLEAR=ALL>
 <BR CLEAR=ALL>
-<h1>Direct X8.0 :�o�b�N�~���[</h1><br>
-<h3>�`���[�X�Q�[�ł悭����������邠��`</h3>
+<h1>Direct X8.0 :バックミラー</h1><br>
+<h3>～レースゲーでよくある後ろを見るあれ～</h3>
 <BR CLEAR=ALL>
 <BR CLEAR=ALL>
 <BR CLEAR=ALL>
 </center>
-<h2>���͂��߂�</h2>
+<h2>■はじめに</h2>
 <image src = "image.gif">
 <p>
-����́A�o�b�N�~���[������Ă݂܂����i��ʂł́A�O�ɂ���N�}���o�b�N�~���[�Ɉڂ��Ă��܂����A�����͓K���ɕ␳���ĉ������j�B<br>
-���̋΂߂Ă����Ђł́A���[�X�Q�[��������Ă��܂����A����͂����̋Z�p�͑S�����Ă��܂���i�����A�׋��̂��߂Ɍ��Ƃ���I�j�B
+今回は、バックミラーを作ってみました（画面では、前にいるクマがバックミラーに移っていますが、そこは適当に補正して下さい）。<br>
+私の勤めている会社では、レースゲームも作っていますが、今回はそれらの技術は全く見ていません（おい、勉強のために見とけよ！）。
 </p>
 
 <p>
-����̃\�[�X�́A���̂��̂ł��B
+今回のソースは、次のものです。
 </p>
 <ul style = "LIST-STYLE-TYPE:none">
-<li><a href="viewport.lzh">viewport.lzh (�o�b�N�~���[�T���v���̃\�[�X)</a>
+<li><a href="viewport.lzh">viewport.lzh (バックミラーサンプルのソース)</a>
 </ul>
 
 <p>
-���e�͎��̂Ƃ���ɂȂ��Ă��܂��B
+内容は次のとおりになっています。
 </p>
 <table>
-<tr><td><a href="main_h.html">main.h</a></td><td>��{�I�Ȓ萔�ȂǁB������o�Ԗ����B</td></tr>
-<tr><td><a href="main_cpp.html">main.cpp</a></td><td>�`��Ɋ֌W���Ȃ��V�X�e���I�ȕ����B�ύX�������̂ŁA�o�Ԗ����B</td></tr>
-<tr><td><a href="draw_h.html">draw.h</a></td><td>�`��̊e�֐��̒�`�B���ɈӖ������̂ŏo�Ԗ����B</td></tr>
-<tr><td><a href="draw_cpp.html">draw.cpp</a></td><td>���C���̕`�敔���B��ɂ��������������B</td></tr>
-<tr><td><a href="vs_vsh.html">vs.vsh</a></td><td>�I�u�W�F�N�g�i�ԁj�\���p�̒��_�V�F�[�_�[�v���O�����B���s�������C�g�B</td></tr>
+<tr><td><a href="main_h.html">main.h</a></td><td>基本的な定数など。今回も出番無し。</td></tr>
+<tr><td><a href="main_cpp.html">main.cpp</a></td><td>描画に関係しないシステム的な部分。変更が無いので、出番無し。</td></tr>
+<tr><td><a href="draw_h.html">draw.h</a></td><td>描画の各関数の定義。特に意味無いので出番無し。</td></tr>
+<tr><td><a href="draw_cpp.html">draw.cpp</a></td><td>メインの描画部分。主にここが説明される。</td></tr>
+<tr><td><a href="vs_vsh.html">vs.vsh</a></td><td>オブジェクト（車）表示用の頂点シェーダープログラム。平行光源ライト。</td></tr>
 </table>
 <p>
-���ƁA���f���Ƃ��āAnsx.x�ƁA���s�t�@�C���� MyBase.exe �y�сA
-VC++ �ŃR���p�C�����邽�߂̃v���W�F�N�g�t�@�C�� MyBase.dsw MyBase.dsp �������Ă��܂��B
+あと、モデルとして、nsx.xと、実行ファイルの MyBase.exe 及び、
+VC++ でコンパイルするためのプロジェクトファイル MyBase.dsw MyBase.dsp が入っています。
 </p>
 
-<h2>����{���j</h2>
+<h2>■基本方針</h2>
 
 <p>
-�ǂ̂悤�Ȏ菇�Ńo�b�N�~���[�����̂��������܂��B</p>
+どのような手順でバックミラーを作るのか説明します。</p>
 <image src = "steps.gif">
 <p>
-��{�I�ɂ́A�ʏ�̕`��ƃo�b�N�~���[�p�̕`���2��s���܂��B<br>
-�ŏ��ɁA���ʂɕ`������Ă���A�\���̈��؂�ς��āA�o�b�N�~���[�̒���`�悵�܂��B<br>
-���̎��ɁAz�o�b�t�@(�[�x�o�b�t�@)���c���Ă���ƁA�[�x�l���O�ɕ`�������ɂȂ����ꍇ�ɕ`�悳��Ȃ��̂ŁA
-��x�[�x�o�b�t�@���N���A���܂��B<br>
+基本的には、通常の描画とバックミラー用の描画を2回行います。<br>
+最初に、普通に描画をしてから、表示領域を切り変えて、バックミラーの中を描画します。<br>
+その時に、zバッファ(深度バッファ)が残っていると、深度値が前に描いた後ろになった場合に描画されないので、
+一度深度バッファをクリアします。<br>
 </p>
 <p>
-DirectX �ɂ́A�`��̈��ύX���邽�߂̊֐� SetViewport ���p�ӂ���Ă��܂��B<br>
-�o�b�N�~���[��`�悷�鎞�ɂ́A���̊֐����Ăяo���`��̈��ύX���Ă���`�悵�܂��B<br>
-�܂��A���݂̕`��̈����������֐� GetViewport �������ɗp�ӂ���Ă��܂��B<br>
-����́A�ŏ��̗̈��ۑ����Ă����āA�o�b�N�~���[�̕`�悪�I��������A���̏�Ԃɖ߂����ߓ��Ɏg���܂��B<br>
-���̂��߂̍\���̂�֐��̎g�����́A���̂Ƃ���ɂȂ�܂��B
+DirectX には、描画領域を変更するための関数 SetViewport が用意されています。<br>
+バックミラーを描画する時には、この関数を呼び出し描画領域を変更してから描画します。<br>
+また、現在の描画領域を所得する関数 GetViewport も同時に用意されています。<br>
+これは、最初の領域を保存しておいて、バックミラーの描画が終了した後、元の状態に戻すため等に使います。<br>
+そのための構造体や関数の使い方は、次のとおりになります。
 </p>
 <pre class="CodeBlock">
 typedef struct _D3DVIEWPORT8 {
-    DWORD       X, Y;           // �`��͈͂̍���
-    DWORD       Width, Height;  // �`��͈͂̑傫��
-    float       MinZ, MaxZ;     // �`���̐[�x�l�̍Œ�l���ő�l
+    DWORD       X, Y;           // 描画範囲の左上
+    DWORD       Width, Height;  // 描画範囲の大きさ
+    float       MinZ, MaxZ;     // 描画後の深度値の最低値を最大値
 } D3DVIEWPORT8;
 
 D3DVIEWPORT8 viewData = { 0, 0, width, height, 0.0f, 1.0f };
@@ -75,36 +75,36 @@ lpD3DDev->SetViewport(&viewData);
 lpD3DDev->GetViewport(&viewData);
 </pre>
 <p>
-�`��̈�̃f�[�^�p�̍\���� D3DVIEWPORT8 �ɁAMinZ, MaxZ ������܂��B<br>
-���̒l������ 0.0f�ɂ���΁A�`�悷�鎞�ɍőO�ʂɕ`�悵�Ă����̂ł����AZ�o�b�t�@�������Ȃ��`��ɂȂ�̂ŁA
-����͒ʏ�ɐ[�x�l���������ނ悤�ɂ��܂��� (MinZ=0.0f, MaxZ=1.0f)�B
+描画領域のデータ用の構造体 D3DVIEWPORT8 に、MinZ, MaxZ があります。<br>
+この値を共に 0.0fにすれば、描画する時に最前面に描画してくれるのですが、Zバッファが効かない描画になるので、
+今回は通常に深度値を書き込むようにしました (MinZ=0.0f, MaxZ=1.0f)。
 </p>
 <p>
-���āA�o�b�N�~���[�͋��ł��B�]���č��E���]���ĕ\������Ȃ���΂Ȃ�܂���B<br>
-�w���E���]���ĕ`��x�Ȃ�ăR�}���h�͗p�ӂ���Ȃ��̂ŁA�����ŉ��Ƃ����Ȃ��Ă͂Ȃ�܂���B<br>
-���E���]�Ƃ́A�����ʂ�E�̂��̂����ɂȂ邱�Ƃł��B<br>
-����������Z���A�������Y���Ƃ���ƁA������X���ɂȂ�܂��B<br>
-�]���āA������Z���ɂ������E�i�r���[���W�n�j�ŁAx��-x�ɂ���ϊ������܂���΁A���E���]���\������܂��B<br>
-�v���O�����I�ɂ́A���[���h�s��ƃr���[�s��̊Ԃ�X���𔽓]������s������܂��܂��B<br>
-����ƁA���̐��E�����E���]����Ă��王���ɓ���̂ŁA���̐��E���\�����ꂽ���ƂɂȂ�܂��B
+さて、バックミラーは鏡です。従って左右反転して表示されなければなりません。<br>
+『左右反転して描画』なんてコマンドは用意されないので、自分で何とかしなくてはなりません。<br>
+左右反転とは、文字通り右のものが左になることです。<br>
+視線方向をZ軸、上向きをY軸とすると、横軸はX軸になります。<br>
+従って、視線をZ軸にした世界（ビュー座標系）で、xを-xにする変換をかませれば、左右反転が表現されます。<br>
+プログラム的には、ワールド行列とビュー行列の間にX軸を反転させる行列をかまします。<br>
+すると、元の世界が左右反転されてから視線に入るので、鏡の世界が表現されたことになります。
 </p>
 <image src = "matrix.gif">
 <p>
-�����Œ��ӂ��Ȃ���΂Ȃ�Ȃ����Ƃ́A���̐��E�ł͉�]�����΂ɂȂ�i�E���肪�����ɂȂ�j�Ƃ������Ƃł��B<br>
-�������������̂��Ƃ����ƁA�\������̃J�����O�����΂ɂȂ�Ƃ������Ƃł��B<br>
-���ʂ�`�悵�Ă��鎞�͖�肪�����̂ł����A�Жʂ����`�悵�Ȃ��ꍇ�́A�J�����O�̃��[�h���t�ɂ��Ȃ��Ă͂Ȃ�܂���B
+ここで注意しなければならないことは、鏡の世界では回転が反対になる（右周りが左回りになる）ということです。<br>
+何をいいたいのかというと、表裏判定のカリングが反対になるということです。<br>
+両面を描画している時は問題が無いのですが、片面しか描画しない場合は、カリングのモードを逆にしなくてはなりません。
 </p>
 <image src = "reverse.gif">
 <p>
-�ȏ�Ő����͏I���ł��B���Ɏ��ۂ̃\�[�X�����܂��傤�B
+以上で説明は終わりです。次に実際のソースを見ましょう。
 </p>
 
 
-<h2>�����ۂ̃v���O����</h2>
+<h2>■実際のプログラム</h2>
 
 <p>
-����́A�����_�����O���Q��s���܂��B<br>
-�P��ڂ́A���ʂ̃����_�����O�ŁA�Q��ڂ̓o�b�N�~���[�̃����_�����O�ł��B
+今回は、レンダリングを２回行います。<br>
+１回目は、普通のレンダリングで、２回目はバックミラーのレンダリングです。
 </p>
 
 <pre class="CodeBlock">
@@ -119,7 +119,7 @@ void Render(LPDIRECT3DDEVICE8 lpD3DDEV)
     
     <Font color = orange><b>D3DVIEWPORT8 viewport={WIN_X, WIN_Y, WIN_W, WIN_H, 0.0f, 1.0f};</b></font>
     <Font color = orange><b>D3DVIEWPORT8 viewport_bak;</b></font>
-    <Font color = orange><b>lpD3DDEV->GetViewport(&viewport_bak);</b></font>        <Font color = cyan>//    ���̃r���[�|�[�g��`������Ă���</font>
+    <Font color = orange><b>lpD3DDEV->GetViewport(&viewport_bak);</b></font>        <Font color = cyan>//    元のビューポート矩形を取っておく</font>
 
     for(int n = 0; n < 2; n++){
         D3DXMATRIX mWorld, mView, mProj, m;
@@ -128,28 +128,28 @@ void Render(LPDIRECT3DDEVICE8 lpD3DDEV)
         D3DXVECTOR3 lookAt = D3DXVECTOR3(0.0f,  3.0f,  0.0f);
         D3DXVECTOR3 up     = D3DXVECTOR3(0.0f,  1.0f,  0.0f);
         if(0 == n){
-            <Font color = cyan><b>// �ʏ�\��</b></font>
+            <Font color = cyan><b>// 通常表示</b></font>
             <Font color = yellow><b>D3DXMatrixLookAtLH(&mView, &eye, &lookAt, &up);</b></font>
             <Font color = yellow><b>D3DXMatrixPerspectiveFovLH(&mProj</b></font>
-                <Font color = yellow><b>,60.0f*PI/180.0f                        </b></font><Font color = cyan><b>// ����p</b></font>
-                <Font color = yellow><b>,(float)WIDTH/(float)HEIGHT             </b></font><Font color = cyan><b>// �A�X�y�N�g��</b></font>
-                <Font color = yellow><b>,0.01f,100.0f                           </b></font><Font color = cyan><b>// �ŋߐڋ���,�ŉ�������</b></font>
+                <Font color = yellow><b>,60.0f*PI/180.0f                        </b></font><Font color = cyan><b>// 視野角</b></font>
+                <Font color = yellow><b>,(float)WIDTH/(float)HEIGHT             </b></font><Font color = cyan><b>// アスペクト比</b></font>
+                <Font color = yellow><b>,0.01f,100.0f                           </b></font><Font color = cyan><b>// 最近接距離,最遠方距離</b></font>
                 <Font color = yellow><b>);</b></font>
         }else{
-            <Font color = cyan><b>// �o�b�N�~���[�\��</b></font>
+            <Font color = cyan><b>// バックミラー表示</b></font>
             <Font color = aquamarine><b>lpD3DDEV->SetViewport(&viewport);</b></font>
             <Font color = aquamarine><b>lpD3DDEV->Clear(0,NULL,D3DCLEAR_TARGET | D3DCLEAR_ZBUFFER,D3DCOLOR_XRGB(0,0x40, 0x40),1.0f,0);</b></font>
             <Font color = aquamarine><b>lpD3DDEV->SetRenderState(D3DRS_CULLMODE, D3DCULL_CW);</b></font>
             
-            <Font color = aquamarine><b>eye.z   = -30.0f;                            </b></font><Font color = cyan><b>// ���ŕ\������Ƃ��́A���΂��猩��</b></font>
+            <Font color = aquamarine><b>eye.z   = -30.0f;                            </b></font><Font color = cyan><b>// 窓で表示するときは、反対から見る</b></font>
             <Font color = aquamarine><b>D3DXMatrixLookAtLH(&mView, &eye, &lookAt, &up);</b></font>
             <Font color = aquamarine><b>D3DXMatrixIdentity(&m);</b></font>
-            <Font color = aquamarine><b>m(0,0)=-1.0f;                                </b></font><Font color = cyan><b>// x���Ɋւ��ċ��������</b></font>
+            <Font color = aquamarine><b>m(0,0)=-1.0f;                                </b></font><Font color = cyan><b>// x軸に関して鏡像を取る</b></font>
             <Font color = aquamarine><b>mView = m * mView;</b></font>
             <Font color = aquamarine><b>D3DXMatrixPerspectiveFovLH(&mProj</b></font>
-                <Font color = aquamarine><b>,20.0f*PI/180.0f                        </b></font><Font color = cyan><b>// ����p</b></font>
-                <Font color = aquamarine><b>,(float)WIN_W/(float)WIN_H              </b></font><Font color = cyan><b>// �A�X�y�N�g��</b></font>
-                <Font color = aquamarine><b>,0.01f,100.0f                           </b></font><Font color = cyan><b>// �ŋߐڋ���,�ŉ�������</b></font>
+                <Font color = aquamarine><b>,20.0f*PI/180.0f                        </b></font><Font color = cyan><b>// 視野角</b></font>
+                <Font color = aquamarine><b>,(float)WIN_W/(float)WIN_H              </b></font><Font color = cyan><b>// アスペクト比</b></font>
+                <Font color = aquamarine><b>,0.01f,100.0f                           </b></font><Font color = cyan><b>// 最近接距離,最遠方距離</b></font>
                 <Font color = aquamarine><b>);</b></font>
         }
         D3DXMatrixRotationY( &mWorld, timeGetTime()/1000.0f );
@@ -162,16 +162,16 @@ void Render(LPDIRECT3DDEVICE8 lpD3DDEV)
         D3DXVec4Normalize(&lightDir, &lightDir);
         D3DXMatrixInverse( &m,  NULL, &mWorld);
         D3DXVec4Transform(&lightDir, &lightDir, &m);
-        lightDir[3] = 0.3f;<Font color = cyan>// �����̋���</font>
+        lightDir[3] = 0.3f;<Font color = cyan>// 環境光の強さ</font>
         lpD3DDEV->SetVertexShaderConstant(13, &lightDir, 1);
 
         lpD3DDEV->SetVertexShader(hVertexShader);
 
-        <Font color = cyan>//���b�V���̕`��</font>
+        <Font color = cyan>//メッシュの描画</font>
         lpD3DDEV->SetStreamSource(0, pMeshVB, sizeof(D3D_CUSTOMVERTEX));
         lpD3DDEV->SetIndices(pMeshIndex,0);
         for(DWORD i=0;i<dwNumMaterials;i++){
-            <Font color = cyan>//�F���Z�b�g</font>
+            <Font color = cyan>//色をセット</font>
             D3DXVECTOR4 vl;
             vl.x = pMeshMaterials[i].Diffuse.r;
             vl.y = pMeshMaterials[i].Diffuse.g;
@@ -187,36 +187,36 @@ void Render(LPDIRECT3DDEVICE8 lpD3DDEV)
         }
     }
     
-    <Font color = orange><b>lpD3DDEV->SetViewport(&viewport_bak);</b></font>            <Font color = cyan>// �r���[�|�[�g��`��߂�</font>
+    <Font color = orange><b>lpD3DDEV->SetViewport(&viewport_bak);</b></font>            <Font color = cyan>// ビューポート矩形を戻す</font>
     <Font color = orange><b>lpD3DDEV->SetRenderState(D3DRS_CULLMODE, D3DCULL_CCW);</b></font>
     <Font color = orange><b>lpD3DDEV->SetTexture(0, NULL);</b></font>
 }
 </pre>
 
 <p>
-���܂�d�v�łȂ������͏ȗ����܂����B<br>
-�P��ڂƂQ��ڂ̃����_�����O�̈Ⴂ�́A���̃\�[�X�̉��F�̕����ƐΐF�̕����ł��B<br>
-�P��ڂ́A���܂łƓ��������_�����O���s���܂��B<br>
-�Q��ڂ́A�r���[�|�[�g��؂�ւ�����ɁAZ�o�b�t�@���N���A���邽�߂̉�ʏ������s���܂��B<br>
-���ɁA���̐��E�͍��E���]���Ă��āA�E��肪�����ɂȂ�̂ŁA�J�����O�̂��߂̃|���S���̕\�����]���t�]���܂��B<br>
-�܂��A�����̔`������(eye.z)�𔽑΂ɂ��܂����B����ŁA�O��������ڂ�����ʂɂȂ�܂��B<br>
-����ɁA���̐��E�Ƃ������ƂŁAYZ���ʂɊւ��ċ������]���r���[�s��̒��O�Ɏ{���܂��B
-����ŁA�J�����ɔ��Ό����Ɏʂ��āA�\������܂��B<br>
-�Ō�ɁA���̌�̕`��̂��߂ɁA�r���[�|�[�g�����ɖ߂��ċN���܂��B
+あまり重要でない部分は省略しました。<br>
+１回目と２回目のレンダリングの違いは、下のソースの黄色の部分と青緑色の部分です。<br>
+１回目は、今までと同じレンダリングを行います。<br>
+２回目は、ビューポートを切り替えた後に、Zバッファをクリアするための画面消去を行います。<br>
+次に、鏡の世界は左右反転していて、右回りが左回りになるので、カリングのためのポリゴンの表裏反転を逆転します。<br>
+また、視線の覗く方向(eye.z)を反対にしました。これで、前から後ろを移した画面になります。<br>
+さらに、鏡の世界ということで、YZ平面に関して鏡像反転をビュー行列の直前に施します。
+これで、カメラに反対向きに写って、表示されます。<br>
+最後に、この後の描画のために、ビューポートを元に戻して起きます。
 </p>
 
-<h2>�����f���\���i���܂��j</h2>
+<h2>■モデル表示（おまけ）</h2>
 
 <p>
-���f���\���ł��B<br>
-���ʂɕ\�����܂����A�����<A HREF="http://www.interq.or.jp/neptune/pepe/iceman/">iceman����</a>�ɐG������č������ɒ��킵�Ă݂܂���(�ł��A�U���߂܂œ͂��Ȃ��E�E�E)�B
+モデル表示です。<br>
+普通に表示しますが、今回は<A HREF="http://www.interq.or.jp/neptune/pepe/iceman/">icemanさん</a>に触発されて高速化に挑戦してみました(でも、６命令まで届かない・・・)。
 </p>
 <p>
-����̍H�v�͖@���x�N�g����w�������g�������Ƃł��i<A HREF="http://www.daionet.gr.jp/~masa/">Masa����</a>�̂���������Ă������@���ȁH�j�B<br>
-�@���x�N�g����w������1.0f�����Ă����܂�(���ʂ�0���������ȁH)�B<br>
-����ƁAdp4 ���߂��g��������w�������c��̂ŁA���̐���������Ɉˑ����Ȃ������ɗp���邱�Ƃ��ł��܂��B<br>
-���_�́A���s�����Ɗ����̐F�ɓ����F���g��Ȃ���΂����Ȃ����Ƃł��B<br>
-�y����k�z<A HREF="http://suzuna.jp/">suzuna����</a>����AD3DVSDT_FLOAT3 �ɂ���ƁAw�����Ɏ����I��1.0f�����Ă����̂ŁA��������g�����ق�����y�������ł��B
+今回の工夫は法線ベクトルのw成分を使ったことです（<A HREF="http://www.daionet.gr.jp/~masa/">Masaさん</a>のおっしゃられていた方法かな？）。<br>
+法線ベクトルのw成分に1.0fを入れておきます(普通は0が多いかな？)。<br>
+すると、dp4 命令を使った時にw成分が残るので、この成分を方向に依存しない環境光に用いることができます。<br>
+欠点は、平行光源と環境光の色に同じ色を使わなければいけないことです。<br>
+【後日談】<A HREF="http://suzuna.jp/">suzunaさん</a>から、D3DVSDT_FLOAT3 にすると、w成分に自動的に1.0fを入れてくれるので、そちらを使ったほうが手軽だそうです。
 </p>
 
 <pre class="CodeBlock">
@@ -237,46 +237,46 @@ DWORD dwDecl[] = {
 </pre>
 
 <p>
-���ۂ̒��_�V�F�[�_�[�͎��̂V���߂ɂȂ�܂��B
+実際の頂点シェーダーは次の７命令になります。
 </p>
 
 
 <pre class="CodeBlock">
-<Font color = cyan>; c0-3   -- world + �r���[ + �����ϊ��s��</Font>
-<Font color = cyan>; c13    -- ���C�g�̃x�N�g�� (w�����͊����̋���)</Font>
-<Font color = cyan>; c14    -- ���C�g�̐F(���b�V���̐F)</Font>
+<Font color = cyan>; c0-3   -- world + ビュー + 透視変換行列</Font>
+<Font color = cyan>; c13    -- ライトのベクトル (w成分は環境光の強さ)</Font>
+<Font color = cyan>; c14    -- ライトの色(メッシュの色)</Font>
 <Font color = cyan>;</Font>
-<Font color = cyan>; v0	���_�̍��W�l</Font>
-<Font color = cyan>; v3	�@���x�N�g�� (w������1.0f)</Font>
-<Font color = cyan>; v7	�e�N�X�`�����W</Font>
+<Font color = cyan>; v0	頂点の座標値</Font>
+<Font color = cyan>; v3	法線ベクトル (w成分は1.0f)</Font>
+<Font color = cyan>; v7	テクスチャ座標</Font>
 
 vs.1.0
 
-<Font color = cyan>;���W�ϊ�</Font>
+<Font color = cyan>;座標変換</Font>
 dp4 oPos.x,	v0,	  c0
 dp4 oPos.y,	v0,	  c1
 dp4 oPos.z,	v0,	  c2
 dp4 oPos.w,	v0,	  c3
 
-<Font color = cyan>; ((l,n) + l.w)*c14 (���s�����̃��C�e�B���O)</Font>
+<Font color = cyan>; ((l,n) + l.w)*c14 (平行光源のライティング)</Font>
 dp4 r0.w,   v3,   c13
 mul oD0,    r0.w, c14
 
-<Font color = cyan>; �e�N�X�`���[�𒣂�</Font>
+<Font color = cyan>; テクスチャーを張る</Font>
 mov oT0,    v7
 </pre>
 
 <p>
-dp4 ���g���āA�@���ƌ��̌���������̋��������߂���A���C�g�⃁�b�V���̐F���悹�܂��B<br>
-���ۂɂ́A���̐ݒ蕔���ŕ�����悤�ɁA���b�V���̐F�����̂܂܏悹�Ă���̂ŁA���F���������Ă��邱�ƂɂȂ�܂��B<br>
-�����̋�����0.3f�ł��i���s�������ʂɐ����ɓ��������Ƃ̔�j�B
+dp4 を使って、法線と光の向きから光の強さを求めた後、ライトやメッシュの色を乗せます。<br>
+実際には、下の設定部分で分かるように、メッシュの色をそのまま乗せているので、白色光が当っていることになります。<br>
+環境光の強さは0.3fです（平行光源が面に垂直に当った時との比）。
 </p>
 <p>
-�܂��A����́A���C�g�̕����Ƀ��[���h�s��̋t�s����|���܂����B<br>
-����́A���[�J�����W�Ō����v�Z���s�����ɑ������܂��B<br>
-���_�V�F�[�_�[�ŁA�����_���[���h���W�ł̖@���x�N�g����p����i�������x�H�j�����A
-���C�g�����[�J�����W�ɕϊ�����ق����i�P��̂݁j�A�v�Z�ʂ͂͂邩�ɏ��Ȃ��ł��B<br>
-�ȉ��̕��������_�V�F�[�_�[�̌Œ背�W�X�^�������镔���ł��B
+また、今回は、ライトの方向にワールド行列の逆行列を掛けました。<br>
+これは、ローカル座標で光源計算を行う事に相当します。<br>
+頂点シェーダーで、毎頂点ワールド座標での法線ベクトルを用いる（数千回程度？）よりも、
+ライトをローカル座標に変換するほうが（１回のみ）、計算量ははるかに少ないです。<br>
+以下の部分が頂点シェーダーの固定レジスタを代入する部分です。
 </p>
 
 <pre class="CodeBlock">
@@ -288,10 +288,10 @@ D3DXVECTOR4 lightDir(1.0f, 1.0f, 0.5f, 0.0f);
 D3DXVec4Normalize(&lightDir, &lightDir);
 D3DXMatrixInverse( &m,  NULL, &mWorld);
 D3DXVec4Transform(&lightDir, &lightDir, &m);
-lightDir[3] = 0.3f;<Font color = cyan>// �����̋���</Font>
+lightDir[3] = 0.3f;<Font color = cyan>// 環境光の強さ</Font>
 lpD3DDEV->SetVertexShaderConstant(13, &lightDir, 1);
 
-<Font color = cyan>//�F���Z�b�g</Font>
+<Font color = cyan>//色をセット</Font>
 D3DXVECTOR4 vl;
 vl.x = pMeshMaterials[i].Diffuse.r;
 vl.  = pMeshMaterials[i].Diffuse.g;
@@ -299,61 +299,61 @@ vl.z = pMeshMaterials[i].Diffuse.b;
 lpD3DDEV->SetVertexShaderConstant(14, &vl, 1);
 </pre>
 
-<h2>�����f���\���i�e�N�X�`���[�ɂ�郉�C�e�B���O�j</h2>
+<h2>■モデル表示（テクスチャーによるライティング）</h2>
 
 <image src = "texture_light.gif" width = 323 height = 253>
 
 <p>
-BBS �ŁA<A HREF="http://suzuna.jp/">suzuna����</a>��A<A HREF="http://cgi3.tky.3web.ne.jp/~tkano/">Kano����</a>�A<A HREF="http://www.interq.or.jp/neptune/pepe/iceman/">iceman����</a>�ɃR�����g�����������܂����B<br>
-��L�̕��@�ł́A���ς̒l�����ɂȂ�Ɗ����̐����������Ă��܂��̂ŁA�ŏI�I�ɍ����������ł��Ă��܂��܂��B<br>
-�Ƃ������ƂŁA�e�N�X�`���[�ɂ�郉�C�e�B���O�����܂����B
+BBS で、<A HREF="http://suzuna.jp/">suzunaさん</a>や、<A HREF="http://cgi3.tky.3web.ne.jp/~tkano/">Kanoさん</a>、<A HREF="http://www.interq.or.jp/neptune/pepe/iceman/">icemanさん</a>にコメントをいただきました。<br>
+上記の方法では、内積の値が負になると環境光の成分を消してしまうので、最終的に黒い部分ができてしまいます。<br>
+ということで、テクスチャーによるライティングをしました。
 </p>
 <ul style = "LIST-STYLE-TYPE:none">
-<li><a href="viewport2.lzh">viewport2.lzh (�e�N�X�`���[�ɂ�郉�C�e�B���O�̏ꍇ)</a>
+<li><a href="viewport2.lzh">viewport2.lzh (テクスチャーによるライティングの場合)</a>
 </ul>
 <p>
-�t�@�C���̒��g�́A
+ファイルの中身は、
 </p>
 <table>
-<tr><td><a href="vs_vsh2.html">vs.vsh</a></td><td>�I�u�W�F�N�g�\���p�̒��_�V�F�[�_�[�v���O�����B���s�������C�g�B</td></tr>
-<tr><td><a href="draw_cpp2.html">draw.cpp</a></td><td>�e�N�X�`���[���C�e�B���O�p�Ɉꕔ�C���B</td></tr>
-<tr><td><a href="main_h2.html">main.h</a></td><td>��{�I�Ȓ萔�ȂǁB������o�Ԗ����B</td></tr>
-<tr><td><a href="main_cpp2.html">main.cpp</a></td><td>�`��Ɋ֌W���Ȃ��V�X�e���I�ȕ����Bfps�\����ǉ��B</td></tr>
-<tr><td><a href="draw_h2.html">draw.h</a></td><td>�`��̊e�֐��̒�`�B���ɈӖ������̂ŏo�Ԗ����B</td></tr>
-<tr><td><a href="font_h2.html">font.h</a></td><td>fps �\���p�B���o�B</td></tr>
-<tr><td><a href="font_cpp2.html">font.cpp</a></td><td>fps �\���p�B���o�B</td></tr>
-<tr><td><a href="normal_transform_vsh2.html">normal_transform.vsh</a></td><td>���܂��B�O��̃��C�g�̌v�Z�����[���h���W�ōs���B</td></tr>
+<tr><td><a href="vs_vsh2.html">vs.vsh</a></td><td>オブジェクト表示用の頂点シェーダープログラム。平行光源ライト。</td></tr>
+<tr><td><a href="draw_cpp2.html">draw.cpp</a></td><td>テクスチャーライティング用に一部修正。</td></tr>
+<tr><td><a href="main_h2.html">main.h</a></td><td>基本的な定数など。今回も出番無し。</td></tr>
+<tr><td><a href="main_cpp2.html">main.cpp</a></td><td>描画に関係しないシステム的な部分。fps表示を追加。</td></tr>
+<tr><td><a href="draw_h2.html">draw.h</a></td><td>描画の各関数の定義。特に意味無いので出番無し。</td></tr>
+<tr><td><a href="font_h2.html">font.h</a></td><td>fps 表示用。既出。</td></tr>
+<tr><td><a href="font_cpp2.html">font.cpp</a></td><td>fps 表示用。既出。</td></tr>
+<tr><td><a href="normal_transform_vsh2.html">normal_transform.vsh</a></td><td>おまけ。前回のライトの計算をワールド座標で行う。</td></tr>
 </table>
 <p>
-�ƁA���s�t�@�C����Xfile�A�v���W�F�N�g�t�@�C������у��C�e�B���O�p�̃e�N�X�`���[light.bmp�������Ă��܂��B<br>
-light.bmp ��
+と、実行ファイルやXfile、プロジェクトファイルおよびライティング用のテクスチャーlight.bmpが入っています。<br>
+light.bmp は
 </p>
 <image src = "light.gif">
 <p>
-�ɁA�Ȃ��Ă��܂��B<br>
-������΁A�f�B�t���[�Y����Ԃɂ��邽�߂ɁA���iu=0�j���΁A�E(u=1)��Ԃɂ��܂����B
+に、なっています。<br>
+環境光を緑、ディフューズ光を赤にするために、左（u=0）が緑、右(u=1)を赤にしました。
 </p>
 
 <p>
-���_�V�F�[�_�[�v���O�����́A���ɂȂ�܂��B<br>
-�g�D�[���Ɠ����悤�ɁA�}���`�e�N�X�`���[�Ō����p�̃e�N�X�`���[�𒣂�܂��B
+頂点シェーダープログラムは、次になります。<br>
+トゥーンと同じように、マルチテクスチャーで光源用のテクスチャーを張ります。
 </p>
 <pre class="CodeBlock">
 vs.1.0
 
-dp4 oPos.x,   v0,   c0    ; ���W�ϊ�
+dp4 oPos.x,   v0,   c0    ; 座標変換
 dp4 oPos.y,   v0,   c1
 dp4 oPos.z,   v0,   c2
 dp4 oPos.w,   v0,   c3
 
-dp4 oT0.x,    v3,   c13   ; l dot n (���C�e�B���O)
-mov oT1,      v7          ; �e�N�X�`���[�𒣂�
+dp4 oT0.x,    v3,   c13   ; l dot n (ライティング)
+mov oT1,      v7          ; テクスチャーを張る
 </pre>
 <p>
-����ƁA�U���߂Ƃ������ɒZ���v���O�����ɂȂ�܂����B<br>
+やっと、６命令という非常に短いプログラムになりました。<br>
 </p>
 <p>
-�`�敔���̓c�D�[���Ɠ����悤�Ȑݒ�ɂȂ�܂��B�Ⴂ�����F�œh��܂����B
+描画部分はツゥーンと同じような設定になります。違いを黄色で塗りました。
 </p>
 <pre class="CodeBlock">
 void Render(LPDIRECT3DDEVICE8 lpD3DDEV)
@@ -362,7 +362,7 @@ void Render(LPDIRECT3DDEVICE8 lpD3DDEV)
     
     D3DVIEWPORT8 viewport={WIN_X, WIN_Y, WIN_W, WIN_H, 0.0f, 0.0f};
     D3DVIEWPORT8 viewport_bak;
-    lpD3DDEV->GetViewport(&viewport_bak);        <Font color = cyan>//    ���̃r���[�|�[�g��`������Ă���</Font>
+    lpD3DDEV->GetViewport(&viewport_bak);        <Font color = cyan>//    元のビューポート矩形を取っておく</Font>
 
     for(int n = 0; n < 2; n++){
         D3DXMATRIX mWorld, mView, mProj, m;
@@ -374,7 +374,7 @@ void Render(LPDIRECT3DDEVICE8 lpD3DDEV)
         lookAt.x = 0.0f; lookAt.y   =  3.0f; lookAt.z =  0.0f;
         up.x     = 0.0f; up.y       =  1.0f; up.z     =  0.0f;
         if(1 == n){
-            <Font color = cyan>// ���ŕ\������Ƃ��́A���΂��猩��</Font>
+            <Font color = cyan>// 窓で表示するときは、反対から見る</Font>
             eye.z   = -30.0f;
             D3DXMatrixLookAtLH(&mView, &eye, &lookAt, &up);
             D3DXMatrixIdentity(&m);
@@ -408,7 +408,7 @@ void Render(LPDIRECT3DDEVICE8 lpD3DDEV)
         lpD3DDEV->SetVertexShader(hVertexShader);
         <Font color = yellow>lpD3DDEV->SetTexture(0,pTexture);</Font>
 
-        <Font color = cyan>//���b�V���̕`��</Font>
+        <Font color = cyan>//メッシュの描画</Font>
         lpD3DDEV->SetStreamSource(0, pMeshVB, sizeof(D3D_CUSTOMVERTEX));
         lpD3DDEV->SetIndices(pMeshIndex,0);
         for(DWORD i=0;i<dwNumMaterials;i++){
@@ -421,10 +421,10 @@ void Render(LPDIRECT3DDEVICE8 lpD3DDEV)
         }
         if(n==0){
             frame_back_draw(lpD3DDEV);
-            lpD3DDEV->SetViewport(&viewport);            <Font color = cyan>//    �V�����r���[�|�[�g��`��ݒ肷��</Font>
+            lpD3DDEV->SetViewport(&viewport);            <Font color = cyan>//    新しいビューポート矩形を設定する</Font>
             lpD3DDEV->SetRenderState(D3DRS_CULLMODE, D3DCULL_CW);
         }else{
-            lpD3DDEV->SetViewport(&viewport_bak);        <Font color = cyan>// �r���[�|�[�g��`��߂�</Font>
+            lpD3DDEV->SetViewport(&viewport_bak);        <Font color = cyan>// ビューポート矩形を戻す</Font>
             lpD3DDEV->SetRenderState(D3DRS_CULLMODE, D3DCULL_CCW);
         }
     }
@@ -434,54 +434,54 @@ void Render(LPDIRECT3DDEVICE8 lpD3DDEV)
 }
 </pre>
 <p>
-�e�N�X�`���[�X�e�[�W0�̓e�N�X�`���[�i���C�e�B���O�j�݂̂��g�p���āA�e�N�X�`���[�X�e�[�W1�̓e�N�X�`���[�i���b�V���j�ƃe�N�X�`���[�X�e�[�W0�̌��ʂ���������ݒ�ɂ��܂����B<br>
-���b�V���̃e�N�X�`���[����񂵂ɂ����̂ŁA�e�N�X�`���[���Ȃ����f���ł�����ɓ��삵�܂��B
+テクスチャーステージ0はテクスチャー（ライティング）のみを使用して、テクスチャーステージ1はテクスチャー（メッシュ）とテクスチャーステージ0の結果を合成する設定にしました。<br>
+メッシュのテクスチャーを後回しにしたので、テクスチャーがないモデルでも正常に動作します。
 </p>
 <p>
-����́A���C�g�� w ������ 0.0f �ɂ��܂����B<br>
-���ς̒l�����̂Ƃ��ɓ����i�����́j�F�ɂȂ�悤�ɁA���̂悤�ɂ��܂������A���C�g�̐�����
-</p>
-<pre class="CodeBlock">
-l = (0.5*lx, 0.5*ly, 0.5*lz, 0.5)              ((lx, ly, lz)�͐��K�����ꂽ�����x�N�g��)
-</pre>
-<p>
-�ɂ���ƁA�@���ƃ��C�g�̃x�N�g���̓��ς� -1.0f�`1.0f �̂Ƃ��ɁAdp4 �̌��ʂ�  0.0f�`1.0f �ɂȂ�̂ŁA
-���ς����̏ꍇ�ɂ����C�g�ɕ\������邱�Ƃ��ł��܂��B<br>
-����g��Ȃ��������R�́A�����{���s�����̃��f����p�����̂ŁA���ς����̂Ƃ��ɓ����l�ƂȂ�A�e�N�X�`���[�̔����̐F����F�ɂȂ��Ă��������Ȃ�����ł��B<br>
-��������A�����e�N�X�`���[�T�C�Y�ł��O���f�[�V�����ɍ����𑜓x��^������ w = 0.0f ���̗p���܂����B<br>
-w = 0.5f �ȊO�ɂ���̂́A�e�N�X�`���[�ʒu�̑S�̂ɂ��炷���ƂɑΉ�����̂ŁA������������A�e�N�X�`���[�������悭�g�p���邽�߂Ɏg�������ł��B
-</p>
-
-<p>
-���ۂ̃p�t�H�[�}���X�ł����A�e�N�X�`���[���C�e�B���O�̏ꍇ�� 322fps�ŁA���Ƃ��Ƃ̃v���O�����̏ꍇ�� 326fps �o�Ă��܂����B
-<p>
-<image src = "default.gif" width = 323 height = 253>�g�b�v�ɒu���Ă���v���O������FPS
-<p>
-1%�قǂƁA�������ł����m���Ƀe�N�X�`���[���C�e�B���O�̕����p�t�H�[�}���X�����������ł����B<br>
-�܂��A�v�Z�ʂ���葽���ꍇ�Ƃ��āA(normal_transform.vsh ���g����) ���[���h���W�Ō����v�Z�����ꍇ�ɂ� 326fps �ƁA���[�J�����W�Ō����v�Z�����Ƃ��Ɠ������ʂ��o�܂����B<br>
-���������̂� Celeron 450MHz Dual �̔�͂ȃ}�V���Ȃ̂ŁA�����炪�{�g���l�b�N�ɂȂ��Ă��邱�Ƃ��l�����܂����A<br>
+今回は、ライトの w 成分を 0.0f にしました。<br>
+内積の値が負のときに同じ（環境光の）色になるように、このようにしましたが、ライトの成分を
 </p>
 <pre class="CodeBlock">
-���ߐ������Ȃ�=���s���x������
+l = (0.5*lx, 0.5*ly, 0.5*lz, 0.5)              ((lx, ly, lz)は正規化された方向ベクトル)
 </pre>
 <p>
-�Ƃ͂����Ȃ��悤�ł��B
+にすると、法線とライトのベクトルの内積が -1.0f～1.0f のときに、dp4 の結果は  0.0f～1.0f になるので、
+内積が負の場合にもライトに表情をつけることができます。<br>
+今回使わなかった理由は、環境光＋平行光源のモデルを用いたので、内積が負のときに同じ値となり、テクスチャーの半分の色が一色になってもったいないからです。<br>
+それよりも、同じテクスチャーサイズでもグラデーションに高い解像度を与えられる w = 0.0f を採用しました。<br>
+w = 0.5f 以外にするのは、テクスチャー位置の全体にずらすことに対応するので、動きをつけたり、テクスチャーを効率よく使用するために使えそうです。
 </p>
 
-<h2>���Ō��</h2>
+<p>
+実際のパフォーマンスですが、テクスチャーライティングの場合は 322fpsで、もともとのプログラムの場合は 326fps 出ていました。
+<p>
+<image src = "default.gif" width = 323 height = 253>トップに置いてあるプログラムのFPS
+<p>
+1%ほどと、小さいですが確実にテクスチャーライティングの方がパフォーマンスが悪かったでした。<br>
+また、計算量がより多い場合として、(normal_transform.vsh を使って) ワールド座標で光源計算した場合には 326fps と、ローカル座標で光源計算したときと同じ結果が出ました。<br>
+実験したのが Celeron 450MHz Dual の非力なマシンなので、そちらがボトルネックになっていることが考えられますが、<br>
+</p>
+<pre class="CodeBlock">
+命令数が少ない=実行速度が速い
+</pre>
+<p>
+とはいえないようです。
+</p>
+
+<h2>■最後に</h2>
 
 <p>
-����́A�o�b�N�~���[������Ă݂܂����B<br>
-�K���ɍ�����̂ŁA���ꂢ�ɂ܂Ƃ߂��Ă��܂���B
-�F����́A�r���[�s���`��͈͂��N���X�������肵�āA
-���������̃I�u�W�F�N�g���ɂ܂Ƃ߂Ă��������ˁB
+今回は、バックミラーを作ってみました。<br>
+適当に作ったので、きれいにまとめられていません。
+皆さんは、ビュー行列や描画範囲をクラス化したりして、
+いい感じのオブジェクト等にまとめてくださいね。
 </p>
 
 <BR CLEAR=ALL>
 <BR CLEAR=ALL>
 <BR CLEAR=ALL>
 <center>
-<p><a href="../index.html">���ǂ�</a></p>
+<p><a href="../index.html">もどる</a></p>
 <p><a href="mailto:imagire@gmail.com">imagire@gmail.com</a></p>
 </center>
 </body>

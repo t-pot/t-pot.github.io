@@ -1,203 +1,203 @@
 <head>
-	<title>t-pot�wDirectX 8.0:�@���}�b�v�ɂ��o���v�}�b�v�x</title>
+	<title>t-pot『DirectX 8.0:法線マップによるバンプマップ』</title>
 	<link rel="stylesheet" type="text/css" href="../if.css">
 </head>
-<meta http-equiv=Content-Type content="text/html; charset=shift_jis">
+<meta http-equiv=Content-Type content="text/html; charset=UTF-8">
 <body text=#ffffff>
 
 <div class="contents">
 <center>
 <BR CLEAR=ALL>
 <BR CLEAR=ALL>
-<h1>Vertex Shader:�@���}�b�v�ɂ��o���v�}�b�v</h1><br>
-<h3>�`����Ȃ�f�B�e�[���A�b�v�`</h3>
+<h1>Vertex Shader:法線マップによるバンプマップ</h1><br>
+<h3>～さらなるディテールアップ～</h3>
 <BR CLEAR=ALL>
 <BR CLEAR=ALL>
 <BR CLEAR=ALL>
 </center>
 
-<h2>���͂��߂�</h2>
+<h2>■はじめに</h2>
 
 <image src = "bump.jpg">
 <p>
-���āA���肪���ȃG�t�F�N�g�ł���Ă��Ȃ������o���v�}�b�v�ł��B<br>
-�o���v�}�b�v�͂ł��ڂ��������������C�e�B���O�ɂ���ĕ\�����܂��B<br>
-���̎����Ƀo���v�}�b�v���g���Ă��܂��B
+さて、ありがちなエフェクトでやっていなかったバンプマップです。<br>
+バンプマップはでこぼこした質感をライティングによって表現します。<br>
+床の質感にバンプマップを使っています。
 </p>
 
 <p>
-����̃\�[�X�́A���̂��̂ł��B
+今回のソースは、次のものです。
 </p>
 <ul style = "LIST-STYLE-TYPE:none">
-<li><a href="bump.lzh">bump.lzh (�o���v�}�b�v�̃\�[�X)</a>
+<li><a href="bump.lzh">bump.lzh (バンプマップのソース)</a>
 </ul>
 
 <p>
-����́A�������C�e�B���O�̃\�[�X��ύX���č���Ă��܂��B�d�v�ȃt�@�C���� bg.cpp �� bg.vsh �ł��B<br>
-�\�[�X�́A���̒ʂ�ł��B
+今回は、半球ライティングのソースを変更して作っています。重要なファイルは bg.cpp と bg.vsh です。<br>
+ソースは、次の通りです。
 </p>
 <table>
-<tr><td><a href="bg_cpp.html">bg.cpp</a></td><td>�n�ʁ{�V�~���̕`��B����̃��C���B</td></tr>
-<tr><td><a href="bg_vsh.html">bg.vsh</a></td><td>���_�V�F�[�_�[�v���O�����B�o���v�}�b�v�p�B</td></tr>
-<tr><td>�@</td></tr>
-<tr><td><a href="main_h.html">main.h</a></td><td>��{�I�Ȓ萔�ȂǁB������o�Ԗ����B</td></tr>
-<tr><td><a href="main_cpp.html">main.cpp</a></td><td>�`��Ɋ֌W���Ȃ��V�X�e���I�ȕ����B�ύX�������̂ŁA�o�Ԗ����B</td></tr>
-<tr><td><a href="draw_h.html">draw.h</a></td><td>�`��̊e�֐��̒�`�B���ɈӖ������̂ŏo�Ԗ����B</td></tr>
-<tr><td><a href="draw_cpp.html">draw.cpp</a></td><td>���C���̕`�敔���B�������C�e�B���O�̂��̂̂܂܁B</td></tr>
-<tr><td><a href="font_h.html">font.h</a></td><td>FPS�\���p�B���o�B</td></tr>
-<tr><td><a href="font_cpp.html">font.cpp</a></td><td>FPS�\���p�B���o�B</td></tr>
-<tr><td><a href="load_h.html">load.h</a></td><td>�t�@�C���̓ǂݍ��݁A�J���B</td></tr>
-<tr><td><a href="load_cpp.html">load.cpp</a></td><td>�t�@�C���̓ǂݍ��݁A�J���B</td></tr>
-<tr><td><a href="light_eff_cpp.html">light_eff.cpp</a></td><td>���C�g�̕�����������郉�C����`��B�������C�e�B���O�̂܂܁B</td></tr>
-<tr><td><a href="resource_h.html">resource.h</a></td><td>���j���[�̃��\�[�X�Ǘ��B</td></tr>
-<tr><td>�@</td></tr>
-<tr><td><a href="diffuse_vsh.html">diffuse.vsh</a></td><td>���_�V�F�[�_�[�v���O�����B�V���v���ȕ��s�����{�����̃��C�g�B</td></tr>
-<tr><td><a href="specular_vsh.html">specular.vsh</a></td><td>���_�V�F�[�_�[�v���O�����B���_�F�ɂ��X�y�L�����[���C�g�B</td></tr>
-<tr><td><a href="texspec_vsh.html">texspec_vsh.vsh</a></td><td>���_�V�F�[�_�[�v���O�����B�e�N�X�`���[�ɂ��X�y�L�����[���C�g�B</td></tr>
-<tr><td><a href="hemisphere_vsh.html">hemisphere.vsh</a></td><td>���_�V�F�[�_�[�v���O�����B���s�������C�g�B</td></tr>
-<tr><td><a href="hemi_amb_vsh.html">hemi_amb.vsh</a></td><td>���_�V�F�[�_�[�v���O�����B���s�����{�����������C�g�B</td></tr>
-<tr><td><a href="hemi_spec_vsh.html">hemi_spec.vsh</a></td><td>���_�V�F�[�_�[�v���O�����B���s�����{���������{�X�y�L�����[���C�g�B</td></tr>
-<tr><td><a href="soft_vsh.html">soft.vsh</a></td><td>���_�V�F�[�_�[�v���O�����B���炩���g�D�[���B</td></tr>
-<tr><td><a href="edge_vsh.html">edge.vsh</a></td><td>���_�V�F�[�_�[�v���O�����B�֊s��`���B</td></tr>
+<tr><td><a href="bg_cpp.html">bg.cpp</a></td><td>地面＋天円柱の描画。今回のメイン。</td></tr>
+<tr><td><a href="bg_vsh.html">bg.vsh</a></td><td>頂点シェーダープログラム。バンプマップ用。</td></tr>
+<tr><td>　</td></tr>
+<tr><td><a href="main_h.html">main.h</a></td><td>基本的な定数など。今回も出番無し。</td></tr>
+<tr><td><a href="main_cpp.html">main.cpp</a></td><td>描画に関係しないシステム的な部分。変更が無いので、出番無し。</td></tr>
+<tr><td><a href="draw_h.html">draw.h</a></td><td>描画の各関数の定義。特に意味無いので出番無し。</td></tr>
+<tr><td><a href="draw_cpp.html">draw.cpp</a></td><td>メインの描画部分。半球ライティングのもののまま。</td></tr>
+<tr><td><a href="font_h.html">font.h</a></td><td>FPS表示用。既出。</td></tr>
+<tr><td><a href="font_cpp.html">font.cpp</a></td><td>FPS表示用。既出。</td></tr>
+<tr><td><a href="load_h.html">load.h</a></td><td>ファイルの読み込み、開放。</td></tr>
+<tr><td><a href="load_cpp.html">load.cpp</a></td><td>ファイルの読み込み、開放。</td></tr>
+<tr><td><a href="light_eff_cpp.html">light_eff.cpp</a></td><td>ライトの方向を説明するラインを描画。半球ライティングのまま。</td></tr>
+<tr><td><a href="resource_h.html">resource.h</a></td><td>メニューのリソース管理。</td></tr>
+<tr><td>　</td></tr>
+<tr><td><a href="diffuse_vsh.html">diffuse.vsh</a></td><td>頂点シェーダープログラム。シンプルな平行光源＋環境光のライト。</td></tr>
+<tr><td><a href="specular_vsh.html">specular.vsh</a></td><td>頂点シェーダープログラム。頂点色によるスペキュラーライト。</td></tr>
+<tr><td><a href="texspec_vsh.html">texspec_vsh.vsh</a></td><td>頂点シェーダープログラム。テクスチャーによるスペキュラーライト。</td></tr>
+<tr><td><a href="hemisphere_vsh.html">hemisphere.vsh</a></td><td>頂点シェーダープログラム。平行半球ライト。</td></tr>
+<tr><td><a href="hemi_amb_vsh.html">hemi_amb.vsh</a></td><td>頂点シェーダープログラム。平行光源＋半球環境光ライト。</td></tr>
+<tr><td><a href="hemi_spec_vsh.html">hemi_spec.vsh</a></td><td>頂点シェーダープログラム。平行光源＋半球環境光＋スペキュラーライト。</td></tr>
+<tr><td><a href="soft_vsh.html">soft.vsh</a></td><td>頂点シェーダープログラム。やわらかいトゥーン。</td></tr>
+<tr><td><a href="edge_vsh.html">edge.vsh</a></td><td>頂点シェーダープログラム。輪郭を描く。</td></tr>
 </table>
-<image src = "tile_bmp.jpg" width = 64 height=64>tile.bmp (���f�J�[��)
-<image src = "normal_bmp.jpg" width = 64 height=64>normal.bmp (�@���}�b�v)<br>
-<image src = "spec_bmp.jpg" width = 64 height=64>spec.bmp (�X�y�L�����p)
-<image src = "metal_bmp.jpg" width = 64 height=64>metal.bmp (���^���p)
-<image src = "soft_bmp.jpg" width = 64 height=64>soft.bmp (���炩���g�D�[���p)
-<image src = "sky_bmp.jpg" width = 64 height=64>sky.bmp (��f�J�[��)
+<image src = "tile_bmp.jpg" width = 64 height=64>tile.bmp (床デカール)
+<image src = "normal_bmp.jpg" width = 64 height=64>normal.bmp (法線マップ)<br>
+<image src = "spec_bmp.jpg" width = 64 height=64>spec.bmp (スペキュラ用)
+<image src = "metal_bmp.jpg" width = 64 height=64>metal.bmp (メタル用)
+<image src = "soft_bmp.jpg" width = 64 height=64>soft.bmp (やわらかいトゥーン用)
+<image src = "sky_bmp.jpg" width = 64 height=64>sky.bmp (空デカール)
 <p>
-���ƁA�����̗l�ɁA���f���ƁA���s�t�@�C���y�сA�v���W�F�N�g�t�@�C���������Ă��܂��B
+あと、いつもの様に、モデルと、実行ファイル及び、プロジェクトファイルが入っています。
 </p>
 
-<h2>���o���v�}�b�v�Ɋւ��邤�񂿂�</h2>
+<h2>■バンプマップに関するうんちく</h2>
 
 <p>
-�o���v�}�b�v�̌��ʂ͂ǂ̂悤�Ȃ��̂ł��傤��?<br>
-���Ƀo���v�}�b�v�������摜�ƁA���Ă��Ȃ��摜����ׂĂ݂܂����B<br>
-�o���v�}�b�v���ꂽ���́A���������i�E��O�j�̕����������Ă���A���̊��������Ă��܂��B<br>
-���ۂɏo�������Ă���킯�ł͂Ȃ��̂ŁA�^���ɂ����Ƃ��ɕ���ȔɂȂ��Ă΂�΂�Ȃ̂ł����A���������邮�铮����ʂł͂��Ȃ苭�͂ł��B
+バンプマップの効果はどのようなものでしょうか?<br>
+下にバンプマップをした画像と、していない画像を並べてみました。<br>
+バンプマップされた床は、光源方向（右手前）の部分が光っており、立体感が増しています。<br>
+実際に出っ張っているわけではないので、真横にしたときに平らな板になってばればれなのですが、光源がぐるぐる動く場面ではかなり強力です。
 </p>
-<image src = "bump_off.jpg" width = 323 height = 252>�g�p�O
-<image src = "bump.jpg" width = 323 height = 252>�g�p��
+<image src = "bump_off.jpg" width = 323 height = 252>使用前
+<image src = "bump.jpg" width = 323 height = 252>使用後
 <p>
-�ǂ̂悤�ȃf�[�^��p�ӂ���΂悢�̂ł��傤��?<br>
-�������̕��@������܂����A����͖@���}�b�v��p�����o���v�}�b�v���s���܂�<br>
-�o���v�}�b�v�ł́A�\�ʂ̂ł��ڂ���Ή������摜��p�ӂ��܂��B<br>
-normal.bmp �� tile.bmp ����쐬�����@���}�b�v�̃f�[�^�ł��B<br>
-nVIDIA �́APhotoshop �v���O�C���ō쐬���܂����B
+どのようなデータを用意すればよいのでしょうか?<br>
+いくつかの方法がありますが、今回は法線マップを用いたバンプマップを行います<br>
+バンプマップでは、表面のでこぼこ具合対応した画像を用意します。<br>
+normal.bmp が tile.bmp から作成した法線マップのデータです。<br>
+nVIDIA の、Photoshop プラグインで作成しました。
 </p>
 
-<image src = "tile_bmp.jpg">tile.bmp (���f�J�[��)
-<image src = "normal_bmp.jpg">normal.bmp (�@���}�b�v)
+<image src = "tile_bmp.jpg">tile.bmp (床デカール)
+<image src = "normal_bmp.jpg">normal.bmp (法線マップ)
 
 <p>
-�@���}�b�v���쐬���邽�߂ɂ́A���ӂ̃s�N�Z���Ɩ��邳���r���܂��B<br>
-���ʂƂ��āA���邳���قȂ�΁A���̕����Ƀx�N�g���𐶐����܂��B
+法線マップを作成するためには、周辺のピクセルと明るさを比較します。<br>
+結果として、明るさが異なれば、その方向にベクトルを生成します。
 </p>
 <image src = "normal.gif">
 <p>
-�P�x�ω����傫����Α傫���قǁA�X���͑傫���Ȃ�܂��B<br>
-���K�Ƃ��āA�P�x�ω��������Ȃ��Ƃ��̎����y���Ƃ��āA�ω����������i�t�A�u�j�����A�w�C�x���ɑΉ������܂��B<br>
-normal.bmp ���قƂ�ǐF�Ȃ̂́A(R,G,B)��(X,Y,Z)�ƑΉ������āA����ȂقƂ�ǂ̕�����F�Ƃ��ĕ\�����Ă��邽�߂ł��B<br>
-�X���̑傫���́A-1.0f�`1.0f �͈̔͂ł����A�F�̋����́A0�`255 �Ȃ̂ŁA
+輝度変化が大きければ大きいほど、傾きは大きくなります。<br>
+慣習として、輝度変化がおきないときの軸をＺ軸として、変化がおきた（Ｕ、Ｖ）軸を、Ｘ，Ｙ軸に対応させます。<br>
+normal.bmp がほとんど青色なのは、(R,G,B)を(X,Y,Z)と対応させて、平らなほとんどの部分を青色として表現しているためです。<br>
+傾きの大きさは、-1.0f～1.0f の範囲ですが、色の強さは、0～255 なので、
 </p>
 <pre class="CodeBlock">
-(nx, ny, nz)�@�@�@�@�@�@�@�@�@�@�@�@�@�@�@�@�@�@�@�@�@�@�@�@ | -1.0f ��� 1.0f
+(nx, ny, nz)　　　　　　　　　　　　　　　　　　　　　　　　 | -1.0f ･･･ 1.0f
 ------------------------------------------------------------------------------
-( R,  G,  B) = (128*(nx+1.0f), 128*(ny+1.0f), 128*(nz+1.0f)) |    0  ���  256
+( R,  G,  B) = (128*(nx+1.0f), 128*(ny+1.0f), 128*(nz+1.0f)) |    0  ･･･  256
 </pre>
 <p>
-�̂悤�ɁA�ϊ����܂��B<br>
-�]���āA�ł��ڂ��̂Ȃ�����ȕ����̐F�́A(128,128,256) �ɂȂ�܂��B<br>
-���Ȃ݂ɁA�@���x�N�g���̏W����P�ʋ��ɑΉ������āA�w���������A�x�����c���Ƃ������̌X���ɉ������F�́A���̂悤�ɂȂ�܂��B
+のように、変換します。<br>
+従って、でこぼこのない平らな部分の色は、(128,128,256) になります。<br>
+ちなみに、法線ベクトルの集合を単位球に対応させて、Ｘ軸を横軸、Ｙ軸を縦軸とした時の傾きに応じた色は、次のようになります。
 </p>
 <image src = "noraml_sphere.jpg">
 
 <p>
-���ɁA���̖@���}�b�v�����f���ɓ\��t���Ȃ���΂Ȃ�܂���B<br>
-�@���}�b�v�͂ł��ڂ����Ă��Ȃ����́A�F�ł��B<br>
-���ۂ̃��f���̂ł��ڂ��̊�͂Ȃ�ł��傤���H<br>
-����͖@�������ł��B<br>
-���C�e�B���O�́A���f�����W�n�ōs���܂��B<br>
-���̂��߂ɁA�@���}�b�v���A���f�����W�n��Z���i�F�j���@�������ɂȂ�悤�ɍ��W�ϊ����Ȃ���΂Ȃ�܂���B<br>
-���̂��߂̊��x�N�g�����K�v�ł��B<br>
-��́A���_�̖@���ŁA�ʂ̊��x�N�g���́A�K���Ɂi�@���ɒ������āA���̓����Ă���������������Ȃ�悤�Ɂj���܂��B<br>
-�Ō�̈�́A�ȏ�̂Q�̃x�N�g���̊O�ς��狁�߂܂��B
+次に、この法線マップをモデルに貼り付けなければなりません。<br>
+法線マップはでこぼこしていない時は、青色です。<br>
+実際のモデルのでこぼこの基準はなんでしょうか？<br>
+それは法線方向です。<br>
+ライティングは、モデル座標系で行います。<br>
+そのために、法線マップを、モデル座標系でZ軸（青色）が法線方向になるように座標変換しなければなりません。<br>
+そのための基底ベクトルが必要です。<br>
+一つは、頂点の法線で、別の基底ベクトルは、適当に（法線に直交して、光の当っている方向が正しくなるように）取ります。<br>
+最後の一つは、以上の２つのベクトルの外積から求めます。
 </p>
 <image src = "st.gif">
 <p>
-����p����̂́A���Ȃ̂ŁA�|���S���̂w�����r�C�x�����s�C�@�����r���s�̊ȒP�Ȍv�Z�ɂȂ�܂��B<br>
-���̍��W�n��p����΁A�y���̏o������i�F�j�́A�r���s�̖@���̕����̏o������ɕϊ�����܂��B<br>
-�܂��A����ȊO�̎��́A�ԋy�ї΂ŕ\�������\�ʂ̂ł��ڂ��ɂȂ�܂��B<br>
+今回用いるのは、床なので、ポリゴンのＸ軸をＳ，Ｙ軸をＴ，法線をＳｘＴの簡単な計算になります。<br>
+この座標系を用いれば、Ｚ軸の出っ張り（青色）は、ＳｘＴの法線の方向の出っ張りに変換されます。<br>
+また、それ以外の軸は、赤及び緑で表現される表面のでこぼこになります。<br>
 <br>
-���`��A���̐�������킩����ȁB<br>
-���ʂ������ق�����������B
+う～ん、この説明じゃわからんよな。<br>
+結果を見たほうが早いだろ。
 </p>
 
 
-<h2>���\�[�X</h2>
+<h2>■ソース</h2>
 
 <p>
-���āA�\�[�X�t�@�C�������Ă݂܂��傤�B<br>
-���_�V�F�[�_�[�v���O�����͎��̂悤�ɂȂ�܂��B
+さて、ソースファイルを見てみましょう。<br>
+頂点シェーダープログラムは次のようになります。
 </p>
 <pre class="CodeBlock">
-<Font color = cyan>; c0-3   -- world + �r���[ + �����ϊ��s��
+<Font color = cyan>; c0-3   -- world + ビュー + 透視変換行列
 ; c12    -- {0.0, 0.5, 1.0, 2.0}
-; c13    -- ���C�g�̃x�N�g�� (w�����͊����̋���)
+; c13    -- ライトのベクトル (w成分は環境光の強さ)
 ;
-; v0    ���_�̍��W�l
-; v3    �ڋ�Ԃ̊��x�N�g�� S
-; v4    �ڋ�Ԃ̊��x�N�g�� T
-; v5    �ڋ�Ԃ̊��x�N�g�� SxT
-; v7    �e�N�X�`�����W0</Font>
+; v0    頂点の座標値
+; v3    接空間の基底ベクトル S
+; v4    接空間の基底ベクトル T
+; v5    接空間の基底ベクトル SxT
+; v7    テクスチャ座標0</Font>
 
 vs.1.0
 
-<Font color = cyan>; �����ϊ�</Font>
+<Font color = cyan>; 透視変換</Font>
 dp4 oPos.x, v0, c0
 dp4 oPos.y, v0, c1
 dp4 oPos.z, v0, c2
 dp4 oPos.w, v0, c3
 
-<Font color = cyan>; �e�N�X�`���[���W</Font>
+<Font color = cyan>; テクスチャー座標</Font>
 mov oT0, v7
 mov oT1, v7
 
-<Font color = cyan>; ���_�F�����߂�</Font>
-dp3 r3.x, v4, c13       <Font color = cyan>; ���C�g�����x�N�g�����g���āA���f�����W�n�ɕϊ�����</Font>
+<Font color = cyan>; 頂点色を決める</Font>
+dp3 r3.x, v4, c13       <Font color = cyan>; ライトを基底ベクトルを使って、モデル座標系に変換する</Font>
 dp3 r3.y, v5, c13       <Font color = cyan>; r3 = LIGHT_LOCAL</Font>
 dp3 r3.z, v3, c13
 
-add r3, r3, c12.z       <Font color = cyan>; 0-1 �ɃX�P�[��</Font>
+add r3, r3, c12.z       <Font color = cyan>; 0-1 にスケール</Font>
 mul oD0, r3, c12.y
 
-mov oD0.w, c12.z        <Font color = cyan>; alpha ������ 1 �ɂ���B</Font>
+mov oD0.w, c12.z        <Font color = cyan>; alpha 成分は 1 にする。</Font>
 </pre>
 
 <p>
-���W�ϊ��̓V���v���ȓ����ϊ��ł��B<br>
-�e�N�X�`���[���W���A���̂܂܃R�s�[���܂��B<br>
-����́A�f�J�[���e�N�X�`���[�i���ʂ̖͗l�̃e�N�X�`���[�j�Ɩ@���}�b�v�𒣂�܂����A
-�����͗l�Ȃ̂ŁA�������W(v7)��p���܂��B<br>
-����Ȃ̂́A���_�F�ł��B<br>
-���C�g�̕��������x�N�g��(S,T,SxT) ��p���č��W�ϊ����܂��B<br>
-����ŁA���C�g�̕����x�N�g���́A�@���̌������猩�������ɕϊ�����܂��B<br>
-���̃x�N�g���Ɩ@���}�b�v�̊e�x�N�g���i�@���}�b�v�̐F���R�����x�N�g���Ƃ݂Ȃ����Ƃ��̃s�N�Z���P�ʂ̃x�N�g���j�̓��όv�Z����΁A
-���s�����̃��C�e�B���O�������ł��܂��B<br>
-���C�g�̕����x�N�g���̊e�����͈̔͂� -1 �` 1 �ł����A���_�F�� 0 �` 1 �͈̔͂łȂ��Ƃ����Ȃ��̂ŁA
+座標変換はシンプルな透視変換です。<br>
+テクスチャー座標も、そのままコピーします。<br>
+今回は、デカールテクスチャー（普通の模様のテクスチャー）と法線マップを張りますが、
+同じ模様なので、同じ座標(v7)を用います。<br>
+特殊なのは、頂点色です。<br>
+ライトの方向を基底ベクトル(S,T,SxT) を用いて座標変換します。<br>
+これで、ライトの方向ベクトルは、法線の向きから見た方向に変換されます。<br>
+このベクトルと法線マップの各ベクトル（法線マップの色を３次元ベクトルとみなしたときのピクセル単位のベクトル）の内積計算すれば、
+平行光源のライティングが実現できます。<br>
+ライトの方向ベクトルの各成分の範囲は -1 ～ 1 ですが、頂点色は 0 ～ 1 の範囲でないといけないので、
 </p>
 <pre class="CodeBlock">
-oD0 = 0.5*L' + 0.5    (L':���x�N�g���ŕϊ��������C�g�̕����x�N�g��)
+oD0 = 0.5*L' + 0.5    (L':基底ベクトルで変換したライトの方向ベクトル)
 </pre>
 <p>
-�̕ϊ��Ŕ͈͂𒲐����܂��B
+の変換で範囲を調整します。
 </p>
 
 <p>
-���́A�b�\�[�X�ł��� bg.cpp �ł��B<br>
-���_�錾�́A���̂悤�ɂȂ�܂��B
+次は、Ｃソースである bg.cpp です。<br>
+頂点宣言は、次のようになります。
 </p>
 <pre class="CodeBlock">
 typedef struct {
@@ -219,39 +219,39 @@ static DWORD dwDeclFloor[] = {
 };
 </pre>
 <p>
-�����̂R�������W D3DVSDE_POSITION�A�e�N�X�`���[���W D3DVSDE_TEXCOORD0�ɉ����āA
-�ڃx�N�g����Ԃ̊�� S, T, SxT ���A���݂��܂��B<br>
-�K���ɁA3, 4, 5 �ԂɐU��܂����B
+いつもの３次元座標 D3DVSDE_POSITION、テクスチャー座標 D3DVSDE_TEXCOORD0に加えて、
+接ベクトル空間の基底 S, T, SxT が、存在します。<br>
+適当に、3, 4, 5 番に振りました。
 </p>
 <p>
-�������́A���̂悤�ɂȂ�܂��B
+初期化は、次のようになります。
 </p>
 <pre class="CodeBlock">
 void InitBg(LPDIRECT3DDEVICE8 lpD3DDev)
 {
     <Font color = cyan>//
-    // �~��
+    // 円柱
     //
     
-    // ��������������
+    // 略････････････
     
     //
-    // ��
+    // 床
     //
-    // ���_�o�b�t�@�̍쐬 </Font>
+    // 頂点バッファの作成 </Font>
     FloorVertex *pFloorDest;
     lpD3DDev->CreateVertexBuffer( 4 * sizeof(FloorVertex),
                                 D3DUSAGE_WRITEONLY, 0, D3DPOOL_MANAGED,
                                 &pFloorVB );
-    <Font color = cyan>// ���_���Z�b�g�A�b�v</Font>
+    <Font color = cyan>// 頂点をセットアップ</Font>
     pFloorVB->Lock ( 0, 0, (BYTE**)&pFloorDest, 0 );
     for (DWORD i = 0; i < 4; i++) {
-        pFloorDest->x   = (i == 0 || i == 1)?(-FLOOR_SIZE):(+FLOOR_SIZE);<Font color = cyan>// �w�y���ʏ�Ɏl�p�`���쐬</Font>
+        pFloorDest->x   = (i == 0 || i == 1)?(-FLOOR_SIZE):(+FLOOR_SIZE);<Font color = cyan>// ＸＺ平面上に四角形を作成</Font>
         pFloorDest->z   = (i == 0 || i == 2)?(-FLOOR_SIZE):(+FLOOR_SIZE);
         pFloorDest->y   = 0.0f;
         pFloorDest->tu = (i == 0 || i == 1)?0:FLOOR_UV;
         pFloorDest->tv = (i == 0 || i == 2)?0:FLOOR_UV;
-        <Font color = yellow>pFloorDest->sx = 1.0f;pFloorDest->sy = 0.0f;pFloorDest->sz = 0.0f;</Font><Font color = cyan>// ���x�N�g���̐ݒ�</Font>
+        <Font color = yellow>pFloorDest->sx = 1.0f;pFloorDest->sy = 0.0f;pFloorDest->sz = 0.0f;</Font><Font color = cyan>// 基底ベクトルの設定</Font>
         <Font color = yellow>pFloorDest->tx = 0.0f;pFloorDest->ty = 0.0f;pFloorDest->tz = 1.0f;
         pFloorDest->xx = 0.0f;pFloorDest->xy = 1.0f;pFloorDest->xz = 0.0f;</Font>
         pFloorDest += 1;
@@ -259,13 +259,13 @@ void InitBg(LPDIRECT3DDEVICE8 lpD3DDev)
     pFloorVB->Unlock ();
 
 
-    <Font color = cyan>// �C���f�b�N�X���Z�b�g�A�b�v</Font>
+    <Font color = cyan>// インデックスをセットアップ</Font>
     lpD3DDev->CreateIndexBuffer( 6 * sizeof(WORD),
                                0,
                                D3DFMT_INDEX16, D3DPOOL_MANAGED,
                                &pFloorIB );
     pFloorIB->Lock ( 0, 0, (BYTE**)&pIndex, 0 );
-    pIndex[0] = 0;    pIndex[1] = 1;    pIndex[2] = 2;    <Font color = cyan>// 0--2 �̎l�p�`</Font>
+    pIndex[0] = 0;    pIndex[1] = 1;    pIndex[2] = 2;    <Font color = cyan>// 0--2 の四角形</Font>
     pIndex[3] = 1;    pIndex[4] = 3;    pIndex[5] = 2;    <Font color = cyan>// 1--3</Font>
     pFloorIB->Unlock ();
 
@@ -277,37 +277,37 @@ void InitBg(LPDIRECT3DDEVICE8 lpD3DDev)
 </pre>
 
 <p>
-���i�����A�o�[�e�b�N�X�o�b�t�@�̃��b�N�i���̃v���O��������g���Ȃ��悤�ɐ錾����j�ł���ApFloorVB->Lock �̌オ�����ł��B<br>
-�������A���x�N�g���̒�`�ł��B����̏��͕��ʂȂ̂ŁA����ł���S�Ă��������x�N�g���ɂȂ��Ă��܂��B<br>
-��蕡�G�ȃ��f���̏ꍇ�́A����ɉ��������x�N�g�����`���Ȃ��Ă͂Ȃ�܂���B<br>
-���̕��@�́i��ʓI�ȏꍇ�́j�A�m��܂���B�ŋ߂̃��f�����O�c�[���͓͂f���o����̂��ȁH<br>
-���ʂ́A�e�N�X�`���[�̏�����͏�����Ȃ̂ŁA���̏���p���Ċ��x�N�g�����쐬����̂��Ǝv���܂��B<br>
-�Ǝv������ADirectX8.1�̒ǉ��� D3DXComputeTangent ���āA���ł��傤�B���A���ꂩ�H
+普段よりも、バーテックスバッファのロック（他のプログラムから使えないように宣言する）である、pFloorVB->Lock の後が長いです。<br>
+ここが、基底ベクトルの定義です。今回の床は平面なので、平らであり全てが同じ基底ベクトルになっています。<br>
+より複雑なモデルの場合は、それに応じた基底ベクトルを定義しなくてはなりません。<br>
+その方法は（一般的な場合は）、知りません。最近のモデリングツールはは吐き出せるのかな？<br>
+普通は、テクスチャーの上方向は上向きなので、この情報を用いて基底ベクトルを作成するのだと思います。<br>
+と思ったら、DirectX8.1の追加の D3DXComputeTangent って、何でしょう。こ、これか？
 </p>
 <p>
-���Ƃ́A�K���ɃC���f�b�N�X�o�b�t�@���`���āA���_�V�F�[�_�[�����[�h���Ă��܂��B<br>
-������ւ�͓Ǝ��֐��ł����A�܂������B�ł������܂���B
+あとは、適当にインデックスバッファを定義して、頂点シェーダーをロードしています。<br>
+ここらへんは独自関数ですが、まだ未発達でございまする。
 </p>
 
 <p>
-���́A�`�敔���ł��B<br>
-���f�����W�n����X�N���[�����W�n�ւ̕ϊ��s��𒸓_�V�F�[�_�[�̒萔���W�X�^�ɒǉ����܂��B<br>
-�܂��A���f�����W�n�ł̃��C�g�̕����x�N�g�����ݒ肵�܂��B<br>
-�V�����̂́AD3DTOP_DOTPRODUCT3 �ł��B<br>
-D3DTSS_COLOROP (�e�e�N�X�`���[�X�e�[�W�ł̃e�N�X�`���[�Ⓒ�_�F�̑g�ݍ��킹���@)�̒l�̈�ł��B<br>
-D3DTOP_DOTPRODUCT3 �́AD3DTSS_COLORARG1 �� D3DTSS_COLORARG2 �̒l���x�N�g���Ƃ݂Ȃ��āA���̓��ς��Ƃ�܂��B<br>
-D3DTSS_COLORARG1 �� D3DTSS_COLORARG2 �ɖ@���}�b�v�A���C�g�x�N�g���������Ă���΁A�s�N�Z���P�ʂł̕��s�����̌v�Z�ɂȂ�܂��B<br>
-���Ƃ́A�e�N�X�`���[�������āA�ŏI�I�ȏo�͂ɂ��܂��B
+次は、描画部分です。<br>
+モデル座標系からスクリーン座標系への変換行列を頂点シェーダーの定数レジスタに追加します。<br>
+また、モデル座標系でのライトの方向ベクトルも設定します。<br>
+新しいのは、D3DTOP_DOTPRODUCT3 です。<br>
+D3DTSS_COLOROP (各テクスチャーステージでのテクスチャーや頂点色の組み合わせ方法)の値の一つです。<br>
+D3DTOP_DOTPRODUCT3 は、D3DTSS_COLORARG1 と D3DTSS_COLORARG2 の値をベクトルとみなして、その内積をとります。<br>
+D3DTSS_COLORARG1 と D3DTSS_COLORARG2 に法線マップ、ライトベクトルが入っていれば、ピクセル単位での並行光源の計算になります。<br>
+あとは、テクスチャーを混ぜて、最終的な出力にします。
 </p>
 <pre class="CodeBlock">
 void DrawBg(LPDIRECT3DDEVICE8 lpD3DDev, D3DXMATRIX mWorld, D3DXMATRIX mView, D3DXMATRIX mProj)
 {
-    <Font color = cyan>// ��
+    <Font color = cyan>// 空
     
-    // ��������������
+    // 略････････････
     
     
-    // ��</Font>
+    // 床</Font>
     D3DXMATRIX m = mWorld * mView * mProj;
     D3DXMatrixTranspose( &m ,  &m);
     lpD3DDev->SetVertexShaderConstant(0,&m, 4);
@@ -320,7 +320,7 @@ void DrawBg(LPDIRECT3DDEVICE8 lpD3DDev, D3DXMATRIX mWorld, D3DXMATRIX mView, D3D
     lpD3DDev->SetVertexShaderConstant(13, &lightDir, 1);
     
     lpD3DDev->SetTexture(0,pNormalTex);
-    <Font color = yellow>lpD3DDev->SetTextureStageState(0,D3DTSS_COLOROP,    D3DTOP_DOTPRODUCT3);</Font>    <Font color = cyan>// �����</Font>
+    <Font color = yellow>lpD3DDev->SetTextureStageState(0,D3DTSS_COLOROP,    D3DTOP_DOTPRODUCT3);</Font>    <Font color = cyan>// これ肝</Font>
     lpD3DDev->SetTextureStageState(0,D3DTSS_COLORARG1,  D3DTA_TEXTURE);
     lpD3DDev->SetTextureStageState(0,D3DTSS_COLORARG2,  D3DTA_DIFFUSE);
     lpD3DDev->SetTextureStageState(0,D3DTSS_ADDRESSU,   D3DTADDRESS_WRAP);
@@ -343,59 +343,59 @@ void DrawBg(LPDIRECT3DDEVICE8 lpD3DDev, D3DXMATRIX mWorld, D3DXMATRIX mView, D3D
 </pre>
 
 <p>
-��Еt���́A�����̗p�ɃV�F�[�_�[�v���O������e�N�X�`���[���J�����邾���Ȃ̂ŁA�K���ɂǂ����B
+後片付けは、いつもの用にシェーダープログラムやテクスチャーを開放するだけなので、適当にどうぞ。
 </p>
 
-<h2>���s�N�Z���V�F�[�_�[��</h2>
+<h2>■ピクセルシェーダー版</h2>
 
 <p>
-�����������s�N�Z���V�F�[�_�[�ł�����Ă݂܂���
-(�s�N�Z���V�F�[�_�[�ł́A��̏����łȂ��������F���܂�ł���̂ō��؂������肵�܂���)�B<br>
-�\�[�X�t�@�C���͎��̂��̂ł��B
+同じ処理をピクセルシェーダーでもやってみました
+(ピクセルシェーダー版は、上の処理でなかった環境色を含んでいるので豪華だったりしますが)。<br>
+ソースファイルは次のものです。
 </p>
 <ul style = "LIST-STYLE-TYPE:none">
-<li><a href="bumpps.lzh">bumpps.lzh (�s�N�Z���V�F�[�_�[�Ńo���v�}�b�v�̃\�[�X)</a>
+<li><a href="bumpps.lzh">bumpps.lzh (ピクセルシェーダー版バンプマップのソース)</a>
 </ul>
 
 <p>
-�ǉ��A�ύX���ꂽ�v���O�����́A�ȉ��ɂȂ�܂��B
+追加、変更されたプログラムは、以下になります。
 </p>
 <table>
-<tr><td><a href="bg_psh_ps.html">bg.psh</a></td><td>�s�N�Z���V�F�[�_�[�v���O�����B</td></tr>
-<tr><td><a href="bg_cpp_ps.html">bg.cpp</a></td><td>�n�ʁ{�V�~���̕`��B</td></tr>
+<tr><td><a href="bg_psh_ps.html">bg.psh</a></td><td>ピクセルシェーダープログラム。</td></tr>
+<tr><td><a href="bg_cpp_ps.html">bg.cpp</a></td><td>地面＋天円柱の描画。</td></tr>
 </table>
 
 <p>
-�ł́A���g���Љ�܂��B<br>
-�܂��́A�s�N�Z���V�F�[�_�[�v���O���� bg.psh �ł��B<br>
-�Œ背�W�X�^�Ɋ��F�̒l�����܂����B
+では、中身を紹介します。<br>
+まずは、ピクセルシェーダープログラム bg.psh です。<br>
+固定レジスタに環境色の値を入れました。
 </p>
 <pre class="CodeBlock">
 ps.1.0
 
-def c0, 0.3f, 0.3f, 0.3f, 0.0f    <Font color = cyan>; �A���r�G���g�F</Font>
+def c0, 0.3f, 0.3f, 0.3f, 0.0f    <Font color = cyan>; アンビエント色</Font>
 
-tex t0                            <Font color = cyan>; �@���}�b�v�̓ǂݍ���</Font>
-tex t1                            <Font color = cyan>; �f�J�[���e�N�X�`���[�̓ǂݍ���</Font>
+tex t0                            <Font color = cyan>; 法線マップの読み込み</Font>
+tex t1                            <Font color = cyan>; デカールテクスチャーの読み込み</Font>
 
-dp3_sat   r1,     t0_bx2, v0_bx2  <Font color = cyan>; �@���}�b�v�ƒ��_�F(���C�g�x�N�g��)�Ƃ̓���</Font>
-add       r1,     r1,     c0      <Font color = cyan>; �A���r�G���g�F�������āA���C�g�̋��������肷��</Font>
-mul_sat   r0.rgb, r1,     t1      <Font color = cyan>; ���C�g�̋����ƃe�N�X�`���������ĐF���v�Z����</Font>
-mul r0.a, t1.a,   v0.a            <Font color = cyan>; �e�N�X�`���ƒ��_�F�̃A���t�@����Z</Font>
+dp3_sat   r1,     t0_bx2, v0_bx2  <Font color = cyan>; 法線マップと頂点色(ライトベクトル)との内積</Font>
+add       r1,     r1,     c0      <Font color = cyan>; アンビエント色を加えて、ライトの強さを決定する</Font>
+mul_sat   r0.rgb, r1,     t1      <Font color = cyan>; ライトの強さとテクスチャをかけて色を計算する</Font>
+mul r0.a, t1.a,   v0.a            <Font color = cyan>; テクスチャと頂点色のアルファを乗算</Font>
 </pre>
 <p>
-�@���}�b�v�̃x�N�g���l�ƁA���_�F�� oD0 �̏o�͂ł��� v0 �� _bx2 ���g���āA-1����1�͈̔͂ɖ߂��܂��B<br>
-�����āAdp3 ���߂��g���āA���όv�Z���āA�e�s�N�Z���̋P�x���v�Z���܂��B<br>
-���̌�ɁA���F����������A�f�J�[�����|���āA�ŏI�I�ȃs�N�Z���̐F���v�Z���܂��B
-�������́A�V���v���Ƀf�J�[���e�N�X�`���[�̐����ƃ��C�g�̌��ʂ��|�������̂�p���Ă����܂��B
+法線マップのベクトル値と、頂点色の oD0 の出力である v0 を _bx2 を使って、-1から1の範囲に戻します。<br>
+そして、dp3 命令を使って、内積計算して、各ピクセルの輝度を計算します。<br>
+その後に、環境色を加えた後、デカールを掛けて、最終的なピクセルの色を計算します。
+α成分は、シンプルにデカールテクスチャーの成分とライトの結果を掛けたものを用いておきます。
 </p>
 
 <p>
-��́Abg.cpp �ł��B<br>
-�������ƌ�n���́A�s�N�Z���V�F�[�_�[�v���O�����̃��[�h��J�����ǉ����ꂽ�����Ȃ̂ŁA�ȗ����܂��B<br>
-�`��֐��� DrawBg �ł����A�ȒP�ɂȂ��Ă��܂��B<br>
-D3DTSS_COLOROP �͐ݒ肵�܂���i���̒��g���s�N�Z���V�F�[�_�[�v���O�����ł����瓖�R�ł����j�B<br>
-��́A�s�N�Z���V�F�[�_�[�̐ݒ肾���ł��B
+後は、bg.cpp です。<br>
+初期化と後始末は、ピクセルシェーダープログラムのロードや開放が追加されただけなので、省略します。<br>
+描画関数の DrawBg ですが、簡単になっています。<br>
+D3DTSS_COLOROP は設定しません（その中身がピクセルシェーダープログラムですから当然ですが）。<br>
+後は、ピクセルシェーダーの設定だけです。
 </p>
 
 
@@ -403,11 +403,11 @@ D3DTSS_COLOROP �͐ݒ肵�܂���i���̒��g���s�N�Z���V�F�[�_�[�v���O�����ł����瓖�
 // ----------------------------------------------------------------------------
 void DrawBg(LPDIRECT3DDEVICE8 lpD3DDev, D3DXMATRIX mWorld, D3DXMATRIX mView, D3DXMATRIX mProj)
 {
-    <Font color = cyan>// ��
+    <Font color = cyan>// 空
     
-    // ��������������
+    // 略････････････
     
-    // ��</Font>
+    // 床</Font>
     D3DXMATRIX m = mWorld * mView * mProj;
     D3DXMatrixTranspose( &m ,  &m);
     lpD3DDev->SetVertexShaderConstant(0,&m, 4);
@@ -436,18 +436,18 @@ void DrawBg(LPDIRECT3DDEVICE8 lpD3DDev, D3DXMATRIX mWorld, D3DXMATRIX mView, D3D
 }
 </pre>
 
-<h2>���Ō��</h2>
+<h2>■最後に</h2>
 
 <p>
-�o���v�}�b�v�ɒ��킵�Ă݂܂����B<br>
-�����Ɗۂ��Ȃ��Ɩڗ����Ȃ���������܂���ˁB
+バンプマップに挑戦してみました。<br>
+もっと丸くないと目立たないかもしれませんね。
 </p>
 
 <BR CLEAR=ALL>
 <BR CLEAR=ALL>
 <BR CLEAR=ALL>
 <center>
-<p><a href="../index.html">���ǂ�</a></p>
+<p><a href="../index.html">もどる</a></p>
 <p><a href="mailto:imagire@gmail.com">imagire@gmail.com</a></p>
 </center>
 </body>

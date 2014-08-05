@@ -1,386 +1,386 @@
 <head>
-	<title>t-pot�wVertex Shader:�������C�e�B���O�x</title>
+	<title>t-pot『Vertex Shader:半球ライティング』</title>
 	<link rel="stylesheet" type="text/css" href="../if.css">
 </head>
-<meta http-equiv=Content-Type content="text/html; charset=shift_jis">
+<meta http-equiv=Content-Type content="text/html; charset=UTF-8">
 <body text=#ffffff>
 
 <div class="contents">
 <center>
 <BR CLEAR=ALL>
 <BR CLEAR=ALL>
-<h1>Vertex Shader:�������C�e�B���O</h1><br>
-<h3>�`������̕W���Ɩ��ƂȂ肤�邩�H�`</h3>
+<h1>Vertex Shader:半球ライティング</h1><br>
+<h3>～次世代の標準照明となりうるか？～</h3>
 <BR CLEAR=ALL>
 <BR CLEAR=ALL>
 <BR CLEAR=ALL>
 </center>
 
-<h2>���͂��߂�</h2>
+<h2>■はじめに</h2>
 
 <image src = "title.jpg">
 <p>
-����́A���� (hemisphere) ���C�e�B���O�ł��B<br>
-�ʏ�p�����Ă�����s�g�U���ł́A���̓�����Ȃ����̕����͕��R�ȁi�ʏ�͊����Ƃ��ė^����j�F�ɂȂ�܂����A
-�������C�e�B���O�́A���̕����Ɋւ��Ă��ڍׂȏ���^���܂��B<br>
-�܂��A���̃p�����[�^�͏��Ȃ��A�y���v�Z�ŕ\���ł��܂��B
+今回は、半球 (hemisphere) ライティングです。<br>
+通常用いられている並行拡散光では、光の当たらない裏の部分は平坦な（通常は環境光として与える）色になりますが、
+半球ライティングは、裏の部分に関しても詳細な情報を与えます。<br>
+また、そのパラメータは少なく、軽い計算で表現できます。
 </p>
 
 <p>
-����̃\�[�X�́A���̂��̂ł��B
+今回のソースは、次のものです。
 </p>
 <ul style = "LIST-STYLE-TYPE:none">
-<li><a href="hemisphere.lzh">hemisphere.lzh (�������C�e�B���O�T���v���̃\�[�X)</a>
+<li><a href="hemisphere.lzh">hemisphere.lzh (半球ライティングサンプルのソース)</a>
 </ul>
 
 <p>
-����́AXFC �ŗp�����\�[�X��ύX���č���Ă��܂��B�]���āA�������t�@�C�����͑����Ȃ��Ă��܂��B<br>
-��ȓ��e�́A���̂Ƃ���ł��B
+今回は、XFC で用いたソースを変更して作っています。従って、いつもよりファイル数は多くなっています。<br>
+主な内容は、次のとおりです。
 </p>
 <table>
-<tr><td><a href="main_h.html">main.h</a></td><td>��{�I�Ȓ萔�ȂǁB������o�Ԗ����B</td></tr>
-<tr><td><a href="main_cpp.html">main.cpp</a></td><td>�`��Ɋ֌W���Ȃ��V�X�e���I�ȕ����B�ύX�������̂ŁA�o�Ԗ����B</td></tr>
-<tr><td><a href="draw_h.html">draw.h</a></td><td>�`��̊e�֐��̒�`�B���ɈӖ������̂ŏo�Ԗ����B</td></tr>
-<tr><td><a href="draw_cpp.html">draw.cpp</a></td><td>���C���̕`�敔���B��ɂ��������������B</td></tr>
-<tr><td><a href="font_h.html">font.h</a></td><td>FPS�\���p�B���o�B</td></tr>
-<tr><td><a href="font_cpp.html">font.cpp</a></td><td>FPS�\���p�B���o�B</td></tr>
-<tr><td><a href="bg_cpp.html">bg.cpp</a></td><td>�n�ʁ{�V�~���̕`��B������������B</td></tr>
-<tr><td><a href="light_eff_cpp.html">light_eff.cpp</a></td><td>���C�g�̕�����������郉�C����`��BXFC�̂��̂���A�����o���B</td></tr>
-<tr><td>�@</td></tr>
-<tr><td><a href="diffuse_vsh.html">diffuse.vsh</a></td><td>���_�V�F�[�_�[�v���O�����B�V���v���ȕ��s�����{�����̃��C�g�B</td></tr>
-<tr><td><a href="specular_vsh.html">specular.vsh</a></td><td>���_�V�F�[�_�[�v���O�����B���_�F�ɂ��X�y�L�����[���C�g�B</td></tr>
-<tr><td><a href="texspec_vsh.html">texspec_vsh.vsh</a></td><td>���_�V�F�[�_�[�v���O�����B�e�N�X�`���[�ɂ��X�y�L�����[���C�g�B</td></tr>
-<tr><td><a href="hemisphere_vsh.html">hemisphere.vsh</a></td><td>���_�V�F�[�_�[�v���O�����B���s�������C�g�B</td></tr>
-<tr><td><a href="hemi_amb.vsh">hemi_amb.vsh</a></td><td>���_�V�F�[�_�[�v���O�����B���s�����{�����������C�g�B</td></tr>
-<tr><td><a href="hemi_spec_vsh.html">hemi_spec.vsh</a></td><td>���_�V�F�[�_�[�v���O�����B���s�����{���������{�X�y�L�����[���C�g�B</td></tr>
-<tr><td><a href="soft_vsh.html">soft.vsh</a></td><td>���_�V�F�[�_�[�v���O�����B���炩���g�D�[���B</td></tr>
-<tr><td><a href="edge_vsh.html">edge.vsh</a></td><td>���_�V�F�[�_�[�v���O�����B�֊s��`���B</td></tr>
+<tr><td><a href="main_h.html">main.h</a></td><td>基本的な定数など。今回も出番無し。</td></tr>
+<tr><td><a href="main_cpp.html">main.cpp</a></td><td>描画に関係しないシステム的な部分。変更が無いので、出番無し。</td></tr>
+<tr><td><a href="draw_h.html">draw.h</a></td><td>描画の各関数の定義。特に意味無いので出番無し。</td></tr>
+<tr><td><a href="draw_cpp.html">draw.cpp</a></td><td>メインの描画部分。主にここが説明される。</td></tr>
+<tr><td><a href="font_h.html">font.h</a></td><td>FPS表示用。既出。</td></tr>
+<tr><td><a href="font_cpp.html">font.cpp</a></td><td>FPS表示用。既出。</td></tr>
+<tr><td><a href="bg_cpp.html">bg.cpp</a></td><td>地面＋天円柱の描画。今回説明無し。</td></tr>
+<tr><td><a href="light_eff_cpp.html">light_eff.cpp</a></td><td>ライトの方向を説明するラインを描画。XFCのものから、抜き出し。</td></tr>
+<tr><td>　</td></tr>
+<tr><td><a href="diffuse_vsh.html">diffuse.vsh</a></td><td>頂点シェーダープログラム。シンプルな平行光源＋環境光のライト。</td></tr>
+<tr><td><a href="specular_vsh.html">specular.vsh</a></td><td>頂点シェーダープログラム。頂点色によるスペキュラーライト。</td></tr>
+<tr><td><a href="texspec_vsh.html">texspec_vsh.vsh</a></td><td>頂点シェーダープログラム。テクスチャーによるスペキュラーライト。</td></tr>
+<tr><td><a href="hemisphere_vsh.html">hemisphere.vsh</a></td><td>頂点シェーダープログラム。平行半球ライト。</td></tr>
+<tr><td><a href="hemi_amb.vsh">hemi_amb.vsh</a></td><td>頂点シェーダープログラム。平行光源＋半球環境光ライト。</td></tr>
+<tr><td><a href="hemi_spec_vsh.html">hemi_spec.vsh</a></td><td>頂点シェーダープログラム。平行光源＋半球環境光＋スペキュラーライト。</td></tr>
+<tr><td><a href="soft_vsh.html">soft.vsh</a></td><td>頂点シェーダープログラム。やわらかいトゥーン。</td></tr>
+<tr><td><a href="edge_vsh.html">edge.vsh</a></td><td>頂点シェーダープログラム。輪郭を描く。</td></tr>
 </table>
-<image src = "spec_bmp.jpg" width = 64 height=64>spec.bmp (�X�y�L�����p)
-<image src = "metal_bmp.jpg" width = 64 height=64>metal.bmp (���^���p)
-<image src = "soft_bmp.jpg" width = 64 height=64>soft.bmp (���炩���g�D�[���p)<br>
-<image src = "tile_bmp.jpg" width = 64 height=64>tile.bmp (���f�J�[��)
-<image src = "sky_bmp.jpg" width = 64 height=64>sky.bmp (��f�J�[��)
+<image src = "spec_bmp.jpg" width = 64 height=64>spec.bmp (スペキュラ用)
+<image src = "metal_bmp.jpg" width = 64 height=64>metal.bmp (メタル用)
+<image src = "soft_bmp.jpg" width = 64 height=64>soft.bmp (やわらかいトゥーン用)<br>
+<image src = "tile_bmp.jpg" width = 64 height=64>tile.bmp (床デカール)
+<image src = "sky_bmp.jpg" width = 64 height=64>sky.bmp (空デカール)
 <p>
-���ƁA�����̗l�ɁA���f���ƁA���s�t�@�C���y�сA�v���W�F�N�g�t�@�C���ƃ��j���[�̃��\�[�X�t�@�C���������Ă��܂��B
+あと、いつもの様に、モデルと、実行ファイル及び、プロジェクトファイルとメニューのリソースファイルが入っています。
 </p>
 
-<h2>���e�N�X�`���[�}�b�v�̂����炢</h2>
+<h2>■テクスチャーマップのおさらい</h2>
 
 <p>
-���āA���܂܂ł̉��񂩏o�Ă����e�N�X�`���[�}�b�v�Ɋւ��Ă����炢���܂��B<br>
-���_�V�F�[�_�[�ł́A�K���ȕ��������_�����e�N�X�`���[��UV���W�Ɏw��ł��܂��B<br>
-���Ƃ��΁Av3 �� ���b�V���̖@���ƁA�Œ背�W�X�^ c0 �� (0.0f, 1.0f, 0.0f, 0.0f) �����Ă����A
+さて、いままでの何回か出てきたテクスチャーマップに関しておさらいします。<br>
+頂点シェーダーでは、適当な浮動小数点数をテクスチャーのUV座標に指定できます。<br>
+たとえば、v3 に メッシュの法線と、固定レジスタ c0 に (0.0f, 1.0f, 0.0f, 0.0f) を入れておき、
 </p>
 <pre class="CodeBlock">
-dp3 oT0.xy, v3, c0               ; oT0.xy = N�L
+dp3 oT0.xy, v3, c0               ; oT0.xy = N･L
 </pre>
 <p>
-�Ƃ��āA�e�N�X�`���[�ɁA
+として、テクスチャーに、
 </p>
 <image src = "diffuse_map.jpg"><br>
 <br>
 <image src = "diffuse_graph.gif">
 <p>
-���g���΁Av3.y ���P�̂Ƃ��� U �l�� 1.0f �ɂȂ�A0 �ȉ��̎��ɂ� 0.0f �ɂȂ�̂ŁA<br>
-y���̐^��ɂ��镽�s��������̃��C�e�B���O���\���ł��܂��B
+を使えば、v3.y が１のときに U 値が 1.0f になり、0 以下の時には 0.0f になるので、<br>
+y軸の真上にある平行光源からのライティングが表現できます。
 </p>
 <p>
-����Ȍv�Z�͒��_�F�ł������ł���̂�(oT0 �� oD0 �ɂ���΂悢�B�]���ȃe�N�X�`���[������Ȃ����A�����I�B�܂��AVRAM ��Q��Ȃ����߂ɂ��A���_�F�̂ق����]�܂���)�A���ʂ͒��_�F��p���܂��B<br>
-���̌v�Z���З͂𔭊�����̂́A�X�y�L�����i���ʌ���j�̂Ƃ����ł��B<br>
-�X�y�L�����̎��ɂ́Ac0 ��K���ȃx�N�g���ɂ��邱�Ƃɂ���āA�S�������v�Z�Ō���݂̍�\�������邱�Ƃ��ł��܂��B<br>
-���̉摜�͕��s�����̂��̂ł��B<br>
+こんな計算は頂点色でも実装できるので(oT0 を oD0 にすればよい。余分なテクスチャーがいらない分、効率的。また、VRAM を浪費しないためにも、頂点色のほうが望ましい)、普通は頂点色を用います。<br>
+この計算が威力を発揮するのは、スペキュラ（鏡面光沢）のとき等です。<br>
+スペキュラの時には、c0 を適当なベクトルにすることによって、全く同じ計算で光沢の在る表現をすることができます。<br>
+次の画像は平行光源のものです。<br>
 </p>
 <image src = "diffuse.jpg" width = 323 height=252>
 <p>
-���̉摜�ɁA<a href="texspec_vsh.html">�X�y�L�����[�̃e�N�X�`���[�𒣂������̂�</a>�ȉ��̗p�ɂȂ�܂��B
+この画像に、<a href="texspec_vsh.html">スペキュラーのテクスチャーを張ったものは</a>以下の用になります。
 </p>
 <image src = "texspec.jpg" width = 323 height=252>
 <p>
-�܂��A���l�̌v�Z��<a href="specular_vsh.html">���_�F�ŕ\�������ꍇ</a>�ɂ́A�ȉ��ɂȂ�܂��B
+また、同様の計算を<a href="specular_vsh.html">頂点色で表現した場合</a>には、以下になります。
 </p>
 <image src = "spec.jpg" width = 323 height=252>
 <p>
-�e�N�X�`���[�𒣂����ꍇ�̂ق������ł����A����́A�e�N�X�`���[�̕`�����ɂ���Ă������̂ŁA�����͖��ł͂���܂���
-(����A���_�F������ꍇ�ɂ́A�����_�ׂ̂��悪�ł��Ȃ��̂ŁA�z���g�͖��Ȃ�ł����ǂ�)�B<br>
-���́AFPS �ł��B�e�N�X�`���[�𒣂����ق������_�F�����Ōv�Z�����ꍇ��������(FPS �̒l���傫��)�Ȃ��Ă��܂��B<br>
-���́A�e�N�X�`���[�𒣂����ꍇ�ɂ͒��_�F�̏ꍇ�����v�Z���y���Ȃ��Ă���̂ł���
-�i���_�F�ł́APhone �̃��f����p���Ă���A�e�N�X�`���[�ɂ̓n�[�t�x�N�g����p���Ă���j�A
-���������������Ă��e�N�X�`���[�ɂ����@�Ƀ����b�g������܂��B<br>
-����́A�e�N�X�`���[�̖͗l�����R�ɑւ����邱�Ƃł��B<br>
-�e�N�X�`���[�͉摜�t�@�C���Ȃ̂ŁA�Z�p�I�ȁw���邳 = x^4�x�̂悤�Ȑ����ɔ����܂���B<br>
-�e�N�X�`���[���܂���͗l
+テクスチャーを張った場合のほうがつるつるですが、これは、テクスチャーの描き方によってもかわるので、そこは問題ではありません
+(いや、頂点色をつける場合には、小数点のべき乗ができないので、ホントは問題なんですけどね)。<br>
+問題は、FPS です。テクスチャーを張ったほうが頂点色だけで計算した場合よりも速く(FPS の値が大きく)なっています。<br>
+実は、テクスチャーを張った場合には頂点色の場合よりも計算が軽くなっているのですが
+（頂点色では、Phone のモデルを用いており、テクスチャーにはハーフベクトルを用いている）、
+そこを差し引いてもテクスチャーによる方法にメリットがあります。<br>
+それは、テクスチャーの模様を自由に替えられることです。<br>
+テクスチャーは画像ファイルなので、算術的な『明るさ = x^4』のような制限に縛られません。<br>
+テクスチャーをまだら模様
 </p>
 <image src = "metal_bmp.jpg" width = 64 height=64>
 <p>
-�ɂ���΁A���̂悤�ȋ�������I�ȃ��C�e�B���O�ɕς��܂��B
+にすれば、下のような金属光沢的なライティングに変わります。
 </p>
 <image src = "metal.jpg" width = 323 height=252>
 <p>
-����́A����������ɕ`�������̂ł����A�Q�[���̂悤�ȁw����炵��������Ηǂ��x���E�ł́A����ł��\���ȏꍇ�������ł��B<br>
-���_�͒��_�F�̏ꍇ�Ɣ�ׂĉ𑜓x���Ⴂ���Ƃł��B<br>
-�e�N�X�`���[�̑傫���� 128 �� 256 ���x�����g���܂���(����ȏ�g���ƁA���̐l����g�������ƕ����������ł��傤(��))�B<br>
-���_�F�̏ꍇ�ɂ́A���������_���̉𑜓x���g����킯�ł�����e�N�X�`���[��������͌����܂���B<br>
-�e�N�X�`���[�̂ق����}�b�n�o���h���o�₷��������A�s���R�ȃM�U�M�U�������܂��B<br>
-���̌��ʂ́A��ł܂Ƃ߂ĕ`���{�[���̏ꍇ�̃����_�����O�ɔ@���Ɍ���Ă��܂��B
+これは、いいかげんに描いたものですが、ゲームのような『それらしく見えれば良い』世界では、これでも十分な場合が多いです。<br>
+欠点は頂点色の場合と比べて解像度が低いことです。<br>
+テクスチャーの大きさは 128 や 256 程度しか使えません(それ以上使うと、他の人から使いすぎと文句を言われるでしょう(笑))。<br>
+頂点色の場合には、浮動小数点分の解像度が使えるわけですからテクスチャーよりもあらは見えません。<br>
+テクスチャーのほうがマッハバンドが出やすかったり、不自然なギザギザが見えます。<br>
+この結果は、後でまとめて描くボールの場合のレンダリングに如実に現れています。
 </p>
 
 <p>
-���āA��̃v���O�����ł́A���ς����̏ꍇ�ɂ͎����I�ɃN���b�v����āA�e�N�X�`���[�� 0 �̒l���g���܂��B<br>
-�܂�A���̗����������ʂ́A�S�ē����F�ɂȂ�܂��B<br>
-���ʂɂ��قȂ�F���g����΁A���}�g�����܂��B<br>
-���̂��߂ɂ́A���ς̒l�͈̔́A-1.0f �` 1.0f �Ɋւ��āA�e�N�X�`���[�� U �l�� 0.0f �` 1.0f �ɑΉ�������Ηǂ��ł��B<br>
-��̓I�ɂ́A���̃��C�g�̕��� L = (lx, ly, lz) �ɑ΂��āA�Œ背�W�X�^�̒l�� c0 = (lx/2, ly/2, lz/2, 0.5) �ɂ��܂��B<br>
-�ȏ�̌Œ背�W�X�^��p���āA
+さて、上のプログラムでは、内積が負の場合には自動的にクリップされて、テクスチャーの 0 の値が使われます。<br>
+つまり、光の裏を向いた面は、全て同じ色になります。<br>
+裏面にも異なる色が使えれば、より抑揚がつきます。<br>
+そのためには、内積の値の範囲、-1.0f ～ 1.0f に関して、テクスチャーの U 値を 0.0f ～ 1.0f に対応させれば良いです。<br>
+具体的には、元のライトの方向 L = (lx, ly, lz) に対して、固定レジスタの値を c0 = (lx/2, ly/2, lz/2, 0.5) にします。<br>
+以上の固定レジスタを用いて、
 </p>
 <pre class="CodeBlock">
-dp4 oT0.xy, v3, c0               ; oT0.xy = (N�L)/2 + 0.5
+dp4 oT0.xy, v3, c0               ; oT0.xy = (N･L)/2 + 0.5
 </pre>
 <p>
-�̌v�Z���s���΁A0.0f �` 1.0f �͈̔͂œ��ς̑S�Ă͈̔͂��T�|�[�g�ł��܂��B<br>
-��قǂ̕��s�����̌��ʂ�\������ɂ́A���̂悤�ȃe�N�X�`���[��p����Ή\�ł��B
+の計算を行えば、0.0f ～ 1.0f の範囲で内積の全ての範囲をサポートできます。<br>
+先ほどの平行光源の結果を表現するには、下のようなテクスチャーを用いれば可能です。
 </p>
 <image src = "amb_map.jpg"><br>
 <br>
 <image src = "amb_graph.gif">
 <p>
-���݁A0.5 �ȉ��̕����͍��œh��Ԃ���Ă��܂����A������K���Ȗ͗l�œh��Ԃ��Η��ʂɂ��w�\��x���������邱�Ƃ��ł��܂��B<br>
-���_�̓e�N�X�`���[�̉𑜓x�������ɂȂ邱�Ƃł��B<br>
-�ŏ��Ɠ������ʂ𓾂邽�߂ɂ́A�e�N�X�`���[�̑傫����{�ɂ��Ȃ��Ă͂Ȃ�܂���B
+現在、0.5 以下の部分は黒で塗りつぶされていますが、ここを適当な模様で塗りつぶせば裏面にも『表情』を持たせることができます。<br>
+欠点はテクスチャーの解像度が半分になることです。<br>
+最初と同じ結果を得るためには、テクスチャーの大きさを倍にしなくてはなりません。
 </p>
 
-<h2>���������C�e�B���O</h2>
+<h2>■半球ライティング</h2>
 
 <p>
-���s�����Ɗ����̃��C�e�B���O�̃p�����[�^��
+平行光源と環境光のライティングのパラメータは
 </p>
 <table>
-<tr><td>1). ���s�����̌���</td></tr>
-<tr><td>2). ���s�����̐F</td></tr>
-<tr><td>3). �����̐F</td></tr>
+<tr><td>1). 平行光源の向き</td></tr>
+<tr><td>2). 平行光源の色</td></tr>
+<tr><td>3). 環境光の色</td></tr>
 </table>
 <p>
-�̂R�ł��B<br>
-�������C�e�B���O�́A�����悤�Ƀp�����[�^���R�Ə��Ȃ����C�e�B���O�ł��B<br>
-�������C�e�B���O�͈�l�Ȍ��ŏƂ炷�������㉺�������킹�����f���ł��B
+の３つです。<br>
+半球ライティングは、同じようにパラメータが３つと少ないライティングです。<br>
+半球ライティングは一様な光で照らす半球を上下から二つ合わせたモデルです。
 </p>
 <image src = "hemimodel.gif">
 <p>
-�p�����[�^�́A
+パラメータは、
 </p>
 <table>
-<tr><td>1). �㔼���̐F</td></tr>
-<tr><td>2). �������̐F</td></tr>
-<tr><td>3). �����̎�</td></tr>
+<tr><td>1). 上半球の色</td></tr>
+<tr><td>2). 下半球の色</td></tr>
+<tr><td>3). 半球の軸</td></tr>
 </table>
 <p>
-�ɁA�Ȃ�܂��B<br>
-��L�̔��������킹�����f���̏ꍇ�ɁA�@���Ɣ����̎��̌������Ƃ̏ꍇ�̐F�́A
+に、なります。<br>
+上記の半球を合わせたモデルの場合に、法線と半球の軸の向きがθの場合の色は、
 </p>
 <pre class="CodeBlock">
-���_�F = 0.5(1+cos��)�V���F + 0.5(1-cos��)�n���F
+頂点色 = 0.5(1+cosθ)天球色 + 0.5(1-cosθ)地球色
 </pre>
 <p>
-�ɂȂ�܂��B<br>
-���̎��̓��o�@�́A<A HREF="http://cgi3.tky.3web.ne.jp/~tkano/">Kano����</a>�̃z�[���y�[�W�ɂ���܂��̂ŁA
-��������Q�Ƃ���ƍō��ł��B<br>
-���_�V�F�[�_�[�v���O�����͎��̂悤�ɂȂ�܂��B
+になります。<br>
+この式の導出法は、<A HREF="http://cgi3.tky.3web.ne.jp/~tkano/">Kanoさん</a>のホームページにありますので、
+そちらを参照すると最高です。<br>
+頂点シェーダープログラムは次のようになります。
 </p>
 
 <pre class="CodeBlock">
 <Font color = cyan>; c0     -- {0.0, 0.5, 1.0, 2.0}
-; c0-3   -- world + �r���[ + �����ϊ��s��
+; c0-3   -- world + ビュー + 透視変換行列
 ; c12    -- {0.0, 0.5, 1.0, 2.0}
-; c15    -- ���C�g�̐F(���b�V���̐F)
-; c18    -- ���C�g�̐F(�㔼���̐F)
-; c19    -- ���C�g�̐F(�������̐F)
-; c20    -- �����̎�
+; c15    -- ライトの色(メッシュの色)
+; c18    -- ライトの色(上半球の色)
+; c19    -- ライトの色(下半球の色)
+; c20    -- 半球の軸
 ;
-; v0	���_�̍��W�l
-; v3	�@���x�N�g�� (w������1.0f)
-; v7	�e�N�X�`�����W0</Font>
+; v0	頂点の座標値
+; v3	法線ベクトル (w成分は1.0f)
+; v7	テクスチャ座標0</Font>
 
 vs.1.0
 
-<Font color = cyan>;���W�ϊ�</Font>
+<Font color = cyan>;座標変換</Font>
 dp4 oPos.x,  v0,   c0
 dp4 oPos.y,  v0,   c1
 dp4 oPos.z,  v0,   c2
 dp4 oPos.w,  v0,   c3
 
-<Font color = cyan>;�������C�e�B���O</Font>
-dp3 r0,      v3,   c20          <Font color = cyan>; (N�A)</Font>
+<Font color = cyan>;半球ライティング</Font>
+dp3 r0,      v3,   c20          <Font color = cyan>; (N･A)</Font>
 mov r1,      c12.y              <Font color = cyan>; r1 = 0.5</Font>
-mad r0,      r0,   r1, r1       <Font color = cyan>; r0 = (1+N�A)/2 = ��</Font>
+mad r0,      r0,   r1, r1       <Font color = cyan>; r0 = (1+N･A)/2 = α</Font>
 
 mov r1,      c19                <Font color = cyan>; r1 = Ld</Font>
 add r1,      c18,  -r1          <Font color = cyan>; r1 = Lu-Ld</Font>
-mad r0,      r1,   r0,  c19     <Font color = cyan>; r0 = ��(Lu-Ld)+Ld = ��Lu + (1-��)Ld </Font>
+mad r0,      r1,   r0,  c19     <Font color = cyan>; r0 = α(Lu-Ld)+Ld = αLu + (1-α)Ld </Font>
 mul oD0,     r0,   c15
 
-<Font color = cyan>; �e�N�X�`���[</Font>
+<Font color = cyan>; テクスチャー</Font>
 mov oT0,     v7
 </pre>
 <p>
-cos�� �͒��_�Ɣ����̌����Ă��鎲�Ƃ̓��ς����Όv�Z�ł���̂ŁA���Ƃ͂�������`�ɑg�ݍ��킹��ΏI���ł��B<br>
-���̃v���O�����ɂ�錋�ʂ́A���̂悤�ɂȂ�܂��B
+cosθ は頂点と半球の向いている軸との内積を取れば計算できるので、あとはそれらを線形に組み合わせれば終了です。<br>
+このプログラムによる結果は、次のようになります。
 </p>
 <image src = "hemi.jpg" width = 323 height=252>
 <p>
-�V���́A���_�F=0.5(1+cos��)�V���F + 0.5(1-cos��)�n���F�̕�����cos�Ƃ�U�l�Ƃ��ăe�N�X�`���[�ŕ`���΁A
-�O�͂ŏq�ׂ��A-1.0f �` 1.0f �̒l���e�N�X�`���[��U�l�ɑΉ���������@�ŁA���Ȃ��X�e�b�v���ŕ\�����邱�Ƃ��ł��܂�<br>
-(��قǂ̃X�y�L�����[�v�Z�̃��C�g�̕����𔼋��̎��ɒu�������邾���ł�)�B<br>
-�e�N�X�`���[�X�e�[�W���]���Ă���΁A��������g���ق��������ł��傤�B
+天球の、頂点色=0.5(1+cosθ)天球色 + 0.5(1-cosθ)地球色の部分をcosθをU値としてテクスチャーで描けば、
+前章で述べた、-1.0f ～ 1.0f の値をテクスチャーのU値に対応させる方法で、少ないステップ数で表現することができます<br>
+(先ほどのスペキュラー計算のライトの方向を半球の軸に置き換えるだけです)。<br>
+テクスチャーステージが余っていれば、そちらを使うほうが高速でしょう。
 </p>
 <p>
-���āA����������A�}�g�̏��Ȃ����C�e�B���O���Ɗ����܂����B<br>
-�����́A�\�̐F�����܂ŉ�肱�ޕ��O���f�[�V�����̔Z�W�����邽�߂ł��傤���H<br>
-�Ƃ������ƂŁA�������C�e�B���O�ɂ���ɕ��s������ǉ����Ă݂܂��B
+さて、やった感じ、抑揚の少ないライティングだと感じました。<br>
+原因は、表の色が裏まで回りこむ分グラデーションの濃淡が減るためでしょうか？<br>
+ということで、半球ライティングにさらに平行光源を追加してみます。
 </p>
 <image src = "ambmodel.gif">
 <p>
-�����𔼋����C�g�ɒu�����������ɂȂ�܂��B<br>
-���ŏ����ƁA
+環境光を半球ライトに置きかえた事になります。<br>
+式で書くと、
 </p>
 <pre class="CodeBlock">
-���_�F = max(N�L, 0) + 0.5(1+cos��)*�V���F + 0.5(1-cos��)*�n���F
+頂点色 = max(N･L, 0) + 0.5(1+cosθ)*天球色 + 0.5(1-cosθ)*地球色
 </pre>
 <p>
-�ɂȂ�܂��B<br>
-�������C�e�B���O�̎����x���ɕ��s�i���������j�ɂ���ƁA���̉摜�������܂��B
+になります。<br>
+半球ライティングの軸をＹ軸に平行（鉛直方向）にすると、次の画像が得られます。
 </p>
 <image src = "hemiamb.jpg" width = 323 height=252>
 <p>
-�n�ʂ̐F���ʂ����w�Ƃ�Ԃ��x�̕\���Ƃ��Ď󂯎~�߂��܂��B<br>
-�܂��A�X�y�L�����[������ɉ������ꍇ�ɂ́A
+地面の色を写した『照り返し』の表現として受け止められます。<br>
+また、スペキュラーをさらに加えた場合には、
 </p>
 <image src = "hemispec.jpg" width = 323 height=252>
 <p>
-�̗l�ɂȂ�܂��B<br>
-���肰�Ȃ��ύX�ł����A���̗��̖ʂɊւ��Ă���o�Ă����悤�Ɋ����܂��B
+の様になります。<br>
+さりげない変更ですが、光の裏の面に関しても趣が出てきたように感じます。
 </p>
 
-<h2>�����܂��̃\�t�g�g�D�[��</h2>
+<h2>■おまけのソフトトゥーン</h2>
 
 <image src = "soft.jpg" width = 323 height=252>
 <p>
-�A�j���̃J�[�r�[�����܂����B<br>
-�z�̊ۂ������͖��炩��CG�ł��B<br>
-�����A���ʂ̃g�D�[���ł͂Ȃ��A���E���ڂ₯�Ă��܂����B<br>
-����ȃ����_�����O�����Ă݂܂����B
+アニメのカービーを見ました。<br>
+奴の丸さ加減は明らかにCGです。<br>
+ただ、普通のトゥーンではなく、境界がぼやけていました。<br>
+そんなレンダリングをしてみました。
 </p>
 <p>
-�g�����e�N�X�`���[��
+使ったテクスチャーは
 </p>
-<image src = "soft_bmp.jpg" width = 64 height=64>soft.bmp (���炩���g�D�[���p)<br>
+<image src = "soft_bmp.jpg" width = 64 height=64>soft.bmp (やわらかいトゥーン用)<br>
 <p>
-�ł��B<br>
-�^�����@���ƌ����̕����������ȏꏊ�Ȃ̂ŁA���̗����������O����F���Â��Ȃ�܂��B
+です。<br>
+真中が法線と光源の方向が垂直な場所なので、光の裏を向く直前から色が暗くなります。
 </p>
 
 <p>
-���_�V�F�[�_�[�v���O�����́A���̂悤�ɂȂ�܂��B
+頂点シェーダープログラムは、次のようになります。
 </p>
 <pre class="CodeBlock">
-<Font color = cyan>; c0-3   -- world + �r���[ + �����ϊ��s��
+<Font color = cyan>; c0-3   -- world + ビュー + 透視変換行列
 ; c12    -- {0.0, 0.5, 1.0, 2.0}
-; c13    -- ���C�g�̃x�N�g��
-; c15    -- ���C�g�{���f���̐F
-; v0	���_�̍��W�l
-; v3	�@���x�N�g�� (w������1.0f)
-; v7	�e�N�X�`�����W0</Font>
+; c13    -- ライトのベクトル
+; c15    -- ライト＋モデルの色
+; v0	頂点の座標値
+; v3	法線ベクトル (w成分は1.0f)
+; v7	テクスチャ座標0</Font>
 
 vs.1.0
 
-dp4 oPos.x,	v0,	  c0           <Font color = cyan>; ���W�ϊ�</Font>
+dp4 oPos.x,	v0,	  c0           <Font color = cyan>; 座標変換</Font>
 dp4 oPos.y,	v0,	  c1
 dp4 oPos.z,	v0,	  c2
 dp4 oPos.w,	v0,	  c3
 
-mov oD0,    c15                <Font color = cyan>; ���_�F</Font>
+mov oD0,    c15                <Font color = cyan>; 頂点色</Font>
 
 dp3 r0.w,   v3,    c13
 mul r0.w,   r0.w,  c12.y
-add oT1.xy, r0.w,  c12.y       <Font color = cyan>; oT1.xy = 0.5(N�L)+0.5</Font>
+add oT1.xy, r0.w,  c12.y       <Font color = cyan>; oT1.xy = 0.5(N･L)+0.5</Font>
 
-mov oT0,    v7                 <Font color = cyan>; �f�J�[���e�N�X�`���[</Font>
+mov oT0,    v7                 <Font color = cyan>; デカールテクスチャー</Font>
 </pre>
 <p>
-���W�X�^�̐ݒ�ɂ���ďo�͂����F��
+レジスタの設定によって出力される色は
 </p>
 <pre class="CodeBlock">
-�o�͐F = ���b�V���̐F * �f�J�[���e�N�X�`���[�̐F * soft.bmp�̐F
+出力色 = メッシュの色 * デカールテクスチャーの色 * soft.bmpの色
 </pre>
 <p>
-�ɁA�Ȃ�܂��B
+に、なります。
 </p>
 
 <p>
-�ʏ�̃g�D�[���Ȃ�A�F���Q�l�ɂ������蕪����̂ł����A����́A���̕����ɃO���f�[�V�������������Ă��܂��B<br>
-�Ƃ������ƂŁA�������炩���g�D�[���ɂȂ����Ǝv���܂��B<br>
-�������I�����W�Ȃ̂́A�Â������ɐF��t��������������ł��B<br>
-�ŏ����������̂ł����A���C�Ȃ������̂ł������܂����B<br>
-�e�N�X�`���[�Ŋ����������悤�Ȃ��̂ł����A���̂ق����A�j�����ۂ���ł͂Ȃ��ł��傤���H
+通常のトゥーンなら、色を２値にくっきり分けるのですが、今回は、その部分にグラデーションがかかっています。<br>
+ということで、少しやわらかいトゥーンになったと思います。<br>
+左側がオレンジなのは、暗い部分に色を付けたかったからです。<br>
+最初黒だったのですが、味気なかったのでこうしました。<br>
+テクスチャーで環境光をつけたようなものですが、このほうがアニメっぽいんではないでしょうか？
 </p>
 
-<h2>���܂Ƃ߂Ă݂��</h2>
+<h2>■まとめてみると</h2>
 
 <p>
-�ł́A����o�Ă������̂������g���ă����_�����O���Ă݂܂��B<br>
-�Ԃ̃��f���ł��܂����ꂽ�Ǝv�������́A������Ŋm�F���Ă��������B
+では、今回出てきたものを球を使ってレンダリングしてみます。<br>
+車のモデルでごまかされたと思った方は、こちらで確認してください。
 </p>
 
-<image src = "b_diffuse.jpg" width = 323 height=252>���s�����{����<br>
+<image src = "b_diffuse.jpg" width = 323 height=252>平行光源＋環境光<br>
 <p>
-�܂��A��{�B
+まぁ、基本。
 </p>
-<image src = "b_spec.jpg" width = 323 height=252>���_�F�ɂ��X�y�L����<br>
+<image src = "b_spec.jpg" width = 323 height=252>頂点色によるスペキュラ<br>
 <p>
-���ꂢ�Ȕ����ˁB
+きれいな白反射。
 </p>
-<image src = "b_texspec.jpg" width = 323 height=252>�e�N�X�`���[�ɂ��X�y�L����<br>
+<image src = "b_texspec.jpg" width = 323 height=252>テクスチャーによるスペキュラ<br>
 <p>
-��̂��̂�肿����ƃM�U�M�U���Ă邩�ȁH�B
+上のものよりちょっとギザギザしてるかな？。
 </p>
-<image src = "b_metal.jpg" width = 323 height=252>�����I����<br>
+<image src = "b_metal.jpg" width = 323 height=252>金属的光沢<br>
 <p>
-���ꂾ�����Ƃ��������ł��ˁB
+これだけだとおかしいですね。
 </p>
-<image src = "b_hemi.jpg" width = 323 height=252>���s����<br>
+<image src = "b_hemi.jpg" width = 323 height=252>平行半球<br>
 <p>
-���̕\���ɂ��������B
+月の表現にいいかも。
 </p>
-<image src = "b_hemiamb.jpg" width = 323 height=252>���s�����{��������<br>
+<image src = "b_hemiamb.jpg" width = 323 height=252>平行光源＋半球環境光<br>
 <p>
-�w�Ƃ�Ԃ��x�Ƃ��Ďg����Ǝv���܂��B�B
+『照り返し』として使えると思います。。
 </p>
-<image src = "b_hemispec.jpg" width = 323 height=252>���s�����{���������{�X�y�L����<br>
+<image src = "b_hemispec.jpg" width = 323 height=252>平行光源＋半球環境光＋スペキュラ<br>
 <p>
-���̒��ł́A��ԃ��A���ł͂Ȃ��ł��傤���H
+この中では、一番リアルではないでしょうか？
 </p>
-<image src = "b_soft.jpg" width = 323 height=252>���炩���g�D�[��<br>
+<image src = "b_soft.jpg" width = 323 height=252>やわらかいトゥーン<br>
 <p>
-���E���M�U�M�U���Ă��܂��ˁB
+境界がギザギザしていますね。
 </p>
 
-<h2>���Ō��</h2>
+<h2>■最後に</h2>
 
 <p>
-Kano ����ꉟ���̔������C�e�B���O�������Ă݂܂����B�����̒u�������Ƃ��āA�Ƃ�Ԃ���\������̂Ɏg���邩�Ȃ��Ǝv���Ă��܂��B
+Kano さん一押しの半球ライティングを試してみました。環境光の置き換えとして、照り返しを表現するのに使えるかなぁと思っています。
 </p>
 <p>
-���łɗ֊s���o�����Ă݂܂���(�g�b�v�̂�ł�)�B<br>
-<A HREF="http://home.att.ne.jp/yellow/hide_n/">�V�₳��</a>�̍��ꂽ�\�[�X���Q�l�ɁA�ꕔ�ύX���܂����B<br>
-�֊s�p�Ƀ��f�����i�ʏ탂�f�����������O�Ɂj<a href="edge_vsh.html">edge.vsh</a>�ŕ`�悵�܂��B<br>
-�X�N���[�����W�Ŗ@�������ɉ����o������A����Ɏ�O�ɉ����o���܂��B<br>
-�����_�����O��Ԃ́A�[�x�o�b�t�@�������݂ƕ\���J�����O����߂܂��B
+ついでに輪郭抽出もしてみました(トップのやつです)。<br>
+<A HREF="http://home.att.ne.jp/yellow/hide_n/">新坂さん</a>の作られたソースを参考に、一部変更しました。<br>
+輪郭用にモデルを（通常モデルを書くより前に）<a href="edge_vsh.html">edge.vsh</a>で描画します。<br>
+スクリーン座標で法線方向に押し出した後、さらに手前に押し出します。<br>
+レンダリング状態は、深度バッファ書き込みと表裏カリングをやめます。
 </p>
 
 <BR CLEAR=ALL>
 <BR CLEAR=ALL>
 <BR CLEAR=ALL>
 <center>
-<p><a href="../index.html">���ǂ�</a></p>
+<p><a href="../index.html">もどる</a></p>
 <p><a href="mailto:imagire@gmail.com">imagire@gmail.com</a></p>
 </center>
 </body>

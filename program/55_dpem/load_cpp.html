@@ -7,7 +7,7 @@
 <BODY TEXT="#000000" BGCOLOR="#FFFFFF">
 <PRE><FONT COLOR="#40F628">0001:</FONT> <FONT COLOR="#008000">// ----------------------------------------------------------------------------</FONT>
 <FONT COLOR="#40F628">0002:</FONT> <FONT COLOR="#008000">//</FONT>
-<FONT COLOR="#40F628">0003:</FONT> <FONT COLOR="#008000">// load.cpp - �ǂݍ��ݕ���</FONT>
+<FONT COLOR="#40F628">0003:</FONT> <FONT COLOR="#008000">// load.cpp - 読み込み部分</FONT>
 <FONT COLOR="#40F628">0004:</FONT> <FONT COLOR="#008000">// </FONT>
 <FONT COLOR="#40F628">0005:</FONT> <FONT COLOR="#008000">// Copyright (c) 2001 IF (if@kun-desu.ne.jp)</FONT>
 <FONT COLOR="#40F628">0006:</FONT> <FONT COLOR="#008000">// All Rights Reserved.</FONT>
@@ -19,9 +19,9 @@
 <FONT COLOR="#40F628">0012:</FONT> <FONT COLOR="#0000FF">#include</FONT> "<FONT COLOR="#600000">load.h</FONT>"
 <FONT COLOR="#40F628">0013:</FONT> 
 <FONT COLOR="#40F628">0014:</FONT> <FONT COLOR="#008000">// ----------------------------------------------------------------------------</FONT>
-<FONT COLOR="#40F628">0015:</FONT> <FONT COLOR="#008000">// ���_�̒�`</FONT>
+<FONT COLOR="#40F628">0015:</FONT> <FONT COLOR="#008000">// 頂点の定義</FONT>
 <FONT COLOR="#40F628">0016:</FONT> <FONT COLOR="#008000">// ----------------------------------------------------------------------------</FONT>
-<FONT COLOR="#40F628">0017:</FONT> <FONT COLOR="#008000">// �����f��</FONT>
+<FONT COLOR="#40F628">0017:</FONT> <FONT COLOR="#008000">// 元モデル</FONT>
 <FONT COLOR="#40F628">0018:</FONT> <FONT COLOR="#0000FF">typedef</FONT> <FONT COLOR="#0000FF">struct</FONT> {
 <FONT COLOR="#40F628">0019:</FONT>     <FONT COLOR="#0000FF">float</FONT> x,y,z;
 <FONT COLOR="#40F628">0020:</FONT>     <FONT COLOR="#0000FF">float</FONT> nx,ny,nz;
@@ -40,7 +40,7 @@
 <FONT COLOR="#40F628">0033:</FONT> };
 <FONT COLOR="#40F628">0034:</FONT> 
 <FONT COLOR="#40F628">0035:</FONT> <FONT COLOR="#008000">// ----------------------------------------------------------------------------</FONT>
-<FONT COLOR="#40F628">0036:</FONT> <FONT COLOR="#008000">// ���f��</FONT>
+<FONT COLOR="#40F628">0036:</FONT> <FONT COLOR="#008000">// モデル</FONT>
 <FONT COLOR="#40F628">0037:</FONT> <FONT COLOR="#008000">// ----------------------------------------------------------------------------</FONT>
 <FONT COLOR="#40F628">0038:</FONT> HRESULT CMyMesh::Load(LPDIRECT3DDEVICE8 lpD3DDev, <FONT COLOR="#0000FF">char</FONT> *filename)
 <FONT COLOR="#40F628">0039:</FONT> {
@@ -56,11 +56,11 @@
 <FONT COLOR="#40F628">0049:</FONT>                                 &amp;pMesh);
 <FONT COLOR="#40F628">0050:</FONT>     <FONT COLOR="#0000FF">if</FONT>(FAILED(hr)) <FONT COLOR="#0000FF">return</FONT> E_FAIL;
 <FONT COLOR="#40F628">0051:</FONT> 
-<FONT COLOR="#40F628">0052:</FONT>     <FONT COLOR="#008000">//���ёւ��Ă���</FONT>
+<FONT COLOR="#40F628">0052:</FONT>     <FONT COLOR="#008000">//並び替えておく</FONT>
 <FONT COLOR="#40F628">0053:</FONT>     pMesh-&gt;Optimize(D3DXMESHOPT_ATTRSORT, NULL, NULL, NULL, NULL, &amp;pMeshOpt);
 <FONT COLOR="#40F628">0054:</FONT>     RELEASE(pMesh);
 <FONT COLOR="#40F628">0055:</FONT> 
-<FONT COLOR="#40F628">0056:</FONT>     <FONT COLOR="#008000">// �傫���𒲂ׂĂ���</FONT>
+<FONT COLOR="#40F628">0056:</FONT>     <FONT COLOR="#008000">// 大きさを調べておく</FONT>
 <FONT COLOR="#40F628">0057:</FONT>     LPDIRECT3DVERTEXBUFFER8 pVB;
 <FONT COLOR="#40F628">0058:</FONT>     BYTE* pVByte;
 <FONT COLOR="#40F628">0059:</FONT>     pMeshOpt-&gt;GetVertexBuffer(&amp;pVB);
@@ -69,18 +69,18 @@
 <FONT COLOR="#40F628">0062:</FONT>     pVB-&gt;Unlock();
 <FONT COLOR="#40F628">0063:</FONT>     pVB-&gt;Release();
 <FONT COLOR="#40F628">0064:</FONT> 
-<FONT COLOR="#40F628">0065:</FONT>     <FONT COLOR="#008000">//�A�g���r���[�g�e�[�u��</FONT>
+<FONT COLOR="#40F628">0065:</FONT>     <FONT COLOR="#008000">//アトリビュートテーブル</FONT>
 <FONT COLOR="#40F628">0066:</FONT>     pMeshOpt-&gt;GetAttributeTable(NULL,&amp;<FONT COLOR="#0000FF">this</FONT>-&gt;dwNumMaterials);
 <FONT COLOR="#40F628">0067:</FONT>     <FONT COLOR="#0000FF">this</FONT>-&gt;pSubsetTable = <FONT COLOR="#0000FF">new</FONT> D3DXATTRIBUTERANGE[<FONT COLOR="#0000FF">this</FONT>-&gt;dwNumMaterials];
 <FONT COLOR="#40F628">0068:</FONT>     pMeshOpt-&gt;GetAttributeTable(<FONT COLOR="#0000FF">this</FONT>-&gt;pSubsetTable, &amp;<FONT COLOR="#0000FF">this</FONT>-&gt;dwNumMaterials);
 <FONT COLOR="#40F628">0069:</FONT> 
-<FONT COLOR="#40F628">0070:</FONT>     <FONT COLOR="#008000">// FVF�ϊ�</FONT>
+<FONT COLOR="#40F628">0070:</FONT>     <FONT COLOR="#008000">// FVF変換</FONT>
 <FONT COLOR="#40F628">0071:</FONT>     hr = pMeshOpt-&gt;CloneMeshFVF(pMeshOpt-&gt;GetOptions(), D3DFVF_VERTEX, lpD3DDev, &amp;pMesh);
 <FONT COLOR="#40F628">0072:</FONT>     <FONT COLOR="#0000FF">if</FONT>(FAILED(hr)) <FONT COLOR="#0000FF">return</FONT> E_FAIL;
 <FONT COLOR="#40F628">0073:</FONT>     RELEASE(pMeshOpt);
 <FONT COLOR="#40F628">0074:</FONT>     D3DXComputeNormals(pMesh,NULL);
 <FONT COLOR="#40F628">0075:</FONT> 
-<FONT COLOR="#40F628">0076:</FONT>     <FONT COLOR="#008000">//Vertex Buffer�ɃR�s�[����</FONT>
+<FONT COLOR="#40F628">0076:</FONT>     <FONT COLOR="#008000">//Vertex Bufferにコピーする</FONT>
 <FONT COLOR="#40F628">0077:</FONT>     D3DVERTEX* pSrc;
 <FONT COLOR="#40F628">0078:</FONT>     D3D_CUSTOMVERTEX* pDest;
 <FONT COLOR="#40F628">0079:</FONT>     LPDIRECT3DINDEXBUFFER8 pSrcIndex;
@@ -114,7 +114,7 @@
 <FONT COLOR="#40F628">0107:</FONT>     pVB-&gt;Release();
 <FONT COLOR="#40F628">0108:</FONT>     <FONT COLOR="#0000FF">this</FONT>-&gt;pVB-&gt;Unlock();
 <FONT COLOR="#40F628">0109:</FONT> 
-<FONT COLOR="#40F628">0110:</FONT>     <FONT COLOR="#008000">//�C���f�b�N�X�̃R�s�[</FONT>
+<FONT COLOR="#40F628">0110:</FONT>     <FONT COLOR="#008000">//インデックスのコピー</FONT>
 <FONT COLOR="#40F628">0111:</FONT>     pMesh-&gt;GetIndexBuffer(&amp;pSrcIndex);
 <FONT COLOR="#40F628">0112:</FONT>     pSrcIndex-&gt;Lock(0,0,(BYTE**)&amp;pISrc,0);
 <FONT COLOR="#40F628">0113:</FONT>     <FONT COLOR="#0000FF">this</FONT>-&gt;pIndex-&gt;Lock(0,0,(BYTE**)&amp;pIDest,0);
@@ -123,7 +123,7 @@
 <FONT COLOR="#40F628">0116:</FONT>     <FONT COLOR="#0000FF">this</FONT>-&gt;pIndex-&gt;Unlock();
 <FONT COLOR="#40F628">0117:</FONT>     pSrcIndex-&gt;Release();
 <FONT COLOR="#40F628">0118:</FONT> 
-<FONT COLOR="#40F628">0119:</FONT>     <FONT COLOR="#008000">// pD3DXMtrlBuffer ����A������e�N�X�`���[�̏���ǂݎ��</FONT>
+<FONT COLOR="#40F628">0119:</FONT>     <FONT COLOR="#008000">// pD3DXMtrlBuffer から、質感やテクスチャーの情報を読み取る</FONT>
 <FONT COLOR="#40F628">0120:</FONT>     D3DXMATERIAL* d3dxMaterials = (D3DXMATERIAL*)pD3DXMtrlBuffer-&gt;GetBufferPointer();
 <FONT COLOR="#40F628">0121:</FONT>     <FONT COLOR="#0000FF">this</FONT>-&gt;pTextures = <FONT COLOR="#0000FF">new</FONT> LPDIRECT3DTEXTURE8[<FONT COLOR="#0000FF">this</FONT>-&gt;dwNumMaterials];
 <FONT COLOR="#40F628">0122:</FONT>     <FONT COLOR="#0000FF">this</FONT>-&gt;pMaterials = <FONT COLOR="#0000FF">new</FONT> D3DMATERIAL8[<FONT COLOR="#0000FF">this</FONT>-&gt;dwNumMaterials];
@@ -140,7 +140,7 @@
 <FONT COLOR="#40F628">0133:</FONT>     
 <FONT COLOR="#40F628">0134:</FONT>     RELEASE(pMesh);
 <FONT COLOR="#40F628">0135:</FONT>     
-<FONT COLOR="#40F628">0136:</FONT>     <FONT COLOR="#0000FF">this</FONT>-&gt;bActive = <FONT COLOR="#0000FF">true</FONT>;       <FONT COLOR="#008000">// �g����悤�ɂȂ�܂���</FONT>
+<FONT COLOR="#40F628">0136:</FONT>     <FONT COLOR="#0000FF">this</FONT>-&gt;bActive = <FONT COLOR="#0000FF">true</FONT>;       <FONT COLOR="#008000">// 使えるようになりました</FONT>
 <FONT COLOR="#40F628">0137:</FONT>     
 <FONT COLOR="#40F628">0138:</FONT>     <FONT COLOR="#0000FF">return</FONT> S_OK;
 <FONT COLOR="#40F628">0139:</FONT> }
@@ -161,10 +161,10 @@
 <FONT COLOR="#40F628">0154:</FONT>     RELEASE(<FONT COLOR="#0000FF">this</FONT>-&gt;pVB);
 <FONT COLOR="#40F628">0155:</FONT>     RELEASE(<FONT COLOR="#0000FF">this</FONT>-&gt;pIndex);
 <FONT COLOR="#40F628">0156:</FONT>     
-<FONT COLOR="#40F628">0157:</FONT>     <FONT COLOR="#0000FF">this</FONT>-&gt;bActive = <FONT COLOR="#0000FF">false</FONT>;      <FONT COLOR="#008000">// �����ł���悤�ɂȂ�܂ŁA�҂�</FONT>
+<FONT COLOR="#40F628">0157:</FONT>     <FONT COLOR="#0000FF">this</FONT>-&gt;bActive = <FONT COLOR="#0000FF">false</FONT>;      <FONT COLOR="#008000">// 準備できるようになるまで、待つ</FONT>
 <FONT COLOR="#40F628">0158:</FONT> }
 <FONT COLOR="#40F628">0159:</FONT> <FONT COLOR="#008000">// ----------------------------------------------------------------------------</FONT>
-<FONT COLOR="#40F628">0160:</FONT> <FONT COLOR="#008000">// �e�N�X�`���[</FONT>
+<FONT COLOR="#40F628">0160:</FONT> <FONT COLOR="#008000">// テクスチャー</FONT>
 <FONT COLOR="#40F628">0161:</FONT> <FONT COLOR="#008000">// ----------------------------------------------------------------------------</FONT>
 <FONT COLOR="#40F628">0162:</FONT> HRESULT CTextureMgr::Load(LPDIRECT3DDEVICE8 lpD3DDev, <FONT COLOR="#0000FF">const</FONT> <FONT COLOR="#0000FF">char</FONT> *filename, LPDIRECT3DTEXTURE8 *ppTexture)
 <FONT COLOR="#40F628">0163:</FONT> {
@@ -181,7 +181,7 @@
 <FONT COLOR="#40F628">0174:</FONT>     RELEASE(pTexture);
 <FONT COLOR="#40F628">0175:</FONT> }
 <FONT COLOR="#40F628">0176:</FONT> <FONT COLOR="#008000">// ----------------------------------------------------------------------------</FONT>
-<FONT COLOR="#40F628">0177:</FONT> <FONT COLOR="#008000">// ���_�V�F�[�_�[</FONT>
+<FONT COLOR="#40F628">0177:</FONT> <FONT COLOR="#008000">// 頂点シェーダー</FONT>
 <FONT COLOR="#40F628">0178:</FONT> <FONT COLOR="#008000">// ----------------------------------------------------------------------------</FONT>
 <FONT COLOR="#40F628">0179:</FONT> HRESULT CVertexShaderMgr::Load(LPDIRECT3DDEVICE8 lpD3DDev, <FONT COLOR="#0000FF">const</FONT> <FONT COLOR="#0000FF">char</FONT> *filename, DWORD *phVertexShader, <FONT COLOR="#0000FF">const</FONT> DWORD dwDecl[])
 <FONT COLOR="#40F628">0180:</FONT> {
@@ -206,7 +206,7 @@
 <FONT COLOR="#40F628">0199:</FONT>     }
 <FONT COLOR="#40F628">0200:</FONT> }
 <FONT COLOR="#40F628">0201:</FONT> <FONT COLOR="#008000">// ----------------------------------------------------------------------------</FONT>
-<FONT COLOR="#40F628">0202:</FONT> <FONT COLOR="#008000">// �s�N�Z���V�F�[�_�[</FONT>
+<FONT COLOR="#40F628">0202:</FONT> <FONT COLOR="#008000">// ピクセルシェーダー</FONT>
 <FONT COLOR="#40F628">0203:</FONT> <FONT COLOR="#008000">// ----------------------------------------------------------------------------</FONT>
 <FONT COLOR="#40F628">0204:</FONT> HRESULT CPixelShaderMgr::Load(LPDIRECT3DDEVICE8 lpD3DDev, <FONT COLOR="#0000FF">const</FONT> <FONT COLOR="#0000FF">char</FONT> *filename, DWORD *phPixelShader)
 <FONT COLOR="#40F628">0205:</FONT> {

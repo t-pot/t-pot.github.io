@@ -1,8 +1,8 @@
 <head>
-	<title>t-pot�w�\�ʉ��U���x</title>
+	<title>t-pot『表面下散乱』</title>
 	<link rel="stylesheet" type="text/css" href="../if.css">
 </head>
-<meta http-equiv=Content-Type content="text/html; charset=shift_jis">
+<meta http-equiv=Content-Type content="text/html; charset=UTF-8">
 <body>
 
 
@@ -10,8 +10,8 @@
 <center>
 <BR CLEAR=ALL>
 <BR CLEAR=ALL>
-<h1>�\�ʉ��U��</h1><br>
-<h3>�` Subsurface Scattering �`</h3>
+<h1>表面下散乱</h1><br>
+<h3>～ Subsurface Scattering ～</h3>
 <BR CLEAR=ALL>
 <BR CLEAR=ALL>
 <BR CLEAR=ALL>
@@ -20,130 +20,130 @@
 <hr>
 <br>
 <p>
-���̉摜���N���b�N����ƁA���X�Ƀ��C�e�B���O����������A�j���[�V�����������܂��B<br>
+下の画像をクリックすると、徐々にライティングが発生するアニメーションが見られます。<br>
 <a href="anim.gif"><image src = "anim_final.gif" width = "10%" height = "10%"></a>
 </p>
 <hr>
 </center>
 <div>
 
-<h2>���͂��߂�</h2>
+<h2>■はじめに</h2>
 
 
 <p>
-�ŋ߁A<a href="http://spin.s2c.ne.jp/">spin</a>���񂪁A�������悤�ɍX�V�A�ڍׂȉ��������Ă���̂ł����i�u�ߓ������\��̃R���s���[�^�O���t�B�b�N�X�Z�p������v�Ȃ�āA�U�������Ă����悤�ȋL���͂��ꂵ�����߂������c�j�A���̒��̂P�ɕ\�ʉ��U���̉���L��������܂����B�\�ʉ��U���́A�a�a�r�ł����N�G�X�g����Ă����̂ŁA�Ƃ肠�����A�����Ƃ��ȒP�Ȕ͈͂ł���Ă݂܂����B
+最近、<a href="http://spin.s2c.ne.jp/">spin</a>さんが、狂ったように更新、詳細な解説をされているのですが（「近日発売予定のコンピュータグラフィックス技術解説書」なんて、散財させてくれるような記事はうれしいやら悲しいやら…）、その中の１つに表面下散乱の解説記事がありました。表面下散乱は、ＢＢＳでもリクエストされていたので、とりあえず、もっとも簡単な範囲でやってみました。
 </p>
 <ul style = "LIST-STYLE-TYPE:none">
-<li><a href="src.zip">src.zip (�\�ʉ��U��:DirectX9)</a>
+<li><a href="src.zip">src.zip (表面下散乱:DirectX9)</a>
 </ul>
 
 <p>
-�܂��A�����̂悤�ɓK���Ƀt�@�C���������Ă��܂��B<br>
-APP WIZARD ����o�͂����t���[�����[�N�̃t�@�C���͏Љ���Ȃ����Ă��������܂��B
+まぁ、いつものように適当にファイルが入っています。<br>
+APP WIZARD から出力されるフレームワークのファイルは紹介を省かせていただきます。
 </p>
 <table>
-<tr><td><a href="hlsl_fx.html">hlsl.fx</a></td><td>�V�F�[�_�̓������G�t�F�N�g�t�@�C��</td></tr>
-<tr><td><a href="main_h.html">main.h</a></td><td>�A�v���P�[�V�����̃w�b�_</td></tr>
-<tr><td><a href="main_cpp.html">main.cpp</a></td><td>�A�v���P�[�V�����̃\�[�X</td></tr>
+<tr><td><a href="hlsl_fx.html">hlsl.fx</a></td><td>シェーダの入ったエフェクトファイル</td></tr>
+<tr><td><a href="main_h.html">main.h</a></td><td>アプリケーションのヘッダ</td></tr>
+<tr><td><a href="main_cpp.html">main.cpp</a></td><td>アプリケーションのソース</td></tr>
 </table>
-<image src = "map_bmp.jpg" width = "64" height = "64">map.bmp:�f�J�[���e�N�X�`��(�������A���݂̃v���O�����ł́A�g���Ă��܂���)
+<image src = "map_bmp.jpg" width = "64" height = "64">map.bmp:デカールテクスチャ(ただし、現在のプログラムでは、使っていません)
 
 <p>
-���ƁA���s�t�@�C���A�n�ʂ̃��f���y�сA�v���W�F�N�g�t�@�C���������Ă��܂��B
+あと、実行ファイル、地面のモデル及び、プロジェクトファイルが入っています。
 </p>
 
 
-<h2>���\�ʉ��U���Ƃ�</h2>
+<h2>■表面下散乱とは</h2>
 
 
 <p>
-�\�ʉ��U���́A�畆�����悭�\�����邽�߂̃����_�����O���@�ŁA��x�畆�̒��ɂ����肱�񂾌����A�畆�̒��ŎU������Ċg�U���Ƃ��ďo�Ă���l�q���V�~�����[�g���܂��B<br>
-�Ⴆ�΁A���ʂ�Lambert�g�U���ƁA�\�ʉ��U�����r����ƁA���̂悤�Ɍ����ڂ��قȂ�܂��B
+表面下散乱は、皮膚をよりよく表現するためのレンダリング方法で、一度皮膚の中にもぐりこんだ光が、皮膚の中で散乱されて拡散光として出てくる様子をシミュレートします。<br>
+例えば、普通のLambert拡散光と、表面下散乱を比較すると、次のように見た目が異なります。
 </p>
-<image src = "none.png">�g�p�O<image src = "title.png">�g�p��
+<image src = "none.png">使用前<image src = "title.png">使用後
 <p>
-���������A�g�U���͂ǂ̂悤�ɂ��ċN���Ă���̂ł��傤���H<br>
-�����͋^��Ɏv���Ă��Ȃ������m��܂��񂪁A�g�U���͕��̕\�ʂ�����˂����������̓����̓d�q�ɂ���ă����_���ȕ����ɎU������āA�o�Ă������̂ł��B
+そもそも、拡散光はどのようにして起きているのでしょうか？<br>
+いつもは疑問に思われていないかも知れませんが、拡散光は物体表面から入射した光が物体内部の電子によってランダムな方向に散乱されて、出てきたものです。
 </p>
 <image src = "diffuse.png">
 <p>
-���̗ʂ������Ȃ�΁A���̕����˂����ʂ�������̂ŁA���͕\�ʂɓ��˂��鋭���ɉ����ċ����g�U����܂��B
+光の量が多くなれば、その分反射される量も増えるので、光は表面に入射する強さに応じて強く拡散されます。
 </p>
 <p>
-�Ƃ��낪�A�����͂����ȒP�ł͂���܂���B<br>
-���̂̑g���ɂ����̂ł����A�\�ʂ�����������́A���x���U�����ꂽ�肵�ĕ��G�Ȕ��˂������܂��B<br>
+ところが、現実はそう簡単ではありません。<br>
+物体の組成にもよるのですが、表面から入った光は、何度も散乱されたりして複雑な反射を示します。<br>
 </p>
 <image src = "high.png">
 <p>
-���ɏd�v�ȓ_�́A�U���������͈�_�����ŎU������Ȃ��Ƃ������Ƃł��B
-���̂ɓ��˂��ꂽ���́A���̓����Œ����������ĕ\�ʂ̕ʂ̏ꏊ����o�Ă���P�[�X���������܂��B�ʂ̏ꏊ��������o�Ă���Ƃ������Ƃ́A�{������������Ȃ������̉e�ɂȂ��������ɂ�����������Ƃ������Ƃł��B�ق��ɂ��A�e�̉A�e���_�炩���������肵�܂��B<br>
-�����́A�畆�A�~���N�A�嗝�΂Ȃǂ̎��R���Ɋւ��ē��Ɍ����Ȍ��ۂŁA���炩�������镨���ɂ���瑽�d�U���̌��ʂ��܂߂�ƁA��胊�A���ȃ����_�����O���\�ɂȂ�܂��B
+特に重要な点は、散乱される光は一点だけで散乱されないということです。
+物体に入射された光は、物体内部で長い旅をして表面の別の場所から出てくるケースも発生します。別の場所から光が出てくるということは、本来光が当たらない光源の影になった部分にも光が当たるということです。ほかにも、影の陰影が柔らかく見えたりします。<br>
+これらは、皮膚、ミルク、大理石などの自然物に関して特に顕著な現象で、やわらかく見える物質にこれら多重散乱の効果を含めると、よりリアルなレンダリングが可能になります。
 </p>
 <p>
-�\�ʉ��U���̕��@�́A�܂����@�_���m������Ă��Ȃ��̂ŁA���܂��܂ȕ��@���l�����܂��B<br>
-�Ⴆ�΁A���_�����ڂ�����ӂ̗̈���ӂ̌����E���W�߂Ă����̍��v���U�����Ƃ�����@
+表面下散乱の方法は、まだ方法論が確立されていないので、さまざまな方法が考えられます。<br>
+例えば、視点が注目する周辺の領域周辺の光を拾い集めてそれらの合計を散乱光とする方法
 </p>
 <image src = "bssrdf.png">
 <p>
-��A���d�U����ݐς��č����������ʂ��P�̑o�Ɏq�Ƃ��ĕ\�����Ȃ��������@������܂��B
+や、多重散乱を累積して合成した結果を１つの双極子として表現しなおした方法があります。
 </p>
 <image src = "multi.png">
 <p>
-�o�Ɏq�́A���̓����ɒu��������o����_�����ƁA���傤�ǂ��̐^��ɂ�������z������_�����łł��Ă��܂��B�����̌����ɂ����ʂ́A���̂��ʂɂȂ��Ă��镔���ł͌�����o���鐬���������Ȃ�A�������������ʂ����o���܂����A���񂾕����ł́A�����z������鐬���������Ȃ�A���Â������_�����O����܂��B
+双極子は、物体内部に置く光を放出する点光源と、ちょうどその真上にある光を吸収する点光源でできています。それらの光源による効果は、物体が凸になっている部分では光を放出する成分が強くなり、光がすけた効果を演出しますが、凹んだ部分では、光が吸収される成分が強くなり、より暗くレンダリングされます。
 </p>
 <p>
-����̕��@�́A�����悭�m��ꂽ���@�ł͂���܂���B��藬�̓I�Ȏ�@���Ƃ�܂��B<br>
-���˂��ꂽ����K���Ɋg�U�����āA�����L���点�܂��B�����Ɉꕔ���M���ɕω������肷����ʂ��l���čL�������������������܂��B
-�ŏI�I�ɓ��˂������Ƌz�������������t��Ԃɗ�����������Ԃ��Ɩ����ʂɂȂ�܂��B</p>
+今回の方法は、それらよく知られた方法ではありません。より流体的な手法をとります。<br>
+入射された光を適当に拡散させて、光を広がらせます。同時に一部が熱等に変化したりする効果を考えて広がった光を減衰させます。
+最終的に入射した光と吸収される光が平衡状態に落ち着いた状態が照明結果になります。</p>
 <image src = "how2.png">
 <p>
-��̓I�ȕ��@�́A���b�V���ɏƎ˂��ꂽ���̗ʂ��f�J�[���Ɠ����e�N�X�`�����W�Ƀ}�b�s���O���܂��B<br>
-���ɁA���̉摜�Ƀu���[�������Ăڂ₩���A���̃e�N�X�`�����U�����ꂽ���ʂƂ��ďƖ��v�Z�Ɏg���܂��B<br>
-�u���[�����������ʂ͎��̃t���[���ł��g�p���āA�w���֐��I�Ȍ��̌�����\�����܂��B
+具体的な方法は、メッシュに照射された光の量をデカールと同じテクスチャ座標にマッピングします。<br>
+次に、その画像にブラーをかけてぼやかし、そのテクスチャを散乱された結果として照明計算に使います。<br>
+ブラーをかけた結果は次のフレームでも使用して、指数関数的な光の減衰を表現します。
 </p>
 <image src = "map.png">
 <p>
-����̓e�N�X�`����Ԃł��̂܂܎U�킳���܂������A�e�N�X�`���Ƀ��[�J�����W�n�ł̃s�N�Z���ԋ������T���v�����O���āA���̋����ɉ����ĎU�킳������A�ȗ����}�b�s���O���āA����ɉ����Ċg�U������Ƃ��悢���ʂ�������Ǝv���܂��B
+今回はテクスチャ空間でそのまま散逸させましたが、テクスチャにローカル座標系でのピクセル間距離をサンプリングして、その距離に応じて散逸させたり、曲率をマッピングして、それに応じて拡散させるとよりよい結果が得られると思います。
 
 </p>
 
 
-<h2>���e�N�X�`���ւ̃T���v�����O</h2>
+<h2>■テクスチャへのサンプリング</h2>
 
 
 <p>
-�ŏ��̃X�e�b�v�́A�e�N�X�`�����W�n�ɓ��ˌ��������_�����O���邱�Ƃł��B<br>
-����́A�e�N�X�`�����W���X�N���[�����W�Ɏg���܂��B�������A�ˉe��Ԃ̍��W�n��-1����1�܂łȂ̂ŁA�X�P�[�����O�Ȃǂ��{���܂��B<br>
-�F�́A���ʂ�Lambert�g�U�̌v�Z�������Ȃ��܂��B
+最初のステップは、テクスチャ座標系に入射光をレンダリングすることです。<br>
+今回は、テクスチャ座標をスクリーン座標に使います。ただし、射影空間の座標系は-1から1までなので、スケーリングなどを施します。<br>
+色は、普通のLambert拡散の計算をおこないます。
 </p>
 <pre class="CodeBlock">
 hlsl.fx
 <font color="deepskyblue">0209:</font> <font color="cyan">// -------------------------------------------------------------</font>
-<font color="deepskyblue">0210:</font> <font color="cyan">// ���_�V�F�[�_�v���O����</font>
+<font color="deepskyblue">0210:</font> <font color="cyan">// 頂点シェーダプログラム</font>
 <font color="deepskyblue">0211:</font> <font color="cyan">// -------------------------------------------------------------</font>
 <font color="deepskyblue">0212:</font> VS_OUTPUT_Irradiance IrradianceV ( VS_INPUT_Irradiance In )
 <font color="deepskyblue">0213:</font> {
-<font color="deepskyblue">0214:</font>     VS_OUTPUT_Irradiance Out = (VS_OUTPUT_Irradiance)0;<font color="cyan">// �o�̓f�[�^</font>
+<font color="deepskyblue">0214:</font>     VS_OUTPUT_Irradiance Out = (VS_OUTPUT_Irradiance)0;<font color="cyan">// 出力データ</font>
 <font color="deepskyblue">0215:</font>     float4 offsetS = { 2.0f, -2.0f, 0.0f, 0.0f};
 <font color="deepskyblue">0216:</font>     float4 offsetB = {-1.0f, +1.0f, 0.5f, 1.0f};
 <font color="deepskyblue">0217:</font>     
-<font color="deepskyblue">0218:</font>     <font color="cyan">// ���W�ϊ�</font>
+<font color="deepskyblue">0218:</font>     <font color="cyan">// 座標変換</font>
 <font color="deepskyblue">0219:</font>     Out.Pos = In.Tex * offsetS + offsetB;
 <font color="deepskyblue">0220:</font>     
-<font color="deepskyblue">0221:</font>     <font color="cyan">// �F</font>
-<font color="deepskyblue">0222:</font>     Out.Color = vLightDir.w                              <font color="cyan">// ���F</font>
-<font color="deepskyblue">0223:</font>             + max( dot(vLightDir.xyz, In.Normal.xyz), 0);<font color="cyan">// �g�U�F</font>
+<font color="deepskyblue">0221:</font>     <font color="cyan">// 色</font>
+<font color="deepskyblue">0222:</font>     Out.Color = vLightDir.w                              <font color="cyan">// 環境色</font>
+<font color="deepskyblue">0223:</font>             + max( dot(vLightDir.xyz, In.Normal.xyz), 0);<font color="cyan">// 拡散色</font>
 <font color="deepskyblue">0224:</font>     
 <font color="deepskyblue">0225:</font>     <font color="blue">return</font> Out;
 <font color="deepskyblue">0226:</font> }
 </pre>
 <p>
-�s�N�Z���V�F�[�_�͊ȒP�ɐF���o�͂��܂��B
+ピクセルシェーダは簡単に色を出力します。
 </p>
 <pre class="CodeBlock">
 hlsl.fx
 <font color="deepskyblue">0227:</font> <font color="cyan">// -------------------------------------------------------------</font>
-<font color="deepskyblue">0228:</font> <font color="cyan">// �s�N�Z���V�F�[�_�v���O����</font>
+<font color="deepskyblue">0228:</font> <font color="cyan">// ピクセルシェーダプログラム</font>
 <font color="deepskyblue">0229:</font> <font color="cyan">// -------------------------------------------------------------</font>
 <font color="deepskyblue">0230:</font> float4 IrradianceP ( VS_OUTPUT_Irradiance In ) : COLOR0
 <font color="deepskyblue">0231:</font> {
@@ -156,41 +156,41 @@ hlsl.fx
 </pre>
 
 
-<h2>���u���[��������</h2>
+<h2>■ブラーをかける</h2>
 
 
 <p>
-���̃X�e�b�v�́A�u���[�������邱�Ƃł��B
-����́A�e�N�X�`���P�������𒣂�t�B���^�����O�����ɂȂ�܂��B<br>
-���_�v�Z�ł́A�K���ɐݒ肳�ꂽ�|���S���̈ʒu�ƃe�N�X�`�����W�����̂܂܏o�͂��܂��B
+次のステップは、ブラーをかけることです。
+これは、テクスチャ１枚だけを張るフィルタリング処理になります。<br>
+頂点計算では、適当に設定されたポリゴンの位置とテクスチャ座標をそのまま出力します。
 </p>
 <pre class="CodeBlock">
 hlsl.fx
 <font color="deepskyblue">0301:</font> <font color="cyan">// -------------------------------------------------------------</font>
-<font color="deepskyblue">0302:</font> <font color="cyan">// ���_�V�F�[�_�v���O����</font>
+<font color="deepskyblue">0302:</font> <font color="cyan">// 頂点シェーダプログラム</font>
 <font color="deepskyblue">0303:</font> <font color="cyan">// -------------------------------------------------------------</font>
 <font color="deepskyblue">0304:</font> VS_OUTPUT_SubLight SubLightV ( VS_INPUT_SubLight In )
 <font color="deepskyblue">0305:</font> {
-<font color="deepskyblue">0306:</font>     VS_OUTPUT_SubLight Out = (VS_OUTPUT_SubLight)0;<font color="cyan">// �o�̓f�[�^</font>
+<font color="deepskyblue">0306:</font>     VS_OUTPUT_SubLight Out = (VS_OUTPUT_SubLight)0;<font color="cyan">// 出力データ</font>
 <font color="deepskyblue">0307:</font>     
-<font color="deepskyblue">0308:</font>     <font color="cyan">// ���W�ϊ�</font>
+<font color="deepskyblue">0308:</font>     <font color="cyan">// 座標変換</font>
 <font color="deepskyblue">0309:</font>     Out.Pos = In.Pos;
 <font color="deepskyblue">0310:</font>     
-<font color="deepskyblue">0311:</font>     <font color="cyan">// �e�N�X�`�����W</font>
+<font color="deepskyblue">0311:</font>     <font color="cyan">// テクスチャ座標</font>
 <font color="deepskyblue">0312:</font>     Out.Tex = In.Tex;
 <font color="deepskyblue">0313:</font>     
 <font color="deepskyblue">0314:</font>     <font color="blue">return</font> Out;
 <font color="deepskyblue">0315:</font> }
 </pre>
 <p>
-�s�N�Z���V�F�[�_�ł́A��قǍ쐬�������ˌ����T���v�����O����ƂƂ��ɁA
-�P�t���[���O�̃u���[�����������ʂ��㉺���E�̃s�N�Z������T���v�����O���Ăڂ����܂��B<br>
-���̂Ƃ��́A���ꂼ��̃T���v�����O���|�����킹�鋭�����������┽�˗������肷��̂ŁA�K���ɒ������܂��B
+ピクセルシェーダでは、先ほど作成した入射光をサンプリングするとともに、
+１フレーム前のブラーをかけた結果を上下左右のピクセルからサンプリングしてぼかします。<br>
+このときの、それぞれのサンプリングを掛け合わせる強さが減衰率や反射率を決定するので、適当に調整します。
 </p>
 <pre class="CodeBlock">
 hlsl.fx
 <font color="deepskyblue">0316:</font> <font color="cyan">// -------------------------------------------------------------</font>
-<font color="deepskyblue">0317:</font> <font color="cyan">// �s�N�Z���V�F�[�_�v���O����</font>
+<font color="deepskyblue">0317:</font> <font color="cyan">// ピクセルシェーダプログラム</font>
 <font color="deepskyblue">0318:</font> <font color="cyan">// -------------------------------------------------------------</font>
 <font color="deepskyblue">0319:</font> float4 SubLightP ( VS_OUTPUT_SubLight In ) : COLOR0
 <font color="deepskyblue">0320:</font> {
@@ -215,26 +215,26 @@ hlsl.fx
 <font color="deepskyblue">0339:</font> }
 </pre>
 <p>
-�Ⴆ�΁A�P�t���[���O�̌��ʁucolP0�v������������Ƃ��̋�����0.25�ɂ���΁A�܂������������Ȃ����ʂ������܂��i���Ȃ킿�^�����ɂȂ��Ă����̂ł����ǁj�B
+例えば、１フレーム前の結果「colP0」等を合成するときの強さを0.25にすれば、まったく減衰しない結果が得られます（すなわち真っ白になっていくのですけど）。
 </p>
 
-<h2>���ŏI����</h2>
+<h2>■最終合成</h2>
 
 
 <p>
-�Ō�Ƀu���[���������e�N�X�`�������C�g�}�b�v�Ƃ��č������܂��B<br>
-���ꂼ��̃e�N�X�`���̓f�J�[���}�b�v�Ɠ������W�n�ɑ��݂���̂ŁA�������W���f�J�[���ƃ��C�g�}�b�v�ɏo�͂��܂��B
+最後にブラーをかけたテクスチャをライトマップとして合成します。<br>
+それぞれのテクスチャはデカールマップと同じ座標系に存在するので、同じ座標をデカールとライトマップに出力します。
 </p>
 <pre class="CodeBlock">
 hlsl.fx
 <font color="deepskyblue">0398:</font> <font color="cyan">// -------------------------------------------------------------</font>
-<font color="deepskyblue">0399:</font> <font color="cyan">// ���_�V�F�[�_�v���O����</font>
+<font color="deepskyblue">0399:</font> <font color="cyan">// 頂点シェーダプログラム</font>
 <font color="deepskyblue">0400:</font> <font color="cyan">// -------------------------------------------------------------</font>
 <font color="deepskyblue">0401:</font> VS_OUTPUT_Final FinalV ( VS_INPUT_Irradiance In )
 <font color="deepskyblue">0402:</font> {
-<font color="deepskyblue">0403:</font>     VS_OUTPUT_Final Out = (VS_OUTPUT_Final)0;<font color="cyan">// �o�̓f�[�^</font>
+<font color="deepskyblue">0403:</font>     VS_OUTPUT_Final Out = (VS_OUTPUT_Final)0;<font color="cyan">// 出力データ</font>
 <font color="deepskyblue">0404:</font>     
-<font color="deepskyblue">0405:</font>     <font color="cyan">// ���W�ϊ�</font>
+<font color="deepskyblue">0405:</font>     <font color="cyan">// 座標変換</font>
 <font color="deepskyblue">0406:</font>     Out.Pos = Out.Pos = mul(In.Pos, mWVP);
 <font color="deepskyblue">0407:</font>     
 <font color="deepskyblue">0408:</font>     Out.Tex0 = In.Tex;
@@ -244,14 +244,14 @@ hlsl.fx
 <font color="deepskyblue">0416:</font> }
 </pre>
 <p>
-�s�N�Z���V�F�[�_�ł́A�������|�����킹�č������܂��B<br>
-���C�g�̋������Q�{���Ă��܂����A���͋C�I�Ȃ��̂ŁA
-���ɂ���Ƃ����ċ��������߂����R�͂���܂���B
+ピクセルシェーダでは、それらを掛け合わせて合成します。<br>
+ライトの強さを２倍していますが、雰囲気的なもので、
+特にこれといって強さを決めた理由はありません。
 </p>
 <pre class="CodeBlock">
 hlsl.fx
 <font color="deepskyblue">0417:</font> <font color="cyan">// -------------------------------------------------------------</font>
-<font color="deepskyblue">0418:</font> <font color="cyan">// �s�N�Z���V�F�[�_�v���O����</font>
+<font color="deepskyblue">0418:</font> <font color="cyan">// ピクセルシェーダプログラム</font>
 <font color="deepskyblue">0419:</font> <font color="cyan">// -------------------------------------------------------------</font>
 <font color="deepskyblue">0420:</font> float4 FinalP ( VS_OUTPUT_Final In ) : COLOR0
 <font color="deepskyblue">0421:</font> {
@@ -260,7 +260,7 @@ hlsl.fx
 <font color="deepskyblue">0424:</font>     float4 decale = tex2D( DecaleSamp,   In.Tex0 );
 <font color="deepskyblue">0425:</font>     float4 light  = saturate(2.0f*tex2D( SubLightSamp, In.Tex1 ));
 <font color="deepskyblue">0426:</font> <font color="cyan">//light=In.Color;</font>
-<font color="deepskyblue">0427:</font>decale = float4(0.8f, 0.8f, 0.8f, 1.0f);<font color="cyan">// ���F�ɂ���</font>
+<font color="deepskyblue">0427:</font>decale = float4(0.8f, 0.8f, 0.8f, 1.0f);<font color="cyan">// 白色にする</font>
 <font color="deepskyblue">0428:</font>     Col = decale * light;
 <font color="deepskyblue">0429:</font>     
 <font color="deepskyblue">0430:</font>     <font color="blue">return</font> Col;
@@ -268,18 +268,18 @@ hlsl.fx
 </PRE>
 
 <p>
-���l�^�F<br>
-0426�s�̃R�����g�A�E�g���͂����ƁA�e�N�X�`�����g��Ȃ����C�e�B���O���s���܂��B<br>
-0427�s���R�����g�A�E�g����ƁA�f�J�[���e�N�X�`���𒣂�܂��B
+裏ネタ：<br>
+0426行のコメントアウトをはずすと、テクスチャを使わないライティングが行えます。<br>
+0427行をコメントアウトすると、デカールテクスチャを張ります。
 </p>
 
-<h2>���Ō��</h2>
+<h2>■最後に</h2>
 
 
 <p>
-���ɓK���ł����A�\�ʉ��U�������܂����B<br>
-���˗���z�����̌�������������ł����A�x�ꂪ�K����������̂ł܂��܂����ǂ��K�v�ł��B<br>
-���̕��@���ᖡ���Ă��������̂ŁA���ꂩ�璷�����t���������Ă������ƂɂȂ肻���ł��B
+実に適当ですが、表面下散乱をしました。<br>
+反射率や吸収率の決定もいい加減ですし、遅れが必ず発生するのでまだまだ改良が必要です。<br>
+他の方法も吟味していきたいので、これから長くお付き合いしていくことになりそうです。
 </p>
 
 </div>
@@ -288,7 +288,7 @@ hlsl.fx
 <BR CLEAR=ALL>
 <center>
 <hr>
-<p><a href="../index.html">���ǂ�</a></p>
+<p><a href="../index.html">もどる</a></p>
 <p><a href="mailto:imagire@gmail.com">imagire@gmail.com</a></p>
 </center>
 

@@ -15,19 +15,19 @@ SPAN.linenum { color:#A0A0A0; font-weight:normal; font-style:normal;}
 </HEAD>
 <BODY TEXT="#000000" BGCOLOR="#FFFFFF">
 <PRE><SPAN CLASS="linenum">0001:</SPAN> <SPAN CLASS="comment">// -------------------------------------------------------------</SPAN>
-<SPAN CLASS="linenum">0002:</SPAN> <SPAN CLASS="comment">// �V���h�E�{�����[���ɂ��e</SPAN>
+<SPAN CLASS="linenum">0002:</SPAN> <SPAN CLASS="comment">// シャドウボリュームによる影</SPAN>
 <SPAN CLASS="linenum">0003:</SPAN> <SPAN CLASS="comment">// </SPAN>
 <SPAN CLASS="linenum">0004:</SPAN> <SPAN CLASS="comment">// Copyright (c) 2002 IMAGIRE Takashi. All rights reserved.</SPAN>
 <SPAN CLASS="linenum">0005:</SPAN> <SPAN CLASS="comment">// -------------------------------------------------------------</SPAN>
 <SPAN CLASS="linenum">0006:</SPAN> 
 <SPAN CLASS="linenum">0007:</SPAN> <SPAN CLASS="comment">// -------------------------------------------------------------</SPAN>
-<SPAN CLASS="linenum">0008:</SPAN> <SPAN CLASS="comment">// �O���[�o���ϐ�</SPAN>
+<SPAN CLASS="linenum">0008:</SPAN> <SPAN CLASS="comment">// グローバル変数</SPAN>
 <SPAN CLASS="linenum">0009:</SPAN> <SPAN CLASS="comment">// -------------------------------------------------------------</SPAN>
-<SPAN CLASS="linenum">0010:</SPAN> float4x4 mWVP;      <SPAN CLASS="comment">// ���[�J������ˉe��Ԃւ̍��W�ϊ�</SPAN>
-<SPAN CLASS="linenum">0011:</SPAN> float4   vLightPos; <SPAN CLASS="comment">// ���C�g�̈ʒu</SPAN>
+<SPAN CLASS="linenum">0010:</SPAN> float4x4 mWVP;      <SPAN CLASS="comment">// ローカルから射影空間への座標変換</SPAN>
+<SPAN CLASS="linenum">0011:</SPAN> float4   vLightPos; <SPAN CLASS="comment">// ライトの位置</SPAN>
 <SPAN CLASS="linenum">0012:</SPAN> 
 <SPAN CLASS="linenum">0013:</SPAN> <SPAN CLASS="comment">// -------------------------------------------------------------</SPAN>
-<SPAN CLASS="linenum">0014:</SPAN> <SPAN CLASS="comment">// ���_�V�F�[�_����s�N�Z���V�F�[�_�ɓn���f�[�^</SPAN>
+<SPAN CLASS="linenum">0014:</SPAN> <SPAN CLASS="comment">// 頂点シェーダからピクセルシェーダに渡すデータ</SPAN>
 <SPAN CLASS="linenum">0015:</SPAN> <SPAN CLASS="comment">// -------------------------------------------------------------</SPAN>
 <SPAN CLASS="linenum">0016:</SPAN> <SPAN CLASS="keyword">struct</SPAN> VS_OUTPUT
 <SPAN CLASS="linenum">0017:</SPAN> {
@@ -35,33 +35,33 @@ SPAN.linenum { color:#A0A0A0; font-weight:normal; font-style:normal;}
 <SPAN CLASS="linenum">0019:</SPAN> };
 <SPAN CLASS="linenum">0020:</SPAN> 
 <SPAN CLASS="linenum">0021:</SPAN> <SPAN CLASS="comment">// -------------------------------------------------------------</SPAN>
-<SPAN CLASS="linenum">0022:</SPAN> <SPAN CLASS="comment">// ���_�V�F�[�_�v���O����</SPAN>
+<SPAN CLASS="linenum">0022:</SPAN> <SPAN CLASS="comment">// 頂点シェーダプログラム</SPAN>
 <SPAN CLASS="linenum">0023:</SPAN> <SPAN CLASS="comment">// -------------------------------------------------------------</SPAN>
 <SPAN CLASS="linenum">0024:</SPAN> VS_OUTPUT VS (
-<SPAN CLASS="linenum">0025:</SPAN>       float4 Pos    : POSITION,          <SPAN CLASS="comment">// ���f���̒��_</SPAN>
-<SPAN CLASS="linenum">0026:</SPAN>       float3 Normal : NORMAL             <SPAN CLASS="comment">// ���f���̖@��</SPAN>
+<SPAN CLASS="linenum">0025:</SPAN>       float4 Pos    : POSITION,          <SPAN CLASS="comment">// モデルの頂点</SPAN>
+<SPAN CLASS="linenum">0026:</SPAN>       float3 Normal : NORMAL             <SPAN CLASS="comment">// モデルの法線</SPAN>
 <SPAN CLASS="linenum">0027:</SPAN> ){
-<SPAN CLASS="linenum">0028:</SPAN>     VS_OUTPUT Out = (VS_OUTPUT)0;        <SPAN CLASS="comment">// �o�̓f�[�^</SPAN>
+<SPAN CLASS="linenum">0028:</SPAN>     VS_OUTPUT Out = (VS_OUTPUT)0;        <SPAN CLASS="comment">// 出力データ</SPAN>
 <SPAN CLASS="linenum">0029:</SPAN>     
-<SPAN CLASS="linenum">0030:</SPAN>     <SPAN CLASS="comment">// ���̗��ɂȂ��Ă���ʂ����Ɉ����L�΂�</SPAN>
+<SPAN CLASS="linenum">0030:</SPAN>     <SPAN CLASS="comment">// 光の裏になっている面を後ろに引き伸ばす</SPAN>
 <SPAN CLASS="linenum">0031:</SPAN>     float4 dir = vLightPos - Pos;
 <SPAN CLASS="linenum">0032:</SPAN>     <SPAN CLASS="keyword">float</SPAN> LN = dot( Normal, dir );
 <SPAN CLASS="linenum">0033:</SPAN>     <SPAN CLASS="keyword">float</SPAN> scale = (0&lt;LN) ? 0.0f : 1.0f;
 <SPAN CLASS="linenum">0034:</SPAN>     
-<SPAN CLASS="linenum">0035:</SPAN>     <SPAN CLASS="comment">// ���W�ϊ�</SPAN>
-<SPAN CLASS="linenum">0036:</SPAN>     Pos.xyz -= 0.001f*Pos;<SPAN CLASS="comment">// �Ȃ������Ȃ��悤�ɏ����k�߂�</SPAN>
+<SPAN CLASS="linenum">0035:</SPAN>     <SPAN CLASS="comment">// 座標変換</SPAN>
+<SPAN CLASS="linenum">0036:</SPAN>     Pos.xyz -= 0.001f*Pos;<SPAN CLASS="comment">// 縞がおきないように少し縮める</SPAN>
 <SPAN CLASS="linenum">0037:</SPAN>     Out.Pos = mul( Pos - scale * dir, mWVP );
 <SPAN CLASS="linenum">0038:</SPAN>     
 <SPAN CLASS="linenum">0039:</SPAN>     <SPAN CLASS="keyword">return</SPAN> Out;
 <SPAN CLASS="linenum">0040:</SPAN> }
 <SPAN CLASS="linenum">0041:</SPAN> <SPAN CLASS="comment">// -------------------------------------------------------------</SPAN>
-<SPAN CLASS="linenum">0042:</SPAN> <SPAN CLASS="comment">// �e�N�j�b�N</SPAN>
+<SPAN CLASS="linenum">0042:</SPAN> <SPAN CLASS="comment">// テクニック</SPAN>
 <SPAN CLASS="linenum">0043:</SPAN> <SPAN CLASS="comment">// -------------------------------------------------------------</SPAN>
 <SPAN CLASS="linenum">0044:</SPAN> technique TShader
 <SPAN CLASS="linenum">0045:</SPAN> {
 <SPAN CLASS="linenum">0046:</SPAN>     pass P0
 <SPAN CLASS="linenum">0047:</SPAN>     {
-<SPAN CLASS="linenum">0048:</SPAN>         <SPAN CLASS="comment">// �V�F�[�_</SPAN>
+<SPAN CLASS="linenum">0048:</SPAN>         <SPAN CLASS="comment">// シェーダ</SPAN>
 <SPAN CLASS="linenum">0049:</SPAN>         VertexShader = compile vs_1_1 VS();
 <SPAN CLASS="linenum">0050:</SPAN>         PixelShader  = NULL;
 <SPAN CLASS="linenum">0051:</SPAN>     }

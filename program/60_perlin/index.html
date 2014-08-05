@@ -1,8 +1,8 @@
 <head>
-	<title>t-pot�wPerlin �m�C�Y�x</title>
+	<title>t-pot『Perlin ノイズ』</title>
 	<link rel="stylesheet" type="text/css" href="../if.css">
 </head>
-<meta http-equiv=Content-Type content="text/html; charset=shift_jis">
+<meta http-equiv=Content-Type content="text/html; charset=UTF-8">
 <body>
 
 
@@ -10,8 +10,8 @@
 <center>
 <BR CLEAR=ALL>
 <BR CLEAR=ALL>
-<h1>Perlin �m�C�Y</h1><br>
-<h3>�`�N�ւ̏d�˕��`</h3>
+<h1>Perlin ノイズ</h1><br>
+<h3>～年輪の重ね方～</h3>
 <BR CLEAR=ALL>
 <BR CLEAR=ALL>
 <BR CLEAR=ALL>
@@ -21,87 +21,87 @@
 </center>
 <div>
 
-<h2>���͂��߂�</h2>
+<h2>■はじめに</h2>
 
 
 <p>
-�����Perlin �m�C�Y���g�����N�ւ̃e�N�X�`�����쐬���܂��B
-Perlin �m�C�Y�͂�����ނɂ����R���e�X�g���s��ꂽ��A
-Cg �̃R�[�f�B���O�R���e�X�g��`�s�h�̃f���Ń��A���^�C�����������݂��Ă��āA
-�Ђ����Ɂi�H�j����オ���Ă��܂��B<br>
-�L�p�ȃ����_���֐��͎g���o������̂ŁA�׋����Ă����܂��傤�B
+今回はPerlin ノイズを使った年輪のテクスチャを作成します。
+Perlin ノイズはそれを題材にしたコンテストが行われたり、
+Cg のコーディングコンテストやＡＴＩのデモでリアルタイム生成が試みられていて、
+ひそかに（？）盛り上がっています。<br>
+有用なランダム関数は使い出があるので、勉強しておきましょう。
 </p>
 <ul style = "LIST-STYLE-TYPE:none">
-<li><a href="src.lzh">src.lzh (Perlin �m�C�Y�̃\�[�X���d�w�d:DirectX8.1)</a>
+<li><a href="src.lzh">src.lzh (Perlin ノイズのソース＆ＥＸＥ:DirectX8.1)</a>
 </ul>
 
 <p>
-�܂��A�����̂悤�ɓK���Ƀt�@�C���������Ă��܂��B
+まぁ、いつものように適当にファイルが入っています。
 </p>
 <table>
-<tr><td><a href="draw_cpp.html">draw.cpp</a></td><td>���C���̕`�敔���B</td></tr>
-<tr><td><a href="draw_h.html">draw.h</a></td><td>�`��̊e�֐��̒�`�B</td></tr>
-<tr><td><a href="bg_cpp.html">bg.cpp</a></td><td>�w�i�̕`��B</td></tr>
-<tr><td><a href="load_cpp.html">load.cpp</a></td><td>���b�V���̃��[�h�B</td></tr>
-<tr><td><a href="load_h.html">load.h</a></td><td>���[�h�̃C���^�[�t�F�C�X�B</td></tr>
-<tr><td><a href="main_h.html">main.h</a></td><td>��{�I�Ȓ萔�ȂǁB</td></tr>
-<tr><td><a href="main_cpp.html">main.cpp</a></td><td>�`��Ɋ֌W���Ȃ��V�X�e���I�ȕ����B</td></tr>
+<tr><td><a href="draw_cpp.html">draw.cpp</a></td><td>メインの描画部分。</td></tr>
+<tr><td><a href="draw_h.html">draw.h</a></td><td>描画の各関数の定義。</td></tr>
+<tr><td><a href="bg_cpp.html">bg.cpp</a></td><td>背景の描画。</td></tr>
+<tr><td><a href="load_cpp.html">load.cpp</a></td><td>メッシュのロード。</td></tr>
+<tr><td><a href="load_h.html">load.h</a></td><td>ロードのインターフェイス。</td></tr>
+<tr><td><a href="main_h.html">main.h</a></td><td>基本的な定数など。</td></tr>
+<tr><td><a href="main_cpp.html">main.cpp</a></td><td>描画に関係しないシステム的な部分。</td></tr>
 </table>
-<image src = "sky_bmp.jpg" width = 64 height=64>sky.bmp (��)<br>
-<image src = "tile_bmp.jpg" width = 64 height=64>tile.bmp (�n��)<br>
+<image src = "sky_bmp.jpg" width = 64 height=64>sky.bmp (空)<br>
+<image src = "tile_bmp.jpg" width = 64 height=64>tile.bmp (地面)<br>
 <p>
-���ƁA���f���Ǝ��s�t�@�C���y�сA�v���W�F�N�g�t�@�C���������Ă��܂��B
+あと、モデルと実行ファイル及び、プロジェクトファイルが入っています。
 </p>
 
 
-<h2>��Perlin �m�C�Y�Ƃ�</h2>
+<h2>■Perlin ノイズとは</h2>
 
 
 <p>
-Perlin �m�C�Y�Ƃ́A�j���[���[�N��w�� <a href="http://mrl.nyu.edu/~perlin/">Ken Perlin ��</a>���J�������m�C�Y�ł��B<br>
-Ken Perlin ���́A�uT2�v���Ŏg�p���ꂽ �uNoise & Turblence �A���S���Y���v�̊J����1997�N�ɃA�J�f�~�[�Z�p�܂���܂��Ă������̂ł��B<br>
-SIGGRAPH �ł����N�̂悤�ɔ��\����Ă���A���̕���ł͔��ɗL���ȕ��ł��B
+Perlin ノイズとは、ニューヨーク大学の <a href="http://mrl.nyu.edu/~perlin/">Ken Perlin 氏</a>が開発したノイズです。<br>
+Ken Perlin 氏は、「T2」等で使用された 「Noise & Turblence アルゴリズム」の開発で1997年にアカデミー技術賞を受賞しているつわものです。<br>
+SIGGRAPH でも毎年のように発表されており、この分野では非常に有名な方です。
 </p>
 <image src = "perlin.jpg">
 <p>
-Perlin �m�C�Y�́A�����̃m�C�Y���������ĂP�̃m�C�Y�����܂��B
+Perlin ノイズは、複数のノイズを合成して１つのノイズを作ります。
 </p>
 <image src = "howto.png">
 <p>
-��������m�C�Y�́A�T���v�����O���g�����Q�ׂ̂���ő������܂��B<br>
-�܂��A���̂Ƃ������̂��i�U���j�����������Ă����܂��B
-���́u���������Ă����x�����v�� Persistance �Ƃ����܂��B
-Persistance �́A�قƂ�ǂ̏ꍇ�P�ȉ��̏����ŁAPersistance ���������قǂȂ��炩�ȃm�C�Y����邱�Ƃ��ł��܂��B<br>
-�Ȃ��炩���́A��������m�C�Y�̌�(�I�N�^�[�u��)�ł��������邱�Ƃ��ł��܂��B
-�Ȃ��A�I�N�^�[�u�Ƃ������́A�m�C�Y�̃T���v�����O���g�����Q�ׂ̂���ł����邩�疼�Â����܂����B
-���g�����Q�{�������͂P�I�N�^�[�u��̉��ł��B
-���̉��y�p��Ƃ̘A�z�ŁA�I�N�^�[�u�Ƃ������t���g���Ă��܂��B<br>
-�����I�N�^�[�u�̃m�C�Y�́A�ׂ��ȕ�����\���ł���̂ŁA���ׂ����m�C�Y����邱�Ƃ��ł��܂��B<br>
-�}�ɏo�Ă���uPersistance ���v�Ȃ����A�u�I�N�^�[�u��v�̉摜������̃^�C�g���G�Ŏg���Ă���m�C�Y�ł��B<br>
-�쐬�����m�C�Y���P�O�{���āA����ɏ��������̗p���ăM�U�M�U�̖͗l�����܂��B
+合成するノイズは、サンプリング周波数が２のべき乗で増加します。<br>
+また、このとき乱数のゆれ（振幅）を小さくしていきます。
+この「小さくしていく度合い」を Persistance といいます。
+Persistance は、ほとんどの場合１以下の小数で、Persistance が小さいほどなだらかなノイズを作ることができます。<br>
+なだらかさは、合成するノイズの個数(オクターブ数)でも調整することができます。
+なぜ、オクターブというかは、ノイズのサンプリング周波数が２のべき乗であがるから名づけられました。
+周波数が２倍高い音は１オクターブ上の音です。
+その音楽用語との連想で、オクターブという言葉が使われています。<br>
+高いオクターブのノイズは、細かな部分を表現できるので、より細かいノイズを作ることができます。<br>
+図に出ている「Persistance 小」ないし、「オクターブ大」の画像が今回のタイトル絵で使っているノイズです。<br>
+作成したノイズを１０倍して、さらに小数部を採用してギザギザの模様を作ります。
 </p>
 <image src = "cycle.png">
 
 <p>
-�Ȃ��A�T���v�����O���钆�Ԃł́A�l�̕�Ԃ����܂��B
+なお、サンプリングする中間では、値の補間をします。
 </p>
 <image src = "erp.png">
 <p>
-�����Catmull-Rom �X�v���C�����B��Ԃɗp���܂����A���`��Ԃ�O�p�֐�����Ԃɗp�����܂�
-�i���ƂŋC�Â����̂ł����A�O�p�֐��͂����ƂȂ��炩�ɂȂ���悤�ɒ�������܂��j�B<br>
-�v�Z�̂��₷���⌋�ʂ̈Ⴂ�̍D�݂őI�ׂ΂����ł��傤�B
+今回はCatmull-Rom スプラインを。補間に用いますが、線形補間や三角関数も補間に用いられます
+（あとで気づいたのですが、三角関数はもっとなだらかにつながるように調整されます）。<br>
+計算のしやすさや結果の違いの好みで選べばいいでしょう。
 </p>
 
-<h2>���\�[�X�t�@�C��</h2>
+<h2>■ソースファイル</h2>
 
 
 <p>
-����ł̓v���O���������Ă����܂��傤�B<br>
-����́A���ʂȃV�F�[�_�͑S������܂���B
+それではプログラムを見ていきましょう。<br>
+今回は、特別なシェーダは全くありません。
 </p>
 <p>
-�e�N�X�`���[�̐����͏��������ɍs���܂��B<br>
-D3DXFillTexture ���g���āA�Z�o�I�ɐ������܂��B
+テクスチャーの生成は初期化時に行います。<br>
+D3DXFillTexture を使って、算出的に生成します。
 </p>
 
 <pre class="CodeBlock">
@@ -112,12 +112,12 @@ draw.c
 <FONT COLOR=deepskyblue>0278:</FONT>     <FONT COLOR=blue>if</FONT>( FAILED(hr = D3DXFillTexture(pTexture, MakTexture, NULL))) <FONT COLOR=blue>return</FONT> hr;
 </pre>
 <p>
-���ۂ̃e�N�X�`���̐����͎��̂悤�ɂȂ�܂��B
+実際のテクスチャの生成は次のようになります。
 </p>
 <pre class="CodeBlock">
 draw.c
 <FONT COLOR=deepskyblue>0227:</FONT> <FONT COLOR=cyan>// ----------------------------------------------------------------------------</FONT>
-<FONT COLOR=deepskyblue>0228:</FONT> <FONT COLOR=cyan>// �e�N�X�`���[���쐬</FONT>
+<FONT COLOR=deepskyblue>0228:</FONT> <FONT COLOR=cyan>// テクスチャーを作成</FONT>
 <FONT COLOR=deepskyblue>0229:</FONT> <FONT COLOR=cyan>// ----------------------------------------------------------------------------</FONT>
 <FONT COLOR=deepskyblue>0230:</FONT> VOID MakTexture(D3DXVECTOR4* pOut, D3DXVECTOR2 *pTexCoord, D3DXVECTOR2 *pTexelSize, LPVOID pData)
 <FONT COLOR=deepskyblue>0231:</FONT> {
@@ -126,40 +126,40 @@ draw.c
 <FONT COLOR=deepskyblue>0234:</FONT> 
 <FONT COLOR=deepskyblue>0235:</FONT>     <FONT COLOR=blue>float</FONT> shade = 0.0f;
 <FONT COLOR=deepskyblue>0236:</FONT>     
-<FONT COLOR=deepskyblue>0237:</FONT>     <FONT COLOR=cyan>// �ő�̐U���̑傫��</FONT>
+<FONT COLOR=deepskyblue>0237:</FONT>     <FONT COLOR=cyan>// 最大の振幅の大きさ</FONT>
 <FONT COLOR=deepskyblue>0238:</FONT>     <FONT COLOR=blue>float</FONT> amplitude = 1.0f/(((<FONT COLOR=blue>float</FONT>)pow( PERSISTANCE, OCTAVES ) - 1.f)/(PERSISTANCE - 1.f));
 <FONT COLOR=deepskyblue>0239:</FONT>     <FONT COLOR=blue>float</FONT> frequency = 4.0;
 <FONT COLOR=deepskyblue>0240:</FONT> 
 <FONT COLOR=deepskyblue>0241:</FONT>     <FONT COLOR=blue>for</FONT>(<FONT COLOR=blue>int</FONT> i=0; i&lt;OCTAVES ; i++){
 <FONT COLOR=deepskyblue>0242:</FONT>         shade += amplitude * GetNoiseOctave(i, frequency, pTexCoord-&gt;x, pTexCoord-&gt;y);
 <FONT COLOR=deepskyblue>0243:</FONT> 
-<FONT COLOR=deepskyblue>0244:</FONT>         amplitude *= PERSISTANCE;   <FONT COLOR=cyan>// �U���͏�����</FONT>
-<FONT COLOR=deepskyblue>0245:</FONT>         frequency *= 2;             <FONT COLOR=cyan>// ���g���͍����Ȃ�</FONT>
+<FONT COLOR=deepskyblue>0244:</FONT>         amplitude *= PERSISTANCE;   <FONT COLOR=cyan>// 振幅は小さく</FONT>
+<FONT COLOR=deepskyblue>0245:</FONT>         frequency *= 2;             <FONT COLOR=cyan>// 周波数は高くなる</FONT>
 <FONT COLOR=deepskyblue>0246:</FONT>     }
 <FONT COLOR=deepskyblue>0247:</FONT>     
-<FONT COLOR=deepskyblue>0248:</FONT>     <FONT COLOR=cyan>// �N�ւۂ����H����</FONT>
-<FONT COLOR=deepskyblue>0249:</FONT>     shade = 10*shade;           <FONT COLOR=cyan>// 10�N���̗�</FONT>
-<FONT COLOR=deepskyblue>0250:</FONT>     shade = shade - (<FONT COLOR=blue>int</FONT>)shade; <FONT COLOR=cyan>// �����������o��</FONT>
+<FONT COLOR=deepskyblue>0248:</FONT>     <FONT COLOR=cyan>// 年輪ぽく加工する</FONT>
+<FONT COLOR=deepskyblue>0249:</FONT>     shade = 10*shade;           <FONT COLOR=cyan>// 10年分の輪</FONT>
+<FONT COLOR=deepskyblue>0250:</FONT>     shade = shade - (<FONT COLOR=blue>int</FONT>)shade; <FONT COLOR=cyan>// 小数部を取り出す</FONT>
 <FONT COLOR=deepskyblue>0251:</FONT> 
-<FONT COLOR=deepskyblue>0252:</FONT>     <FONT COLOR=cyan>// �F������</FONT>
-<FONT COLOR=deepskyblue>0253:</FONT>     pOut-&gt;x = 0.80f*shade;  <FONT COLOR=cyan>// ���F���ۂ��F�ɂ���</FONT>
+<FONT COLOR=deepskyblue>0252:</FONT>     <FONT COLOR=cyan>// 色をつける</FONT>
+<FONT COLOR=deepskyblue>0253:</FONT>     pOut-&gt;x = 0.80f*shade;  <FONT COLOR=cyan>// 茶色っぽい色にする</FONT>
 <FONT COLOR=deepskyblue>0254:</FONT>     pOut-&gt;y = 0.36f*shade;
 <FONT COLOR=deepskyblue>0255:</FONT>     pOut-&gt;z = 0.08f*shade;
 <FONT COLOR=deepskyblue>0256:</FONT>     pOut-&gt;w = 1.0f;
 <FONT COLOR=deepskyblue>0257:</FONT> }
 </pre>
 <p>
-�U���̌����x������ PERSISTANCE �ƁA�d�ˍ��킹�� OCTAVES ��K���Ɍ��߂Ă����܂��B<br>
-�I�N�^�[�u�̉񐔂����m�C�Y�𑫂�����ł����܂��B<br>
-�I�N�^�[�u�������邲�ƂɁA�U���͏������A���g���͍������Ă����܂��B
+振幅の減少度を示す PERSISTANCE と、重ね合わせ回数 OCTAVES を適当に決めておきます。<br>
+オクターブの回数だけノイズを足しこんでいきます。<br>
+オクターブがあがるごとに、振幅は小さく、周波数は高くしていきます。
 </p>
 <p>
-���Ƃ́A�N�ւ̂悤�ɂ���悤�ɁA�J��ւ�����t���܂��B��̓I�ɂ́A�P�O�{���āA���̏��������Ƃ�܂��B
-��������΁A���̃m�C�Y���O����P�ɕω������i�K�łP�O�̔N�ւ��ł��܂��B<br>
-�Ō�ɐF�����ďo�͂���΁A�P�̃e�N�Z���Ɋւ���F�����܂�܂��B
+あとは、年輪のようにするように、繰り替えしを付けます。具体的には、１０倍して、その小数部をとります。
+こうすれば、元のノイズが０から１に変化した段階で１０個の年輪ができます。<br>
+最後に色をつけて出力すれば、１つのテクセルに関する色が求まります。
 </p>
 <p>
-���́A�m�C�Y��^���� GetNoiseOctave �֐��ł��B���̊֐��́A�O����P�̑傫���Ŋe�I�N�^�[�u�ɉ������m�C�Y�𐶐����܂��B
+問題は、ノイズを与える GetNoiseOctave 関数です。この関数は、０から１の大きさで各オクターブに応じたノイズを生成します。
 </p>
 <pre class="CodeBlock">
 draw.c
@@ -205,15 +205,15 @@ draw.c
 <FONT COLOR=deepskyblue>0226:</FONT> }
 </pre>
 <p>
-�I�N�^�[�u���Ƃ̈Ⴂ��\�����܂��傤�B<br>
-�I�N�^�[�u���Ⴆ�΁A���g���������Ȃ�܂��B<br>
-���g���́A�T���v�����O�̌��A���Ȃ킿�J��Ԃ��̉񐔂ł��B
-(no[0], no[1]) �́A���݂̍��W(x, y)���Afrequency �̌J��Ԃ��̒��̉��Ԗڂ��������܂��B
+オクターブごとの違いを表現しましょう。<br>
+オクターブが違えば、周波数が高くなります。<br>
+周波数は、サンプリングの個数、すなわち繰り返しの回数です。
+(no[0], no[1]) は、現在の座標(x, y)が、frequency の繰り返しの中の何番目かを示します。
 </p>
 <p>
-rand_tbl �́A�e�N�Z�����W�Ɉˑ������i�������W�l��^�������ɁA��ɓ���������Ԃ��悤�ȁj�����ł��B<br>
-�z��Ƃ��ė�����p�ӂ��܂����B<br>
-�܂��A�����̒l�́A�g���₷���悤�ɁA0�`1�͈̔͂ɂ��܂����B
+rand_tbl は、テクセル座標に依存した（同じ座標値を与えた時に、常に同じ乱数を返すような）乱数です。<br>
+配列として乱数を用意しました。<br>
+また、乱数の値は、使いやすいように、0～1の範囲にしました。
 </p>
 <pre class="CodeBlock">
 draw.c
@@ -225,15 +225,15 @@ draw.c
 <FONT COLOR=deepskyblue>0274:</FONT>             rand_tbl[i][j] = (<FONT COLOR=blue>float</FONT>)rand()/(<FONT COLOR=blue>float</FONT>)RAND_MAX;
 </pre>
 <p>
-�z��̑傫���͓K���ł��B�������Ǝ������������Ă��܂��̂ŁA�e�N�X�`���T�C�Y�ƃI�N�^�[�u���Ŋ��������x�̑傫����p�ӂ��܂��B
+配列の大きさは適当です。小さいと周期性が見えてしまうので、テクスチャサイズとオクターブ数で割った程度の大きさを用意します。
 </p>
 
 
 <p>
-�m�C�Y���Ȃ��炩�ɂ���֐��Ƃ��ẮACatmull-Rom �Ȑ��̃p�b�`���g���܂����B<br>
-�����n���p�����[�^�̒l�́A�J��Ԃ��̒��ł̂O����P�̊Ԃ̃p�����[�^�ɂȂ�܂��B<br>
-�e�N�Z�����W�ɉ����āA�����I�ɂȂ�悤�ɗ����̃R���g���[���|�C���g�����߂܂��B<br>
-�A���A�I�N�^�[�u���Ⴆ�Εʂ̗����𓾂�悤�ɒ������Ă��܂��B
+ノイズをなだらかにする関数としては、Catmull-Rom 曲線のパッチを使いました。<br>
+引き渡すパラメータの値は、繰り返しの中での０から１の間のパラメータになります。<br>
+テクセル座標に応じて、周期的になるように乱数のコントロールポイントを決めます。<br>
+但し、オクターブが違えば別の乱数を得るように調整しています。
 </p>
 
 <image src = "oct0.png">
@@ -241,12 +241,12 @@ draw.c
 <pre class="CodeBlock">
 draw.c
 <FONT COLOR=deepskyblue>0152:</FONT> <FONT COLOR=cyan>// ----------------------------------------------------------------------------</FONT>
-<FONT COLOR=deepskyblue>0153:</FONT> <FONT COLOR=cyan>// CatmullRom �X�v���C��</FONT>
+<FONT COLOR=deepskyblue>0153:</FONT> <FONT COLOR=cyan>// CatmullRom スプライン</FONT>
 <FONT COLOR=deepskyblue>0154:</FONT> <FONT COLOR=cyan>//</FONT>
-<FONT COLOR=deepskyblue>0155:</FONT> <FONT COLOR=cyan>//          1            �� -1  3 -3  1���� Pi-1 ��</FONT>
-<FONT COLOR=deepskyblue>0156:</FONT> <FONT COLOR=cyan>// xi(t) = �\ [t3 t2 t 1]��  2 -5  4 -1���� Pi   ��</FONT>
-<FONT COLOR=deepskyblue>0157:</FONT> <FONT COLOR=cyan>//          2            �� -1  0  1  0���� Pi+1 ��</FONT>
-<FONT COLOR=deepskyblue>0158:</FONT> <FONT COLOR=cyan>//                       ��  0  2  0  0���� Pi+2 ��</FONT>
+<FONT COLOR=deepskyblue>0155:</FONT> <FONT COLOR=cyan>//          1            ┌ -1  3 -3  1┐┌ Pi-1 ┐</FONT>
+<FONT COLOR=deepskyblue>0156:</FONT> <FONT COLOR=cyan>// xi(t) = ― [t3 t2 t 1]│  2 -5  4 -1││ Pi   │</FONT>
+<FONT COLOR=deepskyblue>0157:</FONT> <FONT COLOR=cyan>//          2            │ -1  0  1  0││ Pi+1 │</FONT>
+<FONT COLOR=deepskyblue>0158:</FONT> <FONT COLOR=cyan>//                       └  0  2  0  0┘└ Pi+2 ┘</FONT>
 <FONT COLOR=deepskyblue>0159:</FONT> <FONT COLOR=cyan>// ----------------------------------------------------------------------------</FONT>
 <FONT COLOR=deepskyblue>0160:</FONT> <FONT COLOR=blue>float</FONT> CatmullRom(<FONT COLOR=blue>float</FONT> x0, <FONT COLOR=blue>float</FONT> x1, <FONT COLOR=blue>float</FONT> x2, <FONT COLOR=blue>float</FONT> x3, <FONT COLOR=blue>float</FONT> t)
 <FONT COLOR=deepskyblue>0161:</FONT> {
@@ -276,22 +276,22 @@ draw.c
 <FONT COLOR=deepskyblue>0185:</FONT> }
 </pre>
 <p>
-CatmullRomPatch �֐��́ACatmull-Rom �Ȑ����Q�d�Ɏg�p���邱�Ƃɂ���āA�Q�����I�ɕ�Ԃ����܂��B<br>
-�p�����[�^ (s,t) ���O����P�̊Ԃœ����ƁA�R���g���[���|�C���g�̒����̂S�_�̒l���⊮����܂��B
+CatmullRomPatch 関数は、Catmull-Rom 曲線を２重に使用することによって、２次元的に補間をします。<br>
+パラメータ (s,t) が０から１の間で動くと、コントロールポイントの中央の４点の値が補完されます。
 </p>
 <image src = "cp.gif">
 
 <p>
-�e�N�X�`�������ۂɒ���͉̂~�����W���g���Ē����Ă��܂����A�}�t�̕����Ȃ̂Ő����͏ȗ����܂��B
+テクスチャを実際に張るのは円柱座標を使って張っていますが、枝葉の部分なので説明は省略します。
 </p>
 
 
-<h2>���Ō��</h2>
+<h2>■最後に</h2>
 
 
 <p>
-����́A�V�F�[�_�Ƃ͑S���֌W�Ȃ��ŁA���ʂɃe�N�X�`���𐶐����܂������A
-���A���^�C���Ŏ������Ă��������ł��ˁB
+今回は、シェーダとは全く関係なしで、普通にテクスチャを生成しましたが、
+リアルタイムで実現していきたいですね。
 </p>
 
 </div>
@@ -300,7 +300,7 @@ CatmullRomPatch �֐��́ACatmull-Rom �Ȑ����Q�d�Ɏg�p���邱�Ƃɂ���āA�Q�����I��
 <BR CLEAR=ALL>
 <center>
 <hr>
-<p><a href="../index.html">���ǂ�</a></p>
+<p><a href="../index.html">もどる</a></p>
 <p><a href="mailto:imagire@gmail.com">imagire@gmail.com</a></p>
 </center>
 

@@ -1,59 +1,59 @@
 <head>
-	<title>t-pot �wVertex Shader ����:��{�I�ȃ��C�e�B���O�x</title>
+	<title>t-pot 『Vertex Shader 入門:基本的なライティング』</title>
 	<link rel="stylesheet" type="text/css" href="../if.css">
 </head>
-<meta http-equiv=Content-Type content="text/html; charset=shift_jis">
+<meta http-equiv=Content-Type content="text/html; charset=UTF-8">
 <body>
 
 <div class="contents">
 <center>
 <BR CLEAR=ALL>
 <BR CLEAR=ALL>
-<h1>��{�I�ȃ��C�e�B���O</h1><br>
-<h3>�`�Ƃ肠�����m���Ƃ��`</h3>
+<h1>基本的なライティング</h1><br>
+<h3>～とりあえず知っとけ～</h3>
 <BR CLEAR=ALL>
 <BR CLEAR=ALL>
 <BR CLEAR=ALL>
 </center>
 
-<h2>������̃t�@�C����</h2>
+<h2>■今回のファイルは</h2>
 
 <p>
-���āA�O��́A�o�[�e�b�N�X�V�F�[�_�[�̎g�������o���܂����B
-�O��̃|���S���́A�e�N�X�`���[�𒣂��������̃|���S���̕\���ł����B
-����́A��{�I�ȃ��C�e�B���O�̗�����舵���܂��B
+さて、前回は、バーテックスシェーダーの使い方を覚えました。
+前回のポリゴンは、テクスチャーを張っただけのポリゴンの表示でした。
+今回は、基本的なライティングの例題を取り扱います。
 </p>
 
-<h2>�����_�F</h2>
+<h2>■頂点色</h2>
 
 <right><image src = "vsdiffuse.gif"></right>
 
 <p>
-�܂��́A���C�e�B���O�͂����ɁA���_�F�Ń|���S���̐F�����܂��B<br>
-�ȉ��̃t�@�C�������[�h���Ă��������B
+まずは、ライティングはせずに、頂点色でポリゴンの色をつけます。<br>
+以下のファイルをロードしてください。
 </p>
 
 <ul style = "LIST-STYLE-TYPE:none">
-<li><a href="vsdiffuse.lzh">vsdiffuse.lzh ���_�F�Ń|���S����\������o�[�e�b�N�X�V�F�[�_�[�̃T���v��)</a>
+<li><a href="vsdiffuse.lzh">vsdiffuse.lzh 頂点色でポリゴンを表示するバーテックスシェーダーのサンプル)</a>
 </ul>
 
 <p>
-�܂��́A���C�e�B���O�͂����ɁA���_�F�Ń|���S���̐F�����܂��B<br>
-�ȉ��̃t�@�C�������[�h���Ă��������B<br>
-����́Avs.vsh �Ƃ����t�@�C����ǉ����܂����B
-����́A�o�[�e�b�N�X�V�F�[�_�[�̃v���O�����ł��B
-�O��́AD3DXAssembleShaderFromFile ���g���āA�t�@�C������ǂݍ��ނ悤�ɂ��܂����B
+まずは、ライティングはせずに、頂点色でポリゴンの色をつけます。<br>
+以下のファイルをロードしてください。<br>
+今回は、vs.vsh というファイルを追加しました。
+これは、バーテックスシェーダーのプログラムです。
+前回は、D3DXAssembleShaderFromFile を使って、ファイルから読み込むようにしました。
 </p>
 
 <p>
-���āA�����̗l�� draw.cpp �ł��B����̒��_�́A
+さて、いつもの様に draw.cpp です。今回の頂点は、
 </p>
 <pre class="CodeBlock">
 struct CUSTOMVERTEX
 {
-    FLOAT x, y, z;  // �ʒu
-    <Font color = orange><b>DWORD color;    // �F</b></font>
-    FLOAT tu, tv;   // �e�N�X�`���[�̉摜�̈ʒu
+    FLOAT x, y, z;  // 位置
+    <Font color = orange><b>DWORD color;    // 色</b></font>
+    FLOAT tu, tv;   // テクスチャーの画像の位置
 };
 #define D3DFVF_CUSTOMVERTEX (D3DFVF_XYZ | <Font color = orange><b>D3DFVF_DIFFUSE | </b></font>D3DFVF_TEX1)
 
@@ -66,21 +66,21 @@ DWORD dwDecl[] = {
 };
 </pre>
 <p>
-�ł��B�O��Ɣ�r���āADWORD color ���t���܂����B
-�o�[�e�b�N�X�V�F�[�_�[�v���O�����ɓ`����t�H�[�}�b�g dwDecl �ɂ��AD3DVSDE_DIFFUSE ��ǉ����܂����B
-�F�̂悤�ȁADWORD �^�̃f�[�^�̏ꍇ�ɂ́AD3DVSDT_D3DCOLOR ���g���܂��B
+です。前回と比較して、DWORD color が付きました。
+バーテックスシェーダープログラムに伝えるフォーマット dwDecl にも、D3DVSDE_DIFFUSE を追加しました。
+色のような、DWORD 型のデータの場合には、D3DVSDT_D3DCOLOR を使います。
 </p>
 
 <p>
-�������́AD3DXAssembleShaderFromFile ���g�����Ƃ��O��Ƃ̈Ⴂ�ł��B<br>
-�܂��A���_�̕ύX�ɑΉ����āA���_�F���w�肵�܂����B����A�E��A�����A�E���̏��ɁA���A�ԁA�΁A�F�ɂȂ�܂��B
+初期化は、D3DXAssembleShaderFromFile を使うことが前回との違いです。<br>
+また、頂点の変更に対応して、頂点色を指定しました。左上、右上、左下、右下の順に、白、赤、緑、青色になります。
 </p>
 
 <pre class="CodeBlock">
 HRESULT InitRender(LPDIRECT3DDEVICE8 lpD3DDEV)
 {
     <Font color = orange><b>CUSTOMVERTEX vertices[] = {
-        // x,     y,    z,                   ��    ��    ��    ��     tu   tv
+        // x,     y,    z,                   赤    緑    青    α     tu   tv
         {-16.0f, 12.0f, 0.0f, D3DCOLOR_RGBA(0xff, 0xff, 0xff, 0xff), 0.0f,0.0f,},
         { 16.0f, 12.0f, 0.0f, D3DCOLOR_RGBA(0xff, 0x00, 0x00, 0xff), 1.0f,0.0f,},
         {-16.0f,-12.0f, 0.0f, D3DCOLOR_RGBA(0x00, 0xff, 0x00, 0xff), 0.0f,1.0f,},
@@ -102,7 +102,7 @@ HRESULT InitRender(LPDIRECT3DDEVICE8 lpD3DDEV)
                                 D3DPOOL_MANAGED, D3DX_FILTER_LINEAR, D3DX_FILTER_LINEAR,
                                 0, NULL, NULL, &pTexture);
 
-    // �o�[�e�b�N�X�V�F�[�_�[���쐬����
+    // バーテックスシェーダーを作成する
     ID3DXBuffer*    pshader;
     <Font color = orange><b>hr = D3DXAssembleShaderFromFile("vs.vsh", 0,NULL,&pshader,NULL);</b></font>
     <Font color = orange><b>if ( FAILED(hr) ) return hr;</b></font>
@@ -111,71 +111,71 @@ HRESULT InitRender(LPDIRECT3DDEVICE8 lpD3DDEV)
     if ( FAILED(hr) ) return hr;
   
     lpD3DDEV->SetRenderState( D3DRS_ZENABLE,      TRUE );
-    lpD3DDEV->SetRenderState( D3DRS_LIGHTING,     FALSE );        // ���_�̐F���g���̂ŁA���C�g�͎g��Ȃ�
-    lpD3DDEV->SetRenderState( D3DRS_CULLMODE, D3DCULL_NONE );    // ���ʕ\��
+    lpD3DDEV->SetRenderState( D3DRS_LIGHTING,     FALSE );        // 頂点の色を使うので、ライトは使わない
+    lpD3DDEV->SetRenderState( D3DRS_CULLMODE, D3DCULL_NONE );    // 両面表示
     
     return S_OK;
 }
 </pre>
 
 <p>
-�`�敔���͈�ӏ������قȂ�܂��B
-���W�ϊ����邽�߂̌Œ背�W�X�^�� c4 �` c7 ����Ac0 �` c3 �ɁA�ڂ��܂����B<br>
-�܂��A�o�[�e�b�N�X�V�F�[�_�[�̃v���O�������A�����ς��������ŁA�[���Ӗ��͂���܂���B
+描画部分は一箇所だけ異なります。
+座標変換するための固定レジスタを c4 ～ c7 から、c0 ～ c3 に、移しました。<br>
+まぁ、バーテックスシェーダーのプログラムを、そう変えただけで、深い意味はありません。
 </p>
 <pre class="CodeBlock">
-    lpD3DDEV->SetVertexShaderConstant( 0 , &trans , 4 );	// Vertex shader �� c0 �` c3 ���W�X�^�̐ݒ�
+    lpD3DDEV->SetVertexShaderConstant( 0 , &trans , 4 );	// Vertex shader の c0 ～ c3 レジスタの設定
 </pre>
 
 <p>
-�̐S���Ȃ߂̃o�[�e�b�N�X�V�F�[�_�[�v���O�����ł����A���̂悤�ɂȂ�܂��B
+肝心かなめのバーテックスシェーダープログラムですが、次のようになります。
 </p>
 <pre class="CodeBlock">
 vs.1.0
-; �P���Ȓ��_�V�F�[�_
-; �萔
-;      reg c0-3   = WorldViewProj �s��
-; �X�g���[�� 0
-;     reg v0   = �ʒu ( 3 x 1 �x�N�g��)
-;     reg v5   = �f�B�t���[�Y�F
-;     reg v7   = �e�N�X�`�����W (2 x 1 �x�N�g��)
-dp4     oPos.x , v0   , c0      ; �ˉe��� x �ʒu���o��
-dp4     oPos.y , v0   , c1      ; �ˉe��� y �ʒu���o��
-dp4     oPos.z , v0   , c2      ; �ˉe��� z �ʒu���o��
-dp4     oPos.w , v0   , c3      ; �ˉe��� w �ʒu���o��
+; 単純な頂点シェーダ
+; 定数
+;      reg c0-3   = WorldViewProj 行列
+; ストリーム 0
+;     reg v0   = 位置 ( 3 x 1 ベクトル)
+;     reg v5   = ディフューズ色
+;     reg v7   = テクスチャ座標 (2 x 1 ベクトル)
+dp4     oPos.x , v0   , c0      ; 射影後の x 位置を出力
+dp4     oPos.y , v0   , c1      ; 射影後の y 位置を出力
+dp4     oPos.z , v0   , c2      ; 射影後の z 位置を出力
+dp4     oPos.w , v0   , c3      ; 射影後の w 位置を出力
 <Font color = orange><b>mov     oD0    , v5</b></font>
-mov     oT0.xy , v7             ; �e�N�X�`�����W���R�s�[
+mov     oT0.xy , v7             ; テクスチャ座標をコピー
 </pre>
 <p>
-�O��Ƃ̈Ⴂ�́AoD0 �ւ̏o�͂ł��B���ꂪ���_�F�ɂȂ�܂��B<br>
-�����ł́Av5 ���W�X�^�ɓ����� CUSTOMVERTEX �� color �������A���̂܂܁A�R�s�[���܂��B<br>
-����ŁA���_�̐F�����f���ꂽ�|���S���̕\�����ł��܂��B
+前回との違いは、oD0 への出力です。これが頂点色になります。<br>
+ここでは、v5 レジスタに入った CUSTOMVERTEX の color 成分を、そのまま、コピーします。<br>
+これで、頂点の色が反映されたポリゴンの表示ができます。
 </p>
 
-<h2>�����s����</h2>
+<h2>■平行光源</h2>
 
 <right><image src = "vslight.gif"></right>
 
 <p>
-���́A���s�����ł��B���s�����́A���z�̂悤�Ȕ��ɉ����ɂ���A�قƂ�ǌ����L����Ȃ����C�g���V�~�����[�g�������̂ł��B<br>
-�\�[�X�́A���ł��B
+次は、平行光源です。平行光源は、太陽のような非常に遠方にあり、ほとんど光が広がらないライトをシミュレートしたものです。<br>
+ソースは、次です。
 </p>
 
 <ul style = "LIST-STYLE-TYPE:none">
-<li><a href="vslight.lzh">vslight.lzh ���s�����Ń|���S�����Ƃ炷�o�[�e�b�N�X�V�F�[�_�[�̃T���v��)</a>
+<li><a href="vslight.lzh">vslight.lzh 平行光源でポリゴンを照らすバーテックスシェーダーのサンプル)</a>
 </ul>
 
 <p>
-���s�����̌��̋����́A�����̕����݂̂Ɉˑ�����̂ŁA�e���_�̖��邳�́A�@�� <b>n</b> �ƁA�����̕��� <b>l</b> �̓��ρi�̊֐��j�ɂȂ�܂��B<br>
-���������āA���_�ɖ@������ǉ����܂��B
+平行光源の光の強さは、光源の方向のみに依存するので、各頂点の明るさは、法線 <b>n</b> と、光源の方向 <b>l</b> の内積（の関数）になります。<br>
+したがって、頂点に法線情報を追加します。
 </p>
 
 <pre class="CodeBlock">
 struct CUSTOMVERTEX
 {
-    FLOAT x, y, z;  // �ʒu
-    <Font color = orange><b>FLOAT nx, ny, nz; // �@��</b></font>
-    FLOAT tu, tv;   // �e�N�X�`���[�̉摜�̈ʒu
+    FLOAT x, y, z;  // 位置
+    <Font color = orange><b>FLOAT nx, ny, nz; // 法線</b></font>
+    FLOAT tu, tv;   // テクスチャーの画像の位置
 };
 #define D3DFVF_CUSTOMVERTEX (D3DFVF_XYZ | <Font color = orange><b>D3DFVF_NORMAL | </b></font>D3DFVF_TEX1)
 
@@ -189,9 +189,9 @@ DWORD dwDecl[] = {
 </pre>
 
 <p>
-�������́A��قǂ̗�ƁA���_�̃f�[�^���Ⴄ�����ł��B<br>
-����́A���̕\�����f�B�t�H�������邽�߂ɁA�@����ʂ̊O���ɏ����L���܂����B
-�L���Ȃ��Ƃ��ɂ́A�e���_�Ɋւ�����̋������ω����Ȃ��̂ŁA�ʂɓ�������̋�������l�ɂȂ�܂��B
+初期化は、先ほどの例と、頂点のデータが違うだけです。<br>
+今回は、光の表現をディフォルメするために、法線を面の外側に少し広げました。
+広げないときには、各頂点に関する光の強さが変化しないので、面に当たる光の強さが一様になります。
 </p>
 
 <pre class="CodeBlock">
@@ -205,7 +205,7 @@ CUSTOMVERTEX vertices[] = {
 </pre>
 
 <p>
-�`�敔���́A���傢�ƈႢ�܂��B���C�g�̕����̃x�N�g�����A�Œ背�W�X�^�� c4 �ɓ���Ă��܂��B
+描画部分は、ちょいと違います。ライトの方向のベクトルを、固定レジスタの c4 に入れています。
 </p>
 
 <pre class="CodeBlock">
@@ -218,29 +218,29 @@ void Render(LPDIRECT3DDEVICE8 lpD3DDEV)
     D3DXMatrixRotationX(&mRotX, 0.0f);
     mWorld = mRotX * mRotY * mTrans;
     
-    // ���[���h�A�r���[���W�n�̕ϊ�
+    // ワールド、ビュー座標系の変換
     D3DXMATRIX mView, mProj;
     D3DXMatrixLookAtLH(&mView
-                    ,&D3DXVECTOR3(0,0.0f,-50.0f)  // �J�����ʒu
-                    ,&D3DXVECTOR3(0,0,0)          // �J�����̒��ړ_
-                    ,&D3DXVECTOR3(0,1,0)          // ��̌���
+                    ,&D3DXVECTOR3(0,0.0f,-50.0f)  // カメラ位置
+                    ,&D3DXVECTOR3(0,0,0)          // カメラの注目点
+                    ,&D3DXVECTOR3(0,1,0)          // 上の向き
                     );
     
-    // �r���[�A�X�N���[�����W�n�̕ϊ�
+    // ビュー、スクリーン座標系の変換
     D3DXMatrixPerspectiveFovLH(&mProj
-        ,60.0f*D3DX_PI/180.0f                   // ����p
-        ,(float)WIDTH/(float)HEIGHT             // �A�X�y�N�g��
-        ,0.01f                                  // �ŋߐڋ���
-        ,100.0f                                 // �ŉ�������
+        ,60.0f*D3DX_PI/180.0f                   // 視野角
+        ,(float)WIDTH/(float)HEIGHT             // アスペクト比
+        ,0.01f                                  // 最近接距離
+        ,100.0f                                 // 最遠方距離
         );
     
-    // Vertex shader �� c0 �` c3 ���W�X�^�̐ݒ�
+    // Vertex shader の c0 ～ c3 レジスタの設定
     D3DXMATRIX  m = mWorld * mView * mProj;
     D3DXMATRIX    trans;
     D3DXMatrixTranspose( &trans ,  &m);
     lpD3DDEV->SetVertexShaderConstant( 0 , &trans , 4 );
     
-    <Font color = orange><b>// ���C�g��c4 ���W�X�^�̐ݒ�
+    <Font color = orange><b>// ライトのc4 レジスタの設定
     D3DXVECTOR4 vLight(0, 0.707f, 0.707f, 0);
     D3DXMatrixInverse(&mWorld, NULL, &mWorld);
     D3DXVec4Transform( &vLight, &vLight, &mWorld);
@@ -254,65 +254,65 @@ void Render(LPDIRECT3DDEVICE8 lpD3DDEV)
 }
 </pre>
 <p>
-���̎��ɁA���[���h�s��̋t�s����|���܂����B<br>
-�|���S������]����ƁA�@������]����K�v������̂ŁA���̌v�Z�����Ă��܂��B<br>
-�����A�e���_�̖@���𖈉񃏁[���h���W�ɕϊ�����̂́A�v�Z�ʂ������̂ŁA
+この時に、ワールド行列の逆行列を掛けました。<br>
+ポリゴンが回転すると、法線も回転する必要があるので、その計算をしています。<br>
+ただ、各頂点の法線を毎回ワールド座標に変換するのは、計算量が多いので、
 </p>
 <pre class="CodeBlock">
-���C�g���Œ肵�āA�|���S�������=�|���S�����Œ肵�āA���C�g���t�����ɉ�
+ライトが固定して、ポリゴンが回る=ポリゴンを固定して、ライトを逆方向に回す
 </pre>
 <p>
-�Ƃ������Ƃ𗘗p���āA���C�g�Ƀ��[���h�s��̋t�s����|���邱�ƂŁA���[���h���W�ւ̕ϊ����ς܂��Ă��܂��B<br>
-�����A�e���_�̖@����S�ĕϊ����Ă�����A�s��ϊ������S�`���璸�_�̌v�Z���K�v�ł��B
-������s�񉉎Z���ł��܂������ƂɂȂ�܂��B
+ということを利用して、ライトにワールド行列の逆行列を掛けることで、ワールド座標への変換を済ませています。<br>
+もし、各頂点の法線を全て変換していたら、行列変換が数百～数千頂点の計算が必要です。
+それを行列演算一回ですましたことになります。
 </p>
 
 <pre class="CodeBlock">
-; v0 : ���_���W
-; v3 : �@��
-; v7 : �e�N�X�`���[���W(UV)
+; v0 : 頂点座標
+; v3 : 法線
+; v7 : テクスチャー座標(UV)
 ;
-; c0-c3 : World-View-Proj �s��
-; c4 : ���C�g�x�N�g��
+; c0-c3 : World-View-Proj 行列
+; c4 : ライトベクトル
 ;
-vs.1.0                             ; �o�[�W�������
-dp4     oPos.x , v0   , c0         ; x�����̓����ϊ�
-dp4     oPos.y , v0   , c1         ; y�����̓����ϊ�
-dp4     oPos.z , v0   , c2         ; z�����̓����ϊ�
-dp4     oPos.w , v0   , c3         ; w�����̓����ϊ�
-<Font color = orange><b>dp3    oD0   , v3  , -c4       ; �@���ƃ��C�g�̕����x�N�g���̓��ς���A�F���v�Z</b></font>
+vs.1.0                             ; バージョン情報
+dp4     oPos.x , v0   , c0         ; x成分の透視変換
+dp4     oPos.y , v0   , c1         ; y成分の透視変換
+dp4     oPos.z , v0   , c2         ; z成分の透視変換
+dp4     oPos.w , v0   , c3         ; w成分の透視変換
+<Font color = orange><b>dp3    oD0   , v3  , -c4       ; 法線とライトの方向ベクトルの内積から、色を計算</b></font>
 mov     oT0.xy , v7                ; copy texcoords
 </pre>
 
 <p>
-���āA�V�F�[�_�[�v���O�����ł��B<br>
-����́AoD0 �̏o�͂� v3 �� -c4 �̓��ςɂȂ��Ă��܂��B<br>
-����́A���̒l������Ă���̂́A�@���ƃ��C�g�̌����͌����������Ă���Ƃ��i���ς̒l��-1�̎��j���A
-��Ԍ��������������Ă��鎞�Ȃ̂ŁA���̂Ƃ��ɐF��1�ɂȂ�悤�ɒ������܂����B
-���̌v�Z�ł́A���ς̒l�� xyzw �̑S�Ă̐����ɓ���܂��B
-���������āA���̐F�͔��ɂȂ�܂��B
+さて、シェーダープログラムです。<br>
+今回は、oD0 の出力が v3 と -c4 の内積になっています。<br>
+これは、負の値を取っているのは、法線とライトの向きは向かい合っているとき（内積の値が-1の時）が、
+一番光が強く当たっている時なので、そのときに色が1になるように調整しました。
+この計算では、内積の値が xyzw の全ての成分に入ります。
+したがって、光の色は白になります。
 </p>
 
-<h2>�����_�F�t�����s����</h2>
+<h2>■頂点色付き平行光源</h2>
 
 <right><image src = "vsld.gif"></right>
 
 <p>
-���āA�ȏ�̓�̍����ł��B<br>
-���_�ɖ@���ƁA���_�F�̗���������܂��B
+さて、以上の二つの合成です。<br>
+頂点に法線と、頂点色の両方が入ります。
 </p>
 
 <ul style = "LIST-STYLE-TYPE:none">
-<li><a href="vsld.lzh">vsld.lzh ���s�����Œ��_�F�t���|���S�����Ƃ炷�o�[�e�b�N�X�V�F�[�_�[�̃T���v��)</a>
+<li><a href="vsld.lzh">vsld.lzh 平行光源で頂点色付きポリゴンを照らすバーテックスシェーダーのサンプル)</a>
 </ul>
 
 <pre class="CodeBlock">
 struct CUSTOMVERTEX
 {
-    FLOAT x, y, z;    // �ʒu
-    FLOAT nx, ny, nz; // �@��
-    DWORD color;      // ���_�F
-    FLOAT tu, tv;     // �e�N�X�`���[�̉摜�̈ʒu
+    FLOAT x, y, z;    // 位置
+    FLOAT nx, ny, nz; // 法線
+    DWORD color;      // 頂点色
+    FLOAT tu, tv;     // テクスチャーの画像の位置
 };
 #define D3DFVF_CUSTOMVERTEX (D3DFVF_XYZ | D3DFVF_NORMAL | D3DFVF_DIFFUSE | D3DFVF_TEX1)
 
@@ -327,12 +327,12 @@ DWORD dwDecl[] = {
 </pre>
 
 <p>
-���������A�f�[�^���Ⴄ�����ŁA���s�����̂��̂��̂܂܂ł��B
-�`��Ɋւ��ẮA�S�������ł��B
+初期化も、データが違うだけで、平行光源のものそのままです。
+描画に関しては、全く同じです。
 </p>
 <pre class="CodeBlock">
 CUSTOMVERTEX vertices[] = {
-    // x,     y,    z,        nx        ny           nz                         ��    ��    ��    ��     tu   tv
+    // x,     y,    z,        nx        ny           nz                         赤    緑    青    α     tu   tv
     {-16.0f, 12.0f, 0.0f,-1.0f/2.0f, 1.0f/2.0f,-1.7320508f/2.0f, D3DCOLOR_RGBA(0xff, 0xff, 0xff, 0xff), 0.0f,0.0f,},
     { 16.0f, 12.0f, 0.0f, 1.0f/2.0f, 1.0f/2.0f,-1.7320508f/2.0f, D3DCOLOR_RGBA(0xff, 0x00, 0x00, 0xff), 1.0f,0.0f,},
     {-16.0f,-12.0f, 0.0f,-1.0f/2.0f,-1.0f/2.0f,-1.7320508f/2.0f, D3DCOLOR_RGBA(0x00, 0xff, 0x00, 0xff), 0.0f,1.0f,},
@@ -341,46 +341,46 @@ CUSTOMVERTEX vertices[] = {
 </pre>
 
 <p>
-�����āA�V�F�[�_�[�v���O�����́A���̂悤�ɂȂ�܂��B
+そして、シェーダープログラムは、次のようになります。
 </p>
 <pre class="CodeBlock">
-; v0 : ���_���W
-; v3 : �@��
-; v5 : ���_�F
-; v7 : �e�N�X�`���[���W(UV)
+; v0 : 頂点座標
+; v3 : 法線
+; v5 : 頂点色
+; v7 : テクスチャー座標(UV)
 ;
-; c0-c3 : World-View-Proj �s��
-; c4 : ���C�g�x�N�g��
+; c0-c3 : World-View-Proj 行列
+; c4 : ライトベクトル
 ;
-vs.1.0                             ; �o�[�W�������
-; ���W�ϊ�
-dp4     oPos.x , v0   , c0         ; x�����̓����ϊ�
-dp4     oPos.y , v0   , c1         ; y�����̓����ϊ�
-dp4     oPos.z , v0   , c2         ; z�����̓����ϊ�
-dp4     oPos.w , v0   , c3         ; w�����̓����ϊ�
-<Font color = orange><b>; ���C�g�̌v�Z
-dp3     r0.x , v3   , -c4      ; �@���ƃ��C�g�̕����x�N�g���̓��ς���A�F���v�Z
-mul     oD0  , v5   , r0.x     ; ����ɒ��_�J���[���l����</b></font>
-; �e�N�X�`���[�𒣂�
-mov     oT0.xy , v7                ; �r�b�g�}�b�v�̃R�s�[
+vs.1.0                             ; バージョン情報
+; 座標変換
+dp4     oPos.x , v0   , c0         ; x成分の透視変換
+dp4     oPos.y , v0   , c1         ; y成分の透視変換
+dp4     oPos.z , v0   , c2         ; z成分の透視変換
+dp4     oPos.w , v0   , c3         ; w成分の透視変換
+<Font color = orange><b>; ライトの計算
+dp3     r0.x , v3   , -c4      ; 法線とライトの方向ベクトルの内積から、色を計算
+mul     oD0  , v5   , r0.x     ; さらに頂点カラーも考える</b></font>
+; テクスチャーを張る
+mov     oT0.xy , v7                ; ビットマップのコピー
 </pre>
 <p>
-���������Ȃ��̂ŁA�ŏ��̓��όv�Z���Ax ���������o�͂��܂����B
-���̒l r0.x ���������āAmul ���Z�ŁA���_�F�ɋ�������āA�����̉e�����v�Z���܂��B
+もったいないので、最初の内積計算を、x 成分だけ出力しました。
+その値 r0.x をもちいて、mul 演算で、頂点色に強弱をつけて、光源の影響を計算します。
 </p>
 <p>
-��ʂɁA���_�F�̓f�U�C�i�[���񂪕t���āA���̂̎��������߂܂��B
-�����v�Z�́A���C�g�̉e���ɂ���ĕ��̂ɑ��݊���^���܂��B
-�������A�ǂ�����g����ƕ֗��Ȃ̂ł����A��ʂɌ����v�Z�͒x���̂ŁA
-���_�F�����ŕ��̂�\�����邱�Ƃ������ł��B<br>
-���������āA���̌v�Z���ł���΁A�����v�Z�͂ł����Ǝv���Ă������Ǝv���܂��B
+一般に、頂点色はデザイナーさんが付けて、物体の質感を高めます。
+光源計算は、ライトの影響によって物体に存在感を与えます。
+もちろん、どちらも使えると便利なのですが、一般に光源計算は遅いので、
+頂点色だけで物体を表現することも多いです。<br>
+したがって、この計算ができれば、光源計算はできたと思ってもいいと思います。
 </p>
 
-<h2>������</h2>
+<h2>■今後</h2>
 
 <p>
-����ŁA���ʂ̌����v�Z�͂ł��܂����B<br>
-���̌�A�o�[�e�b�N�X�V�F�[�_�[���L�̌v�Z�Ɉڂ낤�Ǝv���܂��B
+これで、普通の光源計算はできました。<br>
+この後、バーテックスシェーダー特有の計算に移ろうと思います。
 </p>
 
 <BR CLEAR=ALL>
@@ -388,7 +388,7 @@ mov     oT0.xy , v7                ; �r�b�g�}�b�v�̃R�s�[
 <BR CLEAR=ALL>
 <center>
 <hr>
-<p><a href="../index.html">���ǂ�</a></p>
+<p><a href="../index.html">もどる</a></p>
 <p><a href="mailto:imagire@gmail.com">imagire@gmail.com</a></p>
 </body>
 </html>

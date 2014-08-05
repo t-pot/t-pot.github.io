@@ -1,15 +1,15 @@
 <head>
-	<title>t-pot�w�O�p�֐��t�B�b�e�B���O�ɂ�������̓��o�x</title>
+	<title>t-pot『三角関数フィッティングによる主方向の導出』</title>
 	<link rel="stylesheet" type="text/css" href="../if.css">
 </head>
-<meta http-equiv=Content-Type content="text/html; charset=shift_jis">
+<meta http-equiv=Content-Type content="text/html; charset=UTF-8">
 <body text=#ffffff>
 <div class="contents">
 <center>
 <BR CLEAR=ALL>
 <BR CLEAR=ALL>
-<h1>�O�p�֐��t�B�b�e�B���O�ɂ�������̓��o</h1><br>
-<h3>�`Kano����ɕ����`</h3>
+<h1>三角関数フィッティングによる主方向の導出</h1><br>
+<h3>～Kanoさんに捧ぐ～</h3>
 <BR CLEAR=ALL>
 <BR CLEAR=ALL>
 <BR CLEAR=ALL>
@@ -17,141 +17,141 @@
 </center>
 
 
-<h2>���͂��߂�</h2>
+<h2>■はじめに</h2>
 
 
 <p>
-����AKano ����B�Ɠۂ񂾂Ƃ��ɁA�n�b�`���O�̘b�ɂȂ�܂����B<br>
-�u�n�b�`���O�̃e�N�X�`���[�͎�ȗ��̕����ɒ���̂������ƍl�����邪�A
-��ʂɁA�|���S�����f�����������Ƃ��Ɏ���������߂���@�͒肩�ł͂Ȃ��B�v�Ƃ̘b�ɂȂ�܂����B<br>
-�����ŁA���߂���@��K���ɍl���Ă݂܂����B
+先日、Kano さん達と呑んだときに、ハッチングの話になりました。<br>
+「ハッチングのテクスチャーは主曲率の方向に張るのがいいと考えられるが、
+一般に、ポリゴンモデルがあったときに主方向を求める方法は定かではない。」との話になりました。<br>
+そこで、求める方法を適当に考えてみました。
 <p>
 
 
-<h2>���l����</h2>
+<h2>■考え方</h2>
 
 
 <p>
-������Ƃ́A�p�����[�^�ŗ^����ꂽ�Ȑ�
+主方向とは、パラメータで与えられた曲線
 </p>
 <pre class="CodeBlock">
 <b>p</b> = <b>p</b>(u,v)
 </pre>
 <p>
-�Ɋւ��āA�ڃx�N�g��
+に関して、接ベクトル
 </p>
 <pre class="CodeBlock">
-     ��<b>p</b>        ��<b>p</b>
-<b>p</b><sub>u</sub> = �\�\,  <b>p</b><sub>v</sub> = �\�\
-     ��<b>u</b>        ��<b>v</b>
+     ∂<b>p</b>        ∂<b>p</b>
+<b>p</b><sub>u</sub> = ――,  <b>p</b><sub>v</sub> = ――
+     ∂<b>u</b>        ∂<b>v</b>
 </pre>
 <p>
-���`�o���܂��B���̋Ȗʂ��Ǐ��I�ɓW�J�����ꍇ�ɁAu0, v0�̎���ł́A
+を定義出来ます。この曲面を局所的に展開した場合に、u0, v0の周りでは、
 </p>
 <pre class="CodeBlock">
-<b>p</b>(<b>u</b>0+d<b>u</b>, <b>v</b>0+d<b>v</b>) = <b>p</b>(<b>u</b>0,<b>v</b>0) + d<b>u</b>�<b>p</b><sub>u</sub> + d<b>v</b>�<b>p</b><sub>v</sub>
-                   + [d<b>u</b> d<b>v</b>]�� <b>p</b><sub>u</sub>�<b>p</b><sub>u</sub>  <b>p</b><sub>u</sub>�<b>p</b><sub>v</sub> ����d<b>u</b>��
-                       <b>  </b>   �� <b>p</b><sub>v</sub>�<b>p</b><sub>u</sub>  <b>p</b><sub>v</sub>�<b>p</b><sub>v</sub> ����d<b>v</b>���{���
+<b>p</b>(<b>u</b>0+d<b>u</b>, <b>v</b>0+d<b>v</b>) = <b>p</b>(<b>u</b>0,<b>v</b>0) + d<b>u</b>･<b>p</b><sub>u</sub> + d<b>v</b>･<b>p</b><sub>v</sub>
+                   + [d<b>u</b> d<b>v</b>]┌ <b>p</b><sub>u</sub>･<b>p</b><sub>u</sub>  <b>p</b><sub>u</sub>･<b>p</b><sub>v</sub> ┐┌d<b>u</b>┐
+                       <b>  </b>   └ <b>p</b><sub>v</sub>･<b>p</b><sub>u</sub>  <b>p</b><sub>v</sub>･<b>p</b><sub>v</sub> ┘└d<b>v</b>┘＋･･･
 </pre>
 <p>
-�ƁA�W�J�ł��܂��i�Ȗʂ̕���������C<sup>2</sup>�����炢�K�v���ȁH�j�B<br>
-�Q���̌W����^����s���Ίp�������ꍇ�A���̌ŗL�x�N�g�����x�N�g����������Ƃ����܂��B<br>
-������́A�Q���Ȗʂŕ��������Ƃ��̕������K�肵�A���ꂼ�꒼�����܂��B
+と、展開できます（曲面の方向微分がC<sup>2</sup>級ぐらい必要かな？）。<br>
+２次の係数を与える行列を対角化した場合、その固有ベクトルをベクトルを主方向といいます。<br>
+主方向は、２次曲面で分解したときの方向を規定し、それぞれ直交します。
 </p>
 
 <p>
-���āA�Ȗʂ���A�������������ꂽ�̈���l���܂��B<br>
-���̗̈�Ɋւ��āA�ڃx�N�g���ł���p�x�ƁA�Ȑ��̖@�������̐������v���b�g����ƁA��̃O���t���`���܂��B<br>
+さて、曲面から、無限小だけ離れた領域を考えます。<br>
+この領域に関して、接ベクトルでつくる角度と、曲線の法線方向の成分をプロットすると、一つのグラフが描けます。<br>
 </p>
 <image src = "plot.png">
 <p>
-�Ⴆ�΋Ȗʂ��ȉ~�ʂ̂Ƃ��̒�ʂ̓_�ł̃O���t�̓T�C���J�[�u�ɂȂ�܂��B<br>
-����ȊO�̏ꍇ�ł��A�Ȗʂ��Q���܂ł͈̔͂ŁA�����悤�ȋȐ��ɂȂ�܂��B<br>
-�����Łu�����悤�ȁv�Ƃ����̂́A��������֐��̎R��J�ɂȂ��Ă�������΂̎����֐��Ƃ������Ƃł��B<br>
-�����֐�������΃t�[���G�W�J�������Ȃ�̂����̏�Ƃ������̂ł��B<br>
-�T���v�����O�����Ԋu�ł͂Ȃ��̂ŁA�t�[���G�W�J�͂ł��Ȃ��̂ł����A�O�p�֐��̃t�B�b�e�B���O���s���A���̈ʑ��������������߂܂��B
+例えば曲面が楕円面のときの底面の点でのグラフはサインカーブになります。<br>
+それ以外の場合でも、曲面が２次までの範囲で、同じような曲線になります。<br>
+ここで「同じような」というのは、主方向が関数の山や谷になっている周期πの周期関数ということです。<br>
+周期関数があればフーリエ展開したくなるのが世の常というものです。<br>
+サンプリングが等間隔ではないので、フーリエ展開はできないのですが、三角関数のフィッティングを行い、その位相から主方向を求めます。
 </p>
 
-<h2>���v�Z���@</h2>
+<h2>■計算方法</h2>
 
 
 <p>
-�|���S���̒��_��<b>p</b>�Ƃ��܂��B<br>
-���_�́An�̒��_<b>v</b><sub>i</sub>�Ɨאڂ��Ă��܂��B<br>
-<b>v</b><sub>i</sub>�ւ�<b>P</b>����̕����x�N�g����d<b>v</b><sub>i</sub> = <b>v</b><sub>i</sub>-<b>p</b>�Œ�`���܂��B<br>
-���_<b>p</b>�ł̖@���x�N�g����<b>N</b>�A<b>N</b>�ɒ�������ڃx�N�g������<b>U</b>�A<b>V</b>�Ƃ��܂��B<br>
-d<b>v</b><sub>i</sub> ���K�i�������x�N�g���Ɋւ��āA<b>U</b>�y��<b>V</b>�Ƃ̓��ς��瓾����p�x�������A
-<b>N</b>�Ƃ̓��ς��c���ɂ��ăO���t�����܂��B
+ポリゴンの頂点を<b>p</b>とします。<br>
+頂点は、n個の頂点<b>v</b><sub>i</sub>と隣接しています。<br>
+<b>v</b><sub>i</sub>への<b>P</b>からの方向ベクトルをd<b>v</b><sub>i</sub> = <b>v</b><sub>i</sub>-<b>p</b>で定義します。<br>
+頂点<b>p</b>での法線ベクトルを<b>N</b>、<b>N</b>に直交する接ベクトル基底を<b>U</b>、<b>V</b>とします。<br>
+d<b>v</b><sub>i</sub> を規格化したベクトルに関して、<b>U</b>及び<b>V</b>との内積から得られる角度を横軸、
+<b>N</b>との内積を縦軸にしてグラフを作ります。
 </p>
 <image src = "sample.png">
 <pre class="CodeBlock">
-      <b>N</b>�d<b>v</b><sub>i</sub>
-d<sub>i</sub> = �\�\�\
+      <b>N</b>･d<b>v</b><sub>i</sub>
+d<sub>i</sub> = ―――
       |d<b>v</b><sub>i</sub>|
-             <b>V</b>�d<b>v</b><sub>i</sub>  <b>U</b>�d<b>v</b><sub>i</sub>
-��<sub>i</sub> = atan2(�\�\�\, �\�\�\)
+             <b>V</b>･d<b>v</b><sub>i</sub>  <b>U</b>･d<b>v</b><sub>i</sub>
+θ<sub>i</sub> = atan2(―――, ―――)
              |d<b>v</b><sub>i</sub>|  |d<b>v</b><sub>i</sub>|
 </pre>
 <p>
-���̓_��Ɋւ���t�B�b�e�B���O���s���܂��B<br>
-�����΂̊֐��Ńt�B�b�e�B���O�������̂ŁA
+この点列に関するフィッティングを行います。<br>
+周期πの関数でフィッティングしたいので、
 </p>
 <pre class="CodeBlock">
-f = A cos(2��) + B sin(2��)
+f = A cos(2θ) + B sin(2θ)
 </pre>
 <p>
-�̊֐����l���܂��B<br>
-A��B�A���ꂼ��̌W����ʁX�ɋ��߂܂��B<br>
-�t�B�b�e�B���O���邽�߂̌덷�֐��́A
+の関数を考えます。<br>
+AとB、それぞれの係数を別々に求めます。<br>
+フィッティングするための誤差関数は、
 </p>
 <pre class="CodeBlock">
-err<sub>A</sub> = ��<sub>i</sub>(d<sub>i</sub> - A cos(2��<sub>i</sub>))<sup>2</sup>,
-err<sub>B</sub> = ��<sub>i</sub>(d<sub>i</sub> - B sin(2��<sub>i</sub>))<sup>2</sup>
+err<sub>A</sub> = Σ<sub>i</sub>(d<sub>i</sub> - A cos(2θ<sub>i</sub>))<sup>2</sup>,
+err<sub>B</sub> = Σ<sub>i</sub>(d<sub>i</sub> - B sin(2θ<sub>i</sub>))<sup>2</sup>
 </pre>
 <p>
-���g���܂��B���̌덷�֐��̒l���������Ȃ�A�y��B���e�_��ɂ����Ƃ��߂��֐�f��^���܂��B<br>
-�ɒl�̏����A
+を使います。この誤差関数の値が小さくなるA及びBが各点列にもっとも近い関数fを与えます。<br>
+極値の条件、
 </p>
 <pre class="CodeBlock">
-    ��err<sub>A</sub>
-0�� �\�\�\ = -2��<sub>i</sub>(d<sub>i</sub> - A cos(2��<sub>i</sub>))cos(2��<sub>i</sub>),
-     ��A
+    ∂err<sub>A</sub>
+0≡ ――― = -2Σ<sub>i</sub>(d<sub>i</sub> - A cos(2θ<sub>i</sub>))cos(2θ<sub>i</sub>),
+     ∂A
 
-    ��err<sub>B</sub>
-0�� �\�\�\ = -2��<sub>i</sub>(d<sub>i</sub> - B sin(2��<sub>i</sub>))sin(2��<sub>i</sub>),
-     ��B
+    ∂err<sub>B</sub>
+0≡ ――― = -2Σ<sub>i</sub>(d<sub>i</sub> - B sin(2θ<sub>i</sub>))sin(2θ<sub>i</sub>),
+     ∂B
 </pre>
 <p>
-����W�������߂�ƁA<br>
+から係数を求めると、<br>
 </p>
 <pre class="CodeBlock">
-    ��<sub>i</sub> d<sub>i</sub>cos(2��<sub>i</sub>)
-A = �\�\�\�\�\�\�\,
-    ��<sub>i</sub> cos<sup>2</sup>(2��<sub>i</sub>)
+    Σ<sub>i</sub> d<sub>i</sub>cos(2θ<sub>i</sub>)
+A = ―――――――,
+    Σ<sub>i</sub> cos<sup>2</sup>(2θ<sub>i</sub>)
 
-    ��<sub>i</sub> d<sub>i</sub>sin(2��<sub>i</sub>)
-B = �\�\�\�\�\�\�\,
-    ��<sub>i</sub> sin<sup>2</sup>(2��<sub>i</sub>)
+    Σ<sub>i</sub> d<sub>i</sub>sin(2θ<sub>i</sub>)
+B = ―――――――,
+    Σ<sub>i</sub> sin<sup>2</sup>(2θ<sub>i</sub>)
 </pre>
 <p>
-�ɂȂ�܂��B<br>
-���̌W���ƁA�O�p�֐��̌���
+になります。<br>
+この係数と、三角関数の公式
 </p>
 <pre class="CodeBlock">
-f = A cos(2��) + B sin(2��) = ��(A<sup>2</sup>+B<sup>2</sup>) cos(2��+��),
-�� = atan2(B, A),
+f = A cos(2θ) + B sin(2θ) = √(A<sup>2</sup>+B<sup>2</sup>) cos(2θ+ψ),
+ψ = atan2(B, A),
 </pre>
 <p>
-����A�ʑ������܂�܂��B���̈ʑ���������ɂȂ�܂��B
+から、位相が求まります。この位相が主方向になります。
 </p>
 
 
-<h2>���Ō��</h2>
+<h2>■最後に</h2>
 
 
 <p>
-�܂��Ɋ���̋�_�ŁA���l���Ŋm�F���Ă��Ȃ��̂ŁA�������̂��킩��܂��񂪁A
-���_���Ȃǂ̗��U�I�Ȓl����ȖʂƂ����A���ʂ𓾂邽�߂̕��@��1�ɂȂ�̂ł͂Ȃ��ł��傤���B
+まさに机上の空論で、数値等で確認していないので、正しいのかわかりませんが、
+頂点情報などの離散的な値から曲面という連続量を得るための方法の1つになるのではないでしょうか。
 </p>
 
 
@@ -160,7 +160,7 @@ f = A cos(2��) + B sin(2��) = ��(A<sup>2</sup>+B<sup>2</sup>) cos(2��+��),
 <BR CLEAR=ALL>
 <BR CLEAR=ALL>
 <center>
-<p><a href="../index.html">���ǂ�</a></p>
+<p><a href="../index.html">もどる</a></p>
 <p><a href="mailto:imagire@gmail.com">imagire@gmail.com</a></p>
 </center>
 

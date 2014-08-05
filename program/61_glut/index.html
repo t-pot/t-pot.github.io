@@ -1,8 +1,8 @@
 <head>
-	<title>t-pot�wOpenGL����x</title>
+	<title>t-pot『OpenGL入門』</title>
 	<link rel="stylesheet" type="text/css" href="../if.css">
 </head>
-<meta http-equiv=Content-Type content="text/html; charset=shift_jis">
+<meta http-equiv=Content-Type content="text/html; charset=UTF-8">
 <body>
 
 
@@ -10,8 +10,8 @@
 <center>
 <BR CLEAR=ALL>
 <BR CLEAR=ALL>
-<h1>OpenGL����</h1><br>
-<h3>�`GLUT���g���ĕ\���`</h3>
+<h1>OpenGL入門</h1><br>
+<h3>～GLUTを使って表示～</h3>
 <BR CLEAR=ALL>
 <BR CLEAR=ALL>
 <BR CLEAR=ALL>
@@ -22,89 +22,89 @@
 <div>
 
 
-<h2>���͂��߂�</h2>
+<h2>■はじめに</h2>
 
 
 <p>
-�C����ς���OpenGL�ł��B<br>
-�ȒP�ȃ|���S����\������v���O�����������Č��܂����B
+気分を変えてOpenGLです。<br>
+簡単なポリゴンを表示するプログラムをつくって見ました。
 </p>
 <ul style = "LIST-STYLE-TYPE:none">
-<li><a href="src.lzh">src.lzh (OpenGL�T���v���v���O����:GLUT)</a>
+<li><a href="src.lzh">src.lzh (OpenGLサンプルプログラム:GLUT)</a>
 </ul>
 
 <p>
-�܂��A�����̂悤�ɓK���Ƀt�@�C���������Ă��܂��B
+まぁ、いつものように適当にファイルが入っています。
 </p>
 <table>
-<tr><td><a href="main_cpp.html">main.cpp</a></td><td>���ꂾ���B</td></tr>
+<tr><td><a href="main_cpp.html">main.cpp</a></td><td>これだけ。</td></tr>
 </table>
 <p>
-���ƁA���s�t�@�C���y�сA�v���W�F�N�g�t�@�C���������Ă��܂��B
+あと、実行ファイル及び、プロジェクトファイルが入っています。
 </p>
 
 
-<h2>��OpenGL �� GLUT �ɂ���</h2>
+<h2>■OpenGL や GLUT について</h2>
 
 <p>
-OpenGL �́A�O���t�B�b�NAPI��DirectX�Ǝ����悤�Ȃ��̂ł��i�Ƃ������ADirectX��Windows ��p��OpenGL�Ƃ����ׂ����E�E�E�j�B<br>
-OpenGL �́A���܂��܂ȃv���b�g�t�H�[���œ��삵�܂��B
-����䂦�AOpenGL �̕������L���g���Ă���Ƃ�����ł��傤�B<br>
-OpenGL �ɑ΂��鎄�̕Ό��́A
+OpenGL は、グラフィックAPIでDirectXと似たようなものです（というか、DirectXがWindows 専用のOpenGLというべきか・・・）。<br>
+OpenGL は、さまざまなプラットフォームで動作します。
+それゆえ、OpenGL の方が幅広く使われているといえるでしょう。<br>
+OpenGL に対する私の偏見は、
 </p>
 <table>
-<tr><td>I.</td><td>�����_�����O�𒚔J�ɍs���Ă����Y��</td></tr>
-<tr><td>II.</td><td>DirectX�݂����ɒ��ڂ������Ă��Ȃ�����x��</td></tr>
+<tr><td>I.</td><td>レンダリングを丁寧に行っていて綺麗</td></tr>
+<tr><td>II.</td><td>DirectXみたいに直接たたいていないから遅い</td></tr>
 </table>
 <p>
-�ł����B�Ƃ��낪����͕ς���Ă��܂��B<br>
-NVIDIA �Ȃǂ̃O���t�B�b�N�`�b�v���[�J��OpenGL�̊J���҂����ꍞ�񂾂肵�āA
-OpenGL ���n�[�h�E�F�A�I�ɍ����ɓ��삵�܂��B<br>
-�ނ���AMicrosoft�ɉ��������܂�Ȃ��̂ŁA
-�O���t�B�b�N�`�b�v���[�J���ŐV�@�\��ǉ����悤�ƁA�D������ɖ\��܂����Ă��܂��B<br>
-�Ƃ������ƂŁA���x���x���Ȃǂ� OpenGL ���������R�����ɂ���܂���̂ŁA
-���킵�Ă݂܂��傤�B<br>
+でした。ところが時代は変わっています。<br>
+NVIDIA などのグラフィックチップメーカにOpenGLの開発者が流れ込んだりして、
+OpenGL もハードウェア的に高速に動作します。<br>
+むしろ、Microsoftに押さえ込まれないので、
+グラフィックチップメーカが最新機能を追加しようと、好き勝手に暴れまくっています。<br>
+ということで、速度が遅いなどの OpenGL を嫌う理由も特にありませんので、
+挑戦してみましょう。<br>
 <font size = "1">
-�����Ă����΁A����OS��n�[�h�ˑ��̕����͑��݂���̂ŁA
-�uOpenGL�ŏ����΁A�ǂ̃n�[�h�ł���������OpenGL���΁v�̐l������̂��l�I�Ɍ�����������܂��B</font>
+しいていえば、結局OSやハード依存の部分は存在するので、
+「OpenGLで書けば、どのハードでも動くからOpenGL万歳」の人がいるのが個人的に嫌悪感を抱きます。</font>
 </p>
 
 <p>
-����́AGLUT ���g���āAOpenGL �v���O���~���O�����܂��B<br>
-GLUT �Ƃ� OpenGL Utility Toolkit �̈Ӗ��ł��B<br>
-GLUT �́A��NVIDIA�A��SGI�� Mark Kilgard ���ɂ���č쐬����܂����B
-���̌�AN.Robins �ɂ���� Microsoft Windows �ɈڐA����܂����B <br>
-OpenGL �̖ʓ|�ȕ������B�����Ă���܂��B
+今回は、GLUT を使って、OpenGL プログラミングをします。<br>
+GLUT とは OpenGL Utility Toolkit の意味です。<br>
+GLUT は、現NVIDIA、元SGIの Mark Kilgard 御大によって作成されました。
+その後、N.Robins によって Microsoft Windows に移植されました。 <br>
+OpenGL の面倒な部分を隠蔽してくれます。
 </p>
 
 
-<h2>��GLUT�Z�b�g�A�b�v</h2>
+<h2>■GLUTセットアップ</h2>
 
 <p>
-OpenGL ���̂́AWindows �ŃT�|�[�g����Ă���̂ŁA���͂Ȃ��̂ł����A
-GLUT�͎����ŃC���X�g�[������K�v������܂��B<br>
-<a href = "http://www.xmission.com/~nate/glut.html">Nate Robins ���� Web �T�C�g</a>����A�_�E�����[�h���Ă��������B�����_�E�����[�h�����ꍇ�ɂ́Aglut-3.7.6-bin.zip ���ŐV�ł����B
+OpenGL 自体は、Windows でサポートされているので、問題はないのですが、
+GLUTは自分でインストールする必要があります。<br>
+<a href = "http://www.xmission.com/~nate/glut.html">Nate Robins 氏の Web サイト</a>から、ダウンロードしてください。私がダウンロードした場合には、glut-3.7.6-bin.zip が最新でした。
 </p>
 <p>
-�t�@�C���Ɖ𓀂���ƁA�������t�@�C��������܂��B<br>
-���̃t�@�C�����A���ꂼ��̈ʒu�ɃR�s�[���܂��B
+ファイルと解凍すると、いくつかファイルがあります。<br>
+次のファイルを、それぞれの位置にコピーします。
 </p>
 <table>
-<tr><td>glut.h</td><td>VC�̃C���N���[�h�t�@�C�����u���Ă���ꏊ</td><td>C:\Program Files\Microsoft Visual Studio\VC98\Include\GL �Ƃ�</td></tr>
-<tr><td>glut32.lib</td><td>VC�̃��C�u�������u���Ă���ꏊ</td><td>C:\Program Files\Microsoft Visual Studio\VC98\Lib �Ƃ�</td></tr>
-<tr><td>glut32.dll</td><td>DLL ���u���Ă���ꏊ</td><td>C:\WINNT\system32 �Ƃ�</td></tr>
+<tr><td>glut.h</td><td>VCのインクルードファイルが置いてある場所</td><td>C:\Program Files\Microsoft Visual Studio\VC98\Include\GL とか</td></tr>
+<tr><td>glut32.lib</td><td>VCのライブラリが置いてある場所</td><td>C:\Program Files\Microsoft Visual Studio\VC98\Lib とか</td></tr>
+<tr><td>glut32.dll</td><td>DLL が置いてある場所</td><td>C:\WINNT\system32 とか</td></tr>
 </table>
 <p>
-����ŁAGLUT ���g����悤�ɂȂ�܂����B
+これで、GLUT が使えるようになりました。
 </p>
 
 
-<h2>���\�[�X�t�@�C��</h2>
+<h2>■ソースファイル</h2>
 
 
 <p>
-����ł̓v���O���������Ă����܂��傤�B<br>
-GLUT ���g�����߂ɂ́Aglut.h ���C���N���[�h���܂��B
+それではプログラムを見ていきましょう。<br>
+GLUT を使うためには、glut.h をインクルードします。
 </p>
 
 <pre class="CodeBlock">
@@ -113,98 +113,98 @@ main.cpp
 </pre>
 
 <p>
-�܂��A����������Ȃ��ƁAGLUT�̊֐����g���Ȃ��̂ŁA�Y��Ă������ɋC�Â��܂��ˁB
+まぁ、これを書かないと、GLUTの関数が使えないので、忘れてもすぐに気づきますね。
 </p>
 <p>
-���Ƀ��C���֐������Ă݂܂��傤�B<br>
-�������R�̊֐����ĂԂ����ŁA�E�B���h�E����������܂��B
+次にメイン関数を見てみましょう。<br>
+たった３つの関数を呼ぶだけで、ウィンドウが生成されます。
 </p>
 
 <pre class="CodeBlock">
 main.cpp
 <font COLOR=deepskyblue>0034:</font> <font COLOR=cyan>// ---------------------------------------------------------------------------</font>
-<font COLOR=deepskyblue>0035:</font> <font COLOR=cyan>// ���C���֐�</font>
+<font COLOR=deepskyblue>0035:</font> <font COLOR=cyan>// メイン関数</font>
 <font COLOR=deepskyblue>0036:</font> <font COLOR=cyan>// ---------------------------------------------------------------------------</font>
 <font COLOR=deepskyblue>0037:</font> <font COLOR=blue>int</font> main(<font COLOR=blue>int</font> argc, <font COLOR=blue>char</font> *argv[])
 <font COLOR=deepskyblue>0038:</font> {
-<font COLOR=deepskyblue>0039:</font>     <font COLOR=cyan>// �E�B���h�E�̍쐬</font>
-<font COLOR=deepskyblue>0040:</font>     glutInit(&amp;argc, argv);              <font COLOR=cyan>// GL�̏�����</font>
-<font COLOR=deepskyblue>0041:</font>     glutInitDisplayMode(GLUT_RGBA);     <font COLOR=cyan>// �`�惂�[�h</font>
-<font COLOR=deepskyblue>0042:</font>     glutCreateWindow(argv[0]);          <font COLOR=cyan>// �E�B���h�E�̐���</font>
+<font COLOR=deepskyblue>0039:</font>     <font COLOR=cyan>// ウィンドウの作成</font>
+<font COLOR=deepskyblue>0040:</font>     glutInit(&amp;argc, argv);              <font COLOR=cyan>// GLの初期化</font>
+<font COLOR=deepskyblue>0041:</font>     glutInitDisplayMode(GLUT_RGBA);     <font COLOR=cyan>// 描画モード</font>
+<font COLOR=deepskyblue>0042:</font>     glutCreateWindow(argv[0]);          <font COLOR=cyan>// ウィンドウの生成</font>
 <font COLOR=deepskyblue>0043:</font>     
-<font COLOR=deepskyblue>0044:</font>     <font COLOR=cyan>// �R�[���o�b�N�֐��̐ݒ�</font>
-<font COLOR=deepskyblue>0045:</font>     glutDisplayFunc(display);           <font COLOR=cyan>// �`��֐�</font>
+<font COLOR=deepskyblue>0044:</font>     <font COLOR=cyan>// コールバック関数の設定</font>
+<font COLOR=deepskyblue>0045:</font>     glutDisplayFunc(display);           <font COLOR=cyan>// 描画関数</font>
 <font COLOR=deepskyblue>0046:</font>     
-<font COLOR=deepskyblue>0047:</font>     <font COLOR=cyan>// ��x��������΂����ݒ�</font>
-<font COLOR=deepskyblue>0048:</font>     glClearColor(0.0, 0.0, 0.3, 0.0);   <font COLOR=cyan>// �w�i�F�̐ݒ�</font>
+<font COLOR=deepskyblue>0047:</font>     <font COLOR=cyan>// 一度だけすればいい設定</font>
+<font COLOR=deepskyblue>0048:</font>     glClearColor(0.0, 0.0, 0.3, 0.0);   <font COLOR=cyan>// 背景色の設定</font>
 <font COLOR=deepskyblue>0049:</font> 
-<font COLOR=deepskyblue>0050:</font>     glutMainLoop();                     <font COLOR=cyan>// ���C�����[�v</font>
+<font COLOR=deepskyblue>0050:</font>     glutMainLoop();                     <font COLOR=cyan>// メインループ</font>
 <font COLOR=deepskyblue>0051:</font> 
 <font COLOR=deepskyblue>0052:</font> 
 <font COLOR=deepskyblue>0053:</font>     <font COLOR=blue>return</font> 0;
 <font COLOR=deepskyblue>0054:</font> }
 </pre>
 <p>
-GLUT �́AWindow s�Ɠ����悤�ȁA�C�x���g�h���u���ȃV�X�e�����\�z���܂��B<br>
-���ꂼ��̃C�x���g�́A�R�[���o�b�N�֐���o�^���Ă����A�K�v�ȂƂ��ɂ����̊֐����Ăяo���܂��B<br>
-�����̐ݒ�́Aglut****Func �̌`�����Ă��܂��B����́A��ʂ̍X�V����display�֐����Ăяo���悤�ɐݒ肵�܂��B<br>
-���Ƃ́AglClearColor�Ŕw�i�F��ݒ肷��K���ȏ��������͂���ł���AglutMainLoop()�𓮂����܂��B
+GLUT は、Window sと同じような、イベントドリブンなシステムを構築します。<br>
+それぞれのイベントは、コールバック関数を登録しておき、必要なときにそれらの関数を呼び出します。<br>
+それらの設定は、glut****Func の形をしています。今回は、画面の更新時にdisplay関数を呼び出すように設定します。<br>
+あとは、glClearColorで背景色を設定する適当な初期化をはさんでから、glutMainLoop()を動かします。
 </p>
 <p>
-�����傤����܂��ȗ���ł��B<br>
-���ɁA�ĕ`�悪���������Ƃ��ɌĂяo�����`��֐������܂��傤�B
+いじょうが大まかな流れです。<br>
+次に、再描画がかかったときに呼び出される描画関数を見ましょう。
 </p>
 
 <pre class="CodeBlock">
 main.cpp
 <font COLOR=deepskyblue>0012:</font> <font COLOR=cyan>// ---------------------------------------------------------------------------</font>
-<font COLOR=deepskyblue>0013:</font> <font COLOR=cyan>// ��ʕ`��</font>
+<font COLOR=deepskyblue>0013:</font> <font COLOR=cyan>// 画面描画</font>
 <font COLOR=deepskyblue>0014:</font> <font COLOR=cyan>// ---------------------------------------------------------------------------</font>
 <font COLOR=deepskyblue>0015:</font> <font COLOR=blue>void</font> display(<font COLOR=blue>void</font>)
 <font COLOR=deepskyblue>0016:</font> {
-<font COLOR=deepskyblue>0017:</font>     <font COLOR=cyan>// ��ʂ̃N���A</font>
+<font COLOR=deepskyblue>0017:</font>     <font COLOR=cyan>// 画面のクリア</font>
 <font COLOR=deepskyblue>0018:</font>     glClear(GL_COLOR_BUFFER_BIT);
 <font COLOR=deepskyblue>0019:</font>     
-<font COLOR=deepskyblue>0020:</font>     <font COLOR=cyan>// �|���S���`��</font>
-<font COLOR=deepskyblue>0021:</font>     glBegin(GL_TRIANGLE_STRIP);     <font COLOR=cyan>// �X�g���b�v�ݒ�</font>
-<font COLOR=deepskyblue>0022:</font>     glColor3d(1.0, 0.0, 0.0);       <font COLOR=cyan>// ��</font>
+<font COLOR=deepskyblue>0020:</font>     <font COLOR=cyan>// ポリゴン描画</font>
+<font COLOR=deepskyblue>0021:</font>     glBegin(GL_TRIANGLE_STRIP);     <font COLOR=cyan>// ストリップ設定</font>
+<font COLOR=deepskyblue>0022:</font>     glColor3d(1.0, 0.0, 0.0);       <font COLOR=cyan>// 赤</font>
 <font COLOR=deepskyblue>0023:</font>     glVertex2d(-0.9, +0.9);
-<font COLOR=deepskyblue>0024:</font>     glColor3d(0.0, 1.0, 0.0);       <font COLOR=cyan>// ��</font>
+<font COLOR=deepskyblue>0024:</font>     glColor3d(0.0, 1.0, 0.0);       <font COLOR=cyan>// 青</font>
 <font COLOR=deepskyblue>0025:</font>     glVertex2d(+0.9, +0.9);
-<font COLOR=deepskyblue>0026:</font>     glColor3d(0.0, 0.0, 1.0);       <font COLOR=cyan>// ��</font>
+<font COLOR=deepskyblue>0026:</font>     glColor3d(0.0, 0.0, 1.0);       <font COLOR=cyan>// 緑</font>
 <font COLOR=deepskyblue>0027:</font>     glVertex2d(-0.9, -0.9);
-<font COLOR=deepskyblue>0028:</font>     glColor3d(1.0, 1.0, 1.0);       <font COLOR=cyan>// ��</font>
+<font COLOR=deepskyblue>0028:</font>     glColor3d(1.0, 1.0, 1.0);       <font COLOR=cyan>// 白</font>
 <font COLOR=deepskyblue>0029:</font>     glVertex2d(+0.9, -0.9);
-<font COLOR=deepskyblue>0030:</font>     glEnd();                        <font COLOR=cyan>// �|���S���̕`��I��</font>
+<font COLOR=deepskyblue>0030:</font>     glEnd();                        <font COLOR=cyan>// ポリゴンの描画終了</font>
 <font COLOR=deepskyblue>0031:</font> 
-<font COLOR=deepskyblue>0032:</font>     glFlush();                      <font COLOR=cyan>// ��ʂ̕`��̏I��</font>
+<font COLOR=deepskyblue>0032:</font>     glFlush();                      <font COLOR=cyan>// 画面の描画の終了</font>
 <font COLOR=deepskyblue>0033:</font> }
 </pre>
 
 <p>
-�`��̂����܂��ȗ�����ADirectX�Ƃ���肠��܂���B<br>
-Begin �Ŏn�܂��āAglEnd �ŏI���܂��B<br>
-���̑O�ɁAglClear�ŉ�ʂ̃��t���b�V�����s���܂��B�܂��A�I�������ɁA��ʂ����ۂɍX�V���� glFlush ���Ăяo���܂��B
+描画のおおまかな流れも、DirectXとかわりありません。<br>
+Begin で始まって、glEnd で終わります。<br>
+その前に、glClearで画面のリフレッシュを行います。また、終わった後に、画面を実際に更新する glFlush を呼び出します。
 </p>
 <p>
-�|���S�����̂̕`��́AglBegin �� glEnd �ł�����ꂽ�����ł��B<br>
-glBegin �ŁA�\������v���~�e�B�u���w�肵�܂��B����́A�g���C�A���O���X�g���b�v�ł��B<br>
-���̂��Ƃ́A�e���_�̐F�ƒ��_���W�����X�ɐݒ肵�܂��B
-�|���S���̓O�[���[�V�F�[�f�B���O�ŕ`�悳��܂��B<br>
-���W�n�́A�ˉe���W�n(���A���� -1�`1 �͈̔�)�Ŏw�肵�܂��B<br>
-�܂��A�F�͈̔͂�0�`1.0�ɂȂ�܂��B
+ポリゴン自体の描画は、glBegin と glEnd でくくられた部分です。<br>
+glBegin で、表示するプリミティブを指定します。今回は、トライアングルストリップです。<br>
+そのあとは、各頂点の色と頂点座標を次々に設定します。
+ポリゴンはグーローシェーディングで描画されます。<br>
+座標系は、射影座標系(ｘ、ｙが -1～1 の範囲)で指定します。<br>
+また、色の範囲も0～1.0になります。
 </p>
 
 
-<h2>���Ō��</h2>
+<h2>■最後に</h2>
 
 
 <p>
-����́AOpenGL�ł����B<br>
-OpenGL ��������͂܂������Ȃ������̂ł����ACg cording contest ��NV30����ɉ��傷�邽�߂ɂ́AOpenGL�łȂ��Ƃ��߂Ȃ̂ŁA���傢�ƕ׋����Ă݂܂����B<br>
-�ȒP�ł��ˁB<br>
-�Ƃ���ŁAGLUT ���āA�݂�Ȏg���Ă��ł����H<br>
-OpenGL �̕����͂�����Ƃ킩��Ȃ��̂ŁA�܂��܂���T��ł��B
+今回は、OpenGLでした。<br>
+OpenGL をやるつもりはまったくなかったのですが、Cg cording contest のNV30部門に応募するためには、OpenGLでないとだめなので、ちょいと勉強してみました。<br>
+簡単ですね。<br>
+ところで、GLUT って、みんな使ってるんですか？<br>
+OpenGL の文化はちょっとわからないので、まだまだ手探りです。
 </p>
 
 </div>
@@ -213,7 +213,7 @@ OpenGL �̕����͂�����Ƃ킩��Ȃ��̂ŁA�܂��܂���T��ł��B
 <BR CLEAR=ALL>
 <center>
 <hr>
-<p><a href="../index.html">���ǂ�</a></p>
+<p><a href="../index.html">もどる</a></p>
 <p><a href="mailto:imagire@gmail.com">imagire@gmail.com</a></p>
 </center>
 

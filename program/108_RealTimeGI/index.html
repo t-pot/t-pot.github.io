@@ -1,8 +1,8 @@
 <head>
-	<title>t-pot�w���A���^�C�����Ɩ��x</title>
+	<title>t-pot『リアルタイム大域照明』</title>
 	<link rel="stylesheet" type="text/css" href="../if.css">
 </head>
-<meta http-equiv=Content-Type content="text/html; charset=shift_jis">
+<meta http-equiv=Content-Type content="text/html; charset=UTF-8">
 <body>
 
 
@@ -10,8 +10,8 @@
 <center>
 <BR CLEAR=ALL>
 <BR CLEAR=ALL>
-<h1>���A���^�C�����Ɩ�</h1><br>
-<h3>�` Real-Time Global Illumination �`</h3>
+<h1>リアルタイム大域照明</h1><br>
+<h3>～ Real-Time Global Illumination ～</h3>
 <BR CLEAR=ALL>
 <BR CLEAR=ALL>
 <BR CLEAR=ALL>
@@ -22,120 +22,120 @@
 <div>
 
 
-<h2>���͂��߂�</h2>
+<h2>■はじめに</h2>
 
 
 <p>
-�V�F�[�_�̏_���������ɂ�A���I�ȃV�F�[�_�̎�������A�ėp�x�N�g���v���Z�b�T�ւ̉��p�A�Ɛ��E���ω����Ă��܂����B<br>
-����ɁA���܂ł͎����s�\�Ǝv���Ă������Ɩ������A���^�C���œ��������Ƃ����w�͂��Ȃ���Ă��Ă��܂��B<br>
-����́A���̗���ɂ̂��āA�g�U���ŃZ���t�V���h�E�������A���ݔ��˂��l���ɓ���Ȃ��ꍇ�Ɋւ���O���[�o���C���~�l�[�V�������������Ă݂܂����B<br>
-�܂�A���̂ɓ��˂�����������_�����O�������ŏW�߂Ċg�U���Ƃ��܂��B<br>
-��̐}�����Ă��������ƁA���̏㕔�͓V���̓��ˌ��ɂ���ĐԂ����܂�A�����͒n�ʂ̑��̐F�𔽉f���ꂽ�ΐF�ɂȂ��Ă��܂��B
-���ꂪ����̌��ʂŁA���̂��ړ������Ƃ��Ă��A����̕��i�ɉ����ďu���ɂ��������ɐF���t���܂��B
-���Ƃ��΁A���̈ʒu�������Ȃ�΁A�����̗ΐF�̐����͌����܂�
-�i����̕��i���ʂ肱�񂾊��}�b�v�͂��܂��ł��j�B<br>
-�Ȃ��A�O���[�o���C���~�l�[�V�����̌��ʂ́A���}�b�v�̂悤�ɖ@�������Ɉˑ����āA�\�ʂ̈ʒu�ɂ͈ˑ����Ȃ��悤�ɂ��Ă��܂��B
+シェーダの柔軟性があがるにつれ、個性的なシェーダの実現から、汎用ベクトルプロセッサへの応用、と世界が変化してきました。<br>
+さらに、今までは実現不可能と思われていた大域照明をリアルタイムで動かそうという努力がなされてきています。<br>
+今回は、その流れにのって、拡散光でセルフシャドウが無く、相互反射も考慮に入れない場合に関するグローバルイルミネーションを実現してみました。<br>
+つまり、物体に入射する光をレンダリング方程式で集めて拡散光とします。<br>
+上の図を見ていただくと、球の上部は天球の入射光によって赤く染まり、下部は地面の草の色を反映された緑色になっています。
+これが今回の効果で、物体が移動したとしても、周りの風景に応じて瞬時にいい感じに色が付きます。
+たとえば、球の位置が高くなれば、下部の緑色の成分は減じます
+（周りの風景が写りこんだ環境マップはおまけです）。<br>
+なお、グローバルイルミネーションの効果は、環境マップのように法線だけに依存して、表面の位置には依存しないようにしています。
 </p>
 
 <p>
-�ŁA�����̂悤�Ƀv���O�����ł��B<br>
+で、いつものようにプログラムです。<br>
 </p>
 <ul style = "LIST-STYLE-TYPE:none">
-<li><a href="src.zip">src.zip (���A���^�C�����Ɩ�:DirectX9)</a>
+<li><a href="src.zip">src.zip (リアルタイム大域照明:DirectX9)</a>
 </ul>
 <p>
-�J�[�\���L�[�ŁA�J����������āAz��x�ŃY�[�����ς����܂��B<br>
-�ʂ́A�uW�v�A�uS�v�A�uQ�v�A�uE�v�ŁA�㉺���E�ɓ����܂��B<br>
-�܂��Aa�L�[�Łu�S�Ɩ����ʁv�A�u���}�b�v�Ȃ��v�A�u���}�b�v�̂݁v�̐؂�ւ����ł��܂��B
+カーソルキーで、カメラが回って、zやxでズームが変えられます。<br>
+玉は、「W」、「S」、「Q」、「E」で、上下左右に動きます。<br>
+また、aキーで「全照明効果」、「環境マップなし」、「環境マップのみ」の切り替えができます。
 </p>
 <p>
-�ꉞ�������Ă����ƁA���̂悤�Ɋg�U���Ɗ��}�b�v����������čŏI�I�ȏo�͂ɂȂ��Ă��܂��B
+一応押さえておくと、下のように拡散光と環境マップが合成されて最終的な出力になっています。
 </p>
 <image src = "GI.png"> + <image src = "ENV.png"> = <image src = "ALL.png">
 <p>
-�\�[�X�ɂ́A�����̂悤�ɓK���Ƀt�@�C���������Ă��܂��B
-�厖�ȃt�@�C���͎��̂��̂ł��B
+ソースには、いつものように適当にファイルが入っています。
+大事なファイルは次のものです。
 </p>
 <table>
-<tr><td><a href="main_h.html">main.h</a></td><td>�A�v���P�[�V�����̃w�b�_</td></tr>
-<tr><td><a href="main_cpp.html">main.cpp</a></td><td>�A�v���P�[�V�����̃\�[�X</td></tr>
-<tr><td><a href="hlsl_fx.html">hlsl.fx</a></td><td>�V�F�[�_�v���O����</td></tr>
-<tr><td><a href="paraboloid_fx.html">paraboloid.fx</a></td><td>Dual paraboloid �}�b�v�̂��߂̃V�F�[�_</td></tr>
-<tr><td><a href="hdr_h.html">hdr.h</a></td><td>RADIANCE�t�H�[�}�b�g�\���p�̃w�b�_</td></tr>
-<tr><td><a href="hdr_cpp.html">hdr.cpp</a></td><td>RADIANCE�t�H�[�}�b�g�\���p�̃v���O����</td></tr>
-<tr><td><a href="hdr_fx.html">hdr.fx</a></td><td>RADIANCE�t�H�[�}�b�g�\���p�̃V�F�[�_</td></tr>
+<tr><td><a href="main_h.html">main.h</a></td><td>アプリケーションのヘッダ</td></tr>
+<tr><td><a href="main_cpp.html">main.cpp</a></td><td>アプリケーションのソース</td></tr>
+<tr><td><a href="hlsl_fx.html">hlsl.fx</a></td><td>シェーダプログラム</td></tr>
+<tr><td><a href="paraboloid_fx.html">paraboloid.fx</a></td><td>Dual paraboloid マップのためのシェーダ</td></tr>
+<tr><td><a href="hdr_h.html">hdr.h</a></td><td>RADIANCEフォーマット表示用のヘッダ</td></tr>
+<tr><td><a href="hdr_cpp.html">hdr.cpp</a></td><td>RADIANCEフォーマット表示用のプログラム</td></tr>
+<tr><td><a href="hdr_fx.html">hdr.fx</a></td><td>RADIANCEフォーマット表示用のシェーダ</td></tr>
 </table>
 
 
-<h2>����������Ă����</h2>
+<h2>■何をやっているの</h2>
 
 
 <p>
-����̕��@�́A���}�b�v��K���ȌW�����|���ĕ��ς��邱�Ƃɂ����ˌ���SH�W�J���Ĉ����₷�����Ă����A��͖@���x�N�g������R�T�C����(max(N.��,0))��SH�W�J�����߁A���҂̐ς𑫂����Ƃɂ���āA�g�U���𓱏o���܂��B
+今回の方法は、環境マップを適当な係数を掛けて平均することにより入射光をSH展開して扱いやすくしておき、後は法線ベクトルからコサイン項(max(N.ω,0))のSH展開を求め、両者の積を足すことによって、拡散光を導出します。
 </p>
 <p>
-�����Ő�������΁A�g�U���Ɋւ��郌���_�����O������
+数式で説明すれば、拡散光に関するレンダリング方程式
 </p>
 <image src = "eq1.png">
 <p>
-�̓��ˌ�L<sub>i</sub>�Ɋւ��āASH�W�J
+の入射光L<sub>i</sub>に関して、SH展開
 </p>
 <image src = "eq2.png">
 <p>
-���{���Ɓi����͊撣��΃��A���^�C���ŉ\�ł���j�A�����_�����O��������
+を施すと（これは頑張ればリアルタイムで可能である）、レンダリング方程式は
 </p>
 <image src = "eq3.png">
 <p>
-�̂悤�ɕό`�ł���B�����ŁA�ϕ����ꂽ�������P�ɂ܂Ƃ߂Ă��܂��΁A
+のように変形できる。ここで、積分された部分を１つにまとめてしまえば、
 </p>
 <image src = "eq4.png">
 <p>
-�ƁA���f�B�A���X��P���ȐϘa�̌`�ŏ������Ƃ��ł���B
-����́A�V�F�[�_�Ōv�Z�\�ȗʂł���B<br>
-A<sub>lm</sub>�́A
+と、ラディアンスを単純な積和の形で書くことができる。
+これは、シェーダで計算可能な量である。<br>
+A<sub>lm</sub>は、
 </p>
 <image src = "eq5.png">
 <p>
-�ł���B���̗ʂ́Alm�ȊO�ɂ́A�@���x�N�g��N�ɂ����ˑ����Ȃ��̂ŁA���炩���ߌv�Z���Ă������Ƃ��\�ł���B����́A�@���x�N�g���𔽎˃x�N�g���Ƃ݂Ȃ��X�t�B�A�}�b�v
+である。この量は、lm以外には、法線ベクトルNにしか依存しないので、あらかじめ計算しておくことが可能である。今回は、法線ベクトルを反射ベクトルとみなすスフィアマップ
 </p>
 <image src = "maxnw.png" width="128" height="128">
 <p>
-�ɁA�e�[�u���Ƃ��Ă��̒l�𖄂ߍ��񂾁B�����ŁA�Ԃ�l=1,m=-1�A�΂�l=1,m=0�A��l=1,m=1�A�̌W���ɂȂ��Ă���i���ۂɂ́Al=m=0�̌W�����A���t�@�����ɖ��ߍ���ł���j�B
-�W���͓K���ɕ␳���Ă���A�F�̋�����0.5�̎����AA<sub>lm</sub>��0�̎��ł���B
+に、テーブルとしてその値を埋め込んだ。ここで、赤はl=1,m=-1、緑はl=1,m=0、青はl=1,m=1、の係数になっている（実際には、l=m=0の係数をアルファ成分に埋め込んでいる）。
+係数は適当に補正してあり、色の強さが0.5の時が、A<sub>lm</sub>が0の時である。
 </p>
 
 
-<h2>�����}�b�v�̍쐬</h2>
+<h2>■環境マップの作成</h2>
 
 
 <p>
-�ŏ��̃X�e�b�v�́A���}�b�v����邱�Ƃł���B<br>
-����́A�o�����}�b�v���쐬�����B
-�X�t�B�A�}�b�v�͔j�]���N�����₷�����A�L���[�u�}�b�v�̓����_�����O�񐔂����U���Ă��܂�����̑I���ł���B�ꍇ�ɉ����āA�ʂ̕��@��I��������̂����ł��낤�B
+最初のステップは、環境マップを作ることである。<br>
+今回は、双放物マップを作成した。
+スフィアマップは破綻を起こしやすいし、キューブマップはレンダリング回数が発散してしまうからの選択である。場合に応じて、別の方法を選択するものいいであろう。
 </p>
 <p>
-���}�b�v�͓��I�ɍ쐬����̂��\�ł���A��ԏ�̉�ʂ̊��}�b�v�́A���̂悤�ɂȂ��Ă���B
+環境マップは動的に作成するのが可能であり、一番上の画面の環境マップは、次のようになっている。
 </p>
 <image src = "envmap.png" width="256" height="128">
 <p>
-���́i�����ł͋��j�̃��[�J�����W�n����Ƀ����_�����O�����B
+物体（ここでは球）のローカル座標系を基準にレンダリングした。
 </p>
 
 <p>
-�����_�����O���@�́A�K���ȍ��W�ϊ��ƃe�N�X�`���𒣂邾���ł���B
+レンダリング方法は、適当な座標変換とテクスチャを張るだけである。
 </p>
 <pre class="CodeBlock">
 hlsl.fx
 <font color="deepskyblue">0130:</font> VS_OUTPUT VS_Parabploid (
-<font color="deepskyblue">0131:</font>       float4 Pos    : POSITION           <font color="cyan">// ���f���̒��_</font>
-<font color="deepskyblue">0132:</font>      ,float4 Tex0   : TEXCOORD0          <font color="cyan">// �e�N�X�`�����W</font>
+<font color="deepskyblue">0131:</font>       float4 Pos    : POSITION           <font color="cyan">// モデルの頂点</font>
+<font color="deepskyblue">0132:</font>      ,float4 Tex0   : TEXCOORD0          <font color="cyan">// テクスチャ座標</font>
 <font color="deepskyblue">0133:</font> ){
-<font color="deepskyblue">0134:</font>     VS_OUTPUT Out = (VS_OUTPUT)0;        <font color="cyan">// �o�̓f�[�^</font>
+<font color="deepskyblue">0134:</font>     VS_OUTPUT Out = (VS_OUTPUT)0;        <font color="cyan">// 出力データ</font>
 <font color="deepskyblue">0135:</font>     
-<font color="deepskyblue">0136:</font>     <font color="cyan">// �ʒu���W</font>
+<font color="deepskyblue">0136:</font>     <font color="cyan">// 位置座標</font>
 <font color="deepskyblue">0137:</font>     Out.Pos = paraboloid( Pos, mWV );
 <font color="deepskyblue">0138:</font>     
-<font color="deepskyblue">0139:</font>     <font color="cyan">// �e�N�X�`�����W</font>
+<font color="deepskyblue">0139:</font>     <font color="cyan">// テクスチャ座標</font>
 <font color="deepskyblue">0140:</font>     Out.Tex0 = Tex0;
 <font color="deepskyblue">0141:</font>     
 <font color="deepskyblue">0142:</font>     <font color="blue">return</font> Out;
@@ -144,21 +144,21 @@ hlsl.fx
 
 
 <p>
-���W�ϊ��́A�́A���I�����}�b�v���쐬������Ƃ�HLSL�ŏ����N�����Ă���B<br>
-�Ȃ��A���ʂɉ�荞�񂾒��_�Ɋւ��ẮAw�𕉂ɂ��邱�Ƃɂ���āA���������Ɉ��������Ă���B
+座標変換は、昔、動的放物マップを作成した作業をHLSLで書き起こしている。<br>
+なお、裏面に回り込んだ頂点に関しては、wを負にすることによって、無限遠方に引っ張っている。
 </p>
 <pre class="CodeBlock">
 paraboloid.fx
 <font color="deepskyblue">0011:</font> float4 paraboloid( float4 vPosition, float4x4 mWV )
 <font color="deepskyblue">0012:</font> {   
-<font color="deepskyblue">0013:</font>     float4 Out = (float4)0;          <font color="cyan">// �o�̓f�[�^</font>
+<font color="deepskyblue">0013:</font>     float4 Out = (float4)0;          <font color="cyan">// 出力データ</font>
 <font color="deepskyblue">0014:</font>     float3 pos;
 <font color="deepskyblue">0015:</font>     <font color="blue">float</font> l;
 <font color="deepskyblue">0016:</font>     
 <font color="deepskyblue">0017:</font>     <font color="blue">float</font> z_min = 0.1;
 <font color="deepskyblue">0018:</font>     <font color="blue">float</font> z_max = 100.0;
 <font color="deepskyblue">0019:</font>     
-<font color="deepskyblue">0020:</font>     <font color="cyan">// �ʒu���W</font>
+<font color="deepskyblue">0020:</font>     <font color="cyan">// 位置座標</font>
 <font color="deepskyblue">0021:</font>     pos = mul( vPosition, mWV ).xyz;
 <font color="deepskyblue">0022:</font>     l = length( pos );
 <font color="deepskyblue">0023:</font>     
@@ -179,7 +179,7 @@ paraboloid.fx
 </pre>
 
 <p>
-�s�N�Z���V�F�[�_�͒P���Ƀe�N�X�`���𒣂��Ă���B
+ピクセルシェーダは単純にテクスチャを張っている。
 </p>
 <pre class="CodeBlock">
 hlsl.fx
@@ -187,7 +187,7 @@ hlsl.fx
 <font color="deepskyblue">0148:</font> {
 <font color="deepskyblue">0149:</font>     float4 Out;
 <font color="deepskyblue">0150:</font>     
-<font color="deepskyblue">0151:</font>     <font color="cyan">// �F</font>
+<font color="deepskyblue">0151:</font>     <font color="cyan">// 色</font>
 <font color="deepskyblue">0152:</font>     Out = tex2D( SrcSamp, In.Tex0 );
 <font color="deepskyblue">0153:</font>     
 <font color="deepskyblue">0154:</font>     <font color="blue">return</font> Out;
@@ -195,79 +195,79 @@ hlsl.fx
 </pre>
 
 
-<h2>�����ˌ���SH�W�J</h2>
+<h2>■入射光のSH展開</h2>
 
 
 <p>
-���āA���̎菇�́A�����_�����O�������}�b�v���狅�ʒ��a�֐��̌W�������߂邱�Ƃł���B<br>
-���߂�ʂ́A
+さて、次の手順は、レンダリングした環境マップから球面調和関数の係数を求めることである。<br>
+求める量は、
 </p>
 <image src = "eq6.png">
 <p>
-�Ȃ̂ŁA�����_�����O�������ʂɋ��ʒ��a�֐��̊��֐����|���ėւ��Ƃ�΂悢�B<br>
-�a���Ƃ��Ƃ́A�~�b�v�}�b�v�����Ƃ��̗v�̂ŏ����ȁi�ŏI�I�ɂ͂P�e�N�Z���̑傫���܂Łj�e�N�X�`���֍������|����΂悢�B
+なので、レンダリングした結果に球面調和関数の基底関数を掛けて輪をとればよい。<br>
+和をとる作業は、ミップマップを作るときの要領で小さな（最終的には１テクセルの大きさまで）テクスチャへ合成を掛ければよい。
 </p>
 <p>
-�����ŁA���ɂȂ�̂��ʐϗv�f(Jacobian)�ł���B�����W�n���f�J���g���W�n�Őϕ�����Ƃ��ɂ́A�ϕ��ϐ��̕ϊ��Łusin�Ɓv�̍����]���ɒ������B
-���W�ϊ������č������鎞�ɂ́A���̍����厖�ɂȂ�B
+ここで、問題になるのが面積要素(Jacobian)である。球座標系をデカルト座標系で積分するときには、積分変数の変換で「sinθ」の項が余分に着いた。
+座標変換をして合成する時には、この項が大事になる。
 </p>
 <p>
-�����}�b�v����������Ƃ��ɂ́A���̕ϊ����K�v�ŁA���}�b�v�ɂ����钆�S����̋���s�i�}�b�v�̒��S����e���̒[�܂ł̋�����1�Ƃ���j�ƁA�����ʂւ̃x�N�g�����R������Ԃ̃x�N�g���ɂ����Ƃ��̒��S����̊p�x�Ƃɂ́A
-</p>
-<pre class="CodeBlock">
-s = tan(��/2)
-</pre>
-<p>
-�̊֌W������̂ŁA���̊֌W�����������
+放物マップを合成するときには、この変換が必要で、環境マップにおける中心からの距離s（マップの中心から各軸の端までの距離を1とする）と、放物面へのベクトルを３次元空間のベクトルにしたときの中心からの角度θには、
 </p>
 <pre class="CodeBlock">
-ds = (1/2)(1+tan<sup>2</sup>(��/2))d��
+s = tan(θ/2)
 </pre>
 <p>
-����A�ʐϗv�f�́A(1/2)(1+tan<sup>2</sup>(��/2)) �ɂȂ�B<br>
-�Ȃ��A�v�Z����ƁA��=0��1/2�A��=��/2��1�ɂȂ�A
+の関係があるので、この関係を微分した式
+</p>
+<pre class="CodeBlock">
+ds = (1/2)(1+tan<sup>2</sup>(θ/2))dθ
+</pre>
+<p>
+から、面積要素は、(1/2)(1+tan<sup>2</sup>(θ/2)) になる。<br>
+なお、計算すると、θ=0で1/2、θ=π/2で1になる、
 </p>
 <p>
-�ʐϗv�f������}�b�v�̍��W�n�Ńe�[�u��������ƁA�eUV�ɑΉ����āA���̒l�́A���̂悤�ɂȂ�B
+面積要素を放物マップの座標系でテーブル化すると、各UVに対応して、その値は、次のようになる。
 </p>
 <image src = "jacobi.png" width="128" height="128">
 <p>
-���̌W���ƁA���˕����ɉ�����SH���֐��̒l���|��ƁA���̃e�N�X�`�����ł���i���ꂼ��A�����}�b�v�̃����_�����O�����ɉ����ĕʁX�̃e�N�X�`�����ł���j�B
+この係数と、入射方向に応じたSH基底関数の値を掛ると、次のテクスチャができる（それぞれ、放物マップのレンダリング方向に応じて別々のテクスチャができる）。
 </p>
 <image src = "coeff.png" width="256" height="128">
 <p>
-�����́Al=1�̏ꍇ�̌W���ŁA�Ԃ�l=-1�A�΂�l=0�A��l=1�̌W����\���Ă���B<br>
-��ɂ���āA�F�̋�����0.5�̂Ƃ��낪�x�N�g����0�̒l��\�����Ă���B
+これらは、l=1の場合の係数で、赤がl=-1、緑がl=0、青がl=1の係数を表している。<br>
+例によって、色の強さが0.5のところがベクトルの0の値を表現している。
 <br>
-�����́A�ω����Ȃ��ʂȂ̂ŁA�����_�����O�O�ɂ��炩���߃e�N�X�`�����쐬���邱�Ƃ��ł���B
+これらは、変化しない量なので、レンダリング前にあらかじめテクスチャを作成することができる。
 </p>
 <p>
-�����W�������}�b�v�ɏ�Z����ƁA���̂悤�ɂȂ�B
+これら係数を環境マップに乗算すると、次のようになる。
 </p>
 <image src = "sh128.png" width="256" height="256">
 <p>
-�����ŁA���オl=m=0�A�E�オl=1,m=-1�A������l=1,m=0�A�E����l=1,m=1�̌W���ɂȂ�B
+ここで、左上がl=m=0、右上がl=1,m=-1、左下がl=1,m=0、右下がl=1,m=1の係数になる。
 </p>
 <p>
-��́A���������Ă����΂悢�B����́A�U�S�{�b�N�X�T���v�����O�ŁA�P��̃����_�����O��1/8�ɂ��邱�Ƃ��Q�����Ȃ����i�܂�A���}�b�v�̑傫����64x64�ł���j�B
-���̂悤�Ȋ����ŕ��ω�����Ă����B
+後は、小さくしていけばよい。今回は、６４ボックスサンプリングで、１回のレンダリングで1/8にすることを２おこなった（つまり、環境マップの大きさは64x64である）。
+下のような感じで平均化されていく。
 </p>
 <image src = "sh16.png" width="256" height="256">
 <image src = "sh2.png" width="256" height="256">
 <p>
-�Ȃ��A���ۂ̃����_�����O�ł́A��̐}�̂悤�ɁA�P�̃e�N�X�`���ɑS�Ă�SH�W�����悹���B����͏k������Ƃ��ɂP�x�ɏ����ł��ĕ֗����Ǝv���ĂƂ������u�ł���B
-�܂��A��̃T���v�����O�Ńe�N�X�`�����W�����炷�����ł��ƂȂ�SH�W�����T���v�����O�ł���Ƃ��������b�g������B
+なお、実際のレンダリングでは、上の図のように、１つのテクスチャに全てのSH係数を乗せた。これは縮小するときに１度に処理できて便利だと思ってとった処置である。
+また、後のサンプリングでテクスチャ座標をずらすだけでことなるSH係数をサンプリングできるというメリットもある。
 </p>
 
 
-<h2>������</h2>
+<h2>■合成</h2>
 
 
 <p>
-�ȏ�ŉ������͏I���ŁA��͂��ꂼ��̌W���̐Ϙa�v�Z�����āA���f�B�A���X���Z�o���܂��B
+以上で下準備は終了で、後はそれぞれの係数の積和計算をして、ラディアンスを算出します。
 </p>
 <p>
-�s�N�Z���V�F�[�_�ł́A���ꂼ��̍����x�N�g���l�ɖ߂��Ă��獇�����A���f�B�A���X���v�Z����ƂƂ��ɁA���}�b�v�̒��荞�݂Ȃǂ��s���܂��B
+ピクセルシェーダでは、それぞれの項をベクトル値に戻してから合成し、ラディアンスを計算するとともに、環境マップの張り込みなどを行います。
 </p>
 
 <pre class="CodeBlock">
@@ -283,7 +283,7 @@ hlsl.fx
 <font color="deepskyblue">0212:</font>                 + SH.g * ( 2.0 * tex2D( ReductionSamp, float2(0.75, 0.25) ) - 1.0)
 <font color="deepskyblue">0213:</font>                 + SH.b * ( 2.0 * tex2D( ReductionSamp, float2(0.75, 0.75) ) - 1.0);
 <font color="deepskyblue">0214:</font> 
-<font color="deepskyblue">0215:</font>     <font color="cyan">// ���}�b�v</font>
+<font color="deepskyblue">0215:</font>     <font color="cyan">// 環境マップ</font>
 <font color="deepskyblue">0216:</font>     float4 front = tex2D( ParaboloidFrontSamp, In.Tex0 );
 <font color="deepskyblue">0217:</font>     float4 back  = tex2D( ParaboloidBackSamp,  In.Tex1 );
 <font color="deepskyblue">0218:</font>     float4 env;
@@ -293,52 +293,52 @@ hlsl.fx
 <font color="deepskyblue">0222:</font>     }<font color="blue">else</font>{
 <font color="deepskyblue">0223:</font>         env = back;
 <font color="deepskyblue">0224:</font>     }
-<font color="deepskyblue">0225:</font>     <font color="cyan">// �t���l����</font>
+<font color="deepskyblue">0225:</font>     <font color="cyan">// フレネル項</font>
 <font color="deepskyblue">0226:</font>     <font color="blue">float</font> F = 1 - In.Normal.z * In.Normal.z;
 <font color="deepskyblue">0227:</font>     
-<font color="deepskyblue">0228:</font>     <font color="cyan">// �F</font>
+<font color="deepskyblue">0228:</font>     <font color="cyan">// 色</font>
 <font color="deepskyblue">0229:</font>     Out = 5.0 * GI          <font color="cyan">// GI</font>
-<font color="deepskyblue">0230:</font>         + 0.2f * env * F    <font color="cyan">// ���}�b�v</font>
-<font color="deepskyblue">0231:</font>         + In.Color;         <font color="cyan">// ���̂ق��̐F</font>
+<font color="deepskyblue">0230:</font>         + 0.2f * env * F    <font color="cyan">// 環境マップ</font>
+<font color="deepskyblue">0231:</font>         + In.Color;         <font color="cyan">// そのほかの色</font>
 <font color="deepskyblue">0232:</font> 
 <font color="deepskyblue">0233:</font>     <font color="blue">return</font> Out;
 <font color="deepskyblue">0234:</font> }
 </pre>
 <p>
-���_�V�F�[�_�ł́A�s�N�Z���V�F�[�_�Ŏg���A�����}�b�v��X�t�B�A�}�b�v�̍��W�l�v�Z���Ă����܂��B
+頂点シェーダでは、ピクセルシェーダで使う、放物マップやスフィアマップの座標値計算しておきます。
 </p>
 <pre class="CodeBlock">
 hlsl.fx
 <font color="deepskyblue">0161:</font> VS_OUTPUT VS_ParabploidEnvmap (
-<font color="deepskyblue">0162:</font>       float4 Pos    : POSITION           <font color="cyan">// ���f���̒��_</font>
-<font color="deepskyblue">0163:</font>     , float4 Normal : NORMAL             <font color="cyan">// �@���x�N�g��</font>
+<font color="deepskyblue">0162:</font>       float4 Pos    : POSITION           <font color="cyan">// モデルの頂点</font>
+<font color="deepskyblue">0163:</font>     , float4 Normal : NORMAL             <font color="cyan">// 法線ベクトル</font>
 <font color="deepskyblue">0164:</font>       )
 <font color="deepskyblue">0165:</font> {
 <font color="deepskyblue">0166:</font>     float3 ray;
 <font color="deepskyblue">0167:</font>     float3 ref;
-<font color="deepskyblue">0168:</font>     VS_OUTPUT Out = (VS_OUTPUT)0;        <font color="cyan">// �o�̓f�[�^</font>
+<font color="deepskyblue">0168:</font>     VS_OUTPUT Out = (VS_OUTPUT)0;        <font color="cyan">// 出力データ</font>
 <font color="deepskyblue">0169:</font>     
-<font color="deepskyblue">0170:</font>     <font color="cyan">// �ʒu���W</font>
+<font color="deepskyblue">0170:</font>     <font color="cyan">// 位置座標</font>
 <font color="deepskyblue">0171:</font>     Out.Pos = mul( Pos, mWVP );
 <font color="deepskyblue">0172:</font>     
-<font color="deepskyblue">0173:</font>     <font color="cyan">// ���b�V���̐F</font>
+<font color="deepskyblue">0173:</font>     <font color="cyan">// メッシュの色</font>
 <font color="deepskyblue">0174:</font>     Out.Color = 0.0f;
 <font color="deepskyblue">0175:</font>     
-<font color="deepskyblue">0176:</font>     <font color="cyan">// �e�N�X�`�����W</font>
+<font color="deepskyblue">0176:</font>     <font color="cyan">// テクスチャ座標</font>
 <font color="deepskyblue">0177:</font>     ray = normalize( Pos - vEye ).xyz;
-<font color="deepskyblue">0178:</font>     ref = reflect( ray, Normal.xyz );       <font color="cyan">// ���˃x�N�g��</font>
+<font color="deepskyblue">0178:</font>     ref = reflect( ray, Normal.xyz );       <font color="cyan">// 反射ベクトル</font>
 <font color="deepskyblue">0179:</font> 
 <font color="deepskyblue">0180:</font>     Out.Tex0.x = 0.5 * ( 1 + ref.x/(1+ref.z));
 <font color="deepskyblue">0181:</font>     Out.Tex0.y = 0.5 * ( 1 - ref.y/(1+ref.z));
 <font color="deepskyblue">0182:</font>     Out.Tex1.x = 0.5 * ( 1 - ref.x/(1-ref.z));
 <font color="deepskyblue">0183:</font>     Out.Tex1.y = 0.5 * ( 1 - ref.y/(1-ref.z));
 <font color="deepskyblue">0184:</font>     
-<font color="deepskyblue">0185:</font>     Out.Color.w = ref.z + 0.5f;     <font color="cyan">// ���˃x�N�g���̐����̔���</font>
+<font color="deepskyblue">0185:</font>     Out.Color.w = ref.z + 0.5f;     <font color="cyan">// 反射ベクトルの正負の判定</font>
 <font color="deepskyblue">0186:</font>     
-<font color="deepskyblue">0187:</font>     <font color="cyan">// �@��</font>
+<font color="deepskyblue">0187:</font>     <font color="cyan">// 法線</font>
 <font color="deepskyblue">0188:</font>     Out.Normal = mul( Normal.xyz, mWV );
 <font color="deepskyblue">0189:</font>     
-<font color="deepskyblue">0190:</font>     <font color="cyan">// SH�W���p�̃X�t�B�A���W</font>
+<font color="deepskyblue">0190:</font>     <font color="cyan">// SH係数用のスフィア座標</font>
 <font color="deepskyblue">0191:</font>     float3 r = Normal;
 <font color="deepskyblue">0192:</font>     r.z += 1.0f;
 <font color="deepskyblue">0193:</font>     <font color="blue">float</font> m = 2 * length(r);
@@ -366,14 +366,14 @@ hlsl.fx
 
 
 
-<h2>���Ō��</h2>
+<h2>■最後に</h2>
 
 
 <p>
-�����A����ǂ������ł��B<br>
-SH�̂P���i���s�����j�܂ł��������Ă��܂��񂪁A
-�����Ɋg������̂͂��₷���̂ŁA
-���킵�Ă݂�Ƃ�蕡�G�ȃ��C�e�B���O�������ł���ł��傤�B
+あぁ、しんどかったです。<br>
+SHの１次（平行光源）までしか扱っていませんが、
+高次に拡張するのはたやすいので、
+挑戦してみるとより複雑なライティングが実現できるでしょう。
 </p>
 
 
@@ -385,7 +385,7 @@ SH�̂P���i���s�����j�܂ł��������Ă��܂��񂪁A
 <BR CLEAR=ALL>
 <center>
 <hr>
-<p><a href="../index.html">���ǂ�</a></p>
+<p><a href="../index.html">もどる</a></p>
 <p><a href="mailto:imagire@gmail.com">imagire@gmail.com</a></p>
 </center>
 

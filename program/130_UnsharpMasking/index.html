@@ -1,8 +1,8 @@
 <head>
-	<title>t-pot�wUnsharp Masking�x</title>
+	<title>t-pot『Unsharp Masking』</title>
 	<link rel="stylesheet" type="text/css" href="../if.css">
 </head>
-<meta http-equiv=Content-Type content="text/html; charset=shift_jis">
+<meta http-equiv=Content-Type content="text/html; charset=UTF-8">
 <body>
 
 
@@ -10,8 +10,8 @@
 <center>
 <BR CLEAR=ALL>
 <BR CLEAR=ALL>
-<h1>�ڂ��֊s</h1><br>
-<h3>�` Unsharp Masking �`</h3>
+<h1>ぼけ輪郭</h1><br>
+<h3>～ Unsharp Masking ～</h3>
 <BR CLEAR=ALL>
 <BR CLEAR=ALL>
 <BR CLEAR=ALL>
@@ -22,72 +22,72 @@
 <div>
 
 
-<h2>���͂��߂�</h2>
+<h2>■はじめに</h2>
 
 
 <p>
-SIGGRAPH 2006 �̃R���X�^���c��� Thomas Luft�ACarsten Colditz �� Oliver Deussen �ɂ��
-<a href="http://www.cgmi.inf.uni-konstanz.de/publications/2006/image_enhancement/index.html">Image Enhancement by Unsharp Masking the Depth Buffer</a>���y�����������̂Ŏ������Ă݂܂����B
+SIGGRAPH 2006 のコンスタンツ大の Thomas Luft、Carsten Colditz と Oliver Deussen による
+<a href="http://www.cgmi.inf.uni-konstanz.de/publications/2006/image_enhancement/index.html">Image Enhancement by Unsharp Masking the Depth Buffer</a>が楽そうだったので実装してみました。
 </p>
 <p>
-�_���A�s�J�\�A�X�[�� �A�}�e�B�X�Ƃ��ꗬ�̐l�̊G������ƁA�l���̌��̂ӂ��̕����͈Â��`���̂����������ŁA�����<s>�p�N����</s>���X�y�N�g���Ă݂��悤�ł��B
+ダリ、ピカソ、スーラ 、マティスとか一流の人の絵を見ると、人物の後ろのふちの部分は暗く描くのが多いそうで、それを<s>パクって</s>リスペクトしてみたようです。
 </p>
 <image src = "teaser3.jpg">
 
 
 <p>
-����̃v���O�����́A���̂��̂ł��B
+今回のプログラムは、次のものです。
 </p>
 <ul style = "LIST-STYLE-TYPE:none">
 <li><a href="src.zip">src.zip (Unsharp Masking:Microsoft DirectX 9.0 SDK (August 2006), vs_1_1, ps_2_0)</a>
 </ul>
 
 <p>
-�܂��A�����̂悤�ɓK���Ƀt�@�C���������Ă��܂��B
-�厖�ȕ��������𔲐�����ƁA���̃t�@�C�������ɒ��ڂ���΂������ƂɂȂ�܂��B
+まぁ、いつものように適当にファイルが入っています。
+大事な部分だけを抜粋すると、次のファイルだけに注目すればいいことになります。
 </p>
 <table>
-<tr><td><a href="main_cpp.html">main.cpp</a></td><td>���C���֐�</td></tr>
-<tr><td><a href="main_fx.html">main.fx</a></td><td>�V�F�[�_�v���O����</td></tr>
+<tr><td><a href="main_cpp.html">main.cpp</a></td><td>メイン関数</td></tr>
+<tr><td><a href="main_fx.html">main.fx</a></td><td>シェーダプログラム</td></tr>
 </table>
 
 <p>
-���ɂ��A���s�t�@�C���A���\�[�X�t�@�C���A�v���W�F�N�g�t�@�C���������Ă��܂��B
+他にも、実行ファイル、リソースファイル、プロジェクトファイルが入っています。
 </p>
 
 
-<h2>��������Ă�́H</h2>
+<h2>■何やってるの？</h2>
 
 <p>
-�܂��A���ʂɕ`�悵�āA���ƁA�[�x���ۑ����܂��B
+まず、普通に描画して、あと、深度も保存します。
 </p>
-<image src = "color.png">�F
-<image src = "z.png">�[�x
+<image src = "color.png">色
+<image src = "z.png">深度
 
 <p>
-���ɐ[�x���ڂ����܂��B����́A�Q�p�X�̃K�E�X�ڂ������g���܂����B
+次に深度をぼかします。今回は、２パスのガウスぼかしを使いました。
 </p>
-<image src = "z.png">�I���W�i��Z
-<image src = "blur_x.png">�悱�ڂ���
-<image src = "blur_y.png">���Ăڂ���
+<image src = "z.png">オリジナルZ
+<image src = "blur_x.png">よこぼかし
+<image src = "blur_y.png">たてぼかし
 <p>
-�����ŁA�u���̐[�x-�ڂ������[�x�v������Ǝ��̂悤�ɂȂ�܂��i�Ԃ͕��j�B
+ここで、「元の深度-ぼかした深度」を見ると次のようになります（赤は負）。
 </p>
-<image src = "diff.png">���̐[�x-�ڂ������[�x
+<image src = "diff.png">元の深度-ぼかした深度
 <p>
-���������͉��܂����Ƃ�������A�Â�����Ƃ��������Ɍ��₷���Ȃ�񂶂�Ȃ��H�ƁA�����̂����̍l�����ł��B
+白い部分は奥まったとこだから、暗くするといい感じに見やすくなるんじゃない？と、いうのが元の考え方です。
 </p>
 <p>
-����̃v���O�����ł́A��̓I�ɂ͎��̂悤�ɑg��ł��܂��B
+今回のプログラムでは、具体的には次のように組んでいます。
 </p>
 
 <pre class="CodeBlock">
 main.fx
 <font color="deepskyblue">0227:</font> float4 FinalPS( in float2 OriginalUV : TEXCOORD0 ) : COLOR 
 <font color="deepskyblue">0228:</font> {
-<font color="deepskyblue">0229:</font>     float4 color = tex2D(RenderTargetSampler, OriginalUV);<font color="cyan">// ���摜</font>
-<font color="deepskyblue">0230:</font>     <font color="blue">float</font>  depth      = tex2D(DepthSampler, OriginalUV).r;<font color="cyan">// �I���W�i���̐[�x</font>
-<font color="deepskyblue">0231:</font>     <font color="blue">float</font>  depth_blur = tex2D(MeshTextureSampler, OriginalUV).r; <font color="cyan">// �ڂ������[�x</font>
+<font color="deepskyblue">0229:</font>     float4 color = tex2D(RenderTargetSampler, OriginalUV);<font color="cyan">// 元画像</font>
+<font color="deepskyblue">0230:</font>     <font color="blue">float</font>  depth      = tex2D(DepthSampler, OriginalUV).r;<font color="cyan">// オリジナルの深度</font>
+<font color="deepskyblue">0231:</font>     <font color="blue">float</font>  depth_blur = tex2D(MeshTextureSampler, OriginalUV).r; <font color="cyan">// ぼかした深度</font>
 <font color="deepskyblue">0232:</font> 
 <font color="deepskyblue">0233:</font>     <font color="blue">float</font> diff = depth - depth_blur;
 <font color="deepskyblue">0234:</font>     diff = max(0, diff);
@@ -96,16 +96,16 @@ main.fx
 <font color="deepskyblue">0237:</font> }
 </pre>
 <p>
-�A���t�@�u�����f�B���O�̕������������ˁB
+アルファブレンディングの方が高速かもね。
 </p>
 
 
-<h2>���Ō��</h2>
+<h2>■最後に</h2>
 
 
 <p>
-�[���A���r�G���g�I�N���[�W�����Ɏg����炵���ł����A�ǂ������������܂���B<br>
-�p�����[�^�������H�H�H
+擬似アンビエントオクルージョンに使えるらしいですが、どうもそう見えません。<br>
+パラメータが悪い？？？
 </p>
 
 
@@ -115,7 +115,7 @@ main.fx
 <BR CLEAR=ALL>
 <center>
 <hr>
-<p><a href="../index.html">���ǂ�</a></p>
+<p><a href="../index.html">もどる</a></p>
 <p><a href="mailto:imagire@gmail.com">imagire@gmail.com</a></p>
 </center>
 

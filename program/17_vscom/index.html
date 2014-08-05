@@ -1,216 +1,216 @@
 <head>
-	<title>t-pot �wVertex Shader ����:���_�V�F�[�_�[�̃R�}���h�x</title>
+	<title>t-pot 『Vertex Shader 入門:頂点シェーダーのコマンド』</title>
 	<link rel="stylesheet" type="text/css" href="../if.css">
 </head>
-<meta http-equiv=Content-Type content="text/html; charset=shift_jis">
+<meta http-equiv=Content-Type content="text/html; charset=UTF-8">
 <body>
 
 <div class="contents">
 <center>
 <BR CLEAR=ALL>
 <BR CLEAR=ALL>
-<h1>���_�V�F�[�_�[�̃R�}���h</h1><br>
-<h3>�`�����ł���A��������`</h3>
+<h1>頂点シェーダーのコマンド</h1><br>
+<h3>～何ができる、何をする～</h3>
 <BR CLEAR=ALL>
 <BR CLEAR=ALL>
 <BR CLEAR=ALL>
 </center>
-<h2>���͂��߂�</h2>
+<h2>■はじめに</h2>
 
 <p>
-���_�V�F�[�_�[�̎g�������Љ�܂������A���ۂɂ͉����ł���̂ł��傤���H<br>
-�������񂱂��ł܂Ƃ߂Ă݂����Ǝv���܂��B<br>
-����ɁA�������̊�{�v�Z�̕��@���Љ�����Ǝv���܂��B<br>
-����̃l�^�́AnVIDIA �̃z�[���y�[�W�ɒu���Ă������A
+頂点シェーダーの使い方を紹介しましたが、実際には何ができるのでしょうか？<br>
+いったんここでまとめてみたいと思います。<br>
+さらに、いくつかの基本計算の方法を紹介したいと思います。<br>
+今回のネタは、nVIDIA のホームページに置いてあった、
 </p>
 
 <table>
-<tr><td>I</td><td>Matthias Wolka, �gWhere Is That Instruction? How To Implement "Missing" Vertex Shader Instructions�h</td></tr>
+<tr><td>I</td><td>Matthias Wolka, “Where Is That Instruction? How To Implement "Missing" Vertex Shader Instructions”</td></tr>
 </table>
 
 <p>
-����A����������Ă��܂����B
+から、かっさらってきました。
 </p>
 
-<h2>�����_�V�F�[�_�[�̊T�v</h2>
+<h2>■頂点シェーダーの概要</h2>
 
 <p>
-�����������_�V�F�[�_�[�Ƃ́A����������̂ł��傤���H<br>
-�܂��A���̐}�����Ă��������B
+そもそも頂点シェーダーとは、何をするものでしょうか？<br>
+ます、下の図を見てください。
 </p>
 
 <right><image src = "vscom_pipe.gif"></right>
 
 <p>
-�ȑO�́A�����ϊ��̕����܂ł��ACPU �̖����ł����B
-�Ƃ��낪 GeForce ���̍����\�ȃr�f�I�`�b�v�̓o��ɂ��A
-�����v�Z�A�����ϊ����r�f�I�`�b�v�łł���悤�ɂȂ�܂����B
-����ɂ����́A�v���O���~���O�ɂ���āA�����v�Z�̓��e���ς����܂��B<br>
-���́A�i��Ƀr�f�I�`�b�v�ɂ�鉉�Z�ׂ̈́j�����A�����ϊ��v���O�������A���_�V�F�[�_�[�v���O�����ł��B
-�����̃v���O�����y�сA���̃����_�����O���@�����_�V�F�[�_�[�ł��B
+以前は、透視変換の部分までが、CPU の役割でした。
+ところが GeForce 等の高性能なビデオチップの登場により、
+光源計算、透視変換がビデオチップでできるようになりました。
+さらにそれらは、プログラミングによって、光源計算の内容が変えられます。<br>
+この、（主にビデオチップによる演算の為の）光源、透視変換プログラムが、頂点シェーダープログラムです。
+それらのプログラム及び、そのレンダリング方法が頂点シェーダーです。
 </p>
 
 <p>
-�ł́A��������΂����̂ł��傤���H<br>
-�������Ă��������B
+では、何をすればいいのでしょうか？<br>
+下を見てください。
 </p>
 
 <right><image src = "vscom_reg.gif"></right>
 
 <p>
-��{�I�ɁA���_���̓��W�X�^ v0�`v15 �����H���āA���_�o�̓��W�X�^�ɏo�͂��܂��B<br>
-�r���ŁA��Ɨp�̃��W�X�^�Ƃ��āAr0�`r11 ���g���܂��B<br>
-����ɁA�ϊ��s���A�����̐F�ׂ̈̒萔���W�X�^ c0�`c95 ��ǂݍ��ނ��Ƃ��ł��܂��B<br>
-vs1.1�ȏ�ł́A�萔���W�X�^��c[a0.x+n]�̎g�������ł��܂��B
-�萔 a0.x �����X�؂�ւ���ƁA�����̌����̏�������Z�ɂł��܂��B<br>
+基本的に、頂点入力レジスタ v0～v15 を加工して、頂点出力レジスタに出力します。<br>
+途中で、作業用のレジスタとして、r0～r11 が使えます。<br>
+さらに、変換行列や、光源の色の為の定数レジスタ c0～c95 を読み込むことができます。<br>
+vs1.1以上では、定数レジスタにc[a0.x+n]の使い方ができます。
+定数 a0.x を次々切り替えると、多数の光源の処理が手短にできます。<br>
 </p>
 <p>
-���ӓ_�Ƃ��āAcn, vn �́A�ꖽ�߂Ɉ�񂵂��g���܂���B�܂�A
+注意点として、cn, vn は、一命令に一回しか使えません。つまり、
 </p>
 <pre class="CodeBlock">
 add r0, <Font color = yellow><b>c0, c1</b></font>
 </pre>
 <p>
-�́A�ʖڂł��B
+は、駄目です。
 </p>
 
 <p>
-�o�̓��W�X�^�́A���̂��̂�����܂��B
-�g�����̂����o�͂���� OK �ł��B
+出力レジスタは、次のものがあります。
+使うものだけ出力すれば OK です。
 </p>
 
 <table>
-<tr><td>oDn </td><td>2��</td><td>�o�̓f�[�^ ���W�X�^�F���_�J���[ �f�[�^���o�͂��邽�߂Ɏg�p</td></tr>
-<tr><td>oPos</td><td>1��</td><td>�o�͍��W�F�����N���b�s���O��ԓ��̈ʒu���W�B�N���b�s���O�̂��߂ɕK�v</td></tr>
-<tr><td>oTn </td><td>4(2)��</td><td>�o�̓e�N�X�`�����W�F�e�N�X�`�����W�Ƃ��Ďg�p�����o�̓f�[�^ ���W�X�^�̔z��</td></tr>
-<tr><td>oPts</td><td>1(0)��</td><td>�o�͈ʒu���W�T�C�Y ���W�X�^�F�|�C���g �T�C�Y�̃X�J���[�Bx �v�f�����g�p�B</td></tr>
-<tr><td>oFog</td><td>1(0)��</td><td>�o�̓t�H�O�l���W�X�^�F��Ԃ��ꂽ��t�H�O �e�[�u���ɓ]�������t�H�O�W���Bx �v�f�����g�p�B</td></tr>
+<tr><td>oDn </td><td>2個</td><td>出力データ レジスタ：頂点カラー データを出力するために使用</td></tr>
+<tr><td>oPos</td><td>1個</td><td>出力座標：同次クリッピング空間内の位置座標。クリッピングのために必要</td></tr>
+<tr><td>oTn </td><td>4(2)個</td><td>出力テクスチャ座標：テクスチャ座標として使用される出力データ レジスタの配列</td></tr>
+<tr><td>oPts</td><td>1(0)個</td><td>出力位置座標サイズ レジスタ：ポイント サイズのスカラー。x 要素だけ使用。</td></tr>
+<tr><td>oFog</td><td>1(0)個</td><td>出力フォグ値レジスタ：補間された後フォグ テーブルに転送されるフォグ係数。x 要素だけ使用。</td></tr>
 </table>
 
 <p>
-���́A�i4�������������x�N�g���j���W�X�^�̌��ł��B
-���ʂ̒��̌��́A�s�N�Z���V�F�[�_�[���T�|�[�g����Ă��Ȃ��ꍇ�̃��W�X�^�̌��ł��B<br>
-�܂��A���ꂾ�������Ȃ��Ǝv���ƁA�C�����y�ł��B
+個数は、（4次元浮動小数ベクトル）レジスタの個数です。
+括弧の中の個数は、ピクセルシェーダーがサポートされていない場合のレジスタの個数です。<br>
+まぁ、これだけしかないと思うと、気分が楽です。
 </p>
 
-<h2>������</h2>
+<h2>■命令</h2>
 
 <p>
-�ł́A�ǂ�Ȗ��߂����邩�Ƃ����ƁA�܂��A�o�[�W�����ݒ薽�߂ƒ萔�錾���߂�����܂��B
+では、どんな命令があるかというと、まず、バージョン設定命令と定数宣言命令があります。
 </p>
 <pre class="CodeBlock">
-vs. mainVer . subVer          �^�C�v����уo�[�W�������w��
-def cn     f0, f1, f2, f3     �萔�錾
+vs. mainVer . subVer          タイプおよびバージョンを指定
+def cn     f0, f1, f2, f3     定数宣言
 </pre>
 <p>
-�萔�錾���߂� DXAssembleShaderFromFile �ŁA�g�����Ƃ�錾���Ȃ��ƁA�g���Ȃ��̂Œ��ӂ��܂��傤�B
+定数宣言命令は DXAssembleShaderFromFile で、使うことを宣言しないと、使えないので注意しましょう。
 </p>
 
 <p>
-�Z�p���߂Ƃ��ẮA��������܂��B
+算術命令としては、次があります。
 </p>
 
 <TABLE WIDTH="600" BORDER="0" CELLPADDING="3" CELLSPACING="1">
-<TR><TD ALIGN="center" VALIGN="top" BGCOLOR="#000000"><FONT SIZE="2" COLOR="#FFFFFF"><B>����</B></FONT></TD>
-<TD ALIGN="center" VALIGN="top" BGCOLOR="#000000"><FONT SIZE="2" COLOR="#FFFFFF"><B>����</B></FONT></TD>
+<TR><TD ALIGN="center" VALIGN="top" BGCOLOR="#000000"><FONT SIZE="2" COLOR="#FFFFFF"><B>命令</B></FONT></TD>
+<TD ALIGN="center" VALIGN="top" BGCOLOR="#000000"><FONT SIZE="2" COLOR="#FFFFFF"><B>動作</B></FONT></TD>
 
 <TR><TD ALIGN="left" VALIGN="top" BGCOLOR="#c0c0ff"><FONT SIZE="2">nop</FONT></TD>
-<TD ALIGN="left" VALIGN="top" BGCOLOR="#c0c0ff"><FONT SIZE="2">�������Ȃ�</FONT></TD>
+<TD ALIGN="left" VALIGN="top" BGCOLOR="#c0c0ff"><FONT SIZE="2">何もしない</FONT></TD>
 <TR><TD ALIGN="left" VALIGN="top" BGCOLOR="#c0ffc0"><FONT SIZE="2">mov out, in</FONT></TD>
-<TD ALIGN="left" VALIGN="top" BGCOLOR="#c0ffc0"><FONT SIZE="2">out �� in �̓��e���R�s�[����B</FONT></TD>
+<TD ALIGN="left" VALIGN="top" BGCOLOR="#c0ffc0"><FONT SIZE="2">out へ in の内容をコピーする。</FONT></TD>
 <TR><TD ALIGN="left" VALIGN="top" BGCOLOR="#c0c0ff"><FONT SIZE="2">mul out, in1, in2</FONT></TD>
-<TD ALIGN="left" VALIGN="top" BGCOLOR="#c0c0ff"><FONT SIZE="2">out �� in1 �� in2 �̐ς�������B</FONT></TD>
+<TD ALIGN="left" VALIGN="top" BGCOLOR="#c0c0ff"><FONT SIZE="2">out に in1 と in2 の積を代入する。</FONT></TD>
 <TR><TD ALIGN="left" VALIGN="top" BGCOLOR="#c0ffc0"><FONT SIZE="2">add out, in1, in2</FONT></TD>
-<TD ALIGN="left" VALIGN="top" BGCOLOR="#c0ffc0"><FONT SIZE="2">in1 �� in2 �����Z����B</FONT></TD>
+<TD ALIGN="left" VALIGN="top" BGCOLOR="#c0ffc0"><FONT SIZE="2">in1 と in2 を加算する。</FONT></TD>
 <TR><TD ALIGN="left" VALIGN="top" BGCOLOR="#c0c0ff"><FONT SIZE="2">sub out, in1, in2</FONT></TD>
-<TD ALIGN="left" VALIGN="top" BGCOLOR="#c0c0ff"><FONT SIZE="2">in1 �� in2 �����Z����B</FONT></TD>
+<TD ALIGN="left" VALIGN="top" BGCOLOR="#c0c0ff"><FONT SIZE="2">in1 と in2 を減算する。</FONT></TD>
 <TR><TD ALIGN="left" VALIGN="top" BGCOLOR="#c0ffc0"><FONT SIZE="2">mad out, in1, in2, in3</FONT></TD>
-<TD ALIGN="left" VALIGN="top" BGCOLOR="#c0ffc0"><FONT SIZE="2">in1 �� in2 �̏�Z�̌��ʂ� in3 �����Z���āAdst �ɑ������B</FONT></TD>
+<TD ALIGN="left" VALIGN="top" BGCOLOR="#c0ffc0"><FONT SIZE="2">in1 と in2 の乗算の結果に in3 を加算して、dst に代入する。</FONT></TD>
 <TR><TD ALIGN="left" VALIGN="top" BGCOLOR="#c0c0ff"><FONT SIZE="2">rcp out, in.w</FONT></TD>
-<TD ALIGN="left" VALIGN="top" BGCOLOR="#c0c0ff"><FONT SIZE="2">�t��<br>out.x = out.y = out.z = out.w = 1 / in</FONT></TD>
+<TD ALIGN="left" VALIGN="top" BGCOLOR="#c0c0ff"><FONT SIZE="2">逆数<br>out.x = out.y = out.z = out.w = 1 / in</FONT></TD>
 <TR><TD ALIGN="left" VALIGN="top" BGCOLOR="#c0ffc0"><FONT SIZE="2">rsq out, in</FONT></TD>
 <TD ALIGN="left" VALIGN="top" BGCOLOR="#c0ffc0"><FONT SIZE="2">in
-�̋t��������<BR>out.x = out.y = out.z = out.w = 1/sqrt(in)</FONT></TD>
+の逆数平方根<BR>out.x = out.y = out.z = out.w = 1/sqrt(in)</FONT></TD>
 <TR><TD ALIGN="left" VALIGN="top" BGCOLOR="#c0c0ff"><FONT SIZE="2">dp3 out, in1, in2</FONT></TD>
-<TD ALIGN="left" VALIGN="top" BGCOLOR="#c0c0ff"><FONT SIZE="2">3 �v�f�̓���</FONT></TD>
+<TD ALIGN="left" VALIGN="top" BGCOLOR="#c0c0ff"><FONT SIZE="2">3 要素の内積</FONT></TD>
 <TR><TD ALIGN="left" VALIGN="top" BGCOLOR="#c0ffc0"><FONT SIZE="2">dp4 out, in1, in2</FONT></TD>
-<TD ALIGN="left" VALIGN="top" BGCOLOR="#c0ffc0"><FONT SIZE="2">4 �v�f�̓���</FONT></TD>
+<TD ALIGN="left" VALIGN="top" BGCOLOR="#c0ffc0"><FONT SIZE="2">4 要素の内積</FONT></TD>
 <TR><TD ALIGN="left" VALIGN="top" BGCOLOR="#c0c0ff"><FONT SIZE="2">dst out, in1, in2</FONT></TD>
-<TD ALIGN="left" VALIGN="top" BGCOLOR="#c0c0ff"><FONT SIZE="2">�����x�N�g��<br>in1 �x�N�g���� (NA,d*d,d*d,NA) <br>in2 ��
-(NA,1/d,NA,1/d)<br>out �� (1,d,d*d,1/d)</FONT></TD>
+<TD ALIGN="left" VALIGN="top" BGCOLOR="#c0c0ff"><FONT SIZE="2">距離ベクトル<br>in1 ベクトルは (NA,d*d,d*d,NA) <br>in2 は
+(NA,1/d,NA,1/d)<br>out は (1,d,d*d,1/d)</FONT></TD>
 <TR><TD ALIGN="left" VALIGN="top" BGCOLOR="#c0ffc0"><FONT SIZE="2">lit out, in</FONT></TD>
-<TD ALIGN="left" VALIGN="top" BGCOLOR="#c0ffc0"><FONT SIZE="2">���W���Bout.z = (in.x<0) ? 0 : (in.y^in.w)<UL><LI>in.x = n � l
-(�P�ʖ@���x�N�g���ƌ��x�N�g��)<LI>in.y = n � h (�P�ʖ@���x�N�g���Ɣ��p�x�N�g��)<LI>in.z
-�͎g�p����Ȃ��B<LI>in.w = �ׂ��� (+128 �` -128����Ȃ��Ⴞ��)</UL></FONT></TD>
+<TD ALIGN="left" VALIGN="top" BGCOLOR="#c0ffc0"><FONT SIZE="2">光係数。out.z = (in.x<0) ? 0 : (in.y^in.w)<UL><LI>in.x = n ･ l
+(単位法線ベクトルと光ベクトル)<LI>in.y = n ･ h (単位法線ベクトルと半角ベクトル)<LI>in.z
+は使用されない。<LI>in.w = べき乗 (+128 ～ -128じゃなきゃだめ)</UL></FONT></TD>
 <TR><TD ALIGN="left" VALIGN="top" BGCOLOR="#c0c0ff"><FONT SIZE="2">min out, in1, in2</FONT></TD>
-<TD ALIGN="left" VALIGN="top" BGCOLOR="#c0c0ff"><FONT SIZE="2">�ŏ��l out = (in1 < in2) ? in1 : in2</FONT></TD>
+<TD ALIGN="left" VALIGN="top" BGCOLOR="#c0c0ff"><FONT SIZE="2">最小値 out = (in1 < in2) ? in1 : in2</FONT></TD>
 <TR><TD ALIGN="left" VALIGN="top" BGCOLOR="#c0ffc0"><FONT SIZE="2">max out, in1, in2</FONT></TD>
-<TD ALIGN="left" VALIGN="top" BGCOLOR="#c0ffc0"><FONT SIZE="2">�ő�l out = (in1 < in2) ? in2 : in1</FONT></TD>
+<TD ALIGN="left" VALIGN="top" BGCOLOR="#c0ffc0"><FONT SIZE="2">最大値 out = (in1 < in2) ? in2 : in1</FONT></TD>
 <TR><TD ALIGN="left" VALIGN="top" BGCOLOR="#c0c0ff"><FONT SIZE="2">slt out, in1, in2</FONT></TD>
-<TD ALIGN="left" VALIGN="top" BGCOLOR="#c0c0ff"><FONT SIZE="2">���� out = (in1 < in2) ? 1 : 0</FONT></TD>
+<TD ALIGN="left" VALIGN="top" BGCOLOR="#c0c0ff"><FONT SIZE="2">未満 out = (in1 < in2) ? 1 : 0</FONT></TD>
 <TR><TD ALIGN="left" VALIGN="top" BGCOLOR="#c0ffc0"><FONT SIZE="2">sge out, in1, in2</FONT></TD>
-<TD ALIGN="left" VALIGN="top" BGCOLOR="#c0ffc0"><FONT SIZE="2">�ȏ� out = (in1 >= in2) ? 1 : 0</FONT></TD>
+<TD ALIGN="left" VALIGN="top" BGCOLOR="#c0ffc0"><FONT SIZE="2">以上 out = (in1 >= in2) ? 1 : 0</FONT></TD>
 <TR><TD ALIGN="left" VALIGN="top" BGCOLOR="#c0c0ff"><FONT SIZE="2">expp out, in.w</FONT></TD>
-<TD ALIGN="left" VALIGN="top" BGCOLOR="#c0c0ff"><FONT SIZE="2">2^x     �̕������x<UL><LI>out.x = 2 ^ (int)in.w<LI>out.y = ������(in.w)<LI>out.z = 2 ^ in.w (�ߎ���)<LI>out.w = 1.0</UL></FONT></TD>
+<TD ALIGN="left" VALIGN="top" BGCOLOR="#c0c0ff"><FONT SIZE="2">2^x     の部分精度<UL><LI>out.x = 2 ^ (int)in.w<LI>out.y = 小数部(in.w)<LI>out.z = 2 ^ in.w (近似解)<LI>out.w = 1.0</UL></FONT></TD>
 <TR><TD ALIGN="left" VALIGN="top" BGCOLOR="#c0ffc0"><FONT SIZE="2">logp out, in.w</FONT></TD>
-<TD ALIGN="left" VALIGN="top" BGCOLOR="#c0ffc0"><FONT SIZE="2">log2(x) �̕������x<UL><LI>out.x = exponent((int)in.w)<LI>out.y = mantissa(in.w)<LI>out.z = log2(in.w) (�ߎ���)<LI>out.w = 1.0</UL></FONT></TD>
+<TD ALIGN="left" VALIGN="top" BGCOLOR="#c0ffc0"><FONT SIZE="2">log2(x) の部分精度<UL><LI>out.x = exponent((int)in.w)<LI>out.y = mantissa(in.w)<LI>out.z = log2(in.w) (近似解)<LI>out.w = 1.0</UL></FONT></TD>
 </TABLE>
 
 <p>
-�ȏ�́A�ꖽ�߈�N���b�N�Ŏ��s����܂��B����ȊO�ɁA�}�N���i�����j���߂Ƃ��āA���̂悤�Ȃ��̂�����܂��B<br>
-�����ōœK�������̂ŁA���ꂼ����ׂ��œW�J��������A�����͍����ł��B
+以上は、一命令一クロックで実行されます。これ以外に、マクロ（複合）命令として、次のようなものがあります。<br>
+内部で最適化されるので、それぞれをべたで展開するよりも、速さは高速です。
 </p>
 
 
 <TABLE WIDTH="600" BORDER="0" CELLPADDING="3" CELLSPACING="1">
-<TR><TD ALIGN="center" VALIGN="top" BGCOLOR="#000000"><FONT SIZE="2" COLOR="#FFFFFF"><B>����</B></FONT></TD>
-<TD ALIGN="center" VALIGN="top" BGCOLOR="#000000"><FONT SIZE="2" COLOR="#FFFFFF"><B>����</B></FONT></TD>
+<TR><TD ALIGN="center" VALIGN="top" BGCOLOR="#000000"><FONT SIZE="2" COLOR="#FFFFFF"><B>命令</B></FONT></TD>
+<TD ALIGN="center" VALIGN="top" BGCOLOR="#000000"><FONT SIZE="2" COLOR="#FFFFFF"><B>動作</B></FONT></TD>
 
 <TR><TD ALIGN="left" VALIGN="top" BGCOLOR="#c0c0ff"><FONT SIZE="2">m3x2 out, in0, in1</FONT></TD>
-<TD ALIGN="left" VALIGN="top" BGCOLOR="#c0c0ff"><FONT SIZE="2">3 �~ 2 �x�N�g���s��̏�Z  (2�N���b�N�ȉ�)<UL><LI>dp3 out.x, in0, in[1]<LI>dp3 out.y, in0, in[2]</UL></FONT></TD>
+<TD ALIGN="left" VALIGN="top" BGCOLOR="#c0c0ff"><FONT SIZE="2">3 × 2 ベクトル行列の乗算  (2クロック以下)<UL><LI>dp3 out.x, in0, in[1]<LI>dp3 out.y, in0, in[2]</UL></FONT></TD>
 <TR><TD ALIGN="left" VALIGN="top" BGCOLOR="#c0ffc0"><FONT SIZE="2">m3x3 out, in0, in1</FONT></TD>
-<TD ALIGN="left" VALIGN="top" BGCOLOR="#c0ffc0"><FONT SIZE="2">3 �~ 3 �x�N�g���s��̏�Z  (2�N���b�N�ȉ�)<UL><LI>dp3 out.x, in0, in[1]<LI>dp3 out.y, in0, in[2]<LI>dp3 out.z, in0, in[3]</UL></FONT></TD>
+<TD ALIGN="left" VALIGN="top" BGCOLOR="#c0ffc0"><FONT SIZE="2">3 × 3 ベクトル行列の乗算  (2クロック以下)<UL><LI>dp3 out.x, in0, in[1]<LI>dp3 out.y, in0, in[2]<LI>dp3 out.z, in0, in[3]</UL></FONT></TD>
 <TR><TD ALIGN="left" VALIGN="top" BGCOLOR="#c0c0ff"><FONT SIZE="2">m3x4 out, in0, in1</FONT></TD>
-<TD ALIGN="left" VALIGN="top" BGCOLOR="#c0c0ff"><FONT SIZE="2">3 �~ 4 �x�N�g���s��̏�Z  (2�N���b�N�ȉ�)<UL><LI>dp3 out.x, in0, in[1]<LI>dp3 out.y, in0, in[2]<LI>dp3 out.z, in0, in[3]<LI>dp3 out.w, in0, in[4]</UL></FONT></TD>
+<TD ALIGN="left" VALIGN="top" BGCOLOR="#c0c0ff"><FONT SIZE="2">3 × 4 ベクトル行列の乗算  (2クロック以下)<UL><LI>dp3 out.x, in0, in[1]<LI>dp3 out.y, in0, in[2]<LI>dp3 out.z, in0, in[3]<LI>dp3 out.w, in0, in[4]</UL></FONT></TD>
 <TR><TD ALIGN="left" VALIGN="top" BGCOLOR="#c0ffc0"><FONT SIZE="2">m4x3 out, in0, in1</FONT></TD>
-<TD ALIGN="left" VALIGN="top" BGCOLOR="#c0ffc0"><FONT SIZE="2">4 �~ 3 �x�N�g���s��̏�Z  (2�N���b�N�ȉ�)<UL><LI>dp4 out.x, in0, in[1]<LI>dp4 out.y, in0, in[2]<LI>dp4 out.z, in0, in[3]</UL></FONT></TD>
+<TD ALIGN="left" VALIGN="top" BGCOLOR="#c0ffc0"><FONT SIZE="2">4 × 3 ベクトル行列の乗算  (2クロック以下)<UL><LI>dp4 out.x, in0, in[1]<LI>dp4 out.y, in0, in[2]<LI>dp4 out.z, in0, in[3]</UL></FONT></TD>
 <TR><TD ALIGN="left" VALIGN="top" BGCOLOR="#c0c0ff"><FONT SIZE="2">m4x4 out, in0, in1</FONT></TD>
-<TD ALIGN="left" VALIGN="top" BGCOLOR="#c0c0ff"><FONT SIZE="2">4 �~ 4 �x�N�g���s��̏�Z  (2�N���b�N�ȉ�)<UL><LI>dp4 out.x, in0, in[1]<LI>dp4 out.y, in0, in[2]<LI>dp4 out.z, in0, in[3]<LI>dp4 out.w, in0, in[4]</UL></FONT></TD>
+<TD ALIGN="left" VALIGN="top" BGCOLOR="#c0c0ff"><FONT SIZE="2">4 × 4 ベクトル行列の乗算  (2クロック以下)<UL><LI>dp4 out.x, in0, in[1]<LI>dp4 out.y, in0, in[2]<LI>dp4 out.z, in0, in[3]<LI>dp4 out.w, in0, in[4]</UL></FONT></TD>
 <TR><TD ALIGN="left" VALIGN="top" BGCOLOR="#c0ffc0"><FONT SIZE="2">exp out, in</FONT></TD>
-<TD ALIGN="left" VALIGN="top" BGCOLOR="#c0ffc0"><FONT SIZE="2">�w��2^x�̊��S���x(12�N���b�N�ȉ�)</FONT></TD>
+<TD ALIGN="left" VALIGN="top" BGCOLOR="#c0ffc0"><FONT SIZE="2">指数2^xの完全精度(12クロック以下)</FONT></TD>
 <TR><TD ALIGN="left" VALIGN="top" BGCOLOR="#c0c0ff"><FONT SIZE="2">log out, in</FONT></TD>
-<TD ALIGN="left" VALIGN="top" BGCOLOR="#c0c0ff"><FONT SIZE="2">log2(x) �̊��S���������_���x(12�N���b�N�ȉ�)</FONT></TD>
+<TD ALIGN="left" VALIGN="top" BGCOLOR="#c0c0ff"><FONT SIZE="2">log2(x) の完全浮動小数点精度(12クロック以下)</FONT></TD>
 <TR><TD ALIGN="left" VALIGN="top" BGCOLOR="#c0ffc0"><FONT SIZE="2">frc out, in</FONT></TD>
-<TD ALIGN="left" VALIGN="top" BGCOLOR="#c0ffc0"><FONT SIZE="2">������ (3�N���b�N�ȉ�)</FONT></TD>
+<TD ALIGN="left" VALIGN="top" BGCOLOR="#c0ffc0"><FONT SIZE="2">小数部 (3クロック以下)</FONT></TD>
 </table>
 
 <p>
-�܂��A�C���q�ƕ��ނ�������ȕ��@������܂��B<br>
-�Y�������g���āA�����̓���ւ��Ȃǂ����܂��B
+また、修飾子と分類される特殊な方法があります。<br>
+添え字を使って、成分の入れ替えなどをします。
 </p>
 
 <TABLE WIDTH="600" BORDER="0" CELLPADDING="3" CELLSPACING="1">
-<TR><TD ALIGN="center" VALIGN="top" BGCOLOR="#000000"><FONT SIZE="2" COLOR="#FFFFFF"><B>����</B></FONT></TD>
-<TD ALIGN="center" VALIGN="top" BGCOLOR="#000000"><FONT SIZE="2" COLOR="#FFFFFF"><B>����</B></FONT></TD>
+<TR><TD ALIGN="center" VALIGN="top" BGCOLOR="#000000"><FONT SIZE="2" COLOR="#FFFFFF"><B>命令</B></FONT></TD>
+<TD ALIGN="center" VALIGN="top" BGCOLOR="#000000"><FONT SIZE="2" COLOR="#FFFFFF"><B>動作</B></FONT></TD>
 <TR><TD ALIGN="left" VALIGN="top" BGCOLOR="#c0c0ff"><FONT SIZE="2">r.{x}{y}{z}{w}</FONT></TD>
-<TD ALIGN="left" VALIGN="top" BGCOLOR="#c0c0ff"><FONT SIZE="2">�����o�̓}�X�N<br>ex. mov  r0.x  r1   (x���������̃R�s�[)</FONT></TD>
+<TD ALIGN="left" VALIGN="top" BGCOLOR="#c0c0ff"><FONT SIZE="2">成分出力マスク<br>ex. mov  r0.x  r1   (x成分だけのコピー)</FONT></TD>
 <TR><TD ALIGN="left" VALIGN="top" BGCOLOR="#c0c0ff"><FONT SIZE="2">-r</FONT></TD>
-<TD ALIGN="left" VALIGN="top" BGCOLOR="#c0c0ff"><FONT SIZE="2">�������]<br>ex. add  r0,  r0,  -r1 = sub r0,  r0,  r1</FONT></TD>
+<TD ALIGN="left" VALIGN="top" BGCOLOR="#c0c0ff"><FONT SIZE="2">符号反転<br>ex. add  r0,  r0,  -r1 = sub r0,  r0,  r1</FONT></TD>
 <TR><TD ALIGN="left" VALIGN="top" BGCOLOR="#c0c0ff"><FONT SIZE="2">r.[xyzw][xyzw][xyzw][xyzw]</FONT></TD>
-<TD ALIGN="left" VALIGN="top" BGCOLOR="#c0c0ff"><FONT SIZE="2">�����̓��ꊷ��<br>ex. mov  r0  r1.yzwx (r0.x=r1.y, r0.y=r1.z, r0.z=r1.w, r0.w=r1.x)</FONT></TD>
+<TD ALIGN="left" VALIGN="top" BGCOLOR="#c0c0ff"><FONT SIZE="2">成分の入れ換え<br>ex. mov  r0  r1.yzwx (r0.x=r1.y, r0.y=r1.z, r0.z=r1.w, r0.w=r1.x)</FONT></TD>
 </TABLE>
 
 <p>
-�ł́A�ȏ�̊�{���߂���A���낢��Ȍv�Z�����Ă����܂��傤�B
+では、以上の基本命令から、いろいろな計算をしていきましょう。
 </p>
 
-<h2>���s��v�Z</h2>
+<h2>■行列計算</h2>
 
 <p>
-�ŏ��́A�s��̌v�Z�ł��B<br>
-c0�`c3 ��4�̃x�N�g������Ȃ�s��ɁA�x�N�g�� r1 ����p���āAr0 �ɓ���܂��B<br>
-���Z�̊e�����̓x�N�g���ƍs��̐����̐ς̘a�Ȃ̂ŁA���ςŕ\���ł��܂��B<br>
-�]���āA���̌v�Z�łn�j�ł��B
+最初は、行列の計算です。<br>
+c0～c3 の4つのベクトルからなる行列に、ベクトル r1 を作用して、r0 に入れます。<br>
+演算の各成分はベクトルと行列の成分の積の和なので、内積で表現できます。<br>
+従って、下の計算でＯＫです。
 </p>
 
 <pre class="CodeBlock">
@@ -220,12 +220,12 @@ dp4   r0.z,  c2,  r1
 dp4   r0.w,  c3,  r1
 </pre>
 
-<h2>���]�u�s��</h2>
+<h2>■転置行列</h2>
 
 <p>
-�s��̍s�Ɨ�����ւ������̂��]�u�s��ł��B<br>
-���́AD3DX �ō����s��́A��̌v�Z�ł͏�肭���Z�ł��܂���B�]�u����K�v������܂��B
-�]�u�s��̌v�Z���ł���΁A���ꂪ�����̂ł����A���ꂪ�ł��܂��B
+行列の行と列を入れ替えたものが転置行列です。<br>
+実は、D3DX で作られる行列は、上の計算では上手く演算できません。転置する必要があります。
+転置行列の計算ができれば、それがいいのですが、それができます。
 </p>
 
 <pre class="CodeBlock">
@@ -236,41 +236,41 @@ mad   r0,  c3,  r1.w,  r0
 </pre>
 
 <p>
-�������肭�g���΁A�O���œ]�u����I�[�o�[�w�b�h���Ȃ��Ȃ�̂ŁA�����L����������܂���B
+これを上手く使えば、外部で転置するオーバーヘッドがなくなるので、少し有利かもしれません。
 </p>
 
-<h2>���萔���W�X�^������Ȃ����@</h2>
+<h2>■定数レジスタを消費しない方法</h2>
 
 <p>
-�萔���W�X�^�́A96�����Ȃ��̂ŁA���ʂɎg��Ȃ��ɉz�������Ƃ͂���܂���B<br>
-�ʏ�A�֗��Ȓ萔
+定数レジスタは、96個しかないので、無駄に使わないに越したことはありません。<br>
+通常、便利な定数
 </p>
 <pre class="CodeBlock">
 def c0 0.0f, 0.5f, 1.0f, 2.0f
 </pre>
 <p>
-���g���āA�v�Z���y�ɂ�����̂ł����A�z���g�ɃJ���J���Ƀ`���[�j���O����ƁA
-�����̃��W�X�^���g���̂����A���������Ȃ��Ȃ�܂�(�z���g���H���͂���ȏ�ʂɏo��������Ƃ͖�����)�B<br>
-�Ƃ������ƂŁAr0 = r1 * c0 + 1.0f ���ɂƂ��āA���������l���܂��B<br>
-���āA��L�̌v�Z������Ƃ��́A�ŏ��Ɏ��̂悤�ɑg��ł��܂��܂��B
+を使って、計算を楽にするものですが、ホントにカリカリにチューニングすると、
+それらのレジスタを使うのさえ、もったいなくなります(ホントか？俺はそんな場面に出会ったことは無いぞ)。<br>
+ということで、r0 = r1 * c0 + 1.0f を例にとって、効率化を考えます。<br>
+さて、上記の計算をするときは、最初に次のように組んでしまいます。
 </p>
 
 <pre class="CodeBlock">
-; ���߂ȗ�
+; だめな例
 ; r0 = r1 * c0 + 1.0f
 
 def c1 1.0f, 0.0f, 0.0f, 0.0f
-mad r0, r1, <Font color = yellow><b>c0, c1.x             ; �~ : �萔���W�X�^ cn�́A������g���܂���</b></font>
+mad r0, r1, <Font color = yellow><b>c0, c1.x             ; × : 定数レジスタ cnは、一つしか使えません</b></font>
 </pre>
 
 <p>
-�ł����A����͓����܂���B<br>
-�Ȃ��Ȃ�A�萔���W�X�^�́A���W�X�^�̈����Ɉ�����g���Ȃ�����ł��B<br>
-�Ƃ������ƂŁA��s�ɕ����Ď��s���܂��B
+ですが、これは動きません。<br>
+なぜなら、定数レジスタは、レジスタの引数に一つしか使えないからです。<br>
+ということで、二行に分けて実行します。
 </p>
 
 <pre class="CodeBlock">
-; �����ȗ�
+; 安直な例
 ; r0 = r1 * c0 + 1.0f
 
 def c1 1.0f, 0.0f, 0.0f, 0.0f
@@ -279,13 +279,13 @@ mad r0, r1, c0, r0.x
 </pre>
 
 <p>
-mov ���߂́Ar0.x ���R�s�[���邾���Ȃ̂ŁA���������Ȃ��ł��ˁB<br>
-���� 1.0f �Ƃ����l�́Aslt, sge �̌��ʂ̒l�ɑ��݂��܂��B
-�Ƃ������ƂŁAsge �̔����K�� true �ɂ��邱�ƂŁA1.0f �������o���΁A�萔���W�X�^������������Ƃ��ł��܂��B
+mov 命令は、r0.x をコピーするだけなので、もったいないですね。<br>
+実は 1.0f という値は、slt, sge の結果の値に存在します。
+ということで、sge の判定を必ず true にすることで、1.0f を引き出せば、定数レジスタを一つ浮かすことができます。
 </p>
 
 <pre class="CodeBlock">
-; �萔���W�X�^���g��Ȃ���
+; 定数レジスタを使わない例
 ; r0 = r1 * c0 + 1.0f
 
 <Font color = yellow><b>sge r0, r0, r0                  ; r0 = (1.0f, 1.0f, 1.0f, 1.0f)</b></font>
@@ -293,7 +293,7 @@ mad r0, r1, c0, r0
 </pre>
 
 <p>
-�t�� 0.0f ���g�������Ƃ��́A
+逆に 0.0f を使いたいときは、
 </p>
 
 <pre class="CodeBlock">
@@ -301,42 +301,42 @@ mad r0, r1, c0, r0
 </pre>
 
 <p>
-�Ƃ���΂����ł��B
+とすればいいです。
 </p>
 
-<h2>���p��</h2>
+<h2>■冪乗</h2>
 
 <p>
-���C�e�B���O�p�֐� lit �́A���ׂ͂���v�Z�ɗ��p�ł��܂��B<br>
-�����A���̒��ӓ_�����邻���ł��B<br>
+ライティング用関数 lit は、実はべき乗計算に利用できます。<br>
+ただ、次の注意点があるそうです。<br>
 </p>
 <table>
-<tr><td>I</td><td>�ׂ��͈̔͂� [-128, +128] �Ɏ����I�ɐ��������</td></tr>
-<tr><td>II</td><td>���̐��͐��łȂ���΍s���Ȃ�</td></tr>
-<tr><td>III</td><td>���ʂ� 8 �������������ۏ؂���Ȃ��B</td></tr>
+<tr><td>I</td><td>べきの範囲は [-128, +128] に自動的に制限される</td></tr>
+<tr><td>II</td><td>元の数は正でなければ行けない</td></tr>
+<tr><td>III</td><td>結果も 8 桁分だけしか保証されない。</td></tr>
 </table>
 
 <p>
-�ȏ�̐���������܂����A�ׂ���̌v�Z�͂P���߂łł��܂��B
+以上の制限がありますが、べき乗の計算は１命令でできます。
 </p>
 <pre class="CodeBlock">
 ; r0.z = r1.x^r1.y
-lit r0.z, r1.xxyy                  ; r1.x �͐��łȂ���΂����Ȃ�
+lit r0.z, r1.xxyy                  ; r1.x は正でなければいけない
 </pre>
 <p>
-����A�R�������ʂł����B
+うん、コリャ効果でかい。
 </p>
 
-<h2>��������</h2>
+<h2>■小数部</h2>
 
 <p>
-�������𓱏o���閽�߂́ADX8 �ł́A�}�N�����߂ŗp�ӂ���Ă��܂����AnVIDIA�́w�g���Ă͂����Ȃ��x�Ƃ����܂��B<br>
-���́Aexpp �� y �����́A���͂� w �����̏�����������̂ŁA���͂��H�v���邱�Ƃɂ�菬�����𓱏o���܂��B
+小数部を導出する命令は、DX8 では、マクロ命令で用意されていますが、nVIDIAは『使ってはいけない』といいます。<br>
+実は、expp の y 成分は、入力の w 成分の小数部が入るので、入力を工夫することにより小数部を導出します。
 </p>
 
 <pre class="CodeBlock">
-; r1.xyzw �̏������� r0.xyzw �ɓ����
-<Font color = yellow><b>expp  r0.y,  r1.x                  ; r0.y = ������(r1.x)</b></font>
+; r1.xyzw の小数部を r0.xyzw に入れる
+<Font color = yellow><b>expp  r0.y,  r1.x                  ; r0.y = 小数部(r1.x)</b></font>
 mov   r0.x,  r0.y
 expp  r0.y,  r1.z
 mov   r0.z,  r0.y
@@ -345,25 +345,25 @@ mov   r0.w,  r0.y
 expp  r0.y,  r1.y
 </pre>
 
-<h2>��������</h2>
+<h2>■整数部</h2>
 
 <p>
-���̐�����A���������������̂��������ł��B
+元の数から、小数部引いたものが整数部です。
 </p>
 
 <pre class="CodeBlock">
-; r0.y = ������(r1.y)
+; r0.y = 整数部(r1.y)
 expp  r0.y,  r1.y
 add   r0.y,  r1.y, -r0.y
 </pre>
 
-<h2>���l���傫���ŏ��̐���</h2>
+<h2>■値より大きい最小の整数</h2>
 
 <p>
-���݂̐����傫�������ŁA�ŏ��̂���(floor(a+1))�����߂܂��B
+現在の数より大きい整数で、最小のもの(floor(a+1))を求めます。
 </p>
 <pre class="CodeBlock">
-; r0.y = �V�䐔(r1.y)
+; r0.y = 天井数(r1.y)
 expp  r0.y, -r1.y
 add   r0.y,  r1.y, r0.y
 </pre>
@@ -371,10 +371,10 @@ add   r0.y,  r1.y, r0.y
 <pre class="CodeBlock">
 </pre>
 
-<h2>����Βl</h2>
+<h2>■絶対値</h2>
 
 <p>
--a �� a ���r������ƁA�傫������|a|�Ȃ̂ŁA���Ő�Βl�����܂��B
+-a と a を比較しすると、大きい方は|a|なので、次で絶対値が取れます。
 </p>
 
 <pre class="CodeBlock">
@@ -382,11 +382,11 @@ add   r0.y,  r1.y, r0.y
 max   r0,  r1, -r1
 </pre>
 
-<h2>������Z</h2>
+<h2>■割り算</h2>
 
 <p>
-Vertex Shader �ł́A����Z�͂���܂���B
-�t�������߂閽�߂͂���̂ŁA�ǂ����Ă��g�������ꍇ�́A������g���܂��B
+Vertex Shader では、割り算はありません。
+逆数を求める命令はあるので、どうしても使いたい場合は、これを使います。
 </p>
 
 <pre class="CodeBlock">
@@ -395,11 +395,11 @@ rcp   r0.x,  r2.x               ; r0.x = 1 / r2.x
 mul   r0.x,  r1.x,  r0.x        ; r0.x = r1.x * (1/r2.x) = r1.x / r2.x
 </pre>
 
-<h2>��������</h2>
+<h2>■平方根</h2>
 
 <p>
-�t�������������߂閽�߂�����̂ŁA����ɁA���̋t�����Ƃ��Ă��������͌v�Z�ł���̂ł����A
-�t���v�Z�͌덷���������܂��̂ŁA�t���������ƌ��̐��̐ς��Ƃ��āA�����������߂�̂��A���x�^�[�ł��B
+逆数平方根を求める命令があるので、さらに、その逆数をとっても平方根は計算できるのですが、
+逆数計算は誤差が発生しますので、逆数平方根と元の数の積をとって、平方根を求めるのが、よりベターです。
 </p>
 
 <pre class="CodeBlock">
@@ -408,10 +408,10 @@ rsq   r0.x,  r1.x               ; r0.x = 1/sqrt(r1.x)
 mul   r0.x,  r1.x,  r0.x        ; r0.x = r1.x * (1/sqrt(r1.x)) = sqrt(r1.x)
 </pre>
 
-<h2>���ȉ��A����</h2>
+<h2>■以下、超過</h2>
 
 <p>
-�ȏ�A�����͂���܂����A�ȉ��A���߂͂���܂���B���ŁA�v�Z���܂�(�S���܂Ƃ߂܂���)�B
+以上、未満はありますが、以下、超過はありません。次で、計算します(全部まとめました)。
 </p>
 
 <pre class="CodeBlock">
@@ -421,10 +421,10 @@ slt   r0,  r1,  r2        ; r0 = (r1 &lt  r2) ? 1 : 0
 slt   r0, -r1, -r2        ; r0 = (r1 &gt  r2) ? 1 : 0
 </pre>
 
-<h2>���������A�������Ȃ�</h2>
+<h2>■等しい、等しくない</h2>
 
 <p>
-�g�ݍ��킹�āA�����������v�Z���܂��B
+組み合わせて、等しい時を計算します。
 </p>
 
 <pre class="CodeBlock">
@@ -440,10 +440,10 @@ slt   r2, -r1, -r2
 add   r0,  r0,  r2
 </pre>
 
-<h2>�������֐�</h2>
+<h2>■符号関数</h2>
 
 <p>
-����ɁA���p���āA�����������o�����Ƃ��ł��܂��B
+さらに、応用して、符号を引き出すこともできます。
 </p>
 
 <pre class="CodeBlock">
@@ -456,10 +456,10 @@ slt   r0, -r0,  c0.x
 add   r0,  r0, -r1
 </pre>
 
-<h2>������-�Ȃ��</h2>
+<h2>■もし-ならば</h2>
 
 <p>
-Vertex Shader �ł́A���򖽗߂��̂��̂͂���܂��񂪁A��Ԃ����āA�l��ς��邱�Ƃ͂ł��܂��B
+Vertex Shader では、分岐命令そのものはありませんが、状態を見て、値を変えることはできます。
 </p>
 
 <pre class="CodeBlock">
@@ -470,8 +470,8 @@ mad   r0,  r0,  r1, r4
 </pre>
 
 <p>
-�A���Ar3, r4 ���̂ǂ��炩��������̎��ɂ́A��΂ɖ�����ɂȂ铙�A�ꕔ�������̂ŁA
-�m���������߂�Ƃ��́A�����g���̂���낵�B
+但し、r3, r4 等のどちらかが無限大の時には、絶対に無限大になる等、一部怪しいので、
+確実性を求めるときは、次を使うのがよろし。
 </p>
 
 <pre class="CodeBlock">
@@ -482,10 +482,10 @@ add   r1,  r0,  r4
 mad   r0,  r0,  r3,  r1
 </pre>
 
-<h2>��[0,1] �̊Ԃ͈̔͐���</h2>
+<h2>■[0,1] の間の範囲制限</h2>
 
 <p>
-�l��0����A1�̊Ԃɐ������܂��B
+値を0から、1の間に制限します。
 </p>
 
 <pre class="CodeBlock">
@@ -495,23 +495,23 @@ max   r0,  r0,  c0.x
 min   r0,  r0,  c0.y
 </pre>
 
-<h2>���O��</h2>
+<h2>■外積</h2>
 
 <p>
-��������ւ��̂�����ł��ˁB
+成分入れ替えのいい例ですね。
 </p>
 
 <pre class="CodeBlock">
-; r0 = r1 �~ r2
+; r0 = r1 × r2
 max   r0,  r1.yzxw,  r2.zxyw
 mad   r0, -r2.yzxw,  r1.zxyw,  r0
 </pre>
 
-<h2>��cos sin</h2>
+<h2>■cos sin</h2>
 
 <p>
-�p�W�J�ŁAcos, sin �����߂܂��B
-�����炭���l�v�Z�I�ɍ����Ă���̂ł��傤����A�����ł͏Љ�ɂƂǂ߂܂��B
+冪展開で、cos, sin を求めます。
+おそらく数値計算的に合っているのでしょうから、ここでは紹介にとどめます。
 </p>
 
 <pre class="CodeBlock">
@@ -560,11 +560,11 @@ mad   r1,     r1,      r0,    c4,zwzw
 dp3   r0.x,   r1,     -r2
 </pre>
 
-<h2>������ cos sin</h2>
+<h2>■速い cos sin</h2>
 
 <p>
-�ȏ�̖��߂͐��m�ł����A�x���ł��B
-���̌v�Z���i���X�s���m�ł����j��������^���܂��B
+以上の命令は正確ですが、遅いです。
+次の計算が（少々不正確ですが）速い解を与えます。
 </p>
 
 <pre class="CodeBlock">
@@ -585,10 +585,10 @@ dp4   r0.y,   r0,      c2
 dp4   r0.x,   r2,      c1
 </pre>
 
-<h2>�����̊Ԃ� cos sin</h2>
+<h2>■その間の cos sin</h2>
 
 <p>
-�����ł��͐��m�����ǁA���m�Ȕł� sin / cos ���v�Z������͑����łł��B
+速い版よりは正確だけど、正確な版で sin / cos を計算するよりは速い版です。
 </p>
 
 <pre class="CodeBlock">
@@ -614,10 +614,10 @@ dp4   r0.y,   r2,       c2.yyzz
 dp3   r0.xy,  r0.xyww,  r1.xzww
 </pre>
 
-<h2>���{���x�w���ΐ�</h2>
+<h2>■倍精度指数対数</h2>
 
 <p>
-��萸�x�̍��� exp, log �����߂邽�߂̂��̂ł��B
+より精度の高い exp, log を求めるためのものです。
 </p>
 
 <pre class="CodeBlock">
@@ -653,14 +653,14 @@ mad   r0.w,   r0.w,     r1.y,  r0.z
 mad   r0.x,   r0.w,     r0.y,  r0.x
 </pre>
 
-<h2>���܂Ƃ�</h2>
+<h2>■まとめ</h2>
 <p>
-����̃l�^�́A<a href="http://isweb8.infoseek.co.jp/computer/bbx/">BBX</a>�Ń{�P�����܂����Ƃ��ɁA<a href="http://cgi3.tky.3web.ne.jp/~tkano/">Kano ����</a>���狳���Ă������������Ƃ����ɂȂ��Ă��܂��B<br>
-�������Ă݂�ƁAXFC 2001 �ł̔��\�͂��Ȃ薳�ʂ�����܂��B<br>
-�l�́A�w�Ƃ肠���������₢����x�Ƃ���Ă��܂����Ƃ������̂ŁA�ׂ��ȍ�������덷�̌��ς��肨���Ȃ�ɂ������ł��B<br>
-�����������_����ǂ񂾂肷��ƁA�ׂ��ȂЂ�߂��Ő▭�ȉ��������Ă������肷��̂ŁA���Ȃ�n�b�Ƃ��܂��B
-�Ƃ������ƂŁA�����Ԃ��߂ɂȂ����̂́A�ق��Ȃ�ʖl�ł����B<br>
-���ꂩ����K���o�邼�B
+今回のネタは、<a href="http://isweb8.infoseek.co.jp/computer/bbx/">BBX</a>でボケをかましたときに、<a href="http://cgi3.tky.3web.ne.jp/~tkano/">Kano さん</a>から教えていただいたことが元になっています。<br>
+見直してみると、XFC 2001 での発表はかなり無駄があります。<br>
+僕は、『とりあえず動けやいいや』とやってしまうことが多いので、細かな高速化や誤差の見積もりおざなりにしがいです。<br>
+こういった論文を読んだりすると、細かなひらめきで絶妙な解決がしてあったりするので、かなりハッとします。
+ということで、今回一番ためになったのは、ほかならぬ僕でした。<br>
+これからもガンバるぞ。
 </p>
 
 <BR CLEAR=ALL>
@@ -668,7 +668,7 @@ mad   r0.x,   r0.w,     r0.y,  r0.x
 <BR CLEAR=ALL>
 <center>
 <hr>
-<p><a href="../index.html">���ǂ�</a></p>
+<p><a href="../index.html">もどる</a></p>
 <p><a href="mailto:imagire@gmail.com">imagire@gmail.com</a></p>
 </center>
 </body>

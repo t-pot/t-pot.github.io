@@ -1,8 +1,8 @@
 <head>
-	<title>t-pot�w�L�}�b�v�x</title>
+	<title>t-pot『猫マップ』</title>
 	<link rel="stylesheet" type="text/css" href="../if.css">
 </head>
-<meta http-equiv=Content-Type content="text/html; charset=shift_jis">
+<meta http-equiv=Content-Type content="text/html; charset=UTF-8">
 <body>
 
 
@@ -10,8 +10,8 @@
 <center>
 <BR CLEAR=ALL>
 <BR CLEAR=ALL>
-<h1>�L�}�b�v</h1><br>
-<h3>�`�ʂɔL������ۑ�����킯����Ȃ���`</h3>
+<h1>猫マップ</h1><br>
+<h3>～別に猫属性を保存するわけじゃないよ～</h3>
 <BR CLEAR=ALL>
 <BR CLEAR=ALL>
 <BR CLEAR=ALL>
@@ -19,95 +19,95 @@
 </center>
 <div>
 
-<h2>���͂��߂�</h2>
+<h2>■はじめに</h2>
 
 
 <p>
-����́A�V�F�[�_�Ƃ͊֌W�Ȃ��b�ŁAArnold's cat map �ƌĂ΂��摜�ϊ����s���܂��B
+今回は、シェーダとは関係ない話で、Arnold's cat map と呼ばれる画像変換を行います。
 </p>
 <ul style = "LIST-STYLE-TYPE:none">
-<li><a href="src.lzh">src.lzh (�L�}�b�v�̃T���v��:DirectX8.1)</a>
+<li><a href="src.lzh">src.lzh (猫マップのサンプル:DirectX8.1)</a>
 </ul>
 
 <p>
-�܂��A�����̂悤�ɓK���Ƀt�@�C���������Ă��܂��B<br>
+まぁ、いつものように適当にファイルが入っています。<br>
 </p>
 <table>
-<tr><td><a href="draw_cpp.html">draw.cpp</a></td><td>���C���̕`�敔���B</td></tr>
-<tr><td><a href="draw_h.html">draw.h</a></td><td>�`��̊e�֐��̒�`�B</td></tr>
-<tr><td><a href="main_h.html">main.h</a></td><td>��{�I�Ȓ萔�ȂǁB</td></tr>
-<tr><td><a href="main_cpp.html">main.cpp</a></td><td>�`��Ɋ֌W���Ȃ��V�X�e���I�ȕ����B</td></tr>
+<tr><td><a href="draw_cpp.html">draw.cpp</a></td><td>メインの描画部分。</td></tr>
+<tr><td><a href="draw_h.html">draw.h</a></td><td>描画の各関数の定義。</td></tr>
+<tr><td><a href="main_h.html">main.h</a></td><td>基本的な定数など。</td></tr>
+<tr><td><a href="main_cpp.html">main.cpp</a></td><td>描画に関係しないシステム的な部分。</td></tr>
 </table>
-<image src = "cat_bmp.png" width = 64 height=64>cat.bmp (���G)<br>
+<image src = "cat_bmp.png" width = 64 height=64>cat.bmp (元絵)<br>
 <p>
-���ƁA���s�t�@�C���y�сA�v���W�F�N�g�t�@�C���������Ă��܂��B
+あと、実行ファイル及び、プロジェクトファイルが入っています。
 </p>
 
 
-<h2>������Ă邱��</h2>
+<h2>■やってること</h2>
 
 <p>
-�L�}�b�v�́A���V�A�l�̐��w�҂ł��� Vladimir I. Arnold �ɂ���Ĕ������ꂽ�摜�ŁA
-��ԍŏ��ɔL�̊G���g�������Ƃ��� "Cat Map" �ƌĂ΂�Ă��܂��B<br>
-���̕ϊ��́u�p�C���˕ϊ��v�̂ЂƂŁA�אڂ���s�N�Z���Ǝw���֐��I�ɗ���Ă����̂ŁA�J�I�X��1�ƕ߂炦���܂��B<br>
-���̈���ŁA���w�I�ɂ́u�t�v�ȕϊ��ŁA�ϊ������r������t�ϊ�������ƌ��ɖ߂鎞������̂ŁA
-�U������Ȃ��J�I�X�̗�Ƃ��Ēm���Ă��܂��B
+猫マップは、ロシア人の数学者である Vladimir I. Arnold によって発見された画像で、
+一番最初に猫の絵を使ったことから "Cat Map" と呼ばれています。<br>
+この変換は「パイこね変換」のひとつで、隣接するピクセルと指数関数的に離れていくので、カオスの1つと捕らえられます。<br>
+その一方で、数学的には「可逆」な変換で、変換した途中から逆変換をすると元に戻る時があるので、
+散逸をしないカオスの例として知られています。
 </p>
 <p>
-���ۂ̕ϊ��́A
+実際の変換は、
 </p>
 <pre class="CodeBlock">
-x = (x+ y) mod �s�N�Z���T�C�Y
-y = (x+2y) mod �s�N�Z���T�C�Y
+x = (x+ y) mod ピクセルサイズ
+y = (x+2y) mod ピクセルサイズ
 </pre>
 <p>
-�Ƃ����ȒP�ȕϊ����s���܂��B<br>
-�ȒP�Ƃ����Ă����݂��炢�̂ŁA�}�ŕ`���Ǝ��̂悤�ɂȂ�܂��B
+という簡単な変換が行われます。<br>
+簡単といってもつかみずらいので、図で描くと次のようになります。
 </p>
 
 <image src = "twist.png">
 <p>
-���ɂQ�{�A�c�ɂR�{���䂪�߂����L�΂��܂��B
-���ɂ��̉摜�����̉摜�T�C�Y�Ő؂�Ƃ��āA1�̉摜�ɂȂ����킹�܂��B<br>
-��{�I�ɐ؂��Ē��邾���ŁA�������ō�������Ȃǂ̓��ʂȂ��Ƃ͂��Ă��܂���
-<font size = "1">�i���̉摜�������Ă��܂��ƁA�u���}�}���[�}�b�v�v�ł��ˁj</font>�B
+横に２倍、縦に３倍をゆがめつつ引き伸ばします。
+次にその画像を元の画像サイズで切りとって、1つの画像につなげ合わせます。<br>
+基本的に切って張るだけで、半透明で合成するなどの特別なことはしていません
+<font size = "1">（この画像をつかってしまうと、「ヤママヤーマップ」ですね）</font>。
 <p>
 </p>
-�|���S���Ƃ��Ē���Ƃ��ɂ́A�|���S���̍��W�Ƃt�u�l��
+ポリゴンとして張るときには、ポリゴンの座標とＵＶ値を
 </p>
 <pre class="CodeBlock">
-              ���W�P       ���W�Q       ���W�R        UV�P         UV�Q         UV�R
-�|���S���P�F(0.0, 0.0) - (0.5, 0.0) - (0.0, 1.0) : (0.0, 0.0) - (1.0, 0.5) - (1.0, 1.0)
-�|���S���Q�F(0.5, 0.0) - (1.0, 0.0) - (0.0, 1.0) : (0.0, 0.5) - (1.0, 1.0) - (0.0, 1.0)
-�|���S���R�F(0.0, 1.0) - (1.0, 0.0) - (0.5, 1.0) : (0.0, 0.0) - (1.0, 0.0) - (1.0, 0.5)
-�|���S���S�F(0.5, 1.0) - (1.0, 0.0) - (0.1, 1.0) : (0.0, 0.5) - (0.0, 0.0) - (1.0, 1.0)
+              座標１       座標２       座標３        UV１         UV２         UV３
+ポリゴン１：(0.0, 0.0) - (0.5, 0.0) - (0.0, 1.0) : (0.0, 0.0) - (1.0, 0.5) - (1.0, 1.0)
+ポリゴン２：(0.5, 0.0) - (1.0, 0.0) - (0.0, 1.0) : (0.0, 0.5) - (1.0, 1.0) - (0.0, 1.0)
+ポリゴン３：(0.0, 1.0) - (1.0, 0.0) - (0.5, 1.0) : (0.0, 0.0) - (1.0, 0.0) - (1.0, 0.5)
+ポリゴン４：(0.5, 1.0) - (1.0, 0.0) - (0.1, 1.0) : (0.0, 0.5) - (0.0, 0.0) - (1.0, 1.0)
 </pre>
 <p>
-�Œ���΁ACat Map ���������܂��B
+で張れば、Cat Map が実現します。
 </p>
 <p>
-���̕ϊ������X�ƍs���Ă����΁A
+この変換を次々と行っていけば、
 </p>
 <image src = "convert.png">
 <p>
-�ƁA�s�N�Z�����ǂ�ǂ񍬂����Ă����܂��B<br>
-�s�N�Z���̉𑜓x�������̎��ɂ́A���̃s�N�Z���ƕϊ���̃s�N�Z���̐F�̕��z�͑S���ω����܂��񂪁A
-��X���g���Ă���L���ȉ𑜓x�̃e�N�X�`���[�̏ꍇ�́A�����L�΂��Ə�ݍ��݂��N����̂ŁA
-���̏������ꕔ�s���܂��B<br>
-�������A������x�̑傫���ł���΁A�i�o���`�t�B���^�����O�����s��Ȃ�����́j
-�F�������邱�Ƃ������A100FPS�Ő����Ԓu���Ă����Ă���F�ɂȂ�܂���B
+と、ピクセルがどんどん混ざっていきます。<br>
+ピクセルの解像度が無限の時には、元のピクセルと変換後のピクセルの色の分布は全く変化しませんが、
+我々が使っている有限な解像度のテクスチャーの場合は、引き伸ばしと畳み込みが起きるので、
+情報の消去が一部行われます。<br>
+しかし、ある程度の大きさであれば、（双線形フィルタリング等を行わない限りは）
+色が混ざることが無く、100FPSで数時間置いておいても一色になりません。
 </p>
 
 
-<h2>���Ō��</h2>
+<h2>■最後に</h2>
 
 
 <p>
-�Ȃ��A�����Ȃ肱�̂悤�Ȃ��Ƃ���������Ƃ����ƁA�u�Ύ�v����肽����������ł��B<br>
-�΂̃G�t�F�N�g������Ă����̂ł����A�u�Ύ�v�Ƃ��ĉ����g�����l���Ă��܂��܂����B<br>
-���C�t�Q�[�����Ύ�Ƃ��Ďg���̂͗L���ł����A������Ƒ傰���������̂ŁA
-�|���S��4���łł�����ʂ��g���܂����B<br>
-�܂�����w�ŕ������b������Ȍ`�Ŏg���Ƃ͎v���Ă����Ȃ������ł����B
+なぜ、いきなりこのようなことをやったかというと、「火種」を作りたかったからです。<br>
+火のエフェクトを作っていたのですが、「火種」として何を使うか考えてしまいました。<br>
+ライフゲームを火種として使うのは有名ですが、ちょっと大げさだったので、
+ポリゴン4枚でできる効果を使いました。<br>
+まさか大学で聞いた話をこんな形で使うとは思ってもいなかったでした。
 </p>
 
 </div>
@@ -115,7 +115,7 @@ y = (x+2y) mod �s�N�Z���T�C�Y
 <BR CLEAR=ALL>
 <BR CLEAR=ALL>
 <center>
-<p><a href="../index.html">���ǂ�</a></p>
+<p><a href="../index.html">もどる</a></p>
 <p><a href="mailto:imagire@gmail.com">imagire@gmail.com</a></p>
 </center>
 

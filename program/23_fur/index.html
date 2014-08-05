@@ -1,208 +1,208 @@
 <head>
-	<title>t-pot �w�[���t�@�[���C�e�B���O�̒��_�V�F�[�_�[�ɂ������x</title>
+	<title>t-pot 『擬似ファーライティングの頂点シェーダーによる実装』</title>
 	<link rel="stylesheet" type="text/css" href="../if.css">
 </head>
-<meta http-equiv=Content-Type content="text/html; charset=shift_jis">
+<meta http-equiv=Content-Type content="text/html; charset=UTF-8">
 <body>
 
 <div class="contents">
 <center>
 <BR CLEAR=ALL>
 <BR CLEAR=ALL>
-<h1>�[���t�@�[���C�e�B���O�̒��_�V�F�[�_�[�ɂ�����</h1><br>
-<h3>�`XFC2001�ł̍u���̓��e�ł��`</h3>
+<h1>擬似ファーライティングの頂点シェーダーによる実装</h1><br>
+<h3>～XFC2001での講演の内容です～</h3>
 <BR CLEAR=ALL>
 <BR CLEAR=ALL>
 <BR CLEAR=ALL>
 </center>
-<h2>���͂��߂�</h2>
+<h2>■はじめに</h2>
 
 <p>
-2001 8��25���ɁAX Fellows conference 2001 �ł��b�������Ă��������܂����B<br>
-����́A���̂��b�ł��B
+2001 8月25日に、X Fellows conference 2001 でお話をさせていただきました。<br>
+今回は、そのお話です。
 </p>
 <p>
-�p���[�|�C���g�t�@�C���ƃv���O�����̃t�@�C�������J���܂��B<br>
-�g������̂́A�g���Ă���Ă��������B
+パワーポイントファイルとプログラムのファイルを公開します。<br>
+使えるものは、使ってやってください。
 </p>
 <ul style = "LIST-STYLE-TYPE:none">
-<li><a href="xfc.lzh">xfc.lzh (XFC2001�ł̃f���v���O����)</a>
-<li><a href="xfc.ppt">xfc.ppt (XFC2001�ł̍u����ppt)</a>
+<li><a href="xfc.lzh">xfc.lzh (XFC2001でのデモプログラム)</a>
+<li><a href="xfc.ppt">xfc.ppt (XFC2001での講演のppt)</a>
 </ul>
 
 <p>
-�V�F�[�_�[�I�v�V�����́A
+シェーダーオプションは、
 <table>
-<tr><td>Lambert</td><td>�F</td><td>�����o�[�g���s����</td></tr>
-<tr><td>Phone</td><td>�F</td><td>Phone �X�y�L�����|�t��</td></tr>
-<tr><td>Kajiya</td><td>�F</td><td>Kajiya �̘_���ɍڂ��Ă����炵�����@�̌����v�Z</td></tr>
-<tr><td>101</td><td>�F</td><td>101 �Ŏg��ꂽ�AGoldman �ɂ������v�Z�̊ȈՔ�</td></tr>
-<tr><td>ms</td><td>�F</td><td>Real-time fur over arbitrary surfaces �Ŏg���Ă������</td></tr>
+<tr><td>Lambert</td><td>：</td><td>ランバート並行光源</td></tr>
+<tr><td>Phone</td><td>：</td><td>Phone スペキュラ－付き</td></tr>
+<tr><td>Kajiya</td><td>：</td><td>Kajiya の論文に載っていたらしい方法の光源計算</td></tr>
+<tr><td>101</td><td>：</td><td>101 で使われた、Goldman による光源計算の簡易版</td></tr>
+<tr><td>ms</td><td>：</td><td>Real-time fur over arbitrary surfaces で使われている光源</td></tr>
 </table>
-�ł��B
+です。
 </p>
 
 <p>
-<Font size = 3><b>���J���Ȃ������l�^�FGeForce3 �Ȃ�Am�������ƁA���m�g�[���ɐ؂�ւ�邼�I</b></Font>
-<Font size = 1>�O�ɏЉ�� pixel shader �v���O�����ł��B</Font>
+<Font size = 3><b>公開しなかったネタ：GeForce3 なら、mを押すと、モノトーンに切り替わるぞ！</b></Font>
+<Font size = 1>前に紹介した pixel shader プログラムです。</Font>
 </p>
 
-<h2>���A�v���[�`</h2>
+<h2>■アプローチ</h2>
 
 <p>
-CG �ŁA�т𐶂₷���@�ɂ́A
+CG で、毛を生やす方法には、
 </p>
 
 <table>
-<tr><td>I</td><td>���̖т𒌏�̕��̂Ƃ��� ���f�����O</td></tr>
-<tr><td>II</td><td>Particle System�ɂ��A�v���[�` �i���q����Ōq���j</td></tr>
-<tr><td>III</td><td>���̖т̌ł܂���e�N�X�`���}�b�v, �o���v�}�b�v�ɂ���ĕ\��</td></tr>
-<tr><td>IV</td><td><Font color = yellow><b>�ٕ������˃��f�������p</b></Font></td></tr>
-</table>
-
-<p>
-���A�l�����܂��B�l�I�Ȉӌ��Ƃ��ẮA
-</p>
-
-<table>
-<tr><td>I</td><td>�d������</td></tr>
-<tr><td>II</td><td>�Փ˔��肪�����h�N��</td></tr>
-<tr><td>III</td><td>�{�����ȁH</td></tr>
-<tr><td>IV</td><td><Font color = yellow><b>III�̕��@�ƕ��p���āA����Ɏ����A�b�v�ł���񂶂�Ȃ��H</b></Font></td></tr>
+<tr><td>I</td><td>髪の毛を柱状の物体として モデリング</td></tr>
+<tr><td>II</td><td>Particle Systemによるアプローチ （粒子を線で繋ぐ）</td></tr>
+<tr><td>III</td><td>髪の毛の固まりをテクスチャマップ, バンプマップによって表現</td></tr>
+<tr><td>IV</td><td><Font color = yellow><b>異方性反射モデルを応用</b></Font></td></tr>
 </table>
 
 <p>
-�āA�����ł��B<br>
-�wIII �������I�ȉ��Ȃ̂ł��傤����ǁA����Ɏ����������邽�߂ɁA
-����Љ�� VI �̕��@���g���Ƃ����񂶂�Ȃ��x�Ƃ����̂���{�I�ȃX�^���X�ł��B<br>
-�ٕ������˂Ƃ́A�����ɂ���Ĕ��˂̎d�����ς�錻�ۂ̂��ƂŁA��G�c�Ɍ����΁A�f���łȂ����̔��˂ł��B<br>
-���Ȃ݂ɁA�l�^�{��
+が、考えられます。個人的な意見としては、
 </p>
 
 <table>
-<tr><td>I</td><td>Kajiya, James T. and Timothy L. Kay, �gRendering Fur with Three Dimensional Textures.�h (SIGGRAPH 89 conference proceedings)</td>
+<tr><td>I</td><td>重たすぎ</td></tr>
+<tr><td>II</td><td>衝突判定がメンドクさ</td></tr>
+<tr><td>III</td><td>本命かな？</td></tr>
+<tr><td>IV</td><td><Font color = yellow><b>IIIの方法と併用して、さらに質感アップできるんじゃない？</b></Font></td></tr>
+</table>
+
+<p>
+て、感じです。<br>
+『III が現実的な解なのでしょうけれど、さらに質感を加えるために、
+今回紹介する VI の方法を使うといいんじゃない』というのが基本的なスタンスです。<br>
+異方性反射とは、方向によって反射の仕方が変わる現象のことで、大雑把に言えば、素直でない光の反射です。<br>
+ちなみに、ネタ本は
+</p>
+
+<table>
+<tr><td>I</td><td>Kajiya, James T. and Timothy L. Kay, “Rendering Fur with Three Dimensional Textures.” (SIGGRAPH 89 conference proceedings)</td>
 </tr>
-<tr><td>II</td><td>Dan, B. Goldman, �gFake Fur Rendering.�h (SIGGRAPH 97 conference proceedings) </td>
+<tr><td>II</td><td>Dan, B. Goldman, “Fake Fur Rendering.” (SIGGRAPH 97 conference proceedings) </td>
 </tr>
 </table>
 
 <p>
-�ł��B�ŏ��A�����ōl���ăv���O������g�񂾂̂ł����A��Œ��ׂ�Ɗ��ɔ��\����Ă����̂ŁA
-�����̍l�@�����ƂɃv���O������g�݂Ȃ����܂����B<br>
-���́AKajiya ���ɂ��_���͓ǂ�ł��܂���B������Ă���z�[���y�[�W���������̂ŁA��������p�N���܂����B<br>
-Goldman �̘_���́A�f�B�Y�j�[�̉f��� 101 �Ɏg��ꂽ���̂ł��B<br>
-101 �̍Ō�̃V�[���Ɍ����吨�����Ă���V�[��������̂ł����A���̃V�[���ł́A�^���̂Q�C�̌��������āA
-������Љ����@�i�����ł́A��𔲂��āA���̈ꕔ�����Љ�܂��񂪁j���g���Ă��邻���ł��B<br>
-�Ȃ��A��}���ŌĂ񂾂̂ŁA�Ԉ���Ă���\��<Font color = red size = 5><b>��</b></Font>�ł��B<br>
-�Ԉ���Ă�����A�����Ă��������B
+です。最初、自分で考えてプログラムを組んだのですが、後で調べると既に発表されていたので、
+それらの考察をもとにプログラムを組みなおしました。<br>
+実は、Kajiya 等による論文は読んでいません。解説してあるホームページがあったので、そこからパクリました。<br>
+Goldman の論文は、ディズニーの映画の 101 に使われたものです。<br>
+101 の最後のシーンに犬が大勢座っているシーンがあるのですが、そのシーンでは、真中の２匹の犬を除いて、
+今から紹介する方法（ここでは、手を抜いて、その一部しか紹介しませんが）を使っているそうです。<br>
+なお、大急ぎで呼んだので、間違っている可能性<Font color = red size = 5><b>大</b></Font>です。<br>
+間違っていたら、教えてください。
 </p>
 
 <p>
-���ۂ̃��f�����́A�т�\�ʂɐ������~���Ƃ��ĕ߂炦�A���̉~���Ɋւ�������v�Z���s���܂��B<br>
-����́A�ȗ����̂��߁A�~���͖@�������ɐL�тĂ���Ƃ��܂��B<br>
-�e�����̃��x���Ƃ��ẮA�����_�����O���ꂽ���f���̃��x���ł́A�т͌����Ȃ�����ǁA
-�����v�Z���l����������\�ʂł́A�т̐�[���e�����Ȃ��قǂقږ����ɐL�тĂ��܂��B
+実際のモデル化は、毛を表面に生えた円柱として捕らえ、その円柱に関する光源計算を行います。<br>
+今回は、簡略化のため、円柱は法線方向に伸びているとします。<br>
+粗視化のレベルとしては、レンダリングされたモデルのレベルでは、毛は見えないけれど、
+光源計算を考慮する微小表面では、毛の先端が影響しないほどほぼ無限に伸びています。
 </p>
 
 <right><image src = "fur_model.jpg" width = 480 height = 360></right><br>
 <p>
-���Ȃ݂ɁA�w�����I�Ɍ���x�̂��Ƃ�ŁA�A�b�v�ɂȂ��Ă��锯�̖т́A���̖тł��B
+ちなみに、『微視的に見る』のことろで、アップになっている髪の毛は、私の毛です。
 </p>
 
 <p>
-���ꂩ���̔�r�ΏƂƂ��āA�����o�[�g���s�����ƁA�����Ɣ��ˌ��̂Ȃ��p�̂S��ɔ�Ⴗ��t�H���X�y�L�����|���̉摜���ڂ��Ă����܂��B
+これから後の比較対照として、ランバート並行光源と、視線と反射光のなす角の４乗に比例するフォンスペキュラ－光の画像を載せておきます。
 </p>
 <right><image src = "fur_img_dif.gif" width = 320 height = 240></right>Lambert diffuse
 <right><image src = "fur_img_spe.gif" width = 320 height = 240></right>Phone specular
 
-<h2>��Kajiya ���̒񏥂������@</h2>
+<h2>■Kajiya 等の提唱した方法</h2>
 
 <p>
-�܂��AKajiya ���̕��@�ł��B<br>
-���̉摜�����܂��B
+まず、Kajiya 等の方法です。<br>
+下の画像が作れます。
 </p>
 <right><image src = "fur_img_kaji.gif" width = 320 height = 240></right><br>
 <p>
-�����Ƃ��ẮA����i�V�g�̗ւ�˂��j���ł܂��B<br>
-����ɁA�S�̓I�Ɍ�����荞�݁A���炩�����������������ɂȂ�܂��B
+特徴としては、光沢（天使の輪やねぇ）がでます。<br>
+さらに、全体的に光が回り込み、やわらかい光が当った感じになります。
 </p>
 <p>
-���̌��ʂƂ��ẮA�Q�̌��ʂ��l�����܂��Bdiffuse ���ƁA�X�y�L�����|���ł��B<br>
-�����̌��̐����i�y��Labmert ���s�����j�̍����Ƃ��āA���̋��������܂�܂��B<br>
-���̐����̊����́A�萔���W�X�^�ɓ���Ċ|�����킹�邱�ƂŎ������܂��B
-����́A�~���ɓ�����͔��ł����ALabmert ���s�����̐F�͏����I�����W�����Ă��܂��i�C���I�Ȃ��̂ł��j�B
+光の効果としては、２つの効果を考慮します。diffuse 項と、スペキュラ－項です。<br>
+それらの光の成分（及びLabmert 平行光源）の合成として、光の強さが求まります。<br>
+光の成分の割合は、定数レジスタに入れて掛け合わせることで実現します。
+今回は、円柱に当る光は白ですが、Labmert 平行光源の色は少しオレンジがけています（気分的なものです）。
 </p>
 
 <p>
-<Font size = 5>diffuse ��</Font>
+<Font size = 5>diffuse 項</Font>
 </p>
 <p>
-diffuse ���́A���ʂɑ΂��� Lambert diffuse ���~���ɑ΂��ēK���������̂ŁA�~���Ɍ��������āA���邭�Ȃ������ʂ�\�����܂��B<br>
-��ԋ����Ƃ炳�����̂́A���ʂ���������������ł��B
-�܂��A�т̕����ɐ����Ɍ������������ɂ́A�т̕\�ʂɂ́A��������܂���B<br>
-�]���āA�т̌����ƌ��̕����� sin �ɔ�Ⴕ�������Ō��������Ȃ�܂��B<br>
-Kajiya ���̘_���ł́A�~����̔����ʂɑ΂��� Lambert �̖@�����~���ʂŐϕ����邱�Ƃɂ��A���̌��ʂ𓱂��o���Ă��܂��B
+diffuse 項は、平面に対する Lambert diffuse を円柱に対して適応したもので、円柱に光が当って、明るくなった効果を表現します。<br>
+一番強く照らされるれるのは、側面から光が当った時です。
+また、毛の方向に水平に光が当った時には、毛の表面には、光が当りません。<br>
+従って、毛の向きと光の方向の sin に比例した強さで光が強くなります。<br>
+Kajiya 等の論文では、円柱上の微小面に対する Lambert の法則を円筒面で積分することにより、この結果を導き出しています。
 </p>
 <right><image src = "fur_diffuse.jpg" width = 480 height = 360></right><br>
 <p>
-<Font size = 5>�X�y�L�����|��</Font>
+<Font size = 5>スペキュラ－項</Font>
 </p>
 <p>
-�X�y�L�����|���́A���ː����ŁA�~���Ɋւ��� Phone �̔��ˁi�����ڂŒ�������cos^8���j��p���܂��B<br>
-Kajiya ���̕��@�́A�~���̒��������ɑ΂��p�x�Ƃœ��˂������́A���ˊp�x�Ɠ����p�x�Ƃ����~���̏�𐳔��˂���Ɖ��肵�܂��B<br>
-���̔��ː����́A���˂�������Ȃ��~���ƁA���˃x�N�g���̂Ȃ��p���ɑ΂��āAPhone �̔��˂�K�����邱�Ƃɂ���ē��o���܂��B
-���́A�����x�N�g���Ɖ~���̒��������̂Ȃ��p�Ջy�сA���˃x�N�g���Ɖ~���̒��������̂Ȃ��p�Ƃ̍��Ɠ������̂ŁA
-cos���́A�O�p�֐��̍����̌����A
+スペキュラ－項は、反射成分で、円柱に関する Phone の反射（見た目で調整してcos^8γ）を用います。<br>
+Kajiya 等の方法は、円柱の長さ方向に対し角度θで入射した光は、入射角度と同じ角度θをもつ円錐の上を正反射すると仮定します。<br>
+光の反射成分は、反射する光がなす円錐と、反射ベクトルのなす角γに対して、Phone の反射を適応することによって導出します。
+γは、視線ベクトルと円柱の長さ方向のなす角ψ及び、反射ベクトルと円柱の長さ方向のなす角θの差と等しいので、
+cosγは、三角関数の合成の公式、
 </p>
 <p>
-cos�� = cos(��-��) = cos�� cos�� - sin�� sin��
+cosγ = cos(ψ-θ) = cosψ cosθ - sinψ sinθ
 </p>
 <p>
-���g���ċ��߂邱�Ƃ��o���܂��B
+を使って求めることが出来ます。
 </p>
 <right><image src = "fur_specular.jpg" width = 480 height = 360></right><br>
 
 <p>
-�ł́A�ȏ�̌��ʂ��v�Z�������_�V�F�[�_�[�v���O�����ł��B<br>
-����́A�Z�����邽�߂Ƀ}�N�����߂𑽗p���Ă��܂��B<br>
-sin(a,b) �́A�Q�̃x�N�g�� a, b �̂Ȃ��p�x�� sin �i���Ȃ킿�A�O�� a�~b �̑傫���j�ł��B<br>
-�v�Z�́A���ς�O�ς����߂āA���̑g�ݍ��킹�����邱�ƂɂȂ�܂��B
+では、以上の効果を計算した頂点シェーダープログラムです。<br>
+今回は、短くするためにマクロ命令を多用しています。<br>
+sin(a,b) は、２つのベクトル a, b のなす角度の sin （すなわち、外積 a×b の大きさ）です。<br>
+計算は、内積や外積を求めて、その組み合わせをすることになります。
 </p>
 <pre class="CodeBlock">
 vs.1.0
 <Font color = cyan>
-; c0-3   -- world + �r���[ + �����ϊ��s��
-; c4-7   -- world �s��
-; c8-11  -- world �̋t�]�u�s��
+; c0-3   -- world + ビュー + 透視変換行列
+; c4-7   -- world 行列
+; c8-11  -- world の逆転置行列
 ; c12    -- {0.0, 0.5, 1.0, -1.0}
-; c13    -- ���C�g�̃x�N�g��
-; c14    -- �J�����̈ʒu
-; c15    -- ���b�V���̐F
-; c16    -- diffuse ���C�g�̐F
-; c18    -- �t�@�[ diffuse �̐F
-; c19    -- �t�@�[ specular �̐F
+; c13    -- ライトのベクトル
+; c14    -- カメラの位置
+; c15    -- メッシュの色
+; c16    -- diffuse ライトの色
+; c18    -- ファー diffuse の色
+; c19    -- ファー specular の色
 ;
-; v0    ���_�̍��W�l
-; v3    �@���x�N�g��
-; v7    �e�N�X�`�����W0
+; v0    頂点の座標値
+; v3    法線ベクトル
+; v7    テクスチャ座標0
 </Font>
-m4x4   <Font color = lime>oPos</Font>,     <Font color = orange>v0</Font>,      <Font color = yellow>c0</Font>              <Font color = cyan>; ���W�ϊ�</Font>
-mov    <Font color = lime>oT0</Font>,      <Font color = orange>v7</Font>                       <Font color = cyan>; ���b�V���̃e�N�X�`���[</Font>
+m4x4   <Font color = lime>oPos</Font>,     <Font color = orange>v0</Font>,      <Font color = yellow>c0</Font>              <Font color = cyan>; 座標変換</Font>
+mov    <Font color = lime>oT0</Font>,      <Font color = orange>v7</Font>                       <Font color = cyan>; メッシュのテクスチャー</Font>
 
-m3x3   r0,       <Font color = orange>v3</Font>,      <Font color = yellow>c8</Font>              <Font color = cyan>;�@���̕ϊ�</Font>
-<Font color = cyan>;�@���̐��K��</Font>
+m3x3   r0,       <Font color = orange>v3</Font>,      <Font color = yellow>c8</Font>              <Font color = cyan>;法線の変換</Font>
+<Font color = cyan>;法線の正規化</Font>
 dp3    r0.w,     r0,      r0
 rsq    r0.w,     r0.w
-mul    r0,       r0,      r0.w            <Font color = cyan>; r0 = �@��</Font>
+mul    r0,       r0,      r0.w            <Font color = cyan>; r0 = 法線</Font>
 
-m4x3   r1,       <Font color = orange>v0</Font>,      <Font color = yellow>c4</Font>              <Font color = cyan>; ���_�̃��[���h���W�n�ł̈ʒu�𒲂ׂ�</Font>
-add    r1,       <Font color = yellow>c14</Font>,    -r1              <Font color = cyan>; ���_���璸�_�̕���e</Font>
-<Font color = cyan>; e �̐��K��</Font>
+m4x3   r1,       <Font color = orange>v0</Font>,      <Font color = yellow>c4</Font>              <Font color = cyan>; 頂点のワールド座標系での位置を調べる</Font>
+add    r1,       <Font color = yellow>c14</Font>,    -r1              <Font color = cyan>; 視点から頂点の方向e</Font>
+<Font color = cyan>; e の正規化</Font>
 dp3    r1.w,     r1,      r1
 rsq    r1.w,     r1.w
-mul    r1,       r1,      r1.w            <Font color = cyan>; r1 = e = ���_ - ���_</Font>
+mul    r1,       r1,      r1.w            <Font color = cyan>; r1 = e = 視点 - 頂点</Font>
 
-<Font color = cyan>; Kajiya �t�@�[</Font>
+<Font color = cyan>; Kajiya ファー</Font>
 mul    r4,       r0.zxyw, <Font color = yellow>c13.yzxw</Font>        <Font color = cyan>; r4 = n x l</Font>
 mad    r4,       r0.yzxw, <Font color = yellow>c13.zxyw</Font>, -r4
 
@@ -220,114 +220,114 @@ rcp    r5.w,     r5.w                     <Font color = cyan>; r5.w = |n x e| = 
 dp3    r2.w,     r0,      <Font color = yellow>c13</Font>             <Font color = cyan>; n dot l</Font>
 dp3    r2.y,     r0,      r1              <Font color = cyan>; n dot e</Font>
 
-mul    r2.z,     r2.w,   -r2.y            <Font color = cyan>; r2.z = ( l�n)(-n�e)</Font>
-mad    r2.z,    -r4.w,    r5.w, r2.z      <Font color = cyan>; r2.z = ( l�n)(-n�e) - sin(n,l)sin(n,e)</Font>
-mul    r2.z,     r2.z,    r2.z            <Font color = cyan>; r2.z = ((l�n)(-n�e) - sin(n,l)sin(n,e))^2</Font>
-mul    r2.z,     r2.z,    r2.z            <Font color = cyan>; r2.z = ((l�n)(-n�e) - sin(n,l)sin(n,e))^4</Font>
-mul    r2.z,     r2.z,    r2.z            <Font color = cyan>; r2.z = ((l�n)(-n�e) - sin(n,l)sin(n,e))^8</Font>
+mul    r2.z,     r2.w,   -r2.y            <Font color = cyan>; r2.z = ( l･n)(-n･e)</Font>
+mad    r2.z,    -r4.w,    r5.w, r2.z      <Font color = cyan>; r2.z = ( l･n)(-n･e) - sin(n,l)sin(n,e)</Font>
+mul    r2.z,     r2.z,    r2.z            <Font color = cyan>; r2.z = ((l･n)(-n･e) - sin(n,l)sin(n,e))^2</Font>
+mul    r2.z,     r2.z,    r2.z            <Font color = cyan>; r2.z = ((l･n)(-n･e) - sin(n,l)sin(n,e))^4</Font>
+mul    r2.z,     r2.z,    r2.z            <Font color = cyan>; r2.z = ((l･n)(-n･e) - sin(n,l)sin(n,e))^8</Font>
 
-mul    r6,       <Font color = yellow>c18</Font>,     r4.w            <Font color = cyan>; �t�@�[ diffuse</Font>
-mad    r6,       <Font color = yellow>c19</Font>,     r2.z, r6        <Font color = cyan>; �t�@�[ specular</Font>
+mul    r6,       <Font color = yellow>c18</Font>,     r4.w            <Font color = cyan>; ファー diffuse</Font>
+mad    r6,       <Font color = yellow>c19</Font>,     r2.z, r6        <Font color = cyan>; ファー specular</Font>
 
-max    r2.w,     r2.w,    <Font color = yellow>c12.x</Font>           <Font color = cyan>; ���̒l���J�b�g</Font>
-mul    r3,       <Font color = yellow>c16</Font>,     r2.w            <Font color = cyan>; �����o�[�g diffuse</Font>
+max    r2.w,     r2.w,    <Font color = yellow>c12.x</Font>           <Font color = cyan>; 負の値をカット</Font>
+mul    r3,       <Font color = yellow>c16</Font>,     r2.w            <Font color = cyan>; ランバート diffuse</Font>
 
-add    r6,       r3,      r6              <Font color = cyan>; �t�@�[ + Lambert</Font>
-mul    <Font color = lime>oD0</Font>,      <Font color = yellow>c15</Font>,     r6              <Font color = cyan>; ���b�V���̐F�𔽉f</Font>
+add    r6,       r3,      r6              <Font color = cyan>; ファー + Lambert</Font>
+mul    <Font color = lime>oD0</Font>,      <Font color = yellow>c15</Font>,     r6              <Font color = cyan>; メッシュの色を反映</Font>
 </pre>
 
 <p>
-�ŁA���ʂƂ��ẮA��قǏo���N�}�̂悤�Ȍ��򂪁A�X�y�L�����|�̌��ʂƂ��Č���܂��B<br>
-�܂��Adiffuse �̌��ʂƂ��āA�@���������������ɂ�������荞�݂܂��B
-����́A���̉摜�̂悤�ɁA��������𓖂ĂĂ��΂悭�������āA������̌��ŁA���肪�ڂ���ƌ���܂��B
-�i�����΂�O���̔����֊s�́A�X�y�L�����|�̉e���ł��ˁj�B
+で、結果としては、先ほど出たクマのような光沢が、スペキュラ－の効果として現れます。<br>
+また、diffuse の結果として、法線が裏向いた側にも光が回り込みます。
+これは、下の画像のように、裏から光を当ててやればよく分かって、裏からの光で、周りがぼんやりと光ります。
+（いちばん外側の白い輪郭は、スペキュラ－の影響ですね）。
 </p>
 <right><image src = "fur_img_back.gif" width = 320 height = 240></right><br>
 <p>
-�^�������������Ă��܂����A����͗ǂ�������܂���i�������ς̕��̒l�̃N���b�s���O�Ɋւ���o�O�j�B
+真中も少し光っていますが、これは良く分かりません（多分内積の負の値のクリッピングに関するバグ）。
 </p>
 
-<h2>��Goldman �̎�@</h2>
+<h2>■Goldman の手法</h2>
 
 <p>
-���āA����101�Ŏg��ꂽ�AGoldman �̎�@�ł��B<br>
-������́A���Ȃ茻�ۘ_�I�Ȏ�@��ǉ����܂��B
+さて、次に101で使われた、Goldman の手法です。<br>
+こちらは、かなり現象論的な手法を追加します。
 </p>
 
 <right><image src = "fur_img_101.gif" width = 320 height = 240></right><br>
 
 <p>
-�����ڂƂ��ẮA�A���t���A�S�̓I�ɗ��������������Ɏd�オ��܂��B
+見た目としては、陰が付き、全体的に落ち着いた感じに仕上がります。
 </p>
 
 <p>
-�ł́A��ڂ̌��ʂ́A���ˌ��ɑ΂���C���ł��B<br>
-Kajiya ��� specular ���˂́A�~���̒��������ɑ΂��p�x�Ƃœ��˂������́A���ˊp�x�Ɠ����p�x�Ƃ����~���̏�𐳔��˂���Ɖ��肵�܂����B<br>
-�l�I�ɂ�����͔[���ł��܂���B<br>
-�~���̓��a�����Ɋւ��āA���̓��˕����̔��Ό����ɔ��˂�����������͂��ł��B<br>
-�����ŁA���˗����w�ϔ��ˁx�A���ߗ����w�ϓ��߁x�Ƃ��āA���̊Ԃ͌��Ǝ����̊p�x�� cos �ŕ�Ԃ��܂��B<br>
-�����ŁA�C�ɂ��������Ƃ́A�~���̒��������Ɋւ��Đ����ȕ��ʏ�ł̊p�x���v�Z����Ƃ������Ƃł��B<br>
-�~���̒�������(�@������)�ɐ����Ȃ킯�ł�����A�����ƁA���̕����̂��ꂼ��Ɋւ���@���Ƃ̊O�ς��v�Z���܂��B
-�O�ς̌��ʂ́A���ɂ�����������̕����Ƃ������Ȃ̂ł����A�~���̓��a�����Ɋւ��ē����i90�x�j�������̂ŁA
-(n�~e,n�~l) �� (e,l) �̉~���̓��a�����Ɋւ���p�x�͓������Ȃ�܂��B<br>
-�Ƃ������ƂŁA�ȏ�̐����́A�O�όv�Z����όv�Z�����Ōv�Z�ł���̂ŁA���_�V�F�[�_�[�Ōv�Z�ł��邱�Ƃ�������Ǝv���܂��B
+では、一つ目の効果は、反射光に対する修正です。<br>
+Kajiya らの specular 反射は、円柱の長さ方向に対し角度θで入射した光は、入射角度と同じ角度θをもつ円錐の上を正反射すると仮定しました。<br>
+個人的にもこれは納得できません。<br>
+円柱の動径方向に関して、光の入射方向の反対向きに反射する光が多いはずです。<br>
+そこで、反射率を『ρ反射』、透過率を『ρ透過』として、その間は光と視線の角度の cos で補間します。<br>
+ここで、気にしたいことは、円柱の長さ方向に関して垂直な平面上での角度を計算するということです。<br>
+円柱の長さ方向(法線方向)に垂直なわけですから、視線と、光の方向のそれぞれに関する法線との外積を計算します。
+外積の結果は、元にした視線や光の方向とも垂直なのですが、円柱の動径方向に関して同じ（90度）だけ回るので、
+(n×e,n×l) と (e,l) の円柱の動径方向に関する角度は等しくなります。<br>
+ということで、以上の説明は、外積計算や内積計算だけで計算できるので、頂点シェーダーで計算できることが分かると思います。
 </p>
 <right><image src = "fur_dir.jpg" width = 480 height = 360></right><br>
 <p>
-������́A�����ȉA�e�ł��B���炩�ȊK�i�֐��𓱓����āA�@�������ƓK���ɔ��΂������Ă���Ƃ��́A
-���񂾂�Â����Ă����܂��B<br>
-����́A����Ɍv�Z�̊ȗ����̂��߁A���`�ߎ����܂����B<br>
-�܂��A��(ambient)���ɑΉ����銮�S�ɗ��������Ă���Ƃ��̌��̋������O�ɂ��܂����B<br>
-������v�Z�̊ȗ����̂��߂ł�(�����ق����Ђ����܂��āA�������悩�������Ă̂�����܂�)�B<br>
-����́A���ɂ��� ppt �̐ؔ����Ɋւ��āA��=1�̏�ԂɑΉ����܂��B<br>
-������ւ�̌v�Z��������ƍs�������ꍇ�́A�����̎���Z�x�ŕ\�������e�N�X�`���[���g���āA
-���̌����Ɩ@���Ƃ̓��ς̒l��UV�l�ɂ������}�b�s���O������Ƃ����Ǝv���܂��B
+もう一つは、強引な陰影です。滑らかな階段関数を導入して、法線が光と適当に反対を向いているときは、
+だんだん暗くしていきます。<br>
+今回は、さらに計算の簡略化のため、線形近似しました。<br>
+また、環境(ambient)項に対応する完全に裏を向いているときの光の強さも０にしました。<br>
+これも計算の簡略化のためです(黒いほうがひきしまって、かっこよかったってのもあります)。<br>
+これは、下にある ppt の切抜きに関して、ρ=1の状態に対応します。<br>
+ここらへんの計算をきちんと行いたい場合は、減衰の式を濃度で表現したテクスチャーを使って、
+光の向きと法線との内積の値をUV値にした環境マッピングをするといいと思います。
 </p>
 <right><image src = "fur_suf.jpg" width = 480 height = 360></right><br>
 
 <p>
-�ȏ�̐������v���O��������ƁA���̂悤�ɂȂ�܂��B
+以上の説明をプログラムすると、次のようになります。
 </p>
 <pre class="CodeBlock">
 vs.1.0
 <Font color = cyan>
-; c0-3   -- world + �r���[ + �����ϊ��s��
-; c4-7   -- world �s��
-; c8-11  -- world �̋t�]�u�s��
+; c0-3   -- world + ビュー + 透視変換行列
+; c4-7   -- world 行列
+; c8-11  -- world の逆転置行列
 ; c12    -- {0.0, 0.5, 1.0, -1.0}
-; c13    -- ���C�g�̃x�N�g��
-; c14    -- �J�����̈ʒu
-; c15    -- ���b�V���̐F
-; c16    -- diffuse ���C�g�̐F
-; c18    -- �t�@�[ diffuse �̐F
-; c19    -- �t�@�[ specular �̐F
-; c20    -- �t�@�[���߃p�����[�^
+; c13    -- ライトのベクトル
+; c14    -- カメラの位置
+; c15    -- メッシュの色
+; c16    -- diffuse ライトの色
+; c18    -- ファー diffuse の色
+; c19    -- ファー specular の色
+; c20    -- ファー透過パラメータ
 ;
-; v0    ���_�̍��W�l
-; v3    �@���x�N�g��
-; v7    �e�N�X�`�����W0
+; v0    頂点の座標値
+; v3    法線ベクトル
+; v7    テクスチャ座標0
 </Font>
-m4x4   <Font color = lime>oPos</Font>,     <Font color = orange>v0</Font>,      <Font color = yellow>c0</Font>              <Font color = cyan>; ���W�ϊ�</Font>
-mov    <Font color = lime>oT0</Font>,      <Font color = orange>v7</Font>                       <Font color = cyan>; ���b�V���̃e�N�X�`���[</Font>
+m4x4   <Font color = lime>oPos</Font>,     <Font color = orange>v0</Font>,      <Font color = yellow>c0</Font>              <Font color = cyan>; 座標変換</Font>
+mov    <Font color = lime>oT0</Font>,      <Font color = orange>v7</Font>                       <Font color = cyan>; メッシュのテクスチャー</Font>
 
-<Font color = cyan>;�@���̕ϊ�</Font>
+<Font color = cyan>;法線の変換</Font>
 m3x3   r0,       <Font color = orange>v3</Font>,      <Font color = yellow>c8</Font>
-<Font color = cyan>;�@���̐��K��</Font>
+<Font color = cyan>;法線の正規化</Font>
 dp3    r0.w,     r0,      r0
 rsq    r0.w,     r0.w
-mul    r0,       r0,      r0.w            <Font color = cyan>; r0 = �@��</Font>
+mul    r0,       r0,      r0.w            <Font color = cyan>; r0 = 法線</Font>
 
-<Font color = cyan>; ���_�̃��[���h���W�n�ł̈ʒu�𒲂ׂ�</Font>
+<Font color = cyan>; 頂点のワールド座標系での位置を調べる</Font>
 m4x3   r1,       <Font color = orange>v0</Font>,      <Font color = yellow>c4</Font>
 
-<Font color = cyan>; ���_���璸�_�̕���e</Font>
+<Font color = cyan>; 視点から頂点の方向e</Font>
 add    r1,       <Font color = yellow>c14</Font>,    -r1
-<Font color = cyan>; e �̐��K��</Font>
+<Font color = cyan>; e の正規化</Font>
 dp3    r1.w,     r1,      r1
 rsq    r1.w,     r1.w
-mul    r1,       r1,      r1.w            <Font color = cyan>; r1 = e = ���_ - ���_</Font>
+mul    r1,       r1,      r1.w            <Font color = cyan>; r1 = e = 視点 - 頂点</Font>
 
-<Font color = cyan>; Kajiya �t�@�[</Font>
+<Font color = cyan>; Kajiya ファー</Font>
 <Font color = cyan>; r4 = n x l</Font>
 mul    r4,       r0.zxyw, <Font color = yellow>c13.yzxw</Font>
 mad    r4,       r0.yzxw, <Font color = yellow>c13.zxyw</Font>, -r4
@@ -347,60 +347,60 @@ rcp    r5.w,     r7.y                     <Font color = cyan>; r5.w, = |n x e| =
 dp3    r2.w,     r0,      <Font color = yellow>c13</Font>             <Font color = cyan>; n dot l</Font>
 dp3    r2.y,     r0,      r1              <Font color = cyan>; n dot e</Font>
 
-mul    r2.z,     r2.w,   -r2.y            <Font color = cyan>; r2.z =  (l�n)(-n�e)</Font>
-mad    r2.z,    -r4.w,    r5.w,      r2.z <Font color = cyan>; r2.z =  (l�n)(-n�e) - sin(n,l)sin(n,e)</Font>
-mul    r2.z,     r2.z,    r2.z            <Font color = cyan>; r2.z = ((l�n)(-n�e) - sin(n,l)sin(n,e))^2</Font>
-mul    r2.z,     r2.z,    r2.z            <Font color = cyan>; r2.z = ((l�n)(-n�e) - sin(n,l)sin(n,e))^4</Font>
-mul    r2.z,     r2.z,    r2.z            <Font color = cyan>; r2.z = ((l�n)(-n�e) - sin(n,l)sin(n,e))^8</Font>
+mul    r2.z,     r2.w,   -r2.y            <Font color = cyan>; r2.z =  (l･n)(-n･e)</Font>
+mad    r2.z,    -r4.w,    r5.w,      r2.z <Font color = cyan>; r2.z =  (l･n)(-n･e) - sin(n,l)sin(n,e)</Font>
+mul    r2.z,     r2.z,    r2.z            <Font color = cyan>; r2.z = ((l･n)(-n･e) - sin(n,l)sin(n,e))^2</Font>
+mul    r2.z,     r2.z,    r2.z            <Font color = cyan>; r2.z = ((l･n)(-n･e) - sin(n,l)sin(n,e))^4</Font>
+mul    r2.z,     r2.z,    r2.z            <Font color = cyan>; r2.z = ((l･n)(-n･e) - sin(n,l)sin(n,e))^8</Font>
 
-mul    r6,       <Font color = yellow>c18</Font>,     r4.w            <Font color = cyan>; �t�@�[ diffuse</Font>
-mad    r6,       <Font color = yellow>c19</Font>,     r2.z,      r6   <Font color = cyan>; �t�@�[ specular</Font>
+mul    r6,       <Font color = yellow>c18</Font>,     r4.w            <Font color = cyan>; ファー diffuse</Font>
+mad    r6,       <Font color = yellow>c19</Font>,     r2.z,      r6   <Font color = cyan>; ファー specular</Font>
 
 <Font color = cyan>; 101 Fur</Font>
-<Font color = cyan>; r7.w = cos(n x l, n x e) = (n x l)(n x e)/(|n x l||n x e|) = ��</Font>
+<Font color = cyan>; r7.w = cos(n x l, n x e) = (n x l)(n x e)/(|n x l||n x e|) = κ</Font>
 dp3    r7.w,     r4,      r5  
 mul    r7.w,     r7.w,    r7.x
 mul    r7.w,     r7.w,    r7.y
 
-<Font color = cyan>; r7.w = f_dir = (1+c20.w ��)/2 (directional attenuation factor)</Font>
+<Font color = cyan>; r7.w = f_dir = (1+c20.w κ)/2 (directional attenuation factor)</Font>
 mul    r7.w,     r7.w,    <Font color = yellow>c20.w</Font>
 add    r7.w,     r7.w,    <Font color = yellow>c12.z</Font>
 mul    r7.w,     r7.w,    <Font color = yellow>c12.y</Font>
 
-<Font color = cyan>; f_suf = cramp(2.0f*(l�n)+1)</Font>
+<Font color = cyan>; f_suf = cramp(2.0f*(l･n)+1)</Font>
 rcp    r7.z,     <Font color = yellow>c12.y</Font>
-mad    r7.z,     r7.z,    r2.w,      <Font color = yellow>c12.z</Font><Font color = cyan>; r7.w = 2.0f*(l�n)+1</Font>
-max    r7.z,     r7.z,    <Font color = yellow>c12.x</Font>           <Font color = cyan>; ���̒l���J�b�g</Font>
-min    r7.z,     r7.z,    <Font color = yellow>c12.z</Font>           <Font color = cyan>; 1.0�ȏ�̒l���J�b�g</Font>
+mad    r7.z,     r7.z,    r2.w,      <Font color = yellow>c12.z</Font><Font color = cyan>; r7.w = 2.0f*(l･n)+1</Font>
+max    r7.z,     r7.z,    <Font color = yellow>c12.x</Font>           <Font color = cyan>; 負の値をカット</Font>
+min    r7.z,     r7.z,    <Font color = yellow>c12.z</Font>           <Font color = cyan>; 1.0以上の値をカット</Font>
 
-<Font color = cyan>; �t�@�[ = f_suf * f_dir</Font>
+<Font color = cyan>; ファー = f_suf * f_dir</Font>
 mul    r7.w,     r7.w,    r7.z
 
-<Font color = cyan>; �t�@�[ = f_suf * f_dir * (�t�@�[diffuse + �t�@�[specular)</Font>
+<Font color = cyan>; ファー = f_suf * f_dir * (ファーdiffuse + ファーspecular)</Font>
 mul    r6,       r6,      r7.w
 
-mul    r3,       <Font color = yellow>c16</Font>,     r2.w            <Font color = cyan>; �����o�[�g diffuse</Font>
-add    r6,       r3,      r6              <Font color = cyan>; �t�@�[ + Lambert</Font>
-mul    <Font color = lime>oD0</Font>,      <Font color = yellow>c15</Font>,     r6              <Font color = cyan>; ���b�V���̐F�𔽉f</Font>
+mul    r3,       <Font color = yellow>c16</Font>,     r2.w            <Font color = cyan>; ランバート diffuse</Font>
+add    r6,       r3,      r6              <Font color = cyan>; ファー + Lambert</Font>
+mul    <Font color = lime>oD0</Font>,      <Font color = yellow>c15</Font>,     r6              <Font color = cyan>; メッシュの色を反映</Font>
 </pre>
 
 <p>
-�������ł��傤���B
+いかがでしょうか。
 </p>
 
-<h2>���ǉ��l�^</h2>
+<h2>■追加ネタ</h2>
 
 <p>
-<a href="http://www.cna.ne.jp/~z37/">NM@BC����̃y�[�W</a>�Ŗ󂳂�Ă����A�}�C�N���\�t�g�������� Jerome Lengyel ���񓙂�
+<a href="http://www.cna.ne.jp/~z37/">NM@BCさんのページ</a>で訳されていた、マイクロソフト研究所の Jerome Lengyel さん等の
 <a href="fur.html">Real-time fur over arbitrary surfaces. Symposium on Interactive 3D Graphics 2001, pages 227-232 (update: 2001.4.11) </a>
-�̃��C�e�B���O�������Ă݂܂����B<br>
+のライティングを加えてみました。<br>
 </p>
 <right><image src = "fur_img_half.gif" width = 320 height = 240></right><br>
 <p>
-���̌����́A�v�Z���y�����邽�߂ɁA�X�y�L�����|�����Ahalf-vector (h=(l+e)/2:�����Ǝ����x�N�g���̒��Ԃ̃x�N�g��)�Ɩ@����
-sin �ɔ�Ⴕ���l�ɂ��Ă��܂��B<br>
-�l�́A�׋��s���Ȃ̂ŁAhalf vector �̕����I�Ӗ����܂��ǂ��킩���Ă��܂���B<br>
-�������ƕ׋��������Ǝv���܂��B
+この光源は、計算を軽くするために、スペキュラ－項を、half-vector (h=(l+e)/2:光源と視線ベクトルの中間のベクトル)と法線の
+sin に比例した値にしています。<br>
+僕は、勉強不足なので、half vector の物理的意味がまだ良くわかっていません。<br>
+もちっと勉強したいと思います。
 </p>
 
 <BR CLEAR=ALL>
@@ -408,7 +408,7 @@ sin �ɔ�Ⴕ���l�ɂ��Ă��܂��B<br>
 <BR CLEAR=ALL>
 <center>
 <hr>
-<p><a href="../index.html">���ǂ�</a></p>
+<p><a href="../index.html">もどる</a></p>
 <p><a href="mailto:imagire@gmail.com">imagire@gmail.com</a></p>
 </center>
 </body>

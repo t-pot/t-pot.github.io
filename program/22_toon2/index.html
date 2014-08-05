@@ -1,154 +1,154 @@
 <head>
-	<title>t-pot �wVertex Shader ����:�g�D�[���V�F�[�_�[�Q�x</title>
+	<title>t-pot 『Vertex Shader 入門:トゥーンシェーダー２』</title>
 	<link rel="stylesheet" type="text/css" href="../if.css">
 </head>
-<meta http-equiv=Content-Type content="text/html; charset=shift_jis">
+<meta http-equiv=Content-Type content="text/html; charset=UTF-8">
 <body>
 <div class="contents">
 <center>
 <BR CLEAR=ALL>
 <BR CLEAR=ALL>
-<h1>�g�D�[���V�F�[�_�[�Q</h1><br>
-<h3>�`�֊s���o���Ă݂܂����`</h3>
+<h1>トゥーンシェーダー２</h1><br>
+<h3>～輪郭抽出してみました～</h3>
 <BR CLEAR=ALL>
 <BR CLEAR=ALL>
 <BR CLEAR=ALL>
 </center>
-<h2>���͂��߂�</h2>
+<h2>■はじめに</h2>
 
 <p>
-�O��̔����V�F�[�_�[�ŁA�֊s���o���ł������������̂ŁA������g�D�[���V�F�[�_�[�Ɏg���܂��B
+前回の薄膜シェーダーで、輪郭抽出ができそうだったので、これをトゥーンシェーダーに使います。
 </p>
 <right><image src = "toon2.gif"></right>
 <p>
-�S�̂̊O���ɍ����e���������̂�����̓����ł��B
+全体の外側に黒い影が引かれるのが今回の特徴です。
 </p>
 <p>
-�ȉ��̃t�@�C�����_�E�����[�h���Ă��������B<br>
+以下のファイルをダウンロードしてください。<br>
 </p>
 <ul style = "LIST-STYLE-TYPE:none">
-<li><a href="toon2.lzh">toon2.lzh (�g�D�[���V�F�[�_�[�Q�̃T���v��)</a>
+<li><a href="toon2.lzh">toon2.lzh (トゥーンシェーダー２のサンプル)</a>
 </ul>
 <p>
-�܂��A�g���N�ɓo�ꂵ�Ă��炢�܂��傤�B
+また、トラ君に登場してもらいましょう。
 </p>
 <right><image src = "toon2tiger.gif"></right>
 <p>
-����̂��̂́A�|���S�����������ق������ꂢ�ɏo�܂��ˁB
+今回のものは、ポリゴン数が多いほうがきれいに出ますね。
 </p>
 
-<h2>�����</h2>
+<h2>■解説</h2>
 
 <p>
-����g���G�t�F�N�g�p�̃e�N�X�`���[�́A
+今回使うエフェクト用のテクスチャーは、
 </p>
 <right><image src = "toon2tex.gif"></right>
 <p>
-�ł��B
-����́A�����������F���ω����܂��B���ꂼ��A
+です。
+今回は、横軸方向も色が変化します。それぞれ、
 </p>
 <table>
-<tr><td>U ��</td><td>:</td><td>�i�K�I�ȐF����</td>
+<tr><td>U 軸</td><td>:</td><td>段階的な色分け</td>
 </tr>
-<tr><td>V ��</td><td>:</td><td>�֊s���o</td>
+<tr><td>V 軸</td><td>:</td><td>輪郭抽出</td>
 </tr>
 </table>
 <p>
-�ɁA�g�p���܂��B<br>
-�����̉��̕����A����ƁA�O�̃g�D�[���̎��Ɠ����悤�ȃO���f�[�V�����ł��B
-�Ƃ������ƂŁA�����Ɩ@���̓��ς����A���C�e�B���O�Ɏg�p���܂��B<br>
-�c���́A�E�̂ق�������ƁA�オ���ŁA�������ɂȂ��Ă��܂��B
-������͗֊s���o�Ɏg�p���܂��B
-�����̕����Ɩ@���̓��ς��v�Z���A�l���������A�������Ă̌����������Ă���|���S������̍����F�ɂ��܂��B
-����ŁA�֊s���o���Ȃ���܂��B
+に、使用します。<br>
+横軸の下の方を、見ると、前のトゥーンの時と同じようなグラデーションです。
+ということで、光源と法線の内積を取り、ライティングに使用します。<br>
+縦軸は、右のほうを見ると、上が黒で、下が白になっています。
+こちらは輪郭抽出に使用します。
+視線の方向と法線の内積を計算し、値が小さい、あさっての向きを向いているポリゴンを上の黒い色にします。
+これで、輪郭抽出がなされます。
 </p>
 
-<h2>���o�[�e�b�N�X�V�F�[�_�[(vs.vsh)</h2>
+<h2>■バーテックスシェーダー(vs.vsh)</h2>
 
 <p>
-�ł́A�o�[�e�b�N�X�V�F�[�_�[�v���O�����ł��B
+では、バーテックスシェーダープログラムです。
 </p>
 <pre class="CodeBlock">
 vs.1.0
 
-; c0-3   -- world + �r���[ + �����ϊ��s��
-; c4-7   -- world �s��
-; c8-11  -- world �̋t�]�u�s��
+; c0-3   -- world + ビュー + 透視変換行列
+; c4-7   -- world 行列
+; c8-11  -- world の逆転置行列
 ; c12    -- {0.0, 0.5, 1.0, -1.0}
-; c13    -- ���C�g�̃x�N�g��
-; c14    -- �J�����̈ʒu
-; c15    -- ���b�V���̐F
+; c13    -- ライトのベクトル
+; c14    -- カメラの位置
+; c15    -- メッシュの色
 ;
-; v0    ���_�̍��W�l
-; v3    �@���x�N�g��
-; v8    �e�N�X�`�����W1
+; v0    頂点の座標値
+; v3    法線ベクトル
+; v8    テクスチャ座標1
 
-;���W�ϊ�
+;座標変換
 dp4 oPos.x,    v0,    c0
 dp4 oPos.y,    v0,    c1
 dp4 oPos.z,    v0,    c2
 dp4 oPos.w,    v0,    c3
 
-;�@���̕ϊ�
+;法線の変換
 dp3 r0.x, v3, c8
 dp3 r0.y, v3, c9
 dp3 r0.z, v3, c10
 
-;�@���̐��K��
+;法線の正規化
 dp3 r0.w, r0, r0
 rsq r0.w, r0.w
 mul r0, r0, r0.w
 
-<Font color = orange><b>;���[���h���W�n�ł̒��_�̈ʒu���v�Z����
+<Font color = orange><b>;ワールド座標系での頂点の位置を計算する
 dp4 r1.x, v0, c4
 dp4 r1.y, v0, c5
 dp4 r1.z, v0, c6
 dp4 r1.w, v0, c7
 
-;�J�����ւ̌���e���v�Z����
+;カメラへの向きeを計算する
 add r2, c14, -r1
 
-;e �̐��K��
+;e の正規化
 dp3 r2.w, r2, r2
 rsq r2.w, r2.w
 mul r2, r2, r2.w</b></Font>
 
-; l dot n (���C�e�B���O)
+; l dot n (ライティング)
 dp3 oT0.x, r0, c13
 
-<Font color = orange><b>; e dot n (�֊s���o)
+<Font color = orange><b>; e dot n (輪郭抽出)
 dp3 oT0.y, r0, r2</b></Font>
 
-; ���b�V���̃e�N�X�`���[
+; メッシュのテクスチャー
 mov oT1, v8
 
-; ���b�V���̐F
+; メッシュの色
 mov oD0, c15
 </pre>
 
 <p>
-����́A�g�D�[���̃v���O�����ɁA�����V�F�[�_�[�Ŏg�����Ae dot n �̌v�Z���s���܂��B<br>
-����� oT0.y �ɓ���āA�e�N�X�`���[�̏c�����𗘗p���܂��B<br>
-���ƁAoT0.x �y�� oT0.y �� 0 �ȉ��������� 1 �ȏ�̒l�ɂȂ����ꍇ�ɁA
-SetTextureStageState �̕��ŏ�������悤�ɂ����̂ŁA���όv�Z�̕������ȒP�ɂȂ��Ă��܂��B
+今回は、トゥーンのプログラムに、薄膜シェーダーで使った、e dot n の計算を行います。<br>
+それを oT0.y に入れて、テクスチャーの縦成分を利用します。<br>
+あと、oT0.x 及び oT0.y が 0 以下もしくは 1 以上の値になった場合に、
+SetTextureStageState の方で処理するようにしたので、内積計算の部分が簡単になっています。
 </p>
 
 
-<h2>���\��</h2>
+<h2>■表示</h2>
 
 <p>
-����� draw.cpp �́A�`�敔�������O��̃g�D�[������̕ω�������܂���B<br>
-�������A����� draw.cpp ��O��̃v���O�����Ŏg�p���Ă�������Ɠ����܂�
-�i�e�N�X�`���[�̖͗l�͕ύX���Ȃ���΂Ȃ�܂��񂪁j�B
+今回の draw.cpp は、描画部分しか前回のトゥーンからの変化がありません。<br>
+しかも、今回の draw.cpp を前回のプログラムで使用してもきちんと動きます
+（テクスチャーの模様は変更しなければなりませんが）。
 </p>
 <p>
-�Ⴂ�́ASetTextureStageState(0,D3DTSS_ADDRESSU(D3DTSS_ADDRESSV), D3DTADDRESS_CLAMP) �ŁA
-�e�N�X�`���[�̌J��Ԃ����N�����v���[�h�ɂ��܂��B
-����́AU, V �̒l�� 0 ��菬����������A0 �̃s�N�Z�������������Ă��āA
-1 ���傫��������A1 �̃s�N�Z�����g�p���܂��B
-�܂�A�͂ݏo�����������E�̐F�œh��Ԃ��܂��B<br>
-����ŁA�o�[�e�b�N�X�V�F�[�_�[�v���O�����ł̃N�����v����������Ȃ��Ȃ�܂����B<br>
-��́A�O��g�p�������������̈ʒu���Œ背�W�X�^�� 14 �ɓ���܂����B
+違いは、SetTextureStageState(0,D3DTSS_ADDRESSU(D3DTSS_ADDRESSV), D3DTADDRESS_CLAMP) で、
+テクスチャーの繰り返しをクランプモードにします。
+これは、U, V の値が 0 より小さかったら、0 のピクセルを引っ張ってきて、
+1 より大きかったら、1 のピクセルを使用します。
+つまり、はみ出した分を境界の色で塗りつぶします。<br>
+これで、バーテックスシェーダープログラムでのクランプ処理がいらなくなりました。<br>
+後は、前回使用した視線方向の位置を固定レジスタの 14 に入れました。
 </p>
 
 <pre class="CodeBlock">
@@ -167,10 +167,10 @@ void Render(LPDIRECT3DDEVICE8 lpD3DDEV)
     D3DXMatrixLookAtLH(&mView, &eye, &lookAt, &up);
     
     D3DXMatrixPerspectiveFovLH(&mProj
-        ,60.0f*PI/180.0f                          // ����p
-        ,(float)WIDTH/(float)HEIGHT               // �A�X�y�N�g��
-        ,0.01f                                    // �ŋߐڋ���
-        ,100.0f                                   // �ŉ�������
+        ,60.0f*PI/180.0f                          // 視野角
+        ,(float)WIDTH/(float)HEIGHT               // アスペクト比
+        ,0.01f                                    // 最近接距離
+        ,100.0f                                   // 最遠方距離
         );
     D3DXMATRIX  m = mWorld * mView * mProj;
     D3DXMatrixTranspose( &m ,  &m);
@@ -195,11 +195,11 @@ void Render(LPDIRECT3DDEVICE8 lpD3DDEV)
     <Font color = orange><b>lpD3DDEV->SetTextureStageState(0,D3DTSS_ADDRESSV,    D3DTADDRESS_CLAMP);</b></Font>
     lpD3DDEV->SetTexture(0,pTexture);
 
-    //���b�V���̕`��
+    //メッシュの描画
     lpD3DDEV->SetStreamSource(0, pMeshVB, sizeof(D3D_CUSTOMVERTEX));
     lpD3DDEV->SetIndices(pMeshIndex,0);
     for(DWORD i=0;i<dwNumMaterials;i++){
-        //�F���Z�b�g
+        //色をセット
         D3DXVECTOR4 vl;
         vl.x = pMeshMaterials[i].Diffuse.r;
         vl.y = pMeshMaterials[i].Diffuse.g;
@@ -224,11 +224,11 @@ void Render(LPDIRECT3DDEVICE8 lpD3DDEV)
 }
 </pre>
 
-<h2>���Ō��</h2>
+<h2>■最後に</h2>
 
 <p>
-�Ƃ������ƂŁA�֊s���o���I����āA�g�H�[���V�F�[�_�[�ƌĂ΂����̂��ł��܂����B<br>
-�����A�֊s���|���S������A���f���̌`�ɃV�r�A�Ȃ̂ŁA���������������Ȃ��ƁA���p�ƌĂ΂�郌�x���ɂ͂Ȃ�Ȃ����Ǝv���܂��B
+ということで、輪郭抽出も終わって、トォーンシェーダーと呼ばれるものができました。<br>
+ただ、輪郭がポリゴン数や、モデルの形にシビアなので、もう少し調整しないと、実用と呼ばれるレベルにはならないかと思います。
 </p>
 
 <BR CLEAR=ALL>
@@ -236,7 +236,7 @@ void Render(LPDIRECT3DDEVICE8 lpD3DDEV)
 <BR CLEAR=ALL>
 <center>
 <hr>
-<p><a href="../index.html">���ǂ�</a></p>
+<p><a href="../index.html">もどる</a></p>
 <p><a href="mailto:imagire@gmail.com">imagire@gmail.com</a></p>
 </center>
 </body>

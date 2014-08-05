@@ -1,41 +1,41 @@
 <head>
-	<title>t-pot �wDirectX8.0 ����:���C�g���g���x</title>
+	<title>t-pot 『DirectX8.0 入門:ライトを使う』</title>
 	<link rel="stylesheet" type="text/css" href="../if.css">
 </head>
-<meta http-equiv=Content-Type content="text/html; charset=shift_jis">
+<meta http-equiv=Content-Type content="text/html; charset=UTF-8">
 <body>
 <div class="contents">
 <center>
 <BR CLEAR=ALL>
 <BR CLEAR=ALL>
-<h1>���C�g���g��</h1><br>
-<h3>�`�����A���f�����̂��؂茩���܂��� �`</h3>
+<h1>ライトを使う</h1><br>
+<h3>～もう、モデルがのっぺり見えません ～</h3>
 <BR CLEAR=ALL>
 <BR CLEAR=ALL>
 <BR CLEAR=ALL>
 </center>
-<h2>���͂��߂�</h2>
+<h2>■はじめに</h2>
 
 <p>
-�O��� X �t�@�C���̕\���ł́A�e�N�X�`���[�����������Ă��Ȃ������̂ŁA�̂��؂肵�Ă��܂����B<br>
-����́A���C�g��p���āA�Ԃ̌`��������悤�ɂ��܂��B
+前回の X ファイルの表示では、テクスチャーも何も張っていなかったので、のっぺりしていました。<br>
+今回は、ライトを用いて、車の形が分かるようにします。
 </p>
 <right><image src = "light.gif"></right>
 
 <p>
-�����ʂ�A�ȉ��̃t�@�C�����_�E�����[�h���Ă��������B
+いつも通り、以下のファイルをダウンロードしてください。
 </p>
 <ul style = "LIST-STYLE-TYPE:none">
-<li><a href="light.lzh">light.lzh (���C�g���g�������f���̃T���v��)</a>
+<li><a href="light.lzh">light.lzh (ライトを使ったモデルのサンプル)</a>
 </ul>
 <p>
-�O��̃��f�����[���ɏƂ炳�ꂽ���̂悤�ɁA�I�����W�F�ɕ\������܂��B
+前回のモデルが夕日に照らされたかのように、オレンジ色に表示されます。
 </p>
 
-<h2>������̕ύX</h2>
+<h2>■今回の変更</h2>
 
 <p>
-����́A�O��̃v���O��������A������������ InitRender �����������������ł��B<br>
+今回は、前回のプログラムから、初期化部分の InitRender を書き換えただけです。<br>
 </p>
 
 <pre class="CodeBlock">
@@ -44,21 +44,21 @@ HRESULT InitRender(LPDIRECT3DDEVICE8 lpD3DDEV)
     HRESULT hr;
     LPD3DXBUFFER pD3DXMtrlBuffer;
 
-    // X �t�@�C���̃��[�h
+    // X ファイルのロード
     hr = D3DXLoadMeshFromX( "car.x", D3DXMESH_SYSTEMMEM, 
                                    lpD3DDEV, NULL, 
                                    &pD3DXMtrlBuffer, &dwNumMaterials, 
                                    &pMesh );
     if(FAILED(hr)) return E_FAIL;
 
-    // pD3DXMtrlBuffer ����A������e�N�X�`���[�̏���ǂݎ��
+    // pD3DXMtrlBuffer から、質感やテクスチャーの情報を読み取る
     D3DXMATERIAL* d3dxMaterials = (D3DXMATERIAL*)pD3DXMtrlBuffer->GetBufferPointer();
     pMeshMaterials = new D3DMATERIAL8[dwNumMaterials];
     pMeshTextures  = new LPDIRECT3DTEXTURE8[dwNumMaterials];
 
     for( DWORD i=0; i < dwNumMaterials; i++ ){
-        pMeshMaterials[i] = d3dxMaterials[i].MatD3D;// �����̃R�s�[
-        pMeshMaterials[i].Ambient = pMeshMaterials[i].Diffuse;// �}�e���A���̊��F��ݒ肷��
+        pMeshMaterials[i] = d3dxMaterials[i].MatD3D;// 質感のコピー
+        pMeshMaterials[i].Ambient = pMeshMaterials[i].Diffuse;// マテリアルの環境色を設定する
      
         hr = D3DXCreateTextureFromFile( lpD3DDEV, 
                                         d3dxMaterials[i].pTextureFilename, 
@@ -88,29 +88,29 @@ HRESULT InitRender(LPDIRECT3DDEVICE8 lpD3DDEV)
 }
 </pre>
 <p>
-���Ă��āA�ǉ����ł����AD3DLIGHT8 �Ƀ��C�g�̐ݒ��������AlpD3DDEV->SetLight �ŁA���̐ݒ��L���ɂ��܂��B<br>
-���g�ł����AType �̐ݒ�� D3DLIGHT_DIRECTIONAL �ɂ��܂����B����́A���󂷂�Ɓw���������x�ŁA����������
-�����C�g�ł��i�ʏ�̘a��͕��s�����ł��j�B
-���z�̂悤�ɁA���ɉ����ɂ����āA�n�\�Ɉ�ʂɍ~�蒍������\�����Ă��܂��B<br>
-Diffuse �̓��C�g�̐F��ݒ肵�Ă��܂��B����́A�ԐF�̐������������A�܂�Ԃ����𓖂ĂĂ��܂��B<br>
-���ɁAvecDir ���g���āA������ݒ肵�Ă��܂��B�قځA��������������~�蒍�����܂��B
-D3DXVec3Normalize �́A���C�g���w�����x�̏��ɂ��邽�߂ɕK�v�Ȏ葱���ł��B
-������s��Ȃ��ƁA�s���R�ɖ��邩������A�Â����郉�C�g���o���オ��܂��B
+さてさて、追加分ですが、D3DLIGHT8 にライトの設定をした後、lpD3DDEV->SetLight で、その設定を有効にします。<br>
+中身ですが、Type の設定を D3DLIGHT_DIRECTIONAL にしました。これは、直訳すると『方向光源』で、方向だけを
+持つライトです（通常の和訳は平行光源です）。
+太陽のように、非常に遠くにあって、地表に一面に降り注ぐ光を表現しています。<br>
+Diffuse はライトの色を設定しています。今回は、赤色の成分が強い光、つまり赤い光を当てています。<br>
+次に、vecDir を使って、方向を設定しています。ほぼ、左手上方から光を降り注がせます。
+D3DXVec3Normalize は、ライトを『方向』の情報にするために必要な手続きです。
+これを行わないと、不自然に明るかったり、暗すぎるライトが出来上がります。
 </p>
 <p>
-��́A���C�g��L���ɂ���ݒ肾���ł��B
-D3DRS_AMBIENT �́A�O�ɂ��o�Ă����A�S�̓I�Ȗ��邳��ݒ肷�郉�C�g�ŁA�Â����F�ɂ��܂����B
-�`�悳���G�́A���C�g���������Ă��Ȃ��ꏊ��ǂ�����ƁA���F�ɂȂ��Ă��܂��B
-����́A���̎Ԃ̐F�ŁA���������������������Ă��Ȃ������ɂȂ�܂��B<br>
-�������Ȃ������͐^���ÂɂȂ�܂��B�����̕��̂ɂ́A���̕��̂���̔��˂ȂǂŁA
-�������ړ������Ă��Ȃ������������܂��B���̌��ʂ�\���������̂������ł��B
+後は、ライトを有効にする設定だけです。
+D3DRS_AMBIENT は、前にも出てきた、全体的な明るさを設定するライトで、暗い白色にしました。
+描画される絵の、ライトが当たっていない場所を良く見ると、黄色になっています。
+これは、元の車の色で、ここが環境光しか当たっていない部分になります。<br>
+環境光がない部分は真っ暗になります。現実の物体には、他の物体からの反射などで、
+光が直接当たっていない部分も見えます。この効果を表現したものが環境光です。
 </p>
 
 <p>
-���āA�ǂ��ł��傤���H<rb>
-���\�A�ȒP�Ɍ��𓖂Ă邱�Ƃ��ł��܂��B
-����ȊO�ɂ��A�X�|�b�g���C�g�ȂǁA���낢��Ȏ�ނ̌�������̂ł����A
-���̃��C�g�͏������d�����̂ŁA�����ł́A���ꂾ�����Љ�邱�Ƃɂ��܂��B
+さて、どうでしょうか？<rb>
+結構、簡単に光を当てることができます。
+これ以外にも、スポットライトなど、いろいろな種類の光があるのですが、
+他のライトは処理が重たいので、ここでは、これだけを紹介することにします。
 </p>
 
 <BR CLEAR=ALL>
@@ -118,7 +118,7 @@ D3DRS_AMBIENT �́A�O�ɂ��o�Ă����A�S�̓I�Ȗ��邳��ݒ肷�郉�C�g�ŁA�Â����F�ɂ�
 <BR CLEAR=ALL>
 <center>
 <br>
-<p><a href="../index.html">���ǂ�</a></p>
+<p><a href="../index.html">もどる</a></p>
 <p><a href="mailto:imagire@gmail.com">imagire@gmail.com</a></p>
 </center>
 </body>

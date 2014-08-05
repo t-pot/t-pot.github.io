@@ -1,8 +1,8 @@
 <head>
-	<title>t-pot�wHSV�ϊ��x</title>
+	<title>t-pot『HSV変換』</title>
 	<link rel="stylesheet" type="text/css" href="../if.css">
 </head>
-<meta http-equiv=Content-Type content="text/html; charset=shift_jis">
+<meta http-equiv=Content-Type content="text/html; charset=UTF-8">
 <body>
 
 
@@ -10,8 +10,8 @@
 <center>
 <BR CLEAR=ALL>
 <BR CLEAR=ALL>
-<h1>HSV�ϊ�</h1><br>
-<h3>�` HSV Transform �`</h3>
+<h1>HSV変換</h1><br>
+<h3>～ HSV Transform ～</h3>
 <BR CLEAR=ALL>
 <BR CLEAR=ALL>
 <BR CLEAR=ALL>
@@ -22,69 +22,69 @@
 <div>
 
 
-<h2>���͂��߂�</h2>
+<h2>■はじめに</h2>
 
 
 <p>
-<a href="http://bbx.hp.infoseek.co.jp/cgi-bin/bbx.cgi">BBX</a>�ŁA�u�t�H�g�V���b�v�̐F���ω��̂悤�ɁA�e�N�X�`���̖͗l���󂳂��ɐF��ύX���������̂ł��B�v�Ƃ������₪�������̂Ō��؂��Ă݂܂����B<br>
-��xRGB������HSV�ɕϊ����āAH�����炵����ARGB�ɖ߂��܂��B<br>
-����̃A�v���P�[�V�����ł́A���Ԃɉ����ĐF���̕ω��ʂ�ς��Ă��܂��B
-�ut-pot�v�̕�������̃O���f�[�V�����ŏ����Ă���̂ł����A���̕����̓X�N���[�����܂��B
+<a href="http://bbx.hp.infoseek.co.jp/cgi-bin/bbx.cgi">BBX</a>で、「フォトショップの色相変化のように、テクスチャの模様を壊さずに色を変更させたいのです。」という質問があったので検証してみました。<br>
+一度RGB成分をHSVに変換して、Hをずらした後、RGBに戻します。<br>
+今回のアプリケーションでは、時間に応じて色相の変化量を変えています。
+「t-pot」の文字を虹のグラデーションで書いているのですが、この部分はスクロールします。
 </p>
 
 <p>
-�ŁA�����̂悤�Ƀv���O�����ł��B<br>
+で、いつものようにプログラムです。<br>
 </p>
 <ul style = "LIST-STYLE-TYPE:none">
-<li><a href="src.zip">src.zip (HSV�ϊ�:DirectX9 [Vertex shader 1_1, Pixel shader 2_0])</a>
+<li><a href="src.zip">src.zip (HSV変換:DirectX9 [Vertex shader 1_1, Pixel shader 2_0])</a>
 </ul>
 <p>
-�J�[�\���L�[�ŁA�J���������܂��B<br>
+カーソルキーで、カメラが回ります。<br>
 </p>
 <p>
-�\�[�X�ɂ́A�����̂悤�ɓK���Ƀt�@�C���������Ă��܂��B
-�厖�ȃt�@�C���͎��̂��̂ł��B
+ソースには、いつものように適当にファイルが入っています。
+大事なファイルは次のものです。
 </p>
 <table>
-<tr><td><a href="main_h.html">main.h</a></td><td>�A�v���P�[�V�����̃w�b�_</td></tr>
-<tr><td><a href="main_cpp.html">main.cpp</a></td><td>�A�v���P�[�V�����̃\�[�X</td></tr>
-<tr><td><a href="hlsl_fx.html">hlsl.fx</a></td><td>�V�F�[�_�v���O����</td></tr>
+<tr><td><a href="main_h.html">main.h</a></td><td>アプリケーションのヘッダ</td></tr>
+<tr><td><a href="main_cpp.html">main.cpp</a></td><td>アプリケーションのソース</td></tr>
+<tr><td><a href="hlsl_fx.html">hlsl.fx</a></td><td>シェーダプログラム</td></tr>
 </table>
 
 
-<h2>��HSV�F���W�n</h2>
+<h2>■HSV色座標系</h2>
 
 
 <p>
-HSV�F���W�n�Ƃ́A��r�I�������₷���A�F�̕\�����@�̂P�ł��B<br>
-HSV�F���W�n�ł́A�F��H(Hue/�F��)�AS(Saturation/�ʓx)�AV(Value/���x)�ŕ\������܂��B
+HSV色座標系とは、比較的理解しやすい、色の表現方法の１つです。<br>
+HSV色座標系では、色はH(Hue/色相)、S(Saturation/彩度)、V(Value/明度)で表現されます。
 </p>
 <image src = "hsv.png">
 <p>
-�F���Ƃ́A�ԁA���A�΁A�V�A���A�A�}�[���^�������I�ɂȂ����ւ̂悤�ȍ\���i�F���j�����Ă���A�F������\�����܂��B
+色相とは、赤、黄、緑、シアン、青、マゼンタを周期的につなげた輪のような構造（色相環）をしており、色合いを表現します。
 </p>
 <image src = "h.png">
 <p>
-�ʓx�Ƃ́A�F�̑N�₩���̂��Ƃł��B
-�Ⴆ�΁A�ʓx���グ��΂��h��ȐF�ɂȂ�A�ʓx��������ΑN�₩�łȂ����F�ɋ߂��Ȃ�܂��B
+彩度とは、色の鮮やかさのことです。
+例えば、彩度を上げればより派手な色になり、彩度を下げれば鮮やかでない白色に近くなります。
 </p>
 <image src = "s.png">
 <p>
-���x�Ƃ́A�F�̂����邳�̓x���̂��Ƃł��B���x�������قǖ��邢�F�ɂȂ�A�Ⴏ��ΈÂ��F�ɂȂ�܂��B
+明度とは、色のもつ明るさの度合のことです。明度が高いほど明るい色になり、低ければ暗い色になります。
 </p>
 <image src = "v.png">
 <p>
 </p>
 
-<h2>���v���O����</h2>
+<h2>■プログラム</h2>
 
 
 <p>
-�q�f�a�F���W�n����g�r�u�F���W�n�ւ̕ϊ��͐F�X�ȂƂ���ɗ����Ă���̂ŁA�b����̂��̂��ς����ĉ��ǂ��Ďg���܂��傤�B
+ＲＧＢ色座標系からＨＳＶ色座標系への変換は色々なところに落ちているので、Ｃ言語のものをぱくって改良して使いましょう。
 </p>
 <p>
-�܂��A���ɂȂ�F�ł����A�f�J�[���e�N�X�`���̐F���g���܂��B
-�ϐ��urgb�v�ɕϊ�����F���i�[���Ă����܂��B
+まず、元になる色ですが、デカールテクスチャの色を使います。
+変数「rgb」に変換する色を格納しておきます。
 </p>
 
 <pre class="CodeBlock">
@@ -92,14 +92,14 @@ hlsl.fx
 <font color="deepskyblue">0073:</font> float4 PS(VS_OUTPUT In) : COLOR
 <font color="deepskyblue">0074:</font> {   
 <font color="deepskyblue">0076:</font>     float4 ret = (float4)0;
-<font color="deepskyblue">0077:</font>     float4 decale = tex2D( DecaleSamp, In.Tex );      <font color="cyan">// �f�J�[��</font>
-<font color="deepskyblue">0078:</font>     float3 rgb = decale.xyz;    <font color="cyan">// ���ɂȂ�F</font>
+<font color="deepskyblue">0077:</font>     float4 decale = tex2D( DecaleSamp, In.Tex );      <font color="cyan">// デカール</font>
+<font color="deepskyblue">0078:</font>     float3 rgb = decale.xyz;    <font color="cyan">// 元になる色</font>
 </pre>
 <p>
-�q�f�a����g�r�u�ւ̕ϊ��́A��ԋ����F���u�l�ɁA�F�̍��𐳋K���������̂��r�l�ɂ��܂��B<br>
-�g�l�́A��ԋ����F����ʂ̐F�ւ̋����Ƃ��ċ��߂��܂��B<br>
-�{���́A�r�l���O�̂Ƃ��́A�F���������̂ŁA�g�l�ɂ͐F�����������Ƃ�\���uNO_HUE�v�����蓖�Ă�̂����ʂł����A����͂ǂ��ł������̂ł��̏����͏Ȃ��܂��B<br>
-�Ȃ��A����́A�g�A�r�A�u�e�F���ɂO�`�P�̊Ԃɐ��K�����܂����B
+ＲＧＢからＨＳＶへの変換は、一番強い色をＶ値に、色の差を正規化したものをＳ値にします。<br>
+Ｈ値は、一番強い色から別の色への距離として求められます。<br>
+本来は、Ｓ値が０のときは、色味が無いので、Ｈ値には色実が無いことを表す「NO_HUE」を割り当てるのが普通ですが、今回はどうでもいいのでその処理は省きます。<br>
+なお、今回は、Ｈ、Ｓ、Ｖ各色共に０～１の間に正規化しました。
 </p>
 <pre class="CodeBlock">
 hlsl.fx
@@ -133,16 +133,16 @@ hlsl.fx
 <font color="deepskyblue">0105:</font> <font color="cyan">//  }</font>
 </pre>
 <p>
-���ɁA�܂����̂܂܂ł͂܂�Ȃ��̂ŁA���H���Ă݂܂��傤�B<br>
-�g�l��K���ɓ������āA��l�ɐF������ς��Č��܂��B
+次に、まぁそのままではつまらないので、加工してみましょう。<br>
+Ｈ値を適当に動かして、一様に色合いを変えて見ます。
 </p>
 <pre class="CodeBlock">
 hlsl.fx
-<font color="deepskyblue">0107:</font>     hsv.x += fShift;                                <font color="cyan">// �F���␳</font>
+<font color="deepskyblue">0107:</font>     hsv.x += fShift;                                <font color="cyan">// 色相補正</font>
 <font color="deepskyblue">0108:</font>     <font color="blue">if</font> (1.0 &lt;= hsv.x) hsv.x -= 1.0;
 </pre>
 <p>
-�g�r�u����q�f�a�ւ̋t�ϊ����悭�m���Ă��āA���̂܂܎������Ă݂܂��B
+ＨＳＶからＲＧＢへの逆変換もよく知られていて、そのまま実装してみます。
 </p>
 <pre class="CodeBlock">
 hlsl.fx
@@ -173,7 +173,7 @@ hlsl.fx
 <font color="deepskyblue">0134:</font>     }
 </pre>
 <p>
-����́A�ŏI�I�ɋ��߂�ꂽ�F���V�F�[�f�B���O�F�Ƃ݂Ȃ��ă��C�e�B���O���ďo�͂��܂��B
+今回は、最終的に求められた色をシェーディング色とみなしてライティングして出力します。
 </p>
 <pre class="CodeBlock">
 hlsl.fx
@@ -185,12 +185,12 @@ hlsl.fx
 
 
 
-<h2>���Ō��</h2>
+<h2>■最後に</h2>
 
 
 <p>
-���O�͖��ߐ��Ƃ�����Ȃ��̂��Ȃ��Ǝv���Ă����̂ł����A�ӊO�Ǝ����ł��܂��ˁB<br>
-�܂��A�v���O�����̒����̊���ɂł��邱�Ƃ͂����������Ƃ������̂ŁA���܂�g��Ȃ��Ǝv���܂����c
+やる前は命令数とかたらないのかなぁと思っていたのですが、意外と実現できますね。<br>
+まぁ、プログラムの長さの割りにできることはたいしたことが無いので、あまり使わないと思いますが…
 </p>
 
 
@@ -202,7 +202,7 @@ hlsl.fx
 <BR CLEAR=ALL>
 <center>
 <hr>
-<p><a href="../index.html">���ǂ�</a></p>
+<p><a href="../index.html">もどる</a></p>
 <p><a href="mailto:imagire@gmail.com">imagire@gmail.com</a></p>
 </center>
 

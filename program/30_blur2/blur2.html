@@ -1,66 +1,66 @@
 <head>
-	<title>t-pot�wVertex Shader:���[�V�����u���[2�x</title>
+	<title>t-pot『Vertex Shader:モーションブラー2』</title>
 	<link rel="stylesheet" type="text/css" href="../if.css">
 </head>
-<meta http-equiv=Content-Type content="text/html; charset=shift_jis">
+<meta http-equiv=Content-Type content="text/html; charset=UTF-8">
 <body text=#ffffff>
 
 <div class="contents">
 <center>
 <BR CLEAR=ALL>
 <BR CLEAR=ALL>
-<h1>Vertex Shader:���[�V�����u���[2</h1><br>
-<h3>�`�e�N�X�`���[�ɏ������݂܂����`</h3>
+<h1>Vertex Shader:モーションブラー2</h1><br>
+<h3>～テクスチャーに書き込みました～</h3>
 <BR CLEAR=ALL>
 <BR CLEAR=ALL>
 <BR CLEAR=ALL>
 </center>
 
-<h2>���͂��߂�</h2>
+<h2>■はじめに</h2>
 
 <image src = "title.jpg">
 <p>
-����́A�c���̕ʂ̕\�����@���s���܂��B<br>
-������́A�O�̃t���[���̉摜�������c���Ĕ��������܂��B
+今回は、残像の別の表現方法を行います。<br>
+こちらは、前のフレームの画像が薄く残って尾を引きます。
 </p>
 
 <p>
-����̃\�[�X�́A���̂��̂ł��B
+今回のソースは、次のものです。
 </p>
 <ul style = "LIST-STYLE-TYPE:none">
-<li><a href="blur2.lzh">blur2.lzh (�c���T���v���̃\�[�X:DirextX8.1)</a>
+<li><a href="blur2.lzh">blur2.lzh (残像サンプルのソース:DirextX8.1)</a>
 </ul>
 
 <p>
-���e�͎��̂Ƃ���ɂȂ��Ă��܂��B
+内容は次のとおりになっています。
 </p>
 <table>
-<tr><td><a href="draw_cpp.html">draw.cpp</a></td><td>���C���̕`�敔���B��ɂ��������������B</td></tr>
-<tr><td><a href="main_h.html">main.h</a></td><td>��{�I�Ȓ萔�ȂǁB����͉�ʃT�C�Y��512x512�ɂ��܂����B�B</td></tr>
-<tr><td><a href="main_cpp.html">main.cpp</a></td><td>�`��Ɋ֌W���Ȃ��V�X�e���I�ȕ����B�ύX�������̂ŁA�o�Ԗ����B</td></tr>
-<tr><td><a href="draw_h.html">draw.h</a></td><td>�`��̊e�֐��̒�`�B���ɈӖ������̂ŏo�Ԗ����B</td></tr>
-<tr><td><a href="vs_vsh.html">vs.vsh</a></td><td>���_�V�F�[�_�[�v���O�����B���s�������C�g�B</td></tr>
+<tr><td><a href="draw_cpp.html">draw.cpp</a></td><td>メインの描画部分。主にここが説明される。</td></tr>
+<tr><td><a href="main_h.html">main.h</a></td><td>基本的な定数など。今回は画面サイズを512x512にしました。。</td></tr>
+<tr><td><a href="main_cpp.html">main.cpp</a></td><td>描画に関係しないシステム的な部分。変更が無いので、出番無し。</td></tr>
+<tr><td><a href="draw_h.html">draw.h</a></td><td>描画の各関数の定義。特に意味無いので出番無し。</td></tr>
+<tr><td><a href="vs_vsh.html">vs.vsh</a></td><td>頂点シェーダープログラム。平行光源ライト。</td></tr>
 </table>
 <p>
-���ƁA���f���Ƃ��āAnsx.x�ƁA���s�t�@�C���� MyBase.exe �y�сA
-VC++ �ŃR���p�C�����邽�߂̃v���W�F�N�g�t�@�C�� MyBase.dsw MyBase.dsp �������Ă��܂��B
+あと、モデルとして、nsx.xと、実行ファイルの MyBase.exe 及び、
+VC++ でコンパイルするためのプロジェクトファイル MyBase.dsw MyBase.dsp が入っています。
 </p>
 
 <p>
-����̊̂́A�e�N�X�`���[�Ƀ����_�����O���邱�Ƃł��B<br>
-�����������_�����O�p�̃e�N�X�`���[���Q���p�ӂ��āA�O�̃t���[���̉摜��p���邱�Ƃɂ���āA�c����\�����܂��B<br>
-���Ȃ݂ɍ���̉摜�� 512x512 �Ȃ̂́A�e�N�X�`���[���m�ۂ���̂� 2�ׂ̂���łȂ��Ə�肭�����Ȃ���������ł��B<br>
-����A�r���[�|�[�g�������Ɛݒ肷��Ή\�ł����A�ʓ|�����������̂ŁB
+今回の肝は、テクスチャーにレンダリングすることです。<br>
+しかもレンダリング用のテクスチャーを２枚用意して、前のフレームの画像を用いることによって、残像を表現します。<br>
+ちなみに今回の画像が 512x512 なのは、テクスチャーを確保するのが 2のべき乗でないと上手くいかなかったからです。<br>
+いや、ビューポートをちゃんと設定すれば可能ですが、面倒くさかったので。
 </p>
 
-<h2>���\�[�X</h2>
+<h2>■ソース</h2>
 
 <p>
-�\�[�X�����Ă����܂��B<br>
-�悸�A�g�p����I�u�W�F�N�g�ł����A�����_�����O�̂��߂̃e�N�X�`���[�ƁA�֘A����T�[�t�F�X���K�v�ł��B<br>
-����ɁA���̃o�b�N�o�b�t�@��ۑ����邽�߂̃T�[�t�F�X�̃|�C���^���p�ӂ��܂��B<br>
-�e�N�X�`���[�́A�~�b�v�}�b�v�ɑΉ����邽�߂ɁA�������̉摜�̏W�܂�ɂȂ��Ă��܂��B<br>
-���̉摜�̈����T�[�t�F�X�ł��B
+ソースを見ていきます。<br>
+先ず、使用するオブジェクトですが、レンダリングのためのテクスチャーと、関連するサーフェスが必要です。<br>
+さらに、元のバックバッファを保存するためのサーフェスのポインタも用意します。<br>
+テクスチャーは、ミップマップに対応するために、いくつかの画像の集まりになっています。<br>
+その画像の一つ一つがサーフェスです。
 </p>
 
 <pre class="CodeBlock">
@@ -69,24 +69,24 @@ LPDIRECT3DINDEXBUFFER8  pMeshIndex = NULL;
 D3DXATTRIBUTERANGE      *pSubsetTable = NULL;
 DWORD                   nMeshFaces = 0;
 DWORD                   nMeshVertices = 0;
-D3DMATERIAL8            *pMeshMaterials = NULL;     <Font color = cyan>// ���b�V���̎���</Font>
-LPDIRECT3DTEXTURE8      *pMeshTextures  = NULL;     <Font color = cyan>// ���b�V���̃e�N�X�`���[</Font>
-DWORD                   dwNumMaterials = 0L;        <Font color = cyan>// �}�e���A���̐�</Font>
-FLOAT                   MeshRadius;                 <Font color = cyan>// ���b�V���̑傫��</Font>
+D3DMATERIAL8            *pMeshMaterials = NULL;     <Font color = cyan>// メッシュの質感</Font>
+LPDIRECT3DTEXTURE8      *pMeshTextures  = NULL;     <Font color = cyan>// メッシュのテクスチャー</Font>
+DWORD                   dwNumMaterials = 0L;        <Font color = cyan>// マテリアルの数</Font>
+FLOAT                   MeshRadius;                 <Font color = cyan>// メッシュの大きさ</Font>
 DWORD                   hVertexShader=~0;
 
-<Font color = yellow>LPDIRECT3DTEXTURE8      pTexture[2];                <Font color = cyan>// �����_�����O�̂��߂̃e�N�X�`���[</Font>
-LPDIRECT3DSURFACE8      pTextureSurface[2];         <Font color = cyan>// �e�N�X�`���[�Ɋ֘A����T�[�t�F�X</Font>
-LPDIRECT3DSURFACE8      pBackbuffer = NULL;</Font>         <Font color = cyan>// �o�b�N�o�b�t�@��ۑ����邽�߂̃T�[�t�F�X</Font>
+<Font color = yellow>LPDIRECT3DTEXTURE8      pTexture[2];                <Font color = cyan>// レンダリングのためのテクスチャー</Font>
+LPDIRECT3DSURFACE8      pTextureSurface[2];         <Font color = cyan>// テクスチャーに関連するサーフェス</Font>
+LPDIRECT3DSURFACE8      pBackbuffer = NULL;</Font>         <Font color = cyan>// バックバッファを保存するためのサーフェス</Font>
 </pre>
 
 <p>
-�����̏������ł����A���̃\�[�X�̐F�œh��Ԃ�������������V���������ł��B<br>
-�e�N�X�`���[�ւ̃����_�����O�ƁA�ʏ�̃o�b�N�o�b�t�@�ւ̃����_�����O�̐؂�ւ��̂��߂ɁA�o�b�N�o�b�t�@�̃T�[�t�F�X�ւ̃|�C���^���m�ۂ��܂��B<br>
-���̌�ɁAGetDesc ���g���āA�摜�t�H�[�}�b�g�Ȃǂ̃o�b�N�o�b�t�@�̏��𗘗p���Ȃ���A�e�N�X�`���[�𐶐����܂��B<br>
-���̕ӂ̎菇�́A��̌��܂��Ă���悤�ł��B<br>
-CreateTexture �ŁA�e�N�X�`���[�𐶐�������AGetSurfaceLevel �ŁA�֘A����T�[�t�F�X���`���܂��B<br>
-���̌�ɁASetRenderTarget �ŁA�e�N�X�`���[�Ɛ[�x�o�b�t�@��g�ɂ��܂��B
+それらの初期化ですが、下のソースの色で塗りつぶした部分が今回新しい部分です。<br>
+テクスチャーへのレンダリングと、通常のバックバッファへのレンダリングの切り替えのために、バックバッファのサーフェスへのポインタを確保します。<br>
+その後に、GetDesc を使って、画像フォーマットなどのバックバッファの情報を利用しながら、テクスチャーを生成します。<br>
+この辺の手順は、大体決まっているようです。<br>
+CreateTexture で、テクスチャーを生成した後、GetSurfaceLevel で、関連するサーフェスを定義します。<br>
+その後に、SetRenderTarget で、テクスチャーと深度バッファを組にします。
 </p>
 
 <pre class="CodeBlock">
@@ -98,60 +98,60 @@ HRESULT InitRender(LPDIRECT3DDEVICE8 lpD3DDev)
 {
     HRESULT hr;
 
-    <Font color = cyan>// ���f���̓ǂݍ���</Font>
+    <Font color = cyan>// モデルの読み込み</Font>
     if ( FAILED(hr = LoadXFile("nsx.x", lpD3DDev)) ) return hr;
     
-    <Font color = cyan>// �o�[�e�b�N�X�V�F�[�_�[���쐬����</Font>
+    <Font color = cyan>// バーテックスシェーダーを作成する</Font>
     if ( FAILED(hr = LoadVertexShader("vs.vsh", lpD3DDev, &hVertexShader, dwDecl)) ) return hr;
 
-    <Font color = cyan>// �o�b�N�o�b�t�@�̃|�C���^���m��</Font>
+    <Font color = cyan>// バックバッファのポインタを確保</Font>
     <Font color = orange>if ( FAILED(hr = lpD3DDev->GetRenderTarget(&pBackbuffer))) return hr;</Font>
     
-    <Font color = cyan>// �o�b�N�o�b�t�@�̏��𒲂ׂ�</Font>
+    <Font color = cyan>// バックバッファの情報を調べる</Font>
     <Font color = yellow>D3DSURFACE_DESC Desc;
     if ( FAILED(hr = pBackbuffer->GetDesc( &Desc ))) return hr;</Font>
     
-    <Font color = cyan>// �[�x�o�b�t�@�̃T�[�t�F�X���m�ۂ���</Font>
+    <Font color = cyan>// 深度バッファのサーフェスを確保する</Font>
     <Font color = yellow>LPDIRECT3DSURFACE8 lpZbuffer = NULL;
     if( FAILED(hr = lpD3DDev->GetDepthStencilSurface( &lpZbuffer ))) return hr;</Font>
     
-    <Font color = cyan>// �`��p�e�N�X�`���[��p�ӂ���(2����)</Font>
+    <Font color = cyan>// 描画用テクスチャーを用意する(2枚分)</Font>
     <Font color = yellow>for( int i = 0; i < 2; i++ ){
         if( FAILED(hr = lpD3DDev->CreateTexture(WIDTH,HEIGHT, 1 ,
                                   D3DUSAGE_RENDERTARGET, Desc.Format, 
-                                  D3DPOOL_DEFAULT, &pTexture[i]))) return hr;</Font>                   <Font color = cyan>// �e�N�X�`���[�̐���</Font>
-        <Font color = yellow>if( FAILED(hr = pTexture[i]->GetSurfaceLevel(0,&pTextureSurface[i]))) return hr;</Font>        <Font color = cyan>// �e�N�X�`���[�i�̃~�b�v�}�b�v���x��0�j�ƃT�[�t�F�X���֘A�Â���</Font>
-        <Font color = yellow>if( FAILED(hr = lpD3DDev->SetRenderTarget(pTextureSurface[i], lpZbuffer ))) return hr;</Font>  <Font color = cyan>// �e�N�X�`���[�p�̕`��Ɛ[�x�o�b�t�@���֘A�t����</Font>
+                                  D3DPOOL_DEFAULT, &pTexture[i]))) return hr;</Font>                   <Font color = cyan>// テクスチャーの生成</Font>
+        <Font color = yellow>if( FAILED(hr = pTexture[i]->GetSurfaceLevel(0,&pTextureSurface[i]))) return hr;</Font>        <Font color = cyan>// テクスチャー（のミップマップレベル0）とサーフェスを関連づける</Font>
+        <Font color = yellow>if( FAILED(hr = lpD3DDev->SetRenderTarget(pTextureSurface[i], lpZbuffer ))) return hr;</Font>  <Font color = cyan>// テクスチャー用の描画と深度バッファを関連付ける</Font>
 
         <Font color = yellow>lpD3DDev->BeginScene();
-        lpD3DDev->Clear( 0, NULL, D3DCLEAR_TARGET|D3DCLEAR_ZBUFFER, D3DCOLOR_XRGB(0,0,0), 1.0f, 0 );<Font color = cyan>// �������Ƃ��ăe�N�X�`���[��h��Ԃ��Ă���</Font>
+        lpD3DDev->Clear( 0, NULL, D3DCLEAR_TARGET|D3DCLEAR_ZBUFFER, D3DCOLOR_XRGB(0,0,0), 1.0f, 0 );<Font color = cyan>// 初期化としてテクスチャーを塗りつぶしておく</Font>
         lpD3DDev->EndScene();
     }</Font>
-    <Font color = cyan>// �`������̉�ʂɖ߂�</Font>
+    <Font color = cyan>// 描画を元の画面に戻す</Font>
     <Font color = yellow>lpD3DDev->SetRenderTarget(pBackbuffer, lpZbuffer );</Font>
 
     return S_OK;
 }
 </pre>
 <p>
-���ӓ_�Ƃ��ẮACreateTexture �ŁAD3DUSAGE_RENDERTARGET ���w�肷�邱�Ƃł��B<br>
-�܂��ASetRenderTarget �́A�`��T�[�t�F�X�Ɛ[�x�o�b�t�@�̃T�[�t�F�X��g�ɂ���̂ł����A�����ɕ`�悷��ꏊ���ύX����̂ŁA
-�Ō�Ɍ��̃o�b�N�o�b�t�@�ɖ߂��Ă����Ȃ��Ă͂Ȃ�܂���B
+注意点としては、CreateTexture で、D3DUSAGE_RENDERTARGET を指定することです。<br>
+また、SetRenderTarget は、描画サーフェスと深度バッファのサーフェスを組にするのですが、同時に描画する場所も変更するので、
+最後に元のバックバッファに戻しておかなくてはなりません。
 </p>
 
 <p>
-�ł́A�`�敔���ł��B<br>
-���F�̕������e�N�X�`���[�̐؂�ւ��ɂȂ��Ă��܂��B<br>
-static �ϐ� cnt ���g���āA�`�悷��e�N�X�`���[�����݂ɐ؂�ւ��Ă��܂��B<br>
-�܂��A�Ō�Ɍ��ɖ߂��Ă���A�쐬�����e�N�X�`���[���ׂ����ƒ����Ă��܂�(���̂��߂̍\���̂� TLVERTEX �ł�)�B<br>
-�r���őO�t���[���̃e�N�X�`���[�𔼓����ŕ`�悷�邽�߂� render state ��ύX���Ă��܂�(�I�����W�̕����ł�)�B<br>
-�[�x�o�b�t�@�𖳎����āA�������������Ă��܂��B<br>
-����ȊO�͂����ǂ���̃��f���\����e�N�X�`���[�̕`��ł��B
+では、描画部分です。<br>
+黄色の部分がテクスチャーの切り替えになっています。<br>
+static 変数 cnt を使って、描画するテクスチャーを交互に切り替えています。<br>
+また、最後に元に戻してから、作成したテクスチャーをべたっと張っています(そのための構造体が TLVERTEX です)。<br>
+途中で前フレームのテクスチャーを半透明で描画するために render state を変更しています(オレンジの部分です)。<br>
+深度バッファを無視して、半透明合成しています。<br>
+それ以外はいつもどおりのモデル表示やテクスチャーの描画です。
 </p>
 
 <pre class="CodeBlock">
 <Font color = cyan>//-----------------------------------------------------------------------------
-// �|����`�悷�邽�߂̍\����</Font>
+// 板ポリを描画するための構造体</Font>
 typedef struct {
     float x,y,z,rhw;
     D3DCOLOR color;
@@ -179,16 +179,16 @@ VOID Render(LPDIRECT3DDEVICE8 lpD3DDev)
     D3DXMatrixRotationY( &mWorld, timeGetTime()/300.0f );
     mWorld = m * mWorld;
     
-    <Font color = cyan>// �r���[�s��</Font>
+    <Font color = cyan>// ビュー行列</Font>
     D3DXVECTOR3 eye    = D3DXVECTOR3(0.0f,MeshRadius,2.5f*MeshRadius);
     D3DXVECTOR3 lookAt = D3DXVECTOR3(0.0f,  0.0f,  0.0f);
     D3DXVECTOR3 up     = D3DXVECTOR3(0.0f,  1.0f,  0.0f);
-    <Font color = cyan>// �ʏ�\��</Font>
+    <Font color = cyan>// 通常表示</Font>
     D3DXMatrixLookAtLH(&mView, &eye, &lookAt, &up);
     D3DXMatrixPerspectiveFovLH(&mProj
-        ,60.0f*PI/180.0f                        <Font color = cyan>// ����p</Font>
-        ,(float)WIDTH/(float)HEIGHT             <Font color = cyan>// �A�X�y�N�g��</Font>
-        ,0.01f,100.0f                           <Font color = cyan>// �ŋߐڋ���,�ŉ�������</Font>
+        ,60.0f*PI/180.0f                        <Font color = cyan>// 視野角</Font>
+        ,(float)WIDTH/(float)HEIGHT             <Font color = cyan>// アスペクト比</Font>
+        ,0.01f,100.0f                           <Font color = cyan>// 最近接距離,最遠方距離</Font>
         );
 
     m = mWorld * mView * mProj;
@@ -199,16 +199,16 @@ VOID Render(LPDIRECT3DDEVICE8 lpD3DDev)
     D3DXVec4Normalize(&lightDir, &lightDir);
     D3DXMatrixInverse( &m,  NULL, &mWorld);
     D3DXVec4Transform(&lightDir, &lightDir, &m);
-    lightDir[3] = 0.3f;<Font color = cyan>// �����̋���</Font>
+    lightDir[3] = 0.3f;<Font color = cyan>// 環境光の強さ</Font>
     lpD3DDev->SetVertexShaderConstant(13, &lightDir, 1);
 
-    <Font color = cyan>//���b�V���̕`��</Font>
+    <Font color = cyan>//メッシュの描画</Font>
     lpD3DDev->SetRenderState( D3DRS_ALPHABLENDENABLE, FALSE);
     lpD3DDev->SetVertexShader(hVertexShader);
     lpD3DDev->SetStreamSource(0, pMeshVB, sizeof(D3D_CUSTOMVERTEX));
     lpD3DDev->SetIndices(pMeshIndex,0);
     for(DWORD i=0;i<dwNumMaterials;i++){
-        <Font color = cyan>//�F���Z�b�g</Font>
+        <Font color = cyan>//色をセット</Font>
         D3DXVECTOR4 vl;
         vl.x = pMeshMaterials[i].Diffuse.r;
         vl.y = pMeshMaterials[i].Diffuse.g;
@@ -223,7 +223,7 @@ VOID Render(LPDIRECT3DDEVICE8 lpD3DDev)
                                         pSubsetTable[i].FaceCount);
     }
     
-    <Font color = cyan>// �c���i�ʒu�t���[���O�̉�ʂ𔼓����ŕ`���j</Font>
+    <Font color = cyan>// 残像（位置フレーム前の画面を半透明で描く）</Font>
     <Font color = orange>lpD3DDev->SetRenderState( D3DRS_ZENABLE, FALSE );
     lpD3DDev->SetRenderState( D3DRS_ALPHABLENDENABLE, TRUE );
     lpD3DDev->SetRenderState( D3DRS_SRCBLEND, D3DBLEND_SRCALPHA );
@@ -243,13 +243,13 @@ VOID Render(LPDIRECT3DDEVICE8 lpD3DDev)
     lpD3DDev->SetVertexShader( FVF_TLVERTEX );
     lpD3DDev->DrawPrimitiveUP( D3DPT_TRIANGLESTRIP, 2, Vertex, sizeof( TLVERTEX ) );
 
-    <Font color = cyan>// �`����o�b�N�o�b�t�@�ɖ߂�</Font>
+    <Font color = cyan>// 描画をバックバッファに戻す</Font>
     <Font color = yellow>lpD3DDev->GetDepthStencilSurface( &lpZbuffer );
     lpD3DDev->SetRenderTarget(pBackbuffer, lpZbuffer );
     lpD3DDev->SetRenderState( D3DRS_ZENABLE, TRUE );
     lpD3DDev->SetRenderState( D3DRS_ALPHABLENDENABLE, FALSE);</Font>
 
-    <Font color = cyan>// �`�悵����ʂ��e�N�X�`���[�Ƃ��ĕ`��</Font>
+    <Font color = cyan>// 描画した画面をテクスチャーとして描く</Font>
     {
         TLVERTEX Vertex[4] = {
             <Font color = cyan>// x  y  z rhw           color                     tu tv</Font>
@@ -266,21 +266,21 @@ VOID Render(LPDIRECT3DDEVICE8 lpD3DDev)
 </pre>
 
 <p>
-���Ƃ́A�g�����I�u�W�F�N�g���Ō�ɊJ�����܂��B
+あとは、使ったオブジェクトを最後に開放します。
 </p>
 
-<h2>���Ō��</h2>
+<h2>■最後に</h2>
 
 <p>
-�c�����Ăю�舵���܂������A�e�N�X�`���[�ɕ`�悷�邱�Ƃ̂ق������C���ł��B<br>
-�e�N�X�`���[�ɕ`��ł���΁A����Ȃ��Ƃ₱��Ȃ��Ƃ��c
+残像を再び取り扱いましたが、テクスチャーに描画することのほうがメインです。<br>
+テクスチャーに描画できれば、あんなことやこんなことが…
 </p>
 
 <BR CLEAR=ALL>
 <BR CLEAR=ALL>
 <BR CLEAR=ALL>
 <center>
-<p><a href="../index.html">���ǂ�</a></p>
+<p><a href="../index.html">もどる</a></p>
 <p><a href="mailto:imagire@gmail.com">imagire@gmail.com</a></p>
 </center>
 </body>

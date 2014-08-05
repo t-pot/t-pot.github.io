@@ -1,5 +1,5 @@
 <head>
-	<title>t-pot �wDirectX8.0 ����:�e�N�X�`���[�𒣂�x</title>
+	<title>t-pot 『DirectX8.0 入門:テクスチャーを張る』</title>
 	<link rel="stylesheet" type="text/css" href="../if.css">
 </head>
 <body>
@@ -7,71 +7,71 @@
 <center>
 <BR CLEAR=ALL>
 <BR CLEAR=ALL>
-<h1>�e�N�X�`���[�𒣂�</h1><br>
-<h3>�`����ŁA������ۂ������܂��ˁ`</h3>
+<h1>テクスチャーを張る</h1><br>
+<h3>～これで、それっぽく見えますね～</h3>
 <BR CLEAR=ALL>
 <BR CLEAR=ALL>
 <BR CLEAR=ALL>
 </center>
-<h2>������̃t�@�C����</h2>
+<h2>■今回のファイルは</h2>
 
 <p>
-����́A�e�N�X�`���[�𒣂�܂��B����ŁA���ꂢ�ȉ摜���\���ł���悤�ɂȂ�܂��B
+今回は、テクスチャーを張ります。これで、きれいな画像が表示できるようになります。
 </p>
 <right><image src = "texture.jpg" width = 256 height = 192></right>
 <p>
-���̃\�[�X���A�_�E�����[�h���Ă��������B
+次のソースを、ダウンロードしてください。
 <p>
 
 <ul style = "LIST-STYLE-TYPE:none">
-<li><a href="tex.lzh">tex.lzh (�e�N�X�`���[�𒣂����|���S���\���̃\�[�X)</a>
+<li><a href="tex.lzh">tex.lzh (テクスチャーを張ったポリゴン表示のソース)</a>
 </ul>
 
 <p>
-����́Adraw.cpp �����������������ł��B
+今回は、draw.cpp を書き換えただけです。
 </p>
 
-<h2>�����_�̒�`</h2>
+<h2>■頂点の定義</h2>
 
 <p>
-���_���Ƀe�N�X�`���[�̍��W����ǉ����܂��B<br>
-���̒l�́A�ʏ� UV �l�ƌĂ΂�܂��BU �� X�A V �� Y ���̕����ɑΉ����܂��B
+頂点情報にテクスチャーの座標情報を追加します。<br>
+この値は、通常 UV 値と呼ばれます。U が X、 V が Y 軸の方向に対応します。
 </p>
 
 <pre class="CodeBlock">
-// ���_�̒�`
+// 頂点の定義
 typedef struct {
-    FLOAT x, y, z, rhw;  // �ʒu
-    DWORD color;         // �F
-    <Font color = orange><b>FLOAT tu, tv;      // �e�N�X�`���[�̉摜�̈ʒu</b></Font>
+    FLOAT x, y, z, rhw;  // 位置
+    DWORD color;         // 色
+    <Font color = orange><b>FLOAT tu, tv;      // テクスチャーの画像の位置</b></Font>
 } CUSTOMVERTEX;
 
 #define D3DFVF_CUSTOMVERTEX (D3DFVF_XYZRHW | D3DFVF_DIFFUSE<Font color = orange><b> | D3DFVF_TEX1</b></Font>)
 </pre>
-�܂��A���_�t�H�[�}�b�g�̍\���A D3DFVF_CUSTOMVERTEX ���ǉ����܂��B
+また、頂点フォーマットの構成、 D3DFVF_CUSTOMVERTEX も追加します。
 
-<h2>���I�u�W�F�N�g</h2>
+<h2>■オブジェクト</h2>
 
 <p>
-�e�N�X�`���[�̏����i�[����̂Ɏg����I�u�W�F�N�g�́ALPDIRECT3DTEXTURE8 �ł��B
+テクスチャーの情報を格納するのに使われるオブジェクトは、LPDIRECT3DTEXTURE8 です。
 </p>
 <pre class="CodeBlock">
-LPDIRECT3DTEXTURE8 pTexture = NULL; // �e�N�X�`���[�Ɏg���I�u�W�F�N�g
+LPDIRECT3DTEXTURE8 pTexture = NULL; // テクスチャーに使うオブジェクト
 </pre>
 <p>
-���̃I�u�W�F�N�g�Ɠ����悤�ɁANULL �ŏ��������Ă����܂��B
+他のオブジェクトと同じように、NULL で初期化しておきます。
 </p>
 
-<h2>��������</h2>
+<h2>■初期化</h2>
 
 <p>
-���āA�������ł��B<br>
-����́A�l�p�`��\�����܂��B
-vertices ��4�ɂ��āA����� tu�Atv �̏���ǉ����܂��B
-tu, tv �́A�e�N�X�`���[�̍��y�я�[�� 0.0f �ł���A�E�A���[�� 1.0f �ɂȂ�܂��B<br>
-���_�������������ACreateVertexBuffer �̈�ڂ̈����������܂��B<br>
-D3DXCreateTextureFromFileEx �Ńe�N�X�`���[��ǂݍ��݂܂��B
-����́Asakura.bmp ���e�N�X�`���[�摜�Ƃ��Ď�荞�݂܂����B
+さて、初期化です。<br>
+今回は、四角形を表示します。
+vertices を4つにして、さらに tu、tv の情報を追加します。
+tu, tv は、テクスチャーの左及び上端が 0.0f であり、右、下端が 1.0f になります。<br>
+頂点数が増えた分、CreateVertexBuffer の一つ目の引数も増えます。<br>
+D3DXCreateTextureFromFileEx でテクスチャーを読み込みます。
+今回は、sakura.bmp をテクスチャー画像として取り込みました。
 </p>
 <pre class="CodeBlock">
 HRESULT InitRender(LPDIRECT3DDEVICE8 lpD3DDEV)
@@ -103,14 +103,14 @@ HRESULT InitRender(LPDIRECT3DDEVICE8 lpD3DDEV)
 }
 </pre>
 
-<h2>���`��</h2>
+<h2>■描画</h2>
 
 <p>
-SetTexture �ŁA�e�N�X�`���[�����w�肵�܂��B<br>
-���Ƃ́ADrawPrimitive �ŁA�\�����邾���ł��B
-����̓t�H�[�}�b�g�� D3DPT_TRIANGLESTRIP �ɂ��܂����B
-D3DPT_TRIANGLESTRIP �́A�g���C�A���O���X�g���b�v�Ƃ�������̂ŁA�O�p�`�|���S����я�ɂȂ��܂��B
-�܂��A�\������|���S���̐����i�R�p�`�j�Q���Ȃ̂ŁA�Ō�̈����� 2 �ɂ��܂��B
+SetTexture で、テクスチャー情報を指定します。<br>
+あとは、DrawPrimitive で、表示するだけです。
+今回はフォーマットを D3DPT_TRIANGLESTRIP にしました。
+D3DPT_TRIANGLESTRIP は、トライアングルストリップといわれるもので、三角形ポリゴンを帯状につなげます。
+また、表示するポリゴンの数が（３角形）２枚なので、最後の引数を 2 にします。
 </p>
 
 <pre class="CodeBlock">
@@ -123,10 +123,10 @@ void Render(LPDIRECT3DDEVICE8 lpD3DDEV)
 }
 </pre>
 
-<h2>����Еt��</h2>
+<h2>■後片付け</h2>
 
 <p>
-��Еt���́ALPDIRECT3DTEXTURE8 ���J�����邾���ł��B<br>
+後片付けは、LPDIRECT3DTEXTURE8 を開放するだけです。<br>
 </p>
 
 <pre class="CodeBlock">
@@ -143,7 +143,7 @@ void CleanRender()
 <BR CLEAR=ALL>
 <center>
 <hr>
-<p><a href="../index.html">���ǂ�</a></p>
+<p><a href="../index.html">もどる</a></p>
 <p><a href="mailto:imagire@gmail.com">imagire@gmail.com</a></p>
 </center>
 </body>

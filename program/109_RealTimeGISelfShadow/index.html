@@ -1,8 +1,8 @@
 <head>
-	<title>t-pot�w���ȎՕ����t�����A���^�C�����Ɩ��x</title>
+	<title>t-pot『自己遮蔽項付きリアルタイム大域照明』</title>
 	<link rel="stylesheet" type="text/css" href="../if.css">
 </head>
-<meta http-equiv=Content-Type content="text/html; charset=shift_jis">
+<meta http-equiv=Content-Type content="text/html; charset=UTF-8">
 <body>
 
 
@@ -10,8 +10,8 @@
 <center>
 <BR CLEAR=ALL>
 <BR CLEAR=ALL>
-<h1>���ȎՕ����t�����A���^�C�����Ɩ�</h1><br>
-<h3>�` Real-Time Global Illumination with self shadows �`</h3>
+<h1>自己遮蔽項付きリアルタイム大域照明</h1><br>
+<h3>～ Real-Time Global Illumination with self shadows ～</h3>
 <BR CLEAR=ALL>
 <BR CLEAR=ALL>
 <BR CLEAR=ALL>
@@ -22,130 +22,130 @@
 <div>
 
 
-<h2>���͂��߂�</h2>
+<h2>■はじめに</h2>
 
 
 <p>
-�O��A���A���^�C�����Ɩ�����舵���܂����B<br>
-����́A���ˌ������}�b�v�Ƃ��Ď�荞��ŁA���������ʒ��a�֐��W�J���邱�Ƃɂ���āA�g�U������萳�m�ɕ\�������@�ł��B<br>
-����́A�����PRT�𕹗p���āA���ȎՕ����̃��A���^�C�����Ɩ����������Ă݂܂����B
+前回、リアルタイム大域照明を取り扱いました。<br>
+これは、入射光を環境マップとして取り込んで、それらを球面調和関数展開することによって、拡散光をより正確に表現する手法です。<br>
+今回は、さらにPRTを併用して、自己遮蔽つきのリアルタイム大域照明を実装してみました。
 </p>
 
 <p>
-�ŁA�����̂悤�Ƀv���O�����ł��B<br>
+で、いつものようにプログラムです。<br>
 </p>
 <ul style = "LIST-STYLE-TYPE:none">
-<li><a href="src.zip">src.zip (���ȎՕ����t�����A���^�C�����Ɩ�:DirectX9 [Vertex shader 1_1, Pixel shader 2_0, ���������_�o�b�t�@�g�p])</a>
+<li><a href="src.zip">src.zip (自己遮蔽項付きリアルタイム大域照明:DirectX9 [Vertex shader 1_1, Pixel shader 2_0, 浮動小数点バッファ使用])</a>
 </ul>
 <p>
-GeForce FX �ł́APRT�e�N�X�`�����쐬����H���ŕ��������_�o�b�t�@���g�����߂�HAL�œ����Ȃ��̂ł����A���炩���߃e�N�X�`����p�ӂ��Ă����΍����ɓ��삷��̂ŁA�����쐬����PRT�e�N�X�`����ǂݍ���Ŏ��s����GeForce FX �p�̃v���O�������p�ӂ��Ă����܂����B
+GeForce FX では、PRTテクスチャを作成する工程で浮動小数点バッファを使うためにHALで動かないのですが、あらかじめテクスチャを用意しておけば高速に動作するので、私が作成したPRTテクスチャを読み込んで実行するGeForce FX 用のプログラムも用意しておきました。
 </p>
 <p>
-�J�[�\���L�[�ŁA�J����������āAz��x�ŃY�[�����ς����܂��B<br>
-�܂��Aa�L�[�Łu�S�Ɩ����ʁv�A�u���}�b�v�Ȃ��v�A�u���}�b�v�̂݁v�̐؂�ւ����ł��܂��B<br>
-p�L�[�Ńe�B�[�|�b�g�̓������~�߂邱�Ƃ��ł��܂��B
+カーソルキーで、カメラが回って、zやxでズームが変えられます。<br>
+また、aキーで「全照明効果」、「環境マップなし」、「環境マップのみ」の切り替えができます。<br>
+pキーでティーポットの動きを止めることができます。
 </p>
 <p>
-��̉摜�́A���̂悤�Ɋg�U���Ɗ��}�b�v����������čŏI�I�ȏo�͂ɂȂ��Ă��܂��B
+上の画像は、下のように拡散光と環境マップが合成されて最終的な出力になっています。
 </p>
 <image src = "GI.png"> + <image src = "envmap.png"> = <image src = "final.png">
 <p>
-�\�[�X�ɂ́A�����̂悤�ɓK���Ƀt�@�C���������Ă��܂��B
-�厖�ȃt�@�C���͎��̂��̂ł��B
+ソースには、いつものように適当にファイルが入っています。
+大事なファイルは次のものです。
 </p>
 <table>
-<tr><td><a href="main_h.html">main.h</a></td><td>�A�v���P�[�V�����̃w�b�_</td></tr>
-<tr><td><a href="main_cpp.html">main.cpp</a></td><td>�A�v���P�[�V�����̃\�[�X</td></tr>
-<tr><td><a href="hlsl_fx.html">hlsl.fx</a></td><td>�V�F�[�_�v���O����</td></tr>
-<tr><td><a href="paraboloid_fx.html">paraboloid.fx</a></td><td>Dual paraboloid �}�b�v�̂��߂̃V�F�[�_</td></tr>
+<tr><td><a href="main_h.html">main.h</a></td><td>アプリケーションのヘッダ</td></tr>
+<tr><td><a href="main_cpp.html">main.cpp</a></td><td>アプリケーションのソース</td></tr>
+<tr><td><a href="hlsl_fx.html">hlsl.fx</a></td><td>シェーダプログラム</td></tr>
+<tr><td><a href="paraboloid_fx.html">paraboloid.fx</a></td><td>Dual paraboloid マップのためのシェーダ</td></tr>
 </table>
 
 
-<h2>����������Ă����</h2>
+<h2>■何をやっているの</h2>
 
 
 <p>
-�O��́A�I�u�W�F�N�g�ɓ��˂�����̃����_�����O������
+前回は、オブジェクトに入射する光のレンダリング方程式
 </p>
 <image src = "eq1.png">
 <p>
-�̓��ˌ�L<sub>i</sub>�Ɋւ��āASH�W�J�����܂����B<br>
-����́A���̃����_�����O���������Q�̍��ɕ������܂��B
+の入射光L<sub>i</sub>に関して、SH展開をしました。<br>
+今回は、このレンダリング方程式を２つの項に分解します。
 </p>
 <image src = "eq6.png">
 <p>
-����V(x,��<sub>i</sub>)�͎Օ����ƌĂ΂�鍀�ŁA�O��������˂������������̂ق��̕����ɂ��������ē͂��Ȃ�������0�A�͂�����1�ƂȂ�悤�Ȋ֐��ł��B<br>
-�Օ����ɂ�郌���_�����O�������̕����́A�u�O������͂������̍��v�Ɓu���������̕ʂ̕����ɂ������āA���̌������˂������v�̈Ӗ��œ��ˌ��𕪗ނ����悤�Ɏ�邱�Ƃ��ł��܂��B<br>
-�����ŁA�u���������̕ʂ̕����ɂ������āA���̌������˂������v�́A��x�������˂��Ă���͂��̂ŁA�u�g�U���͔��˗��͏��������̌��ʂ͏������v�A�u���ˌ��͔��ɂ܂�ɂ������˂��Ȃ��̂ŁA�قƂ�ǂ̏ꍇ�������邱�Ƃ��ł���v�Ɨ��R�ŁA�����̍��𖳎�����ƁA�����������O�������́A
+このV(x,ω<sub>i</sub>)は遮蔽項と呼ばれる項で、外部から入射した光が自分のほかの部分にさえぎられて届かなかったら0、届いたら1となるような関数です。<br>
+遮蔽項によるレンダリング方程式の分離は、「外部から届いた光の項」と「光が自分の別の部分にあたって、その光が反射した項」の意味で入射光を分類したように取ることができます。<br>
+ここで、「光が自分の別の部分にあたって、その光が反射した項」は、一度光が反射してから届くので、「拡散光は反射率は小さくその効果は小さい」、「反射光は非常にまれにしか反射しないので、ほとんどの場合無視することができる」と理由で、これらの項を無視すると、レンだリング方程式は、
 </p>
 <image src = "eq7.png">
 <p>
-�Ƌߎ����邱�Ƃ��ł��܂��i�������A���̋ߎ������藧���Ȃ��ꍇ������܂��B���̂Ƃ��ɂ́A����̕��@�͎g���܂���j�B<br>
-���̊֐��Ɋւ��āA���ˌ������ʒ��a�֐��W�J
+と近似することができます（もちろん、この近似が成り立たない場合もあります。そのときには、今回の方法は使えません）。<br>
+この関数に関して、入射光を球面調和関数展開
 </p>
 <image src = "eq2.png">
 <p>
-����ƁA���̂悤�Ȏ��ɕό`�ł��܂��B
+すると、次のような式に変形できます。
 </p>
 <image src = "eq3.png">
 <p>
 </p>
 <image src = "eq4.png">
 <p>
-�����ŁAA<sub>lm</sub>�́A���̂悤�ȌW���ł��B
+ここで、A<sub>lm</sub>は、次のような係数です。
 </p>
 <image src = "eq5.png">
 <p>
-�����̎�������ƁA����́A�O��ƌW�� A<sub>lm</sub>�������قȂ�Ƃ������Ƃ�������܂��B<br>
-�W���̈Ⴂ�́A�Օ��������邩�Ȃ����Ƃ������Ƃł��B�O��͎Օ��������������̂ŁA�W�� A<sub>lm</sub>�̓��f���̖@�������ɂ����ˑ����Ă��Ȃ������̂ł����A����́A�@���x�N�g���ƃ����_�����O����ʒu�Ɉˑ����܂��B�A���A�@���x�N�g���̓����_�����O����ʒu�����ɂ��̂ŁA���ۂɂ́A�����_�����O����ʒu�����ɂ��Ƃ������ƂɂȂ�܂��B<br>
-�������A���̌W����PRT��SH�W�J�̌W���ɑ��Ȃ�܂���B�����ŁA�O��̓X�t�B�A�}�b�v�ŋ��߂� A<sub>lm</sub> ���A�͗l��`�����f�J�[���̃e�N�X�`���Ɠ����\�����������e�N�X�`���ɏĂ��t���A�f�J�[���̃e�N�X�`�����W���g���āA�W�� A<sub>lm</sub> �𒣂荞�݂܂��B
+これらの式を見ると、今回は、前回と係数 A<sub>lm</sub>だけが異なるということが分かります。<br>
+係数の違いは、遮蔽項があるかないかということです。前回は遮蔽項が無かったので、係数 A<sub>lm</sub>はモデルの法線だけにしか依存していなかったのですが、今回は、法線ベクトルとレンダレングする位置に依存します。但し、法線ベクトルはレンダリングする位置だけによるので、実際には、レンダリングする位置だけによるということになります。<br>
+しかも、この係数はPRTのSH展開の係数に他なりません。そこで、前回はスフィアマップで求めた A<sub>lm</sub> を、模様を描いたデカールのテクスチャと同じ構造をもったテクスチャに焼き付け、デカールのテクスチャ座標を使って、係数 A<sub>lm</sub> を張り込みます。
 </p>
 <p>
-����p�ӂ����e�N�X�`���́A���̂��̂ł��B
+今回用意したテクスチャは、次のものです。
 </p>
 <image src = "texture.png">
 <p>
-�����Ńe�N�X�`���𒣂荞�񂾂̂ł����A���ꂢ�ɒ���Ă��Ȃ��̂͊��ق��Ă��������B
+自分でテクスチャを張り込んだのですが、きれいに張れていないのは勘弁してください。
 </p>
 <p>
-�����_�����O�̍H���ł́A�ŏ��ɁA���̃e�N�X�`���������_�����O�������W�𒲂ׂ܂��B<br>
-����́A�����_�����O����e�N�X�`�����W�ɂ��킹�āA�ʒu���W�������_�����O�����F�ɂ��ă����_�����O���܂��B
-�K���ɃX�P�[�������킹��Ǝ��̂悤�ɂȂ�܂��B
+レンダリングの工程では、最初に、このテクスチャがレンダリングされる座標を調べます。<br>
+これは、レンダリング先をテクスチャ座標にあわせて、位置座標をレンダリングされる色にしてレンダリングします。
+適当にスケールをあわせると次のようになります。
 </p>
 <image src = "position.png">
 <p>
-�����悤�ɁA�@���}�b�v���쐬���܂��B
+同じように、法線マップも作成します。
 </p>
 <image src = "normal.png">
 <p>
-���ɁA�����_�����O�����e�N�Z�����ƂɁA�����_�����O�����ʒu�Ɩ@�������̌����ɃJ������u���āA���f����`�悵�܂��B<br>
-����ƁA�������`�悳�ꂽ�ʒu����A�O���̌������������邩�킩��̂ŁA���̏������ɌW���������_�����O���܂��B<br>
-���ۂɍ쐬����V�[���͎��̂悤�ɂȂ�܂��B
+次に、レンダリングしたテクセルごとに、レンダリングされる位置と法線方向の向きにカメラを置いて、モデルを描画します。<br>
+すると、自分が描画された位置から、外部の光がさえぎられるかわかるので、その情報を元に係数をレンダリングします。<br>
+実際に作成するシーンは次のようになります。
 </p>
 <image src = "PreComputing.png">
 <p>
-�e�N�X�`�����P���������āA�X�t�B�A�}�b�v�̗l�Ɏ����������_�����O���āA�����SH�W�����|���邱�Ƃɂ���āA��ϕ��֐������Ƃ߁A���Ƃ͂U�S�{�b�N�X�T���v�����O�ŁA�P�e�N�Z���̏��܂ŗ��Ƃ����݂܂��B<br>
-�Ȃ��Ax������SH(1,-1)�Ay������SH(1,0)�Az������SH(1,1)�Aw������SH(0,0)�̐����𖄂ߍ���ł���̂ŁA����͋ɍʐF�̃O���f�[�V�����������Ǝv���܂�(����́A�Q���ȏ�̍����̌v�Z�͖ʓ|�������̂ł��Ă��܂���)�B<br>
-�ŏI�I�ȉ摜�͎��̗l�ɂȂ�܂��B
+テクスチャを１つずつ走査して、スフィアマップの様に自分をレンダリングして、さらにSH係数を掛けることによって、被積分関数をもとめ、あとは６４ボックスサンプリングで、１テクセルの情報まで落としこみます。<br>
+なお、x成分にSH(1,-1)、y成分にSH(1,0)、z成分にSH(1,1)、w成分にSH(0,0)の成分を埋め込んでいるので、今回は極彩色のグラデーションが見れると思います(今回は、２次以上の高次の計算は面倒くさいのでしていません)。<br>
+最終的な画像は次の様になります。
 </p>
 <image src = "PRT.png">
 <p>
-���������_�o�b�t�@�������Ȃ����ł́A��̃e�N�X�`����ǂݍ���ŁA�����_�����O�̎��Ɏg���΁A���s���邱�Ƃ��ł��܂��B
+浮動小数点バッファがつかえない環境では、上のテクスチャを読み込んで、レンダリングの時に使えば、実行することができます。
 </p>
 
 <p>
-�`����@�Ƃ��͑O�ƈꏏ�Ȃ̂ŏȗ��`
+描画方法とかは前と一緒なので省略～
 </p>
 
 
-<h2>���Ō��</h2>
+<h2>■最後に</h2>
 
 
 <p>
-����Ȃ�A���p�ɂȂ���̂��Ǝv���̂ł����A�������ł��傤���B
+これなら、実用になるものだと思うのですが、いかがでしょうか。
 </p>
 <p>
-����ɂ��Ă��A���̃��f���́A�e�B�[�|�b�g�̃e�N�X�`���̌p���ڂ��������Ă��܂��̂ŁA������Ƃ������f���������������ł��ˁB
+それにしても、このモデルは、ティーポットのテクスチャの継ぎ目が分かってしまうので、きちんとしたモデルを準備したいですね。
 </p>
 
 
@@ -157,7 +157,7 @@ p�L�[�Ńe�B�[�|�b�g�̓������~�߂邱�Ƃ��ł��܂��B
 <BR CLEAR=ALL>
 <center>
 <hr>
-<p><a href="../index.html">���ǂ�</a></p>
+<p><a href="../index.html">もどる</a></p>
 <p><a href="mailto:imagire@gmail.com">imagire@gmail.com</a></p>
 </center>
 

@@ -1,8 +1,8 @@
 <head>
-	<title>t-pot�wRay Tracing : Shadow�x</title>
+	<title>t-pot『Ray Tracing : Shadow』</title>
 	<link rel="stylesheet" type="text/css" href="../if.css">
 </head>
-<meta http-equiv=Content-Type content="text/html; charset=shift_jis">
+<meta http-equiv=Content-Type content="text/html; charset=UTF-8">
 <body>
 
 
@@ -10,8 +10,8 @@
 <center>
 <BR CLEAR=ALL>
 <BR CLEAR=ALL>
-<h1>���C�g���[�X�F�e</h1><br>
-<h3>�` Ray Tracing : Shadow �`</h3>
+<h1>レイトレース：影</h1><br>
+<h3>～ Ray Tracing : Shadow ～</h3>
 <BR CLEAR=ALL>
 <BR CLEAR=ALL>
 <BR CLEAR=ALL>
@@ -23,56 +23,56 @@
 <div>
 
 
-<h2>���͂��߂�</h2>
+<h2>■はじめに</h2>
 
 
 <p>
-�����̉A�e�v�Z�ł͂܂�܂���B
-�e�����Ă݂܂��傤�B
+ただの陰影計算ではつまりません。
+影をつけてみましょう。
 </p>
 
 <p>
-����̃v���O�����́A���̂��̂ł��B
+今回のプログラムは、次のものです。
 </p>
 <ul style = "LIST-STYLE-TYPE:none">
-<li><a href="src.zip">src.zip (�e:MFC, DirectX9)</a>
+<li><a href="src.zip">src.zip (影:MFC, DirectX9)</a>
 </ul>
 
 <p>
-�܂��A�����̂悤�ɓK���Ƀt�@�C���������Ă��܂��B<br>
-APP WIZARD ����o�͂����t���[�����[�N�̃t�@�C���͏Љ���Ȃ����Ă��������܂��B<br>
-���񂩂�A�I�u�W�F�N�g�̂��߂̃N���X��ʃt�@�C�� prim.h�Aprim.cpp �ɕ����܂����B
+まぁ、いつものように適当にファイルが入っています。<br>
+APP WIZARD から出力されるフレームワークのファイルは紹介を省かせていただきます。<br>
+今回から、オブジェクトのためのクラスを別ファイル prim.h、prim.cpp に分けました。
 </p>
 <table>
-<tr><td><a href="render_cpp.html">render.cpp</a></td><td>���C�g���p�̕`��֐��Q</td></tr>
-<tr><td><a href="render_h.html">render.h</a></td><td>���C�g���p�̕`��֐��Q</td></tr>
-<tr><td><a href="prim_cpp.html">prim.cpp</a></td><td>�I�u�W�F�N�g�̃f�[�^�̂��߂̊֐�</td></tr>
-<tr><td><a href="prim_h.html">prim.h</a></td><td>�I�u�W�F�N�g�̃f�[�^�̂��߂̊֐�</td></tr>
-<tr><td><a href="mainDlg_cpp.html">mainDlg.cpp</a></td><td>�_�C�A���O���Ǘ�����N���X�̃��\�b�h�������ꂽ�t�@�C��</td></tr>
-<tr><td><a href="mainDlg_h.html">mainDlg.h</a></td><td>�_�C�A���O���Ǘ�����N���X�̃w�b�_</td></tr>
+<tr><td><a href="render_cpp.html">render.cpp</a></td><td>レイトレ用の描画関数群</td></tr>
+<tr><td><a href="render_h.html">render.h</a></td><td>レイトレ用の描画関数群</td></tr>
+<tr><td><a href="prim_cpp.html">prim.cpp</a></td><td>オブジェクトのデータのための関数</td></tr>
+<tr><td><a href="prim_h.html">prim.h</a></td><td>オブジェクトのデータのための関数</td></tr>
+<tr><td><a href="mainDlg_cpp.html">mainDlg.cpp</a></td><td>ダイアログを管理するクラスのメソッドが書かれたファイル</td></tr>
+<tr><td><a href="mainDlg_h.html">mainDlg.h</a></td><td>ダイアログを管理するクラスのヘッダ</td></tr>
 </table>
 
 <p>
-���ƁA���s�t�@�C���A���\�[�X�t�@�C���A�v���W�F�N�g�t�@�C���������Ă��܂��B
+あと、実行ファイル、リソースファイル、プロジェクトファイルが入っています。
 </p>
 
 
-<h2>��������Ă�́H</h2>
+<h2>■何やってるの？</h2>
 
 
 <p>
-����̕��@�ł����A���C���Ԃ������ꏊ����Ăу��C���΂��܂��B<br>
-�A���A��΂������́A�����̕����ł��B
-�����̕����Ƀ��C���΂��āA�����Ɣ�΂����ꏊ�̊Ԃɕ��̂�����Ό��͓͂��Ȃ��̂ŁA���̕������e�ɂ��܂��B
+今回の方法ですが、レイがぶつかった場所から再びレイを飛ばします。<br>
+但し、飛ばす方向は、光源の方向です。
+光源の方向にレイを飛ばして、光源と飛ばした場所の間に物体があれば光は届かないので、その部分を影にします。
 </p>
 <image src = "explain.png">
 <p>
-���ۂ̃v���O�����́A���̂悤�ɂȂ�܂��B<br>
-���̂Ƃ̌��������o���ꂽ��A�����܂ł̋������v�Z���āA���̋����܂ł͈̔͂�
-�����_����o�����C�����̕��̂ƌ������Ȃ������o���܂��B<br>
-���̕��̂̉e�ɉB��邱�Ƃ�����������ALN ���O�ɂ��āA�g�U���̐����𗎂Ƃ��܂��B<br>
-�Ȃ��ALN&lt;=0 �ƂȂ�A�ʂ������̕��������Ă��Ȃ��Ƃ��ɂ́A�v�Z�͖��ʂȂ̂ŉe�̌v�Z�͂��Ȃ��悤�ɂ��Ă��܂��B<br>
-����́A���ʔ��ˍ��͉�����������Ă��Ȃ��̂ł����A���������˃x�N�g���Ȃǂ��l���ĉ��������ق���������ł��傤�˂�
+実際のプログラムは、次のようになります。<br>
+物体との交差が検出されたら、光源までの距離を計算して、その距離までの範囲で
+交差点から出たレイが他の物体と交差しないか検出します。<br>
+他の物体の影に隠れることが分かったら、LN を０にして、拡散項の成分を落とします。<br>
+なお、LN&lt;=0 となる、面が光源の方を向いていないときには、計算は無駄なので影の計算はしないようにしています。<br>
+今回は、鏡面反射項は何も手を加えていないのですが、ここも反射ベクトルなどを考えて何かしたほうがいいんでしょうねぇ
 </p>
 <pre class="CodeBlock">
 render.cpp
@@ -92,18 +92,18 @@ render.cpp
 <font color="deepskyblue">0619:</font>     t = pBlockTall -&gt;IsAcross(t, &amp;n, &amp;p, &amp;pObj, x, v);
 <font color="deepskyblue">0620:</font> 
 <font color="deepskyblue">0621:</font>     <font color="blue">if</font>( pObj ){
-<font color="deepskyblue">0622:</font>         <font color="cyan">// ���������I</font>
+<font color="deepskyblue">0622:</font>         <font color="cyan">// 当たった！</font>
 <font color="deepskyblue">0623:</font> 
 <font color="deepskyblue">0624:</font>         D3DXVECTOR4 l = light_pos-p;
 <font color="deepskyblue">0625:</font>         <font color="blue">float</font> L2 = D3DXVec3Length((D3DXVECTOR3 *)&amp;l);
 <font color="deepskyblue">0626:</font>         D3DXVec3Normalize((D3DXVECTOR3 *)&amp;l, (D3DXVECTOR3 *)&amp;l);
 <font color="deepskyblue">0627:</font> 
 <font color="deepskyblue">0628:</font>         D3DXVECTOR3 dir, H;
-<font color="deepskyblue">0629:</font>         <font color="cyan">// �����̌v�Z</font>
+<font color="deepskyblue">0629:</font>         <font color="cyan">// 視線の計算</font>
 <font color="deepskyblue">0630:</font>         camera.GetFrom(&amp;dir);
 <font color="deepskyblue">0631:</font>         dir = dir - *(D3DXVECTOR3 *)&amp;p;
 <font color="deepskyblue">0632:</font>         D3DXVec3Normalize(&amp;dir, &amp;dir);
-<font color="deepskyblue">0633:</font>         <font color="cyan">// �n�[�t�x�N�g��</font>
+<font color="deepskyblue">0633:</font>         <font color="cyan">// ハーフベクトル</font>
 <font color="deepskyblue">0634:</font>         H = dir+*(D3DXVECTOR3 *)&amp;l;
 <font color="deepskyblue">0635:</font>         D3DXVec3Normalize((D3DXVECTOR3 *)&amp;H, (D3DXVECTOR3 *)&amp;H);
 <font color="deepskyblue">0636:</font> 
@@ -111,32 +111,32 @@ render.cpp
 <font color="deepskyblue">0638:</font>         <font color="blue">float</font> HN = D3DXVec3Dot((D3DXVECTOR3 *)&amp;H, (D3DXVECTOR3 *)&amp;n);
 <font color="deepskyblue">0639:</font>         <font color="blue">if</font>(HN&lt;0) HN=0;
 <font color="deepskyblue">0640:</font>         <font color="blue">if</font>(0&lt;LN){<font color="yellow">
-<font color="deepskyblue">0641:</font>             <font color="cyan">// ���������Ƃ��납��A�����������邩�𔻒�</font>
-<font color="deepskyblue">0642:</font>             <font color="cyan">// �����Ȃ���΁A�Â�����</font>
+<font color="deepskyblue">0641:</font>             <font color="cyan">// 当たったところから、光源が見えるかを判定</font>
+<font color="deepskyblue">0642:</font>             <font color="cyan">// 見えなければ、暗くする</font>
 <font color="deepskyblue">0643:</font>             <font color="blue">bool</font> bShadow = FALSE;
 <font color="deepskyblue">0644:</font>             <font color="blue">if</font>(!bShadow) bShadow = pShpereS   -&gt;IsAcross(L2, &amp;p, &amp;l);
 <font color="deepskyblue">0645:</font>             <font color="blue">if</font>(!bShadow) bShadow = pShpereT   -&gt;IsAcross(L2, &amp;p, &amp;l);
 <font color="deepskyblue">0646:</font>             <font color="blue">if</font>(!bShadow) bShadow = pRoom      -&gt;IsAcross(L2, &amp;p, &amp;l);
 <font color="deepskyblue">0647:</font>             <font color="blue">if</font>(!bShadow) bShadow = pBlockSmall-&gt;IsAcross(L2, &amp;p, &amp;l);
 <font color="deepskyblue">0648:</font>             <font color="blue">if</font>(!bShadow) bShadow = pBlockTall -&gt;IsAcross(L2, &amp;p, &amp;l);
-<font color="deepskyblue">0649:</font>             <font color="blue">if</font>(bShadow) LN*=0.0f;<font color="cyan">// difuse�����Ȃ���</font></font>
+<font color="deepskyblue">0649:</font>             <font color="blue">if</font>(bShadow) LN*=0.0f;<font color="cyan">// difuseだけなくす</font></font>
 <font color="deepskyblue">0650:</font>         }<font color="blue">else</font>{
 <font color="deepskyblue">0651:</font>             LN=0;
 <font color="deepskyblue">0652:</font>         }
 <font color="deepskyblue">0653:</font>         
 <font color="deepskyblue">0654:</font>         pObj-&gt;GetColor(dest, LN, HN);
 <font color="deepskyblue">0655:</font>         
-<font color="deepskyblue">0656:</font>         <font color="cyan">// �����̐F�̔��f</font>
+<font color="deepskyblue">0656:</font>         <font color="cyan">// 光源の色の反映</font>
 <font color="deepskyblue">0657:</font>         D3DXVECTOR3 light_color = D3DXVECTOR3(10.f,9.0f,5.0f);
 <font color="deepskyblue">0658:</font>         dest-&gt;x *= light_color.x;
 <font color="deepskyblue">0659:</font>         dest-&gt;y *= light_color.y;
 <font color="deepskyblue">0660:</font>         dest-&gt;z *= light_color.z;
 <font color="deepskyblue">0661:</font>         
-<font color="deepskyblue">0662:</font>         <font color="cyan">// ���̋����̓K���ȕ␳</font>
-<font color="deepskyblue">0663:</font>         *dest *= min(1.5f, 500000.0f/(10000.0f+L2)); <font color="cyan">// �����ɂ��␳</font>
-<font color="deepskyblue">0664:</font>         *dest *= min(1, l.y+0.1f);                  <font color="cyan">// ���̌�����cos�Ƃ̊֐��ɂ���</font>
+<font color="deepskyblue">0662:</font>         <font color="cyan">// 光の強さの適当な補正</font>
+<font color="deepskyblue">0663:</font>         *dest *= min(1.5f, 500000.0f/(10000.0f+L2)); <font color="cyan">// 距離による補正</font>
+<font color="deepskyblue">0664:</font>         *dest *= min(1, l.y+0.1f);                  <font color="cyan">// 光の向きをcosθの関数にする</font>
 <font color="deepskyblue">0665:</font>     }<font color="blue">else</font>{
-<font color="deepskyblue">0666:</font>         <font color="cyan">// �O��</font>
+<font color="deepskyblue">0666:</font>         <font color="cyan">// 外れ</font>
 <font color="deepskyblue">0667:</font>         *dest = BG_COLOR;
 <font color="deepskyblue">0668:</font>     }
 <font color="deepskyblue">0669:</font> 
@@ -146,14 +146,14 @@ render.cpp
 </pre>
 
 
-<h2>�����b�V��</h2>
+<h2>■メッシュ</h2>
 
 
 <p>
-����́A�O��̃v���O���������ǂ��Ă�������̂R�p�`����x�Ɉ������߂̃��b�V���N���X�����܂����B<br>
-���b�V���N���X�́A�R�p�`���̐��ƁA�����̃|�C���^���i�[����z��������Ă��܂��B<br>
-�����́A�N���X�̃|�C���^��z��Ƃ��Ď��̂łȂ��āA�f�[�^�z��ւ̃|�C���^�����悤�ɂ���̂��ǂ��ł��傤�B<br>
-�܂��A�Ȃ�ƂȂ��ł����A�O��� CObject �N���X�́ACPrimitive �N���X�ɖ��O��ς��܂����B<br>
+今回は、前回のプログラムを改良してたくさんの３角形を一度に扱うためのメッシュクラスを作りました。<br>
+メッシュクラスは、３角形等の数と、それらのポインタを格納する配列を持っています。<br>
+ここは、クラスのポインタを配列として持つのでなくて、データ配列へのポインタを持つようにするのも良いでしょう。<br>
+また、なんとなくですが、前回の CObject クラスは、CPrimitive クラスに名前を変えました。<br>
 </p>
 <pre class="CodeBlock">
 prim.h
@@ -172,8 +172,8 @@ prim.h
 <font color="deepskyblue">0115:</font> };
 </pre>
 <p>
-���b�V���N���X�̊e���\�b�h�́A�v���~�e�B�u�̌��������������������̏������񂵂Ă��܂��B<br>
-�Ⴆ�΁A��������̃v���O�����́A���̂悤�ɂȂ��Ă��܂��B
+メッシュクラスの各メソッドは、プリミティブの個数だけ初期化や交差判定の処理を回しています。<br>
+例えば、交差判定のプログラムは、次のようになっています。
 </p>
 <pre class="CodeBlock">
 prim.cpp
@@ -212,17 +212,17 @@ prim.cpp
 
 
 
-<h2>��Windows ���ۂ��v���O����</h2>
+<h2>■Windows っぽいプログラム</h2>
 
 
 <p>
-���āA���񂩂�v���O�����̎��s���Ԃ������Ȃ��Ă��܂����B<br>
-���܂ł̂悤�ɉ����l���Ȃ��� Render() �֐��ŏ������܂킵���ςȂ��ɂ��Ă��܂��ƁA�������I������܂ŃE�B���h�E�̈ʒu���������Ȃ�������ƁA���傢�Ƃ���ڂ��v���O�����ɂȂ��Ă��܂��܂��B<br>
-������ւ�ŁA�����t����Ƃ��߂��Ȃ��s�V�̂悢�A�v���P�[�V�����ɂ��Ă݂܂��傤�B
+さて、今回からプログラムの実行時間が長くなってきました。<br>
+今までのように何も考えないで Render() 関数で処理をまわしっぱなしにしてしまうと、処理が終了するまでウィンドウの位置が動かせなかったりと、ちょいとしょぼいプログラムになってしまいます。<br>
+ここらへんで、処理付加を独り占めしない行儀のよいアプリケーションにしてみましょう。
 </p>
 
 <p>
-��n�߂ɁA�A�v���P�[�V������ύX���āA�`��֐����P�s�N�Z������������֐��ɕύX���܂��B
+手始めに、アプリケーションを変更して、描画関数を１ピクセルずつ処理する関数に変更します。
 </p>
 
 <pre class="CodeBlock">
@@ -238,12 +238,12 @@ render.cpp
 <font color="deepskyblue">0589:</font>     s_data[4*(s_y*RENDER_WIDTH+s_x)+1]=(<font color="blue">char</font>)(255.9*min(1,col.y));<font color="cyan">// G</font>
 <font color="deepskyblue">0590:</font>     s_data[4*(s_y*RENDER_WIDTH+s_x)+2]=(<font color="blue">char</font>)(255.9*min(1,col.z));<font color="cyan">// B</font></font>
 <font color="deepskyblue">0591:</font>     
-<font color="deepskyblue">0592:</font>     <font color="cyan">// ���̃s�N�Z���Ɉړ�</font>
+<font color="deepskyblue">0592:</font>     <font color="cyan">// 次のピクセルに移動</font>
 <font color="deepskyblue">0593:</font>     <font color="blue">if</font>(RENDER_WIDTH&lt;=++s_x){
-<font color="deepskyblue">0594:</font>         <font color="cyan">// �s��ς���</font>
+<font color="deepskyblue">0594:</font>         <font color="cyan">// 行を変える</font>
 <font color="deepskyblue">0595:</font>         s_x = 0;
 <font color="deepskyblue">0596:</font>         <font color="blue">if</font>(RENDER_HEIGHT&lt;=++s_y){
-<font color="deepskyblue">0597:</font>             s_state = STATE_IDLE;<font color="cyan">// �I��</font>
+<font color="deepskyblue">0597:</font>             s_state = STATE_IDLE;<font color="cyan">// 終了</font>
 <font color="deepskyblue">0598:</font>             <font color="blue">return</font> 0;
 <font color="deepskyblue">0599:</font>         }
 <font color="deepskyblue">0600:</font>     }
@@ -252,15 +252,15 @@ render.cpp
 <font color="deepskyblue">0603:</font> }
 </pre>
 <p>
-�V�����`��֐��ł́A(s_x, s_y)�̃s�N�Z���Ɋւ��ă��C�g���[�V���O������A
-�ׂ̃s�N�Z���Ɉړ����āA�I�����܂��B<br>
-��ԉE�܂Ńs�N�Z�����ړ�������A���ɉ��̒i�Ɉړ����܂��B<br>
-��ԉE���܂ňړ�������A�{���Ƀ��C�g���[�V���O�͏I�����܂��B<br>
-�`�撆���ǂ����𔻒肷�邽�߂ɁA��ԕϐ� s_state ��p�ӂ��܂����B<br>
-����́As_state �́ASTATE_IDLE �� STATE_RENDER �̏�Ԃ����܂��B<br>
-�ŏ��́ASTATE_IDLE�ɂ��āA�`�悪�n�܂�Ƃ���STATE_RENDER�ɐ؂�ւ��܂��B<br>
-�`�悪���S�ɏI��������A��Ԃ͍Ă�STATE_IDLE�ɖ߂��āA�ҋ@���܂��B<br>
-Render()�֐��́ASTATE_IDLE �̎��Ɂi���������Ă��Ȃ����Ƃ��Ӗ�����j0��Ԃ����Ƃɂ��܂��B
+新しい描画関数では、(s_x, s_y)のピクセルに関してレイトレーシングしたら、
+隣のピクセルに移動して、終了します。<br>
+一番右までピクセルが移動したら、次に下の段に移動します。<br>
+一番右下まで移動したら、本当にレイトレーシングは終了します。<br>
+描画中かどうかを判定するために、状態変数 s_state を用意しました。<br>
+今回は、s_state は、STATE_IDLE か STATE_RENDER の状態を取ります。<br>
+最初は、STATE_IDLEにいて、描画が始まるときにSTATE_RENDERに切り替わります。<br>
+描画が完全に終了したら、状態は再びSTATE_IDLEに戻って、待機します。<br>
+Render()関数は、STATE_IDLE の時に（処理をしていないことを意味する）0を返すことにします。
 </p>
 
 <pre class="CodeBlock">
@@ -275,7 +275,7 @@ render.cpp
 </pre>
 
 <p>
-Render() �֐����Ă΂��O�� Begin() �֐��̌Ăяo���ŁA������Ԃ⃌�C�g���[�X����s�N�Z���̏����ʒu���w�肵�܂��B
+Render() 関数が呼ばれる前の Begin() 関数の呼び出しで、初期状態やレイトレースするピクセルの初期位置を指定します。
 </p>
 
 <pre class="CodeBlock">
@@ -287,7 +287,7 @@ render.cpp
 <font color="deepskyblue">0568:</font>     s_x = 0;
 <font color="deepskyblue">0569:</font>     s_y = 0;</font>
 <font color="deepskyblue">0570:</font> 
-<font color="deepskyblue">0571:</font>     <font color="cyan">// �t���[���o�b�t�@�̏�����</font>
+<font color="deepskyblue">0571:</font>     <font color="cyan">// フレームバッファの初期化</font>
 <font color="deepskyblue">0572:</font>     <font color="blue">for</font>(<font color="blue">int</font> j=0; j&lt;RENDER_HEIGHT; j++){
 <font color="deepskyblue">0573:</font>     <font color="blue">for</font>(<font color="blue">int</font> i=0; i&lt;RENDER_WIDTH ; i++){
 <font color="deepskyblue">0574:</font>         s_data[4*(j*RENDER_WIDTH+i)+0]=(<font color="blue">char</font>)255;<font color="cyan">// R</font>
@@ -298,8 +298,8 @@ render.cpp
 <font color="deepskyblue">0579:</font> }
 </pre>
 <p>
-���ɁA�{�^�����������Ƃ��̕`��֐��̌Ăяo���v���O������ύX���܂��傤�B<br>
-�{�^�����������Ƃ��ɁA�ŏ���Begin()�֐����Ăяo���āA��� Render() �֐��̕Ԃ�l��0�ɂȂ�܂� Render() �֐����Ăё����܂��B
+次に、ボタンを押したときの描画関数の呼び出しプログラムを変更しましょう。<br>
+ボタンを押したときに、最初にBegin()関数を呼び出して、後は Render() 関数の返り値が0になるまで Render() 関数を呼び続けます。
 </p>
 
 <pre class="CodeBlock">
@@ -308,12 +308,12 @@ mainDlg.cpp
 <font color="deepskyblue">0209:</font> {
 <font color="deepskyblue">0210:</font>     <font color="yellow">bQuit = FALSE;</font>
 <font color="deepskyblue">0211:</font> 
-<font color="deepskyblue">0212:</font>     <font color="cyan">// TODO: ���̈ʒu�ɃR���g���[���ʒm�n���h���p�̃R�[�h��ǉ����Ă�������</font>
+<font color="deepskyblue">0212:</font>     <font color="cyan">// TODO: この位置にコントロール通知ハンドラ用のコードを追加してください</font>
 <font color="deepskyblue">0213:</font>     <font color="blue">for</font>(Render::Begin(); <font color="red">Render::Render();</font> <font color="blue">this</font>-&gt;OnPaint()){
-<font color="deepskyblue">0214:</font>         <font color="blue">for</font>(<font color="blue">int</font> i=0; i&lt;1000; i++) <font color="red">Render::Render();</font><font color="cyan">// �P�񂸂��ƂƂĂ��x������</font>
-<font color="deepskyblue">0215:</font>         <font color="cyan">// ���b�Z�[�W�̏���</font>
+<font color="deepskyblue">0214:</font>         <font color="blue">for</font>(<font color="blue">int</font> i=0; i&lt;1000; i++) <font color="red">Render::Render();</font><font color="cyan">// １回ずつだととても遅かった</font>
+<font color="deepskyblue">0215:</font>         <font color="cyan">// メッセージの処理</font>
 <font color="deepskyblue">0216:</font>         <font color="orange">PumpMessages();</font>
-<font color="deepskyblue">0217:</font>         <font color="cyan">// �I������</font>
+<font color="deepskyblue">0217:</font>         <font color="cyan">// 終了判定</font>
 <font color="deepskyblue">0218:</font>         <font color="yellow"><font color="blue">if</font>(bQuit) <font color="blue">return</font>;</font>
 <font color="deepskyblue">0219:</font>     }
 <font color="deepskyblue">0220:</font>     <font color="blue">this</font>-&gt;OnPaint();
@@ -321,21 +321,21 @@ mainDlg.cpp
 </pre>
 
 <p>
-Render() �֐����A���Ă����Ƃ���ŉ�ʂ̍ĕ`��֐� OnPaint() ���ĂԂ��Ƃɂ���āA���݂ǂ̃s�N�Z���܂ŏ������I���Ă��邩����ڂł킩��悤�ɂ��Ă��܂��B<br>
-���ƁA���[�v�̒��ōĂ� Render() �֐���1000��قǂ܂킵�Ă��܂��B����́ARender() ���I���邽�тɂ��������ĕ`�悵�Ă�������ɒx�������̂ŁA�ĕ`��̉񐔂����炷���߂̏����ł��B
-1000��Ƃ����̂́A�t�������Č��߂��K���Ȑ��Ȃ̂ŁA�^�C�}�[���g���ĕ`��񐔂𐧌䂵���ق������悭�Ȃ�Ǝv���܂��B
+Render() 関数が帰ってきたところで画面の再描画関数 OnPaint() を呼ぶことによって、現在どのピクセルまで処理を終えているかが一目でわかるようにしています。<br>
+あと、ループの中で再び Render() 関数を1000回ほどまわしています。これは、Render() を終えるたびにいちいち再描画していたら非常に遅かったので、再描画の回数を減らすための処理です。
+1000回というのは、付加を見て決めた適当な数なので、タイマーを使って描画回数を制御したほうがよりよくなると思います。
 </p>
 <p>
-�ق��ɂ��A�����I���̃t���O bQuit ��ǉ����܂����B<br>
-�O���̃C�x���g�� bQuit �� TRUE �ɂ���ƁARender()��r���ŏI�����āA
-�v���O�����������I�ɒ��f�ł���悤�ɂ��Ă��܂��B
+ほかにも、強制終了のフラグ bQuit を追加しました。<br>
+外部のイベントで bQuit を TRUE にすると、Render()を途中で終了して、
+プログラムを強制的に中断できるようにしています。
 </p>
 <p>
-���ƁAPumpMessages() �Ƃ����֐����ǉ����Ă��܂��B<br>
-����́ARender() �֐��̍��ԂɁA���܂����C�x���g��f���o�����邽�߂̂��̂ł��B<br>
-PumpMessages() ��ǉ��������Ƃɂ���āA�`�撆�̃E�B���h�E�̈ړ���v���O�����̏I�����\�ɂȂ�܂��B<br>
-PumpMessages() �́A���̂悤�ɂȂ�܂��B<br>
-����͌��܂����\���ł�����A���̂܂܃R�s�[���Ă��g�����������B
+あと、PumpMessages() という関数も追加しています。<br>
+これは、Render() 関数の合間に、たまったイベントを吐き出させるためのものです。<br>
+PumpMessages() を追加したことによって、描画中のウィンドウの移動やプログラムの終了が可能になります。<br>
+PumpMessages() は、次のようになります。<br>
+これは決まった構文ですから、そのままコピーしてお使いください。
 </p>
 
 <pre class="CodeBlock">
@@ -351,69 +351,69 @@ mainDlg.cpp
 </pre>
 
 <p>
-�I���t���O�́AOK�{�^����L�����Z���{�^�����������Ƃ��ɂ��悤�ɂ��܂��B<br>
-����́A���炩���ߗp�ӂ���Ă���{�^�����������Ƃ��̊֐� CMainDlg::OnOK() �� CMainDlg::OnCancel() �Ƀt���O�𗧂Ă�R�[�h��ǉ����܂��B
+終了フラグは、OKボタンやキャンセルボタンを押したときにたつようにします。<br>
+それは、あらかじめ用意されているボタンを押したときの関数 CMainDlg::OnOK() や CMainDlg::OnCancel() にフラグを立てるコードを追加します。
 </p>
 
 <pre class="CodeBlock">
 mainDlg.cpp
 <font color="deepskyblue">0223:</font> <font color="cyan">// ---------------------------------------------------------------------------</font>
-<font color="deepskyblue">0224:</font> <font color="cyan">// OK �{�^�����������Ƃ�</font>
+<font color="deepskyblue">0224:</font> <font color="cyan">// OK ボタンを押したとき</font>
 <font color="deepskyblue">0225:</font> <font color="blue">void</font> CMainDlg::OnOK() 
 <font color="deepskyblue">0226:</font> {
-<font color="deepskyblue">0227:</font>     <font color="yellow">bQuit = TRUE;   <font color="cyan">// �I���t���O�𗧂Ă�</font></font>
+<font color="deepskyblue">0227:</font>     <font color="yellow">bQuit = TRUE;   <font color="cyan">// 終了フラグを立てる</font></font>
 <font color="deepskyblue">0228:</font>     
 <font color="deepskyblue">0229:</font>     CDialog::OnOK();
 <font color="deepskyblue">0230:</font> }
 <font color="deepskyblue">0231:</font> 
 <font color="deepskyblue">0232:</font> <font color="cyan">// ---------------------------------------------------------------------------</font>
-<font color="deepskyblue">0233:</font> <font color="cyan">// �L�����Z�� �{�^�����������Ƃ�</font>
+<font color="deepskyblue">0233:</font> <font color="cyan">// キャンセル ボタンを押したとき</font>
 <font color="deepskyblue">0234:</font> <font color="blue">void</font> CMainDlg::OnCancel() 
 <font color="deepskyblue">0235:</font> {
-<font color="deepskyblue">0236:</font>     <font color="yellow">bQuit = TRUE;   <font color="cyan">// �I���t���O�𗧂Ă�</font></font>
+<font color="deepskyblue">0236:</font>     <font color="yellow">bQuit = TRUE;   <font color="cyan">// 終了フラグを立てる</font></font>
 <font color="deepskyblue">0237:</font>     
 <font color="deepskyblue">0238:</font>     CDialog::OnCancel();
 <font color="deepskyblue">0239:</font> }
 </pre>
 <p>
-���ۂɂ́A�����̃R�[�h�� PumpMessages ����Ăяo����ăt���O�������ƂɂȂ�܂��B
+実際には、これらのコードが PumpMessages から呼び出されてフラグがたつことになります。
 </p>
 <p>
-�E�B���h�E�̉E��́~�{�^�����������Ƃ����I������悤�ɂ��܂��傤�B<br>
-�I�����邽�߂ɂ́A�I���C�x���g�̂Ƃ��ɌĂ΂��֐���ǉ����܂��B<br>
-���̊֐��̒ǉ������邽�߂ɂ́AMFC�̗��V�Ƃ��ăN���X�E�B�U�[�h���g���܂��B<br>
-���j���[�́u�\���v�|�uClassWizard�v��I�����邩�Actrl+w�ŃN���X�E�B�U�[�h���Ђ炫�܂��B<br>
-�u���b�Z�[�W�}�b�v�v�́u�I�u�W�F�N�gID�v���_�C�A���O�̃N���X�ɂ��āA�u���b�Z�[�W�v�́uWM_CLOSE�v���_�u���N���b�N���܂��B
+ウィンドウの右上の×ボタンを押したときも終了するようにしましょう。<br>
+終了するためには、終了イベントのときに呼ばれる関数を追加します。<br>
+この関数の追加をするためには、MFCの流儀としてクラスウィザードを使います。<br>
+メニューの「表示」－「ClassWizard」を選択するか、ctrl+wでクラスウィザードをひらきます。<br>
+「メッセージマップ」の「オブジェクトID」をダイアログのクラスにして、「メッセージ」の「WM_CLOSE」をダブルクリックします。
 </p>
 <image src = "WM_CLOSE.png">
 <p>
-��������ƁA���́u�����o�֐��v�̂Ƃ���ɁuOnClose�v�̃C�x���g�֐��������̂ŁA���̕������_�u���N���b�N���܂��B
+そうすると、下の「メンバ関数」のところに「OnClose」のイベント関数が作られるので、その部分をダブルクリックします。
 </p>
 <image src = "OnClose.png">
 <p>
-����ƁA�_�C�A���O��CPP�t�@�C���Ɋ֐��������I�ɍ����̂ŁA�����ɃR�[�h��ǉ����܂��B<br>
-�i.NET�ł́A���\�[�X�̃f�U�C�������Ă���Ƃ��̃_�C�A���O�̃v���p�e�B�́u���b�Z�[�W�v����֐���ǉ����邱�Ƃ��ł��܂��j<br>
-����́A�����_�����O�������I�����邽�߂̃t���O bQuit �𗧂Ă܂��B
+すると、ダイアログのCPPファイルに関数が自動的に作られるので、ここにコードを追加します。<br>
+（.NETでは、リソースのデザインをしているときのダイアログのプロパティの「メッセージ」から関数を追加することができます）<br>
+今回は、レンダリングを強制終了するためのフラグ bQuit を立てます。
 </p>
 <pre class="CodeBlock">
 mainDlg.cpp
 <font color="deepskyblue">0241:</font> <font color="cyan">// ---------------------------------------------------------------------------</font>
-<font color="deepskyblue">0242:</font> <font color="cyan">// �E�B���h�E�����Ƃ�</font>
+<font color="deepskyblue">0242:</font> <font color="cyan">// ウィンドウを閉じるとき</font>
 <font color="deepskyblue">0243:</font> <font color="blue">void</font> CMainDlg::OnClose() 
 <font color="deepskyblue">0244:</font> {
-<font color="deepskyblue">0245:</font>     <font color="yellow">bQuit = TRUE;   <font color="cyan">// �I���t���O�𗧂Ă�</font></font>
+<font color="deepskyblue">0245:</font>     <font color="yellow">bQuit = TRUE;   <font color="cyan">// 終了フラグを立てる</font></font>
 <font color="deepskyblue">0246:</font> 
 <font color="deepskyblue">0247:</font>     CDialog::OnClose();
 <font color="deepskyblue">0248:</font> }
 </pre>
 
 
-<h2>���Ō��</h2>
+<h2>■最後に</h2>
 
 
 <p>
-�S�R�A���C�g�����ۂ�����܂���ˁB<br>
-���́A���ˁA���܂�������Ă݂܂��傤�B
+全然、レイトレっぽくありませんね。<br>
+次は、反射、屈折を取り入れてみましょう。
 </p>
 
 
@@ -423,7 +423,7 @@ mainDlg.cpp
 <BR CLEAR=ALL>
 <center>
 <hr>
-<p><a href="../index.html">���ǂ�</a></p>
+<p><a href="../index.html">もどる</a></p>
 <p><a href="mailto:imagire@gmail.com">imagire@gmail.com</a></p>
 </center>
 

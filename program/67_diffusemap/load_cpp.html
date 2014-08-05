@@ -16,7 +16,7 @@ SPAN.linenum { color:#A0A0A0; font-weight:normal; font-style:normal;}
 <BODY TEXT="#000000" BGCOLOR="#FFFFFF">
 <PRE><SPAN CLASS="linenum">0001:</SPAN> <SPAN CLASS="comment">// ----------------------------------------------------------------------------</SPAN>
 <SPAN CLASS="linenum">0002:</SPAN> <SPAN CLASS="comment">//</SPAN>
-<SPAN CLASS="linenum">0003:</SPAN> <SPAN CLASS="comment">// load.cpp - �ǂݍ��ݕ���</SPAN>
+<SPAN CLASS="linenum">0003:</SPAN> <SPAN CLASS="comment">// load.cpp - 読み込み部分</SPAN>
 <SPAN CLASS="linenum">0004:</SPAN> <SPAN CLASS="comment">// </SPAN>
 <SPAN CLASS="linenum">0005:</SPAN> <SPAN CLASS="comment">// Copyright (c) 2002 IMAGIRE Takashi (imagire@gmail.com)</SPAN>
 <SPAN CLASS="linenum">0006:</SPAN> <SPAN CLASS="comment">// All Rights Reserved.</SPAN>
@@ -28,9 +28,9 @@ SPAN.linenum { color:#A0A0A0; font-weight:normal; font-style:normal;}
 <SPAN CLASS="linenum">0012:</SPAN> <SPAN CLASS="keyword">#include</SPAN> "<SPAN CLASS="string">load.h</SPAN>"
 <SPAN CLASS="linenum">0013:</SPAN> 
 <SPAN CLASS="linenum">0014:</SPAN> <SPAN CLASS="comment">// ----------------------------------------------------------------------------</SPAN>
-<SPAN CLASS="linenum">0015:</SPAN> <SPAN CLASS="comment">// ���_�̒�`</SPAN>
+<SPAN CLASS="linenum">0015:</SPAN> <SPAN CLASS="comment">// 頂点の定義</SPAN>
 <SPAN CLASS="linenum">0016:</SPAN> <SPAN CLASS="comment">// ----------------------------------------------------------------------------</SPAN>
-<SPAN CLASS="linenum">0017:</SPAN> <SPAN CLASS="comment">// �����f��</SPAN>
+<SPAN CLASS="linenum">0017:</SPAN> <SPAN CLASS="comment">// 元モデル</SPAN>
 <SPAN CLASS="linenum">0018:</SPAN> <SPAN CLASS="keyword">typedef</SPAN> <SPAN CLASS="keyword">struct</SPAN> {
 <SPAN CLASS="linenum">0019:</SPAN>     <SPAN CLASS="keyword">float</SPAN> x,y,z;
 <SPAN CLASS="linenum">0020:</SPAN>     <SPAN CLASS="keyword">float</SPAN> nx,ny,nz;
@@ -49,7 +49,7 @@ SPAN.linenum { color:#A0A0A0; font-weight:normal; font-style:normal;}
 <SPAN CLASS="linenum">0033:</SPAN> };
 <SPAN CLASS="linenum">0034:</SPAN> 
 <SPAN CLASS="linenum">0035:</SPAN> <SPAN CLASS="comment">// ----------------------------------------------------------------------------</SPAN>
-<SPAN CLASS="linenum">0036:</SPAN> <SPAN CLASS="comment">// ���f��</SPAN>
+<SPAN CLASS="linenum">0036:</SPAN> <SPAN CLASS="comment">// モデル</SPAN>
 <SPAN CLASS="linenum">0037:</SPAN> <SPAN CLASS="comment">// ----------------------------------------------------------------------------</SPAN>
 <SPAN CLASS="linenum">0038:</SPAN> HRESULT CMyMesh::Load(LPDIRECT3DDEVICE8 lpD3DDev, <SPAN CLASS="keyword">char</SPAN> *filename)
 <SPAN CLASS="linenum">0039:</SPAN> {
@@ -65,11 +65,11 @@ SPAN.linenum { color:#A0A0A0; font-weight:normal; font-style:normal;}
 <SPAN CLASS="linenum">0049:</SPAN>                                 &amp;pMesh);
 <SPAN CLASS="linenum">0050:</SPAN>     <SPAN CLASS="keyword">if</SPAN>(FAILED(hr)) <SPAN CLASS="keyword">return</SPAN> E_FAIL;
 <SPAN CLASS="linenum">0051:</SPAN> 
-<SPAN CLASS="linenum">0052:</SPAN>     <SPAN CLASS="comment">//���ёւ��Ă���</SPAN>
+<SPAN CLASS="linenum">0052:</SPAN>     <SPAN CLASS="comment">//並び替えておく</SPAN>
 <SPAN CLASS="linenum">0053:</SPAN>     pMesh-&gt;Optimize(D3DXMESHOPT_ATTRSORT, NULL, NULL, NULL, NULL, &amp;pMeshOpt);
 <SPAN CLASS="linenum">0054:</SPAN>     RELEASE(pMesh);
 <SPAN CLASS="linenum">0055:</SPAN> 
-<SPAN CLASS="linenum">0056:</SPAN>     <SPAN CLASS="comment">// �傫���𒲂ׂĂ���</SPAN>
+<SPAN CLASS="linenum">0056:</SPAN>     <SPAN CLASS="comment">// 大きさを調べておく</SPAN>
 <SPAN CLASS="linenum">0057:</SPAN>     LPDIRECT3DVERTEXBUFFER8 pVB;
 <SPAN CLASS="linenum">0058:</SPAN>     BYTE* pVByte;
 <SPAN CLASS="linenum">0059:</SPAN>     pMeshOpt-&gt;GetVertexBuffer(&amp;pVB);
@@ -78,18 +78,18 @@ SPAN.linenum { color:#A0A0A0; font-weight:normal; font-style:normal;}
 <SPAN CLASS="linenum">0062:</SPAN>     pVB-&gt;Unlock();
 <SPAN CLASS="linenum">0063:</SPAN>     pVB-&gt;Release();
 <SPAN CLASS="linenum">0064:</SPAN> 
-<SPAN CLASS="linenum">0065:</SPAN>     <SPAN CLASS="comment">//�A�g���r���[�g�e�[�u��</SPAN>
+<SPAN CLASS="linenum">0065:</SPAN>     <SPAN CLASS="comment">//アトリビュートテーブル</SPAN>
 <SPAN CLASS="linenum">0066:</SPAN>     pMeshOpt-&gt;GetAttributeTable(NULL,&amp;<SPAN CLASS="keyword">this</SPAN>-&gt;dwNumMaterials);
 <SPAN CLASS="linenum">0067:</SPAN>     <SPAN CLASS="keyword">this</SPAN>-&gt;pSubsetTable = <SPAN CLASS="keyword">new</SPAN> D3DXATTRIBUTERANGE[<SPAN CLASS="keyword">this</SPAN>-&gt;dwNumMaterials];
 <SPAN CLASS="linenum">0068:</SPAN>     pMeshOpt-&gt;GetAttributeTable(<SPAN CLASS="keyword">this</SPAN>-&gt;pSubsetTable, &amp;<SPAN CLASS="keyword">this</SPAN>-&gt;dwNumMaterials);
 <SPAN CLASS="linenum">0069:</SPAN> 
-<SPAN CLASS="linenum">0070:</SPAN>     <SPAN CLASS="comment">// FVF�ϊ�</SPAN>
+<SPAN CLASS="linenum">0070:</SPAN>     <SPAN CLASS="comment">// FVF変換</SPAN>
 <SPAN CLASS="linenum">0071:</SPAN>     hr = pMeshOpt-&gt;CloneMeshFVF(pMeshOpt-&gt;GetOptions(), D3DFVF_VERTEX, lpD3DDev, &amp;pMesh);
 <SPAN CLASS="linenum">0072:</SPAN>     <SPAN CLASS="keyword">if</SPAN>(FAILED(hr)) <SPAN CLASS="keyword">return</SPAN> E_FAIL;
 <SPAN CLASS="linenum">0073:</SPAN>     RELEASE(pMeshOpt);
 <SPAN CLASS="linenum">0074:</SPAN>     D3DXComputeNormals(pMesh,NULL);
 <SPAN CLASS="linenum">0075:</SPAN> 
-<SPAN CLASS="linenum">0076:</SPAN>     <SPAN CLASS="comment">//Vertex Buffer�ɃR�s�[����</SPAN>
+<SPAN CLASS="linenum">0076:</SPAN>     <SPAN CLASS="comment">//Vertex Bufferにコピーする</SPAN>
 <SPAN CLASS="linenum">0077:</SPAN>     D3DVERTEX* pSrc;
 <SPAN CLASS="linenum">0078:</SPAN>     D3D_CUSTOMVERTEX* pDest;
 <SPAN CLASS="linenum">0079:</SPAN>     LPDIRECT3DINDEXBUFFER8 pSrcIndex;
@@ -123,7 +123,7 @@ SPAN.linenum { color:#A0A0A0; font-weight:normal; font-style:normal;}
 <SPAN CLASS="linenum">0107:</SPAN>     pVB-&gt;Release();
 <SPAN CLASS="linenum">0108:</SPAN>     <SPAN CLASS="keyword">this</SPAN>-&gt;pVB-&gt;Unlock();
 <SPAN CLASS="linenum">0109:</SPAN> 
-<SPAN CLASS="linenum">0110:</SPAN>     <SPAN CLASS="comment">//�C���f�b�N�X�̃R�s�[</SPAN>
+<SPAN CLASS="linenum">0110:</SPAN>     <SPAN CLASS="comment">//インデックスのコピー</SPAN>
 <SPAN CLASS="linenum">0111:</SPAN>     pMesh-&gt;GetIndexBuffer(&amp;pSrcIndex);
 <SPAN CLASS="linenum">0112:</SPAN>     pSrcIndex-&gt;Lock(0,0,(BYTE**)&amp;pISrc,0);
 <SPAN CLASS="linenum">0113:</SPAN>     <SPAN CLASS="keyword">this</SPAN>-&gt;pIndex-&gt;Lock(0,0,(BYTE**)&amp;pIDest,0);
@@ -132,7 +132,7 @@ SPAN.linenum { color:#A0A0A0; font-weight:normal; font-style:normal;}
 <SPAN CLASS="linenum">0116:</SPAN>     <SPAN CLASS="keyword">this</SPAN>-&gt;pIndex-&gt;Unlock();
 <SPAN CLASS="linenum">0117:</SPAN>     pSrcIndex-&gt;Release();
 <SPAN CLASS="linenum">0118:</SPAN> 
-<SPAN CLASS="linenum">0119:</SPAN>     <SPAN CLASS="comment">// pD3DXMtrlBuffer ����A������e�N�X�`���[�̏���ǂݎ��</SPAN>
+<SPAN CLASS="linenum">0119:</SPAN>     <SPAN CLASS="comment">// pD3DXMtrlBuffer から、質感やテクスチャーの情報を読み取る</SPAN>
 <SPAN CLASS="linenum">0120:</SPAN>     D3DXMATERIAL* d3dxMaterials = (D3DXMATERIAL*)pD3DXMtrlBuffer-&gt;GetBufferPointer();
 <SPAN CLASS="linenum">0121:</SPAN>     <SPAN CLASS="keyword">this</SPAN>-&gt;pTextures = <SPAN CLASS="keyword">new</SPAN> LPDIRECT3DTEXTURE8[<SPAN CLASS="keyword">this</SPAN>-&gt;dwNumMaterials];
 <SPAN CLASS="linenum">0122:</SPAN>     <SPAN CLASS="keyword">this</SPAN>-&gt;pMaterials = <SPAN CLASS="keyword">new</SPAN> D3DMATERIAL8[<SPAN CLASS="keyword">this</SPAN>-&gt;dwNumMaterials];
@@ -149,7 +149,7 @@ SPAN.linenum { color:#A0A0A0; font-weight:normal; font-style:normal;}
 <SPAN CLASS="linenum">0133:</SPAN>     
 <SPAN CLASS="linenum">0134:</SPAN>     RELEASE(pMesh);
 <SPAN CLASS="linenum">0135:</SPAN>     
-<SPAN CLASS="linenum">0136:</SPAN>     <SPAN CLASS="keyword">this</SPAN>-&gt;bActive = <SPAN CLASS="keyword">true</SPAN>;       <SPAN CLASS="comment">// �g����悤�ɂȂ�܂���</SPAN>
+<SPAN CLASS="linenum">0136:</SPAN>     <SPAN CLASS="keyword">this</SPAN>-&gt;bActive = <SPAN CLASS="keyword">true</SPAN>;       <SPAN CLASS="comment">// 使えるようになりました</SPAN>
 <SPAN CLASS="linenum">0137:</SPAN>     
 <SPAN CLASS="linenum">0138:</SPAN>     <SPAN CLASS="keyword">return</SPAN> S_OK;
 <SPAN CLASS="linenum">0139:</SPAN> }
@@ -170,10 +170,10 @@ SPAN.linenum { color:#A0A0A0; font-weight:normal; font-style:normal;}
 <SPAN CLASS="linenum">0154:</SPAN>     RELEASE(<SPAN CLASS="keyword">this</SPAN>-&gt;pVB);
 <SPAN CLASS="linenum">0155:</SPAN>     RELEASE(<SPAN CLASS="keyword">this</SPAN>-&gt;pIndex);
 <SPAN CLASS="linenum">0156:</SPAN>     
-<SPAN CLASS="linenum">0157:</SPAN>     <SPAN CLASS="keyword">this</SPAN>-&gt;bActive = <SPAN CLASS="keyword">false</SPAN>;      <SPAN CLASS="comment">// �����ł���悤�ɂȂ�܂ŁA�҂�</SPAN>
+<SPAN CLASS="linenum">0157:</SPAN>     <SPAN CLASS="keyword">this</SPAN>-&gt;bActive = <SPAN CLASS="keyword">false</SPAN>;      <SPAN CLASS="comment">// 準備できるようになるまで、待つ</SPAN>
 <SPAN CLASS="linenum">0158:</SPAN> }
 <SPAN CLASS="linenum">0159:</SPAN> <SPAN CLASS="comment">// ----------------------------------------------------------------------------</SPAN>
-<SPAN CLASS="linenum">0160:</SPAN> <SPAN CLASS="comment">// �e�N�X�`���[</SPAN>
+<SPAN CLASS="linenum">0160:</SPAN> <SPAN CLASS="comment">// テクスチャー</SPAN>
 <SPAN CLASS="linenum">0161:</SPAN> <SPAN CLASS="comment">// ----------------------------------------------------------------------------</SPAN>
 <SPAN CLASS="linenum">0162:</SPAN> HRESULT CTextureMgr::Load(LPDIRECT3DDEVICE8 lpD3DDev, <SPAN CLASS="keyword">const</SPAN> <SPAN CLASS="keyword">char</SPAN> *filename, LPDIRECT3DTEXTURE8 *ppTexture)
 <SPAN CLASS="linenum">0163:</SPAN> {
@@ -190,7 +190,7 @@ SPAN.linenum { color:#A0A0A0; font-weight:normal; font-style:normal;}
 <SPAN CLASS="linenum">0174:</SPAN>     RELEASE(pTexture);
 <SPAN CLASS="linenum">0175:</SPAN> }
 <SPAN CLASS="linenum">0176:</SPAN> <SPAN CLASS="comment">// ----------------------------------------------------------------------------</SPAN>
-<SPAN CLASS="linenum">0177:</SPAN> <SPAN CLASS="comment">// ���_�V�F�[�_�[</SPAN>
+<SPAN CLASS="linenum">0177:</SPAN> <SPAN CLASS="comment">// 頂点シェーダー</SPAN>
 <SPAN CLASS="linenum">0178:</SPAN> <SPAN CLASS="comment">// ----------------------------------------------------------------------------</SPAN>
 <SPAN CLASS="linenum">0179:</SPAN> HRESULT CVertexShaderMgr::Load(LPDIRECT3DDEVICE8 lpD3DDev, <SPAN CLASS="keyword">const</SPAN> <SPAN CLASS="keyword">char</SPAN> *filename, DWORD *phVertexShader, <SPAN CLASS="keyword">const</SPAN> DWORD dwDecl[])
 <SPAN CLASS="linenum">0180:</SPAN> {
@@ -215,7 +215,7 @@ SPAN.linenum { color:#A0A0A0; font-weight:normal; font-style:normal;}
 <SPAN CLASS="linenum">0199:</SPAN>     }
 <SPAN CLASS="linenum">0200:</SPAN> }
 <SPAN CLASS="linenum">0201:</SPAN> <SPAN CLASS="comment">// ----------------------------------------------------------------------------</SPAN>
-<SPAN CLASS="linenum">0202:</SPAN> <SPAN CLASS="comment">// �s�N�Z���V�F�[�_�[</SPAN>
+<SPAN CLASS="linenum">0202:</SPAN> <SPAN CLASS="comment">// ピクセルシェーダー</SPAN>
 <SPAN CLASS="linenum">0203:</SPAN> <SPAN CLASS="comment">// ----------------------------------------------------------------------------</SPAN>
 <SPAN CLASS="linenum">0204:</SPAN> HRESULT CPixelShaderMgr::Load(LPDIRECT3DDEVICE8 lpD3DDev, <SPAN CLASS="keyword">const</SPAN> <SPAN CLASS="keyword">char</SPAN> *filename, DWORD *phPixelShader)
 <SPAN CLASS="linenum">0205:</SPAN> {

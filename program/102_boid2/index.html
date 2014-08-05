@@ -1,152 +1,152 @@
 <head>
-	<title>t-pot �w�����ق���낤:�[���|�e���V�����͂ɂ��Փ˔���x</title>
+	<title>t-pot 『水族館を作ろう:擬似ポテンシャル力による衝突判定』</title>
 	<link rel="stylesheet" type="text/css" href="../if.css">
 </head>
-<meta http-equiv=Content-Type content="text/html; charset=shift_jis">
+<meta http-equiv=Content-Type content="text/html; charset=UTF-8">
 <body>
 <div class="contents">
 <center>
 <BR CLEAR=ALL>
 <BR CLEAR=ALL>
-<h1>�����ق���낤:�[���|�e���V�����͂ɂ��Փ˔���</h1><br>
-<h3>�`�����v�[���ł��`�邮��`</h3>
+<h1>水族館を作ろう:擬似ポテンシャル力による衝突判定</h1><br>
+<h3>～流れるプールでぐ～るぐる～</h3>
 <BR CLEAR=ALL>
 <BR CLEAR=ALL>
 <BR CLEAR=ALL>
 </center>
-<h2>���͂��߂�</h2>
+<h2>■はじめに</h2>
 
 <p>
-����͏Փ˔���ł��B�ǂɂԂ���Ȃ��悤�ɂ��鏈�������܂��B<br>
-�܂��A�Η����N�������������܂��B����ɂ���āA�����ق̂悤�ɋ���������ɉj���܂��B<br>
-����̃l�^�́A�������I���W�i���ł��B
+今回は衝突判定です。壁にぶつからないようにする処理を入れます。<br>
+また、対流を起こす処理を入れます。これによって、水族館のように魚が一方向に泳ぎます。<br>
+今回のネタは、珍しくオリジナルです。
 </p>
 <right><image src = "boid2.gif"></right>
 <p>
 </p>
 <p>
-����̃\�[�X�́A���̂��̂ł��B<br>
+今回のソースは、次のものです。<br>
 </p>
 <ul style = "LIST-STYLE-TYPE:none">
-<li><a href="boid2.lzh">boid2.lzh (BOID:�|�e���V�����͂ɂ��Փ˔���)</a>
+<li><a href="boid2.lzh">boid2.lzh (BOID:ポテンシャル力による衝突判定)</a>
 </ul>
 <p>
-���邮�邮�邮����܂��B
+ぐるぐるぐるぐる回ります。
 </p>
 
-<h2>��BOID �̓����̒ǉ�</h2>
+<h2>■BOID の動きの追加</h2>
 
 <p>
-����ABOID �̓����Ɋւ��Ēǉ�����֐��́A2�ł��B<br>
-AvoidObstacle �ƁAFeelFlow�ŁA�O�҂���Q��������A��҂��Η��������ē����܂��B<br>
-���͑O��Ɠ����ł��B
+今回、BOID の動きに関して追加する関数は、2つです。<br>
+AvoidObstacle と、FeelFlowで、前者が障害物を避け、後者が対流を感じて動きます。<br>
+他は前回と同じです。
 </p>
 
 <pre class="CodeBlock">
 <Font color = cyan>// ----------------------------------------------------------------------------
-// �t���[�����Ƃ̃A�b�v�f�[�g
+// フレームごとのアップデート
 //-----------------------------------------------------------------------------</Font>
 void CBoid::FlockIt (int flock_id, CBoid *first_boid)
 {
     D3DXVECTOR3 acc = D3DXVECTOR3(0,0,0);
 
-    <Font color = cyan>// Step 1:  �O�̎��ԂɌ��肵�����x���g���Ĉʒu�̍X�V</Font>
-    m_oldpos = m_pos;               <Font color = cyan>// �O�̍��W��ۑ����Ă���</Font>
-    m_pos += m_vel;                 <Font color = cyan>// �ړ�</Font>
+    <Font color = cyan>// Step 1:  前の時間に決定した速度を使って位置の更新</Font>
+    m_oldpos = m_pos;               <Font color = cyan>// 前の座標を保存しておく</Font>
+    m_pos += m_vel;                 <Font color = cyan>// 移動</Font>
 
-    this->SeeFriends (first_boid);  <Font color = cyan>// Step 2:  ���Ԃ�T��</Font>
+    this->SeeFriends (first_boid);  <Font color = cyan>// Step 2:  仲間を探す</Font>
 
-    if (m_num_flockmates_seen) {    <Font color = cyan>// Step 3:  �Q��̓���</Font>
-        <Font color = orange>����</Font>
+    if (m_num_flockmates_seen) {    <Font color = cyan>// Step 3:  群れの動作</Font>
+        <Font color = orange>中略</Font>
     }
 
-    <Font color = yellow><b>acc += FeelFlow();</b></Font>            <Font color = cyan>// Step 6.5: ����ɐg���񂹂�</Font>
+    <Font color = yellow><b>acc += FeelFlow();</b></Font>            <Font color = cyan>// Step 6.5: 流れに身を寄せる</Font>
     
-    acc += Cruising();              <Font color = cyan>// Step 7:  ���q</Font>
+    acc += Cruising();              <Font color = cyan>// Step 7:  巡航</Font>
     
-    <Font color = yellow><b>acc += AvoidObstacle();</b></Font>      <Font color = cyan>// Step 7.5: ��Q���������</Font>
+    <Font color = yellow><b>acc += AvoidObstacle();</b></Font>      <Font color = cyan>// Step 7.5: 障害物を避ける</Font>
 
-    <Font color = cyan>// Step 8:  �����̐���</Font>
+    <Font color = cyan>// Step 8:  加速の制限</Font>
     if (D3DXVec3Length(&acc) > MAX_CHANGE) {
         D3DXVec3Normalize(&acc, &acc);
         acc *= MAX_CHANGE;
     }
 
-   <Font color = cyan>// Step 9:  ���x�ω�</Font>
-    m_oldvel = m_vel;    <Font color = cyan>// �O�̑���������Ă���</Font>
-    m_vel += acc;        <Font color = cyan>// ����</Font>
+   <Font color = cyan>// Step 9:  速度変化</Font>
+    m_oldvel = m_vel;    <Font color = cyan>// 前の速さを取っておく</Font>
+    m_vel += acc;        <Font color = cyan>// 加速</Font>
 
-   <Font color = cyan>// Step 11:  ���������Ƃ��ɁA���x�𐧌�����</Font>
+   <Font color = cyan>// Step 11:  速すぎたときに、速度を制限する</Font>
    if (MAX_SPEED < (m_speed = D3DXVec3Length(&m_vel))) {
         D3DXVec3Normalize(&m_vel, &m_vel);
         m_vel *= MAX_SPEED;
         m_speed = MAX_SPEED;
    }
 
-    this->ComputeRPY();<Font color = cyan>// Step 12:  ��]�̌v�Z</Font>
+    this->ComputeRPY();<Font color = cyan>// Step 12:  回転の計算</Font>
 
-    this->WorldBound();<Font color = cyan>// Step 13:  ���E�̋��E�̏���</Font>
+    this->WorldBound();<Font color = cyan>// Step 13:  世界の境界の処理</Font>
 }
 </pre>
 
 
-<h2>����Q���������</h2>
+<h2>■障害物を避ける</h2>
 
 <p>
-�ł́A���ۂ̏�Q���̔������ł��B<br>
-�����肽���������Ƃ́A
+では、実際の障害物の避け方です。<br>
+今回やりたかったことは、
 </p>
 <table>
-<tr><td>��Q���̋����ɉ����āA�悯����ς���</td></tr>
+<tr><td>障害物の距離に応じて、よけ方を変える</td></tr>
 </table>
 <p>
-�Ƃ������Ƃł��B<br>
-�܂�A�w��Q���������ɂ���Ƃ��́A���܂��Q�����C�ɂ��Ȃ����A��Q�����߂��ɂ���Ƃ��́A�}���ɂ悯��x�Ƃ������Ƃł��B<br>
-���������@������Ǝv���܂����A���́A��w�ŕ���������Ă����̂ŁA�����ł悭�m��ꂽ���@�ň������Ǝv���܂��B<br>
-���ꂪ�|�e���V�����@�ł��B<br>
+ということです。<br>
+つまり、『障害物が遠くにあるときは、あまり障害物を気にしないが、障害物が近くにあるときは、急激によける』ということです。<br>
+いくつか方法があると思いますが、私は、大学で物理をやっていたので、物理でよく知られた方法で扱おうと思います。<br>
+それがポテンシャル法です。<br>
 </p>
 <p>
-�|�e���V�����@�Ƃ́A��Q������̋����ɉ����āw�|�e���V�����x�ƌĂ΂��ʂ��ω����܂��B<br>
-�͂́A�|�e���V�����̌X���Ă�������ɓ����A�傫���̓|�e���V�����̌X���ɔ�Ⴕ�܂��B<br>
-�|�e���V�����̌X�����}�Ȃ�͂͑傫���Ȃ�A�X�����Ȃ��炩�Ȃ�A�͂͏������Ȃ�܂��B<br>
-�C���[�W�Ƃ��ẮA�R�̍������|�e���V�����ŁA�}�ȎR�قǏ��̂���ςƂ������Ƃł��B
+ポテンシャル法とは、障害物からの距離に応じて『ポテンシャル』と呼ばれる量が変化します。<br>
+力は、ポテンシャルの傾いている方向に働き、大きさはポテンシャルの傾きに比例します。<br>
+ポテンシャルの傾きが急なら力は大きくなり、傾きがなだらかなら、力は小さくなります。<br>
+イメージとしては、山の高さがポテンシャルで、急な山ほど上るのが大変ということです。
 </p>
 <p>
-����p����|�e���V�����́A�����ŗp����|�e���V�������̂��̂ł͂���܂���B<br>
-�ǂ���̋����ɉ����Č��܂�A�[���I�ȃ|�e���V�����ł��B<br>
-���ۂ̃|�e���V�����́A�ǂ̏ꍇ�ɂ͕ǂ���P����x�������݂��܂���B<br>
-���̃|�e���V�����́A�ǂ���������x�͈̔͂ł����݂�����̂ŁABOID�̊�����w���x�̃|�e���V�����Ƃ����܂��B
+今回用いるポテンシャルは、物理で用いるポテンシャルそのものではありません。<br>
+壁からの距離に応じて決まる、擬似的なポテンシャルです。<br>
+実際のポテンシャルは、壁の場合には壁から１Å程度しか存在しません。<br>
+このポテンシャルは、壁が見える程度の範囲でも存在するもので、BOIDの感じる『氣』のポテンシャルといえます。
 </p>
 <right><image src = "boid2_potential.gif"></right>
 <p>
-����̃|�e���V�����́A�����̂Q��ɔ���Ⴗ�鋭���̂��̂�p���܂��B<br>
-���̃|�e���V�����ɂ���āABOID�͕ǂɋ߂Â��������Ƃ��ɁA�ǂ�������悤�Ƃ��܂��B<br>
-�����\�[�X�ł��B
+今回のポテンシャルは、距離の２乗に反比例する強さのものを用います。<br>
+このポテンシャルによって、BOIDは壁に近づきすぎたときに、壁から避けようとします。<br>
+次がソースです。
 </p>
 
 <pre class="CodeBlock">
 <Font color = cyan>// ----------------------------------------------------------------------------
-// Rule #4 (Obstacle avoidance) ��Q���������
+// Rule #4 (Obstacle avoidance) 障害物を避ける
 //-----------------------------------------------------------------------------</Font>
 D3DXVECTOR3 CBoid::AvoidObstacle (void)
 {
    D3DXVECTOR3 change = D3DXVECTOR3(0,0,0);
 
    bool hit = false;
-   <Font color = cyan>// ��Q�����������āA�|�e���V�����͂����߂�</Font>
+   <Font color = cyan>// 障害物を検索して、ポテンシャル力を求める</Font>
    for(CObstacle *p = CObstacle::GetFirst(); NULL != p; p = p->GetNext()){
        D3DXVECTOR3 force = p->GetDistance(this->m_pos);
        float d = D3DXVec3Length(&force)+0.0001f;
-       if(d < m_perception){              <Font color = cyan>// �����Ȃ����͔̂��肵�Ȃ�</Font>
+       if(d < m_perception){              <Font color = cyan>// 見えないものは判定しない</Font>
             hit = true;    
             D3DXVec3Normalize(&force, &force);
-            change += force / d;          <Font color = cyan>// �����̂Q��ɔ���Ⴗ��|�e���V�����̗͂́A
-                                          // �������ċ����̈��ɔ���Ⴗ��</Font>
+            change += force / d;          <Font color = cyan>// 距離の２乗に反比例するポテンシャルの力は、
+                                          // 微分して距離の一乗に反比例する</Font>
        }
    }
     
-   if(hit){<Font color = cyan>// �ǂ��悯����A�����𐧌�</Font>
-        <Font color = cyan>// ���񂾂������ς���</Font>
+   if(hit){<Font color = cyan>// 壁をよけたら、動きを制御</Font>
+        <Font color = cyan>// だんだん向きを変える</Font>
         float ratio = D3DXVec3Dot(&change, &change);
         if (ratio < MIN_URGENCY) ratio = MIN_URGENCY;
         if (ratio > 5.0f*MAX_URGENCY) ratio = 5.0f*MAX_URGENCY;
@@ -160,22 +160,22 @@ D3DXVECTOR3 CBoid::AvoidObstacle (void)
 </pre>
 
 <p>
-����̂��߂ɁA��Q���N���X CObstacle �𓱓����܂����B<br>
-��͂�A���`���X�g�ŏ��ԂɌĂяo����悤�ɂ��܂����B<br>
-BOID �ł̔���̎��Ɠ����悤�ɁA�������̂͏������Ȃ��悤�ɂ��܂��B<br>
-���ۂɕǂƂ̋��������߂�֐��́A���̂悤�ɂȂ�܂��B
+今回のために、障害物クラス CObstacle を導入しました。<br>
+やはり、線形リストで順番に呼び出せるようにしました。<br>
+BOID での判定の時と同じように、遠いものは処理しないようにします。<br>
+実際に壁との距離を求める関数は、次のようになります。
 </p>
 
 <pre class="CodeBlock">
 <Font color = cyan>// ----------------------------------------------------------------------------
-// pos �Ɗe��Q���Ƃ̋��������߂�
+// pos と各障害物との距離を求める
 // ----------------------------------------------------------------------------</Font>
 D3DXVECTOR3 CObstacle::GetDistance(D3DXVECTOR3 pos)
 {
     D3DXVECTOR3 dist;
 
-    <Font color = cyan>// m_pos:���ʏ�̈�_
-    // m_dir:�@��</Font>
+    <Font color = cyan>// m_pos:平面上の一点
+    // m_dir:法線</Font>
     dist = pos - m_pos;
     float d = D3DXVec3Dot(&dist, &m_dir);
     dist = d * m_dir;
@@ -185,28 +185,28 @@ D3DXVECTOR3 CObstacle::GetDistance(D3DXVECTOR3 pos)
 </pre>
 
 <p>
-m_dir ���A�ǂ̖@���x�N�g���ŁAm_pos�́A�Ǐ�̈�_�ł��B�����͖@�������̋��������߂܂��B<br>
-����ŁA�ǂɋ߂Â��ƁA������ς��ĉ������낤�Ƃ��܂��B
+m_dir が、壁の法線ベクトルで、m_posは、壁上の一点です。距離は法線方向の距離を求めます。<br>
+これで、壁に近づくと、向きを変えて遠ざかろうとします。
 </p>
 
-<h2>���Η��̌���</h2>
+<h2>■対流の効果</h2>
 
 <p>
-���āA���͏�̌��ʂ��v���t���ăv���O��������������A<br>
-�����ǂɒ���t�����Ƃ͖��������̂ł����A��͂�A�ǂ̉��ɂ������Ƃ��܂��B<br>
-�悭�l������A���͊F���������։j�����Ƃ���̂ŁA��ʒu�ɏW�܂邩�A������ɐi�݂܂��B<br>
-���������邽�߂ɁA�����I�ɐi�܂���܂��B<br>
-�ǂ�ȓ����������̂��ƍl���܂������A�Ƃ肠�����j���v�[���̂悤�ɂ��邮��񂵂܂��B
+さて、実は上の効果を思い付いてプログラムを書いたら、<br>
+魚が壁に張り付くことは無かったのですが、やはり、壁の縁にいこうとします。<br>
+よく考えたら、魚は皆同じ方向へ泳ごうとするので、定位置に集まるか、一方向に進みます。<br>
+それを避けるために、強制的に進ませるます。<br>
+どんな動きがいいのかと考えましたが、とりあえず泳ぐプールのようにぐるぐる回します。
 </p>
-<right><image src = "boid2_flow.gif">�Η����ォ�猩���}</right>
+<right><image src = "boid2_flow.gif">対流を上から見た図</right>
 <p>
-�܂��A�^�������邮�铮���̂͂₾�����̂ŁA�Η��̋������A�[�ɍs���قǋ������܂��B<br>
-�v���O�����́A���̂悤�ɂ��܂����B
+また、真中をぐるぐる動くのはやだったので、対流の強さを、端に行くほど強くします。<br>
+プログラムは、次のようにしました。
 </p>
 
 <pre class="CodeBlock">
 <Font color = cyan>// ----------------------------------------------------------------------------
-// Rule #ex (Feel Flow) ����ɐg��C����
+// Rule #ex (Feel Flow) 流れに身を任せる
 //-----------------------------------------------------------------------------</Font>
 D3DXVECTOR3 CBoid::FeelFlow (void)
 {
@@ -216,10 +216,10 @@ D3DXVECTOR3 CBoid::FeelFlow (void)
     float z = (float)fabs(m_pos.z-0.0f);
 
     if(x < z){
-        <Font color = cyan>// �������̗���</Font>
+        <Font color = cyan>// 横向きの流れ</Font>
         <Font color = skyblue>change.x = -(m_pos.z-0.0f);</Font>
     }else{
-        <Font color = cyan>// �c�����̗���</Font>
+        <Font color = cyan>// 縦向きの流れ</Font>
         <Font color = lawngreen>change.z =  (m_pos.x-0.0f);</Font>
     }
 
@@ -233,17 +233,17 @@ D3DXVECTOR3 CBoid::FeelFlow (void)
 }
 </pre>
 <p>
-X �� Z �̐�Βl����A�㉺���E�ǂ���̈ʒu�ɂ���̂��𔻒肵�āA
-�������A�c�����̗����ݒ肵�܂��B
+X と Z の絶対値から、上下左右どちらの位置にいるのかを判定して、
+横方向、縦方向の流れを設定します。
 </p>
 
-<h2>���Ō��</h2>
+<h2>■最後に</h2>
 
 <p>
-����ŁA��Q�����悯�邱�Ƃ��ł���悤�ɂȂ�܂����B<br>
-��Q�����ǂ̏ꍇ���������܂���ł������A��Q������̋������킩��Α��̌`�̏�Q���������܂��B<br>
-�Η��̍����A�G���A�������āA�G���A���ƂɓK���ȗ����ݒ肷��΁A�܂��܂��g����Ǝv���܂��B<br>
-����ŁA�Q�[�����ɔw�i�Ƃ��ēK���ɉj���ł��镨�̂Ƃ��Ďg����̂ł͂Ȃ��ł��傤��?
+今回で、障害物をよけることができるようになりました。<br>
+障害物が壁の場合しか扱いませんでしたが、障害物からの距離がわかれば他の形の障害物も扱えます。<br>
+対流の項も、エリア分けして、エリアごとに適当な流れを設定すれば、まずまず使えると思います。<br>
+これで、ゲーム中に背景として適当に泳いでいる物体として使えるのではないでしょうか?
 </p>
 
 <BR CLEAR=ALL>
@@ -251,7 +251,7 @@ X �� Z �̐�Βl����A�㉺���E�ǂ���̈ʒu�ɂ���̂��𔻒肵�āA
 <BR CLEAR=ALL>
 <center>
 <hr>
-<p><a href="../index.html">���ǂ�</a></p>
+<p><a href="../index.html">もどる</a></p>
 <p><a href="mailto:imagire@gmail.com">imagire@gmail.com</a></p>
 </center>
 </body>

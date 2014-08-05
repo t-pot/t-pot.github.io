@@ -16,9 +16,9 @@ SPAN.linenum { color:#A0A0A0; font-weight:normal; font-style:normal;}
 <BODY TEXT="#000000" BGCOLOR="#FFFFFF">
 <PRE><SPAN CLASS="linenum">0001:</SPAN> <SPAN CLASS="comment">// ----------------------------------------------------------------------------</SPAN>
 <SPAN CLASS="linenum">0002:</SPAN> <SPAN CLASS="comment">//</SPAN>
-<SPAN CLASS="linenum">0003:</SPAN> <SPAN CLASS="comment">// main.cpp - GLUT ‚ÌƒTƒ“ƒvƒ‹ƒ\[ƒX</SPAN>
+<SPAN CLASS="linenum">0003:</SPAN> <SPAN CLASS="comment">// main.cpp - GLUT ã®ã‚µãƒ³ãƒ—ãƒ«ã‚½ãƒ¼ã‚¹</SPAN>
 <SPAN CLASS="linenum">0004:</SPAN> <SPAN CLASS="comment">// </SPAN>
-<SPAN CLASS="linenum">0005:</SPAN> <SPAN CLASS="comment">// Copyright (c) 2002 ¡‹‹êt —² (imagire@nify.com)</SPAN>
+<SPAN CLASS="linenum">0005:</SPAN> <SPAN CLASS="comment">// Copyright (c) 2002 ä»Šçµ¦é» éš† (imagire@nify.com)</SPAN>
 <SPAN CLASS="linenum">0006:</SPAN> <SPAN CLASS="comment">// All Rights Reserved.</SPAN>
 <SPAN CLASS="linenum">0007:</SPAN> <SPAN CLASS="comment">//</SPAN>
 <SPAN CLASS="linenum">0008:</SPAN> <SPAN CLASS="comment">// ----------------------------------------------------------------------------</SPAN>
@@ -31,13 +31,13 @@ SPAN.linenum { color:#A0A0A0; font-weight:normal; font-style:normal;}
 <SPAN CLASS="linenum">0015:</SPAN> 
 <SPAN CLASS="linenum">0016:</SPAN> <SPAN CLASS="keyword">const</SPAN> <SPAN CLASS="keyword">char</SPAN> *TITLE = "<SPAN CLASS="string">Wave</SPAN>";
 <SPAN CLASS="linenum">0017:</SPAN> 
-<SPAN CLASS="linenum">0018:</SPAN> <SPAN CLASS="comment">//ƒeƒNƒXƒ`ƒƒ</SPAN>
+<SPAN CLASS="linenum">0018:</SPAN> <SPAN CLASS="comment">//ãƒ†ã‚¯ã‚¹ãƒãƒ£</SPAN>
 <SPAN CLASS="linenum">0019:</SPAN> <SPAN CLASS="keyword">const</SPAN> <SPAN CLASS="keyword">int</SPAN> TEX_SIZE = 128;
-<SPAN CLASS="linenum">0020:</SPAN> <SPAN CLASS="keyword">unsigned</SPAN> <SPAN CLASS="keyword">int</SPAN> tex_wave;          <SPAN CLASS="comment">// ”g‚Ì¶¬</SPAN>
-<SPAN CLASS="linenum">0021:</SPAN> <SPAN CLASS="keyword">unsigned</SPAN> <SPAN CLASS="keyword">int</SPAN> tex_normal;        <SPAN CLASS="comment">// –@üƒ}ƒbƒv‚Ì¶¬</SPAN>
-<SPAN CLASS="linenum">0022:</SPAN> <SPAN CLASS="keyword">unsigned</SPAN> <SPAN CLASS="keyword">int</SPAN> tex_sky;           <SPAN CLASS="comment">// ”wŒi‚ÌƒeƒNƒXƒ`ƒƒ</SPAN>
+<SPAN CLASS="linenum">0020:</SPAN> <SPAN CLASS="keyword">unsigned</SPAN> <SPAN CLASS="keyword">int</SPAN> tex_wave;          <SPAN CLASS="comment">// æ³¢ã®ç”Ÿæˆ</SPAN>
+<SPAN CLASS="linenum">0021:</SPAN> <SPAN CLASS="keyword">unsigned</SPAN> <SPAN CLASS="keyword">int</SPAN> tex_normal;        <SPAN CLASS="comment">// æ³•ç·šãƒãƒƒãƒ—ã®ç”Ÿæˆ</SPAN>
+<SPAN CLASS="linenum">0022:</SPAN> <SPAN CLASS="keyword">unsigned</SPAN> <SPAN CLASS="keyword">int</SPAN> tex_sky;           <SPAN CLASS="comment">// èƒŒæ™¯ã®ãƒ†ã‚¯ã‚¹ãƒãƒ£</SPAN>
 <SPAN CLASS="linenum">0023:</SPAN> 
-<SPAN CLASS="linenum">0024:</SPAN> <SPAN CLASS="comment">// Cg ‚ÌƒIƒuƒWƒFƒNƒg</SPAN>
+<SPAN CLASS="linenum">0024:</SPAN> <SPAN CLASS="comment">// Cg ã®ã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆ</SPAN>
 <SPAN CLASS="linenum">0025:</SPAN> <SPAN CLASS="keyword">static</SPAN> cgContext        *WaveCgContext              = NULL;
 <SPAN CLASS="linenum">0026:</SPAN> <SPAN CLASS="keyword">static</SPAN> cgProgramIter    *WaveFragmentProgramIter    = NULL;
 <SPAN CLASS="linenum">0027:</SPAN> <SPAN CLASS="keyword">static</SPAN> cgBindIter       *WaveTexBind                = NULL;
@@ -55,15 +55,15 @@ SPAN.linenum { color:#A0A0A0; font-weight:normal; font-style:normal;}
 <SPAN CLASS="linenum">0039:</SPAN> <SPAN CLASS="keyword">static</SPAN> cgBindIter       *TexBind                = NULL;
 <SPAN CLASS="linenum">0040:</SPAN> 
 <SPAN CLASS="linenum">0041:</SPAN> <SPAN CLASS="comment">// ---------------------------------------------------------------------------</SPAN>
-<SPAN CLASS="linenum">0042:</SPAN> <SPAN CLASS="comment">// •‚“®¬”“_”—”</SPAN>
+<SPAN CLASS="linenum">0042:</SPAN> <SPAN CLASS="comment">// æµ®å‹•å°æ•°ç‚¹æ•°ä¹±æ•°</SPAN>
 <SPAN CLASS="linenum">0043:</SPAN> <SPAN CLASS="comment">// ---------------------------------------------------------------------------</SPAN>
 <SPAN CLASS="linenum">0044:</SPAN> <SPAN CLASS="keyword">#define</SPAN> frand() ((<SPAN CLASS="keyword">float</SPAN>)rand() / (<SPAN CLASS="keyword">float</SPAN>) RAND_MAX)
 <SPAN CLASS="linenum">0045:</SPAN> <SPAN CLASS="comment">// ---------------------------------------------------------------------------</SPAN>
-<SPAN CLASS="linenum">0046:</SPAN> <SPAN CLASS="comment">// ‰æ–Ê•`‰æ</SPAN>
+<SPAN CLASS="linenum">0046:</SPAN> <SPAN CLASS="comment">// ç”»é¢æç”»</SPAN>
 <SPAN CLASS="linenum">0047:</SPAN> <SPAN CLASS="comment">// ---------------------------------------------------------------------------</SPAN>
 <SPAN CLASS="linenum">0048:</SPAN> <SPAN CLASS="keyword">static</SPAN> <SPAN CLASS="keyword">void</SPAN> draw_polygone()
 <SPAN CLASS="linenum">0049:</SPAN> {
-<SPAN CLASS="linenum">0050:</SPAN>     glBegin(GL_TRIANGLE_STRIP);     <SPAN CLASS="comment">// ƒXƒgƒŠƒbƒvİ’è</SPAN>
+<SPAN CLASS="linenum">0050:</SPAN>     glBegin(GL_TRIANGLE_STRIP);     <SPAN CLASS="comment">// ã‚¹ãƒˆãƒªãƒƒãƒ—è¨­å®š</SPAN>
 <SPAN CLASS="linenum">0051:</SPAN>         glTexCoord2f(1.0, 0.0);
 <SPAN CLASS="linenum">0052:</SPAN>         glVertex3f(+1.0, -1.0, 0.0f);
 <SPAN CLASS="linenum">0053:</SPAN> 
@@ -75,15 +75,15 @@ SPAN.linenum { color:#A0A0A0; font-weight:normal; font-style:normal;}
 <SPAN CLASS="linenum">0059:</SPAN>         
 <SPAN CLASS="linenum">0060:</SPAN>         glTexCoord2f(0.0, 1.0);
 <SPAN CLASS="linenum">0061:</SPAN>         glVertex3f(-1.0, +1.0, 0.0f);
-<SPAN CLASS="linenum">0062:</SPAN>     glEnd();                        <SPAN CLASS="comment">// ƒ|ƒŠƒSƒ“‚Ì•`‰æI—¹</SPAN>
+<SPAN CLASS="linenum">0062:</SPAN>     glEnd();                        <SPAN CLASS="comment">// ãƒãƒªã‚´ãƒ³ã®æç”»çµ‚äº†</SPAN>
 <SPAN CLASS="linenum">0063:</SPAN> }
 <SPAN CLASS="linenum">0064:</SPAN> <SPAN CLASS="keyword">static</SPAN> <SPAN CLASS="keyword">void</SPAN> draw_sky()
 <SPAN CLASS="linenum">0065:</SPAN> {
-<SPAN CLASS="linenum">0066:</SPAN>     <SPAN CLASS="comment">// ƒeƒNƒXƒ`ƒƒ‚Ìİ’è</SPAN>
+<SPAN CLASS="linenum">0066:</SPAN>     <SPAN CLASS="comment">// ãƒ†ã‚¯ã‚¹ãƒãƒ£ã®è¨­å®š</SPAN>
 <SPAN CLASS="linenum">0067:</SPAN>     glEnable(GL_TEXTURE_2D);
 <SPAN CLASS="linenum">0068:</SPAN>     glBindTexture(GL_TEXTURE_2D, tex_sky);
 <SPAN CLASS="linenum">0069:</SPAN> 
-<SPAN CLASS="linenum">0070:</SPAN>     glBegin(GL_TRIANGLE_STRIP);     <SPAN CLASS="comment">// ƒXƒgƒŠƒbƒvİ’è</SPAN>
+<SPAN CLASS="linenum">0070:</SPAN>     glBegin(GL_TRIANGLE_STRIP);     <SPAN CLASS="comment">// ã‚¹ãƒˆãƒªãƒƒãƒ—è¨­å®š</SPAN>
 <SPAN CLASS="linenum">0071:</SPAN>         glTexCoord2f(0.0, 1.0);
 <SPAN CLASS="linenum">0072:</SPAN>         glVertex3f(+5.0f,-1.0f, -5.0f);
 <SPAN CLASS="linenum">0073:</SPAN> 
@@ -95,60 +95,60 @@ SPAN.linenum { color:#A0A0A0; font-weight:normal; font-style:normal;}
 <SPAN CLASS="linenum">0079:</SPAN>         
 <SPAN CLASS="linenum">0080:</SPAN>         glTexCoord2f(1.0, 0.0);
 <SPAN CLASS="linenum">0081:</SPAN>         glVertex3f(-5.0f, 4.0f, -5.0f);
-<SPAN CLASS="linenum">0082:</SPAN>     glEnd();                        <SPAN CLASS="comment">// ƒ|ƒŠƒSƒ“‚Ì•`‰æI—¹</SPAN>
+<SPAN CLASS="linenum">0082:</SPAN>     glEnd();                        <SPAN CLASS="comment">// ãƒãƒªã‚´ãƒ³ã®æç”»çµ‚äº†</SPAN>
 <SPAN CLASS="linenum">0083:</SPAN> 
 <SPAN CLASS="linenum">0084:</SPAN>     glDisable(GL_TEXTURE_2D);
 <SPAN CLASS="linenum">0085:</SPAN> }
 <SPAN CLASS="linenum">0086:</SPAN> <SPAN CLASS="comment">// ---------------------------------------------------------------------------</SPAN>
-<SPAN CLASS="linenum">0087:</SPAN> <SPAN CLASS="comment">// ‰æ–Ê•`‰æ</SPAN>
+<SPAN CLASS="linenum">0087:</SPAN> <SPAN CLASS="comment">// ç”»é¢æç”»</SPAN>
 <SPAN CLASS="linenum">0088:</SPAN> <SPAN CLASS="comment">// ---------------------------------------------------------------------------</SPAN>
 <SPAN CLASS="linenum">0089:</SPAN> <SPAN CLASS="keyword">void</SPAN> display(<SPAN CLASS="keyword">void</SPAN>)
 <SPAN CLASS="linenum">0090:</SPAN> {
 <SPAN CLASS="linenum">0091:</SPAN>     cgError Ret;
 <SPAN CLASS="linenum">0092:</SPAN>     GLint   tmpview[4];
 <SPAN CLASS="linenum">0093:</SPAN> 
-<SPAN CLASS="linenum">0094:</SPAN>     glClearColor(0.0, 0.0, 0.3, 0.0);   <SPAN CLASS="comment">// ”wŒiF‚Ìİ’è</SPAN>
+<SPAN CLASS="linenum">0094:</SPAN>     glClearColor(0.0, 0.0, 0.3, 0.0);   <SPAN CLASS="comment">// èƒŒæ™¯è‰²ã®è¨­å®š</SPAN>
 <SPAN CLASS="linenum">0095:</SPAN>     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 <SPAN CLASS="linenum">0096:</SPAN> 
-<SPAN CLASS="linenum">0097:</SPAN>     glGetIntegerv(GL_VIEWPORT,tmpview); <SPAN CLASS="comment">// ƒrƒ…[ƒ|[ƒg‚Ì•Û‘¶</SPAN>
-<SPAN CLASS="linenum">0098:</SPAN>     glViewport(0,0,TEX_SIZE,TEX_SIZE);  <SPAN CLASS="comment">// V‚µ‚¢ƒrƒ…[ƒ|[ƒg‚Ìİ’è</SPAN>
+<SPAN CLASS="linenum">0097:</SPAN>     glGetIntegerv(GL_VIEWPORT,tmpview); <SPAN CLASS="comment">// ãƒ“ãƒ¥ãƒ¼ãƒãƒ¼ãƒˆã®ä¿å­˜</SPAN>
+<SPAN CLASS="linenum">0098:</SPAN>     glViewport(0,0,TEX_SIZE,TEX_SIZE);  <SPAN CLASS="comment">// æ–°ã—ã„ãƒ“ãƒ¥ãƒ¼ãƒãƒ¼ãƒˆã®è¨­å®š</SPAN>
 <SPAN CLASS="linenum">0099:</SPAN> 
-<SPAN CLASS="linenum">0100:</SPAN>     <SPAN CLASS="comment">// Ë‰es—ñ‚Ìİ’è</SPAN>
+<SPAN CLASS="linenum">0100:</SPAN>     <SPAN CLASS="comment">// å°„å½±è¡Œåˆ—ã®è¨­å®š</SPAN>
 <SPAN CLASS="linenum">0101:</SPAN>     glMatrixMode(GL_PROJECTION);
 <SPAN CLASS="linenum">0102:</SPAN>     glLoadIdentity();
 <SPAN CLASS="linenum">0103:</SPAN>     glOrtho(-1,1, -1,1, 0.1,10);
 <SPAN CLASS="linenum">0104:</SPAN>     
-<SPAN CLASS="linenum">0105:</SPAN>     <SPAN CLASS="comment">// ƒrƒ…[s—ñ‚Ìİ’è</SPAN>
+<SPAN CLASS="linenum">0105:</SPAN>     <SPAN CLASS="comment">// ãƒ“ãƒ¥ãƒ¼è¡Œåˆ—ã®è¨­å®š</SPAN>
 <SPAN CLASS="linenum">0106:</SPAN>     glMatrixMode(GL_MODELVIEW);
 <SPAN CLASS="linenum">0107:</SPAN>     glLoadIdentity();
-<SPAN CLASS="linenum">0108:</SPAN>     gluLookAt(  0.0, 0.0, 1.0,      <SPAN CLASS="comment">// ‹“_</SPAN>
-<SPAN CLASS="linenum">0109:</SPAN>                 0.0, 0.0, 0.0,      <SPAN CLASS="comment">// ’–Ú“_</SPAN>
-<SPAN CLASS="linenum">0110:</SPAN>                 0.0, 1.0, 0.0);     <SPAN CLASS="comment">// ã•ûŒü</SPAN>
+<SPAN CLASS="linenum">0108:</SPAN>     gluLookAt(  0.0, 0.0, 1.0,      <SPAN CLASS="comment">// è¦–ç‚¹</SPAN>
+<SPAN CLASS="linenum">0109:</SPAN>                 0.0, 0.0, 0.0,      <SPAN CLASS="comment">// æ³¨ç›®ç‚¹</SPAN>
+<SPAN CLASS="linenum">0110:</SPAN>                 0.0, 1.0, 0.0);     <SPAN CLASS="comment">// ä¸Šæ–¹å‘</SPAN>
 <SPAN CLASS="linenum">0111:</SPAN> 
 <SPAN CLASS="linenum">0112:</SPAN>     Ret = cgGLBindProgram(WaveFragmentProgramIter);
 <SPAN CLASS="linenum">0113:</SPAN>     assert(Ret == cgNoError);
 <SPAN CLASS="linenum">0114:</SPAN>     cgGLEnableProgramType(cgFragmentProfile);
 <SPAN CLASS="linenum">0115:</SPAN> 
-<SPAN CLASS="linenum">0116:</SPAN>     <SPAN CLASS="comment">// ƒeƒNƒXƒ`ƒƒ‚Ìg—p</SPAN>
+<SPAN CLASS="linenum">0116:</SPAN>     <SPAN CLASS="comment">// ãƒ†ã‚¯ã‚¹ãƒãƒ£ã®ä½¿ç”¨</SPAN>
 <SPAN CLASS="linenum">0117:</SPAN>     cgGLActiveTexture(WaveTexBind);
 <SPAN CLASS="linenum">0118:</SPAN>     glEnable(GL_TEXTURE_2D);
 <SPAN CLASS="linenum">0119:</SPAN>     glBindTexture(GL_TEXTURE_2D, tex_wave);
 <SPAN CLASS="linenum">0120:</SPAN> 
-<SPAN CLASS="linenum">0121:</SPAN>     glPushMatrix();                 <SPAN CLASS="comment">// ƒrƒ…[s—ñ‚ª‘¼‚Ìƒ|ƒŠƒSƒ“‚Å‚àg‚¦‚é‚æ‚¤‘Ş”ğ</SPAN>
-<SPAN CLASS="linenum">0122:</SPAN>     draw_polygone();                <SPAN CLASS="comment">// ƒ|ƒŠƒSƒ“•`‰æ</SPAN>
-<SPAN CLASS="linenum">0123:</SPAN>     glPopMatrix();                  <SPAN CLASS="comment">// ƒrƒ…[s—ñ‚ÉŒ»İ‚Ìs—ñ‚ğ–ß‚·</SPAN>
+<SPAN CLASS="linenum">0121:</SPAN>     glPushMatrix();                 <SPAN CLASS="comment">// ãƒ“ãƒ¥ãƒ¼è¡Œåˆ—ãŒä»–ã®ãƒãƒªã‚´ãƒ³ã§ã‚‚ä½¿ãˆã‚‹ã‚ˆã†é€€é¿</SPAN>
+<SPAN CLASS="linenum">0122:</SPAN>     draw_polygone();                <SPAN CLASS="comment">// ãƒãƒªã‚´ãƒ³æç”»</SPAN>
+<SPAN CLASS="linenum">0123:</SPAN>     glPopMatrix();                  <SPAN CLASS="comment">// ãƒ“ãƒ¥ãƒ¼è¡Œåˆ—ã«ç¾åœ¨ã®è¡Œåˆ—ã‚’æˆ»ã™</SPAN>
 <SPAN CLASS="linenum">0124:</SPAN> 
-<SPAN CLASS="linenum">0125:</SPAN>     <SPAN CLASS="comment">//  ƒeƒNƒXƒ`ƒƒ‚É“]‘—</SPAN>
+<SPAN CLASS="linenum">0125:</SPAN>     <SPAN CLASS="comment">//  ãƒ†ã‚¯ã‚¹ãƒãƒ£ã«è»¢é€</SPAN>
 <SPAN CLASS="linenum">0126:</SPAN>     glCopyTexImage2D(GL_TEXTURE_2D,0,GL_RGBA,0,0,TEX_SIZE,TEX_SIZE,0);
 <SPAN CLASS="linenum">0127:</SPAN> 
-<SPAN CLASS="linenum">0128:</SPAN>     <SPAN CLASS="comment">// ƒeƒNƒXƒ`ƒƒg‚í‚È‚¢</SPAN>
+<SPAN CLASS="linenum">0128:</SPAN>     <SPAN CLASS="comment">// ãƒ†ã‚¯ã‚¹ãƒãƒ£ä½¿ã‚ãªã„</SPAN>
 <SPAN CLASS="linenum">0129:</SPAN>     cgGLActiveTexture(WaveTexBind);
 <SPAN CLASS="linenum">0130:</SPAN>     glDisable(GL_TEXTURE_2D);
-<SPAN CLASS="linenum">0131:</SPAN>     <SPAN CLASS="comment">// ƒVƒF[ƒ_‚Ì–³Œø‰»</SPAN>
+<SPAN CLASS="linenum">0131:</SPAN>     <SPAN CLASS="comment">// ã‚·ã‚§ãƒ¼ãƒ€ã®ç„¡åŠ¹åŒ–</SPAN>
 <SPAN CLASS="linenum">0132:</SPAN>     cgGLDisableProgramType(cgFragmentProfile);
 <SPAN CLASS="linenum">0133:</SPAN> 
 <SPAN CLASS="linenum">0134:</SPAN>     <SPAN CLASS="comment">// -----------------------------------------------------------------------</SPAN>
-<SPAN CLASS="linenum">0135:</SPAN>     <SPAN CLASS="comment">// –@üƒ}ƒbƒv‚Ìì¬</SPAN>
+<SPAN CLASS="linenum">0135:</SPAN>     <SPAN CLASS="comment">// æ³•ç·šãƒãƒƒãƒ—ã®ä½œæˆ</SPAN>
 <SPAN CLASS="linenum">0136:</SPAN>     <SPAN CLASS="comment">// -----------------------------------------------------------------------</SPAN>
 <SPAN CLASS="linenum">0137:</SPAN>     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 <SPAN CLASS="linenum">0138:</SPAN> 
@@ -156,56 +156,56 @@ SPAN.linenum { color:#A0A0A0; font-weight:normal; font-style:normal;}
 <SPAN CLASS="linenum">0140:</SPAN>     assert(Ret == cgNoError);
 <SPAN CLASS="linenum">0141:</SPAN>     cgGLEnableProgramType(cgFragmentProfile);
 <SPAN CLASS="linenum">0142:</SPAN> 
-<SPAN CLASS="linenum">0143:</SPAN>     <SPAN CLASS="comment">// ƒeƒNƒXƒ`ƒƒ‚Ìg—p</SPAN>
+<SPAN CLASS="linenum">0143:</SPAN>     <SPAN CLASS="comment">// ãƒ†ã‚¯ã‚¹ãƒãƒ£ã®ä½¿ç”¨</SPAN>
 <SPAN CLASS="linenum">0144:</SPAN>     cgGLActiveTexture(NormalTexBind);
 <SPAN CLASS="linenum">0145:</SPAN>     glEnable(GL_TEXTURE_2D);
 <SPAN CLASS="linenum">0146:</SPAN>     glBindTexture(GL_TEXTURE_2D, tex_wave);
 <SPAN CLASS="linenum">0147:</SPAN> 
-<SPAN CLASS="linenum">0148:</SPAN>     glPushMatrix();                 <SPAN CLASS="comment">// ƒrƒ…[s—ñ‚ª‘¼‚Ìƒ|ƒŠƒSƒ“‚Å‚àg‚¦‚é‚æ‚¤‘Ş”ğ</SPAN>
-<SPAN CLASS="linenum">0149:</SPAN>     draw_polygone();                <SPAN CLASS="comment">// ƒ|ƒŠƒSƒ“•`‰æ</SPAN>
-<SPAN CLASS="linenum">0150:</SPAN>     glPopMatrix();                  <SPAN CLASS="comment">// ƒrƒ…[s—ñ‚ÉŒ»İ‚Ìs—ñ‚ğ–ß‚·</SPAN>
+<SPAN CLASS="linenum">0148:</SPAN>     glPushMatrix();                 <SPAN CLASS="comment">// ãƒ“ãƒ¥ãƒ¼è¡Œåˆ—ãŒä»–ã®ãƒãƒªã‚´ãƒ³ã§ã‚‚ä½¿ãˆã‚‹ã‚ˆã†é€€é¿</SPAN>
+<SPAN CLASS="linenum">0149:</SPAN>     draw_polygone();                <SPAN CLASS="comment">// ãƒãƒªã‚´ãƒ³æç”»</SPAN>
+<SPAN CLASS="linenum">0150:</SPAN>     glPopMatrix();                  <SPAN CLASS="comment">// ãƒ“ãƒ¥ãƒ¼è¡Œåˆ—ã«ç¾åœ¨ã®è¡Œåˆ—ã‚’æˆ»ã™</SPAN>
 <SPAN CLASS="linenum">0151:</SPAN> 
-<SPAN CLASS="linenum">0152:</SPAN>     <SPAN CLASS="comment">// ƒeƒNƒXƒ`ƒƒg‚í‚È‚¢‚æ</SPAN>
+<SPAN CLASS="linenum">0152:</SPAN>     <SPAN CLASS="comment">// ãƒ†ã‚¯ã‚¹ãƒãƒ£ä½¿ã‚ãªã„ã‚ˆ</SPAN>
 <SPAN CLASS="linenum">0153:</SPAN>     cgGLActiveTexture(NormalTexBind);
 <SPAN CLASS="linenum">0154:</SPAN>     glDisable(GL_TEXTURE_2D);
 <SPAN CLASS="linenum">0155:</SPAN> 
-<SPAN CLASS="linenum">0156:</SPAN>     <SPAN CLASS="comment">//  ƒeƒNƒXƒ`ƒƒ‚É“]‘—</SPAN>
+<SPAN CLASS="linenum">0156:</SPAN>     <SPAN CLASS="comment">//  ãƒ†ã‚¯ã‚¹ãƒãƒ£ã«è»¢é€</SPAN>
 <SPAN CLASS="linenum">0157:</SPAN>     glEnable(GL_TEXTURE_2D);
 <SPAN CLASS="linenum">0158:</SPAN>     glBindTexture(GL_TEXTURE_2D, tex_normal);
 <SPAN CLASS="linenum">0159:</SPAN>     glCopyTexImage2D(GL_TEXTURE_2D,0,GL_RGBA,0,0,TEX_SIZE,TEX_SIZE,0);
 <SPAN CLASS="linenum">0160:</SPAN>     glDisable(GL_TEXTURE_2D);
 <SPAN CLASS="linenum">0161:</SPAN> 
-<SPAN CLASS="linenum">0162:</SPAN>     <SPAN CLASS="comment">// ƒVƒF[ƒ_‚Ì–³Œø‰»</SPAN>
+<SPAN CLASS="linenum">0162:</SPAN>     <SPAN CLASS="comment">// ã‚·ã‚§ãƒ¼ãƒ€ã®ç„¡åŠ¹åŒ–</SPAN>
 <SPAN CLASS="linenum">0163:</SPAN>     cgGLDisableProgramType(cgFragmentProfile);
 <SPAN CLASS="linenum">0164:</SPAN> 
 <SPAN CLASS="linenum">0165:</SPAN>     <SPAN CLASS="comment">// -----------------------------------------------------------------------</SPAN>
-<SPAN CLASS="linenum">0166:</SPAN>     <SPAN CLASS="comment">// ƒV[ƒ“‚ÌƒŒƒ“ƒ_ƒŠƒ“ƒO</SPAN>
+<SPAN CLASS="linenum">0166:</SPAN>     <SPAN CLASS="comment">// ã‚·ãƒ¼ãƒ³ã®ãƒ¬ãƒ³ãƒ€ãƒªãƒ³ã‚°</SPAN>
 <SPAN CLASS="linenum">0167:</SPAN>     <SPAN CLASS="comment">// -----------------------------------------------------------------------</SPAN>
 <SPAN CLASS="linenum">0168:</SPAN> 
-<SPAN CLASS="linenum">0169:</SPAN>     <SPAN CLASS="comment">// ƒrƒ…[ƒ|[ƒg‚ğ–ß‚·</SPAN>
+<SPAN CLASS="linenum">0169:</SPAN>     <SPAN CLASS="comment">// ãƒ“ãƒ¥ãƒ¼ãƒãƒ¼ãƒˆã‚’æˆ»ã™</SPAN>
 <SPAN CLASS="linenum">0170:</SPAN>     glViewport(tmpview[0],tmpview[1],tmpview[2],tmpview[3]);
-<SPAN CLASS="linenum">0171:</SPAN>     <SPAN CLASS="comment">// ”wŒiF‚Ìİ’è</SPAN>
+<SPAN CLASS="linenum">0171:</SPAN>     <SPAN CLASS="comment">// èƒŒæ™¯è‰²ã®è¨­å®š</SPAN>
 <SPAN CLASS="linenum">0172:</SPAN>     glClearColor(0.51, 0.29, 0.17, 0.0);
 <SPAN CLASS="linenum">0173:</SPAN>     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 <SPAN CLASS="linenum">0174:</SPAN> 
-<SPAN CLASS="linenum">0175:</SPAN>     <SPAN CLASS="comment">// Ë‰es—ñ‚Ìİ’è</SPAN>
+<SPAN CLASS="linenum">0175:</SPAN>     <SPAN CLASS="comment">// å°„å½±è¡Œåˆ—ã®è¨­å®š</SPAN>
 <SPAN CLASS="linenum">0176:</SPAN>     glMatrixMode(GL_PROJECTION);
 <SPAN CLASS="linenum">0177:</SPAN>     glLoadIdentity();
-<SPAN CLASS="linenum">0178:</SPAN>     gluPerspective( 50.0,           <SPAN CLASS="comment">// ‰æŠp</SPAN>
-<SPAN CLASS="linenum">0179:</SPAN>                     1.0,            <SPAN CLASS="comment">// ƒAƒXƒyƒNƒg”ä</SPAN>
-<SPAN CLASS="linenum">0180:</SPAN>                     0.1, 10.0);     <SPAN CLASS="comment">// ‘O•û–ÊAŒã•û–Ê</SPAN>
+<SPAN CLASS="linenum">0178:</SPAN>     gluPerspective( 50.0,           <SPAN CLASS="comment">// ç”»è§’</SPAN>
+<SPAN CLASS="linenum">0179:</SPAN>                     1.0,            <SPAN CLASS="comment">// ã‚¢ã‚¹ãƒšã‚¯ãƒˆæ¯”</SPAN>
+<SPAN CLASS="linenum">0180:</SPAN>                     0.1, 10.0);     <SPAN CLASS="comment">// å‰æ–¹é¢ã€å¾Œæ–¹é¢</SPAN>
 <SPAN CLASS="linenum">0181:</SPAN> 
-<SPAN CLASS="linenum">0182:</SPAN>     <SPAN CLASS="comment">// ƒrƒ…[s—ñ‚Ìİ’è</SPAN>
+<SPAN CLASS="linenum">0182:</SPAN>     <SPAN CLASS="comment">// ãƒ“ãƒ¥ãƒ¼è¡Œåˆ—ã®è¨­å®š</SPAN>
 <SPAN CLASS="linenum">0183:</SPAN>     glMatrixMode(GL_MODELVIEW);
 <SPAN CLASS="linenum">0184:</SPAN>     glLoadIdentity();
-<SPAN CLASS="linenum">0185:</SPAN>     gluLookAt(  0.0, 2.0, 5.0,      <SPAN CLASS="comment">// ‹“_</SPAN>
-<SPAN CLASS="linenum">0186:</SPAN>                 0.0, 0.0, 0.0,      <SPAN CLASS="comment">// ’–Ú“_</SPAN>
-<SPAN CLASS="linenum">0187:</SPAN>                 0.0, 1.0, 0.0);     <SPAN CLASS="comment">// ã•ûŒü</SPAN>
-<SPAN CLASS="linenum">0188:</SPAN>     <SPAN CLASS="comment">// ”wŒi‚Ì•`‰æ</SPAN>
+<SPAN CLASS="linenum">0185:</SPAN>     gluLookAt(  0.0, 2.0, 5.0,      <SPAN CLASS="comment">// è¦–ç‚¹</SPAN>
+<SPAN CLASS="linenum">0186:</SPAN>                 0.0, 0.0, 0.0,      <SPAN CLASS="comment">// æ³¨ç›®ç‚¹</SPAN>
+<SPAN CLASS="linenum">0187:</SPAN>                 0.0, 1.0, 0.0);     <SPAN CLASS="comment">// ä¸Šæ–¹å‘</SPAN>
+<SPAN CLASS="linenum">0188:</SPAN>     <SPAN CLASS="comment">// èƒŒæ™¯ã®æç”»</SPAN>
 <SPAN CLASS="linenum">0189:</SPAN>     draw_sky();
 <SPAN CLASS="linenum">0190:</SPAN> 
 <SPAN CLASS="linenum">0191:</SPAN>     <SPAN CLASS="comment">// -----------------------------------------------------------------------</SPAN>
-<SPAN CLASS="linenum">0192:</SPAN>     <SPAN CLASS="comment">// Cg ‚É‚æ‚é•`‰æ‚ÖØ‚è‘Ö‚¦</SPAN>
+<SPAN CLASS="linenum">0192:</SPAN>     <SPAN CLASS="comment">// Cg ã«ã‚ˆã‚‹æç”»ã¸åˆ‡ã‚Šæ›¿ãˆ</SPAN>
 <SPAN CLASS="linenum">0193:</SPAN>     <SPAN CLASS="comment">// -----------------------------------------------------------------------</SPAN>
 <SPAN CLASS="linenum">0194:</SPAN> 
 <SPAN CLASS="linenum">0195:</SPAN>     Ret = cgGLBindProgram(VertexProgramIter);
@@ -216,18 +216,18 @@ SPAN.linenum { color:#A0A0A0; font-weight:normal; font-style:normal;}
 <SPAN CLASS="linenum">0200:</SPAN>     assert(Ret == cgNoError);
 <SPAN CLASS="linenum">0201:</SPAN>     cgGLEnableProgramType(cgFragmentProfile);
 <SPAN CLASS="linenum">0202:</SPAN> 
-<SPAN CLASS="linenum">0203:</SPAN>     <SPAN CLASS="comment">// ƒeƒNƒXƒ`ƒƒ‚Ìg—p</SPAN>
+<SPAN CLASS="linenum">0203:</SPAN>     <SPAN CLASS="comment">// ãƒ†ã‚¯ã‚¹ãƒãƒ£ã®ä½¿ç”¨</SPAN>
 <SPAN CLASS="linenum">0204:</SPAN>     cgGLActiveTexture(TexBind);
 <SPAN CLASS="linenum">0205:</SPAN>     glEnable(GL_TEXTURE_2D);
 <SPAN CLASS="linenum">0206:</SPAN>     glBindTexture(GL_TEXTURE_2D, tex_normal);
 <SPAN CLASS="linenum">0207:</SPAN> 
-<SPAN CLASS="linenum">0208:</SPAN>     <SPAN CLASS="comment">// local Ë proj</SPAN>
+<SPAN CLASS="linenum">0208:</SPAN>     <SPAN CLASS="comment">// local â‡’ proj</SPAN>
 <SPAN CLASS="linenum">0209:</SPAN>     cgGLBindUniformStateMatrix(VertexProgramIter, WPMatrix, 
 <SPAN CLASS="linenum">0210:</SPAN>         cgGLModelViewProjectionMatrix, cgGLMatrixIdentity);
 <SPAN CLASS="linenum">0211:</SPAN> 
 <SPAN CLASS="linenum">0212:</SPAN>     cgGLBindUniform4f(VertexProgramIter, EyePos,   0.0, 1.0,  5.0, 0.0);
 <SPAN CLASS="linenum">0213:</SPAN>     cgGLBindUniform4f(VertexProgramIter, LightPos, 2.75, 2.0,-10.0, 0.0);
-<SPAN CLASS="linenum">0214:</SPAN>     glBegin(GL_TRIANGLE_STRIP);     <SPAN CLASS="comment">// ƒXƒgƒŠƒbƒvİ’è</SPAN>
+<SPAN CLASS="linenum">0214:</SPAN>     glBegin(GL_TRIANGLE_STRIP);     <SPAN CLASS="comment">// ã‚¹ãƒˆãƒªãƒƒãƒ—è¨­å®š</SPAN>
 <SPAN CLASS="linenum">0215:</SPAN>         glTexCoord2f(1.0, 0.0);
 <SPAN CLASS="linenum">0216:</SPAN>         glVertex3f(+5.0f, 0.0f, -5.0);
 <SPAN CLASS="linenum">0217:</SPAN> 
@@ -239,7 +239,7 @@ SPAN.linenum { color:#A0A0A0; font-weight:normal; font-style:normal;}
 <SPAN CLASS="linenum">0223:</SPAN>         
 <SPAN CLASS="linenum">0224:</SPAN>         glTexCoord2f(0.0, 1.0);
 <SPAN CLASS="linenum">0225:</SPAN>         glVertex3f(-5.0f, 0.0f, +5.0f);
-<SPAN CLASS="linenum">0226:</SPAN>     glEnd();                        <SPAN CLASS="comment">// ƒ|ƒŠƒSƒ“‚Ì•`‰æI—¹</SPAN>
+<SPAN CLASS="linenum">0226:</SPAN>     glEnd();                        <SPAN CLASS="comment">// ãƒãƒªã‚´ãƒ³ã®æç”»çµ‚äº†</SPAN>
 <SPAN CLASS="linenum">0227:</SPAN>     glDisable(GL_TEXTURE_2D);
 <SPAN CLASS="linenum">0228:</SPAN> 
 <SPAN CLASS="linenum">0229:</SPAN>     cgGLActiveTexture(TexBind);
@@ -247,21 +247,21 @@ SPAN.linenum { color:#A0A0A0; font-weight:normal; font-style:normal;}
 <SPAN CLASS="linenum">0231:</SPAN>     cgGLDisableProgramType(cgVertexProfile);
 <SPAN CLASS="linenum">0232:</SPAN> 
 <SPAN CLASS="linenum">0233:</SPAN> 
-<SPAN CLASS="linenum">0234:</SPAN> <SPAN CLASS="keyword">#if</SPAN> 1 <SPAN CLASS="comment">// ƒfƒoƒbƒO—pA‰æ–Ê‚Ì•\¦</SPAN>
+<SPAN CLASS="linenum">0234:</SPAN> <SPAN CLASS="keyword">#if</SPAN> 1 <SPAN CLASS="comment">// ãƒ‡ãƒãƒƒã‚°ç”¨ã€ç”»é¢ã®è¡¨ç¤º</SPAN>
 <SPAN CLASS="linenum">0235:</SPAN> 
-<SPAN CLASS="linenum">0236:</SPAN>     <SPAN CLASS="comment">// Ë‰es—ñ‚Ìİ’è</SPAN>
+<SPAN CLASS="linenum">0236:</SPAN>     <SPAN CLASS="comment">// å°„å½±è¡Œåˆ—ã®è¨­å®š</SPAN>
 <SPAN CLASS="linenum">0237:</SPAN>     glMatrixMode(GL_PROJECTION);
 <SPAN CLASS="linenum">0238:</SPAN>     glLoadIdentity();
 <SPAN CLASS="linenum">0239:</SPAN>     glOrtho(-1,1, -1,1, 0.1,10);
 <SPAN CLASS="linenum">0240:</SPAN>     
-<SPAN CLASS="linenum">0241:</SPAN>     <SPAN CLASS="comment">// ƒrƒ…[s—ñ‚Ìİ’è</SPAN>
+<SPAN CLASS="linenum">0241:</SPAN>     <SPAN CLASS="comment">// ãƒ“ãƒ¥ãƒ¼è¡Œåˆ—ã®è¨­å®š</SPAN>
 <SPAN CLASS="linenum">0242:</SPAN>     glMatrixMode(GL_MODELVIEW);
 <SPAN CLASS="linenum">0243:</SPAN>     glLoadIdentity();
-<SPAN CLASS="linenum">0244:</SPAN>     gluLookAt(  0.0, 0.0, 1.0,      <SPAN CLASS="comment">// ‹“_</SPAN>
-<SPAN CLASS="linenum">0245:</SPAN>                 0.0, 0.0, 0.0,      <SPAN CLASS="comment">// ’–Ú“_</SPAN>
-<SPAN CLASS="linenum">0246:</SPAN>                 0.0, 1.0, 0.0);     <SPAN CLASS="comment">// ã•ûŒü</SPAN>
+<SPAN CLASS="linenum">0244:</SPAN>     gluLookAt(  0.0, 0.0, 1.0,      <SPAN CLASS="comment">// è¦–ç‚¹</SPAN>
+<SPAN CLASS="linenum">0245:</SPAN>                 0.0, 0.0, 0.0,      <SPAN CLASS="comment">// æ³¨ç›®ç‚¹</SPAN>
+<SPAN CLASS="linenum">0246:</SPAN>                 0.0, 1.0, 0.0);     <SPAN CLASS="comment">// ä¸Šæ–¹å‘</SPAN>
 <SPAN CLASS="linenum">0247:</SPAN> 
-<SPAN CLASS="linenum">0248:</SPAN>     <SPAN CLASS="comment">// ƒeƒNƒXƒ`ƒƒ‚ ‚è‚Å”Âƒ|ƒŠ•`‰æ</SPAN>
+<SPAN CLASS="linenum">0248:</SPAN>     <SPAN CLASS="comment">// ãƒ†ã‚¯ã‚¹ãƒãƒ£ã‚ã‚Šã§æ¿ãƒãƒªæç”»</SPAN>
 <SPAN CLASS="linenum">0249:</SPAN>     glEnable(GL_TEXTURE_2D);
 <SPAN CLASS="linenum">0250:</SPAN>     glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_DECAL);
 <SPAN CLASS="linenum">0251:</SPAN>     glBindTexture(GL_TEXTURE_2D, tex_wave);
@@ -291,48 +291,48 @@ SPAN.linenum { color:#A0A0A0; font-weight:normal; font-style:normal;}
 <SPAN CLASS="linenum">0275:</SPAN> 
 <SPAN CLASS="linenum">0276:</SPAN> <SPAN CLASS="keyword">#endif</SPAN>
 <SPAN CLASS="linenum">0277:</SPAN> 
-<SPAN CLASS="linenum">0278:</SPAN>     <SPAN CLASS="comment">// ‰æ–Ê‚ÌXV‚ÌI—¹</SPAN>
+<SPAN CLASS="linenum">0278:</SPAN>     <SPAN CLASS="comment">// ç”»é¢ã®æ›´æ–°ã®çµ‚äº†</SPAN>
 <SPAN CLASS="linenum">0279:</SPAN>     glutSwapBuffers();
 <SPAN CLASS="linenum">0280:</SPAN> }
 <SPAN CLASS="linenum">0281:</SPAN> <SPAN CLASS="comment">// ---------------------------------------------------------------------------</SPAN>
-<SPAN CLASS="linenum">0282:</SPAN> <SPAN CLASS="comment">// ‰æ–Ê‚ªƒŠƒTƒCƒY‚³‚ê‚½‚Æ‚«</SPAN>
+<SPAN CLASS="linenum">0282:</SPAN> <SPAN CLASS="comment">// ç”»é¢ãŒãƒªã‚µã‚¤ã‚ºã•ã‚ŒãŸã¨ã</SPAN>
 <SPAN CLASS="linenum">0283:</SPAN> <SPAN CLASS="comment">// ---------------------------------------------------------------------------</SPAN>
 <SPAN CLASS="linenum">0284:</SPAN> <SPAN CLASS="keyword">void</SPAN> resize(<SPAN CLASS="keyword">int</SPAN> w, <SPAN CLASS="keyword">int</SPAN> h)
 <SPAN CLASS="linenum">0285:</SPAN> {
 <SPAN CLASS="linenum">0286:</SPAN> }
 <SPAN CLASS="linenum">0287:</SPAN> <SPAN CLASS="comment">// ---------------------------------------------------------------------------</SPAN>
-<SPAN CLASS="linenum">0288:</SPAN> <SPAN CLASS="comment">// ‚Ğ‚Ü‚È‚Æ‚«‚ÉÀs‚³‚ê‚é</SPAN>
+<SPAN CLASS="linenum">0288:</SPAN> <SPAN CLASS="comment">// ã²ã¾ãªã¨ãã«å®Ÿè¡Œã•ã‚Œã‚‹</SPAN>
 <SPAN CLASS="linenum">0289:</SPAN> <SPAN CLASS="comment">// ---------------------------------------------------------------------------</SPAN>
 <SPAN CLASS="linenum">0290:</SPAN> <SPAN CLASS="keyword">void</SPAN> idle()
 <SPAN CLASS="linenum">0291:</SPAN> {
-<SPAN CLASS="linenum">0292:</SPAN>     glutPostRedisplay();            <SPAN CLASS="comment">// Ä•`‰æƒŠƒNƒGƒXƒg</SPAN>
+<SPAN CLASS="linenum">0292:</SPAN>     glutPostRedisplay();            <SPAN CLASS="comment">// å†æç”»ãƒªã‚¯ã‚¨ã‚¹ãƒˆ</SPAN>
 <SPAN CLASS="linenum">0293:</SPAN> }
 <SPAN CLASS="linenum">0294:</SPAN> <SPAN CLASS="comment">// ---------------------------------------------------------------------------</SPAN>
-<SPAN CLASS="linenum">0295:</SPAN> <SPAN CLASS="comment">// Cg‚Ì‰Šú‰»</SPAN>
+<SPAN CLASS="linenum">0295:</SPAN> <SPAN CLASS="comment">// Cgã®åˆæœŸåŒ–</SPAN>
 <SPAN CLASS="linenum">0296:</SPAN> <SPAN CLASS="comment">// ---------------------------------------------------------------------------</SPAN>
 <SPAN CLASS="linenum">0297:</SPAN> <SPAN CLASS="keyword">static</SPAN> <SPAN CLASS="keyword">void</SPAN> InitializeCg()
 <SPAN CLASS="linenum">0298:</SPAN> {
 <SPAN CLASS="linenum">0299:</SPAN>     cgError Ret;
 <SPAN CLASS="linenum">0300:</SPAN>     
 <SPAN CLASS="linenum">0301:</SPAN>     <SPAN CLASS="comment">// -----------------------------------------------------------------------</SPAN>
-<SPAN CLASS="linenum">0302:</SPAN>     <SPAN CLASS="comment">// ”g‚Ì“®‚«</SPAN>
+<SPAN CLASS="linenum">0302:</SPAN>     <SPAN CLASS="comment">// æ³¢ã®å‹•ã</SPAN>
 <SPAN CLASS="linenum">0303:</SPAN>     <SPAN CLASS="comment">// -----------------------------------------------------------------------</SPAN>
-<SPAN CLASS="linenum">0304:</SPAN>     <SPAN CLASS="comment">// Cg ‚Ìì¬</SPAN>
+<SPAN CLASS="linenum">0304:</SPAN>     <SPAN CLASS="comment">// Cg ã®ä½œæˆ</SPAN>
 <SPAN CLASS="linenum">0305:</SPAN>     WaveCgContext = cgCreateContext();
 <SPAN CLASS="linenum">0306:</SPAN>     assert(WaveCgContext != NULL);
-<SPAN CLASS="linenum">0307:</SPAN>     <SPAN CLASS="comment">// ƒtƒ‰ƒOƒƒ“ƒgƒvƒƒOƒ‰ƒ€</SPAN>
+<SPAN CLASS="linenum">0307:</SPAN>     <SPAN CLASS="comment">// ãƒ•ãƒ©ã‚°ãƒ¡ãƒ³ãƒˆãƒ—ãƒ­ã‚°ãƒ©ãƒ </SPAN>
 <SPAN CLASS="linenum">0308:</SPAN>     Ret = cgAddProgramFromFile(WaveCgContext, "<SPAN CLASS="string">wave.cg</SPAN>", cgFragmentProfile, NULL);
 <SPAN CLASS="linenum">0309:</SPAN>     assert(Ret == cgNoError);
 <SPAN CLASS="linenum">0310:</SPAN> 
-<SPAN CLASS="linenum">0311:</SPAN>     <SPAN CLASS="comment">// ƒvƒƒOƒ‰ƒ€–¼‚ÅƒvƒƒOƒ‰ƒ€‚ğŒ‹‚Ñ‚Â‚¯‚é</SPAN>
+<SPAN CLASS="linenum">0311:</SPAN>     <SPAN CLASS="comment">// ãƒ—ãƒ­ã‚°ãƒ©ãƒ åã§ãƒ—ãƒ­ã‚°ãƒ©ãƒ ã‚’çµã³ã¤ã‘ã‚‹</SPAN>
 <SPAN CLASS="linenum">0312:</SPAN>     WaveFragmentProgramIter = cgProgramByName(WaveCgContext, "<SPAN CLASS="string">main</SPAN>");
 <SPAN CLASS="linenum">0313:</SPAN>     assert(WaveFragmentProgramIter != NULL);
 <SPAN CLASS="linenum">0314:</SPAN> 
 <SPAN CLASS="linenum">0315:</SPAN> <SPAN CLASS="keyword">#if</SPAN> 1
-<SPAN CLASS="linenum">0316:</SPAN>     <SPAN CLASS="comment">// ƒ\[ƒX‚Ì•\¦</SPAN>
-<SPAN CLASS="linenum">0317:</SPAN>     fprintf(stderr, "<SPAN CLASS="string">---- ƒvƒƒOƒ‰ƒ€ ‚Í‚¶‚ß ----\n</SPAN>"
+<SPAN CLASS="linenum">0316:</SPAN>     <SPAN CLASS="comment">// ã‚½ãƒ¼ã‚¹ã®è¡¨ç¤º</SPAN>
+<SPAN CLASS="linenum">0317:</SPAN>     fprintf(stderr, "<SPAN CLASS="string">---- ãƒ—ãƒ­ã‚°ãƒ©ãƒ  ã¯ã˜ã‚ ----\n</SPAN>"
 <SPAN CLASS="linenum">0318:</SPAN>                     "<SPAN CLASS="string">%s</SPAN>"
-<SPAN CLASS="linenum">0319:</SPAN>                     "<SPAN CLASS="string">---- ƒvƒƒOƒ‰ƒ€ I‚í‚è ----\n</SPAN>",
+<SPAN CLASS="linenum">0319:</SPAN>                     "<SPAN CLASS="string">---- ãƒ—ãƒ­ã‚°ãƒ©ãƒ  çµ‚ã‚ã‚Š ----\n</SPAN>",
 <SPAN CLASS="linenum">0320:</SPAN>     cgGetProgramObjectCode(WaveFragmentProgramIter));
 <SPAN CLASS="linenum">0321:</SPAN> <SPAN CLASS="keyword">#endif</SPAN>
 <SPAN CLASS="linenum">0322:</SPAN>     <SPAN CLASS="keyword">if</SPAN>(WaveFragmentProgramIter != NULL) {
@@ -346,24 +346,24 @@ SPAN.linenum { color:#A0A0A0; font-weight:normal; font-style:normal;}
 <SPAN CLASS="linenum">0330:</SPAN>     }
 <SPAN CLASS="linenum">0331:</SPAN>     
 <SPAN CLASS="linenum">0332:</SPAN>     <SPAN CLASS="comment">// -----------------------------------------------------------------------</SPAN>
-<SPAN CLASS="linenum">0333:</SPAN>     <SPAN CLASS="comment">// –@üƒ}ƒbƒv‚Ìì¬</SPAN>
+<SPAN CLASS="linenum">0333:</SPAN>     <SPAN CLASS="comment">// æ³•ç·šãƒãƒƒãƒ—ã®ä½œæˆ</SPAN>
 <SPAN CLASS="linenum">0334:</SPAN>     <SPAN CLASS="comment">// -----------------------------------------------------------------------</SPAN>
-<SPAN CLASS="linenum">0335:</SPAN>     <SPAN CLASS="comment">// Cg ‚Ìì¬</SPAN>
+<SPAN CLASS="linenum">0335:</SPAN>     <SPAN CLASS="comment">// Cg ã®ä½œæˆ</SPAN>
 <SPAN CLASS="linenum">0336:</SPAN>     NormalCgContext = cgCreateContext();
 <SPAN CLASS="linenum">0337:</SPAN>     assert(NormalCgContext != NULL);
-<SPAN CLASS="linenum">0338:</SPAN>     <SPAN CLASS="comment">// ƒtƒ‰ƒOƒƒ“ƒgƒvƒƒOƒ‰ƒ€</SPAN>
+<SPAN CLASS="linenum">0338:</SPAN>     <SPAN CLASS="comment">// ãƒ•ãƒ©ã‚°ãƒ¡ãƒ³ãƒˆãƒ—ãƒ­ã‚°ãƒ©ãƒ </SPAN>
 <SPAN CLASS="linenum">0339:</SPAN>     Ret = cgAddProgramFromFile(NormalCgContext, "<SPAN CLASS="string">normal.cg</SPAN>", cgFragmentProfile, NULL);
 <SPAN CLASS="linenum">0340:</SPAN>     assert(Ret == cgNoError);
 <SPAN CLASS="linenum">0341:</SPAN> 
-<SPAN CLASS="linenum">0342:</SPAN>     <SPAN CLASS="comment">// ƒvƒƒOƒ‰ƒ€–¼‚ÅƒvƒƒOƒ‰ƒ€‚ğŒ‹‚Ñ‚Â‚¯‚é</SPAN>
+<SPAN CLASS="linenum">0342:</SPAN>     <SPAN CLASS="comment">// ãƒ—ãƒ­ã‚°ãƒ©ãƒ åã§ãƒ—ãƒ­ã‚°ãƒ©ãƒ ã‚’çµã³ã¤ã‘ã‚‹</SPAN>
 <SPAN CLASS="linenum">0343:</SPAN>     NormalFragmentProgramIter = cgProgramByName(NormalCgContext, "<SPAN CLASS="string">main</SPAN>");
 <SPAN CLASS="linenum">0344:</SPAN>     assert(NormalFragmentProgramIter != NULL);
 <SPAN CLASS="linenum">0345:</SPAN> 
 <SPAN CLASS="linenum">0346:</SPAN> <SPAN CLASS="keyword">#if</SPAN> 1
-<SPAN CLASS="linenum">0347:</SPAN>     <SPAN CLASS="comment">// ƒ\[ƒX‚Ì•\¦</SPAN>
-<SPAN CLASS="linenum">0348:</SPAN>     fprintf(stderr, "<SPAN CLASS="string">---- ƒvƒƒOƒ‰ƒ€ ‚Í‚¶‚ß ----\n</SPAN>"
+<SPAN CLASS="linenum">0347:</SPAN>     <SPAN CLASS="comment">// ã‚½ãƒ¼ã‚¹ã®è¡¨ç¤º</SPAN>
+<SPAN CLASS="linenum">0348:</SPAN>     fprintf(stderr, "<SPAN CLASS="string">---- ãƒ—ãƒ­ã‚°ãƒ©ãƒ  ã¯ã˜ã‚ ----\n</SPAN>"
 <SPAN CLASS="linenum">0349:</SPAN>                     "<SPAN CLASS="string">%s</SPAN>"
-<SPAN CLASS="linenum">0350:</SPAN>                     "<SPAN CLASS="string">---- ƒvƒƒOƒ‰ƒ€ I‚í‚è ----\n</SPAN>",
+<SPAN CLASS="linenum">0350:</SPAN>                     "<SPAN CLASS="string">---- ãƒ—ãƒ­ã‚°ãƒ©ãƒ  çµ‚ã‚ã‚Š ----\n</SPAN>",
 <SPAN CLASS="linenum">0351:</SPAN>     cgGetProgramObjectCode(NormalFragmentProgramIter));
 <SPAN CLASS="linenum">0352:</SPAN> <SPAN CLASS="keyword">#endif</SPAN>
 <SPAN CLASS="linenum">0353:</SPAN>     <SPAN CLASS="keyword">if</SPAN>(NormalFragmentProgramIter != NULL) {
@@ -376,23 +376,23 @@ SPAN.linenum { color:#A0A0A0; font-weight:normal; font-style:normal;}
 <SPAN CLASS="linenum">0360:</SPAN>         assert(NormalTexBind != NULL);
 <SPAN CLASS="linenum">0361:</SPAN>     }
 <SPAN CLASS="linenum">0362:</SPAN>     <SPAN CLASS="comment">// -----------------------------------------------------------------------</SPAN>
-<SPAN CLASS="linenum">0363:</SPAN>     <SPAN CLASS="comment">// ”g‚Ì•\¦</SPAN>
+<SPAN CLASS="linenum">0363:</SPAN>     <SPAN CLASS="comment">// æ³¢ã®è¡¨ç¤º</SPAN>
 <SPAN CLASS="linenum">0364:</SPAN>     <SPAN CLASS="comment">// -----------------------------------------------------------------------</SPAN>
-<SPAN CLASS="linenum">0365:</SPAN>     <SPAN CLASS="comment">// Cg ‚Ìì¬</SPAN>
+<SPAN CLASS="linenum">0365:</SPAN>     <SPAN CLASS="comment">// Cg ã®ä½œæˆ</SPAN>
 <SPAN CLASS="linenum">0366:</SPAN>     CgContext = cgCreateContext();
 <SPAN CLASS="linenum">0367:</SPAN>     assert(CgContext != NULL);
 <SPAN CLASS="linenum">0368:</SPAN>     
-<SPAN CLASS="linenum">0369:</SPAN>     <SPAN CLASS="comment">// ’¸“_ƒvƒƒOƒ‰ƒ€</SPAN>
+<SPAN CLASS="linenum">0369:</SPAN>     <SPAN CLASS="comment">// é ‚ç‚¹ãƒ—ãƒ­ã‚°ãƒ©ãƒ </SPAN>
 <SPAN CLASS="linenum">0370:</SPAN>     Ret = cgAddProgramFromFile(CgContext, "<SPAN CLASS="string">vp.cg</SPAN>", cgVertexProfile, NULL);
 <SPAN CLASS="linenum">0371:</SPAN>     assert(Ret == cgNoError);
-<SPAN CLASS="linenum">0372:</SPAN>     <SPAN CLASS="comment">// ƒvƒƒOƒ‰ƒ€–¼‚ÅƒvƒƒOƒ‰ƒ€‚ğŒ‹‚Ñ‚Â‚¯‚é</SPAN>
+<SPAN CLASS="linenum">0372:</SPAN>     <SPAN CLASS="comment">// ãƒ—ãƒ­ã‚°ãƒ©ãƒ åã§ãƒ—ãƒ­ã‚°ãƒ©ãƒ ã‚’çµã³ã¤ã‘ã‚‹</SPAN>
 <SPAN CLASS="linenum">0373:</SPAN>     VertexProgramIter = cgProgramByName(CgContext, "<SPAN CLASS="string">main</SPAN>");
 <SPAN CLASS="linenum">0374:</SPAN>     assert(VertexProgramIter != NULL);
 <SPAN CLASS="linenum">0375:</SPAN> <SPAN CLASS="keyword">#if</SPAN> 1
-<SPAN CLASS="linenum">0376:</SPAN>     <SPAN CLASS="comment">// ƒ\[ƒX‚Ì•\¦</SPAN>
-<SPAN CLASS="linenum">0377:</SPAN>     fprintf(stderr, "<SPAN CLASS="string">---- ƒvƒƒOƒ‰ƒ€ ‚Í‚¶‚ß ----\n</SPAN>"
+<SPAN CLASS="linenum">0376:</SPAN>     <SPAN CLASS="comment">// ã‚½ãƒ¼ã‚¹ã®è¡¨ç¤º</SPAN>
+<SPAN CLASS="linenum">0377:</SPAN>     fprintf(stderr, "<SPAN CLASS="string">---- ãƒ—ãƒ­ã‚°ãƒ©ãƒ  ã¯ã˜ã‚ ----\n</SPAN>"
 <SPAN CLASS="linenum">0378:</SPAN>                     "<SPAN CLASS="string">%s</SPAN>"
-<SPAN CLASS="linenum">0379:</SPAN>                     "<SPAN CLASS="string">---- ƒvƒƒOƒ‰ƒ€ I‚í‚è ----\n</SPAN>",
+<SPAN CLASS="linenum">0379:</SPAN>                     "<SPAN CLASS="string">---- ãƒ—ãƒ­ã‚°ãƒ©ãƒ  çµ‚ã‚ã‚Š ----\n</SPAN>",
 <SPAN CLASS="linenum">0380:</SPAN>     cgGetProgramObjectCode(VertexProgramIter));
 <SPAN CLASS="linenum">0381:</SPAN> <SPAN CLASS="keyword">#endif</SPAN>
 <SPAN CLASS="linenum">0382:</SPAN>      <SPAN CLASS="keyword">if</SPAN>(VertexProgramIter != NULL) {
@@ -405,25 +405,25 @@ SPAN.linenum { color:#A0A0A0; font-weight:normal; font-style:normal;}
 <SPAN CLASS="linenum">0389:</SPAN>          LightPos  = cgGetBindByName(VertexProgramIter, "<SPAN CLASS="string">LightPos</SPAN>");
 <SPAN CLASS="linenum">0390:</SPAN>          WPMatrix  = cgGetBindByName(VertexProgramIter, "<SPAN CLASS="string">ModelViewProj</SPAN>");
 <SPAN CLASS="linenum">0391:</SPAN>  
-<SPAN CLASS="linenum">0392:</SPAN>          <SPAN CLASS="comment">// ƒGƒ‰[ƒ`ƒFƒbƒN</SPAN>
+<SPAN CLASS="linenum">0392:</SPAN>          <SPAN CLASS="comment">// ã‚¨ãƒ©ãƒ¼ãƒã‚§ãƒƒã‚¯</SPAN>
 <SPAN CLASS="linenum">0393:</SPAN>          assert(EyePos != NULL);
 <SPAN CLASS="linenum">0394:</SPAN>          assert(LightPos != NULL);
 <SPAN CLASS="linenum">0395:</SPAN>          assert(WPMatrix != NULL);
 <SPAN CLASS="linenum">0396:</SPAN>      }
 <SPAN CLASS="linenum">0397:</SPAN> 
-<SPAN CLASS="linenum">0398:</SPAN>     <SPAN CLASS="comment">// ƒtƒ‰ƒOƒƒ“ƒgƒvƒƒOƒ‰ƒ€</SPAN>
+<SPAN CLASS="linenum">0398:</SPAN>     <SPAN CLASS="comment">// ãƒ•ãƒ©ã‚°ãƒ¡ãƒ³ãƒˆãƒ—ãƒ­ã‚°ãƒ©ãƒ </SPAN>
 <SPAN CLASS="linenum">0399:</SPAN>     Ret = cgAddProgramFromFile(CgContext, "<SPAN CLASS="string">fp.cg</SPAN>", cgFragmentProfile, NULL);
 <SPAN CLASS="linenum">0400:</SPAN>     assert(Ret == cgNoError);
 <SPAN CLASS="linenum">0401:</SPAN> 
-<SPAN CLASS="linenum">0402:</SPAN>     <SPAN CLASS="comment">// ƒvƒƒOƒ‰ƒ€–¼‚ÅƒvƒƒOƒ‰ƒ€‚ğŒ‹‚Ñ‚Â‚¯‚é</SPAN>
+<SPAN CLASS="linenum">0402:</SPAN>     <SPAN CLASS="comment">// ãƒ—ãƒ­ã‚°ãƒ©ãƒ åã§ãƒ—ãƒ­ã‚°ãƒ©ãƒ ã‚’çµã³ã¤ã‘ã‚‹</SPAN>
 <SPAN CLASS="linenum">0403:</SPAN>     FragmentProgramIter = cgProgramByName(CgContext, "<SPAN CLASS="string">main</SPAN>");
 <SPAN CLASS="linenum">0404:</SPAN>     assert(FragmentProgramIter != NULL);
 <SPAN CLASS="linenum">0405:</SPAN> 
 <SPAN CLASS="linenum">0406:</SPAN> <SPAN CLASS="keyword">#if</SPAN> 1
-<SPAN CLASS="linenum">0407:</SPAN>     <SPAN CLASS="comment">// ƒ\[ƒX‚Ì•\¦</SPAN>
-<SPAN CLASS="linenum">0408:</SPAN>     fprintf(stderr, "<SPAN CLASS="string">---- ƒvƒƒOƒ‰ƒ€ ‚Í‚¶‚ß ----\n</SPAN>"
+<SPAN CLASS="linenum">0407:</SPAN>     <SPAN CLASS="comment">// ã‚½ãƒ¼ã‚¹ã®è¡¨ç¤º</SPAN>
+<SPAN CLASS="linenum">0408:</SPAN>     fprintf(stderr, "<SPAN CLASS="string">---- ãƒ—ãƒ­ã‚°ãƒ©ãƒ  ã¯ã˜ã‚ ----\n</SPAN>"
 <SPAN CLASS="linenum">0409:</SPAN>                     "<SPAN CLASS="string">%s</SPAN>"
-<SPAN CLASS="linenum">0410:</SPAN>                     "<SPAN CLASS="string">---- ƒvƒƒOƒ‰ƒ€ I‚í‚è ----\n</SPAN>",
+<SPAN CLASS="linenum">0410:</SPAN>                     "<SPAN CLASS="string">---- ãƒ—ãƒ­ã‚°ãƒ©ãƒ  çµ‚ã‚ã‚Š ----\n</SPAN>",
 <SPAN CLASS="linenum">0411:</SPAN>     cgGetProgramObjectCode(FragmentProgramIter));
 <SPAN CLASS="linenum">0412:</SPAN> <SPAN CLASS="keyword">#endif</SPAN>
 <SPAN CLASS="linenum">0413:</SPAN>     <SPAN CLASS="keyword">if</SPAN>(FragmentProgramIter != NULL) {
@@ -438,30 +438,30 @@ SPAN.linenum { color:#A0A0A0; font-weight:normal; font-style:normal;}
 <SPAN CLASS="linenum">0422:</SPAN>     
 <SPAN CLASS="linenum">0423:</SPAN> }
 <SPAN CLASS="linenum">0424:</SPAN> <SPAN CLASS="comment">// ---------------------------------------------------------------------------</SPAN>
-<SPAN CLASS="linenum">0425:</SPAN> <SPAN CLASS="comment">// ƒƒCƒ“ŠÖ”</SPAN>
+<SPAN CLASS="linenum">0425:</SPAN> <SPAN CLASS="comment">// ãƒ¡ã‚¤ãƒ³é–¢æ•°</SPAN>
 <SPAN CLASS="linenum">0426:</SPAN> <SPAN CLASS="comment">// ---------------------------------------------------------------------------</SPAN>
 <SPAN CLASS="linenum">0427:</SPAN> <SPAN CLASS="keyword">int</SPAN> main(<SPAN CLASS="keyword">int</SPAN> argc, <SPAN CLASS="keyword">char</SPAN> *argv[])
 <SPAN CLASS="linenum">0428:</SPAN> {
 <SPAN CLASS="linenum">0429:</SPAN>     <SPAN CLASS="keyword">int</SPAN> i, j;
 <SPAN CLASS="linenum">0430:</SPAN> 
-<SPAN CLASS="linenum">0431:</SPAN>     <SPAN CLASS="comment">// ƒEƒBƒ“ƒhƒE‚Ìì¬</SPAN>
-<SPAN CLASS="linenum">0432:</SPAN>     glutInitWindowPosition(100, 100);   <SPAN CLASS="comment">// •\¦ˆÊ’u</SPAN>
-<SPAN CLASS="linenum">0433:</SPAN>     glutInitWindowSize(512, 512);       <SPAN CLASS="comment">// ƒTƒCƒY</SPAN>
-<SPAN CLASS="linenum">0434:</SPAN>     glutInit(&amp;argc, argv);              <SPAN CLASS="comment">// GL‚Ì‰Šú‰»</SPAN>
-<SPAN CLASS="linenum">0435:</SPAN>     glutInitDisplayMode(GLUT_DOUBLE     <SPAN CLASS="comment">// •`‰æƒ‚[ƒh</SPAN>
-<SPAN CLASS="linenum">0436:</SPAN>                      | GLUT_RGBA        <SPAN CLASS="comment">// wƒoƒbƒtƒ@+RGBA+[“xƒoƒbƒtƒ@</SPAN>
+<SPAN CLASS="linenum">0431:</SPAN>     <SPAN CLASS="comment">// ã‚¦ã‚£ãƒ³ãƒ‰ã‚¦ã®ä½œæˆ</SPAN>
+<SPAN CLASS="linenum">0432:</SPAN>     glutInitWindowPosition(100, 100);   <SPAN CLASS="comment">// è¡¨ç¤ºä½ç½®</SPAN>
+<SPAN CLASS="linenum">0433:</SPAN>     glutInitWindowSize(512, 512);       <SPAN CLASS="comment">// ã‚µã‚¤ã‚º</SPAN>
+<SPAN CLASS="linenum">0434:</SPAN>     glutInit(&amp;argc, argv);              <SPAN CLASS="comment">// GLã®åˆæœŸåŒ–</SPAN>
+<SPAN CLASS="linenum">0435:</SPAN>     glutInitDisplayMode(GLUT_DOUBLE     <SPAN CLASS="comment">// æç”»ãƒ¢ãƒ¼ãƒ‰</SPAN>
+<SPAN CLASS="linenum">0436:</SPAN>                      | GLUT_RGBA        <SPAN CLASS="comment">// wãƒãƒƒãƒ•ã‚¡+RGBA+æ·±åº¦ãƒãƒƒãƒ•ã‚¡</SPAN>
 <SPAN CLASS="linenum">0437:</SPAN>                      | GLUT_DEPTH);
-<SPAN CLASS="linenum">0438:</SPAN>     glutCreateWindow(TITLE);            <SPAN CLASS="comment">// ƒEƒBƒ“ƒhƒE‚Ì¶¬</SPAN>
+<SPAN CLASS="linenum">0438:</SPAN>     glutCreateWindow(TITLE);            <SPAN CLASS="comment">// ã‚¦ã‚£ãƒ³ãƒ‰ã‚¦ã®ç”Ÿæˆ</SPAN>
 <SPAN CLASS="linenum">0439:</SPAN>     
-<SPAN CLASS="linenum">0440:</SPAN>     <SPAN CLASS="comment">// ƒR[ƒ‹ƒoƒbƒNŠÖ”‚Ìİ’è</SPAN>
-<SPAN CLASS="linenum">0441:</SPAN>     glutDisplayFunc(display);           <SPAN CLASS="comment">// •`‰æŠÖ”</SPAN>
-<SPAN CLASS="linenum">0442:</SPAN>     glutReshapeFunc(resize);    <SPAN CLASS="comment">// ‰æ–Ê‚ª•ÏŒ`‚µ‚½‚Æ‚«</SPAN>
-<SPAN CLASS="linenum">0443:</SPAN>     glutIdleFunc(idle);         <SPAN CLASS="comment">// ‚Ğ‚Ü‚È‚Æ‚«</SPAN>
+<SPAN CLASS="linenum">0440:</SPAN>     <SPAN CLASS="comment">// ã‚³ãƒ¼ãƒ«ãƒãƒƒã‚¯é–¢æ•°ã®è¨­å®š</SPAN>
+<SPAN CLASS="linenum">0441:</SPAN>     glutDisplayFunc(display);           <SPAN CLASS="comment">// æç”»é–¢æ•°</SPAN>
+<SPAN CLASS="linenum">0442:</SPAN>     glutReshapeFunc(resize);    <SPAN CLASS="comment">// ç”»é¢ãŒå¤‰å½¢ã—ãŸã¨ã</SPAN>
+<SPAN CLASS="linenum">0443:</SPAN>     glutIdleFunc(idle);         <SPAN CLASS="comment">// ã²ã¾ãªã¨ã</SPAN>
 <SPAN CLASS="linenum">0444:</SPAN>     
-<SPAN CLASS="linenum">0445:</SPAN>     <SPAN CLASS="comment">// Cg ‚Ì‰Šú‰»</SPAN>
+<SPAN CLASS="linenum">0445:</SPAN>     <SPAN CLASS="comment">// Cg ã®åˆæœŸåŒ–</SPAN>
 <SPAN CLASS="linenum">0446:</SPAN>     InitializeCg();
 <SPAN CLASS="linenum">0447:</SPAN> 
-<SPAN CLASS="linenum">0448:</SPAN>     <SPAN CLASS="comment">//ƒeƒNƒXƒ`ƒƒ‚Ì¶¬</SPAN>
+<SPAN CLASS="linenum">0448:</SPAN>     <SPAN CLASS="comment">//ãƒ†ã‚¯ã‚¹ãƒãƒ£ã®ç”Ÿæˆ</SPAN>
 <SPAN CLASS="linenum">0449:</SPAN>     GLubyte image[TEX_SIZE][TEX_SIZE][4];
 <SPAN CLASS="linenum">0450:</SPAN>     <SPAN CLASS="keyword">for</SPAN>(i=0;i&lt;TEX_SIZE;i++){
 <SPAN CLASS="linenum">0451:</SPAN>     <SPAN CLASS="keyword">for</SPAN>(j=0;j&lt;TEX_SIZE;j++){
@@ -473,10 +473,10 @@ SPAN.linenum { color:#A0A0A0; font-weight:normal; font-style:normal;}
 <SPAN CLASS="linenum">0457:</SPAN>     glGenTextures(1, &amp;tex_wave);
 <SPAN CLASS="linenum">0458:</SPAN>     glBindTexture(GL_TEXTURE_2D, tex_wave);
 <SPAN CLASS="linenum">0459:</SPAN>     glTexImage2D(GL_TEXTURE_2D, 0
-<SPAN CLASS="linenum">0460:</SPAN>         , 4         <SPAN CLASS="comment">// Layer ”</SPAN>
+<SPAN CLASS="linenum">0460:</SPAN>         , 4         <SPAN CLASS="comment">// Layer æ•°</SPAN>
 <SPAN CLASS="linenum">0461:</SPAN>         , TEX_SIZE  <SPAN CLASS="comment">// width</SPAN>
 <SPAN CLASS="linenum">0462:</SPAN>         , TEX_SIZE  <SPAN CLASS="comment">// height</SPAN>
-<SPAN CLASS="linenum">0463:</SPAN>         , 0         <SPAN CLASS="comment">// ‹«ŠEü‚Ì•</SPAN>
+<SPAN CLASS="linenum">0463:</SPAN>         , 0         <SPAN CLASS="comment">// å¢ƒç•Œç·šã®å¹…</SPAN>
 <SPAN CLASS="linenum">0464:</SPAN>         , GL_RGBA, GL_UNSIGNED_BYTE, image); 
 <SPAN CLASS="linenum">0465:</SPAN>     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT); 
 <SPAN CLASS="linenum">0466:</SPAN>     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT); 
@@ -489,10 +489,10 @@ SPAN.linenum { color:#A0A0A0; font-weight:normal; font-style:normal;}
 <SPAN CLASS="linenum">0473:</SPAN>     glGenTextures(1, &amp;tex_normal);
 <SPAN CLASS="linenum">0474:</SPAN>     glBindTexture(GL_TEXTURE_2D, tex_normal);
 <SPAN CLASS="linenum">0475:</SPAN>     glTexImage2D(GL_TEXTURE_2D, 0
-<SPAN CLASS="linenum">0476:</SPAN>         , 4         <SPAN CLASS="comment">// Layer ”</SPAN>
+<SPAN CLASS="linenum">0476:</SPAN>         , 4         <SPAN CLASS="comment">// Layer æ•°</SPAN>
 <SPAN CLASS="linenum">0477:</SPAN>         , TEX_SIZE  <SPAN CLASS="comment">// width</SPAN>
 <SPAN CLASS="linenum">0478:</SPAN>         , TEX_SIZE  <SPAN CLASS="comment">// height</SPAN>
-<SPAN CLASS="linenum">0479:</SPAN>         , 0         <SPAN CLASS="comment">// ‹«ŠEü‚Ì•</SPAN>
+<SPAN CLASS="linenum">0479:</SPAN>         , 0         <SPAN CLASS="comment">// å¢ƒç•Œç·šã®å¹…</SPAN>
 <SPAN CLASS="linenum">0480:</SPAN>         , GL_RGBA, GL_UNSIGNED_BYTE, image); 
 <SPAN CLASS="linenum">0481:</SPAN>     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT); 
 <SPAN CLASS="linenum">0482:</SPAN>     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT); 
@@ -509,10 +509,10 @@ SPAN.linenum { color:#A0A0A0; font-weight:normal; font-style:normal;}
 <SPAN CLASS="linenum">0493:</SPAN>     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 <SPAN CLASS="linenum">0494:</SPAN>     glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_DECAL);
 <SPAN CLASS="linenum">0495:</SPAN> 
-<SPAN CLASS="linenum">0496:</SPAN>     <SPAN CLASS="comment">// ˆê“x‚¾‚¯‚·‚ê‚Î‚¢‚¢İ’è</SPAN>
-<SPAN CLASS="linenum">0497:</SPAN>     glEnable(GL_DEPTH_TEST);            <SPAN CLASS="comment">// [“xƒoƒbƒtƒ@‚Ìg—p</SPAN>
+<SPAN CLASS="linenum">0496:</SPAN>     <SPAN CLASS="comment">// ä¸€åº¦ã ã‘ã™ã‚Œã°ã„ã„è¨­å®š</SPAN>
+<SPAN CLASS="linenum">0497:</SPAN>     glEnable(GL_DEPTH_TEST);            <SPAN CLASS="comment">// æ·±åº¦ãƒãƒƒãƒ•ã‚¡ã®ä½¿ç”¨</SPAN>
 <SPAN CLASS="linenum">0498:</SPAN> 
-<SPAN CLASS="linenum">0499:</SPAN>     glutMainLoop();                     <SPAN CLASS="comment">// ƒƒCƒ“ƒ‹[ƒv</SPAN>
+<SPAN CLASS="linenum">0499:</SPAN>     glutMainLoop();                     <SPAN CLASS="comment">// ãƒ¡ã‚¤ãƒ³ãƒ«ãƒ¼ãƒ—</SPAN>
 <SPAN CLASS="linenum">0500:</SPAN> 
 <SPAN CLASS="linenum">0501:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( TexBind )cgFreeBindIter( TexBind );
 <SPAN CLASS="linenum">0502:</SPAN>     cgFreeProgramIter( FragmentProgramIter );

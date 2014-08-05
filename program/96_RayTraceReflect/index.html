@@ -1,8 +1,8 @@
 <head>
-	<title>t-pot�wRay Tracing : Reflection &amp; Refraction�x</title>
+	<title>t-pot『Ray Tracing : Reflection &amp; Refraction』</title>
 	<link rel="stylesheet" type="text/css" href="../if.css">
 </head>
-<meta http-equiv=Content-Type content="text/html; charset=shift_jis">
+<meta http-equiv=Content-Type content="text/html; charset=UTF-8">
 <body>
 
 
@@ -10,8 +10,8 @@
 <center>
 <BR CLEAR=ALL>
 <BR CLEAR=ALL>
-<h1>���C�g���[�X�F���ˋ���</h1><br>
-<h3>�` Ray Tracing : Reflection &amp; Refraction �`</h3>
+<h1>レイトレース：反射屈折</h1><br>
+<h3>～ Ray Tracing : Reflection &amp; Refraction ～</h3>
 <BR CLEAR=ALL>
 <BR CLEAR=ALL>
 <BR CLEAR=ALL>
@@ -23,122 +23,122 @@
 <div>
 
 
-<h2>���͂��߂�</h2>
+<h2>■はじめに</h2>
 
 
 <p>
-���܂ł̉摜�́A���A���^�C���ł��\�ȉ摜�ł����B<br>
-�����ŁA���Ă��Ẵ��C�g���̉摜�Ō�������A���œ����ȕ��̂������Ă����ʂ�����Č��܂��傤�B
+今までの画像は、リアルタイムでも可能な画像でした。<br>
+ここで、こてこてのレイトレの画像で見かける、つるつるで透明な物体がおいてある画面を作って見ましょう。
 </p>
 
 <p>
-����̃v���O�����́A���̂��̂ł��B
+今回のプログラムは、次のものです。
 </p>
 <ul style = "LIST-STYLE-TYPE:none">
-<li><a href="src.zip">src.zip (���ˋ���:MFC, DirectX9)</a>
+<li><a href="src.zip">src.zip (反射屈折:MFC, DirectX9)</a>
 </ul>
 
 <p>
-�܂��A�����̂悤�ɓK���Ƀt�@�C���������Ă��܂��B<br>
-APP WIZARD ����o�͂����t���[�����[�N�̃t�@�C���͏Љ���Ȃ����Ă��������܂��B<br>
-���񂩂�A�I�u�W�F�N�g�̂��߂̃N���X��ʃt�@�C�� prim.h�Aprim.cpp �ɕ����܂����B
+まぁ、いつものように適当にファイルが入っています。<br>
+APP WIZARD から出力されるフレームワークのファイルは紹介を省かせていただきます。<br>
+今回から、オブジェクトのためのクラスを別ファイル prim.h、prim.cpp に分けました。
 </p>
 <table>
-<tr><td><a href="render_cpp.html">render.cpp</a></td><td>���C�g���p�̕`��֐��Q</td></tr>
-<tr><td><a href="render_h.html">render.h</a></td><td>���C�g���p�̕`��֐��Q</td></tr>
-<tr><td><a href="prim_cpp.html">prim.cpp</a></td><td>�I�u�W�F�N�g�̃f�[�^�̂��߂̊֐�</td></tr>
-<tr><td><a href="prim_h.html">prim.h</a></td><td>�I�u�W�F�N�g�̃f�[�^�̂��߂̊֐�</td></tr>
-<tr><td><a href="mainDlg_cpp.html">mainDlg.cpp</a></td><td>�_�C�A���O���Ǘ�����N���X�̃��\�b�h�������ꂽ�t�@�C��</td></tr>
-<tr><td><a href="mainDlg_h.html">mainDlg.h</a></td><td>�_�C�A���O���Ǘ�����N���X�̃w�b�_</td></tr>
+<tr><td><a href="render_cpp.html">render.cpp</a></td><td>レイトレ用の描画関数群</td></tr>
+<tr><td><a href="render_h.html">render.h</a></td><td>レイトレ用の描画関数群</td></tr>
+<tr><td><a href="prim_cpp.html">prim.cpp</a></td><td>オブジェクトのデータのための関数</td></tr>
+<tr><td><a href="prim_h.html">prim.h</a></td><td>オブジェクトのデータのための関数</td></tr>
+<tr><td><a href="mainDlg_cpp.html">mainDlg.cpp</a></td><td>ダイアログを管理するクラスのメソッドが書かれたファイル</td></tr>
+<tr><td><a href="mainDlg_h.html">mainDlg.h</a></td><td>ダイアログを管理するクラスのヘッダ</td></tr>
 </table>
 
 <p>
-���ƁA���s�t�@�C���A���\�[�X�t�@�C���A�v���W�F�N�g�t�@�C���������Ă��܂��B
+あと、実行ファイル、リソースファイル、プロジェクトファイルが入っています。
 </p>
 
 
-<h2>��������Ă�́H</h2>
+<h2>■何やってるの？</h2>
 
 
 <p>
-����́A���ˁA���܂�ǉ����܂����B<br>
-�������烌�C���΂����Ƃ��ɁA���C���Փ˂������̂����ˁA�������͋��܂��镨�̂�������A�Փ˂����_���甽�ˁA���܂̕����Ƀ��C���΂��A��΂�����̐F���ŏI�I�ȐF�Ƃ��ďo�͂��܂��B<br>
-�������A���ˁA���܂��ă��C���΂����悪�Ăє��ˁA���܂��镨�̂�������A���̐�ł����ˁA���܂������C���΂��܂��B
+今回は、反射、屈折を追加しました。<br>
+視線からレイを飛ばしたときに、レイが衝突した物体が反射、もしくは屈折する物体だったら、衝突した点から反射、屈折の方向にレイを飛ばし、飛ばした先の色を最終的な色として出力します。<br>
+もちろん、反射、屈折してレイを飛ばした先が再び反射、屈折する物体だったら、その先でも反射、屈折したレイを飛ばします。
 </p>
 <image src = "explain.png">
 <p>
-���āA���ˁA���܂̎��̃��C�̕����ł����A���˃x�N�g���͂���܂ł������o�Ă��Ă���Ƃ���A
+さて、反射、屈折の時のレイの方向ですが、反射ベクトルはこれまでも多く出てきているとおり、
 </p>
 <pre class="CodeBlock">
-<b>r</b> = <b>v</b> - 2 (<b>n</b>�E<b>v</b>) <b>n</b>
+<b>r</b> = <b>v</b> - 2 (<b>n</b>・<b>v</b>) <b>n</b>
 </pre>
 <p>
-�ł��B<br>
-���܃x�N�g���́A�X�l���̖@�����瓱�o���܂��B<br>
-�X�l���̖@���Ƃ́A���ˊp��<sub>1</sub>�ŋ��ܗ���<sub>1</sub>�̕���������ܗ���<sub>2</sub>�̕����Ɍ������˂���Ƃ��ɁA���ˌ�̊p�x��<sub>2</sub>�ɂ́A
+です。<br>
+屈折ベクトルは、スネルの法則から導出します。<br>
+スネルの法則とは、入射角θ<sub>1</sub>で屈折率η<sub>1</sub>の物質から屈折率η<sub>2</sub>の物質に光が入射するときに、入射後の角度θ<sub>2</sub>には、
 </p>
 <pre class="CodeBlock">
-��<sub>1</sub>sin��<sub>1</sub> = ��<sub>2</sub>sin��<sub>2</sub>
+η<sub>1</sub>sinθ<sub>1</sub> = η<sub>2</sub>sinθ<sub>2</sub>
 </pre>
 <p>
-�̊֌W������Ƃ�����ł��B
+の関係があるというやつです。
 </p>
 <image src = "refraction.png">
 <p>
-���āA�ȏ�̏������ɁA���܃x�N�g��<b>T</b>������Ă݂܂��傤�B<br>
-���܃x�N�g��<b>T</b>�́A�p�x��<sub>2</sub>�ŕ��̂ɓ��˂���̂ŁA���������̒P�ʃx�N�g��(�@���x�N�g��)��<b>N</b>�A���������̒P�ʃx�N�g����<b>e</b><sub>v</sub>�Ƃ���ƁA
+さて、以上の情報を元に、屈折ベクトル<b>T</b>を作ってみましょう。<br>
+屈折ベクトル<b>T</b>は、角度θ<sub>2</sub>で物体に入射するので、垂直方向の単位ベクトル(法線ベクトル)を<b>N</b>、水平方向の単位ベクトルを<b>e</b><sub>v</sub>とすると、
 </p>
 <pre class="CodeBlock">
-<b>T</b> = - <b>N</b> cos��<sub>2</sub> - <b>e</b><sub>v</sub> sin��<sub>2</sub>
+<b>T</b> = - <b>N</b> cosθ<sub>2</sub> - <b>e</b><sub>v</sub> sinθ<sub>2</sub>
 </pre>
 <p>
-�ɂȂ�܂��B�����ŁA���˃x�N�g��<b>L</b>�Ɛ��������̃x�N�g���̊֌W��
+になります。ここで、入射ベクトル<b>L</b>と垂直方向のベクトルの関係式
 </p>
 <pre class="CodeBlock">
-<b>e</b><sub>v</sub> sin��<sub>1</sub> = <b>L</b> - (<b>L</b>�E<b>N</b>)<b>N</b>
+<b>e</b><sub>v</sub> sinθ<sub>1</sub> = <b>L</b> - (<b>L</b>・<b>N</b>)<b>N</b>
 </pre>
 <p>
-���g���΁A���܃x�N�g���́A
+を使えば、屈折ベクトルは、
 </p>
 <pre class="CodeBlock">
-<b> </b>     <b> </b>      <sub> </sub>   <b>L</b> - (<b>L</b>�E<b>N</b>)<b>N</b>
-<b>T</b> = - <b>N</b> cos��<sub>2</sub> - ------------ sin��<sub>2</sub>
-<b> </b>     <b> </b>      <sub> </sub>      sin��<sub>1</sub>
+<b> </b>     <b> </b>      <sub> </sub>   <b>L</b> - (<b>L</b>・<b>N</b>)<b>N</b>
+<b>T</b> = - <b>N</b> cosθ<sub>2</sub> - ------------ sinθ<sub>2</sub>
+<b> </b>     <b> </b>      <sub> </sub>      sinθ<sub>1</sub>
 </pre>
 <p>
-�Ƃ����܂��B����ɁA�X�l���̖@�����g���΁A
+とかけます。さらに、スネルの法則を使えば、
 </p>
 <pre class="CodeBlock">
-<b> </b>     <b> </b>      <sub> </sub>   ��<sub>1</sub>
-<b>T</b> = - <b>N</b> cos��<sub>2</sub> - �|<sub> </sub>[<b>L</b> - (<b>L</b>�E<b>N</b>)<b>N</b>]
-<b> </b>     <b> </b>      <sub> </sub>   ��<sub>2</sub>
+<b> </b>     <b> </b>      <sub> </sub>   η<sub>1</sub>
+<b>T</b> = - <b>N</b> cosθ<sub>2</sub> - －<sub> </sub>[<b>L</b> - (<b>L</b>・<b>N</b>)<b>N</b>]
+<b> </b>     <b> </b>      <sub> </sub>   η<sub>2</sub>
 </pre>
 <p>
-�ƕό`�ł��܂��B����ɁAcos��sin�ŏ�����
+と変形できます。さらに、cosをsinで書くと
 </p>
 <pre class="CodeBlock">
-<b> </b>     <b> </b>         <sub> </sub>  <sub> </sub> <sub>   </sub>  ��<sub>1</sub>
-<b>T</b> = - <b>N</b> (1 - sin<sup>2</sup>��<sub>2</sub>)<sup>1/2</sup> - �|<sub> </sub>[<b>L</b> - (<b>L</b>�E<b>N</b>)<b>N</b>]
-<b> </b>     <b> </b>         <sub> </sub>  <sub> </sub> <sub>   </sub>  ��<sub>2</sub>
+<b> </b>     <b> </b>         <sub> </sub>  <sub> </sub> <sub>   </sub>  η<sub>1</sub>
+<b>T</b> = - <b>N</b> (1 - sin<sup>2</sup>θ<sub>2</sub>)<sup>1/2</sup> - －<sub> </sub>[<b>L</b> - (<b>L</b>・<b>N</b>)<b>N</b>]
+<b> </b>     <b> </b>         <sub> </sub>  <sub> </sub> <sub>   </sub>  η<sub>2</sub>
 </pre>
 <p>
-�ƂȂ�̂ł����A����� sin��<sub>2</sub> ���X�l���̖@���ƁAcos��<sub>1</sub> = <b>L</b>�E<b>N</b> ���g���Ēu��������ƁA
+となるのですが、さらに sinθ<sub>2</sub> をスネルの法則と、cosθ<sub>1</sub> = <b>L</b>・<b>N</b> を使って置き換えると、
 </p>
 <pre class="CodeBlock">
-<b> </b>     <b> </b>      ��<sub>1</sub><sup>2</sup>   <sub> </sub>  <sub> </sub> <sub>   </sub>          ��<sub>1</sub>
-<b>T</b> = - <b>N</b> (1 - �| [1 - (<b>L</b>�E<b>N</b>)<sup>2</sup>])<sup>1/2</sup> - �|<sub> </sub>[<b>L</b> - (<b>L</b>�E<b>N</b>)<b>N</b>]
-<b> </b>     <b> </b>      ��<sub>2</sub><sup>2</sup>   <sub> </sub>  <sub> </sub> <sub>   </sub>          ��<sub>2</sub>
+<b> </b>     <b> </b>      η<sub>1</sub><sup>2</sup>   <sub> </sub>  <sub> </sub> <sub>   </sub>          η<sub>1</sub>
+<b>T</b> = - <b>N</b> (1 - － [1 - (<b>L</b>・<b>N</b>)<sup>2</sup>])<sup>1/2</sup> - －<sub> </sub>[<b>L</b> - (<b>L</b>・<b>N</b>)<b>N</b>]
+<b> </b>     <b> </b>      η<sub>2</sub><sup>2</sup>   <sub> </sub>  <sub> </sub> <sub>   </sub>          η<sub>2</sub>
 </pre>
 <p>
-�ɂȂ�܂��B���̎��́A���ܗ���<sub>1</sub>�A��<sub>2</sub>�Ɩ@���x�N�g��<b>N</b>�A���˃x�N�g��<b>L</b>�Ƃ�����X���������Ƃ̂ł���ʂ�����܃x�N�g��<b>T</b>���v�Z���鎮�ɂȂ�܂��B
+になります。この式は、屈折率η<sub>1</sub>、η<sub>2</sub>と法線ベクトル<b>N</b>、入射ベクトル<b>L</b>という我々が扱うことのできる量から屈折ベクトル<b>T</b>を計算する式になります。
 </p>
 
 
-<h2>���v���O����</h2>
+<h2>■プログラム</h2>
 
 
 <p>
-����A���ˁA���܂�������邽�߂ɁA�������̍\���� Material ���g�����܂����B
+今回、反射、屈折を取り入れるために、質感情報の構造体 Material を拡張しました。
 </p>
 
 <pre class="CodeBlock">
@@ -148,26 +148,26 @@ prim.h
 <font color="deepskyblue">0023:</font>     <font color="blue">float</font>   COLOR_DIF[4];
 <font color="deepskyblue">0024:</font>     <font color="blue">float</font>   COLOR_SPE[4];
 <font color="deepskyblue">0025:</font>     <font color="blue">float</font>   speq_power;
-<font color="deepskyblue">0026:</font>     <font color="blue">float</font>   reflection;    <font color="cyan">// ���ʔ��˗�</font>
-<font color="deepskyblue">0027:</font>     <font color="blue">float</font>   refraction;    <font color="cyan">// ���ܔ��˗�</font>
-<font color="deepskyblue">0028:</font>     <font color="blue">float</font>   diffuse;       <font color="cyan">// �g�U���˗�</font>
+<font color="deepskyblue">0026:</font>     <font color="blue">float</font>   reflection;    <font color="cyan">// 鏡面反射率</font>
+<font color="deepskyblue">0027:</font>     <font color="blue">float</font>   refraction;    <font color="cyan">// 屈折反射率</font>
+<font color="deepskyblue">0028:</font>     <font color="blue">float</font>   diffuse;       <font color="cyan">// 拡散反射率</font>
 <font color="deepskyblue">0029:</font> }Material;
 </pre>
 <p>
-�������̂ɓ��������Ƃ��ɁA���ʔ��˗��̊����Ŕ��˂��A���ܔ��˗��̊����ŋ��܂��܂��B�܂��A�g�U���˗��̊����ŕ��̂ɐF�����܂��B<br>
-1-reflection-refraction-diffuse �̊����Ō��͕��̂ɋz������邱�ƂɂȂ�̂ŁAreflection = refraction = diffuse = 0 �ɂ���ƁA���̂͐^�����ɂȂ�܂��B
-�g�U�����́A�g�U���˗��ȊO�ɂ��A�g�U�F COLOR_DIF ���ŐF�𐧌䂷�邱�Ƃ��ł���̂ŁA�����̐F���|�����l���e�F�Ɋւ���g�U���˗��ɂȂ�܂��B
+光が物体に当たったときに、鏡面反射率の割合で反射し、屈折反射率の割合で屈折します。また、拡散反射率の割合で物体に色がつきます。<br>
+1-reflection-refraction-diffuse の割合で光は物体に吸収されることになるので、reflection = refraction = diffuse = 0 にすると、物体は真っ黒になります。
+拡散成分は、拡散反射率以外にも、拡散色 COLOR_DIF 等で色を制御することができるので、それらの色を掛けた値が各色に関する拡散反射率になります。
 </p>
 <p>
-����̋��̃f�[�^�́A���̂悤�ɂȂ�܂��B
+今回の球のデータは、下のようになります。
 </p>
 
 <pre class="CodeBlock">
 render.cpp
 <font color="deepskyblue">0064:</font> <font color="cyan">// ---------------------------------------------------------------------------</font>
-<font color="deepskyblue">0065:</font> <font color="cyan">// ��</font>
+<font color="deepskyblue">0065:</font> <font color="cyan">// 玉</font>
 <font color="deepskyblue">0066:</font> OBJ_DATA sphere_data[] = {
-<font color="deepskyblue">0067:</font> {<font color="cyan">// �������̂ɏ���Ă�ق�</font>
+<font color="deepskyblue">0067:</font> {<font color="cyan">// 小さいのに乗ってるほう</font>
 <font color="deepskyblue">0068:</font>     OBJ_TYPE_SPHERE,
 <font color="deepskyblue">0069:</font>     {
 <font color="deepskyblue">0070:</font>         {0.01f, 0.05f, 0.02f },
@@ -179,7 +179,7 @@ render.cpp
 <font color="deepskyblue">0076:</font>         {185.5, 165+100,169},
 <font color="deepskyblue">0077:</font>         100.0f,
 <font color="deepskyblue">0078:</font>     }
-<font color="deepskyblue">0079:</font> },{<font color="cyan">// �傫���̂ɏ���Ă�ق�</font>
+<font color="deepskyblue">0079:</font> },{<font color="cyan">// 大きいのに乗ってるほう</font>
 <font color="deepskyblue">0080:</font>     OBJ_TYPE_SPHERE,
 <font color="deepskyblue">0081:</font>     {
 <font color="deepskyblue">0082:</font>         {0.00f, 0.00f, 0.00f},
@@ -194,41 +194,41 @@ render.cpp
 <font color="deepskyblue">0091:</font> }};
 </pre>
 <p>
-�����Ƃ����S�ɔ��ˁA���܂��镨�̂ł͂Ȃ��āA�����ȋ��͂킸���ɋ��܁A
-���ȋ��͂킸���ɍ����F�����Ă��܂��B
+両方とも完全に反射、屈折する物体ではなくて、透明な球はわずかに屈折、
+つるつるな球はわずかに黒い色をつけています。
 </p>
 
 <p>
-���āA�F�𓾂�֐� GetColor �́A�ǂ̂悤�ȕύX���󂯂�ł��傤���B<br>
-����A���ˁA���܂������Ƃ���ŁA���̊֐��͍ċA�I�ɌĂ΂�邱�ƂɂȂ�܂��B
-�����ŁA�ċA���ꂽ�[�� depth �������ɒǉ����܂����B
-�֐����Ă΂ꂽ�ŏ��ɍċA�̐[���𒲂ׂāA�K���ɐݒ肵���[�� DEPTH_MAX �𒴂����Ƃ��ɂ́A�����͂��Ȃ��������̂Ƃ��āA���F���o�͂���悤�ɂ��܂����B
+さて、色を得る関数 GetColor は、どのような変更を受けるでしょうか。<br>
+今回、反射、屈折をしたところで、この関数は再帰的に呼ばれることになります。
+そこで、再帰された深さ depth を引数に追加しました。
+関数が呼ばれた最初に再帰の深さを調べて、適当に設定した深さ DEPTH_MAX を超えたときには、光が届かなかったものとして、黒色を出力するようにしました。
 </p>
 <pre class="CodeBlock">
 render.cpp
 <font color="deepskyblue">0639:</font> <font color="blue">bool</font> GetColor(D3DXVECTOR3 *dest, <font color="blue">const</font> D3DXVECTOR4 *x, <font color="blue">const</font> D3DXVECTOR4 *v, <font color="blue">int</font> depth)
 <font color="deepskyblue">0640:</font> {
 <font color="deepskyblue">0641:</font>     <font color="cyan">// -----------------------------------------------------------------------</font>
-<font color="deepskyblue">0642:</font>     <font color="cyan">// �ċA���������ꍇ�͌����͂��Ă��Ȃ����̂ƍl����</font>
+<font color="deepskyblue">0642:</font>     <font color="cyan">// 再帰しすぎた場合は光が届いていないものと考える</font>
 <font color="deepskyblue">0643:</font>     <font color="cyan">// -----------------------------------------------------------------------</font>
 <font color="deepskyblue">0644:</font>     <font color="blue">const</font> <font color="blue">int</font> DEPTH_MAX = 3;
 <font color="deepskyblue">0645:</font>     <font color="blue">if</font>(DEPTH_MAX &lt;= depth) {*dest = D3DXVECTOR3(0,0,0); <font color="blue">return</font> FALSE;}
 </pre>
 <p>
-���ɍs���̂́A���C���Փ˂��镨�̂𒲂ׂ邱�Ƃł��B
-����́A���܂łƕς�肠��܂���B
-�S�Ă̕��̂ƌ������肵�āA��ԋ߂��Ō����������̂ƌ��������ꏊ�A���̖@���𒲂ׂ܂��B<br>
-�Փ˂��Ȃ������Ƃ��ɂ́A�O�ɓ˂��������Ƃ������Ƃł�����A�w�i�F���o�͂��܂��B
+次に行うのは、レイが衝突する物体を調べることです。
+これは、今までと変わりありません。
+全ての物体と交差判定して、一番近くで交差した物体と交差した場所、その法線を調べます。<br>
+衝突がなかったときには、外に突き抜けたということですから、背景色を出力します。
 </p>
 <pre class="CodeBlock">
 render.cpp
 <font color="deepskyblue">0646:</font> 
 <font color="deepskyblue">0647:</font>     <font color="cyan">// -----------------------------------------------------------------------</font>
-<font color="deepskyblue">0648:</font>     <font color="cyan">// ���������_�����߂�</font>
+<font color="deepskyblue">0648:</font>     <font color="cyan">// 視線から交点を求める</font>
 <font color="deepskyblue">0649:</font>     <font color="cyan">// -----------------------------------------------------------------------</font>
 <font color="deepskyblue">0650:</font>     <font color="blue">float</font> t = CPrimitive::INFINTY_DIST;
 <font color="deepskyblue">0651:</font>     CPrimitive *pObj = NULL;
-<font color="deepskyblue">0652:</font>     D3DXVECTOR4 p, n;<font color="cyan">// ��_�̈ʒu�Ɩ@��</font>
+<font color="deepskyblue">0652:</font>     D3DXVECTOR4 p, n;<font color="cyan">// 交点の位置と法線</font>
 <font color="deepskyblue">0653:</font> 
 <font color="deepskyblue">0654:</font>     t = pShpereS   -&gt;IsAcross(t, &amp;n, &amp;p, &amp;pObj, x, v);
 <font color="deepskyblue">0655:</font>     t = pShpereT   -&gt;IsAcross(t, &amp;n, &amp;p, &amp;pObj, x, v);
@@ -237,20 +237,20 @@ render.cpp
 <font color="deepskyblue">0658:</font>     t = pBlockTall -&gt;IsAcross(t, &amp;n, &amp;p, &amp;pObj, x, v);
 <font color="deepskyblue">0659:</font> 
 <font color="deepskyblue">0660:</font>     <font color="blue">if</font>( NULL == pObj ){
-<font color="deepskyblue">0661:</font>         <font color="cyan">// �����̓I�u�W�F�N�g����O�ꂽ�I</font>
+<font color="deepskyblue">0661:</font>         <font color="cyan">// 視線はオブジェクトから外れた！</font>
 <font color="deepskyblue">0662:</font>         *dest = BG_COLOR;
 <font color="deepskyblue">0663:</font>         <font color="blue">return</font> TRUE;
 <font color="deepskyblue">0664:</font>     }
 </pre>
 <p>
-���C�����̂ƌ��������Ƃ��ɂ́A���������_�ł̐F���v�Z���܂��B<br>
-�ŏ��́A�g�U�F�ł��B<br>
-�g�U�F�́A���܂łɂ���Ă����悤�ɁA�_�����������邩�Օ��`�F�b�N�����āABlinn-Phong �̖@������F�����߂܂��B
+レイが物体と交差したときには、あたった点での色を計算します。<br>
+最初は、拡散色です。<br>
+拡散色は、今までにやってきたように、点光源が見えるか遮蔽チェックをして、Blinn-Phong の法則から色を求めます。
 </p>
 <pre class="CodeBlock">
 render.cpp
 <font color="deepskyblue">0666:</font>     <font color="cyan">// -----------------------------------------------------------------------</font>
-<font color="deepskyblue">0667:</font>     <font color="cyan">// �g�U�����Z�o����</font>
+<font color="deepskyblue">0667:</font>     <font color="cyan">// 拡散光を算出する</font>
 <font color="deepskyblue">0668:</font>     <font color="cyan">// -----------------------------------------------------------------------</font>
 <font color="deepskyblue">0669:</font>     <font color="blue">float</font> cd = pObj-&gt;m_material.diffuse;
 <font color="deepskyblue">0670:</font>     D3DXVECTOR3 diffuse_color;
@@ -262,11 +262,11 @@ render.cpp
 <font color="deepskyblue">0676:</font>         D3DXVec3Normalize((D3DXVECTOR3 *)&amp;l, (D3DXVECTOR3 *)&amp;l);
 <font color="deepskyblue">0677:</font> 
 <font color="deepskyblue">0678:</font>         D3DXVECTOR3 dir, H;
-<font color="deepskyblue">0679:</font>         <font color="cyan">// �����̌v�Z</font>
+<font color="deepskyblue">0679:</font>         <font color="cyan">// 視線の計算</font>
 <font color="deepskyblue">0680:</font>         camera.GetFrom(&amp;dir);
 <font color="deepskyblue">0681:</font>         dir = dir - *(D3DXVECTOR3 *)&amp;p;
 <font color="deepskyblue">0682:</font>         D3DXVec3Normalize(&amp;dir, &amp;dir);
-<font color="deepskyblue">0683:</font>         <font color="cyan">// �n�[�t�x�N�g��</font>
+<font color="deepskyblue">0683:</font>         <font color="cyan">// ハーフベクトル</font>
 <font color="deepskyblue">0684:</font>         H = dir+*(D3DXVECTOR3 *)&amp;l;
 <font color="deepskyblue">0685:</font>         D3DXVec3Normalize((D3DXVECTOR3 *)&amp;H, (D3DXVECTOR3 *)&amp;H);
 <font color="deepskyblue">0686:</font> 
@@ -275,52 +275,52 @@ render.cpp
 <font color="deepskyblue">0689:</font>         <font color="blue">if</font>(HN&lt;0) HN=0;
 <font color="deepskyblue">0690:</font>         <font color="blue">if</font>(0&lt;LN){
 <font color="deepskyblue">0691:</font>             <font color="cyan">// ---------------------------------------------------------------</font>
-<font color="deepskyblue">0692:</font>             <font color="cyan">// ���������Ƃ��납��A�����������邩�𔻒�</font>
+<font color="deepskyblue">0692:</font>             <font color="cyan">// 当たったところから、光源が見えるかを判定</font>
 <font color="deepskyblue">0693:</font>             <font color="cyan">// ---------------------------------------------------------------</font>
-<font color="deepskyblue">0694:</font>             <font color="cyan">// �����Ȃ���΁A�Â�����</font>
+<font color="deepskyblue">0694:</font>             <font color="cyan">// 見えなければ、暗くする</font>
 <font color="deepskyblue">0695:</font>             <font color="blue">bool</font> bShadow = FALSE;
 <font color="deepskyblue">0696:</font>             <font color="blue">if</font>(!bShadow) bShadow = pShpereS   -&gt;IsAcross(L2, &amp;p, &amp;l);
 <font color="deepskyblue">0697:</font>             <font color="blue">if</font>(!bShadow) bShadow = pShpereT   -&gt;IsAcross(L2, &amp;p, &amp;l);
 <font color="deepskyblue">0698:</font>             <font color="blue">if</font>(!bShadow) bShadow = pRoom      -&gt;IsAcross(L2, &amp;p, &amp;l);
 <font color="deepskyblue">0699:</font>             <font color="blue">if</font>(!bShadow) bShadow = pBlockSmall-&gt;IsAcross(L2, &amp;p, &amp;l);
 <font color="deepskyblue">0700:</font>             <font color="blue">if</font>(!bShadow) bShadow = pBlockTall -&gt;IsAcross(L2, &amp;p, &amp;l);
-<font color="deepskyblue">0701:</font>             <font color="blue">if</font>(bShadow) LN*=0.0f;<font color="cyan">// difuse�����Ȃ���</font>
+<font color="deepskyblue">0701:</font>             <font color="blue">if</font>(bShadow) LN*=0.0f;<font color="cyan">// difuseだけなくす</font>
 <font color="deepskyblue">0702:</font>         }<font color="blue">else</font>{
 <font color="deepskyblue">0703:</font>             LN=0;
 <font color="deepskyblue">0704:</font>         }
 <font color="deepskyblue">0705:</font> 
 <font color="deepskyblue">0706:</font>         pObj-&gt;GetColor(&amp;diffuse_color, LN, HN);
 <font color="deepskyblue">0707:</font>         
-<font color="deepskyblue">0708:</font>         <font color="cyan">// �����̐F�̔��f</font>
+<font color="deepskyblue">0708:</font>         <font color="cyan">// 光源の色の反映</font>
 <font color="deepskyblue">0709:</font>         D3DXVECTOR3 light_color = D3DXVECTOR3(10.f,9.0f,5.0f);
 <font color="deepskyblue">0710:</font>         diffuse_color.x *= light_color.x;
 <font color="deepskyblue">0711:</font>         diffuse_color.y *= light_color.y;
 <font color="deepskyblue">0712:</font>         diffuse_color.z *= light_color.z;
 <font color="deepskyblue">0713:</font>         
-<font color="deepskyblue">0714:</font>         <font color="cyan">// ���̋����̓K���ȕ␳</font>
-<font color="deepskyblue">0715:</font>         diffuse_color *= min(1.5f, 500000.0f/(10000.0f+L2)); <font color="cyan">// �����ɂ��␳</font>
-<font color="deepskyblue">0716:</font>         diffuse_color *= min(1, l.y+0.1f);                  <font color="cyan">// ���̌�����cos�Ƃ̊֐��ɂ���  </font>
+<font color="deepskyblue">0714:</font>         <font color="cyan">// 光の強さの適当な補正</font>
+<font color="deepskyblue">0715:</font>         diffuse_color *= min(1.5f, 500000.0f/(10000.0f+L2)); <font color="cyan">// 距離による補正</font>
+<font color="deepskyblue">0716:</font>         diffuse_color *= min(1, l.y+0.1f);                  <font color="cyan">// 光の向きをcosθの関数にする  </font>
 <font color="deepskyblue">0717:</font>     }<font color="blue">else</font>{
 <font color="deepskyblue">0718:</font>         diffuse_color = D3DXVECTOR3(0,0,0);
 <font color="deepskyblue">0719:</font>     }
 </pre>
 <p>
-���ɔ��ː����ł��B<br>
-���������ꏊ�̖@���x�N�g�� n ���甽�˃x�N�g�� r �����߂āA���������ꏊ p ����GetColor �֐����ċA�I�ɌĂяo���ďo�͂���F�Ƃ��܂��B<br>
-�����ŁA�v�Z�덷�ɂ���āA�Փ˂����I�u�W�F�N�g�̓����ꏊ�ɍĂяՓ˂���Ƃ��������h�����߂ɁA���C���΂��ꏊ�����������ꏊ���班�� 0.01 �����@�������ɂ��炵�܂����B
+次に反射成分です。<br>
+交差した場所の法線ベクトル n から反射ベクトル r を求めて、交差した場所 p からGetColor 関数を再帰的に呼び出して出力する色とします。<br>
+ここで、計算誤差によって、衝突したオブジェクトの同じ場所に再び衝突するという判定を防ぐために、レイを飛ばす場所をあたった場所から少し 0.01 だけ法線方向にずらしました。
 </p>
 <pre class="CodeBlock">
 render.cpp
 <font color="deepskyblue">0721:</font>     <font color="cyan">// -----------------------------------------------------------------------</font>
-<font color="deepskyblue">0722:</font>     <font color="cyan">// �ċA�I�Ɍ������΂��āA��荂���̔��˂��l���ɓ����</font>
+<font color="deepskyblue">0722:</font>     <font color="cyan">// 再帰的に光線を飛ばして、より高次の反射を考慮に入れる</font>
 <font color="deepskyblue">0723:</font>     <font color="cyan">// -----------------------------------------------------------------------</font>
-<font color="deepskyblue">0724:</font>     <font color="cyan">// ����</font>
+<font color="deepskyblue">0724:</font>     <font color="cyan">// 反射</font>
 <font color="deepskyblue">0725:</font>     <font color="blue">float</font> cr = pObj-&gt;m_material.reflection;
 <font color="deepskyblue">0726:</font>     D3DXVECTOR3 reflect_color;
 <font color="deepskyblue">0727:</font>     <font color="blue">if</font>(0.0f&lt;cr){
-<font color="deepskyblue">0728:</font>         <font color="cyan">// ���˃x�N�g��</font>
+<font color="deepskyblue">0728:</font>         <font color="cyan">// 反射ベクトル</font>
 <font color="deepskyblue">0729:</font>         D3DXVECTOR4 r = *v - 2.0f*D3DXVec3Dot((D3DXVECTOR3 *)&amp;n, (D3DXVECTOR3 *)v) * n;
-<font color="deepskyblue">0730:</font>         D3DXVECTOR4 pos = p + 0.01f*n;<font color="cyan">// ������ƕ�����</font>
+<font color="deepskyblue">0730:</font>         D3DXVECTOR4 pos = p + 0.01f*n;<font color="cyan">// ちょっと浮かす</font>
 <font color="deepskyblue">0731:</font>         <font color="blue">if</font>(!GetColor( &amp;reflect_color, &amp;pos, &amp;r, depth+1)){
 <font color="deepskyblue">0732:</font>             cr = 0;
 <font color="deepskyblue">0733:</font>         }
@@ -329,34 +329,34 @@ render.cpp
 <font color="deepskyblue">0736:</font>     }
 </pre>
 <p>
-���āA��͋��܂ł��B<br>
-���܂����˂ƈႤ�Ƃ���́A���̂ɓ���Ƃ��ƁA���̂���o�Ă���Ƃ��̂Q�ʂ肪����Ƃ������Ƃł��B
-����Ƃ��Əo�Ă���Ƃ��ŁA���ܗ��̔� ��<sub>2</sub>/��<sub>1</sub> �́A�t���̊֌W�ɂȂ�܂��B
-����́A����Ƃ��A�o�Ă���Ƃ����ɁA���̂łȂ�����^��i���ܗ� 1�j�ɂ��܂����B<br>
-�܂��A����Ƃ��Əo��Ƃ��Ŗ@���x�N�g���̌����𔽑΂ɂ���K�v������܂��B
+さて、後は屈折です。<br>
+屈折が反射と違うところは、物体に入るときと、物体から出てくるときの２通りがあるということです。
+入るときと出てくるときで、屈折率の比 η<sub>2</sub>/η<sub>1</sub> は、逆数の関係になります。
+今回は、入るとき、出てくるとき共に、物体でない側を真空（屈折率 1）にしました。<br>
+また、入るときと出るときで法線ベクトルの向きを反対にする必要もあります。
 </p>
 <pre class="CodeBlock">
 render.cpp
-<font color="deepskyblue">0738:</font>     <font color="cyan">// ����</font>
+<font color="deepskyblue">0738:</font>     <font color="cyan">// 屈折</font>
 <font color="deepskyblue">0739:</font>     <font color="blue">float</font> cn = pObj-&gt;m_material.refraction;
 <font color="deepskyblue">0740:</font>     D3DXVECTOR3 refract_color=D3DXVECTOR3(0,0,0);
 <font color="deepskyblue">0741:</font>     <font color="blue">if</font>(0.0f&lt;cn){
-<font color="deepskyblue">0742:</font>         <font color="cyan">// ���܃x�N�g��</font>
+<font color="deepskyblue">0742:</font>         <font color="cyan">// 屈折ベクトル</font>
 <font color="deepskyblue">0743:</font>         D3DXVECTOR4 t, pos;
 <font color="deepskyblue">0744:</font>         <font color="blue">float</font> VN = D3DXVec3Dot((D3DXVECTOR3 *)v, (D3DXVECTOR3 *)&amp;n);
 <font color="deepskyblue">0745:</font>         <font color="blue">float</font> eta = 1.5f;
 <font color="deepskyblue">0746:</font>         <font color="blue">if</font>(VN&lt;0){
-<font color="deepskyblue">0747:</font>             <font color="cyan">// ����</font>
+<font color="deepskyblue">0747:</font>             <font color="cyan">// 入射</font>
 <font color="deepskyblue">0748:</font>             <font color="blue">float</font> D = 1-(1+VN)*(1+VN)/(eta*eta);
-<font color="deepskyblue">0749:</font>             <font color="blue">if</font>(D&lt;0){cn=0;<font color="blue">goto</font> no_refract;}<font color="cyan">// �S����</font>
+<font color="deepskyblue">0749:</font>             <font color="blue">if</font>(D&lt;0){cn=0;<font color="blue">goto</font> no_refract;}<font color="cyan">// 全反射</font>
 <font color="deepskyblue">0750:</font>             t = (-VN/eta-sqrtf(D))*n+(1/eta)*(*v);
-<font color="deepskyblue">0751:</font>             pos = p - 0.01f*n;<font color="cyan">// ������ƕ�����</font>
+<font color="deepskyblue">0751:</font>             pos = p - 0.01f*n;<font color="cyan">// ちょっと浮かす</font>
 <font color="deepskyblue">0752:</font>         }<font color="blue">else</font>{
-<font color="deepskyblue">0753:</font>             <font color="cyan">// �o�čs��</font>
+<font color="deepskyblue">0753:</font>             <font color="cyan">// 出て行く</font>
 <font color="deepskyblue">0754:</font>             <font color="blue">float</font> D = 1-(1-VN)*(1-VN)*(eta*eta);
-<font color="deepskyblue">0755:</font>             <font color="blue">if</font>(D&lt;0){cn=0;<font color="blue">goto</font> no_refract;}<font color="cyan">// �S����</font>
+<font color="deepskyblue">0755:</font>             <font color="blue">if</font>(D&lt;0){cn=0;<font color="blue">goto</font> no_refract;}<font color="cyan">// 全反射</font>
 <font color="deepskyblue">0756:</font>             t = -(VN*eta-sqrtf(D))*n+eta*(*v);
-<font color="deepskyblue">0757:</font>             pos = p + 0.01f*n;<font color="cyan">// ������ƕ�����</font>
+<font color="deepskyblue">0757:</font>             pos = p + 0.01f*n;<font color="cyan">// ちょっと浮かす</font>
 <font color="deepskyblue">0758:</font>         }
 <font color="deepskyblue">0759:</font>         D3DXVec3Normalize( (D3DXVECTOR3 *)&amp;t, (D3DXVECTOR3 *)&amp;t );
 <font color="deepskyblue">0760:</font>         <font color="blue">if</font>(!GetColor( &amp;refract_color, &amp;pos, &amp;t, depth+1)){
@@ -366,7 +366,7 @@ render.cpp
 <font color="deepskyblue">0764:</font> no_refract:
 </pre>
 <p>
-�ȏ�ŁA���ꂼ��̐F���������肵����A��͂��ꂼ��̔��˗��ŐF���������ďo�͂��܂��B
+以上で、それぞれの色成分が決定したら、後はそれぞれの反射率で色を合成して出力します。
 </p>
 <pre class="CodeBlock">
 render.cpp
@@ -378,57 +378,57 @@ render.cpp
 
 
 
-<h2>���ǂ̂��炢�ċA����́H</h2>
+<h2>■どのくらい再帰するの？</h2>
 
 
 <p>
-�v�Z�̑ł��؂�� DEPTH_MAX ��ς���ƁA�ǂ̂悤�Ȍ��ʂɂȂ�̂����Ă݂܂��傤�B
+計算の打ち切り回数 DEPTH_MAX を変えると、どのような結果になるのか見てみましょう。
 </p>
 <table>
 <tr><td>
 <image src = "1.png">
 </td><td>
-�P��ڂ̏Փ˂Ōv�Z��ł��؂�ƁA�c�B���˂���܂������Ȃ������^�����ɂȂ�܂����B<br>
+１回目の衝突で計算を打ち切ると、…。反射や屈折しかしない球が真っ黒になりました。<br>
 </td></tr>
 </table>
 <table>
 <tr><td>
 <image src = "2.png">
 </td><td>
-�Q��ڂ̏Փ˂Ōv�Z��ł��؂�ƁA�c�B���˂̌��ʂ������܂��B<br>
+２回目の衝突で計算を打ち切ると、…。反射の効果が見えます。<br>
 </td></tr>
 </table>
 <table>
 <tr><td>
 <image src = "3.png">
 </td><td>
-�R��ڂ̏Փ˂Ōv�Z��ł��؂�ƁA�c�B���܂̌��ʂ��o�Ă��Ă��܂��B<br>
+３回目の衝突で計算を打ち切ると、…。屈折の効果が出てきています。<br>
 </td></tr>
 </table>
 <table>
 <tr><td>
 <image src = "4.png">
 </td><td>
-�S��ڂ̏Փ˂Ōv�Z��ł��؂�ƁA���˂��鋅�ɉf���������ȋ��Ɋւ��āA���̗����������Ă��܂��B
+４回目の衝突で計算を打ち切ると、反射する球に映った透明な球に関して、その裏側が透けています。
 </td></tr>
 </table>
 <table>
 <tr><td>
 <image src = "5.png">
 </td><td>
-�T��ڂ̏Փ˂Ōv�Z��ł��؂�ƁA�c�B���[��Ⴂ���悭�킩��܂���ˁB<br>
-�܂�A����̏ꍇ�T��ȏ�ɂ���͈̂Ӗ����Ȃ��Ƃ������Ƃł��B
-�V�[�������G�ɂȂ��Ă���ƁA���̓_���ς���Ă���ł��傤�B
+５回目の衝突で計算を打ち切ると、…。うーん違いがよくわかりませんね。<br>
+つまり、今回の場合５回以上にするのは意味がないということです。
+シーンが複雑になってくると、この点も変わってくるでしょう。
 </td></tr>
 </table>
 
 
-<h2>���Ō��</h2>
+<h2>■最後に</h2>
 
 
 <p>
-���āA����ƃ��C�g�����ۂ��摜�ɂȂ�܂������A����ς�e�̕������s���R�ł��ˁB<br>
-�����ƃ��A���ȉ摜�ɂ���ɂ́A���̕������C������K�v������܂��ˁB
+さて、やっとレイトレっぽい画像になりましたが、やっぱり影の部分が不自然ですね。<br>
+もっとリアルな画像にするには、この部分を修正する必要がありますね。
 </p>
 
 
@@ -438,7 +438,7 @@ render.cpp
 <BR CLEAR=ALL>
 <center>
 <hr>
-<p><a href="../index.html">���ǂ�</a></p>
+<p><a href="../index.html">もどる</a></p>
 <p><a href="mailto:imagire@gmail.com">imagire@gmail.com</a></p>
 </center>
 

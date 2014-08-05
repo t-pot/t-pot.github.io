@@ -1,8 +1,8 @@
 <head>
-	<title>t-pot�w�������O�~�x</title>
+	<title>t-pot『ワンの絨毯』</title>
 	<link rel="stylesheet" type="text/css" href="../if.css">
 </head>
-<meta http-equiv=Content-Type content="text/html; charset=shift_jis">
+<meta http-equiv=Content-Type content="text/html; charset=UTF-8">
 <body>
 
 
@@ -10,8 +10,8 @@
 <center>
 <BR CLEAR=ALL>
 <BR CLEAR=ALL>
-<h1>�������O�~</h1><br>
-<h3>�` Wang tile �`</h3>
+<h1>ワンの絨毯</h1><br>
+<h3>～ Wang tile ～</h3>
 <BR CLEAR=ALL>
 <BR CLEAR=ALL>
 <BR CLEAR=ALL>
@@ -22,39 +22,39 @@
 <div>
 
 
-<h2>���͂��߂�</h2>
+<h2>■はじめに</h2>
 
 
 <p>
-<a href="http://www.graphicshardware.org/">Graphics Hardware 2004</a> �ŁANVIDIA �� Li-Yi Wei ���ATile-Based Texture Mapping on Graphics Hardware �Ƃ����^�C�g���ŁAWang tile �̏Љ�����Ă��܂��B�܂��܂����狻���͂������̂ł����A�ق����炩���Ă������̂Ŏ������Ă݂܂����B
+<a href="http://www.graphicshardware.org/">Graphics Hardware 2004</a> で、NVIDIA の Li-Yi Wei が、Tile-Based Texture Mapping on Graphics Hardware というタイトルで、Wang tile の紹介をしています。まえまえから興味はあったのですが、ほったらかしてあったので実装してみました。
 </p>
 
 <p>
-�ŁA�����̂悤�Ƀv���O�����ł��B<br>
+で、いつものようにプログラムです。<br>
 </p>
 <ul style = "LIST-STYLE-TYPE:none">
 <li><a href="wang.zip">wang.zip (DirectX 9.0c [Vertex shader 1_1, Pixel shader 2_0])</a><br>
 </ul>
 <p>
-�X���C�_�[�𓮂����ƁA�}�b�v�ׂ̍������ς��܂��B
+スライダーを動かすと、マップの細かさが変わります。
 </p>
 
 <p>
-�\�[�X�ɂ́A�����̂悤�ɓK���Ƀt�@�C���������Ă��܂��B
-�厖�ȃt�@�C���͎��̂��̂ł��B
+ソースには、いつものように適当にファイルが入っています。
+大事なファイルは次のものです。
 </p>
 <table>
-<tr><td><a href="main_cpp.html">main.cpp</a></td><td>�A�v���P�[�V�����̃\�[�X</td></tr>
-<tr><td><a href="main_fx.html">main.fx</a></td><td>�V�F�[�_�v���O����</td></tr>
+<tr><td><a href="main_cpp.html">main.cpp</a></td><td>アプリケーションのソース</td></tr>
+<tr><td><a href="main_fx.html">main.fx</a></td><td>シェーダプログラム</td></tr>
 </table>
 
 
-<h2>���Ȃɂ���Ă�́H</h2>
+<h2>■なにやってるの？</h2>
 
 
 <p>
-���������������O�~�Ƃ͉����Ƃ������Ƃł����A��{�I�ɂ�1961�N���炠�鏃���Ȑ��w�̖��[Wang 1961]�炵���ł��B�K���ɃO�O���Č���ƁA
-�u4�ӂɐF��h�����^�C��������ނ��^����ꂽ���A�^����ꂽ��ނ̃^�C���������g���Đڂ��Ă���ӂ̐F���ׂ̃^�C���̕ӂƓ����ł���悤�ɂ��Ȃ��畽�ʑS�̂��^�C���ŕ~���l�߂��邩�ǂ����𔻒肷����B(http://www.ice.nuie.nagoya-u.ac.jp/~h003149b/lang/undecidable.html)�v�Ƃ����̂�����ꂽ��A<a href="http://en.wikipedia.org/wiki/Wang_tile">Wikipedia</a>�ɏڍׂȏ�񂪋l�܂��Ă����肵�܂��B
+そもそもワンの絨毯とは何かということですが、基本的には1961年からある純粋な数学の問題[Wang 1961]らしいです。適当にググって見ると、
+「4辺に色を塗ったタイルが何種類か与えられた時、与えられた種類のタイルだけを使って接している辺の色が隣のタイルの辺と同じであるようにしながら平面全体をタイルで敷き詰められるかどうかを判定する問題。(http://www.ice.nuie.nagoya-u.ac.jp/~h003149b/lang/undecidable.html)」というのが得られたり、<a href="http://en.wikipedia.org/wiki/Wang_tile">Wikipedia</a>に詳細な情報が詰まっていたりします。
 </p>
 <p>
 <font size = "1">
@@ -63,54 +63,54 @@
 </p>
 
 <p>
-�ŁA�b�f�I�ɂ́A���̖����f�o�t���g���ĉ����Ƃ��ł͑S�R�����āA�Q�[�������Ă�Ɩ��炩�Ƀe�N�X�`�����J��Ԃ��Ă���悤�ȏ�ʂ������܂���ˁB����� wang tile �Ŏg���Ă���悤�ȃ^�C�����g���ĉ������悤�Ƃ������ɂȂ��Ă��܂��B
+で、ＣＧ的には、この問題をＧＰＵを使って解くとかでは全然無くて、ゲームを見てると明らかにテクスチャを繰り返しているような場面が見えますよね。あれを wang tile で使っているようなタイルを使って解消しようという問題になっています。
 </p>
 <p>
-�����ł́AWang tile �́A�����ȃ^�C����~���l�߂ĂP�̊G�����܂��B<br>
-�^�C���́A�e�ӂɂh�c�����Ă����܂��B���̗�ł́A�e�ӂɐԂƗ΂̂h�c�����Ă��܂��i���������G�ɂ͐F�͕t���܂���j�B<br>
-�h�c�������ӂ͉E�ƍ��y�сA��Ɖ��ŃX���[�Y�ɂȂ���悤�Ƀ^�C��������Ă����܂��B<br>
-�㉺���E�̂h�c���������Ȃ�悤�Ƀ����_���ɂh�c��U���āA�Ή�����^�C����~���l�߂�΁A�Y��ɂȂ����������_���ȉ摜�����܂��B
+ここでの、Wang tile は、小さなタイルを敷き詰めて１つの絵を作ります。<br>
+タイルは、各辺にＩＤをつけておきます。下の例では、各辺に赤と緑のＩＤをつけています（完成した絵には色は付きません）。<br>
+ＩＤが同じ辺は右と左及び、上と下でスムーズにつながるようにタイルを作っておきます。<br>
+上下左右のＩＤが等しくなるようにランダムにＩＤを振って、対応するタイルを敷き詰めれば、綺麗につながったランダムな画像が作れます。
 </p>
 <image src = "sample.png">
 <p>
-���̃^�C����~���l�߂���@�͓���͂���܂���B
-���H�쐬�Ō����΁A�_�|���@�Ɠ������@�����H���܂��B<br>
-�Ⴆ�΍��ォ�珇�Ԃɕ~���l�߂Ă����܂��傤�B�܂��A�ŏ��̓����_���ɂh�c��U��܂��B���ɉE�Ɉڂ�܂��B�����͂��łɌ��܂��Ă���̂ŁA����ȊO�̏㉺�E�������_���ɂh�c��U��܂��B���̂܂ܓ����悤�ɉE�ɐi��ŏ㑤�̃p�^�[�������܂��B���̗�Ɉڂ�܂��B�܂���������n�߂�Ƃ��܂��傤�B��̒i�͌��܂��Ă���̂ŁA�����E�Ƀ����_���ɂh�c��U��܂��B���̉E���͏�ƍ��̂h�c�����܂��Ă���̂ŁA�E�Ɖ��ɂh�c�������_���ɐU���ă^�C�������肵�܂��B�ȍ~�A�[�̕����ȊO�́A�E�Ɖ��Ƀ����_���ɂh�c���ӂ�΁A�������O�~���o���オ��܂��B<br>
+このタイルを敷き詰める方法は難しくはありません。
+迷路作成で言えば、棒倒し法と同じ方法を実践します。<br>
+例えば左上から順番に敷き詰めていきましょう。まず、最初はランダムにＩＤを振ります。次に右に移ります。左側はすでに決まっているので、それ以外の上下右をランダムにＩＤを振ります。そのまま同じように右に進んで上側のパターンを作ります。次の列に移ります。また左側から始めるとしましょう。上の段は決まっているので、下左右にランダムにＩＤを振ります。その右側は上と左のＩＤが決まっているので、右と下にＩＤをランダムに振ってタイルを決定します。以降、端の部分以外は、右と下にランダムにＩＤをふれば、ワンの絨毯が出来上がります。<br>
 </p>
 <image src = "procedual.png">
 <p>
-�����ł́A�ԂƗ΂Ƃ����Q��ނ̂h�c�����^�C���������܂������A�h�c�̎�ނ͉���ނł����v�ł��B�������A�h�c�̎�ނ�������قǕK�v�ȃ^�C���̖����������Ȃ�܂��B�K�v�ɂȂ�^�C���̖����́A�i�h�c�̎�ށj<sup>4</sup>�ő����܂��B�Q��ނȂ�P�U�A�R��ނȂ�W�P�A�S��ނȂ�Q�T�U�ł��B�R��ނ��S��ނɂȂ��Ă���Ǝ����ō��V�X�e�������Ȃ��Ƒʖڂł��傤�ˁB
+ここでは、赤と緑という２種類のＩＤを持つタイルを扱いましたが、ＩＤの種類は何種類でも大丈夫です。ただし、ＩＤの種類が増えるほど必要なタイルの枚数が多くなります。必要になるタイルの枚数は、（ＩＤの種類）<sup>4</sup>で増えます。２種類なら１６、３種類なら８１、４種類なら２５６です。３種類か４種類になってくると自動で作るシステムを作らないと駄目でしょうね。
 </p>
 
 
-<h2>������</h2>
+<h2>■実装</h2>
 
 
 
 <p>
-����̎����ł����A�Q��ނ̃e�N�X�`�����g���܂��B�P�́A�h�c��������\�����Ă��郉���_���ȁu�n�b�V���e�N�X�`���v
+今回の実装ですが、２種類のテクスチャを使います。１つは、ＩＤが何かを表現しているランダムな「ハッシュテクスチャ」
 </p>
 <image src = "rand.png">
 <p>
-�ł��B���̃e�N�X�`���ł́A�P�e�N�Z�����^�C���̂P�ɑΉ����Ă��܂��B
-�e�N�Z���̐Ԑ�����0.5���傫�����ǂ����ō��ӂ�ID���O���P���𔻒肵�Ă��āA
-�ΐ����ŏ�ӂ̂h�c�𔻒肵�܂��i��قǂ܂ł̂h�c�̂P���Ԃł����P���΂̐����ƍ������Ȃ��悤�ɒ��ӂ��Ă��������j�B�E�ӂƉ��ӂ͗אڂ���e�N�Z�����T���v�����O���邱�Ƃɂ���ď��𓾂邱�Ƃ��ł��܂��i�����ʓ|�������ł����A�����ƃA���t�@�����ɗאڂ�������i�[����΃T���v�����O�񐔂����炷���Ƃ��ł��܂����A������₷���̂��߂ɁA����͂��̕��@���̗p���Ă��܂��j�B
+です。このテクスチャでは、１テクセルがタイルの１つに対応しています。
+テクセルの赤成分が0.5より大きいかどうかで左辺のIDが０か１かを判定していて、
+緑成分で上辺のＩＤを判定します（先ほどまでのＩＤの１つが赤でもう１つが緑の説明と混同しないように注意してください）。右辺と下辺は隣接するテクセルをサンプリングすることによって情報を得ることができます（少し面倒くさいですが、青成分とアルファ成分に隣接する情報を格納すればサンプリング回数を減らすこともできますが、分かりやすさのために、今回はこの方法を採用しています）。
 </p>
 <p>
-�����P�́A�^�C���̃e�N�X�`���ł��B����͔����̃V���v���Ȃ��̂��g���܂����B
+もう１つは、タイルのテクスチャです。今回は白黒のシンプルなものを使いました。
 </p>
 <image src = "wang.png">
 <p>
-����́A�P�U�̃^�C�����P�̃e�N�X�`���ɕ~���l�߂Ă��܂��B
+これは、１６個のタイルを１つのテクスチャに敷き詰めています。
 </p>
 <image src = "sep.png">
 <p>
-���āA���̕��������G���悭����ƁA���̃e�N�X�`���͗ǂ��l�����č\������Ă��邱�Ƃ�������܂��iWei�����l�����̂ł��傤���H�������ł��j�B<br>
-�^�C�����c�Ɍ���ƁA�c�ɕ���ł���^�C���͑S�č��E�̂h�c�������ɂȂ��Ă��܂��B<br>
-�܂��A�^�C�������Ɍ���ƁA���ɕ���ł���^�C���͑S�ď㉺�̂h�c�������ɂȂ��Ă��܂��B<br>
-�܂��A�e�N�X�`���͘A���ɂȂ����Ă��܂��iwrap�܂ł��l���ɓ���āI�j�B
-�܂�A�h�c����^�C���̂t�u�l����㈓I�ɋ��߂���悤�ɂȂ��Ă��܂����A���ꂼ��̋��E�Ŗ�肪�����ɂ����Ȃ��Ă��܂��B<br>
-�ŁA�ǂ̂悤�ɂh�c�����߂�Ηǂ����ł����A�l����̂��ʓ|�����������̂ŁA�P���ɏ�������ō���Ă݂܂����B
+さて、この分解した絵をよく見ると、このテクスチャは良く考えられて構成されていることが分かります（Wei氏が考えたのでしょうか？すごいです）。<br>
+タイルを縦に見ると、縦に並んでいるタイルは全て左右のＩＤが同じになっています。<br>
+また、タイルを横に見ると、横に並んでいるタイルは全て上下のＩＤが同じになっています。<br>
+また、テクスチャは連続につながっています（wrapまでも考慮に入れて！）。
+つまり、ＩＤからタイルのＵＶ値を演繹的に求められるようになっていますし、それぞれの境界で問題がおきにくくなっています。<br>
+で、どのようにＩＤを求めれば良いかですが、考えるのが面倒くさかったので、単純に条件分岐で作ってみました。
 </p>
 <pre class="CodeBlock">
 main.fx
@@ -164,20 +164,20 @@ main.fx
 </pre>
 
 <p>
-In.TextureUV �ɁA�l�p�`�|���S���S�̂łO�`�P�ƂȂ�e�N�X�`�����W�l�������Ă��܂��B
-g_fTexSize ���A�n�b�V���e�N�X�`���̃T�C�Y�ŁAg_fInvTexSize �����̋t���ł��B<br>
-TexCoord �ɁA�^�C���p�^�[���̃e�N�X�`���ł̑��΃e�N�X�`�����W�l���ŏ��ɓ���Ă����A���̂��ƃn�b�V���e�N�X�`������I�t�Z�b�g�l�����߂܂��B
+In.TextureUV に、四角形ポリゴン全体で０～１となるテクスチャ座標値が入っています。
+g_fTexSize が、ハッシュテクスチャのサイズで、g_fInvTexSize がその逆数です。<br>
+TexCoord に、タイルパターンのテクスチャでの相対テクスチャ座標値を最初に入れておき、そのあとハッシュテクスチャからオフセット値を求めます。
 </p>
 
 
-<h2>���V�F�[�_���B���Ă݂�</h2>
+<h2>■シェーダを隠してみた</h2>
 
 
 <p>
-�܂��A<a href="http://masafumi.cocolog-nifty.com/masafumis_diary/">�^��</a>�ł��b��Ƃ��ĂłĂ����̂ł����A�G�t�F�N�g�t�@�C���͂��܂葼�l�ɂ͌��������Ȃ��ł���ˁB�Ƃ������ƂŁA����͎��s�t�@�C���ɃG�t�F�N�g�̃f�[�^�𖄂ߍ���Ō��܂����B
+まぁ、<a href="http://masafumi.cocolog-nifty.com/masafumis_diary/">某所</a>でも話題としてでていたのですが、エフェクトファイルはあまり他人には見せたくないですよね。ということで、今回は実行ファイルにエフェクトのデータを埋め込んで見ました。
 </p>
 <p>
-�G�t�F�N�g�̃R���p�C���ɂ́Afxc.exe���g���̂ł����A���������R�}���h�v�����v�g����ł����ނ͖̂ʓ|�������̂Ńo�b�`�t�@�C��������Ă݂܂����B
+エフェクトのコンパイルには、fxc.exeを使うのですが、いちいちコマンドプロンプトから打ち込むのは面倒くさいのでバッチファイルを作ってみました。
 </p>
 <pre class="CodeBlock">
 compile_effect.bat
@@ -185,9 +185,9 @@ compile_effect.bat
 <font color="deepskyblue">0002:</font>pause
 </pre>
 <p>
-�G�t�F�N�g��ҏW������A���̃o�b�`�t�@�C�������s���āAmain_fx.h ���쐬���܂�
-�i�G���[���ł��番����悤�ɁA�I�������pause�łƂ߂Ă݂�悤�ɂ��Ă݂܂����j�B
-main_fx.h �ɂ́A�uconst DWORD g_effect[] = {...};�v�̂悤�ȕϐ����ł��܂��̂ŁAC++�v���O�����̂ق��ł́A���̂悤�ɃG�t�F�N�g�C���^�[�t�F�C�X���쐬���܂��B
+エフェクトを編集したら、このバッチファイルを実行して、main_fx.h を作成します
+（エラーがでたら分かるように、終わったらpauseでとめてみるようにしてみました）。
+main_fx.h には、「const DWORD g_effect[] = {...};」のような変数ができますので、C++プログラムのほうでは、次のようにエフェクトインターフェイスを作成します。
 </p>
 <pre class="CodeBlock">
 main.cpp
@@ -195,16 +195,16 @@ main.cpp
 <font color="deepskyblue">0333:</font>         NULL, NULL, dwShaderFlags, NULL, &amp;g_pEffect, NULL ) );
 </pre>
 <p>
-�|�[�Y���������ł��ˁB�Ԃ�l���Ȃ񂩂��݂āA�G���[�̂Ƃ������|�[�Y�Ƃ��ł��Ȃ����ȁc
+ポーズがうざいですね。返り値かなんかをみて、エラーのときだけポーズとかできないかな…
 </p>
 
 
-<h3>���G���[�̎�����pause (2004 Sep. 26 �ǋL)</h3>
+<h3>■エラーの時だけpause (2004 Sep. 26 追記)</h3>
 
 
 <p>
-erakan ����ɃG���[���x�������ă|�[�Y���|����o�b�`�t�@�C�������������܂����B
-��ʓI�ɂ�������g���ق����ǂ��Ǝv���܂��B
+erakan さんにエラーレベルを見てポーズを掛けるバッチファイルをいただきました。
+一般的にこちらを使うほうが良いと思います。
 </p>
 <pre class="CodeBlock">
 compile_effect.bat
@@ -212,46 +212,46 @@ compile_effect.bat
 <font color="deepskyblue">0002:</font>@if not %ERRORLEVEL% == 0 pause
 </pre>
 <p>
-���肪�Ƃ��������܂����B
+ありがとうございました。
 </p>
 
 
-<h2>���Ō��</h2>
+<h2>■最後に</h2>
 
 
 <p>
-���́A�~�b�v�}�b�v���|���Ă݂��炨�����ȕ\���ɂȂ��Ă��܂�����ł���B
-�Ƃ������ƂŁA����͂͂����Ă��܂��B
+実は、ミップマップを掛けてみたらおかしな表示になってしまったんですよ。
+ということで、今回ははずしています。
 </p>
 <p>
-����̃v���O�������e�N�X�`���� Li-Yi Wei ���g�������̂��g���ƁA���̂悤�ɂȂ�̂ł����A�G�b�W�̏����Ŗ����������Ċ�̃e�N�X�`���ɕ΂肪����̂��A������ƃp�^�[���������܂��B
-�e�N�X�`���̍쐬�Z�p�������̂�����Ƃ���ł��B
+今回のプログラムもテクスチャに Li-Yi Wei が使ったものを使うと、下のようになるのですが、エッジの処理で無理があって基のテクスチャに偏りがあるのか、ちょっとパターンが見えます。
+テクスチャの作成技術も問われるのが難しいところです。
 </p>
 <img src="snake.png">
 <p>
-�ł��AWang tile �́A���ʂ��傫���̂ŁA���ۂɎg���Ă��������ł��ˁB
+でも、Wang tile は、効果が大きいので、実際に使っていきたいですね。
 </p>
 
 
-<h2>��mipmap �� (2004 Sep. 26 �ǉ�)</h2>
+<h2>■mipmap 化 (2004 Sep. 26 追加)</h2>
 
 
 <p>
-erakan ���񂩂�~�b�v�}�b�v�łɕύX����\�[�X�����������܂����B<br>
-�n�[�h�E�F�A�̃~�b�v�}�b�v�@�\���g���̂ł͂Ȃ��A�S�Ẵ~�b�v�}�b�v���x�����܂ނP���̃e�N�X�`�����쐬���āA��������S�ăT���v�����O���邱�Ƃɂ���āA�^�C���̌��Ԃŕs�����̋N���Ȃ����m�ȃ~�b�v�}�b�v���|���Ă��܂��B<br>
-�Ȃ��A�e�~�b�v�}�b�v���x���́A�P�e�N�Z�����̕��������ӂɍL���Ă���A�o�C���j�A�t�B���^�ł���肪�N���Ȃ��悤�ɂȂ��Ă��܂��B
+erakan さんからミップマップ版に変更するソースをいただきました。<br>
+ハードウェアのミップマップ機能を使うのではなく、全てのミップマップレベルを含む１枚のテクスチャを作成して、そこから全てサンプリングすることによって、タイルの隙間で不整合の起きない正確なミップマップを掛けています。<br>
+なお、各ミップマップレベルは、１テクセル分の幅だけ周辺に広げており、バイリニアフィルタでも問題が起きないようになっています。
 </p>
 <ul style = "LIST-STYLE-TYPE:none">
-<li><a href="mipmapwang.zip">mipmapwang.zip (wang.zip����̍����FDirectX 9.0c [Vertex shader 1_1, Pixel shader 2_0])</a><br>
+<li><a href="mipmapwang.zip">mipmapwang.zip (wang.zipからの差分：DirectX 9.0c [Vertex shader 1_1, Pixel shader 2_0])</a><br>
 </ul>
 <p>
-�u@@@�v�̕t���Ă��镔���� wang.zip ����̕ύX�����ɂȂ�܂��B
+「@@@」の付いている部分が wang.zip からの変更部分になります。
 </p>
 
 <table>
-<tr><td><a href="mipmap_main_cpp.html">main.cpp</a></td><td>�A�v���P�[�V�����̃\�[�X</td></tr>
-<tr><td><a href="mipmap_main_fx.html">main.fx</a></td><td>�V�F�[�_�v���O����</td></tr>
-<tr><td><a href="mipmap_compile_effect_bat.html">compile_effect.bat</a></td><td>�G���[�̂Ƃ������|�[�Y����o�[�W����</td></tr>
+<tr><td><a href="mipmap_main_cpp.html">main.cpp</a></td><td>アプリケーションのソース</td></tr>
+<tr><td><a href="mipmap_main_fx.html">main.fx</a></td><td>シェーダプログラム</td></tr>
+<tr><td><a href="mipmap_compile_effect_bat.html">compile_effect.bat</a></td><td>エラーのときだけポーズするバージョン</td></tr>
 </table>
 
 
@@ -262,7 +262,7 @@ erakan ���񂩂�~�b�v�}�b�v�łɕύX����\�[�X�����������܂����B<br>
 <BR CLEAR=ALL>
 <center>
 <hr>
-<p><a href="../index.html">���ǂ�</a></p>
+<p><a href="../index.html">もどる</a></p>
 <p><a href="mailto:imagire@gmail.com">imagire@gmail.com</a></p>
 </center>
 

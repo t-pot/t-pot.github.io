@@ -1,52 +1,52 @@
 <head>
-	<title>t-pot �wDirectX8.0 ����:3D�|���S���̕\���x</title>
+	<title>t-pot 『DirectX8.0 入門:3Dポリゴンの表示』</title>
 	<link rel="stylesheet" type="text/css" href="../if.css">
 </head>
-<meta http-equiv=Content-Type content="text/html; charset=shift_jis">
+<meta http-equiv=Content-Type content="text/html; charset=UTF-8">
 <body>
 <div class="contents">
 <center>
 <BR CLEAR=ALL>
 <BR CLEAR=ALL>
-<h1>3D�|���S���̕\��</h1><br>
-<h3>�`����ŃQ�[��������H�`</h3>
+<h1>3Dポリゴンの表示</h1><br>
+<h3>～これでゲームが作れる？～</h3>
 <BR CLEAR=ALL>
 <BR CLEAR=ALL>
 <BR CLEAR=ALL>
 </center>
-<h2>������̃t�@�C����</h2>
+<h2>■今回のファイルは</h2>
 
 <p>
-����́A�O�p�����񂵂Ă݂܂��B
+今回は、三角錐を回してみます。
 </p>
 <right><image src = "3d.jpg"></right>
 <p>
-���̃\�[�X���A�_�E�����[�h���Ă��������B
+次のソースを、ダウンロードしてください。
 <p>
 
 <ul style = "LIST-STYLE-TYPE:none">
-<li><a href="3d.lzh">3d.lzh (3D�|���S����\������T���v���̃\�[�X)</a>
+<li><a href="3d.lzh">3d.lzh (3Dポリゴンを表示するサンプルのソース)</a>
 </ul>
 
 <p>
-������Adraw.cpp �����������������ł��B
+今回も、draw.cpp を書き換えただけです。
 </p>
 
-<h2>�����_�̒�`</h2>
+<h2>■頂点の定義</h2>
 
 <p>
-����́A���_��ύX���܂��B�Ƃ����Ă��A����ɊȒP�ɂȂ��Ă��āA3�������W�ƁA���_�F�����ł��B
+今回は、頂点を変更します。といっても、さらに簡単になっていて、3次元座標と、頂点色だけです。
 </p>
 <pre class="CodeBlock">
 struct CUSTOMVERTEX
 {
-    FLOAT x, y, z;  // �ʒu
-    DWORD color;    // �F
+    FLOAT x, y, z;  // 位置
+    DWORD color;    // 色
 };
 #define D3DFVF_CUSTOMVERTEX (D3DFVF_XYZ | D3DFVF_DIFFUSE)
 </pre>
 <p>
-����ɁA�g���C�A���O���t�@�����g���Ă݂܂��B���_�ƁAxy�ʁAyz�ʋy�сAzx�ʂ� 1.0 �̒��_�ɂ���O�p�`�R��\�����܂��B 
+さらに、トライアングルファンを使ってみます。原点と、xy面、yz面及び、zx面の 1.0 の頂点にある三角形３つを表示します。 
 </p>
 <pre class="CodeBlock">
     CUSTOMVERTEX vertices[] =
@@ -60,14 +60,14 @@ struct CUSTOMVERTEX
     };
 </pre>
 <p>
-�F�́A(x,y,z)=(1,0,0) ���ԁA(0,1,0) ���΁A(0,0,1) ���ł��B
+色は、(x,y,z)=(1,0,0) が赤、(0,1,0) が緑、(0,0,1) が青です。
 </p>
 
-<h2>��������</h2>
+<h2>■初期化</h2>
 
 <p>
-����́A�����̒��_��`�ɉ����ASetRenderState �ŁA�����_�����O����Ƃ��̐ݒ�����Ă��܂��B<br>
-�������A�ʏ�̕`��ōs���Ă������̂ł����A�ύX���N���Ȃ����ASetRenderState �͏d���炵���̂ŁA�����Őݒ肵�܂��B
+今回は、いつもの頂点定義に加え、SetRenderState で、レンダリングするときの設定をしています。<br>
+もちろん、通常の描画で行ってもいいのですが、変更が起きないし、SetRenderState は重いらしいので、ここで設定します。
 </p>
 <pre class="CodeBlock">
 HRESULT InitRender(LPDIRECT3DDEVICE8 lpD3DDEV)
@@ -100,23 +100,23 @@ HRESULT InitRender(LPDIRECT3DDEVICE8 lpD3DDEV)
 }
 </pre>
 <p>
-D3DRS_CULLMODE �́A�|���S����\���̂�����̂��ǂ����̐ݒ�����܂��B
-D3DCULL_NONE �ɂ���ƁA�\���̊T�O������܂���B
-D3DCULL_CW ���ɐݒ肷��ƁA�������������́A�\�������Ȃ��Ȃ�܂��B<br>
-D3DRS_LIGHTING �́A���C�g�̐ݒ�ł��B�����ł́A���C�g�𓖂ĂȂ��悤�ɂ��܂��B
-���C�g�̌v�Z�́A��{�I�ɏd���̂ŁA�Ȃ�ׂ��g��Ȃ��悤�ɐS������ׂ����Ǝv���܂��B
+D3DRS_CULLMODE は、ポリゴンを表裏のあるものかどうかの設定をします。
+D3DCULL_NONE にすると、表裏の概念がありません。
+D3DCULL_CW 等に設定すると、裏を向いた時は、表示をしなくなります。<br>
+D3DRS_LIGHTING は、ライトの設定です。ここでは、ライトを当てないようにします。
+ライトの計算は、基本的に重いので、なるべく使わないように心がけるべきだと思います。
 </p>
 
-<h2>���`��</h2>
+<h2>■描画</h2>
 
 <p>
-�������A����A��Ԃ����Ⴒ���Ⴕ�Ă��܂��B
+ここが、今回、一番ごちゃごちゃしています。
 </p>
 
 <pre class="CodeBlock">
 void Render(LPDIRECT3DDEVICE8 lpD3DDEV)
 {
-    // ���[�J���A���[���h���W�n�̕ϊ�
+    // ローカル、ワールド座標系の変換
     D3DXMATRIX mWorld, mRotX, mRotY, mTrans;
     D3DXMatrixTranslation(&mTrans, 0,0,0);
     float time = (float)timeGetTime();
@@ -125,81 +125,81 @@ void Render(LPDIRECT3DDEVICE8 lpD3DDEV)
     mWorld = mRotX * mRotY * mTrans;
     lpD3DDEV->SetTransform(D3DTS_WORLD, &mWorld);
     
-    // ���[���h�A�r���[���W�n�̕ϊ�
+    // ワールド、ビュー座標系の変換
     D3DXMATRIX mView, mProj;
     D3DXMatrixLookAtLH(&mView
-                    ,&D3DXVECTOR3(0,3.0f,5.0f)    // �J�����ʒu
-                    ,&D3DXVECTOR3(0,0,0)          // �J�����̒��ړ_
-                    ,&D3DXVECTOR3(0,1,0)          // ��̌���
+                    ,&D3DXVECTOR3(0,3.0f,5.0f)    // カメラ位置
+                    ,&D3DXVECTOR3(0,0,0)          // カメラの注目点
+                    ,&D3DXVECTOR3(0,1,0)          // 上の向き
                     );
     lpD3DDEV->SetTransform(D3DTS_VIEW,  &mView);
     
-    // �r���[�A�X�N���[�����W�n�̕ϊ�
+    // ビュー、スクリーン座標系の変換
     D3DXMatrixPerspectiveFovLH(&mProj
-        ,60.0f*PI/180.0f                        // ����p
-        ,1.0f                                   // �A�X�y�N�g��
-        ,0.01f                                  // �ŋߐڋ���
-        ,100.0f                                 // �ŉ�������
+        ,60.0f*PI/180.0f                        // 視野角
+        ,1.0f                                   // アスペクト比
+        ,0.01f                                  // 最近接距離
+        ,100.0f                                 // 最遠方距離
         );
     lpD3DDEV->SetTransform(D3DTS_PROJECTION, &mProj);
     
-    // �|���S���̕`��
+    // ポリゴンの描画
     lpD3DDEV->SetStreamSource( 0, pVB, sizeof(CUSTOMVERTEX) );
     lpD3DDEV->SetVertexShader( D3DFVF_CUSTOMVERTEX );
     lpD3DDEV->DrawPrimitive( D3DPT_TRIANGLEFAN, 0, 3 );
 }
 </pre>
 <p>
-���āA3�̃}�g���b�N�X��ݒ肷��K�v������܂��B
+さて、3つのマトリックスを設定する必要があります。
 </p>
 <p>
-�ŏ��́A���[�J��-���[���h�}�g���b�N�X�ł��B<br>
-���̃}�g���b�N�X�́A�|���S����3������Ԃł̈ʒu��ݒ肵�܂��B
-mTrans �́A�ʒu���w�肵�܂��B����́A(0,0,0) �Ȃ̂ŁA���_�Ƀ|���S���i�̊�ʒu�j�͂���܂��B<br>
-mRotX, mRotY �́A���ꂼ��AX ���AY ������̃|���S���̉�]�ł��B
-����́AtimeGetTime() �Ŏ��Ԃ𒲂ׂāAY ������ɉ��悤�ɂ��Ă݂܂����B
-Y ������̉�]�́A�R�}�̗l�ɂ��邭����܂��B
+最初は、ローカル-ワールドマトリックスです。<br>
+このマトリックスは、ポリゴンの3次元空間での位置を設定します。
+mTrans は、位置を指定します。今回は、(0,0,0) なので、原点にポリゴン（の基準位置）はあります。<br>
+mRotX, mRotY は、それぞれ、X 軸、Y 軸周りのポリゴンの回転です。
+今回は、timeGetTime() で時間を調べて、Y 軸周りに回るようにしてみました。
+Y 軸周りの回転は、コマの様にくるくる回ります。
 </p>
 <p>
-���Ƀ��[���h-�r���[�}�g���b�N�X�ł��B<br>
-����́A�J�����̈ʒu�ł��B<br>
-����́A(0,3,5)�ɃJ�����������܂��B���_��菭����O��ł��B<br>
-����ȊO�ɁA�J���������Ă���_��ݒ肵�܂��i�|���S��������悤�Ɍ��_�i�|���S���̈ʒu�j���w�肵�܂����j�B
-�܂��A��̕������w�肵�܂��B����́AY���̕����ɂ��܂����B
-������ύX����ƁA�����������A���O�����ł��܂����A�قƂ�ǂ��̐ݒ�ł����ł��傤�B
+次にワールド-ビューマトリックスです。<br>
+これは、カメラの位置です。<br>
+今回は、(0,3,5)にカメラをおきます。原点より少し手前上です。<br>
+これ以外に、カメラが見ている点を設定します（ポリゴンを見るように原点（ポリゴンの位置）を指定しました）。
+また、上の方向を指定します。今回は、Y軸の方向にしました。
+ここを変更すると、酔っ払ったアングルができますが、ほとんどこの設定でいいでしょう。
 </p>
 <p>
-�����āA�r���[-�X�N���[���}�g���b�N�X�ł��B<br>
-����́A�J�����̐��\�ł��B<br>
-�ŏ��̈����ŁA����p��ݒ肵�܂��B�p�m���}�Ȃǂ̓���Ȍ��ʂ�����Ƃ��́A������ύX���܂��B
-�A�X�y�N�g��́A�s�N�Z���̌`�ł��B�܂��A���̃f�B�X�v���C�Ȃ�A1.0�ł��傤
-�iPS ���̃R���V���[�}�@�ł́A320 x 448 �̉𑜓x���g���ꍇ������A���̂Ƃ��ɂ́A0.5�ɂȂ����肵�܂��j�B
-�ŋߐ�(�ŉ���)�����́A��O�ƁA������ǂ̂��炢�܂Ō����邩�ŁA�|���S���̑傫������K���Ɍ��߂܂��B
-����́A�P�ʂ�m�ƌ����āA�|���S���̑傫�����A1m x 1m x 1m �Ƃ���ƁA1cm ����A100m ���炢�͈̔͂ɂ́A
-�قڎ��܂邾�낤�Ǝv�����̂ŁA���̐����ɂ��܂����B
+そして、ビュー-スクリーンマトリックスです。<br>
+これは、カメラの性能です。<br>
+最初の引数で、視野角を設定します。パノラマなどの特殊な効果をするときは、ここを変更します。
+アスペクト比は、ピクセルの形です。まぁ、今のディスプレイなら、1.0でしょう
+（PS 等のコンシューマ機では、320 x 448 の解像度を使う場合があり、このときには、0.5になったりします）。
+最近接(最遠方)距離は、手前と、後方がどのくらいまで見えるかで、ポリゴンの大きさから適当に決めます。
+今回は、単位をmと見立て、ポリゴンの大きさが、1m x 1m x 1m とすると、1cm から、100m ぐらいの範囲には、
+ほぼ収まるだろうと思ったので、この数字にしました。
 </p>
 <p>
-�ȏオ�A�e�}�g���b�N�X�̐ݒ�ł��B
-���̏����͓�������܂����A��^�����Ȃ̂ŁA��x�������قƂ�ǕύX���܂���B<br>
-����Ȃ���Ȃ񂾂Ǝv���Ă�����Ă��񂺂񂩂܂��܂���B<br>
-�����A
+以上が、各マトリックスの設定です。
+この処理は難しく見えますが、定型処理なので、一度作ったらほとんど変更しません。<br>
+こんなもんなんだと思ってもらってぜんぜんかまいません。<br>
+ただ、
 </p>
 <pre class="CodeBlock">
     mWorld * mView * mProj;
 </pre>
 <p>
-�̍s����g���ƈ�C�Ƀ|���S���̃f�[�^����A�f�B�X�v���C�̃X�N���[�����W���v�Z�ł��邱�Ƃ́A
-�o���Ă������ق��������Ǝv���܂��BSetTransform �ŕ��G�Ȑݒ�����Ă���悤�Ɋ����邩������܂��񂪁A
-���ۂɂ͍s��̊|���Z�������܂���B
+の行列を使うと一気にポリゴンのデータから、ディスプレイのスクリーン座標が計算できることは、
+覚えておいたほうがいいと思います。SetTransform で複雑な設定をしているように感じるかもしれませんが、
+実際には行列の掛け算しかしません。
 </p>
 <p>
-�Ō�ɁA�g���C�A���O���X�g���b�v�ŁA��`�Ƀ|���S����3���\�����܂��B<br>
+最後に、トライアングルストリップで、扇形にポリゴンを3枚表示します。<br>
 </p>
 
-<h2>����Еt��</h2>
+<h2>■後片付け</h2>
 
 <p>
-��Еt���́A�����̂悤�ɁA�g�������̂��J�����邾���ł��B
+後片付けは、いつものように、使ったものを開放するだけです。
 </p>
 
 <pre class="CodeBlock">
@@ -210,13 +210,13 @@ void CleanRender()
 </pre>
 
 <p>
-�ǂ��ł��傤���H����ŁA�Ƃ肠����3�����|���S�����\���ł��܂��B
-���_�́A���̖{�A�y�[�W�ɏ���Ƃ��āA�g���Ċ���Ă��܂��̂������Ǝv���܂��B<br>
-�v���́H�Q�[���J���̏�ł��A�e�s�񂪂ǂ��Ȃ��Ă���̂����񂺂�m��Ȃ��l�����܂��B
-�ł��g���Ă��܂��̂ł��B<br>
-�悤�́A�ݒ肵�Ă���ϐ��̈Ӗ����킩���Ă��邩�ǂ����ł��B<br>
-�l�I�ɂ́A�����Ő[���l��������A���̐�ɂ�������Ɩʔ������ƂɃ`�������W������Ċ����ł��B<br>
-�ł��A�����Ƃ����{�ȂǂŐ������}�X�^�[���ׂ��ł���B
+どうでしょうか？これで、とりあえず3次元ポリゴンが表示できます。
+理論は、他の本、ページに譲るとして、使って慣れてしまうのがいいと思います。<br>
+プロの？ゲーム開発の場でも、各行列がどうなっているのかぜんぜん知らない人もいます。
+でも使えてしまうのです。<br>
+ようは、設定している変数の意味がわかっているかどうかです。<br>
+個人的には、ここで深く考えるよりも、この先にあるもっと面白いことにチャレンジしろって感じです。<br>
+でも、ちゃんとした本などで数式もマスターすべきですよ。
 </p>
 
 
@@ -225,7 +225,7 @@ void CleanRender()
 <BR CLEAR=ALL>
 <center>
 <hr>
-<p><a href="../index.html">���ǂ�</a></p>
+<p><a href="../index.html">もどる</a></p>
 <p><a href="mailto:imagire@gmail.com">imagire@gmail.com</a></p>
 </center>
 </body>

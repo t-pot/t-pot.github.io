@@ -17,7 +17,7 @@ SPAN.linenum { color:#A0A0A0; font-weight:normal; font-style:normal;}
 <PRE><SPAN CLASS="linenum">0001:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
 <SPAN CLASS="linenum">0002:</SPAN> <SPAN CLASS="comment">// File: main.cpp</SPAN>
 <SPAN CLASS="linenum">0003:</SPAN> <SPAN CLASS="comment">//</SPAN>
-<SPAN CLASS="linenum">0004:</SPAN> <SPAN CLASS="comment">// Desc: RADIANCE Picture File Format ‚Ì“Ç‚İ‚İ</SPAN>
+<SPAN CLASS="linenum">0004:</SPAN> <SPAN CLASS="comment">// Desc: RADIANCE Picture File Format ã®èª­ã¿è¾¼ã¿</SPAN>
 <SPAN CLASS="linenum">0005:</SPAN> <SPAN CLASS="comment">// Copyright (c) 2003 IMAGIRE Takashi. All rights reserved.</SPAN>
 <SPAN CLASS="linenum">0006:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
 <SPAN CLASS="linenum">0007:</SPAN> <SPAN CLASS="keyword">#define</SPAN> STRICT
@@ -28,14 +28,14 @@ SPAN.linenum { color:#A0A0A0; font-weight:normal; font-style:normal;}
 <SPAN CLASS="linenum">0012:</SPAN> 
 <SPAN CLASS="linenum">0013:</SPAN> <SPAN CLASS="keyword">namespace</SPAN> HDR{
 <SPAN CLASS="linenum">0014:</SPAN> 
-<SPAN CLASS="linenum">0015:</SPAN> <SPAN CLASS="keyword">#define</SPAN>  COLXS      128     <SPAN CLASS="comment">// w”‚ÌŠî€’l(w”‚ª‚±‚Ì’l‚Ì‚É‚ÍRGB‚ÌF‚»‚Ì‚à‚Ì)</SPAN>
-<SPAN CLASS="linenum">0016:</SPAN> <SPAN CLASS="keyword">#define</SPAN> MAXGSHIFT   31      <SPAN CLASS="comment">// ƒKƒ“ƒ}ƒe[ƒuƒ‹‚Ì‚½‚ß‚ÌÅ‘åƒVƒtƒg</SPAN>
+<SPAN CLASS="linenum">0015:</SPAN> <SPAN CLASS="keyword">#define</SPAN>  COLXS      128     <SPAN CLASS="comment">// æŒ‡æ•°ã®åŸºæº–å€¤(æŒ‡æ•°ãŒã“ã®å€¤ã®æ™‚ã«ã¯RGBã®è‰²ãã®ã‚‚ã®)</SPAN>
+<SPAN CLASS="linenum">0016:</SPAN> <SPAN CLASS="keyword">#define</SPAN> MAXGSHIFT   31      <SPAN CLASS="comment">// ã‚¬ãƒ³ãƒãƒ†ãƒ¼ãƒ–ãƒ«ã®ãŸã‚ã®æœ€å¤§ã‚·ãƒ•ãƒˆ</SPAN>
 <SPAN CLASS="linenum">0017:</SPAN> <SPAN CLASS="keyword">static</SPAN> BYTE *g_mant = NULL, *g_nexp = NULL;
 <SPAN CLASS="linenum">0018:</SPAN> <SPAN CLASS="keyword">static</SPAN> BYTE (*g_bval)[256] = NULL;
 <SPAN CLASS="linenum">0019:</SPAN> 
 <SPAN CLASS="linenum">0020:</SPAN> 
 <SPAN CLASS="linenum">0021:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
-<SPAN CLASS="linenum">0022:</SPAN> <SPAN CLASS="comment">// Fî•ñ</SPAN>
+<SPAN CLASS="linenum">0022:</SPAN> <SPAN CLASS="comment">// è‰²æƒ…å ±</SPAN>
 <SPAN CLASS="linenum">0023:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
 <SPAN CLASS="linenum">0024:</SPAN> <SPAN CLASS="keyword">typedef</SPAN> BYTE  COLR[4];      <SPAN CLASS="comment">/* RGBE */</SPAN>
 <SPAN CLASS="linenum">0025:</SPAN> <SPAN CLASS="keyword">#define</SPAN>  RED        0
@@ -45,28 +45,28 @@ SPAN.linenum { color:#A0A0A0; font-weight:normal; font-style:normal;}
 <SPAN CLASS="linenum">0029:</SPAN> 
 <SPAN CLASS="linenum">0030:</SPAN> 
 <SPAN CLASS="linenum">0031:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
-<SPAN CLASS="linenum">0032:</SPAN> <SPAN CLASS="comment">// ƒwƒbƒ_‚©‚ç“Ç‚İæ‚éî•ñ</SPAN>
+<SPAN CLASS="linenum">0032:</SPAN> <SPAN CLASS="comment">// ãƒ˜ãƒƒãƒ€ã‹ã‚‰èª­ã¿å–ã‚‹æƒ…å ±</SPAN>
 <SPAN CLASS="linenum">0033:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
 <SPAN CLASS="linenum">0034:</SPAN> <SPAN CLASS="keyword">typedef</SPAN> <SPAN CLASS="keyword">struct</SPAN>{
-<SPAN CLASS="linenum">0035:</SPAN>     <SPAN CLASS="keyword">char</SPAN>    mn[64]; <SPAN CLASS="comment">// magic number (#?‚ÌŒãA"RADIANCE"‚É‚Ì‚İ‘Î‰)</SPAN>
-<SPAN CLASS="linenum">0036:</SPAN>     <SPAN CLASS="keyword">char</SPAN>    fs[64]; <SPAN CLASS="comment">// ƒtƒH[ƒ}ƒbƒg</SPAN>
-<SPAN CLASS="linenum">0037:</SPAN>     <SPAN CLASS="keyword">double</SPAN>  xp;     <SPAN CLASS="comment">// ˜IŒõŠÔ</SPAN>
-<SPAN CLASS="linenum">0038:</SPAN>     <SPAN CLASS="keyword">int</SPAN>     x;      <SPAN CLASS="comment">// •</SPAN>
-<SPAN CLASS="linenum">0039:</SPAN>     <SPAN CLASS="keyword">int</SPAN>     y;      <SPAN CLASS="comment">// ‚‚³</SPAN>
-<SPAN CLASS="linenum">0040:</SPAN>     <SPAN CLASS="keyword">unsigned</SPAN> <SPAN CLASS="keyword">char</SPAN> or;<SPAN CLASS="comment">// ƒtƒ‰ƒO</SPAN>
-<SPAN CLASS="linenum">0041:</SPAN>     <SPAN CLASS="keyword">int</SPAN>     sl;     <SPAN CLASS="comment">// ƒXƒLƒƒƒ“ƒ‰ƒCƒ“’·‚³</SPAN>
-<SPAN CLASS="linenum">0042:</SPAN>     <SPAN CLASS="keyword">int</SPAN>     ns;     <SPAN CLASS="comment">// ƒXƒLƒƒƒ“ƒ‰ƒCƒ“•</SPAN>
+<SPAN CLASS="linenum">0035:</SPAN>     <SPAN CLASS="keyword">char</SPAN>    mn[64]; <SPAN CLASS="comment">// magic number (#?ã®å¾Œã€"RADIANCE"ã«ã®ã¿å¯¾å¿œ)</SPAN>
+<SPAN CLASS="linenum">0036:</SPAN>     <SPAN CLASS="keyword">char</SPAN>    fs[64]; <SPAN CLASS="comment">// ãƒ•ã‚©ãƒ¼ãƒãƒƒãƒˆ</SPAN>
+<SPAN CLASS="linenum">0037:</SPAN>     <SPAN CLASS="keyword">double</SPAN>  xp;     <SPAN CLASS="comment">// éœ²å…‰æ™‚é–“</SPAN>
+<SPAN CLASS="linenum">0038:</SPAN>     <SPAN CLASS="keyword">int</SPAN>     x;      <SPAN CLASS="comment">// å¹…</SPAN>
+<SPAN CLASS="linenum">0039:</SPAN>     <SPAN CLASS="keyword">int</SPAN>     y;      <SPAN CLASS="comment">// é«˜ã•</SPAN>
+<SPAN CLASS="linenum">0040:</SPAN>     <SPAN CLASS="keyword">unsigned</SPAN> <SPAN CLASS="keyword">char</SPAN> or;<SPAN CLASS="comment">// ãƒ•ãƒ©ã‚°</SPAN>
+<SPAN CLASS="linenum">0041:</SPAN>     <SPAN CLASS="keyword">int</SPAN>     sl;     <SPAN CLASS="comment">// ã‚¹ã‚­ãƒ£ãƒ³ãƒ©ã‚¤ãƒ³é•·ã•</SPAN>
+<SPAN CLASS="linenum">0042:</SPAN>     <SPAN CLASS="keyword">int</SPAN>     ns;     <SPAN CLASS="comment">// ã‚¹ã‚­ãƒ£ãƒ³ãƒ©ã‚¤ãƒ³å¹…</SPAN>
 <SPAN CLASS="linenum">0043:</SPAN> }Info;
 <SPAN CLASS="linenum">0044:</SPAN> 
-<SPAN CLASS="linenum">0045:</SPAN> <SPAN CLASS="comment">// ƒXƒLƒƒƒ“ƒ‰ƒCƒ“‚Ì‡”Ô‚Ì‚½‚ß‚Ìƒtƒ‰ƒO</SPAN>
-<SPAN CLASS="linenum">0046:</SPAN> <SPAN CLASS="keyword">#define</SPAN>  XDECR          1   <SPAN CLASS="comment">// •‰‚Ì•ûŒü‚ÉL‚Ñ‚é‚©‚Ç‚¤‚©</SPAN>
-<SPAN CLASS="linenum">0047:</SPAN> <SPAN CLASS="keyword">#define</SPAN>  YDECR          2   <SPAN CLASS="comment">// •‰‚Ì•ûŒü‚ÉL‚Ñ‚é‚©‚Ç‚¤‚© </SPAN>
-<SPAN CLASS="linenum">0048:</SPAN> <SPAN CLASS="keyword">#define</SPAN>  YMAJOR         4   <SPAN CLASS="comment">// —ñ‚Æs‚Ì‚Ç‚¿‚ç‚ª—Dæ‚©</SPAN>
+<SPAN CLASS="linenum">0045:</SPAN> <SPAN CLASS="comment">// ã‚¹ã‚­ãƒ£ãƒ³ãƒ©ã‚¤ãƒ³ã®é †ç•ªã®ãŸã‚ã®ãƒ•ãƒ©ã‚°</SPAN>
+<SPAN CLASS="linenum">0046:</SPAN> <SPAN CLASS="keyword">#define</SPAN>  XDECR          1   <SPAN CLASS="comment">// è² ã®æ–¹å‘ã«ä¼¸ã³ã‚‹ã‹ã©ã†ã‹</SPAN>
+<SPAN CLASS="linenum">0047:</SPAN> <SPAN CLASS="keyword">#define</SPAN>  YDECR          2   <SPAN CLASS="comment">// è² ã®æ–¹å‘ã«ä¼¸ã³ã‚‹ã‹ã©ã†ã‹ </SPAN>
+<SPAN CLASS="linenum">0048:</SPAN> <SPAN CLASS="keyword">#define</SPAN>  YMAJOR         4   <SPAN CLASS="comment">// åˆ—ã¨è¡Œã®ã©ã¡ã‚‰ãŒå„ªå…ˆã‹</SPAN>
 <SPAN CLASS="linenum">0049:</SPAN> 
-<SPAN CLASS="linenum">0050:</SPAN> <SPAN CLASS="keyword">#define</SPAN>  MINELEN    8       <SPAN CLASS="comment">// Å¬‰æ‘œ‰ğ‘œ“x</SPAN>
-<SPAN CLASS="linenum">0051:</SPAN> <SPAN CLASS="keyword">#define</SPAN>  MAXELEN    0x7fff  <SPAN CLASS="comment">// Å‘å‰æ‘œ‰ğ‘œ“x</SPAN>
+<SPAN CLASS="linenum">0050:</SPAN> <SPAN CLASS="keyword">#define</SPAN>  MINELEN    8       <SPAN CLASS="comment">// æœ€å°ç”»åƒè§£åƒåº¦</SPAN>
+<SPAN CLASS="linenum">0051:</SPAN> <SPAN CLASS="keyword">#define</SPAN>  MAXELEN    0x7fff  <SPAN CLASS="comment">// æœ€å¤§ç”»åƒè§£åƒåº¦</SPAN>
 <SPAN CLASS="linenum">0052:</SPAN> 
-<SPAN CLASS="linenum">0053:</SPAN> <SPAN CLASS="comment">// •W€“I‚È•À‚Ñ‡</SPAN>
+<SPAN CLASS="linenum">0053:</SPAN> <SPAN CLASS="comment">// æ¨™æº–çš„ãªä¸¦ã³é †</SPAN>
 <SPAN CLASS="linenum">0054:</SPAN> <SPAN CLASS="keyword">#define</SPAN>  PIXSTANDARD        (YMAJOR|YDECR)
 <SPAN CLASS="linenum">0055:</SPAN> <SPAN CLASS="keyword">#define</SPAN>  PIXSTDFMT      "<SPAN CLASS="string">-Y %d +X %d\n</SPAN>"
 <SPAN CLASS="linenum">0056:</SPAN> 
@@ -75,7 +75,7 @@ SPAN.linenum { color:#A0A0A0; font-weight:normal; font-style:normal;}
 <SPAN CLASS="linenum">0059:</SPAN> 
 <SPAN CLASS="linenum">0060:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
 <SPAN CLASS="linenum">0061:</SPAN> <SPAN CLASS="comment">// Name: s_RemoveCRCF()</SPAN>
-<SPAN CLASS="linenum">0062:</SPAN> <SPAN CLASS="comment">// Desc: —]•ª‚È‰üs‚ğæ‚èœ‚­</SPAN>
+<SPAN CLASS="linenum">0062:</SPAN> <SPAN CLASS="comment">// Desc: ä½™åˆ†ãªæ”¹è¡Œã‚’å–ã‚Šé™¤ã</SPAN>
 <SPAN CLASS="linenum">0063:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
 <SPAN CLASS="linenum">0064:</SPAN> <SPAN CLASS="keyword">void</SPAN> s_RemoveCRCF(<SPAN CLASS="keyword">char</SPAN> *p)
 <SPAN CLASS="linenum">0065:</SPAN> {
@@ -92,17 +92,17 @@ SPAN.linenum { color:#A0A0A0; font-weight:normal; font-style:normal;}
 <SPAN CLASS="linenum">0076:</SPAN> 
 <SPAN CLASS="linenum">0077:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
 <SPAN CLASS="linenum">0078:</SPAN> <SPAN CLASS="comment">// Name: s_ValData()</SPAN>
-<SPAN CLASS="linenum">0079:</SPAN> <SPAN CLASS="comment">// Desc: ƒf[ƒ^‚Ì•]‰¿</SPAN>
+<SPAN CLASS="linenum">0079:</SPAN> <SPAN CLASS="comment">// Desc: ãƒ‡ãƒ¼ã‚¿ã®è©•ä¾¡</SPAN>
 <SPAN CLASS="linenum">0080:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
 <SPAN CLASS="linenum">0081:</SPAN> <SPAN CLASS="keyword">void</SPAN> s_ValData(Info *r, <SPAN CLASS="keyword">const</SPAN> <SPAN CLASS="keyword">char</SPAN>  *s)
 <SPAN CLASS="linenum">0082:</SPAN> {
 <SPAN CLASS="linenum">0083:</SPAN>     <SPAN CLASS="keyword">if</SPAN>(0 == strncmp(s, "<SPAN CLASS="string">#?</SPAN>", 2))
-<SPAN CLASS="linenum">0084:</SPAN>     {<SPAN CLASS="comment">// ƒ}ƒWƒbƒNƒiƒ“ƒo[</SPAN>
+<SPAN CLASS="linenum">0084:</SPAN>     {<SPAN CLASS="comment">// ãƒã‚¸ãƒƒã‚¯ãƒŠãƒ³ãƒãƒ¼</SPAN>
 <SPAN CLASS="linenum">0085:</SPAN>         strcat(r-&gt;mn, s+2);
 <SPAN CLASS="linenum">0086:</SPAN>         s_RemoveCRCF(r-&gt;mn);
 <SPAN CLASS="linenum">0087:</SPAN>     }
 <SPAN CLASS="linenum">0088:</SPAN>     <SPAN CLASS="keyword">else</SPAN> <SPAN CLASS="keyword">if</SPAN>(0 == strncmp(s, "<SPAN CLASS="string">FORMAT=</SPAN>", 7))
-<SPAN CLASS="linenum">0089:</SPAN>     {<SPAN CLASS="comment">// ƒtƒH[ƒ}ƒbƒg</SPAN>
+<SPAN CLASS="linenum">0089:</SPAN>     {<SPAN CLASS="comment">// ãƒ•ã‚©ãƒ¼ãƒãƒƒãƒˆ</SPAN>
 <SPAN CLASS="linenum">0090:</SPAN>         strcat(r-&gt;fs, s+7);
 <SPAN CLASS="linenum">0091:</SPAN>         s_RemoveCRCF(r-&gt;fs);
 <SPAN CLASS="linenum">0092:</SPAN>     }
@@ -111,7 +111,7 @@ SPAN.linenum { color:#A0A0A0; font-weight:normal; font-style:normal;}
 <SPAN CLASS="linenum">0095:</SPAN> 
 <SPAN CLASS="linenum">0096:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
 <SPAN CLASS="linenum">0097:</SPAN> <SPAN CLASS="comment">// Name: s_GetHeader()</SPAN>
-<SPAN CLASS="linenum">0098:</SPAN> <SPAN CLASS="comment">// Desc: ƒwƒbƒ_‚Ì“Ç‚İ‚İ</SPAN>
+<SPAN CLASS="linenum">0098:</SPAN> <SPAN CLASS="comment">// Desc: ãƒ˜ãƒƒãƒ€ã®èª­ã¿è¾¼ã¿</SPAN>
 <SPAN CLASS="linenum">0099:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
 <SPAN CLASS="linenum">0100:</SPAN> <SPAN CLASS="keyword">int</SPAN> s_GetHeader(FILE  *fp, Info *cp)
 <SPAN CLASS="linenum">0101:</SPAN> {
@@ -126,7 +126,7 @@ SPAN.linenum { color:#A0A0A0; font-weight:normal; font-style:normal;}
 <SPAN CLASS="linenum">0110:</SPAN>         <SPAN CLASS="keyword">if</SPAN> (buf[0] == '<SPAN CLASS="string">\r</SPAN>' &amp;&amp; buf[1] == '<SPAN CLASS="string">\n</SPAN>') <SPAN CLASS="keyword">return</SPAN>(0);
 <SPAN CLASS="linenum">0111:</SPAN> 
 <SPAN CLASS="linenum">0112:</SPAN>         <SPAN CLASS="keyword">if</SPAN> (buf[MAXLINE-2] != '<SPAN CLASS="string">\n</SPAN>') {
-<SPAN CLASS="linenum">0113:</SPAN>             <SPAN CLASS="comment">// ƒoƒCƒiƒŠƒf[ƒ^‚É‚È‚Á‚½‚Æ‚«‚É‚ÍAŒ³‚É–ß‚·</SPAN>
+<SPAN CLASS="linenum">0113:</SPAN>             <SPAN CLASS="comment">// ãƒã‚¤ãƒŠãƒªãƒ‡ãƒ¼ã‚¿ã«ãªã£ãŸã¨ãã«ã¯ã€å…ƒã«æˆ»ã™</SPAN>
 <SPAN CLASS="linenum">0114:</SPAN>             buf[MAXLINE-2] = '<SPAN CLASS="string">\0</SPAN>';
 <SPAN CLASS="linenum">0115:</SPAN>         }
 <SPAN CLASS="linenum">0116:</SPAN>         s_ValData(cp, buf);
@@ -138,17 +138,17 @@ SPAN.linenum { color:#A0A0A0; font-weight:normal; font-style:normal;}
 <SPAN CLASS="linenum">0122:</SPAN> 
 <SPAN CLASS="linenum">0123:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
 <SPAN CLASS="linenum">0124:</SPAN> <SPAN CLASS="comment">// Name: s_Str2Resolu()</SPAN>
-<SPAN CLASS="linenum">0125:</SPAN> <SPAN CLASS="comment">// Desc: •¶š—ñ s ‚©‚ç‰ğ‘œ“x‚ğ’Šo‚·‚é</SPAN>
+<SPAN CLASS="linenum">0125:</SPAN> <SPAN CLASS="comment">// Desc: æ–‡å­—åˆ— s ã‹ã‚‰è§£åƒåº¦ã‚’æŠ½å‡ºã™ã‚‹</SPAN>
 <SPAN CLASS="linenum">0126:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
 <SPAN CLASS="linenum">0127:</SPAN> <SPAN CLASS="keyword">int</SPAN> s_Str2Resolu( Info *r, <SPAN CLASS="keyword">const</SPAN> <SPAN CLASS="keyword">char</SPAN> *s )
 <SPAN CLASS="linenum">0128:</SPAN> {
-<SPAN CLASS="linenum">0129:</SPAN>     <SPAN CLASS="keyword">const</SPAN> <SPAN CLASS="keyword">char</SPAN>  *xndx = NULL; <SPAN CLASS="comment">// 'X' ‚Ì’l‚ªn‚Ü‚éêŠ</SPAN>
-<SPAN CLASS="linenum">0130:</SPAN>     <SPAN CLASS="keyword">const</SPAN> <SPAN CLASS="keyword">char</SPAN>  *yndx = NULL; <SPAN CLASS="comment">// 'Y' ‚Ì’l‚ªn‚Ü‚éêŠ</SPAN>
+<SPAN CLASS="linenum">0129:</SPAN>     <SPAN CLASS="keyword">const</SPAN> <SPAN CLASS="keyword">char</SPAN>  *xndx = NULL; <SPAN CLASS="comment">// 'X' ã®å€¤ãŒå§‹ã¾ã‚‹å ´æ‰€</SPAN>
+<SPAN CLASS="linenum">0130:</SPAN>     <SPAN CLASS="keyword">const</SPAN> <SPAN CLASS="keyword">char</SPAN>  *yndx = NULL; <SPAN CLASS="comment">// 'Y' ã®å€¤ãŒå§‹ã¾ã‚‹å ´æ‰€</SPAN>
 <SPAN CLASS="linenum">0131:</SPAN>     <SPAN CLASS="keyword">const</SPAN> <SPAN CLASS="keyword">char</SPAN>  *cp;
 <SPAN CLASS="linenum">0132:</SPAN> 
 <SPAN CLASS="linenum">0133:</SPAN>     <SPAN CLASS="keyword">if</SPAN> (s == NULL) <SPAN CLASS="keyword">return</SPAN>(0);
 <SPAN CLASS="linenum">0134:</SPAN> 
-<SPAN CLASS="linenum">0135:</SPAN>     <SPAN CLASS="comment">// X ‚â Y ‚Ìn‚Ü‚éˆÊ’u‚ğ’²‚×‚é</SPAN>
+<SPAN CLASS="linenum">0135:</SPAN>     <SPAN CLASS="comment">// X ã‚„ Y ã®å§‹ã¾ã‚‹ä½ç½®ã‚’èª¿ã¹ã‚‹</SPAN>
 <SPAN CLASS="linenum">0136:</SPAN>     <SPAN CLASS="keyword">for</SPAN> (cp = s; *cp; cp++){
 <SPAN CLASS="linenum">0137:</SPAN>         <SPAN CLASS="keyword">if</SPAN> (*cp == '<SPAN CLASS="string">X</SPAN>'){
 <SPAN CLASS="linenum">0138:</SPAN>             xndx = cp;
@@ -157,16 +157,16 @@ SPAN.linenum { color:#A0A0A0; font-weight:normal; font-style:normal;}
 <SPAN CLASS="linenum">0141:</SPAN>         }
 <SPAN CLASS="linenum">0142:</SPAN>     }
 <SPAN CLASS="linenum">0143:</SPAN>     
-<SPAN CLASS="linenum">0144:</SPAN>     <SPAN CLASS="comment">// —¼•û‚Ì•¶š—ñ‚ª“ü‚Á‚Ä‚¢‚È‚¢‚Æ³‚µ‚¢‚à‚Ì‚Å‚Í‚È‚¢B</SPAN>
+<SPAN CLASS="linenum">0144:</SPAN>     <SPAN CLASS="comment">// ä¸¡æ–¹ã®æ–‡å­—åˆ—ãŒå…¥ã£ã¦ã„ãªã„ã¨æ­£ã—ã„ã‚‚ã®ã§ã¯ãªã„ã€‚</SPAN>
 <SPAN CLASS="linenum">0145:</SPAN>     <SPAN CLASS="keyword">if</SPAN> (xndx == NULL || yndx == NULL) <SPAN CLASS="keyword">return</SPAN>(0);
 <SPAN CLASS="linenum">0146:</SPAN>     
-<SPAN CLASS="linenum">0147:</SPAN>     <SPAN CLASS="comment">// ƒtƒ‰ƒO‚ÌŠm”F</SPAN>
+<SPAN CLASS="linenum">0147:</SPAN>     <SPAN CLASS="comment">// ãƒ•ãƒ©ã‚°ã®ç¢ºèª</SPAN>
 <SPAN CLASS="linenum">0148:</SPAN>     r-&gt;or = 0;
 <SPAN CLASS="linenum">0149:</SPAN>     <SPAN CLASS="keyword">if</SPAN> (xndx &gt; yndx) r-&gt;or |= YMAJOR;
 <SPAN CLASS="linenum">0150:</SPAN>     <SPAN CLASS="keyword">if</SPAN> (xndx[-1] == '<SPAN CLASS="string">-</SPAN>') r-&gt;or |= XDECR;
 <SPAN CLASS="linenum">0151:</SPAN>     <SPAN CLASS="keyword">if</SPAN> (yndx[-1] == '<SPAN CLASS="string">-</SPAN>') r-&gt;or |= YDECR;
 <SPAN CLASS="linenum">0152:</SPAN> 
-<SPAN CLASS="linenum">0153:</SPAN>     <SPAN CLASS="comment">// ’l‚ÌŠ“¾</SPAN>
+<SPAN CLASS="linenum">0153:</SPAN>     <SPAN CLASS="comment">// å€¤ã®æ‰€å¾—</SPAN>
 <SPAN CLASS="linenum">0154:</SPAN>     <SPAN CLASS="keyword">if</SPAN> ((r-&gt;x = atoi(xndx+1)) &lt;= 0) <SPAN CLASS="keyword">return</SPAN>(0);
 <SPAN CLASS="linenum">0155:</SPAN>     <SPAN CLASS="keyword">if</SPAN> ((r-&gt;y = atoi(yndx+1)) &lt;= 0) <SPAN CLASS="keyword">return</SPAN>(0);
 <SPAN CLASS="linenum">0156:</SPAN> 
@@ -178,7 +178,7 @@ SPAN.linenum { color:#A0A0A0; font-weight:normal; font-style:normal;}
 <SPAN CLASS="linenum">0162:</SPAN> 
 <SPAN CLASS="linenum">0163:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
 <SPAN CLASS="linenum">0164:</SPAN> <SPAN CLASS="comment">// Name: s_GetResolution()</SPAN>
-<SPAN CLASS="linenum">0165:</SPAN> <SPAN CLASS="comment">// Desc: ƒTƒCƒY‚Ì“Ç‚İ‚İ</SPAN>
+<SPAN CLASS="linenum">0165:</SPAN> <SPAN CLASS="comment">// Desc: ã‚µã‚¤ã‚ºã®èª­ã¿è¾¼ã¿</SPAN>
 <SPAN CLASS="linenum">0166:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
 <SPAN CLASS="linenum">0167:</SPAN> <SPAN CLASS="keyword">int</SPAN> s_GetResolution(FILE  *fp, Info *cp)
 <SPAN CLASS="linenum">0168:</SPAN> {
@@ -198,7 +198,7 @@ SPAN.linenum { color:#A0A0A0; font-weight:normal; font-style:normal;}
 <SPAN CLASS="linenum">0182:</SPAN> 
 <SPAN CLASS="linenum">0183:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
 <SPAN CLASS="linenum">0184:</SPAN> <SPAN CLASS="comment">// Name: s_GetResolu()</SPAN>
-<SPAN CLASS="linenum">0185:</SPAN> <SPAN CLASS="comment">// Desc: scanline ‚Ì length ‚Æ number‚ğ“¾‚é</SPAN>
+<SPAN CLASS="linenum">0185:</SPAN> <SPAN CLASS="comment">// Desc: scanline ã® length ã¨ numberã‚’å¾—ã‚‹</SPAN>
 <SPAN CLASS="linenum">0186:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
 <SPAN CLASS="linenum">0187:</SPAN> <SPAN CLASS="keyword">int</SPAN> s_GetResolu(Info *p)
 <SPAN CLASS="linenum">0188:</SPAN> {
@@ -217,11 +217,11 @@ SPAN.linenum { color:#A0A0A0; font-weight:normal; font-style:normal;}
 <SPAN CLASS="linenum">0201:</SPAN> 
 <SPAN CLASS="linenum">0202:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
 <SPAN CLASS="linenum">0203:</SPAN> <SPAN CLASS="comment">// Name: s_CheckHeader()</SPAN>
-<SPAN CLASS="linenum">0204:</SPAN> <SPAN CLASS="comment">// Desc: HDR ƒtƒ@ƒCƒ‹‚Ì“Ç‚İ‚İi•Ô‚è’l‚ª‚P‚Ì‚ÉAƒtƒH[ƒ}ƒbƒg‚ª³‚µ‚©‚Á‚½j</SPAN>
+<SPAN CLASS="linenum">0204:</SPAN> <SPAN CLASS="comment">// Desc: HDR ãƒ•ã‚¡ã‚¤ãƒ«ã®èª­ã¿è¾¼ã¿ï¼ˆè¿”ã‚Šå€¤ãŒï¼‘ã®æ™‚ã«ã€ãƒ•ã‚©ãƒ¼ãƒãƒƒãƒˆãŒæ­£ã—ã‹ã£ãŸï¼‰</SPAN>
 <SPAN CLASS="linenum">0205:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
 <SPAN CLASS="linenum">0206:</SPAN> <SPAN CLASS="keyword">int</SPAN> s_CheckHeader(FILE  *fin, Info *pInfo)
 <SPAN CLASS="linenum">0207:</SPAN> {
-<SPAN CLASS="linenum">0208:</SPAN>     <SPAN CLASS="comment">// ƒf[ƒ^‚Ì‰Šú‰»</SPAN>
+<SPAN CLASS="linenum">0208:</SPAN>     <SPAN CLASS="comment">// ãƒ‡ãƒ¼ã‚¿ã®åˆæœŸåŒ–</SPAN>
 <SPAN CLASS="linenum">0209:</SPAN>     pInfo-&gt;mn[0] = '<SPAN CLASS="string">\0</SPAN>';
 <SPAN CLASS="linenum">0210:</SPAN>     pInfo-&gt;fs[0] = '<SPAN CLASS="string">\0</SPAN>';
 <SPAN CLASS="linenum">0211:</SPAN>     pInfo-&gt;xp = 1.0000000000000;
@@ -231,21 +231,21 @@ SPAN.linenum { color:#A0A0A0; font-weight:normal; font-style:normal;}
 <SPAN CLASS="linenum">0215:</SPAN>     pInfo-&gt;sl = 0;
 <SPAN CLASS="linenum">0216:</SPAN>     pInfo-&gt;ns = 0;
 <SPAN CLASS="linenum">0217:</SPAN> 
-<SPAN CLASS="linenum">0218:</SPAN>     <SPAN CLASS="comment">// ƒwƒbƒ_‚ÌŠ“¾</SPAN>
+<SPAN CLASS="linenum">0218:</SPAN>     <SPAN CLASS="comment">// ãƒ˜ãƒƒãƒ€ã®æ‰€å¾—</SPAN>
 <SPAN CLASS="linenum">0219:</SPAN>     <SPAN CLASS="keyword">if</SPAN> (s_GetHeader(fin, pInfo) &lt; 0) <SPAN CLASS="keyword">return</SPAN>(-1);
 <SPAN CLASS="linenum">0220:</SPAN>     
-<SPAN CLASS="linenum">0221:</SPAN>     <SPAN CLASS="comment">// ƒwƒbƒ_î•ñƒ`ƒFƒbƒN</SPAN>
+<SPAN CLASS="linenum">0221:</SPAN>     <SPAN CLASS="comment">// ãƒ˜ãƒƒãƒ€æƒ…å ±ãƒã‚§ãƒƒã‚¯</SPAN>
 <SPAN CLASS="linenum">0222:</SPAN>     <SPAN CLASS="keyword">if</SPAN> (pInfo-&gt;mn[0]=='<SPAN CLASS="string">\0</SPAN>' || strcmp("<SPAN CLASS="string">RADIANCE</SPAN>", pInfo-&gt;mn) ) <SPAN CLASS="keyword">return</SPAN> -1;
 <SPAN CLASS="linenum">0223:</SPAN> 
-<SPAN CLASS="linenum">0224:</SPAN>     <SPAN CLASS="comment">// ƒtƒH[ƒ}ƒbƒgƒ`ƒFƒbƒN</SPAN>
+<SPAN CLASS="linenum">0224:</SPAN>     <SPAN CLASS="comment">// ãƒ•ã‚©ãƒ¼ãƒãƒƒãƒˆãƒã‚§ãƒƒã‚¯</SPAN>
 <SPAN CLASS="linenum">0225:</SPAN>     <SPAN CLASS="keyword">if</SPAN> (pInfo-&gt;fs[0]=='<SPAN CLASS="string">\0</SPAN>' || strcmp("<SPAN CLASS="string">32-bit_rle_rgbe</SPAN>", pInfo-&gt;fs) ) <SPAN CLASS="keyword">return</SPAN> -1;
 <SPAN CLASS="linenum">0226:</SPAN> 
-<SPAN CLASS="linenum">0227:</SPAN>     <SPAN CLASS="comment">// ƒTƒCƒYƒ`ƒFƒbƒN</SPAN>
+<SPAN CLASS="linenum">0227:</SPAN>     <SPAN CLASS="comment">// ã‚µã‚¤ã‚ºãƒã‚§ãƒƒã‚¯</SPAN>
 <SPAN CLASS="linenum">0228:</SPAN>     <SPAN CLASS="keyword">if</SPAN> (s_GetResolution(fin, pInfo) &lt; 0) <SPAN CLASS="keyword">return</SPAN>(-1);
 <SPAN CLASS="linenum">0229:</SPAN>     <SPAN CLASS="keyword">if</SPAN> (pInfo-&gt;x &lt;= 0 || pInfo-&gt;y &lt;= 0) <SPAN CLASS="keyword">return</SPAN> -1;
-<SPAN CLASS="linenum">0230:</SPAN>     s_GetResolu(pInfo);<SPAN CLASS="comment">// ‰æ‘œ‚ÌƒXƒLƒƒƒ“ƒ‰ƒCƒ“‚ÌŒvZ‚ğ‚·‚é</SPAN>
+<SPAN CLASS="linenum">0230:</SPAN>     s_GetResolu(pInfo);<SPAN CLASS="comment">// ç”»åƒã®ã‚¹ã‚­ãƒ£ãƒ³ãƒ©ã‚¤ãƒ³ã®è¨ˆç®—ã‚’ã™ã‚‹</SPAN>
 <SPAN CLASS="linenum">0231:</SPAN> 
-<SPAN CLASS="linenum">0232:</SPAN>     <SPAN CLASS="comment">// ³‚µ‚¢ƒf[ƒ^</SPAN>
+<SPAN CLASS="linenum">0232:</SPAN>     <SPAN CLASS="comment">// æ­£ã—ã„ãƒ‡ãƒ¼ã‚¿</SPAN>
 <SPAN CLASS="linenum">0233:</SPAN>     <SPAN CLASS="keyword">return</SPAN> 1;
 <SPAN CLASS="linenum">0234:</SPAN> }
 <SPAN CLASS="linenum">0235:</SPAN> 
@@ -254,7 +254,7 @@ SPAN.linenum { color:#A0A0A0; font-weight:normal; font-style:normal;}
 <SPAN CLASS="linenum">0238:</SPAN> 
 <SPAN CLASS="linenum">0239:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
 <SPAN CLASS="linenum">0240:</SPAN> <SPAN CLASS="comment">// Name: s_OldReadColors()</SPAN>
-<SPAN CLASS="linenum">0241:</SPAN> <SPAN CLASS="comment">// Desc: •„†‰»‚³‚ê‚½Fî•ñ‚ğ“Ç‚İ‚Ş(ŒÃ‚¢”Å)</SPAN>
+<SPAN CLASS="linenum">0241:</SPAN> <SPAN CLASS="comment">// Desc: ç¬¦å·åŒ–ã•ã‚ŒãŸè‰²æƒ…å ±ã‚’èª­ã¿è¾¼ã‚€(å¤ã„ç‰ˆ)</SPAN>
 <SPAN CLASS="linenum">0242:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
 <SPAN CLASS="linenum">0243:</SPAN> <SPAN CLASS="keyword">int</SPAN> s_OldReadColors(COLR *scanline, <SPAN CLASS="keyword">int</SPAN> len, FILE *fp)
 <SPAN CLASS="linenum">0244:</SPAN> {
@@ -268,15 +268,15 @@ SPAN.linenum { color:#A0A0A0; font-weight:normal; font-style:normal;}
 <SPAN CLASS="linenum">0252:</SPAN>         scanline[0][GRN] = getc(fp);
 <SPAN CLASS="linenum">0253:</SPAN>         scanline[0][BLU] = getc(fp);
 <SPAN CLASS="linenum">0254:</SPAN>         scanline[0][EXP] = getc(fp);
-<SPAN CLASS="linenum">0255:</SPAN>         <SPAN CLASS="comment">// ƒf[ƒ^‚ª‚È‚©‚Á‚½‚èƒGƒ‰[‚ÅI—¹</SPAN>
+<SPAN CLASS="linenum">0255:</SPAN>         <SPAN CLASS="comment">// ãƒ‡ãƒ¼ã‚¿ãŒãªã‹ã£ãŸã‚Šã‚¨ãƒ©ãƒ¼ã§çµ‚äº†</SPAN>
 <SPAN CLASS="linenum">0256:</SPAN>         <SPAN CLASS="keyword">if</SPAN> (feof(fp) || ferror(fp)) <SPAN CLASS="keyword">return</SPAN>(-1);
 <SPAN CLASS="linenum">0257:</SPAN> 
 <SPAN CLASS="linenum">0258:</SPAN>         <SPAN CLASS="keyword">if</SPAN> (scanline[0][RED] == 1 &amp;&amp;
 <SPAN CLASS="linenum">0259:</SPAN>             scanline[0][GRN] == 1 &amp;&amp;
 <SPAN CLASS="linenum">0260:</SPAN>             scanline[0][BLU] == 1)
 <SPAN CLASS="linenum">0261:</SPAN>         {
-<SPAN CLASS="linenum">0262:</SPAN>             <SPAN CLASS="comment">// R=G=B=1 ‚Ì‚Æ‚«‚ÍAw”•ª‚¾‚¯“¯‚¶ƒf[ƒ^‚ğ‘±‚¯‚é</SPAN>
-<SPAN CLASS="linenum">0263:</SPAN>             <SPAN CLASS="comment">// ‚»‚Ìƒf[ƒ^‚ª‚³‚ç‚É‘±‚­‚È‚çA’·‚³‚ğ‚Q”{‚É‚µ‚Ä‘±‚¯‚é</SPAN>
+<SPAN CLASS="linenum">0262:</SPAN>             <SPAN CLASS="comment">// R=G=B=1 ã®ã¨ãã¯ã€æŒ‡æ•°åˆ†ã ã‘åŒã˜ãƒ‡ãƒ¼ã‚¿ã‚’ç¶šã‘ã‚‹</SPAN>
+<SPAN CLASS="linenum">0263:</SPAN>             <SPAN CLASS="comment">// ãã®ãƒ‡ãƒ¼ã‚¿ãŒã•ã‚‰ã«ç¶šããªã‚‰ã€é•·ã•ã‚’ï¼’å€ã«ã—ã¦ç¶šã‘ã‚‹</SPAN>
 <SPAN CLASS="linenum">0264:</SPAN>             <SPAN CLASS="keyword">for</SPAN> (i = scanline[0][EXP] &lt;&lt; rshift; i &gt; 0; i--) {
 <SPAN CLASS="linenum">0265:</SPAN>                 scanline[0][0]=scanline[-1][0];
 <SPAN CLASS="linenum">0266:</SPAN>                 scanline[0][1]=scanline[-1][1];
@@ -300,67 +300,67 @@ SPAN.linenum { color:#A0A0A0; font-weight:normal; font-style:normal;}
 <SPAN CLASS="linenum">0284:</SPAN> 
 <SPAN CLASS="linenum">0285:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
 <SPAN CLASS="linenum">0286:</SPAN> <SPAN CLASS="comment">// Name: CreateTextureFromHdrFile()</SPAN>
-<SPAN CLASS="linenum">0287:</SPAN> <SPAN CLASS="comment">// Desc: •„†‰»‚³‚ê‚½Fî•ñ‚ğ“Ç‚İ‚Ş</SPAN>
+<SPAN CLASS="linenum">0287:</SPAN> <SPAN CLASS="comment">// Desc: ç¬¦å·åŒ–ã•ã‚ŒãŸè‰²æƒ…å ±ã‚’èª­ã¿è¾¼ã‚€</SPAN>
 <SPAN CLASS="linenum">0288:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
 <SPAN CLASS="linenum">0289:</SPAN> <SPAN CLASS="keyword">int</SPAN> s_ReadColor (COLR *scanline, <SPAN CLASS="keyword">int</SPAN> len, FILE *fp)
 <SPAN CLASS="linenum">0290:</SPAN> {
 <SPAN CLASS="linenum">0291:</SPAN>     <SPAN CLASS="keyword">int</SPAN>  i, j;
 <SPAN CLASS="linenum">0292:</SPAN>     <SPAN CLASS="keyword">int</SPAN>  code, val;
 <SPAN CLASS="linenum">0293:</SPAN> 
-<SPAN CLASS="linenum">0294:</SPAN>     <SPAN CLASS="comment">// “Ç‚İ‚İ‚Ìƒ^ƒCƒv‚ğŒˆ‚ß‚é</SPAN>
-<SPAN CLASS="linenum">0295:</SPAN>     <SPAN CLASS="comment">// ÅV‚Ì‚à‚Ì‚È‚ç‚ÎAÅ‰‚Ì‚S‚Â‚Ì¬•ª‚ª</SPAN>
-<SPAN CLASS="linenum">0296:</SPAN>     <SPAN CLASS="comment">// [ 2 | 2 | ‰æ‘œƒTƒCƒY‚ÌãˆÊ‚Vƒrƒbƒg|‰æ‘œƒTƒCƒY‚Ì‰ºˆÊ‚Wƒrƒbƒg ]</SPAN>
-<SPAN CLASS="linenum">0297:</SPAN>     <SPAN CLASS="comment">// ‚É‚È‚Á‚Ä‚¢‚é‚Í‚¸</SPAN>
+<SPAN CLASS="linenum">0294:</SPAN>     <SPAN CLASS="comment">// èª­ã¿è¾¼ã¿ã®ã‚¿ã‚¤ãƒ—ã‚’æ±ºã‚ã‚‹</SPAN>
+<SPAN CLASS="linenum">0295:</SPAN>     <SPAN CLASS="comment">// æœ€æ–°ã®ã‚‚ã®ãªã‚‰ã°ã€æœ€åˆã®ï¼”ã¤ã®æˆåˆ†ãŒ</SPAN>
+<SPAN CLASS="linenum">0296:</SPAN>     <SPAN CLASS="comment">// [ 2 | 2 | ç”»åƒã‚µã‚¤ã‚ºã®ä¸Šä½ï¼—ãƒ“ãƒƒãƒˆ|ç”»åƒã‚µã‚¤ã‚ºã®ä¸‹ä½ï¼˜ãƒ“ãƒƒãƒˆ ]</SPAN>
+<SPAN CLASS="linenum">0297:</SPAN>     <SPAN CLASS="comment">// ã«ãªã£ã¦ã„ã‚‹ã¯ãš</SPAN>
 <SPAN CLASS="linenum">0298:</SPAN>     <SPAN CLASS="keyword">if</SPAN> (len &lt; MINELEN || MAXELEN &lt; len ){
-<SPAN CLASS="linenum">0299:</SPAN>         <SPAN CLASS="comment">// ŒÃ‚¢ƒ^ƒCƒv</SPAN>
+<SPAN CLASS="linenum">0299:</SPAN>         <SPAN CLASS="comment">// å¤ã„ã‚¿ã‚¤ãƒ—</SPAN>
 <SPAN CLASS="linenum">0300:</SPAN>         <SPAN CLASS="keyword">return</SPAN>(s_OldReadColors(scanline, len, fp));
 <SPAN CLASS="linenum">0301:</SPAN>     }
 <SPAN CLASS="linenum">0302:</SPAN> 
 <SPAN CLASS="linenum">0303:</SPAN>     i = getc(fp);
-<SPAN CLASS="linenum">0304:</SPAN>     <SPAN CLASS="keyword">if</SPAN> (i == EOF) <SPAN CLASS="keyword">return</SPAN>(-1);<SPAN CLASS="comment">// ƒf[ƒ^‚ª‚È‚¢</SPAN>
+<SPAN CLASS="linenum">0304:</SPAN>     <SPAN CLASS="keyword">if</SPAN> (i == EOF) <SPAN CLASS="keyword">return</SPAN>(-1);<SPAN CLASS="comment">// ãƒ‡ãƒ¼ã‚¿ãŒãªã„</SPAN>
 <SPAN CLASS="linenum">0305:</SPAN> 
 <SPAN CLASS="linenum">0306:</SPAN>     <SPAN CLASS="keyword">if</SPAN> (i != 2) {
-<SPAN CLASS="linenum">0307:</SPAN>         <SPAN CLASS="comment">// Å‰‚Í‚Q‚Å‚È‚¢‚à‚Ì‚ÍŒÃ‚¢ƒ^ƒCƒv</SPAN>
+<SPAN CLASS="linenum">0307:</SPAN>         <SPAN CLASS="comment">// æœ€åˆã¯ï¼’ã§ãªã„ã‚‚ã®ã¯å¤ã„ã‚¿ã‚¤ãƒ—</SPAN>
 <SPAN CLASS="linenum">0308:</SPAN>         ungetc(i, fp);
 <SPAN CLASS="linenum">0309:</SPAN>         <SPAN CLASS="keyword">return</SPAN>(s_OldReadColors(scanline, len, fp));
 <SPAN CLASS="linenum">0310:</SPAN>     }
-<SPAN CLASS="linenum">0311:</SPAN>     <SPAN CLASS="comment">// Å’á‚S‚Â‚Ìƒf[ƒ^‚ª•K—v</SPAN>
+<SPAN CLASS="linenum">0311:</SPAN>     <SPAN CLASS="comment">// æœ€ä½ï¼”ã¤ã®ãƒ‡ãƒ¼ã‚¿ãŒå¿…è¦</SPAN>
 <SPAN CLASS="linenum">0312:</SPAN>     scanline[0][GRN] = getc(fp);
 <SPAN CLASS="linenum">0313:</SPAN>     scanline[0][BLU] = getc(fp);
 <SPAN CLASS="linenum">0314:</SPAN>     <SPAN CLASS="keyword">if</SPAN> ((i = getc(fp)) == EOF) <SPAN CLASS="keyword">return</SPAN>(-1);
 <SPAN CLASS="linenum">0315:</SPAN>     
-<SPAN CLASS="linenum">0316:</SPAN>     <SPAN CLASS="comment">// Å‰‚Ìƒf[ƒ^‚ª"22"‚Æ‚©‚É‚È‚Á‚Ä‚¢‚È‚©‚Á‚½‚èA</SPAN>
-<SPAN CLASS="linenum">0317:</SPAN>     <SPAN CLASS="comment">// ‚RƒoƒCƒg–Ú‚Ìƒf[ƒ^‚É‚Â‚¢‚ÄÅ‘å”‚ğ’´‚¦‚Ä‚¢‚é‚©‚Ìƒ`ƒFƒbƒN</SPAN>
+<SPAN CLASS="linenum">0316:</SPAN>     <SPAN CLASS="comment">// æœ€åˆã®ãƒ‡ãƒ¼ã‚¿ãŒ"22"ã¨ã‹ã«ãªã£ã¦ã„ãªã‹ã£ãŸã‚Šã€</SPAN>
+<SPAN CLASS="linenum">0317:</SPAN>     <SPAN CLASS="comment">// ï¼“ãƒã‚¤ãƒˆç›®ã®ãƒ‡ãƒ¼ã‚¿ã«ã¤ã„ã¦æœ€å¤§æ•°ã‚’è¶…ãˆã¦ã„ã‚‹ã‹ã®ãƒã‚§ãƒƒã‚¯</SPAN>
 <SPAN CLASS="linenum">0318:</SPAN>     <SPAN CLASS="keyword">if</SPAN> (scanline[0][GRN] != 2 || scanline[0][BLU] &amp; 128) {
 <SPAN CLASS="linenum">0319:</SPAN>         scanline[0][RED] = 2;
 <SPAN CLASS="linenum">0320:</SPAN>         scanline[0][EXP] = i;
 <SPAN CLASS="linenum">0321:</SPAN>         <SPAN CLASS="keyword">return</SPAN>(s_OldReadColors(scanline+1, len-1, fp));
 <SPAN CLASS="linenum">0322:</SPAN>     }
 <SPAN CLASS="linenum">0323:</SPAN> 
-<SPAN CLASS="linenum">0324:</SPAN>     <SPAN CLASS="comment">// ’·‚³î•ñ‚ÌŠm”F</SPAN>
+<SPAN CLASS="linenum">0324:</SPAN>     <SPAN CLASS="comment">// é•·ã•æƒ…å ±ã®ç¢ºèª</SPAN>
 <SPAN CLASS="linenum">0325:</SPAN>     <SPAN CLASS="keyword">if</SPAN> ((scanline[0][BLU]&lt;&lt;8 | i) != len) <SPAN CLASS="keyword">return</SPAN>(-1);
 <SPAN CLASS="linenum">0326:</SPAN> 
-<SPAN CLASS="linenum">0327:</SPAN>     <SPAN CLASS="comment">// Še¬•ª‚ğ“Ç‚İ‚Ş</SPAN>
+<SPAN CLASS="linenum">0327:</SPAN>     <SPAN CLASS="comment">// å„æˆåˆ†ã‚’èª­ã¿è¾¼ã‚€</SPAN>
 <SPAN CLASS="linenum">0328:</SPAN>     <SPAN CLASS="keyword">for</SPAN> (i = 0; i &lt; 4; i++)
 <SPAN CLASS="linenum">0329:</SPAN>     {
 <SPAN CLASS="linenum">0330:</SPAN>         <SPAN CLASS="keyword">for</SPAN> (j = 0; j &lt; len; )
 <SPAN CLASS="linenum">0331:</SPAN>         {
-<SPAN CLASS="linenum">0332:</SPAN>             <SPAN CLASS="comment">// ƒf[ƒ^‚ª“r’†‚Å‚È‚­‚È‚Á‚½H</SPAN>
+<SPAN CLASS="linenum">0332:</SPAN>             <SPAN CLASS="comment">// ãƒ‡ãƒ¼ã‚¿ãŒé€”ä¸­ã§ãªããªã£ãŸï¼Ÿ</SPAN>
 <SPAN CLASS="linenum">0333:</SPAN>             <SPAN CLASS="keyword">if</SPAN> ((code = getc(fp)) == EOF) <SPAN CLASS="keyword">return</SPAN>(-1);
 <SPAN CLASS="linenum">0334:</SPAN> 
 <SPAN CLASS="linenum">0335:</SPAN>             <SPAN CLASS="keyword">if</SPAN> (128 &lt; code) {
-<SPAN CLASS="linenum">0336:</SPAN>                 <SPAN CLASS="comment">// ’·‚³+’l‚Ìƒ‰ƒ“ƒŒƒ“ƒOƒX</SPAN>
+<SPAN CLASS="linenum">0336:</SPAN>                 <SPAN CLASS="comment">// é•·ã•+å€¤ã®ãƒ©ãƒ³ãƒ¬ãƒ³ã‚°ã‚¹</SPAN>
 <SPAN CLASS="linenum">0337:</SPAN>                 code &amp;= 127;
 <SPAN CLASS="linenum">0338:</SPAN>                 val = getc(fp);
 <SPAN CLASS="linenum">0339:</SPAN>                 <SPAN CLASS="keyword">while</SPAN> (code--) scanline[j++][i] = val;
 <SPAN CLASS="linenum">0340:</SPAN>             } <SPAN CLASS="keyword">else</SPAN> {
-<SPAN CLASS="linenum">0341:</SPAN>                 <SPAN CLASS="comment">// ƒ‰ƒ“ƒŒƒ“ƒOƒX‚Å‚È‚¢‚à‚Ì‚ªcodeŒÂ‘±‚­</SPAN>
+<SPAN CLASS="linenum">0341:</SPAN>                 <SPAN CLASS="comment">// ãƒ©ãƒ³ãƒ¬ãƒ³ã‚°ã‚¹ã§ãªã„ã‚‚ã®ãŒcodeå€‹ç¶šã</SPAN>
 <SPAN CLASS="linenum">0342:</SPAN>                 <SPAN CLASS="keyword">while</SPAN> (code--) scanline[j++][i] = getc(fp);
 <SPAN CLASS="linenum">0343:</SPAN>             }
 <SPAN CLASS="linenum">0344:</SPAN>         }
 <SPAN CLASS="linenum">0345:</SPAN>     }
 <SPAN CLASS="linenum">0346:</SPAN>     
-<SPAN CLASS="linenum">0347:</SPAN>     <SPAN CLASS="comment">// I’[‚É’B‚µ‚Ä‚¢‚½‚©Šm”F</SPAN>
+<SPAN CLASS="linenum">0347:</SPAN>     <SPAN CLASS="comment">// çµ‚ç«¯ã«é”ã—ã¦ã„ãŸã‹ç¢ºèª</SPAN>
 <SPAN CLASS="linenum">0348:</SPAN>     <SPAN CLASS="keyword">return</SPAN>(feof(fp) ? -1 : 0);
 <SPAN CLASS="linenum">0349:</SPAN> }
 <SPAN CLASS="linenum">0350:</SPAN> 
@@ -369,7 +369,7 @@ SPAN.linenum { color:#A0A0A0; font-weight:normal; font-style:normal;}
 <SPAN CLASS="linenum">0353:</SPAN> 
 <SPAN CLASS="linenum">0354:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
 <SPAN CLASS="linenum">0355:</SPAN> <SPAN CLASS="comment">// Name: CreateTextureFromHdrFile()</SPAN>
-<SPAN CLASS="linenum">0356:</SPAN> <SPAN CLASS="comment">// Desc: Radiance ƒXƒLƒƒƒ“ƒ‰ƒCƒ“ƒtƒH[ƒ}ƒbƒg‚ğRGBE‚É•ÏŠ·‚·‚é</SPAN>
+<SPAN CLASS="linenum">0356:</SPAN> <SPAN CLASS="comment">// Desc: Radiance ã‚¹ã‚­ãƒ£ãƒ³ãƒ©ã‚¤ãƒ³ãƒ•ã‚©ãƒ¼ãƒãƒƒãƒˆã‚’RGBEã«å¤‰æ›ã™ã‚‹</SPAN>
 <SPAN CLASS="linenum">0357:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
 <SPAN CLASS="linenum">0358:</SPAN> <SPAN CLASS="keyword">int</SPAN> Ra2Skel(FILE *fp, <SPAN CLASS="keyword">int</SPAN> sl, <SPAN CLASS="keyword">int</SPAN> nl, LPCTSTR *pErr, LPDIRECT3DTEXTURE9 pTexture)
 <SPAN CLASS="linenum">0359:</SPAN> {
@@ -378,7 +378,7 @@ SPAN.linenum { color:#A0A0A0; font-weight:normal; font-style:normal;}
 <SPAN CLASS="linenum">0362:</SPAN>     <SPAN CLASS="keyword">register</SPAN> <SPAN CLASS="keyword">int</SPAN>    x;
 <SPAN CLASS="linenum">0363:</SPAN>     <SPAN CLASS="keyword">int</SPAN> y;
 <SPAN CLASS="linenum">0364:</SPAN> 
-<SPAN CLASS="linenum">0365:</SPAN>     <SPAN CLASS="comment">// ƒƒ‚ƒŠ‚ÌŠm•Û</SPAN>
+<SPAN CLASS="linenum">0365:</SPAN>     <SPAN CLASS="comment">// ãƒ¡ãƒ¢ãƒªã®ç¢ºä¿</SPAN>
 <SPAN CLASS="linenum">0366:</SPAN>     <SPAN CLASS="keyword">if</SPAN> ((scanin = (COLR *) malloc(sl*<SPAN CLASS="keyword">sizeof</SPAN>(COLR))) == NULL)
 <SPAN CLASS="linenum">0367:</SPAN>     {
 <SPAN CLASS="linenum">0368:</SPAN>         <SPAN CLASS="keyword">static</SPAN> LPCTSTR ErrMsg = "<SPAN CLASS="string">Out of memory.</SPAN>";
@@ -386,7 +386,7 @@ SPAN.linenum { color:#A0A0A0; font-weight:normal; font-style:normal;}
 <SPAN CLASS="linenum">0370:</SPAN>         <SPAN CLASS="keyword">return</SPAN> -1;
 <SPAN CLASS="linenum">0371:</SPAN>     }
 <SPAN CLASS="linenum">0372:</SPAN> 
-<SPAN CLASS="linenum">0373:</SPAN>     <SPAN CLASS="comment">// ƒeƒNƒXƒ`ƒƒ‚ÌƒƒbƒN</SPAN>
+<SPAN CLASS="linenum">0373:</SPAN>     <SPAN CLASS="comment">// ãƒ†ã‚¯ã‚¹ãƒãƒ£ã®ãƒ­ãƒƒã‚¯</SPAN>
 <SPAN CLASS="linenum">0374:</SPAN>     D3DLOCKED_RECT d3dlr;
 <SPAN CLASS="linenum">0375:</SPAN>     <SPAN CLASS="keyword">if</SPAN>(FAILED(pTexture-&gt;LockRect(0, &amp;d3dlr, NULL, 0)))
 <SPAN CLASS="linenum">0376:</SPAN>     {
@@ -396,7 +396,7 @@ SPAN.linenum { color:#A0A0A0; font-weight:normal; font-style:normal;}
 <SPAN CLASS="linenum">0380:</SPAN>         <SPAN CLASS="keyword">goto</SPAN> err1_end;
 <SPAN CLASS="linenum">0381:</SPAN>     }
 <SPAN CLASS="linenum">0382:</SPAN> 
-<SPAN CLASS="linenum">0383:</SPAN>     <SPAN CLASS="comment">// ‰æ‘œ‚Ì•ÏŠ·</SPAN>
+<SPAN CLASS="linenum">0383:</SPAN>     <SPAN CLASS="comment">// ç”»åƒã®å¤‰æ›</SPAN>
 <SPAN CLASS="linenum">0384:</SPAN>     BYTE* pDstRow = (BYTE*)d3dlr.pBits;
 <SPAN CLASS="linenum">0385:</SPAN>     <SPAN CLASS="keyword">for</SPAN> (y = nl-1; y &gt;= 0; y--) {
 <SPAN CLASS="linenum">0386:</SPAN>         <SPAN CLASS="keyword">if</SPAN> (s_ReadColor(scanin, sl, fp) &lt; 0)
@@ -423,7 +423,7 @@ SPAN.linenum { color:#A0A0A0; font-weight:normal; font-style:normal;}
 <SPAN CLASS="linenum">0407:</SPAN> 
 <SPAN CLASS="linenum">0408:</SPAN> err1_end:
 <SPAN CLASS="linenum">0409:</SPAN> 
-<SPAN CLASS="linenum">0410:</SPAN>     <SPAN CLASS="comment">// ƒƒ‚ƒŠ‚ÌŠJ•ú</SPAN>
+<SPAN CLASS="linenum">0410:</SPAN>     <SPAN CLASS="comment">// ãƒ¡ãƒ¢ãƒªã®é–‹æ”¾</SPAN>
 <SPAN CLASS="linenum">0411:</SPAN>     free((<SPAN CLASS="keyword">char</SPAN> *)scanin);
 <SPAN CLASS="linenum">0412:</SPAN> 
 <SPAN CLASS="linenum">0413:</SPAN>     <SPAN CLASS="keyword">return</SPAN> ret;
@@ -434,7 +434,7 @@ SPAN.linenum { color:#A0A0A0; font-weight:normal; font-style:normal;}
 <SPAN CLASS="linenum">0418:</SPAN> 
 <SPAN CLASS="linenum">0419:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
 <SPAN CLASS="linenum">0420:</SPAN> <SPAN CLASS="comment">// Name: CreateTextureFromHdrFile()</SPAN>
-<SPAN CLASS="linenum">0421:</SPAN> <SPAN CLASS="comment">// Desc: HDR ƒtƒ@ƒCƒ‹‚Ì“Ç‚İ‚İ</SPAN>
+<SPAN CLASS="linenum">0421:</SPAN> <SPAN CLASS="comment">// Desc: HDR ãƒ•ã‚¡ã‚¤ãƒ«ã®èª­ã¿è¾¼ã¿</SPAN>
 <SPAN CLASS="linenum">0422:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
 <SPAN CLASS="linenum">0423:</SPAN> HRESULT CreateTextureFromFile(
 <SPAN CLASS="linenum">0424:</SPAN>         LPDIRECT3DDEVICE9 pDevice,
@@ -448,40 +448,40 @@ SPAN.linenum { color:#A0A0A0; font-weight:normal; font-style:normal;}
 <SPAN CLASS="linenum">0432:</SPAN>     FILE *fd;
 <SPAN CLASS="linenum">0433:</SPAN>     
 <SPAN CLASS="linenum">0434:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( (fd = fopen( pSrcFile,"<SPAN CLASS="string">rb</SPAN>" )) == NULL )
-<SPAN CLASS="linenum">0435:</SPAN>     {<SPAN CLASS="comment">// ƒtƒ@ƒCƒ‹‚ÌƒI[ƒvƒ“‚Ì¸”s</SPAN>
+<SPAN CLASS="linenum">0435:</SPAN>     {<SPAN CLASS="comment">// ãƒ•ã‚¡ã‚¤ãƒ«ã®ã‚ªãƒ¼ãƒ—ãƒ³ã®å¤±æ•—</SPAN>
 <SPAN CLASS="linenum">0436:</SPAN>         <SPAN CLASS="keyword">static</SPAN> LPCTSTR ErrMsg = "<SPAN CLASS="string">Can't open input file.</SPAN>";
 <SPAN CLASS="linenum">0437:</SPAN>         <SPAN CLASS="keyword">if</SPAN>(pErr) *pErr = ErrMsg;
 <SPAN CLASS="linenum">0438:</SPAN>         hr = -1;
 <SPAN CLASS="linenum">0439:</SPAN>         <SPAN CLASS="keyword">return</SPAN> -1;
 <SPAN CLASS="linenum">0440:</SPAN>     }
 <SPAN CLASS="linenum">0441:</SPAN> 
-<SPAN CLASS="linenum">0442:</SPAN>     <SPAN CLASS="comment">// ƒwƒbƒ_[‚ğ’²‚×‚é</SPAN>
+<SPAN CLASS="linenum">0442:</SPAN>     <SPAN CLASS="comment">// ãƒ˜ãƒƒãƒ€ãƒ¼ã‚’èª¿ã¹ã‚‹</SPAN>
 <SPAN CLASS="linenum">0443:</SPAN>     <SPAN CLASS="keyword">if</SPAN> (s_CheckHeader(fd, &amp;info) &lt; 0)
 <SPAN CLASS="linenum">0444:</SPAN>     {
 <SPAN CLASS="linenum">0445:</SPAN>         <SPAN CLASS="keyword">static</SPAN> LPCTSTR ErrMsg = "<SPAN CLASS="string">Bad picture format.</SPAN>";
 <SPAN CLASS="linenum">0446:</SPAN>         <SPAN CLASS="keyword">if</SPAN>(pErr) *pErr = ErrMsg;
 <SPAN CLASS="linenum">0447:</SPAN>         hr = -1;
-<SPAN CLASS="linenum">0448:</SPAN>         <SPAN CLASS="keyword">goto</SPAN> err_data;<SPAN CLASS="comment">// ƒtƒH[ƒ}ƒbƒg‚ª‚¨‚©‚µ‚¢</SPAN>
+<SPAN CLASS="linenum">0448:</SPAN>         <SPAN CLASS="keyword">goto</SPAN> err_data;<SPAN CLASS="comment">// ãƒ•ã‚©ãƒ¼ãƒãƒƒãƒˆãŒãŠã‹ã—ã„</SPAN>
 <SPAN CLASS="linenum">0449:</SPAN>     }
 <SPAN CLASS="linenum">0450:</SPAN> 
-<SPAN CLASS="linenum">0451:</SPAN>     <SPAN CLASS="comment">// ƒeƒNƒXƒ`ƒƒ‚ğŠm•Û‚·‚é</SPAN>
+<SPAN CLASS="linenum">0451:</SPAN>     <SPAN CLASS="comment">// ãƒ†ã‚¯ã‚¹ãƒãƒ£ã‚’ç¢ºä¿ã™ã‚‹</SPAN>
 <SPAN CLASS="linenum">0452:</SPAN>     <SPAN CLASS="keyword">if</SPAN>(FAILED(hr=D3DXCreateTexture(pDevice, info.x, info.y
 <SPAN CLASS="linenum">0453:</SPAN>                     , 1, 0, D3DFMT_A8R8G8B8
 <SPAN CLASS="linenum">0454:</SPAN>                     , D3DPOOL_MANAGED, pTexture)))
 <SPAN CLASS="linenum">0455:</SPAN>     {
 <SPAN CLASS="linenum">0456:</SPAN>         <SPAN CLASS="keyword">static</SPAN> LPCTSTR ErrMsg = "<SPAN CLASS="string">Failed to create texture.</SPAN>";
 <SPAN CLASS="linenum">0457:</SPAN>         <SPAN CLASS="keyword">if</SPAN>(pErr) *pErr = ErrMsg;
-<SPAN CLASS="linenum">0458:</SPAN>         <SPAN CLASS="keyword">goto</SPAN> err_data;<SPAN CLASS="comment">// ƒtƒH[ƒ}ƒbƒg‚ª‚¨‚©‚µ‚¢</SPAN>
+<SPAN CLASS="linenum">0458:</SPAN>         <SPAN CLASS="keyword">goto</SPAN> err_data;<SPAN CLASS="comment">// ãƒ•ã‚©ãƒ¼ãƒãƒƒãƒˆãŒãŠã‹ã—ã„</SPAN>
 <SPAN CLASS="linenum">0459:</SPAN>     }
 <SPAN CLASS="linenum">0460:</SPAN> 
-<SPAN CLASS="linenum">0461:</SPAN>     <SPAN CLASS="comment">// ƒRƒ“ƒo[ƒg‚·‚é</SPAN>
+<SPAN CLASS="linenum">0461:</SPAN>     <SPAN CLASS="comment">// ã‚³ãƒ³ãƒãƒ¼ãƒˆã™ã‚‹</SPAN>
 <SPAN CLASS="linenum">0462:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( Ra2Skel(fd, info.sl, info.ns, pErr, *pTexture) &lt; 0)
 <SPAN CLASS="linenum">0463:</SPAN>     {
 <SPAN CLASS="linenum">0464:</SPAN>         hr = -1;
 <SPAN CLASS="linenum">0465:</SPAN>     }
 <SPAN CLASS="linenum">0466:</SPAN> 
 <SPAN CLASS="linenum">0467:</SPAN> err_data:
-<SPAN CLASS="linenum">0468:</SPAN>     <SPAN CLASS="comment">// ƒtƒ@ƒCƒ‹‚ğ•Â‚¶‚é</SPAN>
+<SPAN CLASS="linenum">0468:</SPAN>     <SPAN CLASS="comment">// ãƒ•ã‚¡ã‚¤ãƒ«ã‚’é–‰ã˜ã‚‹</SPAN>
 <SPAN CLASS="linenum">0469:</SPAN>     fclose( fd );
 <SPAN CLASS="linenum">0470:</SPAN> 
 <SPAN CLASS="linenum">0471:</SPAN>     <SPAN CLASS="keyword">return</SPAN> hr;

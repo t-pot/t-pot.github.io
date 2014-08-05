@@ -1,140 +1,140 @@
 <head>
-	<title>t-pot �wVertex Shader ����:�����V�F�[�_�[�x</title>
+	<title>t-pot 『Vertex Shader 入門:薄膜シェーダー』</title>
 	<link rel="stylesheet" type="text/css" href="../if.css">
 </head>
-<meta http-equiv=Content-Type content="text/html; charset=shift_jis">
+<meta http-equiv=Content-Type content="text/html; charset=UTF-8">
 <body>
 <div class="contents">
 <center>
 <BR CLEAR=ALL>
 <BR CLEAR=ALL>
-<h1>�����V�F�[�_�[</h1><br>
-<h3>�`NVIDIA�̃T���v���̓z�ł��`</h3>
+<h1>薄膜シェーダー</h1><br>
+<h3>～NVIDIAのサンプルの奴です～</h3>
 <BR CLEAR=ALL>
 <BR CLEAR=ALL>
 <BR CLEAR=ALL>
 </center>
-<h2>���͂��߂�</h2>
+<h2>■はじめに</h2>
 
 <p>
-�g�D�[���V�F�[�_�[��������̂ŁA�����悤�Ȃ��̂��������T���Ă݂܂����B
-����ƁANVIDIA ��  NVEffectsBrowser �̃T���v���ɁAmembrane Lighting �ƌ����̂��������̂ł�����Љ�܂��B<br>
-membrane �Ƃ́A���̂��Ƃ炵���ł��B����ɁA�����Ă��閌�������炵���̂ŁA�����ł́A�����V�F�[�_�[�ƌĂт܂��B
+トゥーンシェーダーをやったので、似たようなものが無いか探してみました。
+すると、NVIDIA の  NVEffectsBrowser のサンプルに、membrane Lighting と言うのがあったのでこれを紹介します。<br>
+membrane とは、膜のことらしいです。さらに、扱っている膜が透明らしいので、ここでは、薄膜シェーダーと呼びます。
 </p>
 <right><image src = "membrane.gif"></right>
 <p>
-�g�D�[���V�F�[�_�[�Ƃ̈Ⴂ�́A
+トゥーンシェーダーとの違いは、
 </p>
 <table>
-<tr><td>I</td><td>�����̕����ƁA���_�̖@���������ăe�N�X�`���[���W���Z�o����</td>
+<tr><td>I</td><td>視線の方向と、頂点の法線をつかってテクスチャー座標を算出する</td>
 </tr>
-<tr><td>II</td><td>���Z�������ŁA���f����\������</td>
+<tr><td>II</td><td>加算半透明で、モデルを表示する</td>
 </tr>
 </table>
 <p>
-�ł��BI �́A�g�D�[���̏ꍇ�ɂ́A�����̕����Ɩ@���̓��ςł����B
-����́A�Ɩ��Ɠ������ʂ��o���܂��B
-����̏ꍇ�́A���ʂ������Ă��邩�ǂ�����\������̂ŁA�֊s���o�̂悤�ȗp�r�Ɏg���܂��B
+です。I は、トゥーンの場合には、光源の方向と法線の内積でした。
+それは、照明と同じ効果を出します。
+今回の場合は、正面を向いているかどうかを表現するので、輪郭抽出のような用途に使えます。
 </p>
 <p>
-�ȉ��̃t�@�C�����_�E�����[�h���Ă��������B<br>
+以下のファイルをダウンロードしてください。<br>
 </p>
 <ul style = "LIST-STYLE-TYPE:none">
-<li><a href="membrane.lzh">membrane.lzh (�����V�F�[�_�[�̃T���v��)</a>
+<li><a href="membrane.lzh">membrane.lzh (薄膜シェーダーのサンプル)</a>
 </ul>
 <p>
-����́APurpleGreenBright.bmp �Ƃ����t�@�C�����G�t�F�N�g�p�ɓ����Ă��܂��B<br>
-����̃e�N�X�`���[�́A�O��ƈقȂ�A���ς̒l�������ȏꍇ�ɖ��邭�A�傫�ȏꍇ�ɈÂ��Ȃ�܂��B<br>
-���ʓI�ɁA�O�����ڂ����Ƃ����\���ɂȂ�܂��B
+今回は、PurpleGreenBright.bmp というファイルがエフェクト用に入っています。<br>
+今回のテクスチャーは、前回と異なり、内積の値が小さな場合に明るく、大きな場合に暗くなります。<br>
+結果的に、外側がぼおっとした表示になります。
 </p>
 <right><image src = "PurpleGreenBright.gif"></right>
 <p>
-�܂��A�g���ł��\�����Ă݂܂����B
+また、トラでも表示してみました。
 </p>
 <right><image src = "membranetiger.gif"></right>
 <p>
-������ƒn���ł����B
+ちょっと地味でした。
 </p>
 
-<h2>���o�[�e�b�N�X�V�F�[�_�[(vs.vsh)</h2>
+<h2>■バーテックスシェーダー(vs.vsh)</h2>
 
 <p>
-�o�[�e�b�N�X�V�F�[�_�[�v���O���������܂��B
+バーテックスシェーダープログラムを見ます。
 </p>
 <pre class="CodeBlock">
 vs.1.0
 
-; v0	���_�̍��W�l
-; v3	�@���x�N�g��
-; v8	�e�N�X�`�����W1
+; v0	頂点の座標値
+; v3	法線ベクトル
+; v8	テクスチャ座標1
 
 ;
-; c0-3   -- world + �r���[ + �����ϊ��s��
-; c4-7   -- world �s��
-; c8-11  -- world �̋t�]�u�s��
-; c14    -- �J�����̈ʒu
-; c15    -- ���b�V���̐F
+; c0-3   -- world + ビュー + 透視変換行列
+; c4-7   -- world 行列
+; c8-11  -- world の逆転置行列
+; c14    -- カメラの位置
+; c15    -- メッシュの色
 
 vs.1.0
 
-;���W�ϊ�
+;座標変換
 dp4 oPos.x, v0, c0
 dp4 oPos.y, v0, c1
 dp4 oPos.z, v0, c2
 dp4 oPos.w, v0, c3
 
-;�@���̕ϊ�
+;法線の変換
 dp3 r0.x, v3, c8
 dp3 r0.y, v3, c9
 dp3 r0.z, v3, c10
 
-;�@���̐��K��
+;法線の正規化
 dp3 r0.w, r0, r0
 rsq r0.w, r0.w
 mul r0, r0, r0.w
 <Font color = orange><b>
-;���[���h���W�n�ł̒��_�̈ʒu���v�Z����
+;ワールド座標系での頂点の位置を計算する
 dp4 r1.x, v0, c4
 dp4 r1.y, v0, c5
 dp4 r1.z, v0, c6
 dp4 r1.w, v0, c7
 
-;�J�����ւ̌���e���v�Z����
+;カメラへの向きeを計算する
 add r2, c14, -r1
 
-;e �̐��K��
+;e の正規化
 dp3 r2.w, r2, r2
 rsq r2.w, r2.w
 mul r2, r2, r2.w
 
-; e dot n (�e�N�X�`���[���W�̎Z�o)
+; e dot n (テクスチャー座標の算出)
 dp3 r1, r2, r0
 mov oT0.x, r1
 </b></Font>
-; ���b�V���̃e�N�X�`���[
+; メッシュのテクスチャー
 mov oT1, v8
 
-; ���_�F�i(1.0, 1.0, 1.0, 1.0) �����܂��j
+; 頂点色（(1.0, 1.0, 1.0, 1.0) を入れます）
 mov oD0, c15
 </pre>
 
 <p>
-����A�����ւ̕����x�N�g�� e ���A�V�����������܂����B
-�����i�J�����j�̈ʒu�́A���[���h���W�ł̈ʒu�Ȃ̂ŁA�e���_�����[���h���W�̍s��ŕϊ����܂��B
-���̌�ɁA�J�����̈ʒu�Ƃ̍�������āA�J�����̕������Z�o���܂��B<br>
-��́A�@���Ƃ̓��ς��Ƃ��āA�@�����ǂꂾ�����ʂ������Ă��邩���v�Z���A���̒l���e�N�X�`���[�̍��W�ɂ��܂��B<br>
-��́A���̃e�N�X�`���[�𒣂�܂��B<br>
-NVIDIA �̃T���v���ł́A���̃e�N�X�`���[�͒���Ȃ������̂ł����A���т��������̂ŁA�������܂����B<br>
-����ɁANVIDIA �̃T���v���ł́A�e�N�X�`���[�𗬂��Ă����̂ł����A�؂�ڂ����������̂ŁA�����̂���߂܂����B<br>
-�����āA���̐F�͔��f�������ɔ��F (1.0, 1.0, 1.0, 1.0) �����܂����B
-���̐F�œh��ƁA���̐F���悷����̂ŁA�������܂����B
+今回、視線への方向ベクトル e を、新しく導入しました。
+視線（カメラ）の位置は、ワールド座標での位置なので、各頂点をワールド座標の行列で変換します。
+その後に、カメラの位置との差を取って、カメラの方向を算出します。<br>
+後は、法線との内積をとって、法線がどれだけ正面を向いているかを計算し、その値をテクスチャーの座標にします。<br>
+後は、元のテクスチャーを張ります。<br>
+NVIDIA のサンプルでは、元のテクスチャーは張らなかったのですが、さびしかったので、こうしました。<br>
+さらに、NVIDIA のサンプルでは、テクスチャーを流していたのですが、切れ目が汚かったので、流すのをやめました。<br>
+そして、元の色は反映させずに白色 (1.0, 1.0, 1.0, 1.0) を入れました。
+元の色で塗ると、その色がつよすぎるので、こうしました。
 </p>
 
-<h2>��������</h2>
+<h2>■初期化</h2>
 
 <p>
-�ł́A�������ł��B<br>
-�g�D�[���V�F�[�_�[�Ƃ̈Ⴂ�́A���Z�������s�����߂ɁAZ�o�b�t�@��؂��Ă��邱�Ƃł��B
+では、初期化です。<br>
+トゥーンシェーダーとの違いは、加算合成を行うために、Zバッファを切っていることです。
 </p>
 
 <pre class="CodeBlock">
@@ -145,12 +145,12 @@ HRESULT InitRender(LPDIRECT3DDEVICE8 lpD3DDEV)
     hr = LoadXFile("car.x", lpD3DDEV);
     if ( FAILED(hr) ) return hr;
  
-    // ���F�e�N�X�`���[�̓ǂݍ���
+    // 虹色テクスチャーの読み込み
     D3DXCreateTextureFromFileEx(lpD3DDEV, "<Font color = orange><b>PurpleGreenBright.bmp</b></Font>",0,0,0,0,D3DFMT_A8R8G8B8,
                                 D3DPOOL_MANAGED, D3DX_FILTER_LINEAR, D3DX_FILTER_LINEAR,
                                 0, NULL, NULL, &pTexture);
 
-    // �o�[�e�b�N�X�V�F�[�_�[���쐬����
+    // バーテックスシェーダーを作成する
     ID3DXBuffer*    pshader;
     hr = D3DXAssembleShaderFromFile("vs.vsh", 0,NULL,&pshader,NULL);
     if ( FAILED(hr) ) return hr;
@@ -158,21 +158,21 @@ HRESULT InitRender(LPDIRECT3DDEVICE8 lpD3DDEV)
     RELEASE(pshader);
     if ( FAILED(hr) ) return hr;
     
-    // �����_�����O�̏�Ԃ̐ݒ�
+    // レンダリングの状態の設定
     <Font color = orange><b>lpD3DDEV->SetRenderState( D3DRS_ZENABLE, FALSE);</b></Font>
     lpD3DDEV->SetRenderState( D3DRS_AMBIENT, 0xff808080);
     
     return S_OK;
 </pre>
 
-<h2>���\��</h2>
+<h2>■表示</h2>
 
 <p>
-�ł́A�`�敔���ł��B<br>
-mView �̃J�����̈ʒu eye �� SetVertexShaderConstant �� 14�A
-�萔 (1.0f, 1.0f, 1.0f, 1.0f) �� 15 �ɓ���܂����B<br>
-��́A���Z�����ɂȂ�悤�ɁA�������̐ݒ�����܂����B
-�ꉞ�A�g���I�������A�����������Ȃ��悤�ɁA���ɖ߂��Ă����܂��B
+では、描画部分です。<br>
+mView のカメラの位置 eye を SetVertexShaderConstant の 14、
+定数 (1.0f, 1.0f, 1.0f, 1.0f) を 15 に入れました。<br>
+後は、加算合成になるように、α合成の設定をしました。
+一応、使い終わったら、α合成をしないように、元に戻しておきます。
 </p>
 
 <pre class="CodeBlock">
@@ -191,10 +191,10 @@ void Render(LPDIRECT3DDEVICE8 lpD3DDEV)
     D3DXMatrixLookAtLH(&mView, &eye, &lookAt, &up);
     
     D3DXMatrixPerspectiveFovLH(&mProj
-        ,60.0f*PI/180.0f                        // ����p
-        ,(float)WIDTH/(float)HEIGHT                // �A�X�y�N�g��
-        ,0.01f                                    // �ŋߐڋ���
-        ,100.0f                                    // �ŉ�������
+        ,60.0f*PI/180.0f                        // 視野角
+        ,(float)WIDTH/(float)HEIGHT                // アスペクト比
+        ,0.01f                                    // 最近接距離
+        ,100.0f                                    // 最遠方距離
         );
     D3DXMATRIX  m = mWorld * mView * mProj;
     D3DXMatrixTranspose( &m ,  &m);
@@ -218,7 +218,7 @@ void Render(LPDIRECT3DDEVICE8 lpD3DDEV)
     lpD3DDEV->SetTexture(0,pTexture);
     <Font color = orange><b>lpD3DDEV->SetVertexShaderConstant(15,D3DXVECTOR4(1.0f, 1.0f, 1.0f, 1.0f),1);</b></Font>
 
-    //���b�V���̕`��
+    //メッシュの描画
     lpD3DDEV->SetStreamSource(0, pMeshVB, sizeof(D3D_CUSTOMVERTEX));
     lpD3DDEV->SetIndices(pMeshIndex,0);
     for(DWORD i=0;i<dwNumMaterials;i++){
@@ -240,37 +240,37 @@ void Render(LPDIRECT3DDEVICE8 lpD3DDEV)
     <Font color = orange><b>lpD3DDEV->SetRenderState(D3DRS_ALPHABLENDENABLE, FALSE);</b></Font>
 }</pre>
 
-<h2>���w�������_�����O</h2>
+<h2>■Ｘ線レンダリング</h2>
 
 <p>
-�ォ��A�b�f�G����ǂ񂾂Ƃ��ɁA�����g�Q���B�e�������悤�ȉ摜���݂܂����B<br>
-�w�V�����A�V�F�[�_�[�����������x�Ǝv�����̂ł����A�悭�l������A�����V�F�[�_�[�ł������Ȃ��Ǝv���܂����B
+後から、ＣＧ雑誌を読んだときに、レントゲン撮影をしたような画像をみました。<br>
+『新しく、シェーダーを書こうか』と思ったのですが、よく考えたら、薄膜シェーダーでいいかなぁと思いました。
 </p>
 <right><image src = "mem_xray.gif"></right>
 <p>
-�́A���ς̏����Ȑ����𖾂��e�N�X�`���[���g���܂����B<br>
-�@�������������Ă���������邭�Ȃ�܂��B
-����ŗ֊s�����o�ł��A�w���ŏƂ炳�ꂽ�悤�Ɍ�����Ǝv���܂����B
+の、内積の小さな成分を明いテクスチャーを使いました。<br>
+法線が横を向いている方が明るくなります。
+これで輪郭が抽出でき、Ｘ線で照らされたように見えると思いました。
 </p>
 <right><image src = "mem_xray_kuma.gif"></right>
 <p>
-�����ƃ|���S���������Ȃ��ƁA����炵���݂��Ȃ��ł����˂��B
+もっとポリゴンが多くないと、それらしくみえないですかねぇ。
 </p>
 
-<h2>���Ō��</h2>
+<h2>■最後に</h2>
 
 <p>
-����́A�g�D�[������A�����̕ύX�ŁA���z�I�ȕ\���̃����_�����O���s�����Ƃ��ł��܂����B<br>
-NVIDIA �̃T���v���ɂ́A���ɂ��e�N�X�`���[������܂����B�����̈�́A
+今回は、トゥーンから、少しの変更で、幻想的な表示のレンダリングを行うことができました。<br>
+NVIDIA のサンプルには、他にもテクスチャーがありました。それらの一つの、
 </p>
 <right><image src = "membranInvcolors.gif"></right>
 <p>
-�̃e�N�X�`���[���g���΁A���̂悤�ȕ\���ɂȂ�܂��B
+のテクスチャーを使えば、下のような表示になります。
 </p>
 <right><image src = "membraneInv.gif"></right>
 <p>
-�����I�ȕ\�����H<br>
-����Ȃ��ꂢ�ȉ摜������y�ɕ\���ł���Ȃ�āA����������ɂȂ�܂����ˁB
+金属的な表現か？<br>
+こんなきれいな画像がお手軽に表示できるなんて、すごい時代になりましたね。
 </p>
 
 <BR CLEAR=ALL>
@@ -278,7 +278,7 @@ NVIDIA �̃T���v���ɂ́A���ɂ��e�N�X�`���[������܂����B�����̈�́A
 <BR CLEAR=ALL>
 <center>
 <hr>
-<p><a href="../index.html">���ǂ�</a></p>
+<p><a href="../index.html">もどる</a></p>
 <p><a href="mailto:imagire@gmail.com">imagire@gmail.com</a></p>
 </center>
 </body>

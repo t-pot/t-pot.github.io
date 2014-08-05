@@ -1,8 +1,8 @@
 <head>
-	<title>t-pot�w�G�撲�����_�����O�x</title>
+	<title>t-pot『絵画調レンダリング』</title>
 	<link rel="stylesheet" type="text/css" href="../if.css">
 </head>
-<meta http-equiv=Content-Type content="text/html; charset=shift_jis">
+<meta http-equiv=Content-Type content="text/html; charset=UTF-8">
 <body>
 
 
@@ -10,8 +10,8 @@
 <center>
 <BR CLEAR=ALL>
 <BR CLEAR=ALL>
-<h1>�G�撲�����_�����O</h1><br>
-<h3>�` Painterly Rendering with summed area table �`</h3>
+<h1>絵画調レンダリング</h1><br>
+<h3>～ Painterly Rendering with summed area table ～</h3>
 <BR CLEAR=ALL>
 <BR CLEAR=ALL>
 <BR CLEAR=ALL>
@@ -20,7 +20,7 @@
 <hr>
 <br>
 <p>
-���̉摜���N���b�N����ƁA���A���^�C���ɊG�撲�Ń����_�����O����A�j���[�V�����������܂��B<br>
+下の画像をクリックすると、リアルタイムに絵画調でレンダリングするアニメーションが見られます。<br>
 <a href="anim.gif"><image src = "01.gif" width = "64" height = "64"></a>
 </p>
 <hr>
@@ -28,42 +28,42 @@
 <div>
 
 
-<h2>���͂��߂�</h2>
+<h2>■はじめに</h2>
 
 
 <p>
-SAT(Summed Area Table�F�G���A���a�e�[�u��)�́A�ƂĂ��ʔ����Z�@�ł��B<br>
-��ʑS�̂𕽋ω����Ăڂ����悤�ȑ��삪�ȒP�ɍs�Ȃ��܂��B<br>
-SAT�̏����Ȏg�����͔�ʊE�[�x�ł����A����ł͌����݂Ȃ̂ŕʂ̃l�^���l���Ă݂܂����B
+SAT(Summed Area Table：エリア総和テーブル)は、とても面白い技法です。<br>
+画面全体を平均化してぼかすような操作が簡単に行なえます。<br>
+SATの順当な使い道は被写界深度ですが、それでは月並みなので別のネタを考えてみました。
 </p>
 <p>
-����̃v���O�����́A���̂��̂ł��B
+今回のプログラムは、次のものです。
 </p>
 <ul style = "LIST-STYLE-TYPE:none">
-<li><a href="src.zip">src.zip (�G�撲�����_�����O:DirectX9)</a>
+<li><a href="src.zip">src.zip (絵画調レンダリング:DirectX9)</a>
 </ul>
 
 <p>
-�܂��A�����̂悤�ɓK���Ƀt�@�C���������Ă��܂��B<br>
-APP WIZARD ����o�͂����t���[�����[�N�̃t�@�C���͏Љ���Ȃ����Ă��������܂��B
+まぁ、いつものように適当にファイルが入っています。<br>
+APP WIZARD から出力されるフレームワークのファイルは紹介を省かせていただきます。
 </p>
 <table>
-<tr><td><a href="hlsl_fx.html">hlsl.fx</a></td><td>�V�F�[�_�̓������G�t�F�N�g�t�@�C��</td></tr>
-<tr><td><a href="main_h.html">main.h</a></td><td>�A�v���P�[�V�����̃w�b�_</td></tr>
-<tr><td><a href="main_cpp.html">main.cpp</a></td><td>�A�v���P�[�V�����̃\�[�X</td></tr>
+<tr><td><a href="hlsl_fx.html">hlsl.fx</a></td><td>シェーダの入ったエフェクトファイル</td></tr>
+<tr><td><a href="main_h.html">main.h</a></td><td>アプリケーションのヘッダ</td></tr>
+<tr><td><a href="main_cpp.html">main.cpp</a></td><td>アプリケーションのソース</td></tr>
 </table>
 
 <p>
-���ƁA���s�t�@�C���A���f���y�сA�v���W�F�N�g�t�@�C���������Ă��܂��B
+あと、実行ファイル、モデル及び、プロジェクトファイルが入っています。
 </p>
 
 
-<h2>��������Ă�́H</h2>
+<h2>■何やってるの？</h2>
 
 
 <p>
-�P����SAT�̎�@�͂ڂ��������ł����A�������p���邾���ŁA�ڂ�������ω��������܂��B<br>
-�F���ڂ����Ƃ��̕��ς���鐔���́A
+単純なSATの手法はぼかすだけですが、少し応用するだけで、ぼかし方を変化させられます。<br>
+色をぼかすときの平均を取る数式は、
 </p>
 <pre class="CodeBlock">
      1
@@ -71,8 +71,8 @@ t = ---(t<sub>11</sub> + t<sub>12</sub> + ... + t<sub>ab</sub>)
     a*b
 </pre>
 <p>
-�ł��B���̘a�͑S�Ẵe�N�Z���Ɋւ��ē����d�݂ŕ��ς�����Ă��܂��B<br>
-���̎�����ʉ����邱�Ƃ��l����ƁA���̂P�Ƃ��āA�S�Ẵe�N�Z���̏d�݂�ς��ăT���v�����O���邱�Ƃ��l�����܂��B
+です。この和は全てのテクセルに関して同じ重みで平均を取っています。<br>
+この式を一般化することを考えると、その１つとして、全てのテクセルの重みを変えてサンプリングすることが考えられます。
 </p>
 <pre class="CodeBlock">
      c<sub>11</sub>t<sub>11</sub> + c<sub>12</sub>t<sub>12</sub> + ... + c<sub>ab</sub>t<sub>ab</sub>
@@ -80,71 +80,71 @@ t = ---------------------------
         c<sub>11</sub> + c<sub>12</sub> + ... + c<sub>ab</sub>
 </pre>
 <p>
-�W��c<sub>ij</sub>�́A���R�Ɍ��߂邱�Ƃ��ł��܂����A����͗������e�N�X�`���Ɏd���񂾂��̂��g���܂��B
+係数c<sub>ij</sub>は、自由に決めることができますが、今回は乱数をテクスチャに仕込んだものを使います。
 </p>
 <image src = "rand.gif">
 <p>
-�������܂΂�ɂ���΂߂��Ă���Ƃ��ɂ́A
-SAT���g���āA���̃e�N�Z�����T���v�����O����Ƃ��ɁA���ɏ��Ȃ��e�N�Z���̉e�������󂯂܂���B<br>
-�Ⴆ�΁A���̐}�̂悤�ɁA�T���v������̈�Ƀe�N�Z�����P�����Ȃ��Ƃ��ɂ́A
-���̃e�N�Z���̐F�ɂȂ�܂��B<br>
-�F�̕t�����e�N�Z���̎��ӂ́A�قƂ�ǂ����̂悤�ȂP�F�̃s�N�Z���ɂȂ�̂ŁA
-�ЂƂ̐F���L�������G�敗�̉摜�ɂȂ�܂��B
+乱数がまばらにちりばめられているときには、
+SATを使って、回りのテクセルをサンプリングするときに、非常に少ないテクセルの影響しか受けません。<br>
+例えば、下の図のように、サンプルする領域にテクセルが１つしかないときには、
+そのテクセルの色になります。<br>
+色の付いたテクセルの周辺は、ほとんどがそのような１色のピクセルになるので、
+ひとつの色が広がった絵画風の画像になります。
 </p>
 <image src = "explain.gif">
 <p>
-�������A�T���v�����O����͈͂���������ƁA���̒��ɂ���e�N�Z���̐����O�ɂȂ��āA�v�Z���镪�ꂪ���U����̂ŁA���ӂ��K�v�ł��B<br>
-���̂悤�ȃs�N�Z���͒l���s��ɂȂ�̂ŁA���̂悤�ȊG�ɂȂ�܂��B
+ただし、サンプリングする範囲が狭すぎると、その中にあるテクセルの数が０になって、計算する分母が発散するので、注意が必要です。<br>
+そのようなピクセルは値が不定になるので、次のような絵になります。
 </p>
 <image src = "bad.png">
 <p>
-���ۂ̕��@�ł����A���ʂɃ����_�����O�����摜�ƁA�������}�b�s���O�����e�N�X�`����p�ӂ��Ă����܂��B<br>
-�F�����Ƀ����_�����O�����摜�Ɨ�������Z�����摜�����A�A���t�@�����ɗ������i�[���܂��B<br>
-���ɃG���A���a�e�[�u�����쐬���܂��B
-����́A�O�ɂ�����悤�ɉ��ɘa���Ƃ�����ɁA�c�ɘa�����܂��B<br>
-��́A�F�����ƃA���t�@�����ŃG���A���a�e�[�u���̌v�Z��������ɁA�F�������A���t�@�����Ŋ����ĕ��ϒl�����߂܂��B
+実際の方法ですが、普通にレンダリングした画像と、乱数をマッピングしたテクスチャを用意しておきます。<br>
+色成分にレンダリングした画像と乱数を乗算した画像を入れ、アルファ成分に乱数を格納します。<br>
+次にエリア総和テーブルを作成します。
+これは、前にやったように横に和をとった後に、縦に和を取ります。<br>
+後は、色成分とアルファ成分でエリア総和テーブルの計算をした後に、色成分をアルファ成分で割って平均値を求めます。
 </p>
 <image src = "how2.png">
 
 
-<h2>���v���O����</h2>
+<h2>■プログラム</h2>
 
 
 <p>
-����ł́A�V�F�[�_�v���O���������Ă����܂��傤�B<br>
-�e�N�X�`���̍����ƃG���A���a�e�[�u���̉������̍����͓����ɍs���܂��B<br>
-���_�V�F�[�_�őΉ�����e�N�Z���Ƃ��̍����̃e�N�Z�����e�N�X�`�����W�Ɏw�肵�܂��B</p>
+それでは、シェーダプログラムを見ていきましょう。<br>
+テクスチャの合成とエリア総和テーブルの横方向の合成は同時に行います。<br>
+頂点シェーダで対応するテクセルとその左側のテクセルをテクスチャ座標に指定します。</p>
 <pre class="CodeBlock">
 flsl.fx
 <font color="deepskyblue">0062:</font> <font color="cyan">// -------------------------------------------------------------</font>
-<font color="deepskyblue">0063:</font> <font color="cyan">// ���_�V�F�[�_�v���O����</font>
+<font color="deepskyblue">0063:</font> <font color="cyan">// 頂点シェーダプログラム</font>
 <font color="deepskyblue">0064:</font> <font color="cyan">// -------------------------------------------------------------</font>
 <font color="deepskyblue">0065:</font> VS_OUTPUT VS_sat_x (
-<font color="deepskyblue">0066:</font>       float4 Pos    : POSITION,          <font color="cyan">// ���f���̒��_</font>
-<font color="deepskyblue">0067:</font>       float4 Tex    : TEXCOORD0          <font color="cyan">// �e�N�X�`�����W</font>
+<font color="deepskyblue">0066:</font>       float4 Pos    : POSITION,          <font color="cyan">// モデルの頂点</font>
+<font color="deepskyblue">0067:</font>       float4 Tex    : TEXCOORD0          <font color="cyan">// テクスチャ座標</font>
 <font color="deepskyblue">0068:</font> ){
-<font color="deepskyblue">0069:</font>     VS_OUTPUT Out = (VS_OUTPUT)0;        <font color="cyan">// �o�̓f�[�^</font>
+<font color="deepskyblue">0069:</font>     VS_OUTPUT Out = (VS_OUTPUT)0;        <font color="cyan">// 出力データ</font>
 <font color="deepskyblue">0070:</font>     
-<font color="deepskyblue">0071:</font>     <font color="cyan">// �ʒu���W</font>
+<font color="deepskyblue">0071:</font>     <font color="cyan">// 位置座標</font>
 <font color="deepskyblue">0072:</font>     Out.Pos = Pos;
 <font color="deepskyblue">0073:</font>     
-<font color="deepskyblue">0074:</font>     <font color="cyan">// �e�N�X�`�����W// ���S</font>
+<font color="deepskyblue">0074:</font>     <font color="cyan">// テクスチャ座標// 中心</font>
 <font color="deepskyblue">0075:</font>     Out.Tex0 = Tex + float2( 0.5f/MAP_WIDTH, 0.5f/MAP_HEIGHT );
-<font color="deepskyblue">0076:</font>     Out.Tex1 = Tex + float2(-0.5f/MAP_WIDTH, 0.5f/MAP_HEIGHT );<font color="cyan">// ��</font>
+<font color="deepskyblue">0076:</font>     Out.Tex1 = Tex + float2(-0.5f/MAP_WIDTH, 0.5f/MAP_HEIGHT );<font color="cyan">// 左</font>
 <font color="deepskyblue">0077:</font>     
 <font color="deepskyblue">0078:</font>     <font color="blue">return</font> Out;
 <font color="deepskyblue">0079:</font> }
 </pre>
 <p>
-�s�N�Z���V�F�[�_�ł́A�����̃e�N�X�`��"WeightSamp"��ǂݍ���ŁA
-���S�̃e�N�Z���ɏ�Z���邱�Ƃɂ���Č��̐F�Ɨ����̏�Z���v�Z���܂��B<br>
-�܂��A���̃e�N�X�`���̃A���t�@�����ɂ͂P�����Ă������Ƃɂ���āA
-�A���t�@�����ւ̗����̊i�[�����R�ɍs���܂��B
+ピクセルシェーダでは、乱数のテクスチャ"WeightSamp"を読み込んで、
+中心のテクセルに乗算することによって元の色と乱数の乗算を計算します。<br>
+また、元のテクスチャのアルファ成分には１を入れておくことによって、
+アルファ成分への乱数の格納を自然に行います。
 </p>
 <pre class="CodeBlock">
 flsl.fx
 <font color="deepskyblue">0080:</font> <font color="cyan">// -------------------------------------------------------------</font>
-<font color="deepskyblue">0081:</font> <font color="cyan">// �s�N�Z���V�F�[�_�v���O����</font>
+<font color="deepskyblue">0081:</font> <font color="cyan">// ピクセルシェーダプログラム</font>
 <font color="deepskyblue">0082:</font> <font color="cyan">// -------------------------------------------------------------</font>
 <font color="deepskyblue">0083:</font> float4 PS_sat_x(VS_OUTPUT In) : COLOR
 <font color="deepskyblue">0084:</font> {   
@@ -158,37 +158,37 @@ flsl.fx
 <font color="deepskyblue">0092:</font> }
 </pre>
 <p>
-�c�����̍����̓G���A���a�e�[�u���̕��ʂ̍쐬���@�ɂȂ�܂��B<br>
-���_�V�F�[�_�Œ��S�Ƃ��̏�̃e�N�Z�����w�肵�܂��B
+縦方向の合成はエリア総和テーブルの普通の作成方法になります。<br>
+頂点シェーダで中心とその上のテクセルを指定します。
 </p>
 <pre class="CodeBlock">
 flsl.fx
 <font color="deepskyblue">0094:</font> <font color="cyan">// -------------------------------------------------------------</font>
-<font color="deepskyblue">0095:</font> <font color="cyan">// ���_�V�F�[�_�v���O����</font>
+<font color="deepskyblue">0095:</font> <font color="cyan">// 頂点シェーダプログラム</font>
 <font color="deepskyblue">0096:</font> <font color="cyan">// -------------------------------------------------------------</font>
 <font color="deepskyblue">0097:</font> VS_OUTPUT VS_sat_y (
-<font color="deepskyblue">0098:</font>       float4 Pos    : POSITION,          <font color="cyan">// ���f���̒��_</font>
-<font color="deepskyblue">0099:</font>       float4 Tex    : TEXCOORD0          <font color="cyan">// �e�N�X�`�����W</font>
+<font color="deepskyblue">0098:</font>       float4 Pos    : POSITION,          <font color="cyan">// モデルの頂点</font>
+<font color="deepskyblue">0099:</font>       float4 Tex    : TEXCOORD0          <font color="cyan">// テクスチャ座標</font>
 <font color="deepskyblue">0100:</font> ){
-<font color="deepskyblue">0101:</font>     VS_OUTPUT Out = (VS_OUTPUT)0;        <font color="cyan">// �o�̓f�[�^</font>
+<font color="deepskyblue">0101:</font>     VS_OUTPUT Out = (VS_OUTPUT)0;        <font color="cyan">// 出力データ</font>
 <font color="deepskyblue">0102:</font>     
-<font color="deepskyblue">0103:</font>     <font color="cyan">// �ʒu���W</font>
+<font color="deepskyblue">0103:</font>     <font color="cyan">// 位置座標</font>
 <font color="deepskyblue">0104:</font>     Out.Pos = Pos;
 <font color="deepskyblue">0105:</font>     
-<font color="deepskyblue">0106:</font>     <font color="cyan">// �e�N�X�`�����W</font>
+<font color="deepskyblue">0106:</font>     <font color="cyan">// テクスチャ座標</font>
 <font color="deepskyblue">0107:</font>     Out.Tex0 = Tex + float2( 0.5f/MAP_WIDTH, 0.5f/MAP_HEIGHT );
-<font color="deepskyblue">0108:</font>     Out.Tex1 = Tex + float2( 0.5f/MAP_WIDTH,-0.5f/MAP_HEIGHT );<font color="cyan">// ��</font>
+<font color="deepskyblue">0108:</font>     Out.Tex1 = Tex + float2( 0.5f/MAP_WIDTH,-0.5f/MAP_HEIGHT );<font color="cyan">// 上</font>
 <font color="deepskyblue">0109:</font>     
 <font color="deepskyblue">0110:</font>     <font color="blue">return</font> Out;
 <font color="deepskyblue">0111:</font> }
 </pre>
 <p>
-�s�N�Z���V�F�[�_�ł́A�P���ɂ��̂Q�𑫂��܂��B
+ピクセルシェーダでは、単純にその２つを足します。
 </p>
 <pre class="CodeBlock">
 flsl.fx
 <font color="deepskyblue">0113:</font> <font color="cyan">// -------------------------------------------------------------</font>
-<font color="deepskyblue">0114:</font> <font color="cyan">// �s�N�Z���V�F�[�_�v���O����</font>
+<font color="deepskyblue">0114:</font> <font color="cyan">// ピクセルシェーダプログラム</font>
 <font color="deepskyblue">0115:</font> <font color="cyan">// -------------------------------------------------------------</font>
 <font color="deepskyblue">0116:</font> float4 PS_sat_y(VS_OUTPUT In) : COLOR
 <font color="deepskyblue">0117:</font> {   
@@ -201,25 +201,25 @@ flsl.fx
 <font color="deepskyblue">0124:</font> }
 </pre>
 <p>
-�Ō�̍����ł́A�G���A���a�e�[�u���̎����g���āA�A���t�@�����ƐF�������v�Z���āA�F�����̂ق��̓A���t�@�����Ŋ����āA�s�N�Z���̒l�����߂܂��B
+最後の合成では、エリア総和テーブルの式を使って、アルファ成分と色成分を計算して、色成分のほうはアルファ成分で割って、ピクセルの値を求めます。
 </p>
 <pre class="CodeBlock">
 flsl.fx
 <font color="deepskyblue">0152:</font> <font color="cyan">// -------------------------------------------------------------</font>
-<font color="deepskyblue">0153:</font> <font color="cyan">// �s�N�Z���V�F�[�_�v���O����</font>
+<font color="deepskyblue">0153:</font> <font color="cyan">// ピクセルシェーダプログラム</font>
 <font color="deepskyblue">0154:</font> <font color="cyan">// -------------------------------------------------------------</font>
 <font color="deepskyblue">0155:</font> float4 PS_out(VS_OUTPUT In) : COLOR
 <font color="deepskyblue">0156:</font> {   
 <font color="deepskyblue">0157:</font>     float4 Color;
 <font color="deepskyblue">0158:</font>     <font color="blue">float</font>  weight;
 <font color="deepskyblue">0159:</font>     
-<font color="deepskyblue">0160:</font>     <font color="cyan">// �d�݂̑��a�����߂�</font>
+<font color="deepskyblue">0160:</font>     <font color="cyan">// 重みの総和を求める</font>
 <font color="deepskyblue">0161:</font>     weight =  tex2D( SrcSamp, In.Tex0 ).a
 <font color="deepskyblue">0162:</font>             - tex2D( SrcSamp, In.Tex1 ).a
 <font color="deepskyblue">0163:</font>             - tex2D( SrcSamp, In.Tex2 ).a
 <font color="deepskyblue">0164:</font>             + tex2D( SrcSamp, In.Tex3 ).a;
 <font color="deepskyblue">0165:</font>             
-<font color="deepskyblue">0166:</font>     <font color="cyan">// SAT�̒l���d�݂̑��a�Ŋ����āA�F�����߂�</font>
+<font color="deepskyblue">0166:</font>     <font color="cyan">// SATの値を重みの総和で割って、色を求める</font>
 <font color="deepskyblue">0167:</font>     Color  =( tex2D( SrcSamp, In.Tex0 )
 <font color="deepskyblue">0168:</font>             - tex2D( SrcSamp, In.Tex1 )
 <font color="deepskyblue">0169:</font>             - tex2D( SrcSamp, In.Tex2 )
@@ -231,15 +231,15 @@ flsl.fx
 
 
 
-<h2>���Ō��</h2>
+<h2>■最後に</h2>
 
 
 <p>
-�G���A���a�e�[�u���̉��p�����Ă݂܂����B<br>
-�ϕ��v�Z���ł���̂ŁA���Ȃ�̃|�X�g�G�t�F�N�g�����s�ł������ł��ˁB<br>
-�����A�A�j���̉摜������Ɨǂ�������̂ł����A���a�̒l���傫���E���̕�����
-�덷�ɂ��Ȗ͗l�������Ă��܂��B<br>
-�G���A���a�e�[�u�����g�����́A���̎Ȃ������Ȃ��悤�ɒ�������̂��厖�ɂȂ�ł��傤�B
+エリア総和テーブルの応用をしてみました。<br>
+積分計算ができるので、かなりのポストエフェクトが実行できそうですね。<br>
+ただ、アニメの画像を見ると良く分かるのですが、総和の値が大きい右下の部分で
+誤差による縞模様が見えています。<br>
+エリア総和テーブルを使う時は、この縞が見えないように調整するのが大事になるでしょう。
 </p>
 
 </div>
@@ -248,7 +248,7 @@ flsl.fx
 <BR CLEAR=ALL>
 <center>
 <hr>
-<p><a href="../index.html">���ǂ�</a></p>
+<p><a href="../index.html">もどる</a></p>
 <p><a href="mailto:imagire@gmail.com">imagire@gmail.com</a></p>
 </center>
 
