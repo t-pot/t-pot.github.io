@@ -1,0 +1,427 @@
+<HTML>
+<HEAD>
+<TITLE>draw.cpp</TITLE>
+<meta name="GENERATOR" content="cpp2html 2.1 by Niisaka">
+<meta http-equiv="Content-Type" content="text/html">
+</HEAD>
+<BODY TEXT="#000000" BGCOLOR="#FFFFFF">
+<PRE><FONT COLOR="#40F628">0001:</FONT> <FONT COLOR="#008000">// ----------------------------------------------------------------------------</FONT>
+<FONT COLOR="#40F628">0002:</FONT> <FONT COLOR="#008000">//</FONT>
+<FONT COLOR="#40F628">0003:</FONT> <FONT COLOR="#008000">// draw.cpp : Render scene</FONT>
+<FONT COLOR="#40F628">0004:</FONT> <FONT COLOR="#008000">// </FONT>
+<FONT COLOR="#40F628">0005:</FONT> <FONT COLOR="#008000">// Copyright (c) 2002 imagire takashi (imagire@gmail.com)</FONT>
+<FONT COLOR="#40F628">0006:</FONT> <FONT COLOR="#008000">// All Rights Reserved.</FONT>
+<FONT COLOR="#40F628">0007:</FONT> <FONT COLOR="#008000">//</FONT>
+<FONT COLOR="#40F628">0008:</FONT> <FONT COLOR="#008000">// ----------------------------------------------------------------------------</FONT>
+<FONT COLOR="#40F628">0009:</FONT> <FONT COLOR="#0000FF">#define</FONT> STRICT
+<FONT COLOR="#40F628">0010:</FONT> 
+<FONT COLOR="#40F628">0011:</FONT> <FONT COLOR="#0000FF">#include</FONT> &lt;windows.h&gt;
+<FONT COLOR="#40F628">0012:</FONT> <FONT COLOR="#0000FF">#include</FONT> "<FONT COLOR="#600000">Cg/cgD3D.h</FONT>"
+<FONT COLOR="#40F628">0013:</FONT> <FONT COLOR="#0000FF">#include</FONT> "<FONT COLOR="#600000">main.h</FONT>"
+<FONT COLOR="#40F628">0014:</FONT> <FONT COLOR="#0000FF">#include</FONT> "<FONT COLOR="#600000">draw.h</FONT>"
+<FONT COLOR="#40F628">0015:</FONT> 
+<FONT COLOR="#40F628">0016:</FONT> <FONT COLOR="#008000">// ----------------------------------------------------------------------------</FONT>
+<FONT COLOR="#40F628">0017:</FONT> <FONT COLOR="#008000">// ----------------------------------------------------------------------------</FONT>
+<FONT COLOR="#40F628">0018:</FONT> <FONT COLOR="#008000">// Objects</FONT>
+<FONT COLOR="#40F628">0019:</FONT> <FONT COLOR="#008000">// ----------------------------------------------------------------------------</FONT>
+<FONT COLOR="#40F628">0020:</FONT> <FONT COLOR="#008000">// ----------------------------------------------------------------------------</FONT>
+<FONT COLOR="#40F628">0021:</FONT> 
+<FONT COLOR="#40F628">0022:</FONT> <FONT COLOR="#008000">// ----------------------------------------------------------------------------</FONT>
+<FONT COLOR="#40F628">0023:</FONT> <FONT COLOR="#008000">// Cg object</FONT>
+<FONT COLOR="#40F628">0024:</FONT> cgDirect3D cg;
+<FONT COLOR="#40F628">0025:</FONT> cgContextContainer * pCg = 0;
+<FONT COLOR="#40F628">0026:</FONT> 
+<FONT COLOR="#40F628">0027:</FONT> <FONT COLOR="#008000">// ----------------------------------------------------------------------------</FONT>
+<FONT COLOR="#40F628">0028:</FONT> <FONT COLOR="#008000">// vertex shader</FONT>
+<FONT COLOR="#40F628">0029:</FONT> cgProgramContainer      *pVs = 0;           <FONT COLOR="#008000">// vertex container</FONT>
+<FONT COLOR="#40F628">0030:</FONT> cgBindIter              *const_texcoord0= 0;<FONT COLOR="#008000">// texture coord</FONT>
+<FONT COLOR="#40F628">0031:</FONT> cgBindIter              *const_texcoord1= 0;<FONT COLOR="#008000">// texture coord</FONT>
+<FONT COLOR="#40F628">0032:</FONT> cgBindIter              *const_texcoord2= 0;<FONT COLOR="#008000">// texture coord</FONT>
+<FONT COLOR="#40F628">0033:</FONT> cgBindIter              *const_texcoord3= 0;<FONT COLOR="#008000">// texture coord</FONT>
+<FONT COLOR="#40F628">0034:</FONT> 
+<FONT COLOR="#40F628">0035:</FONT> cgVertexAttribute vertex_attributes[] = {   <FONT COLOR="#008000">// input</FONT>
+<FONT COLOR="#40F628">0036:</FONT>     {4, "<FONT COLOR="#600000">Position</FONT>", 0},
+<FONT COLOR="#40F628">0037:</FONT>     {2, "<FONT COLOR="#600000">Texcoord</FONT>", 0},
+<FONT COLOR="#40F628">0038:</FONT>     {0, 0, 0},
+<FONT COLOR="#40F628">0039:</FONT> };
+<FONT COLOR="#40F628">0040:</FONT> 
+<FONT COLOR="#40F628">0041:</FONT> <FONT COLOR="#008000">// ----------------------------------------------------------------------------</FONT>
+<FONT COLOR="#40F628">0042:</FONT> <FONT COLOR="#008000">// pixel shader</FONT>
+<FONT COLOR="#40F628">0043:</FONT> cgProgramContainer      *pPs = 0;           <FONT COLOR="#008000">// pixel shader</FONT>
+<FONT COLOR="#40F628">0044:</FONT> cgBindIter * tex0_iter = 0;                 <FONT COLOR="#008000">// texture</FONT>
+<FONT COLOR="#40F628">0045:</FONT> cgBindIter * tex1_iter = 0;                 <FONT COLOR="#008000">// texture</FONT>
+<FONT COLOR="#40F628">0046:</FONT> cgBindIter * tex2_iter = 0;                 <FONT COLOR="#008000">// texture</FONT>
+<FONT COLOR="#40F628">0047:</FONT> cgBindIter * tex3_iter = 0;                 <FONT COLOR="#008000">// texture</FONT>
+<FONT COLOR="#40F628">0048:</FONT> 
+<FONT COLOR="#40F628">0049:</FONT> 
+<FONT COLOR="#40F628">0050:</FONT> <FONT COLOR="#008000">// ----------------------------------------------------------------------------</FONT>
+<FONT COLOR="#40F628">0051:</FONT> <FONT COLOR="#008000">// vertex &amp; index buffer</FONT>
+<FONT COLOR="#40F628">0052:</FONT> 
+<FONT COLOR="#40F628">0053:</FONT> <FONT COLOR="#0000FF">#define</FONT> D3DFVF_SUMIE_VERTEX     (D3DFVF_XYZ    | D3DFVF_TEX1)
+<FONT COLOR="#40F628">0054:</FONT> <FONT COLOR="#0000FF">#define</FONT> D3DFVF_DROP_VERTEX      (D3DFVF_XYZRHW | D3DFVF_TEX1)   <FONT COLOR="#008000">// for Drop texture</FONT>
+<FONT COLOR="#40F628">0055:</FONT> <FONT COLOR="#0000FF">typedef</FONT> <FONT COLOR="#0000FF">struct</FONT> {
+<FONT COLOR="#40F628">0056:</FONT>     <FONT COLOR="#0000FF">float</FONT> x, y, z, w;
+<FONT COLOR="#40F628">0057:</FONT>     <FONT COLOR="#0000FF">float</FONT> tu,tv;
+<FONT COLOR="#40F628">0058:</FONT> }D3D_SUMIE_VERTEX;
+<FONT COLOR="#40F628">0059:</FONT> 
+<FONT COLOR="#40F628">0060:</FONT> LPDIRECT3DVERTEXBUFFER8 pFinalVB = NULL;
+<FONT COLOR="#40F628">0061:</FONT> LPDIRECT3DVERTEXBUFFER8 pDropVB = NULL;
+<FONT COLOR="#40F628">0062:</FONT> LPDIRECT3DVERTEXBUFFER8 pSumieVB = NULL;
+<FONT COLOR="#40F628">0063:</FONT> LPDIRECT3DINDEXBUFFER8  pSumieIB = NULL;
+<FONT COLOR="#40F628">0064:</FONT> 
+<FONT COLOR="#40F628">0065:</FONT> <FONT COLOR="#008000">// ----------------------------------------------------------------------------</FONT>
+<FONT COLOR="#40F628">0066:</FONT> <FONT COLOR="#008000">// Surface &amp; texture</FONT>
+<FONT COLOR="#40F628">0067:</FONT> LPDIRECT3DTEXTURE8      pDropTexture = NULL;        <FONT COLOR="#008000">// dot texture</FONT>
+<FONT COLOR="#40F628">0068:</FONT> LPDIRECT3DTEXTURE8      pRenderTexture[2] = {NULL,NULL};
+<FONT COLOR="#40F628">0069:</FONT> LPDIRECT3DSURFACE8      pRenderSurface[2] = {NULL,NULL};
+<FONT COLOR="#40F628">0070:</FONT> LPDIRECT3DSURFACE8      pBackbuffer = NULL;
+<FONT COLOR="#40F628">0071:</FONT> 
+<FONT COLOR="#40F628">0072:</FONT> 
+<FONT COLOR="#40F628">0073:</FONT> 
+<FONT COLOR="#40F628">0074:</FONT> <FONT COLOR="#008000">// ----------------------------------------------------------------------------</FONT>
+<FONT COLOR="#40F628">0075:</FONT> <FONT COLOR="#008000">// ----------------------------------------------------------------------------</FONT>
+<FONT COLOR="#40F628">0076:</FONT> <FONT COLOR="#008000">// Drop dot</FONT>
+<FONT COLOR="#40F628">0077:</FONT> <FONT COLOR="#008000">// ----------------------------------------------------------------------------</FONT>
+<FONT COLOR="#40F628">0078:</FONT> <FONT COLOR="#008000">// ----------------------------------------------------------------------------</FONT>
+<FONT COLOR="#40F628">0079:</FONT> 
+<FONT COLOR="#40F628">0080:</FONT> <FONT COLOR="#008000">// ----------------------------------------------------------------------------</FONT>
+<FONT COLOR="#40F628">0081:</FONT> <FONT COLOR="#008000">// Initialize</FONT>
+<FONT COLOR="#40F628">0082:</FONT> HRESULT InitDrop(LPDIRECT3DDEVICE8 lpD3DDev)
+<FONT COLOR="#40F628">0083:</FONT> {
+<FONT COLOR="#40F628">0084:</FONT>     HRESULT hr = S_OK;
+<FONT COLOR="#40F628">0085:</FONT> 
+<FONT COLOR="#40F628">0086:</FONT>     <FONT COLOR="#008000">// Create vertex buffers</FONT>
+<FONT COLOR="#40F628">0087:</FONT>     D3D_SUMIE_VERTEX vertices[] = {
+<FONT COLOR="#40F628">0088:</FONT>         <FONT COLOR="#008000">//     x,      y,    z,  rhw,  tu  tv</FONT>
+<FONT COLOR="#40F628">0089:</FONT>         { 100.0f, 100.0f, 0.5f, 1.0f, 0.0f,0.0f,},
+<FONT COLOR="#40F628">0090:</FONT>         { 420.0f, 100.0f, 0.5f, 1.0f, 1.0f,0.0f,},
+<FONT COLOR="#40F628">0091:</FONT>         { 100.0f, 340.0f, 0.5f, 1.0f, 0.0f,1.0f,},
+<FONT COLOR="#40F628">0092:</FONT>         { 420.0f, 340.0f, 0.5f, 1.0f, 1.0f,1.0f,},
+<FONT COLOR="#40F628">0093:</FONT>     };
+<FONT COLOR="#40F628">0094:</FONT>     
+<FONT COLOR="#40F628">0095:</FONT>     hr = lpD3DDev-&gt;CreateVertexBuffer( 4*<FONT COLOR="#0000FF">sizeof</FONT>(D3D_SUMIE_VERTEX),0,
+<FONT COLOR="#40F628">0096:</FONT>                     D3DFVF_DROP_VERTEX, D3DPOOL_DEFAULT, &amp;pDropVB);
+<FONT COLOR="#40F628">0097:</FONT>     <FONT COLOR="#0000FF">if</FONT>(FAILED(hr)) <FONT COLOR="#0000FF">return</FONT> E_FAIL;
+<FONT COLOR="#40F628">0098:</FONT> 
+<FONT COLOR="#40F628">0099:</FONT>     VOID* pVertices;
+<FONT COLOR="#40F628">0100:</FONT>     hr = pDropVB-&gt;Lock( 0, <FONT COLOR="#0000FF">sizeof</FONT>(vertices), (BYTE**)&amp;pVertices, 0);
+<FONT COLOR="#40F628">0101:</FONT>     <FONT COLOR="#0000FF">if</FONT>(FAILED(hr)) <FONT COLOR="#0000FF">return</FONT> E_FAIL;
+<FONT COLOR="#40F628">0102:</FONT>     memcpy( pVertices, vertices, <FONT COLOR="#0000FF">sizeof</FONT>(vertices) );
+<FONT COLOR="#40F628">0103:</FONT>     pDropVB-&gt;Unlock();
+<FONT COLOR="#40F628">0104:</FONT> 
+<FONT COLOR="#40F628">0105:</FONT>     <FONT COLOR="#008000">// Load texture</FONT>
+<FONT COLOR="#40F628">0106:</FONT>     D3DXCreateTextureFromFileEx(lpD3DDev, "<FONT COLOR="#600000">mask.bmp</FONT>",0,0,0,0,D3DFMT_A8R8G8B8,
+<FONT COLOR="#40F628">0107:</FONT>                                 D3DPOOL_MANAGED, D3DX_FILTER_LINEAR, D3DX_FILTER_LINEAR,
+<FONT COLOR="#40F628">0108:</FONT>                                 0, NULL, NULL, &amp;pDropTexture);
+<FONT COLOR="#40F628">0109:</FONT> 
+<FONT COLOR="#40F628">0110:</FONT>     <FONT COLOR="#0000FF">return</FONT> hr;
+<FONT COLOR="#40F628">0111:</FONT> }
+<FONT COLOR="#40F628">0112:</FONT> <FONT COLOR="#008000">// ----------------------------------------------------------------------------</FONT>
+<FONT COLOR="#40F628">0113:</FONT> <FONT COLOR="#008000">// Request</FONT>
+<FONT COLOR="#40F628">0114:</FONT> <FONT COLOR="#0000FF">static</FONT> <FONT COLOR="#0000FF">float</FONT> drop_x=0;
+<FONT COLOR="#40F628">0115:</FONT> <FONT COLOR="#0000FF">static</FONT> <FONT COLOR="#0000FF">float</FONT> drop_y=0;
+<FONT COLOR="#40F628">0116:</FONT> <FONT COLOR="#0000FF">static</FONT> <FONT COLOR="#0000FF">int</FONT> drop = 0;
+<FONT COLOR="#40F628">0117:</FONT> <FONT COLOR="#008000">// ----------------------------------------------------------------------------</FONT>
+<FONT COLOR="#40F628">0118:</FONT> <FONT COLOR="#0000FF">void</FONT> SetDrop(<FONT COLOR="#0000FF">float</FONT> x , <FONT COLOR="#0000FF">float</FONT> y)
+<FONT COLOR="#40F628">0119:</FONT> {
+<FONT COLOR="#40F628">0120:</FONT>     drop = 100;
+<FONT COLOR="#40F628">0121:</FONT>     drop_x = x;
+<FONT COLOR="#40F628">0122:</FONT>     drop_y = y;
+<FONT COLOR="#40F628">0123:</FONT> }
+<FONT COLOR="#40F628">0124:</FONT> <FONT COLOR="#008000">// ----------------------------------------------------------------------------</FONT>
+<FONT COLOR="#40F628">0125:</FONT> <FONT COLOR="#0000FF">void</FONT> ResetDrop()
+<FONT COLOR="#40F628">0126:</FONT> {
+<FONT COLOR="#40F628">0127:</FONT>     drop = 0;
+<FONT COLOR="#40F628">0128:</FONT> }
+<FONT COLOR="#40F628">0129:</FONT> <FONT COLOR="#008000">// ----------------------------------------------------------------------------</FONT>
+<FONT COLOR="#40F628">0130:</FONT> <FONT COLOR="#0000FF">int</FONT> IsDrop()
+<FONT COLOR="#40F628">0131:</FONT> {
+<FONT COLOR="#40F628">0132:</FONT>     <FONT COLOR="#0000FF">return</FONT> drop;
+<FONT COLOR="#40F628">0133:</FONT> }
+<FONT COLOR="#40F628">0134:</FONT> <FONT COLOR="#008000">// ----------------------------------------------------------------------------</FONT>
+<FONT COLOR="#40F628">0135:</FONT> <FONT COLOR="#008000">// Rendering</FONT>
+<FONT COLOR="#40F628">0136:</FONT> <FONT COLOR="#0000FF">void</FONT> RenderDrop(LPDIRECT3DDEVICE8 lpD3DDev)
+<FONT COLOR="#40F628">0137:</FONT> {
+<FONT COLOR="#40F628">0138:</FONT>     <FONT COLOR="#0000FF">if</FONT>(drop){
+<FONT COLOR="#40F628">0139:</FONT>         D3D_SUMIE_VERTEX *p;
+<FONT COLOR="#40F628">0140:</FONT>         pDropVB-&gt;Lock( 0, 4*<FONT COLOR="#0000FF">sizeof</FONT>(D3D_SUMIE_VERTEX), (BYTE**)&amp;p, 0);
+<FONT COLOR="#40F628">0141:</FONT>         <FONT COLOR="#0000FF">const</FONT> <FONT COLOR="#0000FF">float</FONT> r = 8.0f;<FONT COLOR="#008000">// radius of dot</FONT>
+<FONT COLOR="#40F628">0142:</FONT>         p[0].x = p[2].x = drop_x-r;
+<FONT COLOR="#40F628">0143:</FONT>         p[1].x = p[3].x = drop_x+r;
+<FONT COLOR="#40F628">0144:</FONT>         p[0].y = p[1].y = drop_y-r;
+<FONT COLOR="#40F628">0145:</FONT>         p[2].y = p[3].y = drop_y+r;
+<FONT COLOR="#40F628">0146:</FONT>         pDropVB-&gt;Unlock();
+<FONT COLOR="#40F628">0147:</FONT> 
+<FONT COLOR="#40F628">0148:</FONT>         lpD3DDev-&gt;SetRenderState(D3DRS_ALPHABLENDENABLE, TRUE);
+<FONT COLOR="#40F628">0149:</FONT>         lpD3DDev-&gt;SetRenderState(D3DRS_DESTBLEND, D3DBLEND_INVSRCCOLOR);
+<FONT COLOR="#40F628">0150:</FONT>         lpD3DDev-&gt;SetRenderState(D3DRS_SRCBLEND,  D3DBLEND_ZERO);
+<FONT COLOR="#40F628">0151:</FONT> 
+<FONT COLOR="#40F628">0152:</FONT>         lpD3DDev-&gt;SetTexture( 0, pDropTexture);
+<FONT COLOR="#40F628">0153:</FONT>         lpD3DDev-&gt;SetTexture( 1, 0);
+<FONT COLOR="#40F628">0154:</FONT>         lpD3DDev-&gt;SetTexture( 2, 0);
+<FONT COLOR="#40F628">0155:</FONT>         lpD3DDev-&gt;SetTexture( 3, 0);
+<FONT COLOR="#40F628">0156:</FONT>         lpD3DDev-&gt;SetStreamSource( 0, pDropVB, <FONT COLOR="#0000FF">sizeof</FONT>(D3D_SUMIE_VERTEX) );
+<FONT COLOR="#40F628">0157:</FONT>         lpD3DDev-&gt;SetVertexShader( D3DFVF_DROP_VERTEX );
+<FONT COLOR="#40F628">0158:</FONT>         lpD3DDev-&gt;SetPixelShader ( 0 );
+<FONT COLOR="#40F628">0159:</FONT>         lpD3DDev-&gt;DrawPrimitive(  D3DPT_TRIANGLESTRIP, 0, 2 );
+<FONT COLOR="#40F628">0160:</FONT> 
+<FONT COLOR="#40F628">0161:</FONT>         lpD3DDev-&gt;SetRenderState(D3DRS_ALPHABLENDENABLE, FALSE);
+<FONT COLOR="#40F628">0162:</FONT>     }
+<FONT COLOR="#40F628">0163:</FONT> }
+<FONT COLOR="#40F628">0164:</FONT> 
+<FONT COLOR="#40F628">0165:</FONT> <FONT COLOR="#008000">// ----------------------------------------------------------------------------</FONT>
+<FONT COLOR="#40F628">0166:</FONT> <FONT COLOR="#008000">// ----------------------------------------------------------------------------</FONT>
+<FONT COLOR="#40F628">0167:</FONT> <FONT COLOR="#008000">// Render Target</FONT>
+<FONT COLOR="#40F628">0168:</FONT> <FONT COLOR="#008000">// ----------------------------------------------------------------------------</FONT>
+<FONT COLOR="#40F628">0169:</FONT> <FONT COLOR="#008000">// ----------------------------------------------------------------------------</FONT>
+<FONT COLOR="#40F628">0170:</FONT> 
+<FONT COLOR="#40F628">0171:</FONT> 
+<FONT COLOR="#40F628">0172:</FONT> <FONT COLOR="#008000">//-----------------------------------------------------------------------------</FONT>
+<FONT COLOR="#40F628">0173:</FONT> <FONT COLOR="#008000">// Initialize Rendering Texture</FONT>
+<FONT COLOR="#40F628">0174:</FONT> <FONT COLOR="#008000">//-----------------------------------------------------------------------------</FONT>
+<FONT COLOR="#40F628">0175:</FONT> HRESULT InitRenderTexture(LPDIRECT3DDEVICE8 lpD3DDev)
+<FONT COLOR="#40F628">0176:</FONT> {
+<FONT COLOR="#40F628">0177:</FONT>     HRESULT hr;
+<FONT COLOR="#40F628">0178:</FONT>     DWORD i;
+<FONT COLOR="#40F628">0179:</FONT>     
+<FONT COLOR="#40F628">0180:</FONT>     <FONT COLOR="#008000">// ==================================================</FONT>
+<FONT COLOR="#40F628">0181:</FONT>     <FONT COLOR="#008000">// Vertex &amp; Index buffer</FONT>
+<FONT COLOR="#40F628">0182:</FONT>     <FONT COLOR="#008000">// ==================================================</FONT>
+<FONT COLOR="#40F628">0183:</FONT>     <FONT COLOR="#008000">// Create Vertex buffer</FONT>
+<FONT COLOR="#40F628">0184:</FONT>     D3D_SUMIE_VERTEX *pDest;
+<FONT COLOR="#40F628">0185:</FONT>     WORD *pIndex;
+<FONT COLOR="#40F628">0186:</FONT>     hr = lpD3DDev-&gt;CreateVertexBuffer( 4 * <FONT COLOR="#0000FF">sizeof</FONT>(D3D_SUMIE_VERTEX),
+<FONT COLOR="#40F628">0187:</FONT>                                 D3DUSAGE_WRITEONLY, D3DFVF_SUMIE_VERTEX, D3DPOOL_MANAGED,
+<FONT COLOR="#40F628">0188:</FONT>                                 &amp;pSumieVB );
+<FONT COLOR="#40F628">0189:</FONT>     pSumieVB-&gt;Lock ( 0, 0, (BYTE**)&amp;pDest, 0 );
+<FONT COLOR="#40F628">0190:</FONT>     <FONT COLOR="#0000FF">for</FONT> (i = 0; i &lt; 4; i++) {
+<FONT COLOR="#40F628">0191:</FONT>         pDest-&gt;x   = (i == 0 || i == 1)?-1:(<FONT COLOR="#0000FF">float</FONT>)1;
+<FONT COLOR="#40F628">0192:</FONT>         pDest-&gt;y   = (i == 0 || i == 2)?-1:(<FONT COLOR="#0000FF">float</FONT>)1;
+<FONT COLOR="#40F628">0193:</FONT>         pDest-&gt;z   = 0.5f;
+<FONT COLOR="#40F628">0194:</FONT>         pDest-&gt;w   = 1.0f;
+<FONT COLOR="#40F628">0195:</FONT>         pDest-&gt;tu = (i == 2 || i == 3)?1:(<FONT COLOR="#0000FF">float</FONT>)0;
+<FONT COLOR="#40F628">0196:</FONT>         pDest-&gt;tv = (i == 0 || i == 2)?1:(<FONT COLOR="#0000FF">float</FONT>)0;
+<FONT COLOR="#40F628">0197:</FONT>         pDest++;
+<FONT COLOR="#40F628">0198:</FONT>     }       
+<FONT COLOR="#40F628">0199:</FONT>     pSumieVB-&gt;Unlock ();
+<FONT COLOR="#40F628">0200:</FONT>     <FONT COLOR="#008000">// Create Index Buffer</FONT>
+<FONT COLOR="#40F628">0201:</FONT>     hr = lpD3DDev-&gt;CreateIndexBuffer( 6 * <FONT COLOR="#0000FF">sizeof</FONT>(WORD),
+<FONT COLOR="#40F628">0202:</FONT>                                0,
+<FONT COLOR="#40F628">0203:</FONT>                                D3DFMT_INDEX16, D3DPOOL_MANAGED,
+<FONT COLOR="#40F628">0204:</FONT>                                &amp;pSumieIB );
+<FONT COLOR="#40F628">0205:</FONT>     pSumieIB-&gt;Lock ( 0, 0, (BYTE**)&amp;pIndex, 0 );
+<FONT COLOR="#40F628">0206:</FONT>     pIndex[0] = 0;  pIndex[1] = 1;  pIndex[2] = 2;
+<FONT COLOR="#40F628">0207:</FONT>     pIndex[3] = 1;  pIndex[4] = 3;  pIndex[5] = 2;
+<FONT COLOR="#40F628">0208:</FONT>     pSumieIB-&gt;Unlock ();
+<FONT COLOR="#40F628">0209:</FONT> 
+<FONT COLOR="#40F628">0210:</FONT>     <FONT COLOR="#008000">// ==================================================</FONT>
+<FONT COLOR="#40F628">0211:</FONT>     <FONT COLOR="#008000">// Programmable shader</FONT>
+<FONT COLOR="#40F628">0212:</FONT>     <FONT COLOR="#008000">// ==================================================</FONT>
+<FONT COLOR="#40F628">0213:</FONT>     cg.AddFilePath("<FONT COLOR="#600000">..</FONT>");
+<FONT COLOR="#40F628">0214:</FONT>     pCg = cg.CreateContextContainer(lpD3DDev);
+<FONT COLOR="#40F628">0215:</FONT> 
+<FONT COLOR="#40F628">0216:</FONT>     <FONT COLOR="#008000">// ==================================================</FONT>
+<FONT COLOR="#40F628">0217:</FONT>     <FONT COLOR="#008000">// Vertex Shader</FONT>
+<FONT COLOR="#40F628">0218:</FONT>     pVs = pCg-&gt;LoadCGProgramFromFile(
+<FONT COLOR="#40F628">0219:</FONT>         "<FONT COLOR="#600000">sumie.vsh</FONT>", "<FONT COLOR="#600000">Sumie Vertex Shader</FONT>", cgDX8VertexProfile, vertex_attributes);
+<FONT COLOR="#40F628">0220:</FONT>     
+<FONT COLOR="#40F628">0221:</FONT>    <FONT COLOR="#0000FF">if</FONT> (NULL == pVs) {
+<FONT COLOR="#40F628">0222:</FONT>         <FONT COLOR="#008000">// ERROR</FONT>
+<FONT COLOR="#40F628">0223:</FONT>         <FONT COLOR="#0000FF">const</FONT> <FONT COLOR="#0000FF">char</FONT> * listing = pCg-&gt;GetLastListing();
+<FONT COLOR="#40F628">0224:</FONT>         <FONT COLOR="#0000FF">if</FONT> (listing == 0) listing = "<FONT COLOR="#600000">Could not find cgc.exe.</FONT>";
+<FONT COLOR="#40F628">0225:</FONT>         cg.NotePad("<FONT COLOR="#600000">Failed to Create Vertex Program\n\n</FONT>", listing);    <FONT COLOR="#008000">// Output error</FONT>
+<FONT COLOR="#40F628">0226:</FONT>         exit(1);    <FONT COLOR="#008000">// END</FONT>
+<FONT COLOR="#40F628">0227:</FONT>     }
+<FONT COLOR="#40F628">0228:</FONT>   
+<FONT COLOR="#40F628">0229:</FONT>     const_texcoord0 = pVs-&gt;GetParameterBindByName("<FONT COLOR="#600000">const_texcoord0</FONT>");
+<FONT COLOR="#40F628">0230:</FONT>     const_texcoord1 = pVs-&gt;GetParameterBindByName("<FONT COLOR="#600000">const_texcoord1</FONT>");
+<FONT COLOR="#40F628">0231:</FONT>     const_texcoord2 = pVs-&gt;GetParameterBindByName("<FONT COLOR="#600000">const_texcoord2</FONT>");
+<FONT COLOR="#40F628">0232:</FONT>     const_texcoord3 = pVs-&gt;GetParameterBindByName("<FONT COLOR="#600000">const_texcoord3</FONT>");
+<FONT COLOR="#40F628">0233:</FONT> 
+<FONT COLOR="#40F628">0234:</FONT>     <FONT COLOR="#0000FF">float</FONT> <FONT COLOR="#0000FF">const</FONT> inv_w = 1.0f / (<FONT COLOR="#0000FF">float</FONT>)WIDTH;
+<FONT COLOR="#40F628">0235:</FONT>     <FONT COLOR="#0000FF">float</FONT> <FONT COLOR="#0000FF">const</FONT> inv_h = 1.0f / (<FONT COLOR="#0000FF">float</FONT>)HEIGHT;
+<FONT COLOR="#40F628">0236:</FONT>     pVs-&gt;SetShaderConstant( const_texcoord0, &amp;D3DXVECTOR2  (( 0.0f    +0.5f)*inv_w, ( 0.0f+0.5f)*inv_h)  );
+<FONT COLOR="#40F628">0237:</FONT>     pVs-&gt;SetShaderConstant( const_texcoord1, &amp;D3DXVECTOR2  (( 0.0f    +0.5f)*inv_w, (-1.0f+0.5f)*inv_h)  );
+<FONT COLOR="#40F628">0238:</FONT>     pVs-&gt;SetShaderConstant( const_texcoord2, &amp;D3DXVECTOR2  ((-0.57735f+0.5f)*inv_w, ( 0.5f+0.5f)*inv_h)  );
+<FONT COLOR="#40F628">0239:</FONT>     pVs-&gt;SetShaderConstant( const_texcoord3, &amp;D3DXVECTOR2  ((+0.57735f+0.5f)*inv_w, ( 0.5f+0.5f)*inv_h)  );
+<FONT COLOR="#40F628">0240:</FONT> 
+<FONT COLOR="#40F628">0241:</FONT>     <FONT COLOR="#008000">// ==================================================</FONT>
+<FONT COLOR="#40F628">0242:</FONT>     <FONT COLOR="#008000">// Pixel Shader</FONT>
+<FONT COLOR="#40F628">0243:</FONT>     pPs = pCg-&gt;LoadCGProgramFromFile( "<FONT COLOR="#600000">sumie.psh</FONT>", "<FONT COLOR="#600000">Sumie Pixel Shader</FONT>", cgDX8PixelProfile);
+<FONT COLOR="#40F628">0244:</FONT>     
+<FONT COLOR="#40F628">0245:</FONT>     <FONT COLOR="#0000FF">if</FONT> (NULL == pPs) {
+<FONT COLOR="#40F628">0246:</FONT>         <FONT COLOR="#008000">// ERROR</FONT>
+<FONT COLOR="#40F628">0247:</FONT>         <FONT COLOR="#0000FF">const</FONT> <FONT COLOR="#0000FF">char</FONT> * error_text = pCg-&gt;GetLastListing();
+<FONT COLOR="#40F628">0248:</FONT>         cg.NotePad("<FONT COLOR="#600000">Failed to Create Pixel Program\n\n</FONT>", error_text);    <FONT COLOR="#008000">// Output error</FONT>
+<FONT COLOR="#40F628">0249:</FONT> 
+<FONT COLOR="#40F628">0250:</FONT>         exit(1);    <FONT COLOR="#008000">// END</FONT>
+<FONT COLOR="#40F628">0251:</FONT>     }
+<FONT COLOR="#40F628">0252:</FONT>  
+<FONT COLOR="#40F628">0253:</FONT>     tex0_iter = pPs-&gt;GetTextureBindByName("<FONT COLOR="#600000">tex0</FONT>");
+<FONT COLOR="#40F628">0254:</FONT>     tex1_iter = pPs-&gt;GetTextureBindByName("<FONT COLOR="#600000">tex1</FONT>");
+<FONT COLOR="#40F628">0255:</FONT>     tex2_iter = pPs-&gt;GetTextureBindByName("<FONT COLOR="#600000">tex2</FONT>");
+<FONT COLOR="#40F628">0256:</FONT>     tex3_iter = pPs-&gt;GetTextureBindByName("<FONT COLOR="#600000">tex3</FONT>");
+<FONT COLOR="#40F628">0257:</FONT> 
+<FONT COLOR="#40F628">0258:</FONT>     <FONT COLOR="#008000">// ==================================================</FONT>
+<FONT COLOR="#40F628">0259:</FONT>     <FONT COLOR="#008000">// Surface</FONT>
+<FONT COLOR="#40F628">0260:</FONT>     <FONT COLOR="#008000">// ==================================================</FONT>
+<FONT COLOR="#40F628">0261:</FONT>     D3DSURFACE_DESC Desc;
+<FONT COLOR="#40F628">0262:</FONT>     LPDIRECT3DSURFACE8 lpZbuffer = NULL;
+<FONT COLOR="#40F628">0263:</FONT>     <FONT COLOR="#0000FF">if</FONT>( FAILED(hr = lpD3DDev-&gt;GetRenderTarget(&amp;pBackbuffer))) <FONT COLOR="#0000FF">return</FONT> hr;
+<FONT COLOR="#40F628">0264:</FONT>     <FONT COLOR="#0000FF">if</FONT>( FAILED(hr = pBackbuffer-&gt;GetDesc( &amp;Desc ))) <FONT COLOR="#0000FF">return</FONT> hr;
+<FONT COLOR="#40F628">0265:</FONT> 
+<FONT COLOR="#40F628">0266:</FONT>     <FONT COLOR="#0000FF">if</FONT>( FAILED(hr = lpD3DDev-&gt;GetDepthStencilSurface( &amp;lpZbuffer ))) <FONT COLOR="#0000FF">return</FONT> hr;
+<FONT COLOR="#40F628">0267:</FONT>     
+<FONT COLOR="#40F628">0268:</FONT>     <FONT COLOR="#0000FF">for</FONT>( i=0 ; i&lt;2 ; i++ ){
+<FONT COLOR="#40F628">0269:</FONT>         <FONT COLOR="#0000FF">if</FONT>( FAILED(hr = lpD3DDev-&gt;CreateTexture(Desc.Width, Desc.Height, 1
+<FONT COLOR="#40F628">0270:</FONT>                                 , D3DUSAGE_RENDERTARGET, D3DFMT_A8R8G8B8, D3DPOOL_DEFAULT, &amp;pRenderTexture[i]))) <FONT COLOR="#0000FF">return</FONT> hr;
+<FONT COLOR="#40F628">0271:</FONT>         <FONT COLOR="#0000FF">if</FONT>( FAILED(hr = pRenderTexture[i]-&gt;GetSurfaceLevel(0,&amp;pRenderSurface[i]))) <FONT COLOR="#0000FF">return</FONT> hr;
+<FONT COLOR="#40F628">0272:</FONT>         <FONT COLOR="#0000FF">if</FONT>( FAILED(hr = lpD3DDev-&gt;SetRenderTarget(pRenderSurface[i], lpZbuffer ))) <FONT COLOR="#0000FF">return</FONT> hr;
+<FONT COLOR="#40F628">0273:</FONT>     }
+<FONT COLOR="#40F628">0274:</FONT> 
+<FONT COLOR="#40F628">0275:</FONT>     lpD3DDev-&gt;SetRenderTarget(pBackbuffer, lpZbuffer );
+<FONT COLOR="#40F628">0276:</FONT>     
+<FONT COLOR="#40F628">0277:</FONT>     <FONT COLOR="#0000FF">return</FONT> S_OK;
+<FONT COLOR="#40F628">0278:</FONT> }
+<FONT COLOR="#40F628">0279:</FONT> <FONT COLOR="#008000">// ----------------------------------------------------------------------------</FONT>
+<FONT COLOR="#40F628">0280:</FONT> <FONT COLOR="#008000">// Rendering</FONT>
+<FONT COLOR="#40F628">0281:</FONT> <FONT COLOR="#008000">// ----------------------------------------------------------------------------</FONT>
+<FONT COLOR="#40F628">0282:</FONT> <FONT COLOR="#0000FF">void</FONT> RenderSumie(LPDIRECT3DDEVICE8 lpD3DDev, <FONT COLOR="#0000FF">int</FONT> id)
+<FONT COLOR="#40F628">0283:</FONT> {
+<FONT COLOR="#40F628">0284:</FONT>     pVs-&gt;SetShaderActive();
+<FONT COLOR="#40F628">0285:</FONT>     pPs-&gt;SetShaderActive();
+<FONT COLOR="#40F628">0286:</FONT>     pPs-&gt;SetTexture(tex0_iter, pRenderTexture[id]);
+<FONT COLOR="#40F628">0287:</FONT>     pPs-&gt;SetTexture(tex1_iter, pRenderTexture[id]);
+<FONT COLOR="#40F628">0288:</FONT>     pPs-&gt;SetTexture(tex2_iter, pRenderTexture[id]);
+<FONT COLOR="#40F628">0289:</FONT>     pPs-&gt;SetTexture(tex3_iter, pRenderTexture[id]);
+<FONT COLOR="#40F628">0290:</FONT>     lpD3DDev-&gt;SetStreamSource( 0, pSumieVB, <FONT COLOR="#0000FF">sizeof</FONT>(D3D_SUMIE_VERTEX) );
+<FONT COLOR="#40F628">0291:</FONT>     lpD3DDev-&gt;SetIndices(pSumieIB,0);
+<FONT COLOR="#40F628">0292:</FONT>     lpD3DDev-&gt;DrawIndexedPrimitive( D3DPT_TRIANGLELIST, 0, 4, 0, 2 );
+<FONT COLOR="#40F628">0293:</FONT> }
+<FONT COLOR="#40F628">0294:</FONT> 
+<FONT COLOR="#40F628">0295:</FONT> <FONT COLOR="#008000">// ----------------------------------------------------------------------------</FONT>
+<FONT COLOR="#40F628">0296:</FONT> <FONT COLOR="#008000">// ----------------------------------------------------------------------------</FONT>
+<FONT COLOR="#40F628">0297:</FONT> <FONT COLOR="#008000">// Final rendering</FONT>
+<FONT COLOR="#40F628">0298:</FONT> <FONT COLOR="#008000">// ----------------------------------------------------------------------------</FONT>
+<FONT COLOR="#40F628">0299:</FONT> <FONT COLOR="#008000">// ----------------------------------------------------------------------------</FONT>
+<FONT COLOR="#40F628">0300:</FONT> 
+<FONT COLOR="#40F628">0301:</FONT> <FONT COLOR="#008000">// ----------------------------------------------------------------------------</FONT>
+<FONT COLOR="#40F628">0302:</FONT> <FONT COLOR="#008000">// Initialize</FONT>
+<FONT COLOR="#40F628">0303:</FONT> HRESULT InitFinal(LPDIRECT3DDEVICE8 lpD3DDev)
+<FONT COLOR="#40F628">0304:</FONT> {
+<FONT COLOR="#40F628">0305:</FONT>     HRESULT hr = S_OK;
+<FONT COLOR="#40F628">0306:</FONT> 
+<FONT COLOR="#40F628">0307:</FONT>     <FONT COLOR="#008000">// Create vertex buffer</FONT>
+<FONT COLOR="#40F628">0308:</FONT>     D3D_SUMIE_VERTEX vertices[] = {
+<FONT COLOR="#40F628">0309:</FONT>         <FONT COLOR="#008000">//  x,      y,    z,   rhw,  tu  tv</FONT>
+<FONT COLOR="#40F628">0310:</FONT>         {  0.0f,   0.0f, 0.5f, 1.0f, 0.0f,0.0f,},
+<FONT COLOR="#40F628">0311:</FONT>         { WIDTH,   0.0f, 0.5f, 1.0f, 1.0f,0.0f,},
+<FONT COLOR="#40F628">0312:</FONT>         {  0.0f, HEIGHT, 0.5f, 1.0f, 0.0f,1.0f,},
+<FONT COLOR="#40F628">0313:</FONT>         { WIDTH, HEIGHT, 0.5f, 1.0f, 1.0f,1.0f,},
+<FONT COLOR="#40F628">0314:</FONT>     };
+<FONT COLOR="#40F628">0315:</FONT>     
+<FONT COLOR="#40F628">0316:</FONT>     hr = lpD3DDev-&gt;CreateVertexBuffer( 4*<FONT COLOR="#0000FF">sizeof</FONT>(D3D_SUMIE_VERTEX),0,
+<FONT COLOR="#40F628">0317:</FONT>                     D3DFVF_DROP_VERTEX, D3DPOOL_DEFAULT, &amp;pFinalVB);
+<FONT COLOR="#40F628">0318:</FONT>     <FONT COLOR="#0000FF">if</FONT>(FAILED(hr)) <FONT COLOR="#0000FF">return</FONT> hr;
+<FONT COLOR="#40F628">0319:</FONT> 
+<FONT COLOR="#40F628">0320:</FONT>     VOID* pVertices;
+<FONT COLOR="#40F628">0321:</FONT>     hr = pFinalVB-&gt;Lock( 0, <FONT COLOR="#0000FF">sizeof</FONT>(vertices), (BYTE**)&amp;pVertices, 0);
+<FONT COLOR="#40F628">0322:</FONT>     <FONT COLOR="#0000FF">if</FONT>(FAILED(hr)) <FONT COLOR="#0000FF">return</FONT> hr;
+<FONT COLOR="#40F628">0323:</FONT>     memcpy( pVertices, vertices, <FONT COLOR="#0000FF">sizeof</FONT>(vertices) );
+<FONT COLOR="#40F628">0324:</FONT>     pFinalVB-&gt;Unlock();
+<FONT COLOR="#40F628">0325:</FONT> 
+<FONT COLOR="#40F628">0326:</FONT>     <FONT COLOR="#0000FF">return</FONT> hr;
+<FONT COLOR="#40F628">0327:</FONT> }
+<FONT COLOR="#40F628">0328:</FONT> <FONT COLOR="#008000">// ----------------------------------------------------------------------------</FONT>
+<FONT COLOR="#40F628">0329:</FONT> <FONT COLOR="#008000">// Rendering</FONT>
+<FONT COLOR="#40F628">0330:</FONT> <FONT COLOR="#0000FF">void</FONT> RenderFinal(LPDIRECT3DDEVICE8 lpD3DDev)
+<FONT COLOR="#40F628">0331:</FONT> {
+<FONT COLOR="#40F628">0332:</FONT>     lpD3DDev-&gt;SetStreamSource( 0, pFinalVB, <FONT COLOR="#0000FF">sizeof</FONT>(D3D_SUMIE_VERTEX) );
+<FONT COLOR="#40F628">0333:</FONT>     lpD3DDev-&gt;SetVertexShader( D3DFVF_DROP_VERTEX );
+<FONT COLOR="#40F628">0334:</FONT>     lpD3DDev-&gt;SetPixelShader(NULL); 
+<FONT COLOR="#40F628">0335:</FONT>     lpD3DDev-&gt;DrawPrimitive(  D3DPT_TRIANGLESTRIP, 0, 2 );
+<FONT COLOR="#40F628">0336:</FONT> }
+<FONT COLOR="#40F628">0337:</FONT> 
+<FONT COLOR="#40F628">0338:</FONT> 
+<FONT COLOR="#40F628">0339:</FONT> 
+<FONT COLOR="#40F628">0340:</FONT> <FONT COLOR="#008000">//-----------------------------------------------------------------------------</FONT>
+<FONT COLOR="#40F628">0341:</FONT> <FONT COLOR="#008000">// Name: Initialize and setup some rendering states</FONT>
+<FONT COLOR="#40F628">0342:</FONT> <FONT COLOR="#008000">//-----------------------------------------------------------------------------</FONT>
+<FONT COLOR="#40F628">0343:</FONT> HRESULT InitRender(LPDIRECT3DDEVICE8 lpD3DDev)
+<FONT COLOR="#40F628">0344:</FONT> {
+<FONT COLOR="#40F628">0345:</FONT>     HRESULT hr = S_OK;
+<FONT COLOR="#40F628">0346:</FONT>     <FONT COLOR="#0000FF">int</FONT> i;
+<FONT COLOR="#40F628">0347:</FONT> 
+<FONT COLOR="#40F628">0348:</FONT>     <FONT COLOR="#0000FF">if</FONT> ( FAILED(hr = InitDrop(lpD3DDev)))<FONT COLOR="#0000FF">return</FONT> hr;
+<FONT COLOR="#40F628">0349:</FONT> 
+<FONT COLOR="#40F628">0350:</FONT>     <FONT COLOR="#008000">// レンダリングテクスチャー用の初期化</FONT>
+<FONT COLOR="#40F628">0351:</FONT>     <FONT COLOR="#0000FF">if</FONT> ( FAILED(hr = InitRenderTexture(lpD3DDev)))<FONT COLOR="#0000FF">return</FONT> hr;
+<FONT COLOR="#40F628">0352:</FONT> 
+<FONT COLOR="#40F628">0353:</FONT>     <FONT COLOR="#008000">// 最終描画頂点バッファの初期化</FONT>
+<FONT COLOR="#40F628">0354:</FONT>     <FONT COLOR="#0000FF">if</FONT> ( FAILED(hr = InitFinal(lpD3DDev)))<FONT COLOR="#0000FF">return</FONT> hr;
+<FONT COLOR="#40F628">0355:</FONT> 
+<FONT COLOR="#40F628">0356:</FONT>     <FONT COLOR="#008000">// 不変なレジスタの設定</FONT>
+<FONT COLOR="#40F628">0357:</FONT>     lpD3DDev-&gt;SetRenderState( D3DRS_ZENABLE, TRUE );
+<FONT COLOR="#40F628">0358:</FONT>     lpD3DDev-&gt;SetRenderState( D3DRS_LIGHTING,  FALSE );
+<FONT COLOR="#40F628">0359:</FONT>     <FONT COLOR="#0000FF">for</FONT> (i = 0; i &lt; 4; ++i) {
+<FONT COLOR="#40F628">0360:</FONT>         lpD3DDev-&gt;SetTextureStageState(i, D3DTSS_MAGFILTER, D3DTEXF_LINEAR);
+<FONT COLOR="#40F628">0361:</FONT>         lpD3DDev-&gt;SetTextureStageState(i, D3DTSS_MINFILTER, D3DTEXF_LINEAR);
+<FONT COLOR="#40F628">0362:</FONT>         lpD3DDev-&gt;SetTextureStageState(i, D3DTSS_MIPFILTER, D3DTEXF_NONE);
+<FONT COLOR="#40F628">0363:</FONT>         lpD3DDev-&gt;SetTextureStageState(i, D3DTSS_ADDRESSU,  D3DTADDRESS_CLAMP);
+<FONT COLOR="#40F628">0364:</FONT>         lpD3DDev-&gt;SetTextureStageState(i, D3DTSS_ADDRESSV,  D3DTADDRESS_CLAMP);
+<FONT COLOR="#40F628">0365:</FONT>         lpD3DDev-&gt;SetTextureStageState(i, D3DTSS_COLOROP,   D3DTOP_SELECTARG1);
+<FONT COLOR="#40F628">0366:</FONT>         lpD3DDev-&gt;SetTextureStageState(i, D3DTSS_COLORARG1, D3DTA_TEXTURE);
+<FONT COLOR="#40F628">0367:</FONT>     }
+<FONT COLOR="#40F628">0368:</FONT> 
+<FONT COLOR="#40F628">0369:</FONT>     <FONT COLOR="#0000FF">return</FONT> hr;
+<FONT COLOR="#40F628">0370:</FONT> }
+<FONT COLOR="#40F628">0371:</FONT> 
+<FONT COLOR="#40F628">0372:</FONT> <FONT COLOR="#008000">//-----------------------------------------------------------------------------</FONT>
+<FONT COLOR="#40F628">0373:</FONT> <FONT COLOR="#008000">// Name: Render()</FONT>
+<FONT COLOR="#40F628">0374:</FONT> <FONT COLOR="#008000">// Desc: Draws the scene</FONT>
+<FONT COLOR="#40F628">0375:</FONT> <FONT COLOR="#008000">//-----------------------------------------------------------------------------</FONT>
+<FONT COLOR="#40F628">0376:</FONT> VOID Render(LPDIRECT3DDEVICE8 lpD3DDev)
+<FONT COLOR="#40F628">0377:</FONT> {
+<FONT COLOR="#40F628">0378:</FONT>     <FONT COLOR="#0000FF">static</FONT> DWORD id = 0;
+<FONT COLOR="#40F628">0379:</FONT>     id = 1-id;
+<FONT COLOR="#40F628">0380:</FONT> 
+<FONT COLOR="#40F628">0381:</FONT>     LPDIRECT3DSURFACE8 lpZbuffer = NULL;
+<FONT COLOR="#40F628">0382:</FONT>     lpD3DDev-&gt;GetDepthStencilSurface( &amp;lpZbuffer );
+<FONT COLOR="#40F628">0383:</FONT>     lpD3DDev-&gt;SetRenderTarget(pRenderSurface[id], lpZbuffer);
+<FONT COLOR="#40F628">0384:</FONT> 
+<FONT COLOR="#40F628">0385:</FONT>     RenderSumie(lpD3DDev, 1-id);
+<FONT COLOR="#40F628">0386:</FONT>     RenderDrop(lpD3DDev);
+<FONT COLOR="#40F628">0387:</FONT> 
+<FONT COLOR="#40F628">0388:</FONT>     <FONT COLOR="#0000FF">static</FONT> <FONT COLOR="#0000FF">int</FONT> first = 2;
+<FONT COLOR="#40F628">0389:</FONT>     <FONT COLOR="#0000FF">if</FONT>(0&lt;first){
+<FONT COLOR="#40F628">0390:</FONT>         first--;
+<FONT COLOR="#40F628">0391:</FONT>         lpD3DDev-&gt;Clear(0,NULL,D3DCLEAR_TARGET | D3DCLEAR_ZBUFFER, D3DCOLOR_RGBA(255,255,255,255),1.0f,0);
+<FONT COLOR="#40F628">0392:</FONT>     }
+<FONT COLOR="#40F628">0393:</FONT> 
+<FONT COLOR="#40F628">0394:</FONT>     lpD3DDev-&gt;SetRenderTarget(pBackbuffer, lpZbuffer );
+<FONT COLOR="#40F628">0395:</FONT>     lpD3DDev-&gt;SetTexture( 0, pRenderTexture[id]);
+<FONT COLOR="#40F628">0396:</FONT>     lpD3DDev-&gt;SetTexture( 1, NULL);
+<FONT COLOR="#40F628">0397:</FONT>     lpD3DDev-&gt;SetTexture( 2, NULL);
+<FONT COLOR="#40F628">0398:</FONT>     lpD3DDev-&gt;SetTexture( 3, NULL);
+<FONT COLOR="#40F628">0399:</FONT>     RenderFinal(lpD3DDev);
+<FONT COLOR="#40F628">0400:</FONT> }
+<FONT COLOR="#40F628">0401:</FONT> <FONT COLOR="#008000">//-----------------------------------------------------------------------------</FONT>
+<FONT COLOR="#40F628">0402:</FONT> <FONT COLOR="#008000">// Name: CleanRender()</FONT>
+<FONT COLOR="#40F628">0403:</FONT> <FONT COLOR="#008000">//-----------------------------------------------------------------------------</FONT>
+<FONT COLOR="#40F628">0404:</FONT> <FONT COLOR="#0000FF">void</FONT> CleanRender(LPDIRECT3DDEVICE8 lpD3DDev)
+<FONT COLOR="#40F628">0405:</FONT> {
+<FONT COLOR="#40F628">0406:</FONT>     DWORD i;
+<FONT COLOR="#40F628">0407:</FONT>     
+<FONT COLOR="#40F628">0408:</FONT>     <FONT COLOR="#0000FF">for</FONT>( i=0 ; i&lt;2 ; i++ ){
+<FONT COLOR="#40F628">0409:</FONT>         RELEASE(pRenderSurface[i]);
+<FONT COLOR="#40F628">0410:</FONT>         RELEASE(pRenderTexture[i]);
+<FONT COLOR="#40F628">0411:</FONT>     }
+<FONT COLOR="#40F628">0412:</FONT>     RELEASE(pBackbuffer);
+<FONT COLOR="#40F628">0413:</FONT>     
+<FONT COLOR="#40F628">0414:</FONT>     RELEASE(pFinalVB);
+<FONT COLOR="#40F628">0415:</FONT>     RELEASE(pDropVB);
+<FONT COLOR="#40F628">0416:</FONT>     RELEASE(pDropTexture);
+<FONT COLOR="#40F628">0417:</FONT> }
+<FONT COLOR="#40F628">0418:</FONT> </PRE>
+</BODY>
+</HTML>

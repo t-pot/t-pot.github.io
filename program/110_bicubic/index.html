@@ -1,0 +1,251 @@
+<head>
+	<title>t-pot『双３次補間サンプリング』</title>
+	<link rel="stylesheet" type="text/css" href="../if.css">
+</head>
+<meta http-equiv=Content-Type content="text/html; charset=shift_jis">
+<body>
+
+
+<div class="contents">
+<center>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<h1>双３次補間サンプリング</h1><br>
+<h3>～ Bi-cubic sampling ～</h3>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<image src = "title.png">
+<br>
+<hr>
+</center>
+<div>
+
+
+<h2>■はじめに</h2>
+
+
+<p>
+周りから「GPUでバイキュービックぐらいできるだろ」いわれたのでやりました。<br>
+一番右のテクスチャがバイキュービックサンプリングしたものです（書かれている文字に特に意味はありません）。
+</p>
+<p>
+バイリニアが全体的にぼけるのに対して、バイキュービックは「しまりがある」ぼかしになります。<br>
+また、今回の方法では、４５度のラインが綺麗な直線になります。
+</p>
+<image src = "tree.png">
+<p>
+ただし、４角形などの角では、逆に内側が変にへこんだりします。
+</p>
+<image src = "square.png">
+<p>
+まぁ、これらは補間関数で調整が可能なので、特に気にしないで行きましょう。
+</p>
+
+<p>
+で、いつものようにプログラムです。<br>
+</p>
+<ul style = "LIST-STYLE-TYPE:none">
+<li><a href="src.zip">src.zip (双３次補間サンプリング:DirectX9 [Pixel shader 2_0])</a>
+</ul>
+<p>
+ソースには、いつものように適当にファイルが入っています。
+大事なファイルは次のものです。
+</p>
+<table>
+<tr><td><a href="main_h.html">main.h</a></td><td>アプリケーションのヘッダ</td></tr>
+<tr><td><a href="main_cpp.html">main.cpp</a></td><td>アプリケーションのソース</td></tr>
+<tr><td><a href="hlsl_fx.html">hlsl.fx</a></td><td>シェーダプログラム</td></tr>
+</table>
+
+
+<h2>■何をやっているの</h2>
+
+
+<p>
+普段、テクスチャをサンプリングする時には、ポイントサンプリングや線形サンプリングを使うのですが、
+もう少し高度な方法として、３次曲線を使って周辺のテクセルの値から読み込むテクスチャの色を決定する方法が３次補間です。<br>
+テクスチャに使うときには、縦と横の２方向から合成をするので、「２」を意味する双(Bi)をつけて、双３次補間といいます。
+</p>
+<p>
+普通は、双３次補間をするときには、テクスチャ座標の周囲１６点のサンプリング点からテクセルを読み込んで、縦と横方向に３次補間を施します。
+</p>
+<image src = "cubic.png">
+<p>
+</p>
+<p>
+数式で表現すると、補間多項式をW、テクスチャ座標の左上のサンプリングポイントからの距離をu,vとして、各サンプリング点での色をc<sub>ij</sub>とすれば、双３次補間サンプリングは次のようになります。
+</p>
+<image src = "eq.png">
+<p>
+なお、uやvは、最近接テクセル間の距離が１になるような距離で正規化されます。<br>
+この補間関数Wは、一般的には任意です。
+ただし、縦方向と横方向で同じ補間多項式を使うことに注目しましょう。<br>
+このような式の場合、和は２つの式
+</p>
+<image src = "eq1.png">
+<p>
+に分離することができます。<br>
+これは、実装時に、縦方向の補間を行った後に、横方向の（同じ係数の）補間を行えば最終的な値が得られるという意味で、押さえておきたい変形です（ガウスぼかしの分解と同じようなもんです）。<br>
+補間関数Wは、任意なのですが、今回は次のような補間多項式を使いました。
+</p>
+<image src = "eq2.png">
+<p>
+これは、Perlinノイズの勉強のときに見かけ多識なのですが、Catmull-Rom 曲線の端点での傾きが２倍になったものになっています。
+最初は、Catmull-Rom をそのまま使ったのですが、普通に滑らかになってつまらなかったので、
+このような曲線を採用しました（つまり、傾きを調整すれば、補間の強さの調整ができるということです）。
+</p>
+
+<h2>■シェーダプログラム</h2>
+
+
+<p>
+今回は、ピクセルシェーダだけの実装になっています。<br>
+シェーダプログラムは、主に３つの部分に分かれます。<br>
+１つは、合成する重みを計算する部分です。<br>
+最初に指定されたテクスチャ座標が、テクセル内のどのを指示しているのか調べます。
+次に、それらの位置を３乗まですると共に、重みをつけて合成します。<br>
+この重みは、先ほどの式をしこしこと分解して求めます。
+</p>
+<pre class="CodeBlock">
+hlsl.fx
+<font color="deepskyblue">0034:</font> float4 PS (VS_OUTPUT In) : COLOR
+<font color="deepskyblue">0035:</font> {   
+<font color="deepskyblue">0043:</font>     <font color="blue">const</font> float4 w3 = float4(-1, 1,-1, 1);
+<font color="deepskyblue">0044:</font>     <font color="blue">const</font> float4 w2 = float4( 2,-2, 1,-1);
+<font color="deepskyblue">0045:</font>     <font color="blue">const</font> float4 w1 = float4(-1, 0, 1, 0);
+<font color="deepskyblue">0046:</font>     <font color="blue">const</font> float4 w0 = float4( 0, 1, 0, 0);
+<font color="deepskyblue">0048:</font>     
+<font color="deepskyblue">0049:</font>     float2 fUV = frac (In.Tex5 * vSize);    <font color="cyan">// サブテクセルを0～1のパラメータ化</font>
+<font color="deepskyblue">0050:</font>     float2 fUV2 = fUV * fUV;                <font color="cyan">// fUV の２乗</font>
+<font color="deepskyblue">0051:</font>     float2 fUV3 = fUV * fUV2;               <font color="cyan">// fUV の３乗</font>
+<font color="deepskyblue">0052:</font>     float4 u, v;
+<font color="deepskyblue">0053:</font>     u = fUV3.x * w3 + fUV2.x * w2 + fUV.x * w1 + w0;
+<font color="deepskyblue">0054:</font>     v = fUV3.y * w3 + fUV2.y * w2 + fUV.y * w1 + w0;
+</pre>
+<p>
+次に、テクスチャをサンプリングします。<br>
+高速化と、シェーダ命令の削減のために、テクスチャ座標は8つの座標をアプリケーション側で先に計算して、それらの位置でサンプリングすると共に、
+残りの８点は一様にずらしてテクスチャ座標とします。<br>
+今回は、ポイントサンプリングを使って、半端な位置のテクスチャを読み込んでも、それなりの値が得られるようにしています。
+</p>
+<pre class="CodeBlock">
+hlsl.fx
+<font color="deepskyblue">0056:</font>     <font color="cyan">// テクスチャから少しずらしてサンプリング</font>
+<font color="deepskyblue">0057:</font>     float4 col00 = tex2D( SrcSamp, In.Tex0 );
+<font color="deepskyblue">0058:</font>     float4 col01 = tex2D( SrcSamp, In.Tex1 );
+<font color="deepskyblue">0059:</font>     float4 col02 = tex2D( SrcSamp, In.Tex2 );
+<font color="deepskyblue">0060:</font>     float4 col03 = tex2D( SrcSamp, In.Tex3 );
+<font color="deepskyblue">0061:</font> 
+<font color="deepskyblue">0062:</font>     float4 col10 = tex2D( SrcSamp, In.Tex4 );
+<font color="deepskyblue">0063:</font>     float4 col11 = tex2D( SrcSamp, In.Tex5 );
+<font color="deepskyblue">0064:</font>     float4 col12 = tex2D( SrcSamp, In.Tex6 );
+<font color="deepskyblue">0065:</font>     float4 col13 = tex2D( SrcSamp, In.Tex7 );
+<font color="deepskyblue">0066:</font> 
+<font color="deepskyblue">0067:</font>     float4 col20 = tex2D( SrcSamp, In.Tex0 + d2u );
+<font color="deepskyblue">0068:</font>     float4 col21 = tex2D( SrcSamp, In.Tex1 + d2u );
+<font color="deepskyblue">0069:</font>     float4 col22 = tex2D( SrcSamp, In.Tex2 + d2u );
+<font color="deepskyblue">0070:</font>     float4 col23 = tex2D( SrcSamp, In.Tex3 + d2u );
+<font color="deepskyblue">0071:</font> 
+<font color="deepskyblue">0072:</font>     float4 col30 = tex2D( SrcSamp, In.Tex4 + d2u );
+<font color="deepskyblue">0073:</font>     float4 col31 = tex2D( SrcSamp, In.Tex5 + d2u );
+<font color="deepskyblue">0074:</font>     float4 col32 = tex2D( SrcSamp, In.Tex6 + d2u );
+<font color="deepskyblue">0075:</font>     float4 col33 = tex2D( SrcSamp, In.Tex7 + d2u );
+</pre>
+<image src = "samp.png">
+<p>
+最後に、計算した重みとサンプリングした色で合成します。<br>
+はじめに、横方向に合成してから、後で縦方向に合成します。
+</p>
+<pre class="CodeBlock">
+hlsl.fx
+<font color="deepskyblue">0078:</font>     float4 col0 = u.x * col00 + u.y * col10 + u.z * col20 + u.w * col30;
+<font color="deepskyblue">0079:</font>     float4 col1 = u.x * col01 + u.y * col11 + u.z * col21 + u.w * col31;
+<font color="deepskyblue">0080:</font>     float4 col2 = u.x * col02 + u.y * col12 + u.z * col22 + u.w * col32;
+<font color="deepskyblue">0081:</font>     float4 col3 = u.x * col03 + u.y * col13 + u.z * col23 + u.w * col33;
+<font color="deepskyblue">0082:</font>     
+<font color="deepskyblue">0083:</font>     <font color="blue">return</font> v.x * col0 + v.y * col1 + v.z * col2 + v.w * col3;
+<font color="deepskyblue">0084:</font> }
+</pre>
+
+
+<h2>■テクスチャ座標</h2>
+
+
+<p>
+アプリケーション側では、テクスチャ座標を指定して描画します。<br>
+シェーダプログラムに流し込むデータは、次のような８つのテクスチャ座標を持つ構造体です。
+</p>
+<pre class="CodeBlock">
+main.cpp
+<font color="deepskyblue">0040:</font> <font color="blue">typedef</font> <font color="blue">struct</font> {
+<font color="deepskyblue">0041:</font>     FLOAT       p[4];
+<font color="deepskyblue">0042:</font>     FLOAT       tu0, tv0;
+<font color="deepskyblue">0043:</font>     FLOAT       tu1, tv1;
+<font color="deepskyblue">0044:</font>     FLOAT       tu2, tv2;
+<font color="deepskyblue">0045:</font>     FLOAT       tu3, tv3;
+<font color="deepskyblue">0046:</font>     FLOAT       tu4, tv4;
+<font color="deepskyblue">0047:</font>     FLOAT       tu5, tv5;
+<font color="deepskyblue">0048:</font>     FLOAT       tu6, tv6;
+<font color="deepskyblue">0049:</font>     FLOAT       tu7, tv7;
+<font color="deepskyblue">0050:</font> } TVERTEX8;
+</pre>
+<p>
+後は、べたに構造体にデータを流し込みます。<br>
+テクセル単位でずらす値として、テクセル幅の逆数(du,dv)を計算しておいて、各テクスチャ座標をテクセルごとにずらします。
+</p>
+<pre class="CodeBlock">
+main.cpp
+<font color="deepskyblue">0296:</font>             TVERTEX8 Vertex8[4] = {
+<font color="deepskyblue">0297:</font>                 <font color="cyan">// x      y    z rhw  uv0</font>
+<font color="deepskyblue">0298:</font>                 {x + 0, y + 0, 0, 1, 0-1.5f*du, 0-1.5f*dv,  0-1.5f*du, 0-0.5f*dv,  0-1.5f*du, 0+0.5f*dv,  0-1.5f*du, 0+1.5f*dv
+<font color="deepskyblue">0299:</font>                                     ,0-0.5f*du, 0-1.5f*dv,  0-0.5f*du, 0-0.5f*dv,  0-0.5f*du, 0+0.5f*dv,  0-0.5f*du, 0+1.5f*dv},
+<font color="deepskyblue">0300:</font>                 {x + w, y + 0, 0, 1, 1-1.5f*du, 0-1.5f*dv,  1-1.5f*du, 0-0.5f*dv,  1-1.5f*du, 0+0.5f*dv,  1-1.5f*du, 0+1.5f*dv
+<font color="deepskyblue">0301:</font>                                     ,1-0.5f*du, 0-1.5f*dv,  1-0.5f*du, 0-0.5f*dv,  1-0.5f*du, 0+0.5f*dv,  1-0.5f*du, 0+1.5f*dv},
+<font color="deepskyblue">0302:</font>                 {x + w, y + h, 0, 1, 1-1.5f*du, 1-1.5f*dv,  1-1.5f*du, 1-0.5f*dv,  1-1.5f*du, 1+0.5f*dv,  1-1.5f*du, 1+1.5f*dv
+<font color="deepskyblue">0303:</font>                                     ,1-0.5f*du, 1-1.5f*dv,  1-0.5f*du, 1-0.5f*dv,  1-0.5f*du, 1+0.5f*dv,  1-0.5f*du, 1+1.5f*dv},
+<font color="deepskyblue">0304:</font>                 {x + 0, y + h, 0, 1, 0-1.5f*du, 1-1.5f*dv,  0-1.5f*du, 1-0.5f*dv,  0-1.5f*du, 1+0.5f*dv,  0-1.5f*du, 1+1.5f*dv
+<font color="deepskyblue">0305:</font>                                     ,0-0.5f*du, 1-1.5f*dv,  0-0.5f*du, 1-0.5f*dv,  0-0.5f*du, 1+0.5f*dv,  0-0.5f*du, 1+1.5f*dv},
+<font color="deepskyblue">0306:</font>             };
+</pre>
+<p>
+後は、シェーダを設定して描画です。
+</p>
+<pre class="CodeBlock">
+main.cpp
+<font color="deepskyblue">0323:</font>                 m_pd3dDevice-&gt;SetSamplerState( 0, D3DSAMP_MINFILTER, D3DTEXF_POINT );
+<font color="deepskyblue">0324:</font>                 m_pd3dDevice-&gt;SetSamplerState( 0, D3DSAMP_MAGFILTER, D3DTEXF_POINT );
+<font color="deepskyblue">0325:</font>                 m_pd3dDevice-&gt;SetFVF( D3DFVF_XYZRHW | D3DFVF_TEX8 );
+<font color="deepskyblue">0326:</font>                 <font color="blue">if</font>( m_pEffect != NULL ) {
+<font color="deepskyblue">0327:</font>                     m_pEffect-&gt;SetTechnique( m_hTechnique );
+<font color="deepskyblue">0328:</font>                     m_pEffect-&gt;Begin( NULL, 0 );
+<font color="deepskyblue">0329:</font>                     m_pEffect-&gt;Pass( 0 );
+<font color="deepskyblue">0330:</font>                     m_pd3dDevice-&gt;DrawPrimitiveUP( D3DPT_TRIANGLEFAN, 2, Vertex8, <font color="blue">sizeof</font>( TVERTEX8 ) );
+<font color="deepskyblue">0331:</font>                     m_pEffect-&gt;End();
+<font color="deepskyblue">0332:</font>                 }
+</pre>
+
+
+<h2>■最後に</h2>
+
+
+<p>
+欠点は、双３次補間をするだけで、他にはほとんど何もできなくなることでしょうか。<br>
+よっぽど場所を区切れば使えるかもしれませんね。
+</p>
+
+
+
+
+</div>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<center>
+<hr>
+<p><a href="../index.html">もどる</a></p>
+<p><a href="mailto:imagire@gmail.com">imagire@gmail.com</a></p>
+</center>
+
+</body>
+</html>

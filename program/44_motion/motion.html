@@ -1,0 +1,1762 @@
+<head>
+	<title>t-pot『モーション』</title>
+	<link rel="stylesheet" type="text/css" href="../if.css">
+</head>
+<meta http-equiv=Content-Type content="text/html; charset=shift_jis">
+<body text=#ffffff>
+
+
+<div class="contents">
+<center>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<h1>モーション</h1><br>
+<h3>～これ動くのか？～</h3>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+</center>
+
+
+<h2>■はじめに</h2>
+
+
+<p>
+この業界、「どのくらいできるか」の指標に『アニメーションのプログラムがつくれるか？』というのがあります。<br>
+今まで、面倒くさくてプログラムしてなかったのですが、最近そのような質問をされて
+『時間が無くてやってない。もちろんできるけど』なんて、誤魔化しました。
+『プログラムできるなんてうそだろ』とバレる前にやっておきます。
+</p>
+<image src = "title.png">
+<p>
+<ul style = "LIST-STYLE-TYPE:none">
+<li><a href="motion.lzh">motion.lzh (モーションのサンプル:DirectX8.1)</a>
+</ul>
+
+<p>
+まぁ、いつものように適当にファイルが入っています。<br>
+</p>
+<table>
+<tr><td><a href="CSkinModel_h.html">CSkinModel.h</a></td><td>スキンメッシュに関連したインターフェイス。</td></tr>
+<tr><td><a href="CSkinModel_cpp.html">CSkinModel.cpp</a></td><td>スキンメッシュに関連したソースの寄せ集め。</td></tr>
+<tr><td><a href="draw_h.html">draw.h</a></td><td>描画の各関数の定義。</td></tr>
+<tr><td><a href="draw_cpp.html">draw.cpp</a></td><td>メインの描画部分。</td></tr>
+<tr><td><a href="main_h.html">main.h</a></td><td>基本的な定数など。</td></tr>
+<tr><td><a href="main_cpp.html">main.cpp</a></td><td>描画に関係しないシステム的な部分。</td></tr>
+<tr><td><a href="font_h.html">font.h</a></td><td>フォント。fpsの表示に使用。</td></tr>
+<tr><td><a href="font_cpp.html">font.cpp</a></td><td>フォント。fpsの表示に使用。</td></tr>
+<tr><td><a href="resource_h.html">resource.h</a></td><td>メニューなどのリソースのヘッダ。</td></tr>
+</table>
+<p>
+あと、モデルと、実行ファイル及び、プロジェクトファイルが入っています。<br>
+今回、SDKに付属の tiny.x を入れているんですが、これっていいですかね。
+</p>
+
+
+<h2>■つかい方</h2>
+
+
+<p>
+実際には、ライブラリとして使いたい「くれくれ君」が多いでしょうから、関連するファイルを一つ（CSkinModel.cpp）にまとめました。<br>
+中身は、サンプルの SkinnedMesh のラッパーです。<br>
+ただし、単独のオブジェクトになるように、複数のメッシュが登録できる仕組みは取り除いて簡単にしました。<br>
+draw.cpp でオブジェクトを使用しています。
+</p>
+<p>
+最初にすることですが、ヘッダファイルを読み込んでオブジェクトを生成します。
+</p>
+<pre class="CodeBlock">
+draw.cpp
+<font color = deepskyblue>0015:</font> <font color = yellow>#include "CSkinModel.h"</font>
+<font color = deepskyblue>0016:</font> 
+<font color = deepskyblue>0017:</font> <font color = yellow>CSkinModel  model;</font>
+</pre>
+<p>
+CSkinModel が、実際に取り扱うクラスです。CSkinModel.h には、他にもクラスがありますが、
+CSkinModel に必要なので定義されているためで、CSkinModel があれば十分に使えます。
+</p>
+<p>
+次に必要なのが初期化です。<br>
+CSkinModel::Init(DWORD,LPDIRECT3DDEVICE8,D3DCAPS8) で初期化します。<br>
+CSkinModel は、内部で時間差をとって表示するフレームを決めるので、開始時間も初期化時に受け渡します。<br>
+次にCSkinModel::Load(TCHAR*) で、Xファイルをロードします。
+</p>
+<pre class="CodeBlock">
+draw.cpp
+<font color = deepskyblue>0027:</font> HRESULT InitRender(LPDIRECT3D8 pD3D, LPDIRECT3DDEVICE8 pD3DDev)
+<font color = deepskyblue>0028:</font> {
+<font color = deepskyblue>0029:</font>     HRESULT hr;
+<font color = deepskyblue>0030:</font>     DWORD time;
+<font color = deepskyblue>0031:</font>     
+<font color = deepskyblue>0032:</font>     timeBeginPeriod(10);    <font color = cyan>// 10ms でタイマーを呼び出す</font>
+<font color = deepskyblue>0033:</font>     time = timeGetTime();
+<font color = deepskyblue>0034:</font>     
+<font color = deepskyblue>0035:</font>     <font color = cyan>// モデルの初期化</font>
+<font color = deepskyblue>0036:</font>     D3DCAPS8 caps;
+<font color = deepskyblue>0037:</font>     pD3D->GetDeviceCaps(D3DADAPTER_DEFAULT, D3DDEVTYPE_HAL, &caps);
+<font color = deepskyblue>0038:</font>     <font color = yellow>model.Init(time, pD3DDev, caps);</font>
+<font color = deepskyblue>0039:</font>     
+<font color = deepskyblue>0040:</font>     <font color = cyan>// もし、ファイルがなかったら、ディフォルトのファイルを読む</font>
+<font color = deepskyblue>0041:</font>     if('\0' == model.GetFileName()[0]){
+<font color = deepskyblue>0042:</font>         hr = <font color = yellow>model.Load("tiny.x");</font>
+<font color = deepskyblue>0043:</font>     }
+<font color = deepskyblue>0044:</font>  
+<font color = deepskyblue>0048:</font>     return S_OK;
+<font color = deepskyblue>0049:</font> }
+</pre>
+<p>
+実際のレンダリングのときですが、<br>
+CSkinModel::FrameMove(DWORD) で、時間を進めて、CSkinModel::Render() で描画します。<br>
+ポーズしたいときは、CSkinModel::FrameMove(DWORD) だけ通さなければ、同じ姿勢で表示されます。<br>
+それ以外に、ワールド行列（に連動した回転や平行移動）や、ビュー行列を指定できます。<br>
+動かしたいときは、CSkinModel::SetTrans(D3DXMATRIXA16) を指定すれば、位置が動きます。
+</p>
+<pre class="CodeBlock">
+draw.cpp
+<font color = deepskyblue>0050:</font> <font color = cyan>// ----------------------------------------------------------------------------</font>
+<font color = deepskyblue>0051:</font> <font color = cyan>// Name: Render()</font>
+<font color = deepskyblue>0052:</font> <font color = cyan>// Desc: ポリゴンの描画</font>
+<font color = deepskyblue>0053:</font> <font color = cyan>//-----------------------------------------------------------------------------</font>
+<font color = deepskyblue>0054:</font> void Render(LPDIRECT3DDEVICE8 pD3DDev)
+<font color = deepskyblue>0055:</font> {
+<font color = deepskyblue>0056:</font>     DWORD time = timeGetTime();
+<font color = deepskyblue>0057:</font> 
+<font color = deepskyblue>0058:</font>     D3DXMATRIXA16 m;
+<font color = deepskyblue>0059:</font> 
+<font color = deepskyblue>0060:</font>     <font color = cyan>// 重心移動</font>
+<font color = deepskyblue>0061:</font>     D3DXMatrixIdentity(&m);
+<font color = deepskyblue>0062:</font>     D3DXMatrixTranslation(&m, 0, -model.GetRadius() * 0.5f, 0);
+<font color = deepskyblue>0063:</font>     model.SetTrans(m);
+<font color = deepskyblue>0064:</font>     <font color = cyan>// 回転</font>
+<font color = deepskyblue>0065:</font>     D3DXMatrixIdentity(&m);
+<font color = deepskyblue>0066:</font>     D3DXMatrixRotationYawPitchRoll(&m, rot.y, rot.x, rot.z);
+<font color = deepskyblue>0067:</font>     model.SetRot(m);
+<font color = deepskyblue>0068:</font>     
+<font color = deepskyblue>0069:</font>     <font color = cyan>// カメラの設定</font>
+<font color = deepskyblue>0070:</font>     D3DXMatrixIdentity(&m);
+<font color = deepskyblue>0071:</font>     D3DXMatrixTranslation(&m, 0, 0, -model.GetRadius() * 2.5f);
+<font color = deepskyblue>0072:</font>     model.SetView(m);
+<font color = deepskyblue>0073:</font>     <font color = cyan>// モデルの表示</font>
+<font color = deepskyblue>0074:</font>     <font color = yellow>model.FrameMove(time);</font>
+<font color = deepskyblue>0075:</font>     <font color = yellow>model.Render();</font>
+<font color = deepskyblue>0076:</font> }
+</pre>
+<p>
+最後は、お決まりの後片付けです。「Release()」を、呼んでください。
+</p>
+<pre class="CodeBlock">
+draw.cpp
+<font color = deepskyblue>0078:</font> <font color = cyan>//-----------------------------------------------------------------------------</font>
+<font color = deepskyblue>0079:</font> <font color = cyan>// Name: CleanRender()</font>
+<font color = deepskyblue>0080:</font> <font color = cyan>// Desc: 後始末</font>
+<font color = deepskyblue>0081:</font> <font color = cyan>//-----------------------------------------------------------------------------</font>
+<font color = deepskyblue>0082:</font> void CleanRender(LPDIRECT3DDEVICE8 pD3DDev)
+<font color = deepskyblue>0083:</font> {
+<font color = deepskyblue>0084:</font>     <font color = yellow>model.Release();</font>
+<font color = deepskyblue>0085:</font> }
+</pre>
+<p>
+これぐらいなら、どなたでも使えるのではないでしょうか。<br>
+もっと複雑なことをされたい方やシェーダーを変えたい方は以降で説明する内部構造から、改良を加えていってください。
+</p>
+
+
+<h2>■内部プログラム：初期化</h2>
+
+
+<p>
+初期化で一番大事なことは、頂点シェーダーの作成です（後は、引数を保存しているだけです）。<br>
+今回は、なるべくファイル数を減らしたかったので、頂点シェーダーをプログラム中に埋め込んでいます。<br>
+頂点シェーダーでは４つまでの行列を合成してスキンの処理を行いますが、
+現在の頂点シェーダーでは、分岐命令が使えないので、混ぜ合わせる行列の数に対応して、頂点シェーダーが４つに分かれます。<br>
+ここらへんは頂点シェーダー2.0になって、本質的に良くなる一つの点ですね。<br>
+</p>
+<p>
+今回は、「行列パレット」を使います。「行列パレット」とは、変換のためのローカル行列を配列として格納したものです。<br>
+実際にブレンドに使用する（４つ以下の）行列を「行列パレット」から引っ張ってきます。
+絵を書くときにパレットから原色を取り出して色を作るように行列を混ぜ合わせて、実際に用いる行列を作ります。
+</p>
+<image src = "palette.png">
+<p>
+行列を引っ張るのに、初登場のアドレスレジスタを使います。<br>
+アドレスレジスタは、定数レジスタに関して、配列のように番号を指定して
+動的に参照する番号を変えるためのレジスタです。<br>
+この仕組みがないと、各頂点に関して異なる行列が引っ張ってこれないので、
+サポートしていない頂点シェーダー1.0では、ソフトウェア的にしかシェーダーを実行できません。<br>
+</p>
+<p>
+行列パレットでは4x3の正方でない行列をつかいます。これは、行列パレットに使用する行列数が多いためで、
+今回のパレット数では最大が29個（c9～c95で87個の定数レジスタから3列の行列を生成する）にもなるので、自明な4列目の行列は省略して少しでもレジスタを節約しています。
+</p>
+<p>
+行列１つの（骨が入っていない）モデルの表示をする頂点シェーダーは次のとおりです。<br>
+まぁ、サンプルをそのまま引っ張ったので、コメントが多いですが、やっている事は短いです。
+</p>
+<pre class="CodeBlock">
+CSkinModel.cpp
+<font color = deepskyblue>0033:</font> <font color = cyan>// ----------------------------------------------------------------------------</font>
+<font color = deepskyblue>0034:</font> <font color = cyan>// v0 = 頂点の位置</font>
+<font color = deepskyblue>0035:</font> <font color = cyan>// v1 = 重み</font>
+<font color = deepskyblue>0036:</font> <font color = cyan>// v2 = 重みのインデックス</font>
+<font color = deepskyblue>0037:</font> <font color = cyan>// v3 = 法線</font>
+<font color = deepskyblue>0038:</font> <font color = cyan>// v4 = テクスチャー座標</font>
+<font color = deepskyblue>0039:</font> <font color = cyan>//------------------------------------------------------------------------------</font>
+<font color = deepskyblue>0040:</font> <font color = cyan>// r0.w = Last blend weight</font>
+<font color = deepskyblue>0041:</font> <font color = cyan>// r1 = 重みのインデックス</font>
+<font color = deepskyblue>0042:</font> <font color = cyan>// r2 = 一時的な座標</font>
+<font color = deepskyblue>0043:</font> <font color = cyan>// r3 = 一時的な法線</font>
+<font color = deepskyblue>0044:</font> <font color = cyan>// r4 = カメラ空間での座標</font>
+<font color = deepskyblue>0045:</font> <font color = cyan>// r5 = カメラ空間での法線</font>
+<font color = deepskyblue>0046:</font> <font color = cyan>//------------------------------------------------------------------------------</font>
+<font color = deepskyblue>0047:</font> <font color = cyan>// c9-c95 = 行列パレット</font>
+<font color = deepskyblue>0048:</font> <font color = cyan>// c8     = 平行光源</font>
+<font color = deepskyblue>0049:</font> <font color = cyan>// c7     = 環境光</font>
+<font color = deepskyblue>0050:</font> <font color = cyan>// c2-c5  = 射影行列</font>
+<font color = deepskyblue>0051:</font> <font color = cyan>// c1     = 光源方向</font>
+<font color = deepskyblue>0052:</font> <font color = cyan>// c0     = {1, ライトのべき乗, 0, 1020.01};</font>
+<font color = deepskyblue>0053:</font> <font color = cyan>//------------------------------------------------------------------------------</font>
+<font color = deepskyblue>0054:</font> <font color = cyan>// oPos   = 位置</font>
+<font color = deepskyblue>0055:</font> <font color = cyan>// oD0    = 平行光</font>
+<font color = deepskyblue>0056:</font> <font color = cyan>// oD1    = すぺきゅらー</font>
+<font color = deepskyblue>0057:</font> <font color = cyan>// oT0    = テクスチャー座標</font>
+<font color = deepskyblue>0058:</font> <font color = cyan>//------------------------------------------------------------------------------</font>
+<font color = deepskyblue>0059:</font> 
+<font color = deepskyblue>0060:</font> const char VertexShader0[] = {
+<font color = deepskyblue>0061:</font> "vs.1.1                            <font color = cyan>// シェーダ バージョン 1.1           </font>\n"\
+<font color = deepskyblue>0062:</font> "mul r1,v2.zyxw,c0.wwww            <font color = cyan>// Geforce3 で UBYTE4 がないのを補う </font>\n"\
+<font color = deepskyblue>0063:</font> 
+<font color = deepskyblue>0064:</font> "mov a0.x,r1.x                     <font color = cyan>// 1 つめの行列を設定                </font>\n"\
+<font color = deepskyblue>0065:</font> "<font color = yellow>m4x3 r4,v0,c[a0.x + 9]</font>                                                 \n"\
+<font color = deepskyblue>0066:</font> "<font color = yellow>m3x3 r5,v3,c[a0.x + 9]</font>                                                 \n"\
+<font color = deepskyblue>0067:</font> 
+<font color = deepskyblue>0068:</font> "mov r4.w,c0.x                     <font color = cyan>// 透視変換                          </font>\n"\
+<font color = deepskyblue>0069:</font> "m4x4 oPos,r4,c2                                                        \n"\
+<font color = deepskyblue>0070:</font> 
+<font color = deepskyblue>0071:</font> "dp3 r5.w, r5, r5                  <font color = cyan>// 法線の規格化                      </font>\n"\
+<font color = deepskyblue>0072:</font> "rsq r5.w, r5.w                                                         \n"\
+<font color = deepskyblue>0073:</font> "mul r5, r5, r5.w                                                       \n"\
+<font color = deepskyblue>0074:</font> 
+<font color = deepskyblue>0075:</font> "dp3 r1.x, r5, c1                  <font color = cyan>// ライティング                      </font>\n"\
+<font color = deepskyblue>0076:</font> "lit r1, r1                        <font color = cyan>//                                   </font>\n"\
+<font color = deepskyblue>0077:</font> "mul r0, r1.y, c8                  <font color = cyan>// 平行光源                          </font>\n"\
+<font color = deepskyblue>0078:</font> "add r0, r0, c7                    <font color = cyan>//  +環境光                          </font>\n"\
+<font color = deepskyblue>0079:</font> "min oD0, r0, c0.x                 <font color = cyan>// 1以下にクランプ                   </font>\n"\
+<font color = deepskyblue>0080:</font> "mov oD1, c0.zzzz                  <font color = cyan>// すぺきゅらーの設定                </font>\n"\
+<font color = deepskyblue>0081:</font> 
+<font color = deepskyblue>0082:</font> "mov oT0, v4                       <font color = cyan>// テクスチャー座標のコピー          </font>"
+<font color = deepskyblue>0083:</font> };
+</pre>
+
+<p>
+a0.x がアドレスレジスタです。65行目の m4x3 命令などで、行列パレットの最初の位置である定数レジスタ9をオフセットにして行列を引っ張ってきます。<br>
+ただし、係数や並び順が頂点情報に入れられて時点のものでは使いづらいので並び替えます。<br>
+後は、透視変換したり、法線は規格化して光源計算を行ったり、テクスチャー座標をコピーしてテクスチャーを張ります。
+</p>
+<p>
+次に一気に飛ばして行列を４つ混ぜる場合を見ましょう。<br>
+１つの場合との違いはアドレスレジスタを４回変更して、４つの行列を合成していることです。<br>
+それらに重みの係数 v1 を掛けて、混ぜ合わせます。ただし、全ての係数の和が1になるように４つめの係数はそれ以外の3つの係数から求めました。
+</p>
+
+<pre class="CodeBlock">
+CSkinModel.cpp
+<font color = deepskyblue>0163:</font> const char VertexShader3[] = {
+<font color = deepskyblue>0164:</font> "vs.1.1                            <font color = cyan>// シェーダ バージョン 1.1           </font>\n"\
+<font color = deepskyblue>0165:</font> "mul r1,v2.zyxw,c0.wwww            <font color = cyan>// Geforce3 で UBYTE4 がないのを補う </font>\n"\
+<font color = deepskyblue>0166:</font> 
+<font color = deepskyblue>0167:</font> "dp3 r0.w,v1.xyz,c0.xxx            <font color = cyan>// 最後の係数はウェイトの合計が1から算出 </font>\n"\
+<font color = deepskyblue>0168:</font> "add r0.w,-r0.w,c0.x                                                    \n"\
+<font color = deepskyblue>0169:</font> 
+<font color = deepskyblue>0170:</font> "<font color = yellow>mov a0.x,r1.x</font>                     <font color = cyan>// 1 つめの行列を設定                </font>\n"\
+<font color = deepskyblue>0171:</font> "<font color = yellow>m4x3 r4,v0,c[a0.x + 9]</font>                                                 \n"\
+<font color = deepskyblue>0172:</font> "<font color = yellow>m3x3 r5,v3,c[a0.x + 9]</font>                                                 \n"\
+<font color = deepskyblue>0173:</font> "<font color = yellow>mul r4,r4,v1.xxxx</font>                 <font color = cyan>// 係数をかけて合成する              </font>\n"\
+<font color = deepskyblue>0174:</font> "<font color = yellow>mul r5,r5,v1.xxxx </font>                                                     \n"\
+<font color = deepskyblue>0175:</font> 
+<font color = deepskyblue>0176:</font> "<font color = orange>mov a0.x,r1.y</font>                     <font color = cyan>// 2 つめの行列を設定                </font>\n"\
+<font color = deepskyblue>0177:</font> "<font color = orange>m4x3 r2,v0,c[a0.x + 9]</font>                                                 \n"\
+<font color = deepskyblue>0178:</font> "<font color = orange>m3x3 r3,v3,c[a0.x + 9]</font>                                                 \n"\
+<font color = deepskyblue>0179:</font> "<font color = orange>mad r4,r2,v1.yyyy,r4</font>              <font color = cyan>// 係数をかけて合成する              </font>\n"\
+<font color = deepskyblue>0180:</font> "<font color = orange>mad r5,r3,v1.yyyy,r5</font>                                                   \n"\
+<font color = deepskyblue>0181:</font> 
+<font color = deepskyblue>0182:</font> "<font color = red>mov a0.x,r1.z</font>                     <font color = cyan>// 3 つめの行列を設定                </font>\n"\
+<font color = deepskyblue>0183:</font> "<font color = red>m4x3 r2,v0,c[a0.x + 9]</font>                                                 \n"\
+<font color = deepskyblue>0184:</font> "<font color = red>m3x3 r3,v3,c[a0.x + 9]</font>                                                 \n"\
+<font color = deepskyblue>0185:</font> "<font color = red>mad r4,r2,v1.zzzz,r4</font>              <font color = cyan>// 係数をかけて合成する              </font>\n"\
+<font color = deepskyblue>0186:</font> "<font color = red>mad r5,r3,v1.zzzz,r5</font>                                                   \n"\
+<font color = deepskyblue>0187:</font> 
+<font color = deepskyblue>0188:</font> "<font color = lime>mov a0.x,r1.w</font>                     <font color = cyan>// 4 つめの行列を設定                </font>\n"\
+<font color = deepskyblue>0189:</font> "<font color = lime>m4x3 r2,v0,c[a0.x + 9]</font>                                                 \n"\
+<font color = deepskyblue>0190:</font> "<font color = lime>m3x3 r3,v3,c[a0.x + 9]</font>                                                 \n"\
+<font color = deepskyblue>0191:</font> "<font color = lime>mad r4,r2,r0.wwww,r4</font>              <font color = cyan>// 係数をかけて合成する              </font>\n"\
+<font color = deepskyblue>0192:</font> "<font color = lime>mad r5,r3,r0.wwww,r5</font>                                                   \n"\
+<font color = deepskyblue>0193:</font> 
+<font color = deepskyblue>0194:</font> "mov r4.w,c0.x                     <font color = cyan>// 座標変換                          </font>\n"\
+<font color = deepskyblue>0195:</font> "m4x4 oPos,r4,c2                                                        \n"\
+<font color = deepskyblue>0196:</font> 
+<font color = deepskyblue>0197:</font> "dp3 r5.w, r5, r5                  <font color = cyan>// 法線の規格化                      </font>\n"\
+<font color = deepskyblue>0198:</font> "rsq r5.w, r5.w                                                         \n"\
+<font color = deepskyblue>0199:</font> "mul r5, r5, r5.w                                                       \n"\
+<font color = deepskyblue>0200:</font> 
+<font color = deepskyblue>0201:</font> "dp3 r1.x, r5, c1                  <font color = cyan>// ライティング                      </font>\n"\
+<font color = deepskyblue>0202:</font> "lit r1, r1                        <font color = cyan>//                                   </font>\n"\
+<font color = deepskyblue>0203:</font> "mul r0, r1.y, c8                  <font color = cyan>// 平行光源                          </font>\n"\
+<font color = deepskyblue>0204:</font> "add r0, r0, c7                    <font color = cyan>//  +環境光                          </font>\n"\
+<font color = deepskyblue>0205:</font> "min oD0, r0, c0.x                 <font color = cyan>// 1以下にクランプ                   </font>\n"\
+<font color = deepskyblue>0206:</font> "mov oD1, c0.zzzz                  <font color = cyan>// すぺきゅらーの設定                </font>\n"\
+<font color = deepskyblue>0207:</font> 
+<font color = deepskyblue>0208:</font> "mov oT0, v4                       <font color = cyan>// テクスチャー座標のコピー         </font> "
+<font color = deepskyblue>0209:</font> };
+</pre>
+
+<p>
+行列が2つと3つの場合の合成はちょうどその中間のようになします。
+</p>
+<p>
+シャーダープログラムの生成は次のようになりますが、特に見るべき点は無いので、適当に流してください。
+</p>
+<pre class="CodeBlock">
+CSkinModel.cpp
+<font color = deepskyblue>1475:</font> <font color = cyan>//-----------------------------------------------------------------------------</font>
+<font color = deepskyblue>1476:</font> <font color = cyan>// 頂点シェーダーの生成</font>
+<font color = deepskyblue>1477:</font> <font color = cyan>//-----------------------------------------------------------------------------</font>
+<font color = deepskyblue>1478:</font> HRESULT CSkinModel::_CreateVertexShader()
+<font color = deepskyblue>1479:</font> {
+<font color = deepskyblue>1480:</font>     LPD3DXBUFFER pCode;
+<font color = deepskyblue>1481:</font>     HRESULT hr;
+<font color = deepskyblue>1482:</font>     
+<font color = deepskyblue>1483:</font>     <font color = cyan>// インデックススキニングのための頂点シェーダーの生成</font>
+<font color = deepskyblue>1484:</font>     DWORD dwIndexedVertexDecl1[] = {
+<font color = deepskyblue>1485:</font>         D3DVSD_STREAM( 0 ),
+<font color = deepskyblue>1486:</font>         D3DVSD_REG( 0, D3DVSDT_FLOAT3 ),    <font color = cyan>// Position of first mesh</font>
+<font color = deepskyblue>1487:</font>         D3DVSD_REG( 2, D3DVSDT_D3DCOLOR ),  <font color = cyan>// 合成する行列の指定</font>
+<font color = deepskyblue>1488:</font>         D3DVSD_REG( 3, D3DVSDT_FLOAT3 ),    <font color = cyan>// 法線</font>
+<font color = deepskyblue>1489:</font>         D3DVSD_REG( 4, D3DVSDT_FLOAT2 ),    <font color = cyan>// テクスチャー座標</font>
+<font color = deepskyblue>1490:</font>         D3DVSD_END()
+<font color = deepskyblue>1491:</font>     };
+<font color = deepskyblue>1492:</font> 
+<font color = deepskyblue>1493:</font>     DWORD dwIndexedVertexDecl2[] = {
+<font color = deepskyblue>1494:</font>         D3DVSD_STREAM( 0 ),
+<font color = deepskyblue>1495:</font>         D3DVSD_REG( 0, D3DVSDT_FLOAT3 ),    <font color = cyan>// Position of first mesh</font>
+<font color = deepskyblue>1496:</font>         D3DVSD_REG( 1, D3DVSDT_FLOAT1 ),    <font color = cyan>// 合成の重み</font>
+<font color = deepskyblue>1497:</font>         D3DVSD_REG( 2, D3DVSDT_D3DCOLOR ),  <font color = cyan>// 合成する行列の指定</font>
+<font color = deepskyblue>1498:</font>         D3DVSD_REG( 3, D3DVSDT_FLOAT3 ),    <font color = cyan>// 法線</font>
+<font color = deepskyblue>1499:</font>         D3DVSD_REG( 4, D3DVSDT_FLOAT2 ),    <font color = cyan>// テクスチャー座標</font>
+<font color = deepskyblue>1500:</font>         D3DVSD_END()
+<font color = deepskyblue>1501:</font>     };
+<font color = deepskyblue>1502:</font> 
+<font color = deepskyblue>1503:</font>     DWORD dwIndexedVertexDecl3[] =  {
+<font color = deepskyblue>1504:</font>         D3DVSD_STREAM( 0 ),
+<font color = deepskyblue>1505:</font>         D3DVSD_REG( 0, D3DVSDT_FLOAT3 ),    <font color = cyan>// Position of first mesh</font>
+<font color = deepskyblue>1506:</font>         D3DVSD_REG( 1, D3DVSDT_FLOAT2 ),    <font color = cyan>// 合成の重み</font>
+<font color = deepskyblue>1507:</font>         D3DVSD_REG( 2, D3DVSDT_D3DCOLOR ),  <font color = cyan>// 合成する行列の指定</font>
+<font color = deepskyblue>1508:</font>         D3DVSD_REG( 3, D3DVSDT_FLOAT3 ),    <font color = cyan>// 法線</font>
+<font color = deepskyblue>1509:</font>         D3DVSD_REG( 4, D3DVSDT_FLOAT2 ),    <font color = cyan>// テクスチャー座標</font>
+<font color = deepskyblue>1510:</font>         D3DVSD_END()
+<font color = deepskyblue>1511:</font>     };
+<font color = deepskyblue>1512:</font> 
+<font color = deepskyblue>1513:</font>     DWORD dwIndexedVertexDecl4[] =  {
+<font color = deepskyblue>1514:</font>         D3DVSD_STREAM( 0 ),
+<font color = deepskyblue>1515:</font>         D3DVSD_REG( 0, D3DVSDT_FLOAT3 ),    <font color = cyan>// Position of first mesh</font>
+<font color = deepskyblue>1516:</font>         D3DVSD_REG( 1, D3DVSDT_FLOAT3 ),    <font color = cyan>// 合成の重み</font>
+<font color = deepskyblue>1517:</font>         D3DVSD_REG( 2, D3DVSDT_D3DCOLOR ),  <font color = cyan>// 合成する行列の指定</font>
+<font color = deepskyblue>1518:</font>         D3DVSD_REG( 3, D3DVSDT_FLOAT3 ),    <font color = cyan>// 法線</font>
+<font color = deepskyblue>1519:</font>         D3DVSD_REG( 4, D3DVSDT_FLOAT2 ),    <font color = cyan>// テクスチャー座標</font>
+<font color = deepskyblue>1520:</font>         D3DVSD_END()
+<font color = deepskyblue>1521:</font>     };
+<font color = deepskyblue>1522:</font> 
+<font color = deepskyblue>1523:</font>     DWORD* dwIndexedVertexDecl[] = {
+<font color = deepskyblue>1524:</font>         dwIndexedVertexDecl1,
+<font color = deepskyblue>1525:</font>         dwIndexedVertexDecl2,
+<font color = deepskyblue>1526:</font>         dwIndexedVertexDecl3,
+<font color = deepskyblue>1527:</font>         dwIndexedVertexDecl4,
+<font color = deepskyblue>1528:</font>     };
+<font color = deepskyblue>1529:</font>     
+<font color = deepskyblue>1530:</font>     char *filename[] = {
+<font color = deepskyblue>1531:</font>         "skinmesh1.vsh",
+<font color = deepskyblue>1532:</font>         "skinmesh2.vsh",
+<font color = deepskyblue>1533:</font>         "skinmesh3.vsh",
+<font color = deepskyblue>1534:</font>         "skinmesh4.vsh",
+<font color = deepskyblue>1535:</font>     };
+<font color = deepskyblue>1536:</font> 
+<font color = deepskyblue>1537:</font>     const char *shader_program[] = {
+<font color = deepskyblue>1538:</font>         VertexShader0,
+<font color = deepskyblue>1539:</font>         VertexShader1,
+<font color = deepskyblue>1540:</font>         VertexShader2,
+<font color = deepskyblue>1541:</font>         VertexShader3,
+<font color = deepskyblue>1542:</font>     };
+<font color = deepskyblue>1543:</font>     const int size[] = {
+<font color = deepskyblue>1544:</font>         sizeof(VertexShader0)-1,
+<font color = deepskyblue>1545:</font>         sizeof(VertexShader1)-1,
+<font color = deepskyblue>1546:</font>         sizeof(VertexShader2)-1,
+<font color = deepskyblue>1547:</font>         sizeof(VertexShader3)-1,
+<font color = deepskyblue>1548:</font>     };
+<font color = deepskyblue>1549:</font> 
+<font color = deepskyblue>1550:</font>     <font color = cyan>// アドレス レジスタが使えないならソフトウェアT&L</font>
+<font color = deepskyblue>1551:</font>     DWORD bUseSW = (m_d3dCaps.VertexShaderVersion < D3DVS_VERSION(1, 1));
+<font color = deepskyblue>1552:</font> 
+<font color = deepskyblue>1553:</font>     for (DWORD i = 0; i < 4; ++i)  {
+<font color = deepskyblue>1554:</font>         <font color = cyan>// シェーダープログラムの読み込み</font>
+<font color = deepskyblue>1555:</font>         if ( FAILED(hr = D3DXAssembleShader( shader_program[i] , size[i], 0 , NULL , &pCode , NULL)) ) return hr;
+<font color = deepskyblue>1556:</font> 
+<font color = deepskyblue>1557:</font>         <font color = cyan>// 頂点シェーダーの生成</font>
+<font color = deepskyblue>1558:</font>         if( FAILED( hr = m_pD3DDev->CreateVertexShader( dwIndexedVertexDecl[i], 
+<font color = deepskyblue>1559:</font>                                              (DWORD*)pCode->GetBufferPointer(),
+<font color = deepskyblue>1560:</font>                                              &(m_dwIndexedVertexShader[i]) , bUseSW ? D3DUSAGE_SOFTWAREPROCESSING : 0 ) ) )
+<font color = deepskyblue>1561:</font>             return hr;
+<font color = deepskyblue>1562:</font> 
+<font color = deepskyblue>1563:</font>         pCode->Release();
+<font color = deepskyblue>1564:</font>     }
+<font color = deepskyblue>1565:</font>     
+<font color = deepskyblue>1566:</font>     return S_OK;
+<font color = deepskyblue>1567:</font> }
+</pre>
+
+
+<h2>■内部プログラム：ロード</h2>
+
+
+<p>
+では、いよいよXファイルのロードです。ここが一番しんどい部分です。<br>
+大雑把に「Xファイルのロード」と、「レンダリングステートなどの設定」分かれますが、
+「Xファイルのロード」では、ファイルの構造を調べ、その構造にあったメッシュを生成し、アニメをロードし
+親子関係を構築するなどのいろいろなことをしなくてはなりません。<BR>
+使われている関数やメソッドをまとめると次のようになります。</p>
+<image src = "load.png">
+<p>
+しんどいですが、順次見ていきましょう。<br>
+呼びだされた関数の内部ですが、大まかに２つの部分に分かれます。
+</p>
+<pre class="CodeBlock">
+<FONT COLOR="deepskyblue">1574:</FONT> <FONT COLOR="cyan">//-----------------------------------------------------------------------------</FONT>
+<FONT COLOR="deepskyblue">1575:</FONT> <FONT COLOR="cyan">// ロード</FONT>
+<FONT COLOR="deepskyblue">1576:</FONT> <FONT COLOR="cyan">//-----------------------------------------------------------------------------</FONT>
+<FONT COLOR="deepskyblue">1577:</FONT> HRESULT CSkinModel::[Load( <FONT COLOR="#0000FF">const</FONT> TCHAR *filename )
+<FONT COLOR="deepskyblue">1578:</FONT> {
+<FONT COLOR="deepskyblue">1579:</FONT>     HRESULT hr;
+<FONT COLOR="deepskyblue">1580:</FONT>     
+<FONT COLOR="deepskyblue">1581:</FONT>     strcpy(m_szPath, filename);
+<FONT COLOR="deepskyblue">1582:</FONT>     
+<FONT COLOR="deepskyblue">1583:</FONT>     <FONT COLOR="cyan">// メッシュのロード</FONT>
+<FONT COLOR="deepskyblue">1584:</FONT>     <FONT COLOR="#0000FF">if</FONT>(FAILED(hr = <FONT COLOR="#0000FF">this</FONT>-&gt;_LoadMeshHierarchy(m_pD3DDev))) <FONT COLOR="#0000FF">return</FONT> hr;
+<FONT COLOR="deepskyblue">1585:</FONT> 
+<FONT COLOR="deepskyblue">1586:</FONT>     <FONT COLOR="cyan">// SetRenderState の設定</FONT>
+<FONT COLOR="deepskyblue">1587:</FONT>     <FONT COLOR="#0000FF">if</FONT> (FAILED(hr = RestoreDeviceObjects(m_pD3DDev))) <FONT COLOR="#0000FF">return</FONT> hr;
+<FONT COLOR="deepskyblue">1588:</FONT> 
+<FONT COLOR="deepskyblue">1589:</FONT>     <FONT COLOR="#0000FF">return</FONT> S_OK;
+<FONT COLOR="deepskyblue">1590:</FONT> }
+</pre>
+<p>
+CSkinModel::_LoadMeshHierarchy が本質的なロード関数です。全体の流れを制御します。<br>
+</p>
+<pre class="CodeBlock">
+<FONT COLOR="deepskyblue">0698:</FONT> <FONT COLOR="cyan">//-----------------------------------------------------------------------------</FONT>
+<FONT COLOR="deepskyblue">0699:</FONT> <FONT COLOR="cyan">// 読み込んだファイルを解読する</FONT>
+<FONT COLOR="deepskyblue">0700:</FONT> <FONT COLOR="cyan">//-----------------------------------------------------------------------------</FONT>
+<FONT COLOR="deepskyblue">0701:</FONT> HRESULT CSkinModel::_LoadMeshHierarchy(LPDIRECT3DDEVICE8 pD3DDev)
+<FONT COLOR="deepskyblue">0702:</FONT> {
+<FONT COLOR="deepskyblue">0703:</FONT>     HRESULT hr = S_OK;
+<FONT COLOR="deepskyblue">0704:</FONT>     <FONT COLOR="#0000FF">const</FONT> TCHAR* pszFile = m_szPath;
+<FONT COLOR="deepskyblue">0705:</FONT>     SDrawElement *pdeMesh = NULL;
+<FONT COLOR="deepskyblue">0706:</FONT>     LPDIRECTXFILE           pxofapi    = NULL;  <FONT COLOR="cyan">// DirectXFile オブジェクト</FONT>
+<FONT COLOR="deepskyblue">0707:</FONT>     LPDIRECTXFILEENUMOBJECT pxofenum   = NULL;  <FONT COLOR="cyan">// DirectXFile 列挙オブジェクト</FONT>
+<FONT COLOR="deepskyblue">0708:</FONT>     LPDIRECTXFILEDATA       pxofobjCur = NULL;  <FONT COLOR="cyan">// DirectXFile データ オブジェクト</FONT>
+<FONT COLOR="deepskyblue">0709:</FONT>     DWORD dwOptions = 0;
+<FONT COLOR="deepskyblue">0710:</FONT>     <FONT COLOR="#0000FF">int</FONT> cchFileName;
+<FONT COLOR="deepskyblue">0711:</FONT> 
+<FONT COLOR="deepskyblue">0712:</FONT>     <FONT COLOR="#0000FF">if</FONT> (pszFile == NULL) <FONT COLOR="#0000FF">return</FONT> E_INVALIDARG;<FONT COLOR="cyan">// ありえないけど、一応･･･</FONT>
+<FONT COLOR="deepskyblue">0713:</FONT>     
+<FONT COLOR="deepskyblue">0714:</FONT>     pdeMesh = <FONT COLOR="#0000FF">new</FONT> SDrawElement();
+<FONT COLOR="deepskyblue">0715:</FONT>     <FONT COLOR="#0000FF">delete</FONT> pdeMesh-&gt;pframeRoot;
+<FONT COLOR="deepskyblue">0716:</FONT>     pdeMesh-&gt;pframeAnimHead = NULL;
+<FONT COLOR="deepskyblue">0717:</FONT>     
+<FONT COLOR="deepskyblue">0718:</FONT>     pdeMesh-&gt;pframeRoot = <FONT COLOR="#0000FF">new</FONT> SFrame();
+<FONT COLOR="deepskyblue">0719:</FONT>     <FONT COLOR="#0000FF">if</FONT> (pdeMesh-&gt;pframeRoot == NULL) {<FONT COLOR="cyan">// メモリ不足</FONT>
+<FONT COLOR="deepskyblue">0720:</FONT>         hr = E_OUTOFMEMORY;
+<FONT COLOR="deepskyblue">0721:</FONT>         <FONT COLOR="#0000FF">goto</FONT> e_Exit;
+<FONT COLOR="deepskyblue">0722:</FONT>     }
+<FONT COLOR="deepskyblue">0723:</FONT>     
+<FONT COLOR="deepskyblue">0724:</FONT>     cchFileName = strlen(m_szPath);
+<FONT COLOR="deepskyblue">0725:</FONT>     <FONT COLOR="#0000FF">if</FONT> (cchFileName &lt; 2) {<FONT COLOR="cyan">// 有効なファイル名でないなら失敗扱い</FONT>
+<FONT COLOR="deepskyblue">0726:</FONT>         hr = E_FAIL;
+<FONT COLOR="deepskyblue">0727:</FONT>         <FONT COLOR="#0000FF">goto</FONT> e_Exit;
+<FONT COLOR="deepskyblue">0728:</FONT>     }
+<FONT COLOR="deepskyblue">0729:</FONT>     
+<FONT COLOR="deepskyblue">0730:</FONT>     <FONT COLOR="cyan">// ------------------------------------------------------------------------</FONT>
+<FONT COLOR="deepskyblue">0731:</FONT>     <FONT COLOR="cyan">// XFile の実際の読み込み</FONT>
+<FONT COLOR="deepskyblue">0732:</FONT>     <FONT COLOR="#0000FF">if</FONT> (FAILED(hr = DirectXFileCreate(&amp;pxofapi))) <FONT COLOR="#0000FF">goto</FONT> e_Exit;
+<FONT COLOR="deepskyblue">0733:</FONT>     
+<FONT COLOR="deepskyblue">0734:</FONT>     <FONT COLOR="cyan">// カスタム テンプレートを登録する</FONT>
+<FONT COLOR="deepskyblue">0735:</FONT>     hr = pxofapi-&gt;RegisterTemplates((LPVOID)D3DRM_XTEMPLATES,  D3DRM_XTEMPLATE_BYTES);
+<FONT COLOR="deepskyblue">0736:</FONT>     <FONT COLOR="#0000FF">if</FONT> (FAILED(hr)) <FONT COLOR="#0000FF">goto</FONT> e_Exit;
+<FONT COLOR="deepskyblue">0737:</FONT>     
+<FONT COLOR="deepskyblue">0738:</FONT>     <FONT COLOR="cyan">// 列挙オブジェクトを生成する</FONT>
+<FONT COLOR="deepskyblue">0739:</FONT>     <FONT COLOR="cyan">// 列挙オブジェクトは、グローバル ユニーク識別子 (GUID) または名前でデータ オブジェクトを取得するのに使う</FONT>
+<FONT COLOR="deepskyblue">0740:</FONT>     <FONT COLOR="#0000FF">if</FONT> (FAILED(hr = pxofapi-&gt;CreateEnumObject(
+<FONT COLOR="deepskyblue">0741:</FONT>           (LPVOID)m_szPath      <FONT COLOR="cyan">// DXFILELOAD_FROMFILE のときはファイル名</FONT>
+<FONT COLOR="deepskyblue">0742:</FONT>         , DXFILELOAD_FROMFILE   <FONT COLOR="cyan">// 「ファイル」からデータを読み取る</FONT>
+<FONT COLOR="deepskyblue">0743:</FONT>         , &amp;pxofenum             <FONT COLOR="cyan">// 作成された列挙オブジェクト</FONT>
+<FONT COLOR="deepskyblue">0744:</FONT>         ))) <FONT COLOR="#0000FF">goto</FONT> e_Exit;
+<FONT COLOR="deepskyblue">0745:</FONT>     
+<FONT COLOR="deepskyblue">0746:</FONT>     
+<FONT COLOR="deepskyblue">0747:</FONT>     <FONT COLOR="cyan">// ------------------------------------------------------------------------</FONT>
+<FONT COLOR="deepskyblue">0748:</FONT>     <FONT COLOR="cyan">// データを読み込んで、フレームにがんがん登録していく</FONT>
+<FONT COLOR="deepskyblue">0749:</FONT>     <FONT COLOR="#0000FF">while</FONT> (SUCCEEDED(pxofenum-&gt;GetNextDataObject(&amp;pxofobjCur))) {
+<FONT COLOR="deepskyblue">0750:</FONT>         hr = pdeMesh-&gt;pframeRoot-&gt;LoadFrames(pxofobjCur, pdeMesh, dwOptions, *<FONT COLOR="#0000FF">this</FONT>);
+<FONT COLOR="deepskyblue">0751:</FONT>         RELEASE(pxofobjCur);
+<FONT COLOR="deepskyblue">0752:</FONT>         
+<FONT COLOR="deepskyblue">0753:</FONT>         <FONT COLOR="#0000FF">if</FONT> (FAILED(hr)) <FONT COLOR="#0000FF">goto</FONT> e_Exit;
+<FONT COLOR="deepskyblue">0754:</FONT>     }
+<FONT COLOR="deepskyblue">0755:</FONT>     
+<FONT COLOR="deepskyblue">0756:</FONT>     <FONT COLOR="cyan">// ------------------------------------------------------------------------</FONT>
+<FONT COLOR="deepskyblue">0757:</FONT>     <FONT COLOR="cyan">// 骨構造の行列を構成する</FONT>
+<FONT COLOR="deepskyblue">0758:</FONT>     hr = pdeMesh-&gt;pframeRoot-&gt;FindBones(pdeMesh);
+<FONT COLOR="deepskyblue">0759:</FONT>     <FONT COLOR="#0000FF">if</FONT> (FAILED(hr)) <FONT COLOR="#0000FF">goto</FONT> e_Exit;
+<FONT COLOR="deepskyblue">0760:</FONT>     
+<FONT COLOR="deepskyblue">0761:</FONT>     <FONT COLOR="cyan">// ------------------------------------------------------------------------</FONT>
+<FONT COLOR="deepskyblue">0762:</FONT>     <FONT COLOR="cyan">// ファイル名を保存しておく</FONT>
+<FONT COLOR="deepskyblue">0763:</FONT>     <FONT COLOR="#0000FF">delete</FONT> []pdeMesh-&gt;szName;
+<FONT COLOR="deepskyblue">0764:</FONT>     pdeMesh-&gt;szName = <FONT COLOR="#0000FF">new</FONT> <FONT COLOR="#0000FF">char</FONT>[cchFileName+1];
+<FONT COLOR="deepskyblue">0765:</FONT>     <FONT COLOR="#0000FF">if</FONT> (pdeMesh-&gt;szName == NULL) {
+<FONT COLOR="deepskyblue">0766:</FONT>         hr = E_OUTOFMEMORY;<FONT COLOR="cyan">// メモリ不足</FONT>
+<FONT COLOR="deepskyblue">0767:</FONT>         <FONT COLOR="#0000FF">goto</FONT> e_Exit;
+<FONT COLOR="deepskyblue">0768:</FONT>     }
+<FONT COLOR="deepskyblue">0769:</FONT>     memcpy(pdeMesh-&gt;szName, m_szPath, cchFileName+1);
+<FONT COLOR="deepskyblue">0770:</FONT> 
+<FONT COLOR="deepskyblue">0771:</FONT>     <FONT COLOR="cyan">// ------------------------------------------------------------------------</FONT>
+<FONT COLOR="deepskyblue">0772:</FONT>     <FONT COLOR="cyan">// 現在登録されているモデルを削除し。読み込んだモデルを選択オブジェクトにする</FONT>
+<FONT COLOR="deepskyblue">0773:</FONT>     _DeleteSelectedMesh();
+<FONT COLOR="deepskyblue">0774:</FONT>     m_pdeMesh = pdeMesh;
+<FONT COLOR="deepskyblue">0775:</FONT>     
+<FONT COLOR="deepskyblue">0776:</FONT>     <FONT COLOR="cyan">// ------------------------------------------------------------------------</FONT>
+<FONT COLOR="deepskyblue">0777:</FONT>     <FONT COLOR="cyan">// ときどき使うのでバウンディング球を作成しておく</FONT>
+<FONT COLOR="deepskyblue">0778:</FONT>     <FONT COLOR="#0000FF">if</FONT> (FAILED(hr = pdeMesh-&gt;CalculateBoundingSphere())) <FONT COLOR="#0000FF">goto</FONT> e_Exit;
+<FONT COLOR="deepskyblue">0779:</FONT>     
+<FONT COLOR="deepskyblue">0780:</FONT>     <FONT COLOR="cyan">// 射影行列を設定しておく</FONT>
+<FONT COLOR="deepskyblue">0781:</FONT>     _SetProjectionMatrix();
+<FONT COLOR="deepskyblue">0782:</FONT>     
+<FONT COLOR="deepskyblue">0783:</FONT>     <FONT COLOR="cyan">// 現在の時間とループするフレーム数を設定する</FONT>
+<FONT COLOR="deepskyblue">0784:</FONT>     m_pdeMesh-&gt;fCurTime = 0.0f;
+<FONT COLOR="deepskyblue">0785:</FONT>     
+<FONT COLOR="deepskyblue">0786:</FONT>     <FONT COLOR="cyan">// アニメをしないときの（全体移動の）行列を保存しておく</FONT>
+<FONT COLOR="deepskyblue">0787:</FONT>     D3DXMatrixTranslation(&amp;m_pdeMesh-&gt;pframeRoot-&gt;matRot,
+<FONT COLOR="deepskyblue">0788:</FONT>                             -pdeMesh-&gt;vCenter.x,
+<FONT COLOR="deepskyblue">0789:</FONT>                             -pdeMesh-&gt;vCenter.y,
+<FONT COLOR="deepskyblue">0790:</FONT>                             -pdeMesh-&gt;vCenter.z);
+<FONT COLOR="deepskyblue">0791:</FONT>     m_pdeMesh-&gt;pframeRoot-&gt;matRotOrig = m_pdeMesh-&gt;pframeRoot-&gt;matRot;
+<FONT COLOR="deepskyblue">0792:</FONT>     
+<FONT COLOR="deepskyblue">0793:</FONT> e_Exit:
+<FONT COLOR="deepskyblue">0794:</FONT>     <FONT COLOR="cyan">// もう使わないものを開放</FONT>
+<FONT COLOR="deepskyblue">0795:</FONT>     RELEASE(pxofobjCur);
+<FONT COLOR="deepskyblue">0796:</FONT>     RELEASE(pxofenum);
+<FONT COLOR="deepskyblue">0797:</FONT>     RELEASE(pxofapi);
+<FONT COLOR="deepskyblue">0798:</FONT>     <FONT COLOR="#0000FF">if</FONT> (FAILED(hr)) <FONT COLOR="#0000FF">delete</FONT> pdeMesh;
+<FONT COLOR="deepskyblue">0799:</FONT>     
+<FONT COLOR="deepskyblue">0800:</FONT>     <FONT COLOR="#0000FF">return</FONT> hr;
+<FONT COLOR="deepskyblue">0801:</FONT> }
+</pre>
+<p>
+説明すつ前に、少し構造を示しておきましょうか。<br>
+</p>
+<p>
+外の関数とのインターフェイスは、CSkinModel ですが、重要な属性は、SDrawElement *m_pdeMesh です。<br>
+彼が基点となり、骨の親子関係を構築する階層構造を作ります。<br>
+SDrawElement は、主なメンバーとして SFrame::pframeRoot、SFrame::pframeAnimHead を、もっています。<br>
+SFrame::pframeRoot は親子関係を保存するための木構造です。<br>
+SFrame::pframeAnimHead は、（時間の設定を容易にするための）アニメーション構造のツリー構造です。
+</p>
+<image src = "skin.png">
+<p>
+SFrame に階層構造の情報が入ります。<br>
+いままで出てきた階層構造は、骨格を考えることになります。<br>
+例えば、下のような骨格を持つモデルが考えられます。
+</p>
+<image src = "bone.png">
+<p>
+橙色の「へそ」の部分から全ての矢印は伸びていますが、ここを「親」とよびます。<br>
+親から直接伸びている部分が子供です。また、矢印が複数伸びている場合（「へそ」からは３本伸びていますね。
+）それぞれの子供の関係は兄弟（sibling）と呼ばれます。<br>
+ただし、SFrame は、骨を表現する行列だけでなく、メッシュやアニメーションデータも格納します。<br>
+各親および子供から緑色の矢印が出ています。この矢印は骨の回転運動による基底行列の向きの変化を表しています（どこが基準の位置か明示されていませんが、それはアニメーションをしていないときの矢印の向きが自然な向きです）。
+骨の行列の平行移動の部分は、白い矢印で表されます。<br>
+ワールド座標から見たときの子供の行列は、親の行列に子供自信の行列を掛けます。
+また、掛けた行列をさらに子供（元の親から見て孫ですね）に渡すことによって、親の行列の情報が子孫に伝わっていきます。<br>
+この変換によって、腰を回したときに、肩も腕も同じように回ることが表現できます。<br>
+ここでも骨格は、あくまで説明用に適当に作ったものです。<br>
+実際にサンプルモデルの骨格がこのようになっているかはまったく知りませんし、
+皆さんがどのようなワンスキンの骨格を作られているかはわかりません。
+</p>
+<p>
+行列の合成に関しても、ここで見ておきましょう。<br>
+黄色い子供に注目します。<br>
+黄色い子供から出ている矢印は、紫色で囲まれた３つです。この３つの行列が「黄色い子供に関連付けられた」メッシュを混ぜ合わせる合成行列になります。<br>
+黄色い子供の行列自体はワールド行列に設定され、重心移動のような効果として用いられます。<br>
+</p>
+<p>
+さて、_LoadMeshHierarchy では、最初に CSkinModel::m_pdeMesh や、CSkinModel::pdeMesh->pframeRoot 等のメモリを確保します。<br>
+まぁ、使うためには必ず確保するものですし、特に問題はないでしょう。<br>
+次に DirectXFileCreate で、Xファイルを取り扱うための準備をします。<br>
+準備ができたら、RegisterTemplates で、「テンプレート」を読み込みます。
+「テンプレート」とは、Xファイルを読み込むためのフォーマットが格納されたファイルです。<br>
+ここでは、いにしえのRMで規定されたフォーマットを読むように宣言します。<br>
+この「テンプレート」を変更すれば、プログラムの変更なしに独自ファーマットの読み込みができます
+（が、誰もそんなことしないでしょうね）。<br>
+読み込むテンプレートが決まったら CreateEnumObject で、データを順次読み込むように設定し、<br>
+while (SUCCEEDED(pxofenum->GetNextDataObject(&pxofobjCur))) {...}<br>
+で、どんどん読み込んでいきます。どう読み込むかは後でやっていきましょう。
+</p>
+<p>
+読み込みが終了したら、SFrame::FindBones で親子関係を経巡りながら、
+それぞれのメッシュに骨の行列のポインタを確保していきます。<br>
+後々IKなどで個別に骨を動かしたくなったら、SMeshContainer::m_pBoneMatrix[i] を操作すればよいでしょう。
+</p>
+<pre class="CodeBlock">
+<FONT COLOR="deepskyblue">0802:</FONT> <FONT COLOR="cyan">//-----------------------------------------------------------------------------</FONT>
+<FONT COLOR="deepskyblue">0803:</FONT> <FONT COLOR="cyan">// 骨の構造の解読</FONT>
+<FONT COLOR="deepskyblue">0804:</FONT> <FONT COLOR="cyan">//-----------------------------------------------------------------------------</FONT>
+<FONT COLOR="deepskyblue">0805:</FONT> HRESULT SFrame::FindBones(SDrawElement *pde)
+<FONT COLOR="deepskyblue">0806:</FONT> {
+<FONT COLOR="deepskyblue">0807:</FONT>     HRESULT hr = S_OK;
+<FONT COLOR="deepskyblue">0808:</FONT>     
+<FONT COLOR="deepskyblue">0809:</FONT>     <FONT COLOR="#0000FF">for</FONT>(SMeshContainer *pMc=<FONT COLOR="#0000FF">this</FONT>-&gt;pmcMesh ; pMc ; pMc=pMc-&gt;pmcNext ){
+<FONT COLOR="deepskyblue">0810:</FONT>         <FONT COLOR="#0000FF">if</FONT> (pMc-&gt;m_pSkinMesh) {
+<FONT COLOR="deepskyblue">0811:</FONT>             <FONT COLOR="#0000FF">char</FONT>** pBoneName = <FONT COLOR="#0000FF">static_cast</FONT>&lt;<FONT COLOR="#0000FF">char</FONT>**&gt;(pMc-&gt;m_pBoneNamesBuf-&gt;GetBufferPointer());
+<FONT COLOR="deepskyblue">0812:</FONT>             <FONT COLOR="#0000FF">for</FONT> (DWORD i = 0; i &lt; pMc-&gt;m_pSkinMesh-&gt;GetNumBones(); ++i) {
+<FONT COLOR="deepskyblue">0813:</FONT>                 <FONT COLOR="cyan">// 骨のフレームの行列を骨の行列に設定する</FONT>
+<FONT COLOR="deepskyblue">0814:</FONT>                 pMc-&gt;m_pBoneMatrix[i] = &amp;(pde-&gt;FindFrame(pBoneName[i])-&gt;matCombined);
+<FONT COLOR="deepskyblue">0815:</FONT>             }
+<FONT COLOR="deepskyblue">0816:</FONT>         }
+<FONT COLOR="deepskyblue">0817:</FONT>     }
+<FONT COLOR="deepskyblue">0818:</FONT>     
+<FONT COLOR="deepskyblue">0819:</FONT>     <FONT COLOR="cyan">// 子供や子供兄弟も作成する</FONT>
+<FONT COLOR="deepskyblue">0820:</FONT>     <FONT COLOR="#0000FF">for</FONT>(SFrame *pChild=<FONT COLOR="#0000FF">this</FONT>-&gt;pframeFirstChild ; pChild ; pChild = pChild-&gt;pframeSibling ){
+<FONT COLOR="deepskyblue">0821:</FONT>         <FONT COLOR="#0000FF">if</FONT> (FAILED(hr = pChild-&gt;FindBones(pde))) <FONT COLOR="#0000FF">return</FONT> hr;
+<FONT COLOR="deepskyblue">0822:</FONT>     }
+<FONT COLOR="deepskyblue">0823:</FONT>     
+<FONT COLOR="deepskyblue">0824:</FONT>     <FONT COLOR="#0000FF">return</FONT> S_OK;
+<FONT COLOR="deepskyblue">0825:</FONT> }
+</pre>
+<p>
+_LoadMeshHierarchy では、FindBones が終了したらロードに成功したもほぼ同じなので、名前を保存したり、メッシュを登録します。<br>
+また、射影行列を設定したり、時間やアニメをしていないときの行列を保存するなどの変数の初期化を行います。
+</p>
+<p>
+では、xファイルの中身のデータを見る部分にいきます。<br>
+xファイルの各データは、GetType によって得られるさまざまな種類のデータがあります。
+</p>
+<table>
+<tr><td>TID_D3DRMMesh</td><td>メッシュ</td><td>頂点情報など。いわゆるモデルデータ</td>
+</tr>
+<tr><td>TID_D3DRMFrameTransformMatrix</td><td>行列</td><td>各骨に関連した行列データ。</td>
+</tr>
+<tr><td>TID_D3DRMAnimationSet</td><td>アニメーションセット</td><td>その中にさらにアニメーションデータが入っている。</td>
+</tr>
+<tr><td>TID_D3DRMAnimation</td><td>アニメーション</td><td>1つのアニメーションのデータが入っている</td>
+</tr>
+<tr><td>TID_D3DRMFrame</td><td>フレーム</td><td>子のフレームの情報が入っている（再帰的に子供のデータを読み込む）</td>
+</tr>
+</table>
+<p>
+それらを適当な方法で読み込みます。
+</p>
+<pre class="CodeBlock">
+<FONT color="deepskyblue">0826:</FONT> <FONT color="cyan">//-----------------------------------------------------------------------------</FONT>
+<FONT color="deepskyblue">0827:</FONT> <FONT color="cyan">// フレームの読み込み</FONT>
+<FONT color="deepskyblue">0828:</FONT> <FONT color="cyan">//-----------------------------------------------------------------------------</FONT>
+<FONT color="deepskyblue">0829:</FONT> HRESULT SFrame::LoadFrames(LPDIRECTXFILEDATA pxofobjCur, SDrawElement *pde,
+<FONT color="deepskyblue">0830:</FONT>                       DWORD options, CSkinModel &amp;model)
+<FONT color="deepskyblue">0831:</FONT> {
+<FONT color="deepskyblue">0832:</FONT>     HRESULT hr = S_OK;
+<FONT color="deepskyblue">0833:</FONT>     LPDIRECTXFILEDATA pxofobjChild = NULL;
+<FONT color="deepskyblue">0834:</FONT>     LPDIRECTXFILEOBJECT pxofChild = NULL;
+<FONT color="deepskyblue">0835:</FONT>     <FONT color="#0000FF">const</FONT> GUID *type;
+<FONT color="deepskyblue">0836:</FONT>     DWORD cbSize;
+<FONT color="deepskyblue">0837:</FONT>     D3DXMATRIX *pmatNew;
+<FONT color="deepskyblue">0838:</FONT>     DWORD cchName;
+<FONT color="deepskyblue">0839:</FONT>     
+<FONT color="deepskyblue">0840:</FONT>     <FONT color="cyan">// タイプを調べて、種類に応じたロードを行う</FONT>
+<FONT color="deepskyblue">0841:</FONT>     <FONT color="#0000FF">if</FONT> (FAILED(hr = pxofobjCur-&gt;GetType(&amp;type))) <FONT color="#0000FF">goto</FONT> e_Exit;
+<FONT color="deepskyblue">0842:</FONT>     
+<FONT color="deepskyblue">0843:</FONT>     <FONT color="#0000FF">if</FONT>(TID_D3DRMMesh==*type){
+<FONT color="deepskyblue">0844:</FONT>         <FONT color="cyan">// ★D3D RM の頃からの伝統ある（？）メッシュファイル</FONT>
+<FONT color="deepskyblue">0845:</FONT>         hr = <FONT color="#0000FF">this</FONT>-&gt;_LoadMesh(pxofobjCur, options, model);
+<FONT color="deepskyblue">0846:</FONT>         <FONT color="#0000FF">if</FONT> (FAILED(hr))<FONT color="#0000FF">goto</FONT> e_Exit;
+<FONT color="deepskyblue">0847:</FONT>     }<FONT color="#0000FF">else</FONT>
+<FONT color="deepskyblue">0848:</FONT>     <FONT color="#0000FF">if</FONT>(TID_D3DRMFrameTransformMatrix==*type){
+<FONT color="deepskyblue">0849:</FONT>         <FONT color="cyan">// ★姿勢行列</FONT>
+<FONT color="deepskyblue">0850:</FONT>         hr = pxofobjCur-&gt;GetData(NULL, &amp;cbSize, (PVOID*)&amp;pmatNew);
+<FONT color="deepskyblue">0851:</FONT>         <FONT color="#0000FF">if</FONT> (FAILED(hr)) <FONT color="#0000FF">goto</FONT> e_Exit;
+<FONT color="deepskyblue">0852:</FONT>         <FONT color="cyan">// フレームを呼び出した（親の）フレームの行列を設定する</FONT>
+<FONT color="deepskyblue">0853:</FONT>         <FONT color="#0000FF">this</FONT>-&gt;matRot = *pmatNew;
+<FONT color="deepskyblue">0854:</FONT>         <FONT color="#0000FF">this</FONT>-&gt;matRotOrig = *pmatNew;
+<FONT color="deepskyblue">0855:</FONT>     }<FONT color="#0000FF">else</FONT>
+<FONT color="deepskyblue">0856:</FONT>     <FONT color="#0000FF">if</FONT>(TID_D3DRMAnimationSet==*type){
+<FONT color="deepskyblue">0857:</FONT>         <FONT color="cyan">// ★アニメーションの集合</FONT>
+<FONT color="deepskyblue">0858:</FONT>         <FONT color="#0000FF">this</FONT>-&gt;_LoadAnimationSet(pxofobjCur, pde, options, model);
+<FONT color="deepskyblue">0859:</FONT>     }<FONT color="#0000FF">else</FONT>
+<FONT color="deepskyblue">0860:</FONT>     <FONT color="#0000FF">if</FONT>(TID_D3DRMAnimation==*type){
+<FONT color="deepskyblue">0861:</FONT>         <FONT color="cyan">// ★アニメーション</FONT>
+<FONT color="deepskyblue">0862:</FONT>         <FONT color="#0000FF">this</FONT>-&gt;_LoadAnimation(pxofobjCur, pde, options, model);
+<FONT color="deepskyblue">0863:</FONT>     }<FONT color="#0000FF">else</FONT>
+<FONT color="deepskyblue">0864:</FONT>     <FONT color="#0000FF">if</FONT>(TID_D3DRMFrame==*type){
+<FONT color="deepskyblue">0865:</FONT>         <FONT color="cyan">// ★さらに新規フレーム</FONT>
+<FONT color="deepskyblue">0866:</FONT>         <FONT color="cyan">// メモリ確保</FONT>
+<FONT color="deepskyblue">0867:</FONT>         SFrame *pframeCur;
+<FONT color="deepskyblue">0868:</FONT>         <FONT color="#0000FF">if</FONT> (NULL == (pframeCur = <FONT color="#0000FF">new</FONT> SFrame())) {
+<FONT color="deepskyblue">0869:</FONT>             hr = E_OUTOFMEMORY; <FONT color="#0000FF">goto</FONT> e_Exit;
+<FONT color="deepskyblue">0870:</FONT>         }
+<FONT color="deepskyblue">0871:</FONT>         <FONT color="cyan">// 名前があれば名前を読み込む</FONT>
+<FONT color="deepskyblue">0872:</FONT>         <FONT color="#0000FF">if</FONT> (FAILED(hr = pxofobjCur-&gt;GetName(NULL, &amp;cchName)))   <FONT color="#0000FF">goto</FONT> e_Exit;
+<FONT color="deepskyblue">0873:</FONT>         <FONT color="#0000FF">if</FONT> (cchName &gt; 0) {
+<FONT color="deepskyblue">0874:</FONT>             <FONT color="#0000FF">if</FONT> (NULL == (pframeCur-&gt;szName = <FONT color="#0000FF">new</FONT> <FONT color="#0000FF">char</FONT>[cchName])) {
+<FONT color="deepskyblue">0875:</FONT>                 hr = E_OUTOFMEMORY;
+<FONT color="deepskyblue">0876:</FONT>                 <FONT color="#0000FF">goto</FONT> e_Exit;
+<FONT color="deepskyblue">0877:</FONT>             }
+<FONT color="deepskyblue">0878:</FONT>             <FONT color="#0000FF">if</FONT> (FAILED(hr = pxofobjCur-&gt;GetName(pframeCur-&gt;szName, &amp;cchName))) <FONT color="#0000FF">goto</FONT> e_Exit;
+<FONT color="deepskyblue">0879:</FONT>         }
+<FONT color="deepskyblue">0880:</FONT>         <FONT color="cyan">// 新規フレームの追加</FONT>
+<FONT color="deepskyblue">0881:</FONT>         <FONT color="#0000FF">this</FONT>-&gt;AddFrame(pframeCur);
+<FONT color="deepskyblue">0882:</FONT>         
+<FONT color="deepskyblue">0883:</FONT>         <FONT color="cyan">// 子供のデータをがんがん読み込む</FONT>
+<FONT color="deepskyblue">0884:</FONT>         <FONT color="#0000FF">while</FONT> (SUCCEEDED(pxofobjCur-&gt;GetNextObject(&amp;pxofChild))) {
+<FONT color="deepskyblue">0885:</FONT>             hr = pxofChild-&gt;QueryInterface(IID_IDirectXFileData,(LPVOID *)&amp;pxofobjChild);
+<FONT color="deepskyblue">0886:</FONT>             <FONT color="#0000FF">if</FONT> (SUCCEEDED(hr)) {<FONT color="cyan">// 子供に FileData を要求して、FileData があったら再起的に読み込む</FONT>
+<FONT color="deepskyblue">0887:</FONT>                 hr = pframeCur-&gt;LoadFrames(pxofobjChild, pde, options, model);
+<FONT color="deepskyblue">0888:</FONT>                 <FONT color="#0000FF">if</FONT> (FAILED(hr)) <FONT color="#0000FF">goto</FONT> e_Exit;
+<FONT color="deepskyblue">0889:</FONT>                 RELEASE(pxofobjChild);
+<FONT color="deepskyblue">0890:</FONT>             }
+<FONT color="deepskyblue">0891:</FONT>             RELEASE(pxofChild);
+<FONT color="deepskyblue">0892:</FONT>         }
+<FONT color="deepskyblue">0893:</FONT>     }
+<FONT color="deepskyblue">0894:</FONT>     
+<FONT color="deepskyblue">0895:</FONT> e_Exit:
+<FONT color="deepskyblue">0896:</FONT>     RELEASE(pxofobjChild);
+<FONT color="deepskyblue">0897:</FONT>     RELEASE(pxofChild);
+<FONT color="deepskyblue">0898:</FONT>     <FONT color="#0000FF">return</FONT> hr;
+<FONT color="deepskyblue">0899:</FONT> }
+</pre>
+<p>
+それでは、それぞれの読み込みを見ましょう。<br>
+先ずはメッシュの読み込みです。
+</p>
+<pre class="CodeBlock">
+<FONT COLOR="deepskyblue">0900:</FONT> <FONT COLOR="cyan">//-----------------------------------------------------------------------------</FONT>
+<FONT COLOR="deepskyblue">0901:</FONT> <FONT COLOR="cyan">// モデルの読み込み</FONT>
+<FONT COLOR="deepskyblue">0902:</FONT> <FONT COLOR="cyan">//-----------------------------------------------------------------------------</FONT>
+<FONT COLOR="deepskyblue">0903:</FONT> HRESULT SFrame::_LoadMesh(LPDIRECTXFILEDATA pxofobjCur, DWORD options, CSkinModel &amp;model)
+<FONT COLOR="deepskyblue">0904:</FONT> {
+<FONT COLOR="deepskyblue">0905:</FONT>     HRESULT hr = S_OK;
+<FONT COLOR="deepskyblue">0906:</FONT>     SMeshContainer *pmcMesh = NULL;
+<FONT COLOR="deepskyblue">0907:</FONT>     LPD3DXBUFFER pbufMaterials = NULL;
+<FONT COLOR="deepskyblue">0908:</FONT>     LPD3DXBUFFER pbufAdjacency = NULL;
+<FONT COLOR="deepskyblue">0909:</FONT>     DWORD cchName;
+<FONT COLOR="deepskyblue">0910:</FONT>     UINT cFaces;
+<FONT COLOR="deepskyblue">0911:</FONT>     LPDWORD pAdjacencyIn;
+<FONT COLOR="deepskyblue">0912:</FONT>     
+<FONT COLOR="deepskyblue">0913:</FONT>     <FONT COLOR="cyan">// メモリの確保</FONT>
+<FONT COLOR="deepskyblue">0914:</FONT>     <FONT COLOR="#0000FF">if</FONT> (NULL == (pmcMesh = <FONT COLOR="#0000FF">new</FONT> SMeshContainer())) {
+<FONT COLOR="deepskyblue">0915:</FONT>         hr = E_OUTOFMEMORY; <FONT COLOR="#0000FF">goto</FONT> e_Exit;
+<FONT COLOR="deepskyblue">0916:</FONT>     }
+<FONT COLOR="deepskyblue">0917:</FONT>     
+<FONT COLOR="deepskyblue">0918:</FONT>     <FONT COLOR="cyan">// 名前を調べる</FONT>
+<FONT COLOR="deepskyblue">0919:</FONT>     <FONT COLOR="#0000FF">if</FONT> (FAILED(hr = pxofobjCur-&gt;GetName(NULL, &amp;cchName)))   <FONT COLOR="#0000FF">goto</FONT> e_Exit;
+<FONT COLOR="deepskyblue">0920:</FONT>     <FONT COLOR="#0000FF">if</FONT> (cchName &gt; 0) {
+<FONT COLOR="deepskyblue">0921:</FONT>         <FONT COLOR="#0000FF">if</FONT> (NULL == (pmcMesh-&gt;szName=<FONT COLOR="#0000FF">new</FONT> <FONT COLOR="#0000FF">char</FONT>[cchName])) {
+<FONT COLOR="deepskyblue">0922:</FONT>             hr = E_OUTOFMEMORY; <FONT COLOR="#0000FF">goto</FONT> e_Exit;
+<FONT COLOR="deepskyblue">0923:</FONT>         }
+<FONT COLOR="deepskyblue">0924:</FONT>         <FONT COLOR="#0000FF">if</FONT> (FAILED(hr=pxofobjCur-&gt;GetName(pmcMesh-&gt;szName, &amp;cchName)))  <FONT COLOR="#0000FF">goto</FONT> e_Exit;
+<FONT COLOR="deepskyblue">0925:</FONT>     }
+<FONT COLOR="deepskyblue">0926:</FONT>     <FONT COLOR="cyan">// XFile を読み込む</FONT>
+<FONT COLOR="deepskyblue">0927:</FONT>     hr = D3DXLoadSkinMeshFromXof(pxofobjCur, options, model.GetDevice(), &amp;pbufAdjacency, &amp;pbufMaterials, &amp;pmcMesh-&gt;cMaterials, 
+<FONT COLOR="deepskyblue">0928:</FONT>         &amp;pmcMesh-&gt;m_pBoneNamesBuf, &amp;pmcMesh-&gt;m_pBoneOffsetBuf, &amp;pmcMesh-&gt;m_pSkinMesh);
+<FONT COLOR="deepskyblue">0929:</FONT>     <FONT COLOR="#0000FF">if</FONT> (FAILED(hr)) {
+<FONT COLOR="deepskyblue">0930:</FONT>         <FONT COLOR="#0000FF">if</FONT> (hr == D3DXERR_LOADEDMESHASNODATA) hr = S_OK;
+<FONT COLOR="deepskyblue">0931:</FONT>         <FONT COLOR="#0000FF">goto</FONT> e_Exit;
+<FONT COLOR="deepskyblue">0932:</FONT>     }
+<FONT COLOR="deepskyblue">0933:</FONT>     
+<FONT COLOR="deepskyblue">0934:</FONT>     <FONT COLOR="cyan">// 各ポリゴンに関する隣接面の情報をコピーする</FONT>
+<FONT COLOR="deepskyblue">0935:</FONT>     cFaces = pmcMesh-&gt;m_pSkinMesh-&gt;GetNumFaces();
+<FONT COLOR="deepskyblue">0936:</FONT>     pAdjacencyIn = <FONT COLOR="#0000FF">static_cast</FONT>&lt;LPDWORD&gt;(pbufAdjacency-&gt;GetBufferPointer());
+<FONT COLOR="deepskyblue">0937:</FONT>     <FONT COLOR="#0000FF">if</FONT> (NULL == (pmcMesh-&gt;m_rgiAdjacency=<FONT COLOR="#0000FF">new</FONT> DWORD[cFaces * 3])) {
+<FONT COLOR="deepskyblue">0938:</FONT>         hr = E_OUTOFMEMORY; <FONT COLOR="#0000FF">goto</FONT> e_Exit;
+<FONT COLOR="deepskyblue">0939:</FONT>     }
+<FONT COLOR="deepskyblue">0940:</FONT>     memcpy(pmcMesh-&gt;m_rgiAdjacency, pAdjacencyIn, cFaces * 3 * <FONT COLOR="#0000FF">sizeof</FONT>(DWORD));
+<FONT COLOR="deepskyblue">0941:</FONT> 
+<FONT COLOR="deepskyblue">0942:</FONT>     <FONT COLOR="cyan">// スキンのデータを処理する</FONT>
+<FONT COLOR="deepskyblue">0943:</FONT>     <FONT COLOR="#0000FF">if</FONT> (pmcMesh-&gt;m_pSkinMesh-&gt;GetNumBones()) {
+<FONT COLOR="deepskyblue">0944:</FONT>         <FONT COLOR="cyan">// 骨の数の計算</FONT>
+<FONT COLOR="deepskyblue">0945:</FONT>         model.SetMaxBorns(max(pmcMesh-&gt;m_pSkinMesh-&gt;GetNumBones(), model.GetMaxBorns()));
+<FONT COLOR="deepskyblue">0946:</FONT>         <FONT COLOR="cyan">// 骨で使う行列分のメモリの確保</FONT>
+<FONT COLOR="deepskyblue">0947:</FONT>         pmcMesh-&gt;m_pBoneMatrix = <FONT COLOR="#0000FF">new</FONT> D3DXMATRIX*[pmcMesh-&gt;m_pSkinMesh-&gt;GetNumBones()];
+<FONT COLOR="deepskyblue">0948:</FONT>         <FONT COLOR="#0000FF">if</FONT> (pmcMesh-&gt;m_pBoneMatrix == NULL) <FONT COLOR="#0000FF">goto</FONT> e_Exit;
+<FONT COLOR="deepskyblue">0949:</FONT>         pmcMesh-&gt;m_pBoneOffsetMat = <FONT COLOR="#0000FF">reinterpret_cast</FONT>&lt;D3DXMATRIX*&gt;(pmcMesh-&gt;m_pBoneOffsetBuf-&gt;GetBufferPointer());
+<FONT COLOR="deepskyblue">0950:</FONT>         <FONT COLOR="cyan">// 実際に表示で使うための（取り扱いやすい）メッシュを構成する</FONT>
+<FONT COLOR="deepskyblue">0951:</FONT>         <FONT COLOR="#0000FF">if</FONT> (FAILED(hr = model.GenerateMesh(pmcMesh))) <FONT COLOR="#0000FF">goto</FONT> e_Exit;
+<FONT COLOR="deepskyblue">0952:</FONT>     } <FONT COLOR="#0000FF">else</FONT> {
+<FONT COLOR="deepskyblue">0953:</FONT>         pmcMesh-&gt;m_pSkinMesh-&gt;GetOriginalMesh(&amp;(pmcMesh-&gt;pMesh));
+<FONT COLOR="deepskyblue">0954:</FONT>         pmcMesh-&gt;m_pSkinMesh-&gt;Release();        <FONT COLOR="cyan">// もう使わないので開放</FONT>
+<FONT COLOR="deepskyblue">0955:</FONT>         pmcMesh-&gt;m_pSkinMesh = NULL;            <FONT COLOR="cyan">// 骨がないのでスキンメッシュではない</FONT>
+<FONT COLOR="deepskyblue">0956:</FONT>         pmcMesh-&gt;cpattr = pmcMesh-&gt;cMaterials;  <FONT COLOR="cyan">// 質感を引っ張る</FONT>
+<FONT COLOR="deepskyblue">0957:</FONT>     }
+<FONT COLOR="deepskyblue">0958:</FONT>     
+<FONT COLOR="deepskyblue">0959:</FONT>     <FONT COLOR="#0000FF">if</FONT> ((pbufMaterials == NULL) || (pmcMesh-&gt;cMaterials == 0)) {
+<FONT COLOR="deepskyblue">0960:</FONT>         <FONT COLOR="cyan">// 質感情報なければ適当なものを作成</FONT>
+<FONT COLOR="deepskyblue">0961:</FONT>         pmcMesh-&gt;rgMaterials = <FONT COLOR="#0000FF">new</FONT> D3DMATERIAL8[1];
+<FONT COLOR="deepskyblue">0962:</FONT>         <FONT COLOR="#0000FF">if</FONT> (pmcMesh-&gt;rgMaterials == NULL) {
+<FONT COLOR="deepskyblue">0963:</FONT>             hr = E_OUTOFMEMORY; <FONT COLOR="#0000FF">goto</FONT> e_Exit;
+<FONT COLOR="deepskyblue">0964:</FONT>         }
+<FONT COLOR="deepskyblue">0965:</FONT>         memset(pmcMesh-&gt;rgMaterials, 0, <FONT COLOR="#0000FF">sizeof</FONT>(D3DMATERIAL8));
+<FONT COLOR="deepskyblue">0966:</FONT>         pmcMesh-&gt;rgMaterials[0].Diffuse.r = 0.5f;
+<FONT COLOR="deepskyblue">0967:</FONT>         pmcMesh-&gt;rgMaterials[0].Diffuse.g = 0.5f;
+<FONT COLOR="deepskyblue">0968:</FONT>         pmcMesh-&gt;rgMaterials[0].Diffuse.b = 0.5f;
+<FONT COLOR="deepskyblue">0969:</FONT>         pmcMesh-&gt;rgMaterials[0].Specular = pmcMesh-&gt;rgMaterials[0].Diffuse;
+<FONT COLOR="deepskyblue">0970:</FONT>         <FONT COLOR="cyan">// ダミーテクスチャー</FONT>
+<FONT COLOR="deepskyblue">0971:</FONT>         pmcMesh-&gt;pTextures = <FONT COLOR="#0000FF">new</FONT> LPDIRECT3DTEXTURE8[1];
+<FONT COLOR="deepskyblue">0972:</FONT>         <FONT COLOR="#0000FF">if</FONT> (pmcMesh-&gt;pTextures == NULL) {
+<FONT COLOR="deepskyblue">0973:</FONT>             hr = E_OUTOFMEMORY; <FONT COLOR="#0000FF">goto</FONT> e_Exit;
+<FONT COLOR="deepskyblue">0974:</FONT>         }
+<FONT COLOR="deepskyblue">0975:</FONT>         pmcMesh-&gt;pTextures[0] = NULL;
+<FONT COLOR="deepskyblue">0976:</FONT>     } <FONT COLOR="#0000FF">else</FONT> {
+<FONT COLOR="deepskyblue">0977:</FONT>         <FONT COLOR="cyan">// 質感情報あれば読み込む</FONT>
+<FONT COLOR="deepskyblue">0978:</FONT>         pmcMesh-&gt;rgMaterials = <FONT COLOR="#0000FF">new</FONT> D3DMATERIAL8[pmcMesh-&gt;cMaterials];
+<FONT COLOR="deepskyblue">0979:</FONT>         pmcMesh-&gt;pTextures = <FONT COLOR="#0000FF">new</FONT> LPDIRECT3DTEXTURE8[pmcMesh-&gt;cMaterials];
+<FONT COLOR="deepskyblue">0980:</FONT>         <FONT COLOR="#0000FF">if</FONT> (pmcMesh-&gt;rgMaterials == NULL || pmcMesh-&gt;pTextures == NULL) {
+<FONT COLOR="deepskyblue">0981:</FONT>             hr = E_OUTOFMEMORY;
+<FONT COLOR="deepskyblue">0982:</FONT>             <FONT COLOR="#0000FF">goto</FONT> e_Exit;
+<FONT COLOR="deepskyblue">0983:</FONT>         }
+<FONT COLOR="deepskyblue">0984:</FONT>         
+<FONT COLOR="deepskyblue">0985:</FONT>         LPD3DXMATERIAL pMaterials = (LPD3DXMATERIAL)pbufMaterials-&gt;GetBufferPointer();
+<FONT COLOR="deepskyblue">0986:</FONT>         
+<FONT COLOR="deepskyblue">0987:</FONT>         <FONT COLOR="#0000FF">for</FONT> (UINT i = 0; i &lt; pmcMesh-&gt;cMaterials; i++) {
+<FONT COLOR="deepskyblue">0988:</FONT>             pmcMesh-&gt;rgMaterials[i] = pMaterials[i].MatD3D;
+<FONT COLOR="deepskyblue">0989:</FONT>             <FONT COLOR="cyan">// テクスチャーがあればロード</FONT>
+<FONT COLOR="deepskyblue">0990:</FONT>             pmcMesh-&gt;pTextures[i] = NULL;
+<FONT COLOR="deepskyblue">0991:</FONT>             <FONT COLOR="#0000FF">if</FONT> (pMaterials[i].pTextureFilename != NULL) {
+<FONT COLOR="deepskyblue">0992:</FONT>                 hr = D3DXCreateTextureFromFile(model.GetDevice(), pMaterials[i].pTextureFilename, &amp;(pmcMesh-&gt;pTextures[i]));
+<FONT COLOR="deepskyblue">0993:</FONT>                 <FONT COLOR="#0000FF">if</FONT> (FAILED(hr)) pmcMesh-&gt;pTextures[i] = NULL;
+<FONT COLOR="deepskyblue">0994:</FONT>             }
+<FONT COLOR="deepskyblue">0995:</FONT>         }
+<FONT COLOR="deepskyblue">0996:</FONT>     }
+<FONT COLOR="deepskyblue">0997:</FONT>     
+<FONT COLOR="deepskyblue">0998:</FONT>     <FONT COLOR="cyan">// 親のフレームにメッシュを登録する</FONT>
+<FONT COLOR="deepskyblue">0999:</FONT>     <FONT COLOR="#0000FF">this</FONT>-&gt;AddMesh(pmcMesh);
+<FONT COLOR="deepskyblue">1000:</FONT>     pmcMesh = NULL;
+<FONT COLOR="deepskyblue">1001:</FONT>     
+<FONT COLOR="deepskyblue">1002:</FONT> e_Exit:
+<FONT COLOR="deepskyblue">1003:</FONT>     <FONT COLOR="#0000FF">delete</FONT> pmcMesh;
+<FONT COLOR="deepskyblue">1004:</FONT>     
+<FONT COLOR="deepskyblue">1005:</FONT>     RELEASE(pbufAdjacency);
+<FONT COLOR="deepskyblue">1006:</FONT>     RELEASE(pbufMaterials);
+<FONT COLOR="deepskyblue">1007:</FONT> 
+<FONT COLOR="deepskyblue">1008:</FONT>     <FONT COLOR="#0000FF">return</FONT> hr;
+<FONT COLOR="deepskyblue">1009:</FONT> }
+</pre>
+<p>
+メッシュの情報は SMeshContainer に収められます。<br>
+SMeshContainer は、質感やテクスチャーの情報があります。<br>
+D3DXLoadSkinMeshFromXof で、LPDIRECTXFILEDATA にあるメッシュデータを読み込みます。<br>
+その後、各ポリゴンの隣接面の情報や骨の情報を保存した後、GenerateMesh で、メッシュを適当な構造に再構成します。<br>
+そして、質感情報やテクスチャーのロードなど、スキンでないメッシュでも行った手順を踏みます。
+</p>
+<p>
+メッシュの再構成ですが、描画方法によって処理が異なります。
+</p>
+<pre class="CodeBlock">
+<FONT COLOR="deepskyblue">1420:</FONT> <FONT COLOR="cyan">//-----------------------------------------------------------------------------</FONT>
+<FONT COLOR="deepskyblue">1421:</FONT> <FONT COLOR="cyan">// メッシュの生成</FONT>
+<FONT COLOR="deepskyblue">1422:</FONT> <FONT COLOR="cyan">//-----------------------------------------------------------------------------</FONT>
+<FONT COLOR="deepskyblue">1423:</FONT> HRESULT CSkinModel::GenerateMesh(SMeshContainer *pmcMesh)
+<FONT COLOR="deepskyblue">1424:</FONT> {
+<FONT COLOR="deepskyblue">1425:</FONT>     HRESULT hr = S_OK;
+<FONT COLOR="deepskyblue">1426:</FONT>     LPDIRECT3DDEVICE8 pD3DDev = NULL;
+<FONT COLOR="deepskyblue">1427:</FONT>     DWORD cFaces = pmcMesh-&gt;m_pSkinMesh-&gt;GetNumFaces();
+<FONT COLOR="deepskyblue">1428:</FONT> 
+<FONT COLOR="deepskyblue">1429:</FONT>     <FONT COLOR="#0000FF">if</FONT> (FAILED(hr=pmcMesh-&gt;m_pSkinMesh-&gt;GetDevice(&amp;pD3DDev))) <FONT COLOR="#0000FF">goto</FONT> e_Exit;
+<FONT COLOR="deepskyblue">1430:</FONT> 
+<FONT COLOR="deepskyblue">1431:</FONT>     RELEASE(pmcMesh-&gt;pMesh);
+<FONT COLOR="deepskyblue">1432:</FONT>     <FONT COLOR="#0000FF">delete</FONT> [] <FONT COLOR="#0000FF">this</FONT>-&gt;m_pBoneMatrices;
+<FONT COLOR="deepskyblue">1433:</FONT> 
+<FONT COLOR="deepskyblue">1434:</FONT>     pmcMesh-&gt;pMesh    = NULL;
+<FONT COLOR="deepskyblue">1435:</FONT>     <FONT COLOR="#0000FF">this</FONT>-&gt;m_pBoneMatrices    = NULL;
+<FONT COLOR="deepskyblue">1436:</FONT>     
+<FONT COLOR="deepskyblue">1437:</FONT>     <FONT COLOR="cyan">// 方法によって生成するものを変える</FONT>
+<FONT COLOR="deepskyblue">1438:</FONT>     <FONT COLOR="#0000FF">switch</FONT>(<FONT COLOR="#0000FF">this</FONT>-&gt;GetMethod()){
+<FONT COLOR="deepskyblue">1439:</FONT>     <FONT COLOR="#0000FF">case</FONT> D3DNONINDEXED:
+<FONT COLOR="deepskyblue">1440:</FONT>         hr = _GenerateMeshNonIndexed(pmcMesh);
+<FONT COLOR="deepskyblue">1441:</FONT>         <FONT COLOR="#0000FF">break</FONT>;
+<FONT COLOR="deepskyblue">1442:</FONT>     <FONT COLOR="#0000FF">case</FONT> D3DINDEXEDVS:
+<FONT COLOR="deepskyblue">1443:</FONT>         hr = _GenerateMeshIndexedVs(pmcMesh);
+<FONT COLOR="deepskyblue">1444:</FONT>         <FONT COLOR="#0000FF">break</FONT>;
+<FONT COLOR="deepskyblue">1445:</FONT>     <FONT COLOR="#0000FF">case</FONT> D3DINDEXED:
+<FONT COLOR="deepskyblue">1446:</FONT>         hr = _GenerateMeshIndexed(pmcMesh);
+<FONT COLOR="deepskyblue">1447:</FONT>         <FONT COLOR="#0000FF">break</FONT>;
+<FONT COLOR="deepskyblue">1448:</FONT>     <FONT COLOR="#0000FF">case</FONT> SOFTWARE:
+<FONT COLOR="deepskyblue">1449:</FONT>         hr = _GenerateMeshSoftware(pmcMesh);
+<FONT COLOR="deepskyblue">1450:</FONT>         <FONT COLOR="#0000FF">break</FONT>;
+<FONT COLOR="deepskyblue">1451:</FONT>     }
+<FONT COLOR="deepskyblue">1452:</FONT>     <FONT COLOR="#0000FF">if</FONT>(SUCCEEDED(hr)) pmcMesh-&gt;m_Method = <FONT COLOR="#0000FF">this</FONT>-&gt;GetMethod();
+<FONT COLOR="deepskyblue">1453:</FONT> 
+<FONT COLOR="deepskyblue">1454:</FONT> e_Exit:
+<FONT COLOR="deepskyblue">1455:</FONT> 
+<FONT COLOR="deepskyblue">1456:</FONT>     RELEASE(pD3DDev);
+<FONT COLOR="deepskyblue">1457:</FONT>     <FONT COLOR="#0000FF">return</FONT> hr;
+<FONT COLOR="deepskyblue">1458:</FONT> }
+</pre>
+<p>
+<br>
+今回は、頂点シェーダーにしか興味がないので、_GenerateMeshIndexedVs（D3DINDEXEDVS）を見ます。<br>
+固定レジスタの数に限界があるので、行列パレットの最大値を制限します（あれ、ここで２８個ですね。29個までいける気もするのですが…）。<br>
+次に頂点シェーダーのバージョンをチェックして、ハードウェアで実行できるか確認します。<br>
+だめならソフトウェアT&Lで実行です。<br>
+次に ConvertToIndexedBlendedMesh で、頂点パレットが使えるように変換します。<br>
+また、フレキシブル頂点フォーマットを確認して、混ぜ合わせる行列の数、すなわち頂点シェーダーの種類を確認します。<br>
+最後にフレキシブル頂点フォーマットにあったメッシュに再変換します。
+<pre class="CodeBlock">
+<FONT COLOR="deepskyblue">1293:</FONT> <FONT COLOR="cyan">//-----------------------------------------------------------------------------</FONT>
+<FONT COLOR="deepskyblue">1294:</FONT> <FONT COLOR="cyan">// メッシュの生成(D3DINDEXEDVS)</FONT>
+<FONT COLOR="deepskyblue">1295:</FONT> <FONT COLOR="cyan">//-----------------------------------------------------------------------------</FONT>
+<FONT COLOR="deepskyblue">1296:</FONT> HRESULT CSkinModel::_GenerateMeshIndexedVs(SMeshContainer *pmcMesh)
+<FONT COLOR="deepskyblue">1297:</FONT> {
+<FONT COLOR="deepskyblue">1298:</FONT>     HRESULT hr = S_OK;
+<FONT COLOR="deepskyblue">1299:</FONT>     <FONT COLOR="cyan">// 行列パレットの数を設定する（最大28）</FONT>
+<FONT COLOR="deepskyblue">1300:</FONT>     pmcMesh-&gt;m_paletteSize = min(28, pmcMesh-&gt;m_pSkinMesh-&gt;GetNumBones());
+<FONT COLOR="deepskyblue">1301:</FONT> 
+<FONT COLOR="deepskyblue">1302:</FONT>     <FONT COLOR="cyan">// アドレス レジスタが使えないならソフトウェアT&amp;L</FONT>
+<FONT COLOR="deepskyblue">1303:</FONT>     DWORD flags = D3DXMESHOPT_VERTEXCACHE;
+<FONT COLOR="deepskyblue">1304:</FONT>     <FONT COLOR="#0000FF">if</FONT> (D3DVS_VERSION(1, 1) &lt;= <FONT COLOR="#0000FF">this</FONT>-&gt;GetCaps()-&gt;VertexShaderVersion ) {
+<FONT COLOR="deepskyblue">1305:</FONT>         pmcMesh-&gt;m_bUseSW = <FONT COLOR="#0000FF">false</FONT>;
+<FONT COLOR="deepskyblue">1306:</FONT>         flags |= D3DXMESH_MANAGED;
+<FONT COLOR="deepskyblue">1307:</FONT>     } <FONT COLOR="#0000FF">else</FONT> {
+<FONT COLOR="deepskyblue">1308:</FONT>         pmcMesh-&gt;m_bUseSW = <FONT COLOR="#0000FF">true</FONT>;
+<FONT COLOR="deepskyblue">1309:</FONT>         flags |= D3DXMESH_SYSTEMMEM;
+<FONT COLOR="deepskyblue">1310:</FONT>     }
+<FONT COLOR="deepskyblue">1311:</FONT>     
+<FONT COLOR="deepskyblue">1312:</FONT>     <FONT COLOR="cyan">// インデックス付きのブレンドされたメッシュへ変換する</FONT>
+<FONT COLOR="deepskyblue">1313:</FONT>     hr = pmcMesh-&gt;m_pSkinMesh-&gt;ConvertToIndexedBlendedMesh(flags, pmcMesh-&gt;m_rgiAdjacency, pmcMesh-&gt;m_paletteSize, NULL,
+<FONT COLOR="deepskyblue">1314:</FONT>         &amp;pmcMesh-&gt;cpattr, &amp;pmcMesh-&gt;m_pBoneCombinationBuf, NULL, NULL, &amp;pmcMesh-&gt;pMesh);
+<FONT COLOR="deepskyblue">1315:</FONT>     <FONT COLOR="#0000FF">if</FONT> (FAILED(hr)) <FONT COLOR="#0000FF">return</FONT> hr;
+<FONT COLOR="deepskyblue">1316:</FONT>     
+<FONT COLOR="deepskyblue">1317:</FONT>     <FONT COLOR="cyan">// 最大の混合する数を調べる</FONT>
+<FONT COLOR="deepskyblue">1318:</FONT>     <FONT COLOR="#0000FF">if</FONT> ((pmcMesh-&gt;pMesh-&gt;GetFVF() &amp; D3DFVF_POSITION_MASK) != D3DFVF_XYZ) {
+<FONT COLOR="deepskyblue">1319:</FONT>         pmcMesh-&gt;m_maxFaceInfl = ((pmcMesh-&gt;pMesh-&gt;GetFVF() &amp; D3DFVF_POSITION_MASK) - D3DFVF_XYZRHW) / 2;
+<FONT COLOR="deepskyblue">1320:</FONT>     } <FONT COLOR="#0000FF">else</FONT> {
+<FONT COLOR="deepskyblue">1321:</FONT>         pmcMesh-&gt;m_maxFaceInfl = 1;
+<FONT COLOR="deepskyblue">1322:</FONT>     }
+<FONT COLOR="deepskyblue">1323:</FONT> 
+<FONT COLOR="deepskyblue">1324:</FONT>     <FONT COLOR="cyan">// FVF を変更して、それにあったメッシュを作成する</FONT>
+<FONT COLOR="deepskyblue">1325:</FONT>     DWORD newFVF = (pmcMesh-&gt;pMesh-&gt;GetFVF() &amp; D3DFVF_POSITION_MASK) | D3DFVF_NORMAL | D3DFVF_TEX1 | D3DFVF_LASTBETA_UBYTE4;
+<FONT COLOR="deepskyblue">1326:</FONT>     <FONT COLOR="#0000FF">if</FONT> (newFVF != pmcMesh-&gt;pMesh-&gt;GetFVF()) {
+<FONT COLOR="deepskyblue">1327:</FONT>         LPD3DXMESH pMesh;
+<FONT COLOR="deepskyblue">1328:</FONT>         hr = pmcMesh-&gt;pMesh-&gt;CloneMeshFVF(pmcMesh-&gt;pMesh-&gt;GetOptions(), newFVF, <FONT COLOR="#0000FF">this</FONT>-&gt;GetDevice(), &amp;pMesh);
+<FONT COLOR="deepskyblue">1329:</FONT>         <FONT COLOR="#0000FF">if</FONT> (!FAILED(hr)) {
+<FONT COLOR="deepskyblue">1330:</FONT>             pmcMesh-&gt;pMesh-&gt;Release();
+<FONT COLOR="deepskyblue">1331:</FONT>             pmcMesh-&gt;pMesh = pMesh;
+<FONT COLOR="deepskyblue">1332:</FONT>             pMesh = NULL;
+<FONT COLOR="deepskyblue">1333:</FONT>         }
+<FONT COLOR="deepskyblue">1334:</FONT>     }
+<FONT COLOR="deepskyblue">1335:</FONT>     <FONT COLOR="#0000FF">return</FONT> hr;
+<FONT COLOR="deepskyblue">1336:</FONT> }
+</pre>
+<p>
+以上で、メッシュの読み込みは完了します。
+</p>
+<p>
+次にアニメーションセットです。<br>
+アニメーションセットは、アニメーションセットを確認するフレームを追加してから、
+登録されたアニメーションを読めるだけ読んでいきます。
+</p>
+<pre class="CodeBlock">
+<FONT COLOR="deepskyblue">1010:</FONT> <FONT COLOR="cyan">//-----------------------------------------------------------------------------</FONT>
+<FONT COLOR="deepskyblue">1011:</FONT> <FONT COLOR="cyan">// アニメーションの集合のロード</FONT>
+<FONT COLOR="deepskyblue">1012:</FONT> <FONT COLOR="cyan">//-----------------------------------------------------------------------------</FONT>
+<FONT COLOR="deepskyblue">1013:</FONT> HRESULT SFrame::_LoadAnimationSet(LPDIRECTXFILEDATA pxofobjCur, SDrawElement *pde,
+<FONT COLOR="deepskyblue">1014:</FONT>                         DWORD options, CSkinModel &amp;model)
+<FONT COLOR="deepskyblue">1015:</FONT> {
+<FONT COLOR="deepskyblue">1016:</FONT>     SFrame *pframeCur;
+<FONT COLOR="deepskyblue">1017:</FONT>     <FONT COLOR="#0000FF">const</FONT> GUID *type;
+<FONT COLOR="deepskyblue">1018:</FONT>     HRESULT hr = S_OK;
+<FONT COLOR="deepskyblue">1019:</FONT>     LPDIRECTXFILEDATA pxofobjChild = NULL;
+<FONT COLOR="deepskyblue">1020:</FONT>     LPDIRECTXFILEOBJECT pxofChild = NULL;
+<FONT COLOR="deepskyblue">1021:</FONT>     DWORD cchName;
+<FONT COLOR="deepskyblue">1022:</FONT>     
+<FONT COLOR="deepskyblue">1023:</FONT>     <FONT COLOR="cyan">// 新規にフレームを追加</FONT>
+<FONT COLOR="deepskyblue">1024:</FONT>     <FONT COLOR="#0000FF">if</FONT> (NULL == (pframeCur=<FONT COLOR="#0000FF">new</FONT> SFrame())) {
+<FONT COLOR="deepskyblue">1025:</FONT>         hr = E_OUTOFMEMORY; <FONT COLOR="#0000FF">goto</FONT> e_Exit;
+<FONT COLOR="deepskyblue">1026:</FONT>     }
+<FONT COLOR="deepskyblue">1027:</FONT>     <FONT COLOR="#0000FF">this</FONT>-&gt;AddFrame(pframeCur);
+<FONT COLOR="deepskyblue">1028:</FONT> 
+<FONT COLOR="deepskyblue">1029:</FONT>     pframeCur-&gt;bAnimationFrame = <FONT COLOR="#0000FF">true</FONT>;  <FONT COLOR="cyan">// アニメーションのフレームであることを宣言</FONT>
+<FONT COLOR="deepskyblue">1030:</FONT>     
+<FONT COLOR="deepskyblue">1031:</FONT>     <FONT COLOR="cyan">// 名前を読み込む</FONT>
+<FONT COLOR="deepskyblue">1032:</FONT>     <FONT COLOR="#0000FF">if</FONT> (FAILED(hr = pxofobjCur-&gt;GetName(NULL, &amp;cchName))) <FONT COLOR="#0000FF">goto</FONT> e_Exit;
+<FONT COLOR="deepskyblue">1033:</FONT>     <FONT COLOR="#0000FF">if</FONT> (cchName &gt; 0) {
+<FONT COLOR="deepskyblue">1034:</FONT>         <FONT COLOR="#0000FF">if</FONT> (NULL == (pframeCur-&gt;szName = <FONT COLOR="#0000FF">new</FONT> <FONT COLOR="#0000FF">char</FONT>[cchName])) {
+<FONT COLOR="deepskyblue">1035:</FONT>             hr = E_OUTOFMEMORY; <FONT COLOR="#0000FF">goto</FONT> e_Exit;
+<FONT COLOR="deepskyblue">1036:</FONT>         }
+<FONT COLOR="deepskyblue">1037:</FONT>         <FONT COLOR="#0000FF">if</FONT> (FAILED(hr = pxofobjCur-&gt;GetName(pframeCur-&gt;szName, &amp;cchName))) <FONT COLOR="#0000FF">goto</FONT> e_Exit;
+<FONT COLOR="deepskyblue">1038:</FONT>     }
+<FONT COLOR="deepskyblue">1039:</FONT>     
+<FONT COLOR="deepskyblue">1040:</FONT>     <FONT COLOR="cyan">// 読める限りのデータを読んで、アニメーションのデータをロードする</FONT>
+<FONT COLOR="deepskyblue">1041:</FONT>     <FONT COLOR="#0000FF">while</FONT> (SUCCEEDED(pxofobjCur-&gt;GetNextObject(&amp;pxofChild))) {
+<FONT COLOR="deepskyblue">1042:</FONT>         hr = pxofChild-&gt;QueryInterface(IID_IDirectXFileData,(LPVOID *)&amp;pxofobjChild);
+<FONT COLOR="deepskyblue">1043:</FONT>         <FONT COLOR="#0000FF">if</FONT> (SUCCEEDED(hr)) {
+<FONT COLOR="deepskyblue">1044:</FONT>             <FONT COLOR="#0000FF">if</FONT> (FAILED(hr = pxofobjChild-&gt;GetType(&amp;type))) <FONT COLOR="#0000FF">goto</FONT> e_Exit;
+<FONT COLOR="deepskyblue">1045:</FONT>             
+<FONT COLOR="deepskyblue">1046:</FONT>             <FONT COLOR="#0000FF">if</FONT>( TID_D3DRMAnimation == *type ) {<FONT COLOR="cyan">// アニメのデータだけ</FONT>
+<FONT COLOR="deepskyblue">1047:</FONT>                 hr = pframeCur-&gt;_LoadAnimation(pxofobjChild, pde, options, model);
+<FONT COLOR="deepskyblue">1048:</FONT>                 <FONT COLOR="#0000FF">if</FONT> (FAILED(hr)) <FONT COLOR="#0000FF">goto</FONT> e_Exit;
+<FONT COLOR="deepskyblue">1049:</FONT>             }
+<FONT COLOR="deepskyblue">1050:</FONT>             RELEASE(pxofobjChild);
+<FONT COLOR="deepskyblue">1051:</FONT>         }
+<FONT COLOR="deepskyblue">1052:</FONT>         RELEASE(pxofChild);
+<FONT COLOR="deepskyblue">1053:</FONT>     }
+<FONT COLOR="deepskyblue">1054:</FONT>     
+<FONT COLOR="deepskyblue">1055:</FONT> e_Exit:
+<FONT COLOR="deepskyblue">1056:</FONT>     RELEASE(pxofobjChild);
+<FONT COLOR="deepskyblue">1057:</FONT>     RELEASE(pxofChild);
+<FONT COLOR="deepskyblue">1058:</FONT>     <FONT COLOR="#0000FF">return</FONT> hr;
+<FONT COLOR="deepskyblue">1059:</FONT> }
+</pre>
+<p>
+最後にアニメーションです。<br>
+ここも分岐があります。<br>
+実際のアニメーションデータ TID_D3DRMAnimationKey 以外にも、子供のフレームデータや「参照」として別のフレームのデータを引っ張ってきたりします。<br>
+まぁ、サンプル通りにしておきましょう。<br>
+</p>
+<table>
+<tr><td>IID_IDirectXFileDataReference</td><td>別のフレームのデータの参照としてデータが存在する</td>
+</tr>
+<tr><td>TID_D3DRMFrame </td><td>さらに子供のフレームがある</td>
+</tr>
+<tr><td>TID_D3DRMAnimationOptions</td><td>オプション（今回は見ない）</td>
+</tr>
+<tr><td>TID_D3DRMAnimationKey </td><td>キーフレームデータ</td>
+</tr>
+</table>
+<p>
+キーフレームデータの中にも種類があります。
+</p>
+<table>
+<tr><td>0</td><td>回転</td><td>クオータニオンのデータで回転する</td>
+</tr>
+<tr><td>1</td><td>拡縮</td><td>特定の時刻（キーフレーム）での値が入っています</td>
+</tr>
+<tr><td>2</td><td>平行移動</td><td>キーフレームでの値が入っています</td>
+</tr>
+<tr><td>4</td><td>行列</td><td>行列のデータがそのまま入っています</td>
+</tr>
+</table>
+<p>
+ちなみにキーフレーム（法）とは、アニメのデータを全ての時間持っているのでは無く、時間を空けて持ち、その間は適当な方法で補間する方法のことです。<br>
+同じアニメーションでも、キーフレームが少ないほうがデータが小さく、綺麗なアニメーションになる傾向があります。<br>
+以下にキーフレームの数を減らすかは、アニメータの腕、ないしはコンバーターを作る人の腕にかかっています。
+</p>
+<pre class="CodeBlock">
+<FONT COLOR="deepskyblue">1060:</FONT> <FONT COLOR="cyan">//-----------------------------------------------------------------------------</FONT>
+<FONT COLOR="deepskyblue">1061:</FONT> <FONT COLOR="cyan">// アニメのロード</FONT>
+<FONT COLOR="deepskyblue">1062:</FONT> <FONT COLOR="cyan">//-----------------------------------------------------------------------------</FONT>
+<FONT COLOR="deepskyblue">1063:</FONT> HRESULT SFrame::_LoadAnimation(LPDIRECTXFILEDATA pxofobjCur, SDrawElement *pde,
+<FONT COLOR="deepskyblue">1064:</FONT>                      DWORD options, CSkinModel &amp;model)
+<FONT COLOR="deepskyblue">1065:</FONT> {
+<FONT COLOR="deepskyblue">1066:</FONT>     HRESULT hr = S_OK;
+<FONT COLOR="deepskyblue">1067:</FONT>     SRotateKeyXFile   *pFileRotateKey;
+<FONT COLOR="deepskyblue">1068:</FONT>     SScaleKeyXFile    *pFileScaleKey;
+<FONT COLOR="deepskyblue">1069:</FONT>     SPositionKeyXFile *pFilePosKey;
+<FONT COLOR="deepskyblue">1070:</FONT>     SMatrixKeyXFile   *pFileMatrixKey;
+<FONT COLOR="deepskyblue">1071:</FONT>     SFrame *pframeCur;
+<FONT COLOR="deepskyblue">1072:</FONT>     LPDIRECTXFILEDATA pxofobjChild = NULL;
+<FONT COLOR="deepskyblue">1073:</FONT>     LPDIRECTXFILEOBJECT pxofChild = NULL;
+<FONT COLOR="deepskyblue">1074:</FONT>     LPDIRECTXFILEDATAREFERENCE pxofobjChildRef = NULL;
+<FONT COLOR="deepskyblue">1075:</FONT>     <FONT COLOR="#0000FF">const</FONT> GUID *type;
+<FONT COLOR="deepskyblue">1076:</FONT>     DWORD dwSize;
+<FONT COLOR="deepskyblue">1077:</FONT>     PBYTE pData;
+<FONT COLOR="deepskyblue">1078:</FONT>     DWORD dwKeyType;
+<FONT COLOR="deepskyblue">1079:</FONT>     DWORD cKeys;
+<FONT COLOR="deepskyblue">1080:</FONT>     DWORD iKey;
+<FONT COLOR="deepskyblue">1081:</FONT>     DWORD cchName;
+<FONT COLOR="deepskyblue">1082:</FONT>     <FONT COLOR="#0000FF">char</FONT> *szFrameName;
+<FONT COLOR="deepskyblue">1083:</FONT>     
+<FONT COLOR="deepskyblue">1084:</FONT>     <FONT COLOR="cyan">// 新規にフレームを追加</FONT>
+<FONT COLOR="deepskyblue">1085:</FONT>     <FONT COLOR="#0000FF">if</FONT> (NULL == (pframeCur = <FONT COLOR="#0000FF">new</FONT> SFrame())) {
+<FONT COLOR="deepskyblue">1086:</FONT>         hr = E_OUTOFMEMORY; <FONT COLOR="#0000FF">goto</FONT> e_Exit;
+<FONT COLOR="deepskyblue">1087:</FONT>     }
+<FONT COLOR="deepskyblue">1088:</FONT>     <FONT COLOR="#0000FF">this</FONT>-&gt;AddFrame(pframeCur);
+<FONT COLOR="deepskyblue">1089:</FONT>     pde-&gt;AddAnimationFrame(pframeCur);  <FONT COLOR="cyan">// SDrawElement にアニメを追加</FONT>
+<FONT COLOR="deepskyblue">1090:</FONT>     
+<FONT COLOR="deepskyblue">1091:</FONT>     pframeCur-&gt;bAnimationFrame = <FONT COLOR="#0000FF">true</FONT>;  <FONT COLOR="cyan">// アニメーションのフレームであることを宣言</FONT>
+<FONT COLOR="deepskyblue">1092:</FONT>     
+<FONT COLOR="deepskyblue">1093:</FONT>     <FONT COLOR="cyan">// 読める限りのデータを読んで、アニメーションのデータをロードする</FONT>
+<FONT COLOR="deepskyblue">1094:</FONT>     <FONT COLOR="#0000FF">while</FONT> (SUCCEEDED(pxofobjCur-&gt;GetNextObject(&amp;pxofChild))) {
+<FONT COLOR="deepskyblue">1095:</FONT>         <FONT COLOR="cyan">// 参照をしらべる</FONT>
+<FONT COLOR="deepskyblue">1096:</FONT>         hr = pxofChild-&gt;QueryInterface(IID_IDirectXFileDataReference,(LPVOID *)&amp;pxofobjChildRef);
+<FONT COLOR="deepskyblue">1097:</FONT>         <FONT COLOR="#0000FF">if</FONT> (SUCCEEDED(hr)) {
+<FONT COLOR="deepskyblue">1098:</FONT>             hr = pxofobjChildRef-&gt;Resolve(&amp;pxofobjChild);
+<FONT COLOR="deepskyblue">1099:</FONT>             <FONT COLOR="#0000FF">if</FONT> (SUCCEEDED(hr)) {
+<FONT COLOR="deepskyblue">1100:</FONT>                 <FONT COLOR="cyan">// タイプを調べて、フレームの情報だけを抜き出す</FONT>
+<FONT COLOR="deepskyblue">1101:</FONT>                 <FONT COLOR="#0000FF">if</FONT> (FAILED(hr = pxofobjChild-&gt;GetType(&amp;type))) <FONT COLOR="#0000FF">goto</FONT> e_Exit;
+<FONT COLOR="deepskyblue">1102:</FONT>                 
+<FONT COLOR="deepskyblue">1103:</FONT>                 <FONT COLOR="#0000FF">if</FONT>( TID_D3DRMFrame == *type ) {
+<FONT COLOR="deepskyblue">1104:</FONT>                     <FONT COLOR="#0000FF">if</FONT> (pframeCur-&gt;pframeToAnimate != NULL) {<FONT COLOR="cyan">// あるのか？</FONT>
+<FONT COLOR="deepskyblue">1105:</FONT>                         hr = E_INVALIDARG;  <FONT COLOR="#0000FF">goto</FONT> e_Exit;
+<FONT COLOR="deepskyblue">1106:</FONT>                     }
+<FONT COLOR="deepskyblue">1107:</FONT>                     
+<FONT COLOR="deepskyblue">1108:</FONT>                     <FONT COLOR="cyan">// 名前を読み込む</FONT>
+<FONT COLOR="deepskyblue">1109:</FONT>                     <FONT COLOR="#0000FF">if</FONT> (FAILED(hr = pxofobjChild-&gt;GetName(NULL, &amp;cchName))) <FONT COLOR="#0000FF">goto</FONT> e_Exit;
+<FONT COLOR="deepskyblue">1110:</FONT>                     <FONT COLOR="#0000FF">if</FONT> (cchName == 0) {
+<FONT COLOR="deepskyblue">1111:</FONT>                         hr = E_INVALIDARG;  <FONT COLOR="#0000FF">goto</FONT> e_Exit;
+<FONT COLOR="deepskyblue">1112:</FONT>                     }
+<FONT COLOR="deepskyblue">1113:</FONT>                     szFrameName = (<FONT COLOR="#0000FF">char</FONT>*)_alloca(cchName);
+<FONT COLOR="deepskyblue">1114:</FONT>                     <FONT COLOR="#0000FF">if</FONT> (szFrameName == NULL) {
+<FONT COLOR="deepskyblue">1115:</FONT>                         hr = E_OUTOFMEMORY; <FONT COLOR="#0000FF">goto</FONT> e_Exit;
+<FONT COLOR="deepskyblue">1116:</FONT>                     }
+<FONT COLOR="deepskyblue">1117:</FONT>                     <FONT COLOR="#0000FF">if</FONT> (FAILED(hr = pxofobjChild-&gt;GetName(szFrameName, &amp;cchName))) <FONT COLOR="#0000FF">goto</FONT> e_Exit;
+<FONT COLOR="deepskyblue">1118:</FONT>                     
+<FONT COLOR="deepskyblue">1119:</FONT>                     <FONT COLOR="cyan">// 名前からフレームを検索する</FONT>
+<FONT COLOR="deepskyblue">1120:</FONT>                     pframeCur-&gt;pframeToAnimate = pde-&gt;FindFrame(szFrameName);
+<FONT COLOR="deepskyblue">1121:</FONT>                     <FONT COLOR="#0000FF">if</FONT> (pframeCur-&gt;pframeToAnimate == NULL) {
+<FONT COLOR="deepskyblue">1122:</FONT>                         hr = E_INVALIDARG; <FONT COLOR="#0000FF">goto</FONT> e_Exit;
+<FONT COLOR="deepskyblue">1123:</FONT>                     }
+<FONT COLOR="deepskyblue">1124:</FONT>                 }
+<FONT COLOR="deepskyblue">1125:</FONT>                 RELEASE(pxofobjChild);
+<FONT COLOR="deepskyblue">1126:</FONT>             }
+<FONT COLOR="deepskyblue">1127:</FONT>             RELEASE(pxofobjChildRef);
+<FONT COLOR="deepskyblue">1128:</FONT>         } <FONT COLOR="#0000FF">else</FONT> {
+<FONT COLOR="deepskyblue">1129:</FONT>             <FONT COLOR="cyan">// 参照がなければデータを調べる</FONT>
+<FONT COLOR="deepskyblue">1130:</FONT>             hr = pxofChild-&gt;QueryInterface(IID_IDirectXFileData,(LPVOID *)&amp;pxofobjChild);
+<FONT COLOR="deepskyblue">1131:</FONT>             <FONT COLOR="#0000FF">if</FONT> (SUCCEEDED(hr))
+<FONT COLOR="deepskyblue">1132:</FONT>             {
+<FONT COLOR="deepskyblue">1133:</FONT>                 <FONT COLOR="cyan">// タイプを調べて、種類に応じた処理を行う</FONT>
+<FONT COLOR="deepskyblue">1134:</FONT>                 <FONT COLOR="#0000FF">if</FONT> (FAILED(hr = pxofobjChild-&gt;GetType(&amp;type))) <FONT COLOR="#0000FF">goto</FONT> e_Exit;
+<FONT COLOR="deepskyblue">1135:</FONT>                 
+<FONT COLOR="deepskyblue">1136:</FONT>                 <FONT COLOR="#0000FF">if</FONT> ( TID_D3DRMFrame == *type ) {<FONT COLOR="cyan">// フレーム</FONT>
+<FONT COLOR="deepskyblue">1137:</FONT>                     hr = pframeCur-&gt;LoadFrames(pxofobjChild, pde, options, model);
+<FONT COLOR="deepskyblue">1138:</FONT>                     <FONT COLOR="#0000FF">if</FONT> (FAILED(hr)) <FONT COLOR="#0000FF">goto</FONT> e_Exit;
+<FONT COLOR="deepskyblue">1139:</FONT>                 } <FONT COLOR="#0000FF">else</FONT> <FONT COLOR="#0000FF">if</FONT> ( TID_D3DRMAnimationOptions == *type ) {
+<FONT COLOR="deepskyblue">1140:</FONT>                     <FONT COLOR="cyan">// オプション（処理なし）</FONT>
+<FONT COLOR="deepskyblue">1141:</FONT>                 } <FONT COLOR="#0000FF">else</FONT> <FONT COLOR="#0000FF">if</FONT> ( TID_D3DRMAnimationKey == *type ) {
+<FONT COLOR="deepskyblue">1142:</FONT>                     <FONT COLOR="cyan">// アニメーションのキーフレームデータ</FONT>
+<FONT COLOR="deepskyblue">1143:</FONT>                     <FONT COLOR="#0000FF">if</FONT> (FAILED(hr = pxofobjChild-&gt;GetData( NULL, &amp;dwSize, (PVOID*)&amp;pData ))) <FONT COLOR="#0000FF">goto</FONT> e_Exit;
+<FONT COLOR="deepskyblue">1144:</FONT>                     
+<FONT COLOR="deepskyblue">1145:</FONT>                     dwKeyType = ((DWORD*)pData)[0];
+<FONT COLOR="deepskyblue">1146:</FONT>                     cKeys = ((DWORD*)pData)[1];
+<FONT COLOR="deepskyblue">1147:</FONT>                     
+<FONT COLOR="deepskyblue">1148:</FONT>                     <FONT COLOR="#0000FF">switch</FONT>(dwKeyType){
+<FONT COLOR="deepskyblue">1149:</FONT>                     <FONT COLOR="#0000FF">case</FONT> 0:<FONT COLOR="cyan">// 回転</FONT>
+<FONT COLOR="deepskyblue">1150:</FONT>                         <FONT COLOR="#0000FF">if</FONT> (pframeCur-&gt;m_pRotateKeys != NULL) {
+<FONT COLOR="deepskyblue">1151:</FONT>                             hr = E_INVALIDARG;  <FONT COLOR="#0000FF">goto</FONT> e_Exit;
+<FONT COLOR="deepskyblue">1152:</FONT>                         }
+<FONT COLOR="deepskyblue">1153:</FONT>                         <FONT COLOR="#0000FF">if</FONT> (NULL==(pframeCur-&gt;m_pRotateKeys = <FONT COLOR="#0000FF">new</FONT> SRotateKey[cKeys])) {
+<FONT COLOR="deepskyblue">1154:</FONT>                             hr = E_OUTOFMEMORY; <FONT COLOR="#0000FF">goto</FONT> e_Exit;
+<FONT COLOR="deepskyblue">1155:</FONT>                         }
+<FONT COLOR="deepskyblue">1156:</FONT>                         pframeCur-&gt;m_cRotateKeys = cKeys;
+<FONT COLOR="deepskyblue">1157:</FONT>                         pFileRotateKey =  (SRotateKeyXFile*)(pData + (<FONT COLOR="#0000FF">sizeof</FONT>(DWORD) * 2));
+<FONT COLOR="deepskyblue">1158:</FONT>                         <FONT COLOR="#0000FF">for</FONT> (iKey = 0;iKey &lt; cKeys; iKey++) {
+<FONT COLOR="deepskyblue">1159:</FONT>                             pframeCur-&gt;m_pRotateKeys[iKey].dwTime = pFileRotateKey-&gt;dwTime;
+<FONT COLOR="deepskyblue">1160:</FONT>                             pframeCur-&gt;m_pRotateKeys[iKey].quatRotate.x = pFileRotateKey-&gt;x;
+<FONT COLOR="deepskyblue">1161:</FONT>                             pframeCur-&gt;m_pRotateKeys[iKey].quatRotate.y = pFileRotateKey-&gt;y;
+<FONT COLOR="deepskyblue">1162:</FONT>                             pframeCur-&gt;m_pRotateKeys[iKey].quatRotate.z = pFileRotateKey-&gt;z;
+<FONT COLOR="deepskyblue">1163:</FONT>                             pframeCur-&gt;m_pRotateKeys[iKey].quatRotate.w = pFileRotateKey-&gt;w;
+<FONT COLOR="deepskyblue">1164:</FONT>                             pFileRotateKey++;
+<FONT COLOR="deepskyblue">1165:</FONT>                         }
+<FONT COLOR="deepskyblue">1166:</FONT>                         <FONT COLOR="#0000FF">break</FONT>;
+<FONT COLOR="deepskyblue">1167:</FONT>                     <FONT COLOR="#0000FF">case</FONT> 1:<FONT COLOR="cyan">// 拡大縮小</FONT>
+<FONT COLOR="deepskyblue">1168:</FONT>                         <FONT COLOR="#0000FF">if</FONT> (pframeCur-&gt;m_pScaleKeys != NULL) {
+<FONT COLOR="deepskyblue">1169:</FONT>                             hr = E_INVALIDARG;  <FONT COLOR="#0000FF">goto</FONT> e_Exit;
+<FONT COLOR="deepskyblue">1170:</FONT>                         }
+<FONT COLOR="deepskyblue">1171:</FONT>                         <FONT COLOR="#0000FF">if</FONT> (NULL==(pframeCur-&gt;m_pScaleKeys = <FONT COLOR="#0000FF">new</FONT> SScaleKey[cKeys])) {
+<FONT COLOR="deepskyblue">1172:</FONT>                             hr = E_OUTOFMEMORY; <FONT COLOR="#0000FF">goto</FONT> e_Exit;
+<FONT COLOR="deepskyblue">1173:</FONT>                         }
+<FONT COLOR="deepskyblue">1174:</FONT>                         pframeCur-&gt;m_cScaleKeys = cKeys;
+<FONT COLOR="deepskyblue">1175:</FONT>                         pFileScaleKey =  (SScaleKeyXFile*)(pData + (<FONT COLOR="#0000FF">sizeof</FONT>(DWORD) * 2));
+<FONT COLOR="deepskyblue">1176:</FONT>                         <FONT COLOR="#0000FF">for</FONT> (iKey = 0;iKey &lt; cKeys; iKey++) {
+<FONT COLOR="deepskyblue">1177:</FONT>                             pframeCur-&gt;m_pScaleKeys[iKey].dwTime = pFileScaleKey-&gt;dwTime;
+<FONT COLOR="deepskyblue">1178:</FONT>                             pframeCur-&gt;m_pScaleKeys[iKey].vScale = pFileScaleKey-&gt;vScale;
+<FONT COLOR="deepskyblue">1179:</FONT>                             pFileScaleKey++;
+<FONT COLOR="deepskyblue">1180:</FONT>                         }
+<FONT COLOR="deepskyblue">1181:</FONT>                         <FONT COLOR="#0000FF">break</FONT>;
+<FONT COLOR="deepskyblue">1182:</FONT>                     <FONT COLOR="#0000FF">case</FONT> 2:<FONT COLOR="cyan">// 平行移動</FONT>
+<FONT COLOR="deepskyblue">1183:</FONT>                         <FONT COLOR="#0000FF">if</FONT> (pframeCur-&gt;m_pPositionKeys != NULL) {
+<FONT COLOR="deepskyblue">1184:</FONT>                             hr = E_INVALIDARG;  <FONT COLOR="#0000FF">goto</FONT> e_Exit;
+<FONT COLOR="deepskyblue">1185:</FONT>                         }
+<FONT COLOR="deepskyblue">1186:</FONT>                         <FONT COLOR="#0000FF">if</FONT> (NULL==(pframeCur-&gt;m_pPositionKeys = <FONT COLOR="#0000FF">new</FONT> SPositionKey[cKeys])) {
+<FONT COLOR="deepskyblue">1187:</FONT>                             hr = E_OUTOFMEMORY; <FONT COLOR="#0000FF">goto</FONT> e_Exit;
+<FONT COLOR="deepskyblue">1188:</FONT>                         }
+<FONT COLOR="deepskyblue">1189:</FONT>                         pframeCur-&gt;m_cPositionKeys = cKeys;
+<FONT COLOR="deepskyblue">1190:</FONT>                         pFilePosKey =  (SPositionKeyXFile*)(pData + (<FONT COLOR="#0000FF">sizeof</FONT>(DWORD) * 2));
+<FONT COLOR="deepskyblue">1191:</FONT>                         <FONT COLOR="#0000FF">for</FONT> (iKey = 0;iKey &lt; cKeys; iKey++) {
+<FONT COLOR="deepskyblue">1192:</FONT>                             pframeCur-&gt;m_pPositionKeys[iKey].dwTime = pFilePosKey-&gt;dwTime;
+<FONT COLOR="deepskyblue">1193:</FONT>                             pframeCur-&gt;m_pPositionKeys[iKey].vPos = pFilePosKey-&gt;vPos;
+<FONT COLOR="deepskyblue">1194:</FONT>                             pFilePosKey++;
+<FONT COLOR="deepskyblue">1195:</FONT>                         }
+<FONT COLOR="deepskyblue">1196:</FONT>                         <FONT COLOR="#0000FF">break</FONT>;
+<FONT COLOR="deepskyblue">1197:</FONT>                     <FONT COLOR="#0000FF">case</FONT> 4:<FONT COLOR="cyan">// 行列そのもの</FONT>
+<FONT COLOR="deepskyblue">1198:</FONT>                         <FONT COLOR="#0000FF">if</FONT> (pframeCur-&gt;m_pMatrixKeys != NULL) {
+<FONT COLOR="deepskyblue">1199:</FONT>                             hr = E_INVALIDARG;  <FONT COLOR="#0000FF">goto</FONT> e_Exit;
+<FONT COLOR="deepskyblue">1200:</FONT>                         }
+<FONT COLOR="deepskyblue">1201:</FONT>                         <FONT COLOR="#0000FF">if</FONT> (NULL==(pframeCur-&gt;m_pMatrixKeys = <FONT COLOR="#0000FF">new</FONT> SMatrixKey[cKeys])) {
+<FONT COLOR="deepskyblue">1202:</FONT>                             hr = E_OUTOFMEMORY; <FONT COLOR="#0000FF">goto</FONT> e_Exit;
+<FONT COLOR="deepskyblue">1203:</FONT>                         }
+<FONT COLOR="deepskyblue">1204:</FONT>                         pframeCur-&gt;m_cMatrixKeys = cKeys;
+<FONT COLOR="deepskyblue">1205:</FONT>                         pFileMatrixKey =  (SMatrixKeyXFile*)(pData + (<FONT COLOR="#0000FF">sizeof</FONT>(DWORD) * 2));
+<FONT COLOR="deepskyblue">1206:</FONT>                         <FONT COLOR="#0000FF">for</FONT> (iKey = 0;iKey &lt; cKeys; iKey++) {
+<FONT COLOR="deepskyblue">1207:</FONT>                             pframeCur-&gt;m_pMatrixKeys[iKey].dwTime = pFileMatrixKey-&gt;dwTime;
+<FONT COLOR="deepskyblue">1208:</FONT>                             pframeCur-&gt;m_pMatrixKeys[iKey].mat = pFileMatrixKey-&gt;mat;
+<FONT COLOR="deepskyblue">1209:</FONT>                             pFileMatrixKey++;
+<FONT COLOR="deepskyblue">1210:</FONT>                         }
+<FONT COLOR="deepskyblue">1211:</FONT>                         <FONT COLOR="#0000FF">break</FONT>;
+<FONT COLOR="deepskyblue">1212:</FONT>                     <FONT COLOR="#0000FF">default</FONT>:
+<FONT COLOR="deepskyblue">1213:</FONT>                         hr = E_INVALIDARG;  <FONT COLOR="#0000FF">goto</FONT> e_Exit;
+<FONT COLOR="deepskyblue">1214:</FONT>                         <FONT COLOR="#0000FF">break</FONT>;
+<FONT COLOR="deepskyblue">1215:</FONT>                     }
+<FONT COLOR="deepskyblue">1216:</FONT>                 }
+<FONT COLOR="deepskyblue">1217:</FONT>                 RELEASE(pxofobjChild);
+<FONT COLOR="deepskyblue">1218:</FONT>             }
+<FONT COLOR="deepskyblue">1219:</FONT>         }
+<FONT COLOR="deepskyblue">1220:</FONT>         RELEASE(pxofChild);
+<FONT COLOR="deepskyblue">1221:</FONT>     }
+<FONT COLOR="deepskyblue">1222:</FONT>     
+<FONT COLOR="deepskyblue">1223:</FONT> e_Exit:
+<FONT COLOR="deepskyblue">1224:</FONT>     RELEASE(pxofobjChild);
+<FONT COLOR="deepskyblue">1225:</FONT>     RELEASE(pxofChild);
+<FONT COLOR="deepskyblue">1226:</FONT>     RELEASE(pxofobjChildRef);
+<FONT COLOR="deepskyblue">1227:</FONT>     <FONT COLOR="#0000FF">return</FONT> hr;
+<FONT COLOR="deepskyblue">1228:</FONT> }
+</pre>
+<p>
+と、このような長い経過を経て、ロードが終了します。
+</p>
+<p>
+あと説明していないのは、レンダリングステートなどの設定ですね。<br>
+深度バッファを有効にしたり、ライトの構造体を設定したりします。
+</p>
+<pre class="CodeBlock">
+<FONT COLOR="deepskyblue">1611:</FONT> <FONT COLOR="cyan">//-----------------------------------------------------------------------------</FONT>
+<FONT COLOR="deepskyblue">1612:</FONT> <FONT COLOR="cyan">// シーンの初期化</FONT>
+<FONT COLOR="deepskyblue">1613:</FONT> <FONT COLOR="cyan">//-----------------------------------------------------------------------------</FONT>
+<FONT COLOR="deepskyblue">1614:</FONT> HRESULT CSkinModel::RestoreDeviceObjects(LPDIRECT3DDEVICE8 pD3DDev)
+<FONT COLOR="deepskyblue">1615:</FONT> {
+<FONT COLOR="deepskyblue">1616:</FONT>     HRESULT hr = S_OK;
+<FONT COLOR="deepskyblue">1617:</FONT>     D3DLIGHT8 light;
+<FONT COLOR="deepskyblue">1618:</FONT>     
+<FONT COLOR="deepskyblue">1619:</FONT>     <FONT COLOR="cyan">// レンダリングのための状態の設定</FONT>
+<FONT COLOR="deepskyblue">1620:</FONT>     pD3DDev-&gt;SetRenderState( D3DRS_DITHERENABLE, TRUE );
+<FONT COLOR="deepskyblue">1621:</FONT>     pD3DDev-&gt;SetRenderState( D3DRS_ZENABLE, TRUE );
+<FONT COLOR="deepskyblue">1622:</FONT>     pD3DDev-&gt;SetRenderState( D3DRS_SPECULARENABLE, FALSE );
+<FONT COLOR="deepskyblue">1623:</FONT>     pD3DDev-&gt;SetRenderState( D3DRS_NORMALIZENORMALS, TRUE );
+<FONT COLOR="deepskyblue">1624:</FONT> 
+<FONT COLOR="deepskyblue">1625:</FONT>     pD3DDev-&gt;SetRenderState( D3DRS_CULLMODE, D3DCULL_CW );
+<FONT COLOR="deepskyblue">1626:</FONT>     pD3DDev-&gt;SetRenderState( D3DRS_LIGHTING, TRUE );
+<FONT COLOR="deepskyblue">1627:</FONT>     pD3DDev-&gt;SetTextureStageState( 0, D3DTSS_MAGFILTER, D3DTEXF_LINEAR  );
+<FONT COLOR="deepskyblue">1628:</FONT>     pD3DDev-&gt;SetTextureStageState( 0, D3DTSS_MINFILTER, D3DTEXF_LINEAR  );
+<FONT COLOR="deepskyblue">1629:</FONT> 
+<FONT COLOR="deepskyblue">1630:</FONT>     pD3DDev-&gt;SetRenderState( D3DRS_COLORVERTEX, FALSE );
+<FONT COLOR="deepskyblue">1631:</FONT> 
+<FONT COLOR="deepskyblue">1632:</FONT>     <FONT COLOR="#0000FF">if</FONT> (m_pdeMesh != NULL) _SetProjectionMatrix();
+<FONT COLOR="deepskyblue">1633:</FONT> 
+<FONT COLOR="deepskyblue">1634:</FONT>     
+<FONT COLOR="deepskyblue">1635:</FONT>     <FONT COLOR="cyan">// ソフトウェアT&amp;Lのためのライトの設定</FONT>
+<FONT COLOR="deepskyblue">1636:</FONT>     ZeroMemory( &amp;light, <FONT COLOR="#0000FF">sizeof</FONT>(light) );
+<FONT COLOR="deepskyblue">1637:</FONT>     light.Type = D3DLIGHT_DIRECTIONAL;
+<FONT COLOR="deepskyblue">1638:</FONT>     light.Diffuse.r = 1.0;
+<FONT COLOR="deepskyblue">1639:</FONT>     light.Diffuse.g = 1.0;
+<FONT COLOR="deepskyblue">1640:</FONT>     light.Diffuse.b = 1.0;
+<FONT COLOR="deepskyblue">1641:</FONT>     light.Specular.r = 0;
+<FONT COLOR="deepskyblue">1642:</FONT>     light.Specular.g = 0;
+<FONT COLOR="deepskyblue">1643:</FONT>     light.Specular.b = 0;
+<FONT COLOR="deepskyblue">1644:</FONT>     light.Ambient.r = 0.25;
+<FONT COLOR="deepskyblue">1645:</FONT>     light.Ambient.g = 0.25;
+<FONT COLOR="deepskyblue">1646:</FONT>     light.Ambient.b = 0.25;
+<FONT COLOR="deepskyblue">1647:</FONT>     light.Direction = D3DXVECTOR3( 0.0f, 0.0f, -1.0f);
+<FONT COLOR="deepskyblue">1648:</FONT> 
+<FONT COLOR="deepskyblue">1649:</FONT>     <FONT COLOR="#0000FF">if</FONT> (FAILED(hr = pD3DDev-&gt;SetLight(0, &amp;light ))) <FONT COLOR="#0000FF">return</FONT> E_FAIL;
+<FONT COLOR="deepskyblue">1650:</FONT>     <FONT COLOR="#0000FF">if</FONT> (FAILED(hr = pD3DDev-&gt;LightEnable(0, TRUE))) <FONT COLOR="#0000FF">return</FONT> E_FAIL;
+<FONT COLOR="deepskyblue">1651:</FONT> 
+<FONT COLOR="deepskyblue">1652:</FONT>     <FONT COLOR="cyan">// 頂点シェーダーのライトの設定</FONT>
+<FONT COLOR="deepskyblue">1653:</FONT>     pD3DDev-&gt;SetVertexShaderConstant(1, &amp;D3DXVECTOR4( 0.0f, 0.0f, 1.0f, 0.0f ), 1);
+<FONT COLOR="deepskyblue">1654:</FONT> 
+<FONT COLOR="deepskyblue">1655:</FONT>     <FONT COLOR="#0000FF">return</FONT> S_OK;
+<FONT COLOR="deepskyblue">1656:</FONT> }
+</pre>
+<p>
+ごくろうさまでした。。
+</p>
+
+
+<h2>■内部プログラム：描画</h2>
+
+
+<p>
+描画部分では、時間を進める部分と設定された時間で描画する部分とに分かれています。<br>
+時間を進める部分では、全てのアニメーションのフレームにわたって時間を設定します。<br>
+時間を決定するのに 4.8 倍していますが、これはSDKのサンプルからそのまま引っ張ってきた値なのでどうしてか分かっていません。<br>
+もちろん、ここを変えればスローモーションになったり動きが速くなったりします。
+</p>
+<pre class="CodeBlock">
+<font color = deepskyblue>1652:</font> <font color = cyan>//-----------------------------------------------------------------------------</font>
+<font color = deepskyblue>1653:</font> <font color = cyan>// 動かす</font>
+<font color = deepskyblue>1654:</font> <font color = cyan>//-----------------------------------------------------------------------------</font>
+<font color = deepskyblue>1655:</font> HRESULT CSkinModel::FrameMove(DWORD time)
+<font color = deepskyblue>1656:</font> {
+<font color = deepskyblue>1657:</font>     if(m_pdeMesh){
+<font color = deepskyblue>1658:</font>         m_pdeMesh->fCurTime = 4.8f*(float)(time - m_1st_time);// 時間の設定
+<font color = deepskyblue>1659:</font> 
+<font color = deepskyblue>1660:</font>         for (SFrame* pFrame = m_pdeMesh->pframeAnimHead; pFrame ; pFrame=pFrame->pframeAnimNext) {
+<font color = deepskyblue>1661:</font>             pFrame->SetTime(m_pdeMesh->fCurTime);
+<font color = deepskyblue>1662:</font>         }
+<font color = deepskyblue>1663:</font>     }
+<font color = deepskyblue>1664:</font>     
+<font color = deepskyblue>1665:</font>     return S_OK;
+<font color = deepskyblue>1666:</font> }
+</pre>
+<p>
+実際に時間を設定する部分は条件分岐の嵐です。<br>
+アニメーションの種類に応じて
+</p>
+<table>
+<tr><td>行列</td><td>一番近い値を使う</td>
+</tr>
+<tr><td>拡縮</td><td>線形補間</td>
+</tr>
+<tr><td>回転</td><td>球状平方補間</td>
+</tr>
+<tr><td>平行移動</td><td>線形補間</td>
+</tr>
+</table>
+<p>
+と、補間の仕方を変えます。データを行列で与えるのはデータが離散的になるので、なるべくやめたほうがよさそうですね。
+</p>
+<pre class="CodeBlock">
+<FONT COLOR="deepskyblue">0303:</FONT> <FONT COLOR="cyan">//-----------------------------------------------------------------------------</FONT>
+<FONT COLOR="deepskyblue">0304:</FONT> <FONT COLOR="cyan">// 時間の設定</FONT>
+<FONT COLOR="deepskyblue">0305:</FONT> <FONT COLOR="#0000FF">void</FONT> SFrame::SetTime(<FONT COLOR="#0000FF">float</FONT> fGlobalTime)
+<FONT COLOR="deepskyblue">0306:</FONT> {
+<FONT COLOR="deepskyblue">0307:</FONT>     UINT iKey;
+<FONT COLOR="deepskyblue">0308:</FONT>     UINT dwp2;
+<FONT COLOR="deepskyblue">0309:</FONT>     UINT dwp3;
+<FONT COLOR="deepskyblue">0310:</FONT>     D3DXMATRIXA16 matResult;
+<FONT COLOR="deepskyblue">0311:</FONT>     D3DXMATRIXA16 matTemp;
+<FONT COLOR="deepskyblue">0312:</FONT>     <FONT COLOR="#0000FF">float</FONT> fTime1;
+<FONT COLOR="deepskyblue">0313:</FONT>     <FONT COLOR="#0000FF">float</FONT> fTime2;
+<FONT COLOR="deepskyblue">0314:</FONT>     <FONT COLOR="#0000FF">float</FONT> fLerpValue;
+<FONT COLOR="deepskyblue">0315:</FONT>     D3DXVECTOR3 vScale;
+<FONT COLOR="deepskyblue">0316:</FONT>     D3DXVECTOR3 vPos;
+<FONT COLOR="deepskyblue">0317:</FONT>     D3DXQUATERNION quat;
+<FONT COLOR="deepskyblue">0318:</FONT>     BOOL bAnimate = <FONT COLOR="#0000FF">false</FONT>;
+<FONT COLOR="deepskyblue">0319:</FONT>     <FONT COLOR="#0000FF">float</FONT> fTime;
+<FONT COLOR="deepskyblue">0320:</FONT> 
+<FONT COLOR="deepskyblue">0321:</FONT>     <FONT COLOR="#0000FF">if</FONT> (m_pMatrixKeys ) {
+<FONT COLOR="deepskyblue">0322:</FONT>         <FONT COLOR="cyan">// 行列としてアニメが登録されていた場合</FONT>
+<FONT COLOR="deepskyblue">0323:</FONT>         
+<FONT COLOR="deepskyblue">0324:</FONT>         <FONT COLOR="cyan">// 時間にあったキーフレームを検索する</FONT>
+<FONT COLOR="deepskyblue">0325:</FONT>         fTime = (<FONT COLOR="#0000FF">float</FONT>)fmod(fGlobalTime, m_pMatrixKeys[m_cMatrixKeys-1].dwTime);
+<FONT COLOR="deepskyblue">0326:</FONT>         <FONT COLOR="#0000FF">for</FONT> (iKey = 0 ;iKey &lt; m_cMatrixKeys ; iKey++) {
+<FONT COLOR="deepskyblue">0327:</FONT>             <FONT COLOR="#0000FF">if</FONT> ((<FONT COLOR="#0000FF">float</FONT>)m_pMatrixKeys[iKey].dwTime &gt; fTime) {
+<FONT COLOR="deepskyblue">0328:</FONT>                 dwp3 = iKey;
+<FONT COLOR="deepskyblue">0329:</FONT>                 dwp2= (0&lt;iKey)?(iKey - 1):iKey;
+<FONT COLOR="deepskyblue">0330:</FONT>                 <FONT COLOR="#0000FF">break</FONT>;
+<FONT COLOR="deepskyblue">0331:</FONT>             }
+<FONT COLOR="deepskyblue">0332:</FONT>         }
+<FONT COLOR="deepskyblue">0333:</FONT>         fTime1 = (<FONT COLOR="#0000FF">float</FONT>)m_pMatrixKeys[dwp2].dwTime;
+<FONT COLOR="deepskyblue">0334:</FONT>         fTime2 = (<FONT COLOR="#0000FF">float</FONT>)m_pMatrixKeys[dwp3].dwTime;
+<FONT COLOR="deepskyblue">0335:</FONT>         <FONT COLOR="cyan">// 時間の前後のキーフレームで近い方を選択する</FONT>
+<FONT COLOR="deepskyblue">0336:</FONT>         fLerpValue = ((fTime2 - fTime1) !=0)?( (fTime - fTime1)  / (fTime2 - fTime1)):0;
+<FONT COLOR="deepskyblue">0337:</FONT>         iKey = (0.5&lt;fLerpValue)?dwp3:dwp2;
+<FONT COLOR="deepskyblue">0338:</FONT>         pframeToAnimate-&gt;matRot = m_pMatrixKeys[iKey].mat;
+<FONT COLOR="deepskyblue">0339:</FONT>     } <FONT COLOR="#0000FF">else</FONT> {
+<FONT COLOR="deepskyblue">0340:</FONT>         D3DXMatrixIdentity(&amp;matResult);
+<FONT COLOR="deepskyblue">0341:</FONT>         <FONT COLOR="cyan">// スケールのアニメが登録されていた場合</FONT>
+<FONT COLOR="deepskyblue">0342:</FONT>         <FONT COLOR="#0000FF">if</FONT> (m_pScaleKeys) {
+<FONT COLOR="deepskyblue">0343:</FONT>             dwp2 = dwp3 = 0;
+<FONT COLOR="deepskyblue">0344:</FONT> 
+<FONT COLOR="deepskyblue">0345:</FONT>             <FONT COLOR="cyan">// 時間にあったキーフレームを検索する</FONT>
+<FONT COLOR="deepskyblue">0346:</FONT>             fTime = (<FONT COLOR="#0000FF">float</FONT>)fmod(fGlobalTime, m_pScaleKeys[m_cScaleKeys-1].dwTime);
+<FONT COLOR="deepskyblue">0347:</FONT>             <FONT COLOR="#0000FF">for</FONT> (iKey = 0 ;iKey &lt; m_cScaleKeys ; iKey++) {
+<FONT COLOR="deepskyblue">0348:</FONT>                 <FONT COLOR="#0000FF">if</FONT> ((<FONT COLOR="#0000FF">float</FONT>)m_pScaleKeys[iKey].dwTime &gt; fTime) {
+<FONT COLOR="deepskyblue">0349:</FONT>                     dwp3 = iKey;
+<FONT COLOR="deepskyblue">0350:</FONT>                     dwp2= (0&lt;iKey)?(iKey - 1):iKey;
+<FONT COLOR="deepskyblue">0351:</FONT>                     <FONT COLOR="#0000FF">break</FONT>;
+<FONT COLOR="deepskyblue">0352:</FONT>                 }
+<FONT COLOR="deepskyblue">0353:</FONT>             }
+<FONT COLOR="deepskyblue">0354:</FONT>             fTime1 = (<FONT COLOR="#0000FF">float</FONT>)m_pScaleKeys[dwp2].dwTime;
+<FONT COLOR="deepskyblue">0355:</FONT>             fTime2 = (<FONT COLOR="#0000FF">float</FONT>)m_pScaleKeys[dwp3].dwTime;
+<FONT COLOR="deepskyblue">0356:</FONT> 
+<FONT COLOR="deepskyblue">0357:</FONT>             <FONT COLOR="cyan">// 線形補間して合成</FONT>
+<FONT COLOR="deepskyblue">0358:</FONT>             fLerpValue = ((fTime2 - fTime1) !=0)?( (fTime - fTime1)  / (fTime2 - fTime1)):0;
+<FONT COLOR="deepskyblue">0359:</FONT>             D3DXVec3Lerp(&amp;vScale,
+<FONT COLOR="deepskyblue">0360:</FONT>                     &amp;m_pScaleKeys[dwp2].vScale,
+<FONT COLOR="deepskyblue">0361:</FONT>                     &amp;m_pScaleKeys[dwp3].vScale,
+<FONT COLOR="deepskyblue">0362:</FONT>                     fLerpValue);
+<FONT COLOR="deepskyblue">0363:</FONT>             D3DXMatrixScaling(&amp;matTemp, vScale.x, vScale.y, vScale.z);
+<FONT COLOR="deepskyblue">0364:</FONT>             
+<FONT COLOR="deepskyblue">0365:</FONT>             <FONT COLOR="cyan">// 掛けた結果を保存する</FONT>
+<FONT COLOR="deepskyblue">0366:</FONT>             D3DXMatrixMultiply(&amp;matResult, &amp;matResult, &amp;matTemp);
+<FONT COLOR="deepskyblue">0367:</FONT> 
+<FONT COLOR="deepskyblue">0368:</FONT>             bAnimate = <FONT COLOR="#0000FF">true</FONT>;
+<FONT COLOR="deepskyblue">0369:</FONT>         }
+<FONT COLOR="deepskyblue">0370:</FONT> 
+<FONT COLOR="deepskyblue">0371:</FONT>         <FONT COLOR="cyan">// 回転のアニメが登録されていた場合</FONT>
+<FONT COLOR="deepskyblue">0372:</FONT>         <FONT COLOR="#0000FF">if</FONT> (m_pRotateKeys ) {
+<FONT COLOR="deepskyblue">0373:</FONT>             <FONT COLOR="#0000FF">int</FONT> i1 = 0;
+<FONT COLOR="deepskyblue">0374:</FONT>             <FONT COLOR="#0000FF">int</FONT> i2 = 0;
+<FONT COLOR="deepskyblue">0375:</FONT> 
+<FONT COLOR="deepskyblue">0376:</FONT>             <FONT COLOR="cyan">// 時間にあったキーフレームを検索する</FONT>
+<FONT COLOR="deepskyblue">0377:</FONT>             fTime = (<FONT COLOR="#0000FF">float</FONT>)fmod(fGlobalTime, m_pRotateKeys[m_cRotateKeys-1].dwTime);
+<FONT COLOR="deepskyblue">0378:</FONT>             <FONT COLOR="#0000FF">for</FONT> (iKey = 0 ;iKey &lt; m_cRotateKeys ; iKey++){
+<FONT COLOR="deepskyblue">0379:</FONT>                 <FONT COLOR="#0000FF">if</FONT> (fTime &lt; (<FONT COLOR="#0000FF">float</FONT>)m_pRotateKeys[iKey].dwTime){
+<FONT COLOR="deepskyblue">0380:</FONT>                     i1 = (iKey &gt; 0) ? iKey - 1 : 0;
+<FONT COLOR="deepskyblue">0381:</FONT>                     i2 = iKey;
+<FONT COLOR="deepskyblue">0382:</FONT>                     <FONT COLOR="#0000FF">break</FONT>;
+<FONT COLOR="deepskyblue">0383:</FONT>                 }
+<FONT COLOR="deepskyblue">0384:</FONT>             }
+<FONT COLOR="deepskyblue">0385:</FONT> 
+<FONT COLOR="deepskyblue">0386:</FONT>             fTime1 = (<FONT COLOR="#0000FF">float</FONT>)m_pRotateKeys[i1].dwTime;
+<FONT COLOR="deepskyblue">0387:</FONT>             fTime2 = (<FONT COLOR="#0000FF">float</FONT>)m_pRotateKeys[i2].dwTime;
+<FONT COLOR="deepskyblue">0388:</FONT>             fLerpValue = ((fTime2 - fTime1) !=0)?( (fTime - fTime1)  / (fTime2 - fTime1)):0;
+<FONT COLOR="deepskyblue">0389:</FONT> 
+<FONT COLOR="deepskyblue">0390:</FONT>             <FONT COLOR="cyan">// 球状平方補間して合成</FONT>
+<FONT COLOR="deepskyblue">0391:</FONT>             <FONT COLOR="#0000FF">int</FONT> i0 = i1 - 1;
+<FONT COLOR="deepskyblue">0392:</FONT>             <FONT COLOR="#0000FF">int</FONT> i3 = i2 + 1;
+<FONT COLOR="deepskyblue">0393:</FONT> 
+<FONT COLOR="deepskyblue">0394:</FONT>             <FONT COLOR="#0000FF">if</FONT>(i0 &lt; 0)  i0 += m_cRotateKeys;
+<FONT COLOR="deepskyblue">0395:</FONT>             <FONT COLOR="#0000FF">if</FONT>(i3 &gt;= (INT) m_cRotateKeys)   i3 -= m_cRotateKeys;
+<FONT COLOR="deepskyblue">0396:</FONT> 
+<FONT COLOR="deepskyblue">0397:</FONT>             D3DXQUATERNION qA, qB, qC;
+<FONT COLOR="deepskyblue">0398:</FONT>             D3DXQuaternionSquadSetup(&amp;qA, &amp;qB, &amp;qC, 
+<FONT COLOR="deepskyblue">0399:</FONT>                 &amp;m_pRotateKeys[i0].quatRotate, &amp;m_pRotateKeys[i1].quatRotate, 
+<FONT COLOR="deepskyblue">0400:</FONT>                 &amp;m_pRotateKeys[i2].quatRotate, &amp;m_pRotateKeys[i3].quatRotate);
+<FONT COLOR="deepskyblue">0401:</FONT> 
+<FONT COLOR="deepskyblue">0402:</FONT>             D3DXQuaternionSquad(&amp;quat, &amp;m_pRotateKeys[i1].quatRotate, &amp;qA, &amp;qB, &amp;qC, fLerpValue);
+<FONT COLOR="deepskyblue">0403:</FONT> 
+<FONT COLOR="deepskyblue">0404:</FONT>             quat.w = -quat.w;
+<FONT COLOR="deepskyblue">0405:</FONT>             D3DXMatrixRotationQuaternion(&amp;matTemp, &amp;quat);
+<FONT COLOR="deepskyblue">0406:</FONT>             <FONT COLOR="cyan">// 掛けた結果を保存する</FONT>
+<FONT COLOR="deepskyblue">0407:</FONT>             D3DXMatrixMultiply(&amp;matResult, &amp;matResult, &amp;matTemp);
+<FONT COLOR="deepskyblue">0408:</FONT> 
+<FONT COLOR="deepskyblue">0409:</FONT>             bAnimate = <FONT COLOR="#0000FF">true</FONT>;
+<FONT COLOR="deepskyblue">0410:</FONT>         }
+<FONT COLOR="deepskyblue">0411:</FONT> 
+<FONT COLOR="deepskyblue">0412:</FONT>         <FONT COLOR="cyan">// 平行移動のアニメが登録されていた場合</FONT>
+<FONT COLOR="deepskyblue">0413:</FONT>         <FONT COLOR="#0000FF">if</FONT> (m_pPositionKeys) {
+<FONT COLOR="deepskyblue">0414:</FONT>             dwp2=dwp3=0;
+<FONT COLOR="deepskyblue">0415:</FONT>             <FONT COLOR="cyan">// 時間にあったキーフレームを検索する</FONT>
+<FONT COLOR="deepskyblue">0416:</FONT>             fTime = (<FONT COLOR="#0000FF">float</FONT>)fmod(fGlobalTime, m_pPositionKeys[m_cPositionKeys-1].dwTime);
+<FONT COLOR="deepskyblue">0417:</FONT>             <FONT COLOR="#0000FF">for</FONT> (iKey = 0 ;iKey &lt; m_cPositionKeys ; iKey++) {
+<FONT COLOR="deepskyblue">0418:</FONT>                 <FONT COLOR="#0000FF">if</FONT> ((<FONT COLOR="#0000FF">float</FONT>)m_pPositionKeys[iKey].dwTime &gt; fTime) {
+<FONT COLOR="deepskyblue">0419:</FONT>                     dwp3 = iKey;
+<FONT COLOR="deepskyblue">0420:</FONT>                     dwp2= (0&lt;iKey)?(iKey - 1):iKey;
+<FONT COLOR="deepskyblue">0421:</FONT>                     <FONT COLOR="#0000FF">break</FONT>;
+<FONT COLOR="deepskyblue">0422:</FONT>                 }
+<FONT COLOR="deepskyblue">0423:</FONT>             }
+<FONT COLOR="deepskyblue">0424:</FONT>             
+<FONT COLOR="deepskyblue">0425:</FONT>             <FONT COLOR="cyan">// 線形補間して合成</FONT>
+<FONT COLOR="deepskyblue">0426:</FONT>             fTime1 = (<FONT COLOR="#0000FF">float</FONT>)m_pPositionKeys[dwp2].dwTime;
+<FONT COLOR="deepskyblue">0427:</FONT>             fTime2 = (<FONT COLOR="#0000FF">float</FONT>)m_pPositionKeys[dwp3].dwTime;
+<FONT COLOR="deepskyblue">0428:</FONT>             fLerpValue = ((fTime2 - fTime1) !=0)?( (fTime - fTime1)  / (fTime2 - fTime1)):0;
+<FONT COLOR="deepskyblue">0429:</FONT>             D3DXVec3Lerp((D3DXVECTOR3*)&amp;vPos,
+<FONT COLOR="deepskyblue">0430:</FONT>                     &amp;m_pPositionKeys[dwp2].vPos,
+<FONT COLOR="deepskyblue">0431:</FONT>                     &amp;m_pPositionKeys[dwp3].vPos,
+<FONT COLOR="deepskyblue">0432:</FONT>                     fLerpValue);
+<FONT COLOR="deepskyblue">0433:</FONT>             D3DXMatrixTranslation(&amp;matTemp, vPos.x, vPos.y, vPos.z);
+<FONT COLOR="deepskyblue">0434:</FONT>             
+<FONT COLOR="deepskyblue">0435:</FONT>             <FONT COLOR="cyan">// 掛けた結果を保存する</FONT>
+<FONT COLOR="deepskyblue">0436:</FONT>             D3DXMatrixMultiply(&amp;matResult, &amp;matResult, &amp;matTemp);
+<FONT COLOR="deepskyblue">0437:</FONT>             bAnimate = <FONT COLOR="#0000FF">true</FONT>;
+<FONT COLOR="deepskyblue">0438:</FONT>         } <FONT COLOR="#0000FF">else</FONT> {
+<FONT COLOR="deepskyblue">0439:</FONT>             <FONT COLOR="cyan">// 平行移動の場合はアニメが無ければディフォルトの位置を指定する</FONT>
+<FONT COLOR="deepskyblue">0440:</FONT>             D3DXMatrixTranslation(&amp;matTemp
+<FONT COLOR="deepskyblue">0441:</FONT>                             , pframeToAnimate-&gt;matRotOrig._41
+<FONT COLOR="deepskyblue">0442:</FONT>                             , pframeToAnimate-&gt;matRotOrig._42
+<FONT COLOR="deepskyblue">0443:</FONT>                             , pframeToAnimate-&gt;matRotOrig._43);
+<FONT COLOR="deepskyblue">0444:</FONT>             D3DXMatrixMultiply(&amp;matResult, &amp;matResult, &amp;matTemp);
+<FONT COLOR="deepskyblue">0445:</FONT>         }
+<FONT COLOR="deepskyblue">0446:</FONT> 
+<FONT COLOR="deepskyblue">0447:</FONT>         <FONT COLOR="#0000FF">if</FONT> (bAnimate) pframeToAnimate-&gt;matRot = matResult;
+<FONT COLOR="deepskyblue">0448:</FONT>     }
+<FONT COLOR="deepskyblue">0449:</FONT> }
+</pre>
+<p>
+描画部分はもう少し入り組んでいます。<br>
+全体の回転や平行移動を決め、ビュー行列も確保した後、行列を決定しその行列で描画します。
+</p>
+<pre class="CodeBlock">
+<FONT COLOR="deepskyblue">1980:</FONT> <FONT COLOR="cyan">//-----------------------------------------------------------------------------</FONT>
+<FONT COLOR="deepskyblue">1981:</FONT> <FONT COLOR="cyan">// 描画</FONT>
+<FONT COLOR="deepskyblue">1982:</FONT> <FONT COLOR="cyan">//-----------------------------------------------------------------------------</FONT>
+<FONT COLOR="deepskyblue">1983:</FONT> HRESULT CSkinModel::Render()
+<FONT COLOR="deepskyblue">1984:</FONT> {
+<FONT COLOR="deepskyblue">1985:</FONT>     UINT cTriangles = 0;
+<FONT COLOR="deepskyblue">1986:</FONT>     HRESULT hr;
+<FONT COLOR="deepskyblue">1987:</FONT> 
+<FONT COLOR="deepskyblue">1988:</FONT>     <FONT COLOR="#0000FF">if</FONT>(m_pdeMesh){
+<FONT COLOR="deepskyblue">1989:</FONT>         <FONT COLOR="cyan">// 視点を設定する</FONT>
+<FONT COLOR="deepskyblue">1990:</FONT>         m_pdeMesh-&gt;pframeRoot-&gt;matRot   = m_Rot;
+<FONT COLOR="deepskyblue">1991:</FONT>         m_pdeMesh-&gt;pframeRoot-&gt;matTrans = m_Trans;
+<FONT COLOR="deepskyblue">1992:</FONT>         
+<FONT COLOR="deepskyblue">1993:</FONT>         <FONT COLOR="cyan">// ソフトウェアT&amp;Lのためにビュー行列を設定</FONT>
+<FONT COLOR="deepskyblue">1994:</FONT>         hr = m_pD3DDev-&gt;SetTransform(D3DTS_VIEW, (D3DMATRIX*)&amp;m_View);
+<FONT COLOR="deepskyblue">1995:</FONT>         <FONT COLOR="#0000FF">if</FONT>(FAILED(hr)) <FONT COLOR="#0000FF">return</FONT> hr;
+<FONT COLOR="deepskyblue">1996:</FONT> 
+<FONT COLOR="deepskyblue">1997:</FONT>         D3DXMATRIXA16 mCur;
+<FONT COLOR="deepskyblue">1998:</FONT>         D3DXMatrixIdentity(&amp;mCur);
+<FONT COLOR="deepskyblue">1999:</FONT>         <FONT COLOR="cyan">// 動かす</FONT>
+<FONT COLOR="deepskyblue">2000:</FONT>         <FONT COLOR="#0000FF">if</FONT> (FAILED(hr = m_pdeMesh-&gt;pframeRoot-&gt;UpdateFrames(mCur))) <FONT COLOR="#0000FF">return</FONT> hr;
+<FONT COLOR="deepskyblue">2001:</FONT>         <FONT COLOR="cyan">// 描画する</FONT>
+<FONT COLOR="deepskyblue">2002:</FONT>         <FONT COLOR="#0000FF">if</FONT> (FAILED(hr = _DrawFrames(m_pdeMesh-&gt;pframeRoot, cTriangles))) <FONT COLOR="#0000FF">return</FONT> hr;
+<FONT COLOR="deepskyblue">2003:</FONT>     }
+<FONT COLOR="deepskyblue">2004:</FONT> 
+<FONT COLOR="deepskyblue">2005:</FONT>     <FONT COLOR="#0000FF">return</FONT> S_OK;
+<FONT COLOR="deepskyblue">2006:</FONT> }
+</pre>
+<p>
+SFrame::UpdateFrames は、アニメーションとして生成された行列を使って、
+各骨の行列から親子関係を持ったローカル行列を作成します。<br>
+方法は親の骨の行列にさらに自分の骨の行列を掛けて親からの相対的な行列に変換します。<br>
+また、自分の骨を子供に受け渡して、さらに孫、曾孫のローカル座標を作らせます。
+</p>
+<pre class="CodeBlock">
+<FONT COLOR="deepskyblue">1674:</FONT> <FONT COLOR="cyan">//-----------------------------------------------------------------------------</FONT>
+<FONT COLOR="deepskyblue">1675:</FONT> <FONT COLOR="cyan">// 行列の生成</FONT>
+<FONT COLOR="deepskyblue">1676:</FONT> <FONT COLOR="cyan">//-----------------------------------------------------------------------------</FONT>
+<FONT COLOR="deepskyblue">1677:</FONT> HRESULT SFrame::UpdateFrames(D3DXMATRIX &amp;matCur)
+<FONT COLOR="deepskyblue">1678:</FONT> {
+<FONT COLOR="deepskyblue">1679:</FONT>     HRESULT hr = S_OK;
+<FONT COLOR="deepskyblue">1680:</FONT>     <FONT COLOR="#0000FF">this</FONT>-&gt;matCombined = matCur;
+<FONT COLOR="deepskyblue">1681:</FONT>     D3DXMatrixMultiply(&amp;<FONT COLOR="#0000FF">this</FONT>-&gt;matCombined, &amp;<FONT COLOR="#0000FF">this</FONT>-&gt;matRot, &amp;matCur);
+<FONT COLOR="deepskyblue">1682:</FONT>     D3DXMatrixMultiply(&amp;<FONT COLOR="#0000FF">this</FONT>-&gt;matCombined, &amp;<FONT COLOR="#0000FF">this</FONT>-&gt;matCombined, &amp;<FONT COLOR="#0000FF">this</FONT>-&gt;matTrans );
+<FONT COLOR="deepskyblue">1683:</FONT>     
+<FONT COLOR="deepskyblue">1684:</FONT>     <FONT COLOR="cyan">// 自分の行列を親として、子供たちを次々に行列変換する</FONT>
+<FONT COLOR="deepskyblue">1685:</FONT>     <FONT COLOR="#0000FF">for</FONT>( SFrame *p=<FONT COLOR="#0000FF">this</FONT>-&gt;pframeFirstChild ; p!=NULL ; p=p-&gt;pframeSibling ){
+<FONT COLOR="deepskyblue">1686:</FONT>         <FONT COLOR="#0000FF">if</FONT> (FAILED(hr = p-&gt;UpdateFrames(<FONT COLOR="#0000FF">this</FONT>-&gt;matCombined))) <FONT COLOR="#0000FF">return</FONT> hr;
+<FONT COLOR="deepskyblue">1687:</FONT>     }
+<FONT COLOR="deepskyblue">1688:</FONT>     
+<FONT COLOR="deepskyblue">1689:</FONT>     <FONT COLOR="#0000FF">return</FONT> S_OK;
+<FONT COLOR="deepskyblue">1690:</FONT> }
+</pre>
+<p>
+もう一つ関数 CSkinModel::_DrawFrames() は、描画関数です。<br>
+作成した行列をワールド座標に設定して描画し、子供も次々に描画していきます。
+</p>
+<pre class="CodeBlock">
+<FONT COLOR="deepskyblue">1958:</FONT> HRESULT CSkinModel::_DrawFrames(SFrame *pframe, UINT &amp;cTriangles)
+<FONT COLOR="deepskyblue">1959:</FONT> {
+<FONT COLOR="deepskyblue">1960:</FONT>     HRESULT hr = S_OK;
+<FONT COLOR="deepskyblue">1961:</FONT>     LPDIRECT3DDEVICE8   pD3DDev = m_pD3DDev;
+<FONT COLOR="deepskyblue">1962:</FONT> 
+<FONT COLOR="deepskyblue">1963:</FONT>     <FONT COLOR="cyan">// ワールド行列の生成</FONT>
+<FONT COLOR="deepskyblue">1964:</FONT>     <FONT COLOR="#0000FF">if</FONT> (pframe-&gt;pmcMesh != NULL){
+<FONT COLOR="deepskyblue">1965:</FONT>         hr = pD3DDev-&gt;SetTransform(D3DTS_WORLD, &amp;pframe-&gt;matCombined);
+<FONT COLOR="deepskyblue">1966:</FONT>         <FONT COLOR="#0000FF">if</FONT>(FAILED(hr)) <FONT COLOR="#0000FF">return</FONT> hr;
+<FONT COLOR="deepskyblue">1967:</FONT>     }
+<FONT COLOR="deepskyblue">1968:</FONT>     <FONT COLOR="cyan">// 登録されているメッシュを表示</FONT>
+<FONT COLOR="deepskyblue">1969:</FONT>     <FONT COLOR="#0000FF">for</FONT>(SMeshContainer *it=pframe-&gt;pmcMesh ; it ; it=it-&gt;pmcNext){
+<FONT COLOR="deepskyblue">1970:</FONT>         <FONT COLOR="#0000FF">if</FONT> (FAILED(hr = _DrawMeshContainer(it)))<FONT COLOR="#0000FF">return</FONT> hr;
+<FONT COLOR="deepskyblue">1971:</FONT>         cTriangles += it-&gt;pMesh-&gt;GetNumFaces();
+<FONT COLOR="deepskyblue">1972:</FONT>     }
+<FONT COLOR="deepskyblue">1973:</FONT>     <FONT COLOR="cyan">// 子供を次々に表示</FONT>
+<FONT COLOR="deepskyblue">1974:</FONT>     <FONT COLOR="#0000FF">for</FONT>(SFrame *pChild=pframe-&gt;pframeFirstChild ; pChild ; pChild=pChild-&gt;pframeSibling){
+<FONT COLOR="deepskyblue">1975:</FONT>         <FONT COLOR="#0000FF">if</FONT> (FAILED(hr = _DrawFrames(pChild, cTriangles))) <FONT COLOR="#0000FF">return</FONT> hr;
+<FONT COLOR="deepskyblue">1976:</FONT>     }
+<FONT COLOR="deepskyblue">1977:</FONT> 
+<FONT COLOR="deepskyblue">1978:</FONT>     <FONT COLOR="#0000FF">return</FONT> S_OK;
+<FONT COLOR="deepskyblue">1979:</FONT> }</pre>
+<p>
+描画する関数は、さらにレンダリング方法によって分岐します。<br>
+今回は頂点シェーダーにのみ注目します。この時、_DrawMeshContainerIndexedVs が選ばれるので、その中身を見ていきます。
+</p>
+<pre class="CodeBlock">
+<FONT COLOR="deepskyblue">1934:</FONT> <FONT COLOR="cyan">//-----------------------------------------------------------------------------</FONT>
+<FONT COLOR="deepskyblue">1935:</FONT> <FONT COLOR="cyan">// 各メッシュの描画</FONT>
+<FONT COLOR="deepskyblue">1936:</FONT> <FONT COLOR="cyan">//-----------------------------------------------------------------------------</FONT>
+<FONT COLOR="deepskyblue">1937:</FONT> HRESULT CSkinModel::_DrawMeshContainer(SMeshContainer *pmcMesh)
+<FONT COLOR="deepskyblue">1938:</FONT> {
+<FONT COLOR="deepskyblue">1939:</FONT>     HRESULT hr = S_OK;
+<FONT COLOR="deepskyblue">1940:</FONT> 
+<FONT COLOR="deepskyblue">1941:</FONT>     <FONT COLOR="cyan">// スキンじゃないモデル</FONT>
+<FONT COLOR="deepskyblue">1942:</FONT>     <FONT COLOR="#0000FF">if</FONT> (! pmcMesh-&gt;m_pSkinMesh) <FONT COLOR="#0000FF">return</FONT> _DrawMeshContainerNoSkin(pmcMesh);
+<FONT COLOR="deepskyblue">1943:</FONT>     
+<FONT COLOR="deepskyblue">1944:</FONT>     <FONT COLOR="cyan">// 描画方法が切り変わったらメッシュを生成しなおす</FONT>
+<FONT COLOR="deepskyblue">1945:</FONT>     <FONT COLOR="#0000FF">if</FONT> (m_method != pmcMesh-&gt;m_Method) <FONT COLOR="#0000FF">this</FONT>-&gt;GenerateMesh(pmcMesh);
+<FONT COLOR="deepskyblue">1946:</FONT>     
+<FONT COLOR="deepskyblue">1947:</FONT>     <FONT COLOR="cyan">// それぞれの手法に応じてそれぞれ描画</FONT>
+<FONT COLOR="deepskyblue">1948:</FONT>     <FONT COLOR="#0000FF">if</FONT> (m_method == D3DNONINDEXED) <FONT COLOR="#0000FF">return</FONT> _DrawMeshContainerNonIndexed(pmcMesh);
+<FONT COLOR="deepskyblue">1949:</FONT>     <FONT COLOR="#0000FF">if</FONT> (m_method == D3DINDEXEDVS ) <FONT COLOR="#0000FF">return</FONT> _DrawMeshContainerIndexedVs (pmcMesh);
+<FONT COLOR="deepskyblue">1950:</FONT>     <FONT COLOR="#0000FF">if</FONT> (m_method == D3DINDEXED   ) <FONT COLOR="#0000FF">return</FONT> _DrawMeshContainerIndexed   (pmcMesh);
+<FONT COLOR="deepskyblue">1951:</FONT>     <FONT COLOR="#0000FF">if</FONT> (m_method == SOFTWARE     ) <FONT COLOR="#0000FF">return</FONT> _DrawMeshContainerSoftware  (pmcMesh);
+<FONT COLOR="deepskyblue">1952:</FONT>     
+<FONT COLOR="deepskyblue">1953:</FONT>     <FONT COLOR="#0000FF">return</FONT> S_OK;
+<FONT COLOR="deepskyblue">1954:</FONT> }
+</pre>
+<p>
+CSkinModel::_DrawMeshContainerIndexedVs では、最初と最後に頂点シェーダーのバージョン不足でHALが使えないときのソフトウェアT&L の切り替えを行います。<br>
+次に（スキンでない）メッシュを描画するときと同じように頂点バッファ、インデックスバッファ、頂点シェーダーの指定を行います。<br>
+ここで、混ぜ合わせに使う行列の数に応じて頂点シェーダーの切り替えが行われます。<br>
+次に骨の行列を固定レジスタに設定します。噂によると、定数レジスタを沢山切り替えるのは遅いようなので、
+高速化したいときは、（行列の数を減らして）全ての行列を共通化して一モデルに一回ぐらいの更新に減らすと早くなるかもしれません（未検証）。<br>
+あとは、質感による色やテクスチャーの設定をして、DrawIndexedPrimitive で描画します。
+</p>
+<pre class="CodeBlock">
+<FONT COLOR="deepskyblue">1791:</FONT> <FONT COLOR="cyan">//-----------------------------------------------------------------------------</FONT>
+<FONT COLOR="deepskyblue">1792:</FONT> <FONT COLOR="cyan">// D3DINDEXEDVS</FONT>
+<FONT COLOR="deepskyblue">1793:</FONT> <FONT COLOR="cyan">//-----------------------------------------------------------------------------</FONT>
+<FONT COLOR="deepskyblue">1794:</FONT> HRESULT CSkinModel::_DrawMeshContainerIndexedVs(SMeshContainer *pmcMesh)
+<FONT COLOR="deepskyblue">1795:</FONT> {
+<FONT COLOR="deepskyblue">1796:</FONT>     UINT ipattr;
+<FONT COLOR="deepskyblue">1797:</FONT>     LPDIRECT3DDEVICE8   pD3DDev = m_pD3DDev;
+<FONT COLOR="deepskyblue">1798:</FONT>     LPD3DXBONECOMBINATION pBoneComb;
+<FONT COLOR="deepskyblue">1799:</FONT>     HRESULT hr;
+<FONT COLOR="deepskyblue">1800:</FONT> 
+<FONT COLOR="deepskyblue">1801:</FONT>     D3DXVECTOR4 vConst( 1.0f, 0.0f, 0.0f, 765.01f );
+<FONT COLOR="deepskyblue">1802:</FONT>     LPDIRECT3DVERTEXBUFFER8 pVB;
+<FONT COLOR="deepskyblue">1803:</FONT>     LPDIRECT3DINDEXBUFFER8 pIB;
+<FONT COLOR="deepskyblue">1804:</FONT> 
+<FONT COLOR="deepskyblue">1805:</FONT>     <FONT COLOR="#0000FF">if</FONT> (pmcMesh-&gt;m_bUseSW) {<FONT COLOR="cyan">// 描画できない時はソフトウェアT&amp;Lで描画</FONT>
+<FONT COLOR="deepskyblue">1806:</FONT>         m_pD3DDev-&gt;SetRenderState(D3DRS_SOFTWAREVERTEXPROCESSING, TRUE);
+<FONT COLOR="deepskyblue">1807:</FONT>     }
+<FONT COLOR="deepskyblue">1808:</FONT> 
+<FONT COLOR="deepskyblue">1809:</FONT>     <FONT COLOR="cyan">// 頂点、インデックスバッファの設定</FONT>
+<FONT COLOR="deepskyblue">1810:</FONT>     pmcMesh-&gt;pMesh-&gt;GetVertexBuffer(&amp;pVB);
+<FONT COLOR="deepskyblue">1811:</FONT>     pmcMesh-&gt;pMesh-&gt;GetIndexBuffer(&amp;pIB);
+<FONT COLOR="deepskyblue">1812:</FONT>     <FONT COLOR="#0000FF">if</FONT>(FAILED(hr = m_pD3DDev-&gt;SetStreamSource(0, pVB, D3DXGetFVFVertexSize(pmcMesh-&gt;pMesh-&gt;GetFVF()))))<FONT COLOR="#0000FF">return</FONT> hr;
+<FONT COLOR="deepskyblue">1813:</FONT>     <FONT COLOR="#0000FF">if</FONT>(FAILED(hr = m_pD3DDev-&gt;SetIndices(pIB, 0)))<FONT COLOR="#0000FF">return</FONT> hr;
+<FONT COLOR="deepskyblue">1814:</FONT>     pVB-&gt;Release();
+<FONT COLOR="deepskyblue">1815:</FONT>     pIB-&gt;Release();
+<FONT COLOR="deepskyblue">1816:</FONT> 
+<FONT COLOR="deepskyblue">1817:</FONT>     <FONT COLOR="cyan">// 混ぜている行列の個数に応じて、シェーダーを切り替える</FONT>
+<FONT COLOR="deepskyblue">1818:</FONT>     <FONT COLOR="#0000FF">if</FONT>(FAILED(hr = m_pD3DDev-&gt;SetVertexShader(m_dwIndexedVertexShader[pmcMesh-&gt;m_maxFaceInfl - 1])))<FONT COLOR="#0000FF">return</FONT> hr;
+<FONT COLOR="deepskyblue">1819:</FONT> 
+<FONT COLOR="deepskyblue">1820:</FONT>     pBoneComb = <FONT COLOR="#0000FF">reinterpret_cast</FONT>&lt;LPD3DXBONECOMBINATION&gt;(pmcMesh-&gt;m_pBoneCombinationBuf-&gt;GetBufferPointer());
+<FONT COLOR="deepskyblue">1821:</FONT>     <FONT COLOR="#0000FF">for</FONT> (ipattr = 0; ipattr &lt; pmcMesh-&gt;cpattr; ipattr++){
+<FONT COLOR="deepskyblue">1822:</FONT>         <FONT COLOR="cyan">// ビュー行列をかけて、ボーンの行列を設定する</FONT>
+<FONT COLOR="deepskyblue">1823:</FONT>         <FONT COLOR="#0000FF">for</FONT> (DWORD i = 0; i &lt; pmcMesh-&gt;m_paletteSize; ++i){
+<FONT COLOR="deepskyblue">1824:</FONT>             DWORD matid = pBoneComb[ipattr].BoneId[i];
+<FONT COLOR="deepskyblue">1825:</FONT>             <FONT COLOR="#0000FF">if</FONT> (matid != UINT_MAX){
+<FONT COLOR="deepskyblue">1826:</FONT>                 D3DXMATRIXA16 mat;
+<FONT COLOR="deepskyblue">1827:</FONT>                 D3DXMatrixMultiply(&amp;mat, &amp;pmcMesh-&gt;m_pBoneOffsetMat[matid], pmcMesh-&gt;m_pBoneMatrix[matid]);
+<FONT COLOR="deepskyblue">1828:</FONT>                 D3DXMatrixMultiplyTranspose(&amp;mat, &amp;mat, &amp;m_View);
+<FONT COLOR="deepskyblue">1829:</FONT>                 m_pD3DDev-&gt;SetVertexShaderConstant(i*3 + 9, &amp;mat, 3);
+<FONT COLOR="deepskyblue">1830:</FONT>             }
+<FONT COLOR="deepskyblue">1831:</FONT>         }
+<FONT COLOR="deepskyblue">1832:</FONT> 
+<FONT COLOR="deepskyblue">1833:</FONT>         <FONT COLOR="cyan">// 質感の設定</FONT>
+<FONT COLOR="deepskyblue">1834:</FONT>         D3DXCOLOR ambEmm;
+<FONT COLOR="deepskyblue">1835:</FONT>         D3DMATERIAL8 *pMaterial = &amp;pmcMesh-&gt;rgMaterials[pBoneComb[ipattr].AttribId];
+<FONT COLOR="deepskyblue">1836:</FONT>         D3DXColorModulate(&amp;ambEmm, &amp;D3DXCOLOR(pMaterial-&gt;Ambient),&amp;D3DXCOLOR(.25, .25, .25, 1.0));
+<FONT COLOR="deepskyblue">1837:</FONT>         ambEmm += D3DXCOLOR(pMaterial-&gt;Emissive);
+<FONT COLOR="deepskyblue">1838:</FONT>         m_pD3DDev-&gt;SetVertexShaderConstant(8, &amp;(pMaterial-&gt;Diffuse), 1);<FONT COLOR="cyan">// 平行光源</FONT>
+<FONT COLOR="deepskyblue">1839:</FONT>         m_pD3DDev-&gt;SetVertexShaderConstant(7, &amp;ambEmm, 1);              <FONT COLOR="cyan">// 環境光</FONT>
+<FONT COLOR="deepskyblue">1840:</FONT>         vConst.y = pMaterial-&gt;Power;
+<FONT COLOR="deepskyblue">1841:</FONT>         m_pD3DDev-&gt;SetVertexShaderConstant(0, &amp;vConst, 1);<FONT COLOR="cyan">// すぺきゅらー</FONT>
+<FONT COLOR="deepskyblue">1842:</FONT>         <FONT COLOR="cyan">// テクスチャーの設定</FONT>
+<FONT COLOR="deepskyblue">1843:</FONT>         m_pD3DDev-&gt;SetTexture(0, pmcMesh-&gt;pTextures[pBoneComb[ipattr].AttribId]);
+<FONT COLOR="deepskyblue">1844:</FONT>         <FONT COLOR="cyan">// 実際の描画</FONT>
+<FONT COLOR="deepskyblue">1845:</FONT>         hr = m_pD3DDev-&gt;DrawIndexedPrimitive(D3DPT_TRIANGLELIST, 
+<FONT COLOR="deepskyblue">1846:</FONT>                                      pBoneComb[ipattr].VertexStart, pBoneComb[ipattr].VertexCount,
+<FONT COLOR="deepskyblue">1847:</FONT>                                      pBoneComb[ipattr].FaceStart * 3, pBoneComb[ipattr].FaceCount);
+<FONT COLOR="deepskyblue">1848:</FONT>         <FONT COLOR="#0000FF">if</FONT>(FAILED(hr))  <FONT COLOR="#0000FF">return</FONT> hr;
+<FONT COLOR="deepskyblue">1849:</FONT>     }
+<FONT COLOR="deepskyblue">1850:</FONT>     
+<FONT COLOR="deepskyblue">1851:</FONT>     <FONT COLOR="cyan">// ソフトウェアT&amp;Lの時を戻す</FONT>
+<FONT COLOR="deepskyblue">1852:</FONT>     <FONT COLOR="#0000FF">if</FONT> (pmcMesh-&gt;m_bUseSW) {
+<FONT COLOR="deepskyblue">1853:</FONT>         m_pD3DDev-&gt;SetRenderState(D3DRS_SOFTWAREVERTEXPROCESSING, FALSE);
+<FONT COLOR="deepskyblue">1854:</FONT>     }
+<FONT COLOR="deepskyblue">1855:</FONT> 
+<FONT COLOR="deepskyblue">1856:</FONT>     <FONT COLOR="#0000FF">return</FONT> S_OK;
+<FONT COLOR="deepskyblue">1857:</FONT> }
+</pre>
+
+<h2>■内部プログラム：後片付け</h2>
+
+
+<p>
+後片付けは確保したメモリを開放します。<br>
+階層構造になっているものはその子供、兄弟も順次開放していきます。
+</p>
+
+<pre class="CodeBlock">
+CSkinModel.cpp
+<font color = deepskyblue>2000:</font> <font color = cyan>//-----------------------------------------------------------------------------</font>
+<font color = deepskyblue>2001:</font> <font color = cyan>// 最後の時やデバイスが変更されたとき等に呼ばれる</font>
+<font color = deepskyblue>2002:</font> <font color = cyan>//-----------------------------------------------------------------------------</font>
+<font color = deepskyblue>2003:</font> HRESULT CSkinModel::Release()
+<font color = deepskyblue>2004:</font> {
+<font color = deepskyblue>2005:</font>     _InvalidateDeviceObjects();
+<font color = deepskyblue>2006:</font>     _DeleteDeviceObjects();
+<font color = deepskyblue>2007:</font>     
+<font color = deepskyblue>2008:</font>     return S_OK;
+<font color = deepskyblue>2009:</font> }
+<font color = deepskyblue>2010:</font> <font color = cyan>//-----------------------------------------------------------------------------</font>
+<font color = deepskyblue>2011:</font> <font color = cyan>// 最後の時やデバイスが変更されたとき等に呼ばれる</font>
+<font color = deepskyblue>2012:</font> <font color = cyan>//-----------------------------------------------------------------------------</font>
+<font color = deepskyblue>2013:</font> HRESULT CSkinModel::_InvalidateDeviceObjects()
+<font color = deepskyblue>2014:</font> {
+<font color = deepskyblue>2015:</font>     if(m_pdeMesh) m_pdeMesh->pframeRoot->ReleaseDeviceDependentMeshes();
+<font color = deepskyblue>2016:</font> 
+<font color = deepskyblue>2017:</font>     return S_OK;
+<font color = deepskyblue>2018:</font> }
+<font color = deepskyblue>2019:</font> <font color = cyan>//-----------------------------------------------------------------------------</font>
+<font color = deepskyblue>2020:</font> <font color = cyan>// 最後の時やデバイスが変更されたとき等に呼ばれる</font>
+<font color = deepskyblue>2021:</font> <font color = cyan>//-----------------------------------------------------------------------------</font>
+<font color = deepskyblue>2022:</font> HRESULT CSkinModel::_DeleteDeviceObjects()
+<font color = deepskyblue>2023:</font> {
+<font color = deepskyblue>2024:</font>     if(m_pdeMesh) delete m_pdeMesh; m_pdeMesh = NULL;
+<font color = deepskyblue>2025:</font>     
+<font color = deepskyblue>2026:</font>     delete [] m_pBoneMatrices;
+<font color = deepskyblue>2027:</font> 
+<font color = deepskyblue>2028:</font>     return S_OK;
+<font color = deepskyblue>2029:</font> }
+<font color = deepskyblue>2030:</font> <font color = cyan>//-----------------------------------------------------------------------------</font>
+<font color = deepskyblue>2031:</font> <font color = cyan>// メッシュとして確保したメモリを開放する</font>
+<font color = deepskyblue>2032:</font> <font color = cyan>//-----------------------------------------------------------------------------</font>
+<font color = deepskyblue>2033:</font> void SFrame::ReleaseDeviceDependentMeshes()
+<font color = deepskyblue>2034:</font> {
+<font color = deepskyblue>2035:</font>     if (this->pmcMesh != NULL){
+<font color = deepskyblue>2036:</font>         for (SMeshContainer* pmcCurr = this->pmcMesh; pmcCurr != NULL; pmcCurr = pmcCurr->pmcNext){
+<font color = deepskyblue>2037:</font>             if (pmcCurr->m_pSkinMesh != NULL){
+<font color = deepskyblue>2038:</font>                 RELEASE(pmcCurr->pMesh);
+<font color = deepskyblue>2039:</font> 
+<font color = deepskyblue>2040:</font>                 pmcCurr->m_Method = NONE;
+<font color = deepskyblue>2041:</font>             }
+<font color = deepskyblue>2042:</font>         }
+<font color = deepskyblue>2043:</font>     }
+<font color = deepskyblue>2044:</font> 
+<font color = deepskyblue>2045:</font>     <font color = cyan>// 子供や子供兄弟を次々に削除</font>
+<font color = deepskyblue>2046:</font>     if (this->pframeFirstChild != NULL)
+<font color = deepskyblue>2047:</font>         this->pframeFirstChild->ReleaseDeviceDependentMeshes();
+<font color = deepskyblue>2048:</font> 
+<font color = deepskyblue>2049:</font>     if (this->pframeSibling != NULL)
+<font color = deepskyblue>2050:</font>         this->pframeSibling->ReleaseDeviceDependentMeshes();
+<font color = deepskyblue>2051:</font> }
+</pre>
+
+
+<h2>■最後に</h2>
+
+
+<p>
+やっとモーションを終えました。<br>
+オブジェクト化を進めようと思ったのですが、全然、まとまってなかったりして…<br>
+<br>
+モーションは難しいことがない割に、ソースコードばかり長くなるので、説明はしたくないところですよね。<br>
+技術系のＢＢＳで、『アニメーションするにはどうすればいいですか？』というのを、
+就職活動の前の時期になると（？）見かけるのですが、最近では『skinned mesh のサンプルを見ろよ』で片付けられますね。<br>
+個人的には、その回答で良いと思うのですが、うざいのでやってみました。<br>
+<br>
+モーションはフォーマットをどうするのかは考え物ですよね。<br>
+独自フォーマットで描画するのは楽ですが、コンバータを作ったり、メンテナンスをしなくちゃいけないし、
+今回のように、よく知られたXファイルを使うときには、全てのXファイルが表示できないと文句いわれるし。<br>
+でもまぁ、仕事でやらない限りは、広がっているフォーマットを使うほうが（頭の良い人が考えているはずだから）効率もいいだろうし、データも沢山あるしでお勧めする方法だと思いますけどね。
+</p>
+<p>
+ということで、今後『初心者なのですが、ファイルでアニメーションをするにはどうすればいいですか』という『あきらめろ』といいたくなるような質問が減ってくれればいいと思います。
+</p>
+
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<center>
+<p><a href="../index.html">もどる</a></p>
+<p><a href="mailto:imagire@gmail.com">imagire@gmail.com</a></p>
+</center>
+
+</body>
+</html>

@@ -1,0 +1,60 @@
+<HTML>
+<HEAD>
+<TITLE>hemi_amb.vsh</TITLE>
+<meta name="GENERATOR" content="cpp2html 2.0 by Niisaka">
+<meta http-equiv="Content-Type" content="text/html">
+<meta http-equiv="Content-Style-Type" content="text/css">
+<STYLE TYPE="text/css">
+<!--
+SPAN.comment { color:#008000; font-weight:normal; font-style:normal;}
+SPAN.keyword { color:#0000FF; font-weight:normal; font-style:normal;}
+SPAN.string { color:#600000; font-weight:normal; font-style:normal;}
+SPAN.linenum { color:#A0A0A0; font-weight:normal; font-style:normal;}
+-->
+</STYLE>
+</HEAD>
+<BODY TEXT="#000000" BGCOLOR="#FFFFFF">
+<PRE><SPAN CLASS="linenum">0001:</SPAN> ;
+<SPAN CLASS="linenum">0002:</SPAN> ; 環境光半球ライティング
+<SPAN CLASS="linenum">0003:</SPAN> ;
+<SPAN CLASS="linenum">0004:</SPAN> ; c0-3   -- world + ビュー + 透視変換行列
+<SPAN CLASS="linenum">0005:</SPAN> ; c12    -- {0.0, 0.5, 1.0, 2.0}
+<SPAN CLASS="linenum">0006:</SPAN> ; c13    -- ライトのベクトル (w成分は環境光の強さ)
+<SPAN CLASS="linenum">0007:</SPAN> ; c14    -- 視点の位置
+<SPAN CLASS="linenum">0008:</SPAN> ; c15    -- ライトの色(平行光源の色*メッシュの色)
+<SPAN CLASS="linenum">0009:</SPAN> ; c18    -- ライトの色(上半球の色)
+<SPAN CLASS="linenum">0010:</SPAN> ; c19    -- ライトの色(下半球の色)
+<SPAN CLASS="linenum">0011:</SPAN> ; c20    -- 半球の軸
+<SPAN CLASS="linenum">0012:</SPAN> ;
+<SPAN CLASS="linenum">0013:</SPAN> ; v0    頂点の座標値
+<SPAN CLASS="linenum">0014:</SPAN> ; v3    法線ベクトル (w成分は1.0f)
+<SPAN CLASS="linenum">0015:</SPAN> ; v7    テクスチャ座標0
+<SPAN CLASS="linenum">0016:</SPAN> 
+<SPAN CLASS="linenum">0017:</SPAN> vs.1.0
+<SPAN CLASS="linenum">0018:</SPAN> 
+<SPAN CLASS="linenum">0019:</SPAN> ;座標変換
+<SPAN CLASS="linenum">0020:</SPAN> dp4 oPos.x, v0,   c0
+<SPAN CLASS="linenum">0021:</SPAN> dp4 oPos.y, v0,   c1
+<SPAN CLASS="linenum">0022:</SPAN> dp4 oPos.z, v0,   c2
+<SPAN CLASS="linenum">0023:</SPAN> dp4 oPos.w, v0,   c3
+<SPAN CLASS="linenum">0024:</SPAN> 
+<SPAN CLASS="linenum">0025:</SPAN> 
+<SPAN CLASS="linenum">0026:</SPAN> ;半球ライティング
+<SPAN CLASS="linenum">0027:</SPAN> dp3 r0,      v3,   c20          ; (N･A)
+<SPAN CLASS="linenum">0028:</SPAN> mov r1,      c12.y              ; r1 = 0.5
+<SPAN CLASS="linenum">0029:</SPAN> mad r0,      r0,   r1, r1       ; r0 = (1+N･A)/2 = α
+<SPAN CLASS="linenum">0030:</SPAN> 
+<SPAN CLASS="linenum">0031:</SPAN> mov r1,      c19                ; r1 = Ld
+<SPAN CLASS="linenum">0032:</SPAN> add r1,      c18,  -r1          ; r1 = Lu-Ld
+<SPAN CLASS="linenum">0033:</SPAN> mad r0,      r1,   r0,  c19     ; r0 = α(Lu-Ld)+Ld = αLu + (1-α)Ld 
+<SPAN CLASS="linenum">0034:</SPAN> 
+<SPAN CLASS="linenum">0035:</SPAN> ; N･L (平行光源)
+<SPAN CLASS="linenum">0036:</SPAN> dp3 r1.w,   v3,    c13
+<SPAN CLASS="linenum">0037:</SPAN> max r1.w,   r1.w,  c12.x
+<SPAN CLASS="linenum">0038:</SPAN> add r1,     r1.w,  r0
+<SPAN CLASS="linenum">0039:</SPAN> mul oD0,    r1,    c15
+<SPAN CLASS="linenum">0040:</SPAN> 
+<SPAN CLASS="linenum">0041:</SPAN> ; テクスチャー
+<SPAN CLASS="linenum">0042:</SPAN> mov oT0,    v7</PRE>
+</BODY>
+</HTML>

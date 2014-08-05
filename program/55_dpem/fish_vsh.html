@@ -1,0 +1,56 @@
+<HTML>
+<HEAD>
+<TITLE>fish.vsh</TITLE>
+<meta name="GENERATOR" content="vsh2html 1.0 by Niisaka">
+<meta http-equiv="Content-Type" content="text/html">
+<meta http-equiv="Content-Style-Type" content="text/css">
+<STYLE TYPE="text/css">
+<!--
+SPAN.comment { color:#008000; font-weight:normal; font-style:normal;}
+SPAN.linenum { color:#A0A0A0; font-weight:normal; font-style:normal;}
+-->
+</STYLE>
+</HEAD>
+<BODY TEXT="#000000" BGCOLOR="#FFFFFF">
+<PRE><SPAN CLASS="linenum">0001:</SPAN> <SPAN CLASS="comment">; c0-3   -- world + ビュー 行列</SPAN>
+<SPAN CLASS="linenum">0002:</SPAN> <SPAN CLASS="comment">; c12    -- {0.0, 0.5, 1.0, 2.0}</SPAN>
+<SPAN CLASS="linenum">0003:</SPAN> <SPAN CLASS="comment">; c13    -- ライトのベクトル (w成分は環境光の強さ)</SPAN>
+<SPAN CLASS="linenum">0004:</SPAN> <SPAN CLASS="comment">; c14    -- モデルの色</SPAN>
+<SPAN CLASS="linenum">0005:</SPAN> <SPAN CLASS="comment">; c15    -- 深度調整</SPAN>
+<SPAN CLASS="linenum">0006:</SPAN> <SPAN CLASS="comment">;</SPAN>
+<SPAN CLASS="linenum">0007:</SPAN> <SPAN CLASS="comment">; v0    頂点の座標値</SPAN>
+<SPAN CLASS="linenum">0008:</SPAN> <SPAN CLASS="comment">; v7    テクスチャ座標</SPAN>
+<SPAN CLASS="linenum">0009:</SPAN> 
+<SPAN CLASS="linenum">0010:</SPAN> vs.1.0
+<SPAN CLASS="linenum">0011:</SPAN> 
+<SPAN CLASS="linenum">0012:</SPAN> <SPAN CLASS="comment">;座標変換</SPAN>
+<SPAN CLASS="linenum">0013:</SPAN> m4x4 r0,  v0,   c0
+<SPAN CLASS="linenum">0014:</SPAN> 
+<SPAN CLASS="linenum">0015:</SPAN> dp3 r0.w, r0, r0
+<SPAN CLASS="linenum">0016:</SPAN> rsq r1.w, r0.w
+<SPAN CLASS="linenum">0017:</SPAN> mul r0.w, r0.w, r1.w
+<SPAN CLASS="linenum">0018:</SPAN> mov oPos.w, r0.w                <SPAN CLASS="comment">; oPos.w = r0.w = ||v0||</SPAN>
+<SPAN CLASS="linenum">0019:</SPAN> 
+<SPAN CLASS="linenum">0020:</SPAN> mad oPos.z,  c15.x, r0.w, c15.y <SPAN CLASS="comment">; oPos.z = z_max*(||v0||-z_min)/(z_max-z_min)</SPAN>
+<SPAN CLASS="linenum">0021:</SPAN> 
+<SPAN CLASS="linenum">0022:</SPAN> add r1.w, r0.w, -r0.z           
+<SPAN CLASS="linenum">0023:</SPAN> dp4 r1.z, r0.xxyy, r0.xxyy
+<SPAN CLASS="linenum">0024:</SPAN> rcp r1.z, r1.z
+<SPAN CLASS="linenum">0025:</SPAN> mul r0, r0, r0.w
+<SPAN CLASS="linenum">0026:</SPAN> mul r0, r0, r1.w
+<SPAN CLASS="linenum">0027:</SPAN> mul r0, r0, c12.w
+<SPAN CLASS="linenum">0028:</SPAN> mul oPos.xy, r0, r1.z           <SPAN CLASS="comment">; oPos.xy = r0.xy*||v0||*(||v0||-r0.z)/(v0.x^2+v0.y^2)</SPAN>
+<SPAN CLASS="linenum">0029:</SPAN> 
+<SPAN CLASS="linenum">0030:</SPAN> <SPAN CLASS="comment">; 通常レンダリング(比較用)</SPAN>
+<SPAN CLASS="linenum">0031:</SPAN> <SPAN CLASS="comment">;m4x4   r0,  v0,   c0</SPAN>
+<SPAN CLASS="linenum">0032:</SPAN> <SPAN CLASS="comment">;m4x4 oPos,  r0,   c4</SPAN>
+<SPAN CLASS="linenum">0033:</SPAN> 
+<SPAN CLASS="linenum">0034:</SPAN> <SPAN CLASS="comment">; ((L･N) + L.w)*c14 (平行光源のライティング)</SPAN>
+<SPAN CLASS="linenum">0035:</SPAN> dp4 r0.w,   v3,   c13
+<SPAN CLASS="linenum">0036:</SPAN> mul oD0,    r0.w, c14
+<SPAN CLASS="linenum">0037:</SPAN> 
+<SPAN CLASS="linenum">0038:</SPAN> <SPAN CLASS="comment">; テクスチャーを張る</SPAN>
+<SPAN CLASS="linenum">0039:</SPAN> mov oT0,    v7
+<SPAN CLASS="linenum">0040:</SPAN> </PRE>
+</BODY>
+</HTML>

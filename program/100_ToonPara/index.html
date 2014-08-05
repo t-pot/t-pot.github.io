@@ -1,0 +1,144 @@
+<head>
+	<title>t-pot『放物変換 トゥーンシェーディング』</title>
+	<link rel="stylesheet" type="text/css" href="../if.css">
+</head>
+<meta http-equiv=Content-Type content="text/html; charset=shift_jis">
+<body>
+
+
+<div class="contents">
+<center>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<h1>放物変換 トゥーンシェーディング</h1><br>
+<h3>～ Toon shading with parabolic maps ～</h3>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<image src = "title.png">
+<br>
+<hr>
+</center>
+<div>
+
+
+<h2>■はじめに</h2>
+
+
+<p>
+前回の<a href="../99_FactoredBRDF/index.html">「因数分解化ＢＲＤＦ」</a>で放物変換を取り扱ったのですが、この方法は、今まで１次元テクスチャでテーブル引きしていて頂点ごとにかくかくしたたものを滑らかな変化に変えることができます。
+この表現で一番最初に思いつくのがトゥーンシェーディングで、トゥーンシェーディングは、下手にやるとグーローシェーディングの線形補間によってポリゴンの形が見えてしまうのですが、放物変換を使うと滑らかに変化させることができます。
+</p>
+<p>
+今回のプログラムは、次のものです。
+</p>
+<ul style = "LIST-STYLE-TYPE:none">
+<li><a href="src.zip">src.zip (放物変換 トゥーンシェーディング:DirectX9(ピクセルシェーダ1.1)</a>
+</ul>
+
+<p>
+まぁ、いつものように適当にファイルが入っています。<br>
+APP WIZARD から出力されるフレームワークのファイルは紹介を省かせていただきます。
+</p>
+<table>
+<tr><td><a href="hlsl_fx.html">hlsl.fx</a></td><td>シェーダの入ったエフェクトファイル</td></tr>
+<tr><td><a href="main_h.html">main.h</a></td><td>アプリケーションのヘッダ</td></tr>
+<tr><td><a href="main_cpp.html">main.cpp</a></td><td>アプリケーションのソース</td></tr>
+</table>
+
+<p>
+あと、実行ファイル、プロジェクトファイルが入っています。
+</p>
+
+
+<h2>■何やってるの？</h2>
+
+
+<p>
+今回は、前回より簡単になっています。ほぼ２色に塗り分けられたトゥーンのテクスチャをライトベクトルを放物変換を使って計算したテクスチャ座標を使ったサンプリングによって、デカールの色に陰影をつけます。
+</p>
+<table>
+<tr>
+<td>color = </td><td><image src = "decale.png"></td><td> * </td><td><image src = "toon.png"></td><td>(Q(L))</td>
+</tr>
+</table>
+<p>
+なお、今回は前回の放物変換をそのまま使いましたが、実際にやってみると白と黒の境界がテクスチャのふちぎりぎりになってしまったので、テクスチャ座標に変換するときの半径(前回の式のpv)をもう少し小さくしたほうが良いかも知れません。
+</p>
+
+
+<h2>■プログラム</h2>
+
+
+<p>
+頂点シェーダでは放物変換を使って、ライトベクトルからテクスチャ座標を計算します。
+</p>
+
+<pre class="CodeBlock">
+hlsl.fx
+<font color="deepskyblue">0083:</font> <font color="cyan">// -------------------------------------------------------------</font>
+<font color="deepskyblue">0084:</font> <font color="cyan">// 頂点シェーダプログラム</font>
+<font color="deepskyblue">0085:</font> <font color="cyan">// -------------------------------------------------------------</font>
+<font color="deepskyblue">0086:</font> VS_OUTPUT VS(VS_INPUT In)
+<font color="deepskyblue">0087:</font> {   
+<font color="deepskyblue">0088:</font>     VS_OUTPUT Out = (VS_OUTPUT)0;            <font color="cyan">// 出力データ</font>
+<font color="deepskyblue">0089:</font>     
+<font color="deepskyblue">0090:</font>     <font color="cyan">// 位置座標</font>
+<font color="deepskyblue">0091:</font>     Out.Pos = mul( In.Pos, mWVP );
+<font color="deepskyblue">0092:</font>     
+<font color="deepskyblue">0093:</font>     <font color="cyan">// 表面座標系の基底ベクトルを求める</font>
+<font color="deepskyblue">0094:</font>     float3 N = In.Normal;                   <font color="cyan">// 法線ベクトル</font>
+<font color="deepskyblue">0095:</font>     float3 B = float3(0,1,0);               <font color="cyan">// 従法線ベクトル</font>
+<font color="deepskyblue">0096:</font>     float3 T = normalize(cross(N,B));       <font color="cyan">// 接ベクトル</font>
+<font color="deepskyblue">0097:</font>     B = cross(T,N);
+<font color="deepskyblue">0098:</font>     
+<font color="deepskyblue">0099:</font>     <font color="cyan">// ベクトルをテクスチャ座標へ変換する</font>
+<font color="deepskyblue">0100:</font>     <font color="yellow">float3 L = normalize(LightPos-In.Pos.xyz);<font color="cyan">// ライトベクトル</font>
+<font color="deepskyblue">0101:</font>     Out.ToonCoord = Q(L, B,T,N);</font>
+<font color="deepskyblue">0102:</font>     
+<font color="deepskyblue">0103:</font>     <font color="cyan">// デカールのテクスチャ座標</font>
+<font color="deepskyblue">0104:</font>     Out.Tex = In.Tex;
+<font color="deepskyblue">0105:</font> 
+<font color="deepskyblue">0106:</font>     <font color="blue">return</font> Out;
+<font color="deepskyblue">0107:</font> }
+</pre>
+<p>
+ピクセルシェーダでは先ほど求めたテクスチャ座標でトゥーンのテクスチャを読み込んでデカールテクスチャからの色に陰影をつけます。
+なお、そのままでは色の変化が急すぎたので、環境光を0.5つけました（同時に読み込んだ陰影も0.5倍に調整しました）。
+</p>
+<pre class="CodeBlock">
+hlsl.fx
+<font color="deepskyblue">0108:</font> <font color="cyan">// -------------------------------------------------------------</font>
+<font color="deepskyblue">0109:</font> <font color="cyan">// ピクセルシェーダプログラム</font>
+<font color="deepskyblue">0110:</font> <font color="cyan">// -------------------------------------------------------------</font>
+<font color="deepskyblue">0111:</font> float4 PS(VS_OUTPUT In) : COLOR
+<font color="deepskyblue">0112:</font> {   
+<font color="deepskyblue">0113:</font>     float4 decale = tex2D( DecaleSamp, In.Tex );      <font color="cyan">// デカール</font>
+<font color="deepskyblue">0114:</font>     <font color="blue">float</font>  shade  = tex2D( ToonSamp,   In.ToonCoord );<font color="cyan">// ツゥーン</font>
+<font color="deepskyblue">0115:</font>     
+<font color="deepskyblue">0116:</font>     <font color="blue">return</font> (0.5f*shade+0.5f) * decale;
+<font color="deepskyblue">0117:</font> }
+</pre>
+
+
+<h2>■最後に</h2>
+
+
+<p>
+逆に放物変換に特有のクセが出てきますね。
+まぁ、でも使えるでしょう。。
+</p>
+
+
+</div>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<center>
+<hr>
+<p><a href="../index.html">もどる</a></p>
+<p><a href="mailto:imagire@gmail.com">imagire@gmail.com</a></p>
+</center>
+
+</body>
+</html>

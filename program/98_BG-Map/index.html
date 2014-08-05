@@ -1,0 +1,424 @@
+<head>
+	<title>t-pot『背景マッピング』</title>
+	<link rel="stylesheet" type="text/css" href="../if.css">
+</head>
+<meta http-equiv=Content-Type content="text/html; charset=shift_jis">
+<body>
+
+
+<div class="contents">
+<center>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<h1>背景マッピング</h1><br>
+<h3>～ Pre-Computed Matting ～</h3>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<image src = "title.png">
+<br>
+<hr>
+</center>
+<div>
+
+
+<h2>■はじめに</h2>
+
+<p>
+<a href="http://bbx.hp.infoseek.co.jp/">BBX</a>で、マリーニさんから、
+</p>
+<pre class="CodeBlock">
+実は、今DirectX9でバイオハザードのような一枚絵のゲームを作っていますて、
+視点の切り替え時にレンダリング＆Ｚバッファを作成、保存しておき次からは
+その視点である限りコピーして使いまわそう、と考えまして。これなら、とて
+もポリゴン数が増えても、切り替え時しかレンダリングしないので結構イケま
+すよね。
+
+しかし、Ｚバッファのコピーはやってみるとできないじゃないですか。（笑）
+色々と調べましたが、どうやらだめで。ロックすればなんとか
+できそうですが、機種が限られてしまうとか。
+
+ですので今は、背景となるポリゴンをテクスチャをひっぺがしてライティング
+なしで、極力負荷が抑えられるように描画し(Zバッファ書き込みだけが必要で
+あるため）、その上に保存しておいた一枚絵を描画しています。
+
+なんとか、解決する方法ありませんかな、と思って投稿しました。皆様のお知恵
+をお貸しください。よろしくお願いします。
+</pre>
+<p>
+という質問を受けて、「ps 1_3以上なら出来るんじゃないの？ま、でも実用的なのは2_0以上だろ」と返したのですが、
+そういえば深度バッファへの書き込みはやっていなかったので、実装してみました。
+</p>
+<p>
+今回のプログラムは、次のものです。
+</p>
+<ul style = "LIST-STYLE-TYPE:none">
+<li><a href="src.zip">src.zip (背景マッピング:DirectX9(ピクセルシェーダ2.0)</a>
+</ul>
+
+<p>
+まぁ、いつものように適当にファイルが入っています。<br>
+APP WIZARD から出力されるフレームワークのファイルは紹介を省かせていただきます。
+</p>
+<table>
+<tr><td><a href="hlsl_fx.html">hlsl.fx</a></td><td>シェーダの入ったエフェクトファイル</td></tr>
+<tr><td><a href="main_h.html">main.h</a></td><td>アプリケーションのヘッダ</td></tr>
+<tr><td><a href="main_cpp.html">main.cpp</a></td><td>アプリケーションのソース</td></tr>
+</table>
+
+<p>
+あと、実行ファイル、プロジェクトファイルが入っています。
+</p>
+
+
+<h2>■何やってるの？</h2>
+
+
+<p>
+今回の方法は、あらかじめ背景の色と深度バッファの値をテクスチャに保存しておいて、レンダリングの時には、背景を描画する代わりにこれらのテクスチャをレンダリングします。<br>
+今回は、初期化時やカメラが変わった時に背景画像を作り直していますが、基本的には、ＲＧＢ８ビットの画像なので、バイオハザードのようなカメラが変わらないゲームでは、あらかじめ画像ファイルを用意しておいて、適当なときに読み込むのが良いでしょう。
+</p>
+
+<image src = "explain.png">
+<p>
+さて、上の図で、深度バッファのイメージがカラフルなことに気がついたでしょうか。<br>
+我々が普段使う深度バッファは１６ビットないしは２４ビットの精度があります。
+これをそのままテクスチャに書き出しただけでは８ビットの精度に落ちてしまうので、深度値を各色成分に上位、中位、下位に分けて保存しました。<br>
+なお、浮動小数点バッファを使う手もありますが、今回は汎用性を重視して個の実装にしました。
+</p>
+<image src = "format.png">
+<p>
+具体的に、0.0～1.0の深度値を展開する式は、各成分が２５６段階なので、
+<pre class="CodeBlock">
+R = depth
+G = 小数部(        256.0 * depth)
+B = 小数部(256.0 * 256.0 * depth)
+</pre>
+のようにすれば、それぞれの上位８ビットを取って適当な値が保存されます。<br>
+逆に色から深度値を戻すには、
+<pre class="CodeBlock">
+depth = R + G / 256.0 + B / (256.0*256.0)
+</pre>
+のようにすればよいでしょう。<br>
+実際にテクスチャを見ると、次のようになります。
+</p>
+<image src = "depth.png">
+<p>
+</p>
+
+
+
+
+<h2>■背景テクスチャの作成</h2>
+
+
+<p>
+ということで、今回のプログラムを紹介してきましょう。<br>
+今回一番働き者なのはピクセルシェーダで、色成分に普通にレンダリングすると共に、
+頂点シェーダから出力された座標In.Posから、深度バッファに記録される値In.Pos.z/In.Pos.w計算して、色ごとに深度値をテクスチャに出力します。
+</p>
+<pre class="CodeBlock">
+hlsl.fx
+<font color="deepskyblue">0089:</font> <font color="cyan">// -------------------------------------------------------------</font>
+<font color="deepskyblue">0090:</font> <font color="cyan">// ピクセルシェーダプログラム</font>
+<font color="deepskyblue">0091:</font> <font color="cyan">// -------------------------------------------------------------</font>
+<font color="deepskyblue">0092:</font> PS_OUTPUT PS ( VS_OUTPUT In ) {
+<font color="deepskyblue">0093:</font>     
+<font color="deepskyblue">0094:</font>     PS_OUTPUT Out = ( PS_OUTPUT ) 0;
+<font color="deepskyblue">0095:</font>     
+<font color="deepskyblue">0096:</font>     <font color="cyan">// 通常色</font>
+<font color="deepskyblue">0097:</font>     Out.Color = tex2D( DecaleSamp, In.Tex );
+<font color="deepskyblue">0098:</font>     
+<font color="deepskyblue">0099:</font>     <font color="cyan">// 深度</font>
+<font color="deepskyblue">0100:</font>     <font color="blue">float</font> depth = In.Pos.z / In.Pos.w;
+<font color="deepskyblue">0101:</font>     Out.Depth.x = depth;
+<font color="deepskyblue">0102:</font>     Out.Depth.y = depth * 256.0;
+<font color="deepskyblue">0103:</font>     Out.Depth.z = depth * 256.0f * 256.0f;
+<font color="deepskyblue">0104:</font>     Out.Depth.w = 0.0f;
+<font color="deepskyblue">0105:</font>     Out.Depth = frac(Out.Depth);
+<font color="deepskyblue">0106:</font> 
+<font color="deepskyblue">0107:</font>     <font color="blue">return</font> Out;
+<font color="deepskyblue">0108:</font> }
+</pre>
+<p>
+ちなみに、今回は、マルチレンダリングターゲットを使って、色と深度値を一度に別々のテクスチャに出力しました。<br>
+ピクセルシェーダから出力されるデータは、次のような構造体です。
+</p>
+<pre class="CodeBlock">
+hlsl.fx
+<font color="deepskyblue">0082:</font> <font color="cyan">// -------------------------------------------------------------</font>
+<font color="deepskyblue">0083:</font> <font color="cyan">// ピクセルシェーダ出力データ</font>
+<font color="deepskyblue">0084:</font> <font color="cyan">// -------------------------------------------------------------</font>
+<font color="deepskyblue">0085:</font> <font color="blue">struct</font> PS_OUTPUT {
+<font color="deepskyblue">0086:</font>     float4 Color  : COLOR0;
+<font color="deepskyblue">0087:</font>     float4 Depth  : COLOR1;
+<font color="deepskyblue">0088:</font> };
+</pre>
+<p>
+頂点シェーダも特別なプログラムを組まなくてはなりません。<br>
+ピクセルシェーダからは、レンダリングされる座標は直接はわからないので、
+テクスチャ座標を通して、頂点シェーダからピクセルシェーダに座標値を出力します。
+</p>
+<pre class="CodeBlock">
+hlsl.fx
+<font color="deepskyblue">0057:</font> <font color="cyan">// ------------------------------------------------------------</font>
+<font color="deepskyblue">0058:</font> <font color="cyan">// 頂点シェーダからピクセルシェーダに渡されるデータ</font>
+<font color="deepskyblue">0059:</font> <font color="cyan">// ------------------------------------------------------------</font>
+<font color="deepskyblue">0060:</font> <font color="blue">struct</font> VS_OUTPUT
+<font color="deepskyblue">0061:</font> {
+<font color="deepskyblue">0062:</font>     float4 Position     : POSITION;
+<font color="deepskyblue">0063:</font>     float2 Tex          : TEXCOORD0;
+<font color="deepskyblue">0064:</font>     float4 Pos          : TEXCOORD1;
+<font color="deepskyblue">0065:</font> };
+</pre>
+<p>
+頂点シェーダプログラムでは、POSITION と TEXCOORD1の２つに同じ座標値を出力します。
+</p>
+<pre class="CodeBlock">
+hlsl.fx
+<font color="deepskyblue">0066:</font> <font color="cyan">// ------------------------------------------------------------</font>
+<font color="deepskyblue">0067:</font> <font color="cyan">// 頂点シェーダプログラム</font>
+<font color="deepskyblue">0068:</font> <font color="cyan">// ------------------------------------------------------------</font>
+<font color="deepskyblue">0069:</font> VS_OUTPUT VS (
+<font color="deepskyblue">0070:</font>       float4 Pos    : POSITION           <font color="cyan">// モデルの頂点</font>
+<font color="deepskyblue">0071:</font>      ,float4 Tex    : TEXCOORD0          <font color="cyan">// テクスチャ座標</font>
+<font color="deepskyblue">0072:</font> ){
+<font color="deepskyblue">0073:</font>     VS_OUTPUT Out = (VS_OUTPUT)0;        <font color="cyan">// 出力データ</font>
+<font color="deepskyblue">0074:</font>     
+<font color="deepskyblue">0075:</font>     <font color="cyan">// 位置座標</font>
+<font color="deepskyblue">0076:</font>     <font color="yellow">Out.Pos =</font> Out.Position = mul( Pos, mWVP );
+<font color="deepskyblue">0077:</font>     
+<font color="deepskyblue">0078:</font>     Out.Tex = Tex;
+<font color="deepskyblue">0079:</font>     
+<font color="deepskyblue">0080:</font>     <font color="blue">return</font> Out;
+<font color="deepskyblue">0081:</font> }
+</pre>
+<p>
+アプリケーション側で用意するオブジェクトは、色用と深度用の２枚のテクスチャとそのサーフェス、また、レンダリング時に使う深度バッファになります。<br>
+また、m_bCreateというフラグを用意しました。これは、カメラが変わったときと初期化時にTRUEになるフラグで、これがたっているときにテクスチャを描画します。
+</p>
+<pre class="CodeBlock">
+main.h
+<font color="deepskyblue">0029:</font> <font color="cyan">//-------------------------------------------------------------</font>
+<font color="deepskyblue">0030:</font> <font color="cyan">// Name: class CMyD3DApplication</font>
+<font color="deepskyblue">0031:</font> <font color="cyan">// Desc: アプリケーションのクラス</font>
+<font color="deepskyblue">0032:</font> <font color="cyan">//-------------------------------------------------------------</font>
+<font color="deepskyblue">0033:</font> <font color="blue">class</font> CMyD3DApplication : <font color="blue">public</font> CD3DApplication
+<font color="deepskyblue">0034:</font> {
+<font color="deepskyblue">0035:</font>     <font color="yellow">BOOL                    m_bCreate;  </font><font color="cyan">// マップを作成する</font>
+<font color="deepskyblue">0036:</font> 
+<font color="deepskyblue">0037:</font>     CD3DMesh                *m_pMesh;
+<font color="deepskyblue">0038:</font>     CD3DMesh                *m_pMeshBg;
+<font color="deepskyblue">0039:</font>             
+<font color="deepskyblue">0040:</font>     <font color="cyan">// シェーダ</font>
+<font color="deepskyblue">0041:</font>     LPD3DXEFFECT            m_pEffect;      <font color="cyan">// エフェクト</font>
+<font color="deepskyblue">0042:</font>     D3DXHANDLE              m_hTechnique;   <font color="cyan">// テクニック</font>
+<font color="deepskyblue">0043:</font>     D3DXHANDLE              m_htColor;      <font color="cyan">// テクスチャ</font>
+<font color="deepskyblue">0044:</font>     D3DXHANDLE              m_htDepth;      <font color="cyan">// テクスチャ</font>
+<font color="deepskyblue">0045:</font>     D3DXHANDLE              m_hmWVP;        <font color="cyan">// 変換行列</font>
+<font color="deepskyblue">0046:</font> 
+<font color="deepskyblue">0047:</font>     <font color="cyan">// シャドウマップ</font>
+<font color="deepskyblue">0048:</font>     <font color="yellow">LPDIRECT3DSURFACE9      m_pMapZ;            <font color="cyan">// 深度バッファ</font>
+<font color="deepskyblue">0049:</font>     LPDIRECT3DTEXTURE9      m_pColorTex;        <font color="cyan">// 背景の色を格納する</font>
+<font color="deepskyblue">0050:</font>     LPDIRECT3DSURFACE9      m_pColorSurf;
+<font color="deepskyblue">0051:</font>     LPDIRECT3DTEXTURE9      m_pDepthTex;        <font color="cyan">// 背景の深度を格納する</font>
+<font color="deepskyblue">0052:</font>     LPDIRECT3DSURFACE9      m_pDepthSurf;</font>
+<font color="deepskyblue">0053:</font> 
+</pre>
+<p>
+描画するプログラムですが、レンダリングターゲットを変更するときの基本的な手法と同じく、今までのレンダリングターゲットを保存しておいてから、レンダリングターゲットを切り替えます。<br>
+今回は、２枚のテクスチャに同時に書き込むので、レンダリングターゲットの設定SetRenderTargetは、２回呼び出します。
+</p>
+<pre class="CodeBlock">
+main.cpp
+<font color="deepskyblue">0397:</font>         <font color="cyan">//-------------------------------------------------</font>
+<font color="deepskyblue">0398:</font>         <font color="cyan">// 背景マップの作成</font>
+<font color="deepskyblue">0399:</font>         <font color="cyan">//-------------------------------------------------</font>
+<font color="deepskyblue">0400:</font>         <font color="blue">if</font>(m_bCreate){
+<font color="deepskyblue">0401:</font>             m_bCreate = FALSE;
+<font color="deepskyblue">0402:</font> 
+<font color="deepskyblue">0403:</font>             <font color="cyan">//-------------------------------------------------</font>
+<font color="deepskyblue">0404:</font>             <font color="cyan">// レンダリングターゲットの保存</font>
+<font color="deepskyblue">0405:</font>             <font color="cyan">//-------------------------------------------------</font>
+<font color="deepskyblue">0406:</font>             m_pd3dDevice-&gt;GetRenderTarget(0, &amp;pOldBackBuffer);
+<font color="deepskyblue">0407:</font>             m_pd3dDevice-&gt;GetDepthStencilSurface(&amp;pOldZBuffer);
+<font color="deepskyblue">0408:</font>             m_pd3dDevice-&gt;GetViewport(&amp;oldViewport);
+<font color="deepskyblue">0409:</font> 
+<font color="deepskyblue">0410:</font>             <font color="cyan">//-------------------------------------------------</font>
+<font color="deepskyblue">0411:</font>             <font color="cyan">// レンダリングターゲットの変更</font>
+<font color="deepskyblue">0412:</font>             <font color="cyan">//-------------------------------------------------</font>
+<font color="deepskyblue">0413:</font>             <font color="yellow">m_pd3dDevice-&gt;SetRenderTarget(0, m_pColorSurf);</font>
+<font color="deepskyblue">0414:</font>             <font color="yellow">m_pd3dDevice-&gt;SetRenderTarget(1, m_pDepthSurf);</font>
+<font color="deepskyblue">0415:</font>             m_pd3dDevice-&gt;SetDepthStencilSurface(m_pMapZ);
+<font color="deepskyblue">0416:</font>             <font color="cyan">// ビューポートの変更</font>
+<font color="deepskyblue">0417:</font>             D3DVIEWPORT9 viewport = {0,0      <font color="cyan">// 左上の座標</font>
+<font color="deepskyblue">0418:</font>                             , MAP_WIDTH  <font color="cyan">// 幅</font>
+<font color="deepskyblue">0419:</font>                             , MAP_HEIGHT <font color="cyan">// 高さ</font>
+<font color="deepskyblue">0420:</font>                             , 0.0f,1.0f};     <font color="cyan">// 前面、後面</font>
+<font color="deepskyblue">0421:</font>             m_pd3dDevice-&gt;SetViewport(&amp;viewport);
+</pre>
+<p>
+描画するときは、先ほど作成したシェーダに描画方を切り替えて普通に描画します。<br>
+なお、今回の背景が白いのは、仕方なくやっていることです。<br>
+深度テクスチャとして初期化すべき値は1.0なのですが、深度用のテクスチャと色用のテクスチャで違う色で初期化できないので、全てのテクスチャを白で初期化します。
+</p>
+<pre class="CodeBlock">
+main.cpp
+<font color="deepskyblue">0423:</font>             <font color="cyan">// クリア</font>
+<font color="deepskyblue">0424:</font>             m_pd3dDevice-&gt;Clear(0L, NULL
+<font color="deepskyblue">0425:</font>                             , D3DCLEAR_TARGET | D3DCLEAR_ZBUFFER
+<font color="deepskyblue">0426:</font>                             , <font color="yellow">0xffffff</font>, 1.0f, 0L);
+<font color="deepskyblue">0427:</font> 
+<font color="deepskyblue">0428:</font>             <font color="cyan">//-------------------------------------------------</font>
+<font color="deepskyblue">0429:</font>             <font color="cyan">// シェーダの設定</font>
+<font color="deepskyblue">0430:</font>             <font color="cyan">//-------------------------------------------------</font>
+<font color="deepskyblue">0431:</font>             m_pEffect-&gt;SetTechnique( m_hTechnique );
+<font color="deepskyblue">0432:</font>             m_pEffect-&gt;Begin( NULL, 0 );
+<font color="deepskyblue">0433:</font>             m_pEffect-&gt;Pass( 0 );
+<font color="deepskyblue">0434:</font> 
+<font color="deepskyblue">0435:</font>             <font color="cyan">//-------------------------------------------------</font>
+<font color="deepskyblue">0436:</font>             <font color="cyan">// 背景の描画</font>
+<font color="deepskyblue">0437:</font>             <font color="cyan">//-------------------------------------------------</font>
+<font color="deepskyblue">0438:</font>             m = m_mWorld * m_mView * m_mProj;
+<font color="deepskyblue">0439:</font>             m_pEffect-&gt;SetMatrix(m_hmWVP, &amp;m);
+<font color="deepskyblue">0440:</font> 
+<font color="deepskyblue">0441:</font>             TSS( 0, D3DTSS_COLOROP,   D3DTOP_SELECTARG1 );
+<font color="deepskyblue">0442:</font>             TSS( 0, D3DTSS_COLORARG1, D3DTA_TEXTURE );
+<font color="deepskyblue">0443:</font>             m_pMeshBg-&gt;Render( m_pd3dDevice );
+<font color="deepskyblue">0444:</font> 
+<font color="deepskyblue">0445:</font>             m_pEffect-&gt;End();
+</pre>
+<p>
+最後にレンダリングターゲットを元に戻してテクスチャの作成は終了です。<br>
+特に２つめのレンダリングターゲットにNULLを設定することを忘れないようにしましょう。
+</p>
+<pre class="CodeBlock">
+main.cpp
+<font color="deepskyblue">0447:</font>             <font color="cyan">//-----------------------------------------------------</font>
+<font color="deepskyblue">0448:</font>             <font color="cyan">// レンダリングターゲットを元に戻す</font>
+<font color="deepskyblue">0449:</font>             <font color="cyan">//-----------------------------------------------------</font>
+<font color="deepskyblue">0450:</font>             m_pd3dDevice-&gt;SetRenderTarget(0, pOldBackBuffer);
+<font color="deepskyblue">0451:</font>             <font color="yellow">m_pd3dDevice-&gt;SetRenderTarget(1, NULL);</font>
+<font color="deepskyblue">0452:</font>             m_pd3dDevice-&gt;SetDepthStencilSurface(pOldZBuffer);
+<font color="deepskyblue">0453:</font>             m_pd3dDevice-&gt;SetViewport(&amp;oldViewport);
+<font color="deepskyblue">0454:</font>             pOldBackBuffer-&gt;Release();
+<font color="deepskyblue">0455:</font>             pOldZBuffer-&gt;Release();
+<font color="deepskyblue">0456:</font>         }
+</pre>
+
+
+<h2>■背景の描画</h2>
+
+
+<p>
+さて、後は、用意したテクスチャを使って背景を描画しましょう。<br>
+これは、普段画面クリアして、背景を描画するルーチンと下のルーチンを置き換えます。
+</p>
+<pre class="CodeBlock">
+main.cpp
+<font color="deepskyblue">0458:</font>         <font color="cyan">//-------------------------------------------------</font>
+<font color="deepskyblue">0459:</font>         <font color="cyan">// 作成した背景の張り込み</font>
+<font color="deepskyblue">0460:</font>         <font color="cyan">//-------------------------------------------------</font>
+<font color="deepskyblue">0461:</font>         m_pEffect-&gt;SetTechnique( m_hTechnique );
+<font color="deepskyblue">0462:</font>         m_pEffect-&gt;Begin( NULL, 0 );
+<font color="deepskyblue">0463:</font>         m_pEffect-&gt;Pass( 1 );
+<font color="deepskyblue">0464:</font> 
+<font color="deepskyblue">0465:</font>         <font color="yellow">RS( D3DRS_ZFUNC, D3DCMP_ALWAYS );</font>
+<font color="deepskyblue">0466:</font>         RS( D3DRS_LIGHTING, FALSE );
+<font color="deepskyblue">0467:</font>         TSS(0,D3DTSS_COLOROP,   D3DTOP_SELECTARG1);
+<font color="deepskyblue">0468:</font>         TSS(0,D3DTSS_COLORARG1, D3DTA_TEXTURE);
+<font color="deepskyblue">0469:</font>         TSS(1,D3DTSS_COLOROP,   D3DTOP_DISABLE);
+<font color="deepskyblue">0470:</font>         
+<font color="deepskyblue">0471:</font>         FLOAT w = (FLOAT)<font color="blue">this</font>-&gt;m_d3dsdBackBuffer.Width;
+<font color="deepskyblue">0472:</font>         FLOAT h = (FLOAT)<font color="blue">this</font>-&gt;m_d3dsdBackBuffer.Height;
+<font color="deepskyblue">0473:</font>         TVERTEX Vertex1[4] = {
+<font color="deepskyblue">0474:</font>             <font color="cyan">//x  y     z    rhw  tu tv</font>
+<font color="deepskyblue">0475:</font>             { 0, 0, 0.001f, 1.0f, 0, 0,},
+<font color="deepskyblue">0476:</font>             { w, 0, 0.001f, 1.0f, 1, 0,},
+<font color="deepskyblue">0477:</font>             { w, h, 0.001f, 1.0f, 1, 1,},
+<font color="deepskyblue">0478:</font>             { 0, h, 0.001f, 1.0f, 0, 1,},
+<font color="deepskyblue">0479:</font>         };
+<font color="deepskyblue">0480:</font>         m_pd3dDevice-&gt;SetFVF( D3DFVF_XYZRHW | D3DFVF_TEX1 );
+<font color="deepskyblue">0481:</font>         m_pEffect-&gt;SetTexture(m_htColor, m_pColorTex);
+<font color="deepskyblue">0482:</font>         m_pEffect-&gt;SetTexture(m_htDepth, m_pDepthTex);
+<font color="deepskyblue">0483:</font>         m_pd3dDevice-&gt;DrawPrimitiveUP( D3DPT_TRIANGLEFAN
+<font color="deepskyblue">0484:</font>                         , 2, Vertex1, <font color="blue">sizeof</font>( TVERTEX ) );
+<font color="deepskyblue">0485:</font> 
+<font color="deepskyblue">0486:</font>         m_pEffect-&gt;End();
+<font color="deepskyblue">0487:</font> 
+<font color="deepskyblue">0488:</font>         <font color="yellow">RS( D3DRS_ZFUNC, D3DCMP_LESSEQUAL );</font> 
+</pre>
+<p>
+基本的には、エフェクトを使って、四角形ポリゴンを全画面に表示しているだけです。<br>
+ここで、大事なのは、レンダリングステート D3DRS_ZFUNC に D3DCMP_ALWAYS を指定して、深度テストに常に合格するようにすることです。<br>
+これがないと、現在の深度バッファの値よりも奥の深度に書き込めなくなってしまいます。
+</p>
+<p>
+さて、シェーダですが、次のように色成分はそのまま出力して、深度成分は成分ごとに格納された深度値の値を元に戻して出力します。
+</p>
+<pre class="CodeBlock">
+hlsl.fx
+<font color="deepskyblue">0123:</font> <font color="cyan">// -------------------------------------------------------------</font>
+<font color="deepskyblue">0124:</font> <font color="cyan">// ピクセルシェーダ</font>
+<font color="deepskyblue">0125:</font> <font color="cyan">// -------------------------------------------------------------</font>
+<font color="deepskyblue">0126:</font> PS_OUTPUT_Mapping psMapping ( float4 Tex : TEXCOORD0 ) {
+<font color="deepskyblue">0127:</font>     
+<font color="deepskyblue">0128:</font>     PS_OUTPUT_Mapping Out = ( PS_OUTPUT_Mapping ) 0;
+<font color="deepskyblue">0129:</font>     
+<font color="deepskyblue">0130:</font>     <font color="cyan">// 通常色</font>
+<font color="deepskyblue">0131:</font>     Out.Color = tex2D( ColorSamp, Tex );
+<font color="deepskyblue">0132:</font>     
+<font color="deepskyblue">0133:</font>     <font color="cyan">// 深度</font>
+<font color="deepskyblue">0134:</font>     float4 depth = tex2D( DepthSamp, Tex );
+<font color="deepskyblue">0135:</font>     Out.Depth = depth.x
+<font color="deepskyblue">0136:</font>               + depth.y / 256.0f
+<font color="deepskyblue">0137:</font>               + depth.z / (256.0f*256.0f);
+<font color="deepskyblue">0138:</font>     
+<font color="deepskyblue">0139:</font>     <font color="blue">return</font> Out;
+<font color="deepskyblue">0140:</font> }
+</pre>
+<p>
+なお、ピクセルシェーダからの出力は、次の構造体になります。<br>
+DEPTH セマンティクスを使って、深度値の出力を宣言します。
+</p>
+<pre class="CodeBlock">
+hlsl.fx
+<font color="deepskyblue">0116:</font> <font color="cyan">// -------------------------------------------------------------</font>
+<font color="deepskyblue">0117:</font> <font color="cyan">// ピクセルシェーダ出力データ</font>
+<font color="deepskyblue">0118:</font> <font color="cyan">// -------------------------------------------------------------</font>
+<font color="deepskyblue">0119:</font> <font color="blue">struct</font> PS_OUTPUT_Mapping {
+<font color="deepskyblue">0120:</font>     float4 Color  : COLOR0;
+<font color="deepskyblue">0121:</font>     <font color="blue">float</font>  Depth  : DEPTH;
+<font color="deepskyblue">0122:</font> };
+</pre>
+
+
+
+<h2>■最後に</h2>
+
+
+<p>
+ちなみに、今回の方法がどのくらい有効かということですが、
+いつものように、毎フレ背景を描画したときには、520FPS、
+今回の方法を使えば、700FPS と、確かに有効な方法であることが確認できました。<br>
+ただし、背景を作成したフレームでは、420FPSと遅くなってしまうので、
+画像を更新するフレームには気をつけてください。
+</p>
+<p>
+ところで、この技法って、どこかの会社が特許とってますかねぇ。<br>
+いかにも取られていても不思議でない気がするのですが、どなたかご存知ですか？
+</p>
+
+
+</div>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<center>
+<hr>
+<p><a href="../index.html">もどる</a></p>
+<p><a href="mailto:imagire@gmail.com">imagire@gmail.com</a></p>
+</center>
+
+</body>
+</html>

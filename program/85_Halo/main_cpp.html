@@ -1,0 +1,878 @@
+<HTML>
+<HEAD>
+<TITLE>main.cpp</TITLE>
+<meta name="GENERATOR" content="cpp2html 2.1 by Niisaka">
+<meta http-equiv="Content-Type" content="text/html">
+</HEAD>
+<BODY TEXT="#000000" BGCOLOR="#FFFFFF">
+<PRE><FONT COLOR="#40F628">0001:</FONT> <FONT COLOR="#008000">//-------------------------------------------------------------</FONT>
+<FONT COLOR="#40F628">0002:</FONT> <FONT COLOR="#008000">// File: main.cpp</FONT>
+<FONT COLOR="#40F628">0003:</FONT> <FONT COLOR="#008000">//</FONT>
+<FONT COLOR="#40F628">0004:</FONT> <FONT COLOR="#008000">// Desc: ハロ</FONT>
+<FONT COLOR="#40F628">0005:</FONT> <FONT COLOR="#008000">//-------------------------------------------------------------</FONT>
+<FONT COLOR="#40F628">0006:</FONT> <FONT COLOR="#0000FF">#define</FONT> STRICT
+<FONT COLOR="#40F628">0007:</FONT> <FONT COLOR="#0000FF">#include</FONT> &lt;windows.h&gt;
+<FONT COLOR="#40F628">0008:</FONT> <FONT COLOR="#0000FF">#include</FONT> &lt;commctrl.h&gt;
+<FONT COLOR="#40F628">0009:</FONT> <FONT COLOR="#0000FF">#include</FONT> &lt;commdlg.h&gt;
+<FONT COLOR="#40F628">0010:</FONT> <FONT COLOR="#0000FF">#include</FONT> &lt;basetsd.h&gt;
+<FONT COLOR="#40F628">0011:</FONT> <FONT COLOR="#0000FF">#include</FONT> &lt;math.h&gt;
+<FONT COLOR="#40F628">0012:</FONT> <FONT COLOR="#0000FF">#include</FONT> &lt;stdio.h&gt;
+<FONT COLOR="#40F628">0013:</FONT> <FONT COLOR="#0000FF">#include</FONT> &lt;d3dx9.h&gt;
+<FONT COLOR="#40F628">0014:</FONT> <FONT COLOR="#0000FF">#include</FONT> &lt;dxerr9.h&gt;
+<FONT COLOR="#40F628">0015:</FONT> <FONT COLOR="#0000FF">#include</FONT> &lt;tchar.h&gt;
+<FONT COLOR="#40F628">0016:</FONT> <FONT COLOR="#0000FF">#include</FONT> "<FONT COLOR="#600000">DXUtil.h</FONT>"
+<FONT COLOR="#40F628">0017:</FONT> <FONT COLOR="#0000FF">#include</FONT> "<FONT COLOR="#600000">D3DEnumeration.h</FONT>"
+<FONT COLOR="#40F628">0018:</FONT> <FONT COLOR="#0000FF">#include</FONT> "<FONT COLOR="#600000">D3DSettings.h</FONT>"
+<FONT COLOR="#40F628">0019:</FONT> <FONT COLOR="#0000FF">#include</FONT> "<FONT COLOR="#600000">D3DApp.h</FONT>"
+<FONT COLOR="#40F628">0020:</FONT> <FONT COLOR="#0000FF">#include</FONT> "<FONT COLOR="#600000">D3DFont.h</FONT>"
+<FONT COLOR="#40F628">0021:</FONT> <FONT COLOR="#0000FF">#include</FONT> "<FONT COLOR="#600000">D3DFile.h</FONT>"
+<FONT COLOR="#40F628">0022:</FONT> <FONT COLOR="#0000FF">#include</FONT> "<FONT COLOR="#600000">D3DUtil.h</FONT>"
+<FONT COLOR="#40F628">0023:</FONT> <FONT COLOR="#0000FF">#include</FONT> "<FONT COLOR="#600000">resource.h</FONT>"
+<FONT COLOR="#40F628">0024:</FONT> <FONT COLOR="#0000FF">#include</FONT> "<FONT COLOR="#600000">main.h</FONT>"
+<FONT COLOR="#40F628">0025:</FONT> 
+<FONT COLOR="#40F628">0026:</FONT> <FONT COLOR="#0000FF">#define</FONT> RENDERING_WIDTH     512
+<FONT COLOR="#40F628">0027:</FONT> <FONT COLOR="#0000FF">#define</FONT> RENDERING_HEIGHT    512
+<FONT COLOR="#40F628">0028:</FONT> <FONT COLOR="#0000FF">#define</FONT> MAP_WIDTH           128
+<FONT COLOR="#40F628">0029:</FONT> <FONT COLOR="#0000FF">#define</FONT> MAP_HEIGHT          128
+<FONT COLOR="#40F628">0030:</FONT> 
+<FONT COLOR="#40F628">0031:</FONT> <FONT COLOR="#0000FF">#define</FONT> PASS_SCENE          0
+<FONT COLOR="#40F628">0032:</FONT> <FONT COLOR="#0000FF">#define</FONT> PASS_REDUCTION      1
+<FONT COLOR="#40F628">0033:</FONT> <FONT COLOR="#0000FF">#define</FONT> PASS_X              2
+<FONT COLOR="#40F628">0034:</FONT> <FONT COLOR="#0000FF">#define</FONT> PASS_Y              3
+<FONT COLOR="#40F628">0035:</FONT> <FONT COLOR="#0000FF">#define</FONT> PASS_FINAL          4
+<FONT COLOR="#40F628">0036:</FONT> 
+<FONT COLOR="#40F628">0037:</FONT> <FONT COLOR="#008000">// 頂点宣言</FONT>
+<FONT COLOR="#40F628">0038:</FONT> D3DVERTEXELEMENT9 decl[] =
+<FONT COLOR="#40F628">0039:</FONT> {
+<FONT COLOR="#40F628">0040:</FONT>     {0,  0, D3DDECLTYPE_FLOAT3,   D3DDECLMETHOD_DEFAULT, D3DDECLUSAGE_POSITION, 0},
+<FONT COLOR="#40F628">0041:</FONT>     {0, 12, D3DDECLTYPE_FLOAT2,   D3DDECLMETHOD_DEFAULT, D3DDECLUSAGE_TEXCOORD, 0},
+<FONT COLOR="#40F628">0042:</FONT>     D3DDECL_END()
+<FONT COLOR="#40F628">0043:</FONT> };
+<FONT COLOR="#40F628">0044:</FONT> 
+<FONT COLOR="#40F628">0045:</FONT> <FONT COLOR="#008000">// 長いから短縮形を作ってみた</FONT>
+<FONT COLOR="#40F628">0046:</FONT> <FONT COLOR="#0000FF">#define</FONT> RS   m_pd3dDevice-&gt;SetRenderState
+<FONT COLOR="#40F628">0047:</FONT> <FONT COLOR="#0000FF">#define</FONT> TSS  m_pd3dDevice-&gt;SetTextureStageState
+<FONT COLOR="#40F628">0048:</FONT> <FONT COLOR="#0000FF">#define</FONT> SAMP m_pd3dDevice-&gt;SetSamplerState
+<FONT COLOR="#40F628">0049:</FONT> 
+<FONT COLOR="#40F628">0050:</FONT> 
+<FONT COLOR="#40F628">0051:</FONT> <FONT COLOR="#008000">//-------------------------------------------------------------</FONT>
+<FONT COLOR="#40F628">0052:</FONT> <FONT COLOR="#008000">// 頂点の構造体</FONT>
+<FONT COLOR="#40F628">0053:</FONT> <FONT COLOR="#008000">//-------------------------------------------------------------</FONT>
+<FONT COLOR="#40F628">0054:</FONT> <FONT COLOR="#0000FF">typedef</FONT> <FONT COLOR="#0000FF">struct</FONT> {
+<FONT COLOR="#40F628">0055:</FONT>     FLOAT       p[4];
+<FONT COLOR="#40F628">0056:</FONT>     FLOAT       tu, tv;
+<FONT COLOR="#40F628">0057:</FONT> } TVERTEX;
+<FONT COLOR="#40F628">0058:</FONT> <FONT COLOR="#0000FF">typedef</FONT> <FONT COLOR="#0000FF">struct</FONT> {
+<FONT COLOR="#40F628">0059:</FONT>     FLOAT       p[4];
+<FONT COLOR="#40F628">0060:</FONT>     FLOAT       uv1[2];
+<FONT COLOR="#40F628">0061:</FONT>     FLOAT       uv2[2];
+<FONT COLOR="#40F628">0062:</FONT> } T2VERTEX;
+<FONT COLOR="#40F628">0063:</FONT> 
+<FONT COLOR="#40F628">0064:</FONT> <FONT COLOR="#008000">//-------------------------------------------------------------</FONT>
+<FONT COLOR="#40F628">0065:</FONT> <FONT COLOR="#008000">// グローバル変数</FONT>
+<FONT COLOR="#40F628">0066:</FONT> <FONT COLOR="#008000">//-------------------------------------------------------------</FONT>
+<FONT COLOR="#40F628">0067:</FONT> CMyD3DApplication* g_pApp  = NULL;
+<FONT COLOR="#40F628">0068:</FONT> HINSTANCE          g_hInst = NULL;
+<FONT COLOR="#40F628">0069:</FONT> 
+<FONT COLOR="#40F628">0070:</FONT> 
+<FONT COLOR="#40F628">0071:</FONT> <FONT COLOR="#008000">//-------------------------------------------------------------</FONT>
+<FONT COLOR="#40F628">0072:</FONT> <FONT COLOR="#008000">// Name: WinMain()</FONT>
+<FONT COLOR="#40F628">0073:</FONT> <FONT COLOR="#008000">// Desc: メイン関数</FONT>
+<FONT COLOR="#40F628">0074:</FONT> <FONT COLOR="#008000">//-------------------------------------------------------------</FONT>
+<FONT COLOR="#40F628">0075:</FONT> INT WINAPI WinMain( HINSTANCE hInst, HINSTANCE, LPSTR, INT )
+<FONT COLOR="#40F628">0076:</FONT> {
+<FONT COLOR="#40F628">0077:</FONT>     CMyD3DApplication d3dApp;
+<FONT COLOR="#40F628">0078:</FONT> 
+<FONT COLOR="#40F628">0079:</FONT>     g_pApp  = &amp;d3dApp;
+<FONT COLOR="#40F628">0080:</FONT>     g_hInst = hInst;
+<FONT COLOR="#40F628">0081:</FONT> 
+<FONT COLOR="#40F628">0082:</FONT>     InitCommonControls();
+<FONT COLOR="#40F628">0083:</FONT>     <FONT COLOR="#0000FF">if</FONT>( FAILED( d3dApp.Create( hInst ) ) )
+<FONT COLOR="#40F628">0084:</FONT>         <FONT COLOR="#0000FF">return</FONT> 0;
+<FONT COLOR="#40F628">0085:</FONT> 
+<FONT COLOR="#40F628">0086:</FONT>     <FONT COLOR="#0000FF">return</FONT> d3dApp.Run();
+<FONT COLOR="#40F628">0087:</FONT> }
+<FONT COLOR="#40F628">0088:</FONT> 
+<FONT COLOR="#40F628">0089:</FONT> 
+<FONT COLOR="#40F628">0090:</FONT> 
+<FONT COLOR="#40F628">0091:</FONT> 
+<FONT COLOR="#40F628">0092:</FONT> <FONT COLOR="#008000">//-------------------------------------------------------------</FONT>
+<FONT COLOR="#40F628">0093:</FONT> <FONT COLOR="#008000">// Name: CMyD3DApplication()</FONT>
+<FONT COLOR="#40F628">0094:</FONT> <FONT COLOR="#008000">// Desc: アプリケーションのコンストラクタ</FONT>
+<FONT COLOR="#40F628">0095:</FONT> <FONT COLOR="#008000">//-------------------------------------------------------------</FONT>
+<FONT COLOR="#40F628">0096:</FONT> CMyD3DApplication::CMyD3DApplication()
+<FONT COLOR="#40F628">0097:</FONT> {
+<FONT COLOR="#40F628">0098:</FONT>     m_pMesh                     = <FONT COLOR="#0000FF">new</FONT> CD3DMesh();
+<FONT COLOR="#40F628">0099:</FONT> 
+<FONT COLOR="#40F628">0100:</FONT>     m_pMapZ                     = NULL;
+<FONT COLOR="#40F628">0101:</FONT>     m_pOriginalTex              = NULL;
+<FONT COLOR="#40F628">0102:</FONT>     m_pOriginalSurf             = NULL;
+<FONT COLOR="#40F628">0103:</FONT>     m_pLumTex                   = NULL;
+<FONT COLOR="#40F628">0104:</FONT>     m_pLumSurf                  = NULL;
+<FONT COLOR="#40F628">0105:</FONT>     m_pXMap                     = NULL;
+<FONT COLOR="#40F628">0106:</FONT>     m_pXMapSurf                 = NULL;
+<FONT COLOR="#40F628">0107:</FONT>     m_pLargeTex                 = NULL;
+<FONT COLOR="#40F628">0108:</FONT>     m_pLargeSurf                = NULL;
+<FONT COLOR="#40F628">0109:</FONT>     m_pSmallTex                 = NULL;
+<FONT COLOR="#40F628">0110:</FONT>     m_pSmallSurf                = NULL;
+<FONT COLOR="#40F628">0111:</FONT> 
+<FONT COLOR="#40F628">0112:</FONT>     m_pEffect                   = NULL;
+<FONT COLOR="#40F628">0113:</FONT>     m_hTechnique                = NULL;
+<FONT COLOR="#40F628">0114:</FONT>     m_hafWeight                 = NULL;
+<FONT COLOR="#40F628">0115:</FONT>     m_htSrcMap                  = NULL;
+<FONT COLOR="#40F628">0116:</FONT>     m_htSrcMap2                 = NULL;
+<FONT COLOR="#40F628">0117:</FONT>     m_hmWVP                     = NULL;
+<FONT COLOR="#40F628">0118:</FONT>     m_hvLightDir                = NULL;
+<FONT COLOR="#40F628">0119:</FONT>     m_hvEyePos                  = NULL;
+<FONT COLOR="#40F628">0120:</FONT>     m_hvCol                     = NULL;
+<FONT COLOR="#40F628">0121:</FONT>     m_pDecl                     = NULL;
+<FONT COLOR="#40F628">0122:</FONT> 
+<FONT COLOR="#40F628">0123:</FONT>     m_fWorldRotX                = -0.41271535f;
+<FONT COLOR="#40F628">0124:</FONT>     m_fWorldRotY                = D3DX_PI/2;
+<FONT COLOR="#40F628">0125:</FONT>     m_fViewZoom                 = 2.0f;
+<FONT COLOR="#40F628">0126:</FONT> 
+<FONT COLOR="#40F628">0127:</FONT>     m_dwCreationWidth           = 512;
+<FONT COLOR="#40F628">0128:</FONT>     m_dwCreationHeight          = 512;
+<FONT COLOR="#40F628">0129:</FONT>     m_strWindowTitle            = TEXT( "<FONT COLOR="#600000">main</FONT>" );
+<FONT COLOR="#40F628">0130:</FONT>     m_d3dEnumeration.AppUsesDepthBuffer   = TRUE;
+<FONT COLOR="#40F628">0131:</FONT>     m_bStartFullscreen          = <FONT COLOR="#0000FF">false</FONT>;
+<FONT COLOR="#40F628">0132:</FONT>     m_bShowCursorWhenFullscreen = <FONT COLOR="#0000FF">false</FONT>;
+<FONT COLOR="#40F628">0133:</FONT> 
+<FONT COLOR="#40F628">0134:</FONT>     m_pFont                     = <FONT COLOR="#0000FF">new</FONT> CD3DFont( _T("<FONT COLOR="#600000">Arial</FONT>"), 12, D3DFONT_BOLD );
+<FONT COLOR="#40F628">0135:</FONT>     m_bLoadingApp               = TRUE;
+<FONT COLOR="#40F628">0136:</FONT> 
+<FONT COLOR="#40F628">0137:</FONT>     ZeroMemory( &amp;m_UserInput, <FONT COLOR="#0000FF">sizeof</FONT>(m_UserInput) );
+<FONT COLOR="#40F628">0138:</FONT> }
+<FONT COLOR="#40F628">0139:</FONT> 
+<FONT COLOR="#40F628">0140:</FONT> 
+<FONT COLOR="#40F628">0141:</FONT> 
+<FONT COLOR="#40F628">0142:</FONT> 
+<FONT COLOR="#40F628">0143:</FONT> <FONT COLOR="#008000">//-------------------------------------------------------------</FONT>
+<FONT COLOR="#40F628">0144:</FONT> <FONT COLOR="#008000">// Name: ~CMyD3DApplication()</FONT>
+<FONT COLOR="#40F628">0145:</FONT> <FONT COLOR="#008000">// Desc: デストラクタ</FONT>
+<FONT COLOR="#40F628">0146:</FONT> <FONT COLOR="#008000">//-------------------------------------------------------------</FONT>
+<FONT COLOR="#40F628">0147:</FONT> CMyD3DApplication::~CMyD3DApplication()
+<FONT COLOR="#40F628">0148:</FONT> {
+<FONT COLOR="#40F628">0149:</FONT> }
+<FONT COLOR="#40F628">0150:</FONT> 
+<FONT COLOR="#40F628">0151:</FONT> 
+<FONT COLOR="#40F628">0152:</FONT> 
+<FONT COLOR="#40F628">0153:</FONT> 
+<FONT COLOR="#40F628">0154:</FONT> <FONT COLOR="#008000">//-------------------------------------------------------------</FONT>
+<FONT COLOR="#40F628">0155:</FONT> <FONT COLOR="#008000">// Name: OneTimeSceneInit()</FONT>
+<FONT COLOR="#40F628">0156:</FONT> <FONT COLOR="#008000">// Desc: 一度だけ行う初期化</FONT>
+<FONT COLOR="#40F628">0157:</FONT> <FONT COLOR="#008000">//      ウィンドウの初期化やIDirect3D9の初期化は終わってます。</FONT>
+<FONT COLOR="#40F628">0158:</FONT> <FONT COLOR="#008000">//      ただ、LPDIRECT3DDEVICE9 の初期化は終わっていません。</FONT>
+<FONT COLOR="#40F628">0159:</FONT> <FONT COLOR="#008000">//-------------------------------------------------------------</FONT>
+<FONT COLOR="#40F628">0160:</FONT> HRESULT CMyD3DApplication::OneTimeSceneInit()
+<FONT COLOR="#40F628">0161:</FONT> {
+<FONT COLOR="#40F628">0162:</FONT>     <FONT COLOR="#008000">// ローディングメッセージを表示する</FONT>
+<FONT COLOR="#40F628">0163:</FONT>     SendMessage( m_hWnd, WM_PAINT, 0, 0 );
+<FONT COLOR="#40F628">0164:</FONT> 
+<FONT COLOR="#40F628">0165:</FONT>     m_bLoadingApp = FALSE;
+<FONT COLOR="#40F628">0166:</FONT> 
+<FONT COLOR="#40F628">0167:</FONT>     <FONT COLOR="#0000FF">return</FONT> S_OK;
+<FONT COLOR="#40F628">0168:</FONT> }
+<FONT COLOR="#40F628">0169:</FONT> 
+<FONT COLOR="#40F628">0170:</FONT> 
+<FONT COLOR="#40F628">0171:</FONT> 
+<FONT COLOR="#40F628">0172:</FONT> 
+<FONT COLOR="#40F628">0173:</FONT> <FONT COLOR="#008000">//-------------------------------------------------------------</FONT>
+<FONT COLOR="#40F628">0174:</FONT> <FONT COLOR="#008000">// Name: ConfirmDevice()</FONT>
+<FONT COLOR="#40F628">0175:</FONT> <FONT COLOR="#008000">// Desc: 初期化の時に呼ばれます。必要な能力をチェックします。</FONT>
+<FONT COLOR="#40F628">0176:</FONT> <FONT COLOR="#008000">//-------------------------------------------------------------</FONT>
+<FONT COLOR="#40F628">0177:</FONT> HRESULT CMyD3DApplication::ConfirmDevice( D3DCAPS9* pCaps,
+<FONT COLOR="#40F628">0178:</FONT>                      DWORD dwBehavior,    D3DFORMAT Format )
+<FONT COLOR="#40F628">0179:</FONT> {
+<FONT COLOR="#40F628">0180:</FONT>     UNREFERENCED_PARAMETER( Format );
+<FONT COLOR="#40F628">0181:</FONT>     UNREFERENCED_PARAMETER( dwBehavior );
+<FONT COLOR="#40F628">0182:</FONT>     UNREFERENCED_PARAMETER( pCaps );
+<FONT COLOR="#40F628">0183:</FONT>     
+<FONT COLOR="#40F628">0184:</FONT> 
+<FONT COLOR="#40F628">0185:</FONT>     <FONT COLOR="#008000">// ピクセルシェーダバージョンチェック</FONT>
+<FONT COLOR="#40F628">0186:</FONT>     <FONT COLOR="#0000FF">if</FONT>( pCaps-&gt;PixelShaderVersion &lt; D3DPS_VERSION(2,0) )
+<FONT COLOR="#40F628">0187:</FONT>         <FONT COLOR="#0000FF">return</FONT> E_FAIL;
+<FONT COLOR="#40F628">0188:</FONT> 
+<FONT COLOR="#40F628">0189:</FONT>     <FONT COLOR="#008000">// 頂点シェーダバージョンが上位かソフトウェア頂点処理</FONT>
+<FONT COLOR="#40F628">0190:</FONT>     <FONT COLOR="#0000FF">if</FONT>( pCaps-&gt;VertexShaderVersion &lt; D3DVS_VERSION(1,1)
+<FONT COLOR="#40F628">0191:</FONT>     &amp;&amp;  0==(dwBehavior &amp; D3DCREATE_SOFTWARE_VERTEXPROCESSING) )
+<FONT COLOR="#40F628">0192:</FONT>             <FONT COLOR="#0000FF">return</FONT> E_FAIL;
+<FONT COLOR="#40F628">0193:</FONT> 
+<FONT COLOR="#40F628">0194:</FONT>     <FONT COLOR="#0000FF">return</FONT> S_OK;
+<FONT COLOR="#40F628">0195:</FONT> }
+<FONT COLOR="#40F628">0196:</FONT> 
+<FONT COLOR="#40F628">0197:</FONT> 
+<FONT COLOR="#40F628">0198:</FONT> 
+<FONT COLOR="#40F628">0199:</FONT> 
+<FONT COLOR="#40F628">0200:</FONT> <FONT COLOR="#008000">//-------------------------------------------------------------</FONT>
+<FONT COLOR="#40F628">0201:</FONT> <FONT COLOR="#008000">// Name: UpdateWeight()</FONT>
+<FONT COLOR="#40F628">0202:</FONT> <FONT COLOR="#008000">// Desc: 重みの計算</FONT>
+<FONT COLOR="#40F628">0203:</FONT> <FONT COLOR="#008000">//-------------------------------------------------------------</FONT>
+<FONT COLOR="#40F628">0204:</FONT> VOID CMyD3DApplication::UpdateWeight( )
+<FONT COLOR="#40F628">0205:</FONT> {
+<FONT COLOR="#40F628">0206:</FONT>     DWORD i, j;
+<FONT COLOR="#40F628">0207:</FONT>     FLOAT size[2][3] = {
+<FONT COLOR="#40F628">0208:</FONT>                         <FONT COLOR="#008000">// 赤     緑     青</FONT>
+<FONT COLOR="#40F628">0209:</FONT>                         { 30.0f, 17.5f, 9.8f},<FONT COLOR="#008000">// 外側</FONT>
+<FONT COLOR="#40F628">0210:</FONT>                         { 20.0f, 11.2f, 7.5f},<FONT COLOR="#008000">// 内側</FONT>
+<FONT COLOR="#40F628">0211:</FONT>                     };
+<FONT COLOR="#40F628">0212:</FONT>     
+<FONT COLOR="#40F628">0213:</FONT>     <FONT COLOR="#0000FF">for</FONT>(j=0;j&lt;2;j++){
+<FONT COLOR="#40F628">0214:</FONT>         FLOAT total[3]={0,0,0};
+<FONT COLOR="#40F628">0215:</FONT>         <FONT COLOR="#0000FF">for</FONT>( i=0; i&lt;WEIGHT_MUN; i++ ){
+<FONT COLOR="#40F628">0216:</FONT>             FLOAT pos = 1.0f+2.0f*(FLOAT)i;
+<FONT COLOR="#40F628">0217:</FONT>             <FONT COLOR="#008000">// ガウス重みを計算する</FONT>
+<FONT COLOR="#40F628">0218:</FONT>             m_tbl[j][i].x = expf(-0.5f*(FLOAT)(pos*pos)/size[j][0]);
+<FONT COLOR="#40F628">0219:</FONT>             m_tbl[j][i].y = expf(-0.5f*(FLOAT)(pos*pos)/size[j][1]);
+<FONT COLOR="#40F628">0220:</FONT>             m_tbl[j][i].z = expf(-0.5f*(FLOAT)(pos*pos)/size[j][2]);
+<FONT COLOR="#40F628">0221:</FONT>             <FONT COLOR="#008000">// 規格化のための重みの総和を計算する</FONT>
+<FONT COLOR="#40F628">0222:</FONT>             total[0] += 2.0f*m_tbl[j][i].x;
+<FONT COLOR="#40F628">0223:</FONT>             total[1] += 2.0f*m_tbl[j][i].y;
+<FONT COLOR="#40F628">0224:</FONT>             total[2] += 2.0f*m_tbl[j][i].z;
+<FONT COLOR="#40F628">0225:</FONT> 
+<FONT COLOR="#40F628">0226:</FONT>             m_tbl[j][i].w = 1;
+<FONT COLOR="#40F628">0227:</FONT>         }
+<FONT COLOR="#40F628">0228:</FONT>         <FONT COLOR="#008000">// 規格化</FONT>
+<FONT COLOR="#40F628">0229:</FONT>         <FONT COLOR="#0000FF">for</FONT>( i=0; i&lt;WEIGHT_MUN; i++ ){
+<FONT COLOR="#40F628">0230:</FONT>             m_tbl[j][i].x /= total[0];
+<FONT COLOR="#40F628">0231:</FONT>             m_tbl[j][i].y /= total[1];
+<FONT COLOR="#40F628">0232:</FONT>             m_tbl[j][i].z /= total[2];
+<FONT COLOR="#40F628">0233:</FONT>         }
+<FONT COLOR="#40F628">0234:</FONT>     }
+<FONT COLOR="#40F628">0235:</FONT> }
+<FONT COLOR="#40F628">0236:</FONT> 
+<FONT COLOR="#40F628">0237:</FONT> 
+<FONT COLOR="#40F628">0238:</FONT> 
+<FONT COLOR="#40F628">0239:</FONT> 
+<FONT COLOR="#40F628">0240:</FONT> <FONT COLOR="#008000">//-------------------------------------------------------------</FONT>
+<FONT COLOR="#40F628">0241:</FONT> <FONT COLOR="#008000">// Name: InitDeviceObjects()</FONT>
+<FONT COLOR="#40F628">0242:</FONT> <FONT COLOR="#008000">// Desc: デバイスが生成された後の初期化をします。</FONT>
+<FONT COLOR="#40F628">0243:</FONT> <FONT COLOR="#008000">//      フレームバッファフォーマットやデバイスの種類が変わった</FONT>
+<FONT COLOR="#40F628">0244:</FONT> <FONT COLOR="#008000">//      後に通過します。</FONT>
+<FONT COLOR="#40F628">0245:</FONT> <FONT COLOR="#008000">//      ここで確保したメモリはDeleteDeviceObjects()で開放します</FONT>
+<FONT COLOR="#40F628">0246:</FONT> <FONT COLOR="#008000">//-------------------------------------------------------------</FONT>
+<FONT COLOR="#40F628">0247:</FONT> HRESULT CMyD3DApplication::InitDeviceObjects()
+<FONT COLOR="#40F628">0248:</FONT> {
+<FONT COLOR="#40F628">0249:</FONT>     HRESULT hr;
+<FONT COLOR="#40F628">0250:</FONT>     D3DXVECTOR4 offset;
+<FONT COLOR="#40F628">0251:</FONT> 
+<FONT COLOR="#40F628">0252:</FONT>     <FONT COLOR="#008000">// 車の読み込み</FONT>
+<FONT COLOR="#40F628">0253:</FONT>     <FONT COLOR="#0000FF">if</FONT>(FAILED(hr=m_pMesh  -&gt;Create( m_pd3dDevice, _T("<FONT COLOR="#600000">ufo.x</FONT>"))))
+<FONT COLOR="#40F628">0254:</FONT>         <FONT COLOR="#0000FF">return</FONT> DXTRACE_ERR( "<FONT COLOR="#600000">LoadCar</FONT>", hr );
+<FONT COLOR="#40F628">0255:</FONT>         
+<FONT COLOR="#40F628">0256:</FONT>     <FONT COLOR="#008000">// 頂点宣言のオブジェクトの生成</FONT>
+<FONT COLOR="#40F628">0257:</FONT>     <FONT COLOR="#0000FF">if</FONT>( FAILED( hr = m_pd3dDevice-&gt;CreateVertexDeclaration( decl, &amp;m_pDecl ) ) )
+<FONT COLOR="#40F628">0258:</FONT>         <FONT COLOR="#0000FF">return</FONT> DXTRACE_ERR( "<FONT COLOR="#600000">CreateVertexDeclaration</FONT>", hr );
+<FONT COLOR="#40F628">0259:</FONT>     
+<FONT COLOR="#40F628">0260:</FONT>     <FONT COLOR="#008000">// シェーダの読み込み</FONT>
+<FONT COLOR="#40F628">0261:</FONT>     LPD3DXBUFFER pErr;
+<FONT COLOR="#40F628">0262:</FONT>     <FONT COLOR="#0000FF">if</FONT>( FAILED( hr = D3DXCreateEffectFromFile(
+<FONT COLOR="#40F628">0263:</FONT>                 m_pd3dDevice, "<FONT COLOR="#600000">hlsl.fx</FONT>", NULL, NULL, 
+<FONT COLOR="#40F628">0264:</FONT>                 D3DXSHADER_DEBUG , NULL, &amp;m_pEffect, &amp;pErr ))){
+<FONT COLOR="#40F628">0265:</FONT>         MessageBox( NULL, (LPCTSTR)pErr-&gt;GetBufferPointer()
+<FONT COLOR="#40F628">0266:</FONT>                     , "<FONT COLOR="#600000">ERROR</FONT>", MB_OK);
+<FONT COLOR="#40F628">0267:</FONT>         <FONT COLOR="#0000FF">return</FONT> DXTRACE_ERR( "<FONT COLOR="#600000">CreateEffectFromFile</FONT>", hr );
+<FONT COLOR="#40F628">0268:</FONT>     }
+<FONT COLOR="#40F628">0269:</FONT>     m_hTechnique = m_pEffect-&gt;GetTechniqueByName( "<FONT COLOR="#600000">TShader</FONT>" );
+<FONT COLOR="#40F628">0270:</FONT>     m_hafWeight  = m_pEffect-&gt;GetParameterByName( NULL, "<FONT COLOR="#600000">weight</FONT>" );
+<FONT COLOR="#40F628">0271:</FONT>     m_htSrcMap   = m_pEffect-&gt;GetParameterByName( NULL, "<FONT COLOR="#600000">SrcMap</FONT>" );
+<FONT COLOR="#40F628">0272:</FONT>     m_htSrcMap2  = m_pEffect-&gt;GetParameterByName( NULL, "<FONT COLOR="#600000">SrcMap2</FONT>" );
+<FONT COLOR="#40F628">0273:</FONT>     m_hmWVP      = m_pEffect-&gt;GetParameterByName( NULL, "<FONT COLOR="#600000">mWVP</FONT>" );
+<FONT COLOR="#40F628">0274:</FONT>     m_hvLightDir = m_pEffect-&gt;GetParameterByName( NULL, "<FONT COLOR="#600000">vLightDir</FONT>" );
+<FONT COLOR="#40F628">0275:</FONT>     m_hvEyePos   = m_pEffect-&gt;GetParameterByName( NULL, "<FONT COLOR="#600000">vEyePos</FONT>" );
+<FONT COLOR="#40F628">0276:</FONT>     m_hvCol      = m_pEffect-&gt;GetParameterByName( NULL, "<FONT COLOR="#600000">vCol</FONT>" );
+<FONT COLOR="#40F628">0277:</FONT>     m_pEffect-&gt;SetFloat("<FONT COLOR="#600000">MAP_WIDTH</FONT>",  MAP_WIDTH);   <FONT COLOR="#008000">// 幅の設定</FONT>
+<FONT COLOR="#40F628">0278:</FONT>     m_pEffect-&gt;SetFloat("<FONT COLOR="#600000">MAP_HEIGHT</FONT>", MAP_HEIGHT);  <FONT COLOR="#008000">// 高さの設定</FONT>
+<FONT COLOR="#40F628">0279:</FONT>     
+<FONT COLOR="#40F628">0280:</FONT>     <FONT COLOR="#008000">// シェーダ内で使う８テクセル先を指定する定数</FONT>
+<FONT COLOR="#40F628">0281:</FONT>     offset.x = 8.0f/MAP_WIDTH;  offset.y = 0.0f/MAP_HEIGHT;
+<FONT COLOR="#40F628">0282:</FONT>     m_pEffect-&gt;SetVector("<FONT COLOR="#600000">offsetX</FONT>",  &amp;offset);
+<FONT COLOR="#40F628">0283:</FONT>     offset.x = 0.0f/MAP_WIDTH;  offset.y = 8.0f/MAP_HEIGHT;
+<FONT COLOR="#40F628">0284:</FONT>     m_pEffect-&gt;SetVector("<FONT COLOR="#600000">offsetY</FONT>",  &amp;offset);
+<FONT COLOR="#40F628">0285:</FONT> 
+<FONT COLOR="#40F628">0286:</FONT>     <FONT COLOR="#008000">// 重みを設定</FONT>
+<FONT COLOR="#40F628">0287:</FONT>     <FONT COLOR="#0000FF">this</FONT>-&gt;UpdateWeight();
+<FONT COLOR="#40F628">0288:</FONT> 
+<FONT COLOR="#40F628">0289:</FONT>     <FONT COLOR="#008000">// フォント</FONT>
+<FONT COLOR="#40F628">0290:</FONT>     m_pFont-&gt;InitDeviceObjects( m_pd3dDevice );
+<FONT COLOR="#40F628">0291:</FONT> 
+<FONT COLOR="#40F628">0292:</FONT>     <FONT COLOR="#0000FF">return</FONT> S_OK;
+<FONT COLOR="#40F628">0293:</FONT> }
+<FONT COLOR="#40F628">0294:</FONT> 
+<FONT COLOR="#40F628">0295:</FONT> <FONT COLOR="#008000">//-------------------------------------------------------------</FONT>
+<FONT COLOR="#40F628">0296:</FONT> <FONT COLOR="#008000">// Name: RestoreDeviceObjects()</FONT>
+<FONT COLOR="#40F628">0297:</FONT> <FONT COLOR="#008000">// Desc: 画面のサイズが変更された時等に呼ばれます。</FONT>
+<FONT COLOR="#40F628">0298:</FONT> <FONT COLOR="#008000">//      確保したメモリはInvalidateDeviceObjects()で開放します。</FONT>
+<FONT COLOR="#40F628">0299:</FONT> <FONT COLOR="#008000">//-------------------------------------------------------------</FONT>
+<FONT COLOR="#40F628">0300:</FONT> HRESULT CMyD3DApplication::RestoreDeviceObjects()
+<FONT COLOR="#40F628">0301:</FONT> {
+<FONT COLOR="#40F628">0302:</FONT>     <FONT COLOR="#008000">// メッシュ</FONT>
+<FONT COLOR="#40F628">0303:</FONT>     m_pMesh  -&gt;RestoreDeviceObjects( m_pd3dDevice );
+<FONT COLOR="#40F628">0304:</FONT> 
+<FONT COLOR="#40F628">0305:</FONT>     <FONT COLOR="#008000">// レンダリング状態の設定</FONT>
+<FONT COLOR="#40F628">0306:</FONT>     RS( D3DRS_DITHERENABLE,   FALSE );
+<FONT COLOR="#40F628">0307:</FONT>     RS( D3DRS_SPECULARENABLE, FALSE );
+<FONT COLOR="#40F628">0308:</FONT>     RS( D3DRS_ZENABLE,        TRUE );
+<FONT COLOR="#40F628">0309:</FONT>     
+<FONT COLOR="#40F628">0310:</FONT>     TSS( 0, D3DTSS_COLOROP,   D3DTOP_MODULATE );
+<FONT COLOR="#40F628">0311:</FONT>     TSS( 0, D3DTSS_COLORARG1, D3DTA_TEXTURE );
+<FONT COLOR="#40F628">0312:</FONT>     TSS( 0, D3DTSS_COLORARG2, D3DTA_DIFFUSE );
+<FONT COLOR="#40F628">0313:</FONT>     TSS( 0, D3DTSS_ALPHAOP,   D3DTOP_SELECTARG1 );
+<FONT COLOR="#40F628">0314:</FONT>     TSS( 0, D3DTSS_ALPHAARG1, D3DTA_DIFFUSE );
+<FONT COLOR="#40F628">0315:</FONT>     SAMP( 0, D3DSAMP_MINFILTER, D3DTEXF_LINEAR );
+<FONT COLOR="#40F628">0316:</FONT>     SAMP( 0, D3DSAMP_MAGFILTER, D3DTEXF_LINEAR );
+<FONT COLOR="#40F628">0317:</FONT>     SAMP( 0, D3DSAMP_ADDRESSU, D3DTADDRESS_CLAMP );
+<FONT COLOR="#40F628">0318:</FONT>     SAMP( 0, D3DSAMP_ADDRESSV, D3DTADDRESS_CLAMP );
+<FONT COLOR="#40F628">0319:</FONT> 
+<FONT COLOR="#40F628">0320:</FONT>     <FONT COLOR="#008000">// ワールド行列</FONT>
+<FONT COLOR="#40F628">0321:</FONT>     D3DXMATRIX matIdentity;
+<FONT COLOR="#40F628">0322:</FONT>     D3DXMatrixIdentity( &amp;m_mWorld );
+<FONT COLOR="#40F628">0323:</FONT> 
+<FONT COLOR="#40F628">0324:</FONT>     <FONT COLOR="#008000">// ビュー行列</FONT>
+<FONT COLOR="#40F628">0325:</FONT>     D3DXVECTOR3 vFromPt   = D3DXVECTOR3( 0.0f, 0.0f, -5.0f );
+<FONT COLOR="#40F628">0326:</FONT>     D3DXVECTOR3 vLookatPt = D3DXVECTOR3( 0.0f, 0.0f, 0.0f );
+<FONT COLOR="#40F628">0327:</FONT>     D3DXVECTOR3 vUpVec    = D3DXVECTOR3( 0.0f, 1.0f, 0.0f );
+<FONT COLOR="#40F628">0328:</FONT>     D3DXMatrixLookAtLH( &amp;m_mView, &amp;vFromPt, &amp;vLookatPt, &amp;vUpVec );
+<FONT COLOR="#40F628">0329:</FONT> 
+<FONT COLOR="#40F628">0330:</FONT>     <FONT COLOR="#008000">// 射影行列</FONT>
+<FONT COLOR="#40F628">0331:</FONT>     FLOAT fAspect = ((FLOAT)m_d3dsdBackBuffer.Width) / m_d3dsdBackBuffer.Height;
+<FONT COLOR="#40F628">0332:</FONT>     D3DXMatrixPerspectiveFovLH( &amp;m_mProj, D3DX_PI/4, fAspect, 1.0f, 100.0f );
+<FONT COLOR="#40F628">0333:</FONT> 
+<FONT COLOR="#40F628">0334:</FONT>     <FONT COLOR="#008000">// フォント</FONT>
+<FONT COLOR="#40F628">0335:</FONT>     m_pFont-&gt;RestoreDeviceObjects();
+<FONT COLOR="#40F628">0336:</FONT> 
+<FONT COLOR="#40F628">0337:</FONT>     <FONT COLOR="#008000">// レンダリングターゲットの生成</FONT>
+<FONT COLOR="#40F628">0338:</FONT>     <FONT COLOR="#0000FF">if</FONT> (FAILED(m_pd3dDevice-&gt;CreateDepthStencilSurface(RENDERING_WIDTH, RENDERING_HEIGHT, 
+<FONT COLOR="#40F628">0339:</FONT>         D3DFMT_D16, D3DMULTISAMPLE_NONE, 0, TRUE, &amp;m_pMapZ, NULL)))
+<FONT COLOR="#40F628">0340:</FONT>         <FONT COLOR="#0000FF">return</FONT> E_FAIL;
+<FONT COLOR="#40F628">0341:</FONT>     <FONT COLOR="#0000FF">if</FONT> (FAILED(m_pd3dDevice-&gt;CreateTexture(RENDERING_WIDTH, RENDERING_HEIGHT, 1, 
+<FONT COLOR="#40F628">0342:</FONT>         D3DUSAGE_RENDERTARGET, D3DFMT_A32B32G32R32F, D3DPOOL_DEFAULT, &amp;m_pOriginalTex, NULL)))
+<FONT COLOR="#40F628">0343:</FONT>         <FONT COLOR="#0000FF">return</FONT> E_FAIL;
+<FONT COLOR="#40F628">0344:</FONT>     <FONT COLOR="#008000">// 縮小バッファ</FONT>
+<FONT COLOR="#40F628">0345:</FONT>     <FONT COLOR="#0000FF">if</FONT> (FAILED(m_pOriginalTex-&gt;GetSurfaceLevel(0, &amp;m_pOriginalSurf)))
+<FONT COLOR="#40F628">0346:</FONT>         <FONT COLOR="#0000FF">return</FONT> E_FAIL;
+<FONT COLOR="#40F628">0347:</FONT>     <FONT COLOR="#0000FF">if</FONT> (FAILED(m_pd3dDevice-&gt;CreateTexture(MAP_WIDTH, MAP_HEIGHT, 1, 
+<FONT COLOR="#40F628">0348:</FONT>         D3DUSAGE_RENDERTARGET, D3DFMT_A32B32G32R32F, D3DPOOL_DEFAULT, &amp;m_pLumTex, NULL)))
+<FONT COLOR="#40F628">0349:</FONT>         <FONT COLOR="#0000FF">return</FONT> E_FAIL;
+<FONT COLOR="#40F628">0350:</FONT>     <FONT COLOR="#0000FF">if</FONT> (FAILED(m_pLumTex-&gt;GetSurfaceLevel(0, &amp;m_pLumSurf)))
+<FONT COLOR="#40F628">0351:</FONT>         <FONT COLOR="#0000FF">return</FONT> E_FAIL;
+<FONT COLOR="#40F628">0352:</FONT>     <FONT COLOR="#008000">// X軸方向のぼかし</FONT>
+<FONT COLOR="#40F628">0353:</FONT>     <FONT COLOR="#0000FF">if</FONT> (FAILED(m_pd3dDevice-&gt;CreateTexture(MAP_WIDTH, MAP_HEIGHT, 1, 
+<FONT COLOR="#40F628">0354:</FONT>         D3DUSAGE_RENDERTARGET, D3DFMT_A32B32G32R32F, D3DPOOL_DEFAULT, &amp;m_pXMap, NULL)))
+<FONT COLOR="#40F628">0355:</FONT>         <FONT COLOR="#0000FF">return</FONT> E_FAIL;
+<FONT COLOR="#40F628">0356:</FONT>     <FONT COLOR="#0000FF">if</FONT> (FAILED(m_pXMap-&gt;GetSurfaceLevel(0, &amp;m_pXMapSurf)))
+<FONT COLOR="#40F628">0357:</FONT>         <FONT COLOR="#0000FF">return</FONT> E_FAIL;
+<FONT COLOR="#40F628">0358:</FONT>     <FONT COLOR="#008000">// 大き目の円</FONT>
+<FONT COLOR="#40F628">0359:</FONT>     <FONT COLOR="#0000FF">if</FONT> (FAILED(m_pd3dDevice-&gt;CreateTexture(MAP_WIDTH, MAP_HEIGHT, 1, 
+<FONT COLOR="#40F628">0360:</FONT>         D3DUSAGE_RENDERTARGET, D3DFMT_A32B32G32R32F, D3DPOOL_DEFAULT, &amp;m_pLargeTex, NULL)))
+<FONT COLOR="#40F628">0361:</FONT>         <FONT COLOR="#0000FF">return</FONT> E_FAIL;
+<FONT COLOR="#40F628">0362:</FONT>     <FONT COLOR="#0000FF">if</FONT> (FAILED(m_pLargeTex-&gt;GetSurfaceLevel(0, &amp;m_pLargeSurf)))
+<FONT COLOR="#40F628">0363:</FONT>         <FONT COLOR="#0000FF">return</FONT> E_FAIL;
+<FONT COLOR="#40F628">0364:</FONT>     <FONT COLOR="#008000">// 小さ目の円</FONT>
+<FONT COLOR="#40F628">0365:</FONT>     <FONT COLOR="#0000FF">if</FONT> (FAILED(m_pd3dDevice-&gt;CreateTexture(MAP_WIDTH, MAP_HEIGHT, 1, 
+<FONT COLOR="#40F628">0366:</FONT>         D3DUSAGE_RENDERTARGET, D3DFMT_A32B32G32R32F, D3DPOOL_DEFAULT, &amp;m_pSmallTex, NULL)))
+<FONT COLOR="#40F628">0367:</FONT>         <FONT COLOR="#0000FF">return</FONT> E_FAIL;
+<FONT COLOR="#40F628">0368:</FONT>     <FONT COLOR="#0000FF">if</FONT> (FAILED(m_pSmallTex-&gt;GetSurfaceLevel(0, &amp;m_pSmallSurf)))
+<FONT COLOR="#40F628">0369:</FONT>         <FONT COLOR="#0000FF">return</FONT> E_FAIL;
+<FONT COLOR="#40F628">0370:</FONT> 
+<FONT COLOR="#40F628">0371:</FONT>     m_pEffect-&gt;OnResetDevice();
+<FONT COLOR="#40F628">0372:</FONT> 
+<FONT COLOR="#40F628">0373:</FONT>     <FONT COLOR="#0000FF">return</FONT> S_OK;
+<FONT COLOR="#40F628">0374:</FONT> }
+<FONT COLOR="#40F628">0375:</FONT> 
+<FONT COLOR="#40F628">0376:</FONT> 
+<FONT COLOR="#40F628">0377:</FONT> 
+<FONT COLOR="#40F628">0378:</FONT> 
+<FONT COLOR="#40F628">0379:</FONT> <FONT COLOR="#008000">//-------------------------------------------------------------</FONT>
+<FONT COLOR="#40F628">0380:</FONT> <FONT COLOR="#008000">// Name: FrameMove()</FONT>
+<FONT COLOR="#40F628">0381:</FONT> <FONT COLOR="#008000">// Desc: 毎フレーム呼ばれます。アニメの処理などを行います。</FONT>
+<FONT COLOR="#40F628">0382:</FONT> <FONT COLOR="#008000">//-------------------------------------------------------------</FONT>
+<FONT COLOR="#40F628">0383:</FONT> HRESULT CMyD3DApplication::FrameMove()
+<FONT COLOR="#40F628">0384:</FONT> {
+<FONT COLOR="#40F628">0385:</FONT>     <FONT COLOR="#008000">// 入力データの更新</FONT>
+<FONT COLOR="#40F628">0386:</FONT>     UpdateInput( &amp;m_UserInput );
+<FONT COLOR="#40F628">0387:</FONT> 
+<FONT COLOR="#40F628">0388:</FONT>     <FONT COLOR="#008000">//---------------------------------------------------------</FONT>
+<FONT COLOR="#40F628">0389:</FONT>     <FONT COLOR="#008000">// 入力に応じて座標系を更新する</FONT>
+<FONT COLOR="#40F628">0390:</FONT>     <FONT COLOR="#008000">//---------------------------------------------------------</FONT>
+<FONT COLOR="#40F628">0391:</FONT>     <FONT COLOR="#008000">// 回転</FONT>
+<FONT COLOR="#40F628">0392:</FONT>     D3DXMATRIX matRotY;
+<FONT COLOR="#40F628">0393:</FONT>     D3DXMATRIX matRotX;
+<FONT COLOR="#40F628">0394:</FONT> 
+<FONT COLOR="#40F628">0395:</FONT>     <FONT COLOR="#0000FF">if</FONT>( m_UserInput.bRotateLeft &amp;&amp; !m_UserInput.bRotateRight )
+<FONT COLOR="#40F628">0396:</FONT>         m_fWorldRotY += m_fElapsedTime;
+<FONT COLOR="#40F628">0397:</FONT>     <FONT COLOR="#0000FF">else</FONT>
+<FONT COLOR="#40F628">0398:</FONT>     <FONT COLOR="#0000FF">if</FONT>( m_UserInput.bRotateRight &amp;&amp; !m_UserInput.bRotateLeft )
+<FONT COLOR="#40F628">0399:</FONT>         m_fWorldRotY -= m_fElapsedTime;
+<FONT COLOR="#40F628">0400:</FONT> 
+<FONT COLOR="#40F628">0401:</FONT>     <FONT COLOR="#0000FF">if</FONT>( m_UserInput.bRotateUp &amp;&amp; !m_UserInput.bRotateDown )
+<FONT COLOR="#40F628">0402:</FONT>         m_fWorldRotX += m_fElapsedTime;
+<FONT COLOR="#40F628">0403:</FONT>     <FONT COLOR="#0000FF">else</FONT>
+<FONT COLOR="#40F628">0404:</FONT>     <FONT COLOR="#0000FF">if</FONT>( m_UserInput.bRotateDown &amp;&amp; !m_UserInput.bRotateUp )
+<FONT COLOR="#40F628">0405:</FONT>         m_fWorldRotX -= m_fElapsedTime;
+<FONT COLOR="#40F628">0406:</FONT> 
+<FONT COLOR="#40F628">0407:</FONT>     D3DXMatrixRotationX( &amp;matRotX, m_fWorldRotX );
+<FONT COLOR="#40F628">0408:</FONT>     D3DXMatrixRotationY( &amp;matRotY, m_fWorldRotY );
+<FONT COLOR="#40F628">0409:</FONT> 
+<FONT COLOR="#40F628">0410:</FONT>     D3DXMatrixMultiply( &amp;m_mWorld, &amp;matRotY, &amp;matRotX );
+<FONT COLOR="#40F628">0411:</FONT>     
+<FONT COLOR="#40F628">0412:</FONT>     <FONT COLOR="#008000">//---------------------------------------------------------</FONT>
+<FONT COLOR="#40F628">0413:</FONT>     <FONT COLOR="#008000">// ビュー行列の設定</FONT>
+<FONT COLOR="#40F628">0414:</FONT>     <FONT COLOR="#008000">//---------------------------------------------------------</FONT>
+<FONT COLOR="#40F628">0415:</FONT>     <FONT COLOR="#008000">// ズーム</FONT>
+<FONT COLOR="#40F628">0416:</FONT>     <FONT COLOR="#0000FF">if</FONT>( m_UserInput.bZoomIn &amp;&amp; !m_UserInput.bZoomOut )
+<FONT COLOR="#40F628">0417:</FONT>         m_fViewZoom += m_fElapsedTime;
+<FONT COLOR="#40F628">0418:</FONT>     <FONT COLOR="#0000FF">else</FONT> <FONT COLOR="#0000FF">if</FONT>( m_UserInput.bZoomOut &amp;&amp; !m_UserInput.bZoomIn )
+<FONT COLOR="#40F628">0419:</FONT>         m_fViewZoom -= m_fElapsedTime;
+<FONT COLOR="#40F628">0420:</FONT> 
+<FONT COLOR="#40F628">0421:</FONT>     D3DXVECTOR3 vFromPt   = D3DXVECTOR3( 0.0f, 0.0f, -m_fViewZoom );
+<FONT COLOR="#40F628">0422:</FONT>     D3DXVECTOR3 vLookatPt = D3DXVECTOR3( 0.0f, 0.0f, 0.0f );
+<FONT COLOR="#40F628">0423:</FONT>     D3DXVECTOR3 vUpVec    = D3DXVECTOR3( 0.0f, 1.0f, 0.0f );
+<FONT COLOR="#40F628">0424:</FONT>     D3DXMatrixLookAtLH( &amp;m_mView, &amp;vFromPt, &amp;vLookatPt, &amp;vUpVec );
+<FONT COLOR="#40F628">0425:</FONT> 
+<FONT COLOR="#40F628">0426:</FONT>     <FONT COLOR="#0000FF">return</FONT> S_OK;
+<FONT COLOR="#40F628">0427:</FONT> }
+<FONT COLOR="#40F628">0428:</FONT> <FONT COLOR="#008000">//-------------------------------------------------------------</FONT>
+<FONT COLOR="#40F628">0429:</FONT> <FONT COLOR="#008000">// Name: UpdateInput()</FONT>
+<FONT COLOR="#40F628">0430:</FONT> <FONT COLOR="#008000">// Desc: 入力データを更新する</FONT>
+<FONT COLOR="#40F628">0431:</FONT> <FONT COLOR="#008000">//-------------------------------------------------------------</FONT>
+<FONT COLOR="#40F628">0432:</FONT> <FONT COLOR="#0000FF">void</FONT> CMyD3DApplication::UpdateInput( UserInput* pUserInput )
+<FONT COLOR="#40F628">0433:</FONT> {
+<FONT COLOR="#40F628">0434:</FONT>     pUserInput-&gt;bRotateUp    = ( m_bActive &amp;&amp; (GetAsyncKeyState( VK_UP )    &amp; 0x8000) == 0x8000 );
+<FONT COLOR="#40F628">0435:</FONT>     pUserInput-&gt;bRotateDown  = ( m_bActive &amp;&amp; (GetAsyncKeyState( VK_DOWN )  &amp; 0x8000) == 0x8000 );
+<FONT COLOR="#40F628">0436:</FONT>     pUserInput-&gt;bRotateLeft  = ( m_bActive &amp;&amp; (GetAsyncKeyState( VK_LEFT )  &amp; 0x8000) == 0x8000 );
+<FONT COLOR="#40F628">0437:</FONT>     pUserInput-&gt;bRotateRight = ( m_bActive &amp;&amp; (GetAsyncKeyState( VK_RIGHT ) &amp; 0x8000) == 0x8000 );
+<FONT COLOR="#40F628">0438:</FONT>     
+<FONT COLOR="#40F628">0439:</FONT>     pUserInput-&gt;bZoomIn      = ( m_bActive &amp;&amp; (GetAsyncKeyState( '<FONT COLOR="#600000">Z</FONT>'     )  &amp; 0x8000) == 0x8000 );
+<FONT COLOR="#40F628">0440:</FONT>     pUserInput-&gt;bZoomOut     = ( m_bActive &amp;&amp; (GetAsyncKeyState( '<FONT COLOR="#600000">X</FONT>'      ) &amp; 0x8000) == 0x8000 );
+<FONT COLOR="#40F628">0441:</FONT> }
+<FONT COLOR="#40F628">0442:</FONT> 
+<FONT COLOR="#40F628">0443:</FONT> 
+<FONT COLOR="#40F628">0444:</FONT> <FONT COLOR="#008000">//-------------------------------------------------------------</FONT>
+<FONT COLOR="#40F628">0445:</FONT> <FONT COLOR="#008000">// Name: Render()</FONT>
+<FONT COLOR="#40F628">0446:</FONT> <FONT COLOR="#008000">// Desc: 画面を描画する.</FONT>
+<FONT COLOR="#40F628">0447:</FONT> <FONT COLOR="#008000">//-------------------------------------------------------------</FONT>
+<FONT COLOR="#40F628">0448:</FONT> HRESULT CMyD3DApplication::Render()
+<FONT COLOR="#40F628">0449:</FONT> {
+<FONT COLOR="#40F628">0450:</FONT>     D3DXMATRIX m, mL, mR, mView, mProj;
+<FONT COLOR="#40F628">0451:</FONT>     LPDIRECT3DSURFACE9 pOldBackBuffer, pOldZBuffer;
+<FONT COLOR="#40F628">0452:</FONT>     D3DVIEWPORT9 oldViewport;
+<FONT COLOR="#40F628">0453:</FONT>     D3DXVECTOR4 v, light_pos;
+<FONT COLOR="#40F628">0454:</FONT>     D3DMATERIAL9 *pMtrl;
+<FONT COLOR="#40F628">0455:</FONT>     DWORD i;
+<FONT COLOR="#40F628">0456:</FONT> 
+<FONT COLOR="#40F628">0457:</FONT>     <FONT COLOR="#008000">//---------------------------------------------------------</FONT>
+<FONT COLOR="#40F628">0458:</FONT>     <FONT COLOR="#008000">// 描画</FONT>
+<FONT COLOR="#40F628">0459:</FONT>     <FONT COLOR="#008000">//---------------------------------------------------------</FONT>
+<FONT COLOR="#40F628">0460:</FONT>     <FONT COLOR="#0000FF">if</FONT>( SUCCEEDED( m_pd3dDevice-&gt;BeginScene() ) )
+<FONT COLOR="#40F628">0461:</FONT>     {
+<FONT COLOR="#40F628">0462:</FONT>         <FONT COLOR="#008000">//-------------------------------------------------</FONT>
+<FONT COLOR="#40F628">0463:</FONT>         <FONT COLOR="#008000">// レンダリングターゲットの保存</FONT>
+<FONT COLOR="#40F628">0464:</FONT>         <FONT COLOR="#008000">//-------------------------------------------------</FONT>
+<FONT COLOR="#40F628">0465:</FONT>         m_pd3dDevice-&gt;GetRenderTarget(0, &amp;pOldBackBuffer);
+<FONT COLOR="#40F628">0466:</FONT>         m_pd3dDevice-&gt;GetDepthStencilSurface(&amp;pOldZBuffer);
+<FONT COLOR="#40F628">0467:</FONT>         m_pd3dDevice-&gt;GetViewport(&amp;oldViewport);
+<FONT COLOR="#40F628">0468:</FONT> 
+<FONT COLOR="#40F628">0469:</FONT>         <FONT COLOR="#0000FF">if</FONT>( m_pEffect != NULL ) 
+<FONT COLOR="#40F628">0470:</FONT>         {
+<FONT COLOR="#40F628">0471:</FONT>             <FONT COLOR="#008000">//-------------------------------------------------</FONT>
+<FONT COLOR="#40F628">0472:</FONT>             <FONT COLOR="#008000">// レンダリングターゲットの変更</FONT>
+<FONT COLOR="#40F628">0473:</FONT>             <FONT COLOR="#008000">//-------------------------------------------------</FONT>
+<FONT COLOR="#40F628">0474:</FONT>             m_pd3dDevice-&gt;SetRenderTarget(0, m_pOriginalSurf);
+<FONT COLOR="#40F628">0475:</FONT>             m_pd3dDevice-&gt;SetDepthStencilSurface(m_pMapZ);
+<FONT COLOR="#40F628">0476:</FONT>             <FONT COLOR="#008000">// ビューポートの変更</FONT>
+<FONT COLOR="#40F628">0477:</FONT>             D3DVIEWPORT9 viewport = {0,0      <FONT COLOR="#008000">// 左上の座標</FONT>
+<FONT COLOR="#40F628">0478:</FONT>                             , RENDERING_WIDTH  <FONT COLOR="#008000">// 幅</FONT>
+<FONT COLOR="#40F628">0479:</FONT>                             , RENDERING_HEIGHT <FONT COLOR="#008000">// 高さ</FONT>
+<FONT COLOR="#40F628">0480:</FONT>                             , 0.0f,1.0f};     <FONT COLOR="#008000">// 前面、後面</FONT>
+<FONT COLOR="#40F628">0481:</FONT>             m_pd3dDevice-&gt;SetViewport(&amp;viewport);
+<FONT COLOR="#40F628">0482:</FONT> 
+<FONT COLOR="#40F628">0483:</FONT>             <FONT COLOR="#008000">// レンダリングターゲットのクリア</FONT>
+<FONT COLOR="#40F628">0484:</FONT>             m_pd3dDevice-&gt;Clear(0L, NULL
+<FONT COLOR="#40F628">0485:</FONT>                             , D3DCLEAR_TARGET | D3DCLEAR_ZBUFFER
+<FONT COLOR="#40F628">0486:</FONT>                             , 0x000000, 1.0f, 0L);
+<FONT COLOR="#40F628">0487:</FONT> 
+<FONT COLOR="#40F628">0488:</FONT>             <FONT COLOR="#008000">//-------------------------------------------------</FONT>
+<FONT COLOR="#40F628">0489:</FONT>             <FONT COLOR="#008000">// シーンの描画</FONT>
+<FONT COLOR="#40F628">0490:</FONT>             <FONT COLOR="#008000">//-------------------------------------------------</FONT>
+<FONT COLOR="#40F628">0491:</FONT>             TSS( 0, D3DTSS_COLOROP,   D3DTOP_SELECTARG1 );
+<FONT COLOR="#40F628">0492:</FONT>             TSS( 0, D3DTSS_COLORARG1, D3DTA_DIFFUSE );
+<FONT COLOR="#40F628">0493:</FONT> 
+<FONT COLOR="#40F628">0494:</FONT>             m_pEffect-&gt;SetTechnique( m_hTechnique );
+<FONT COLOR="#40F628">0495:</FONT>             m_pEffect-&gt;Begin( NULL, 0 );
+<FONT COLOR="#40F628">0496:</FONT>             m_pEffect-&gt;Pass( PASS_SCENE );
+<FONT COLOR="#40F628">0497:</FONT> 
+<FONT COLOR="#40F628">0498:</FONT>             <FONT COLOR="#008000">// 移動</FONT>
+<FONT COLOR="#40F628">0499:</FONT>             D3DXMatrixTranslation( &amp;m, 0.5f, 0.0f ,0.0f );
+<FONT COLOR="#40F628">0500:</FONT>             D3DXMatrixRotationY( &amp;mR,  m_fTime );
+<FONT COLOR="#40F628">0501:</FONT>             mL = m * mR * m_mWorld;
+<FONT COLOR="#40F628">0502:</FONT>             <FONT COLOR="#008000">// ライトの方向</FONT>
+<FONT COLOR="#40F628">0503:</FONT>             D3DXMatrixInverse( &amp;m, NULL, &amp;mL);
+<FONT COLOR="#40F628">0504:</FONT>             light_pos = D3DXVECTOR4(1,1,-1,0);
+<FONT COLOR="#40F628">0505:</FONT>             D3DXVec4Transform( &amp;v, &amp;light_pos, &amp;m );
+<FONT COLOR="#40F628">0506:</FONT>             v.w = 0;
+<FONT COLOR="#40F628">0507:</FONT>             D3DXVec4Normalize( &amp;v, &amp;v );
+<FONT COLOR="#40F628">0508:</FONT>             m_pEffect-&gt;SetVector( m_hvLightDir, &amp;v );
+<FONT COLOR="#40F628">0509:</FONT>             <FONT COLOR="#008000">// 視点</FONT>
+<FONT COLOR="#40F628">0510:</FONT>             D3DXVECTOR3 vFromPt   = D3DXVECTOR3( 0.0f, 0.0f, -m_fViewZoom );
+<FONT COLOR="#40F628">0511:</FONT>             D3DXVec3Transform( &amp;v, &amp;vFromPt, &amp;m );
+<FONT COLOR="#40F628">0512:</FONT>             m_pEffect-&gt;SetVector( m_hvEyePos, &amp;v );
+<FONT COLOR="#40F628">0513:</FONT>             <FONT COLOR="#008000">// ローカル-射影変換行列</FONT>
+<FONT COLOR="#40F628">0514:</FONT>             m = mL * m_mView * m_mProj;
+<FONT COLOR="#40F628">0515:</FONT>             m_pEffect-&gt;SetMatrix( m_hmWVP, &amp;m );
+<FONT COLOR="#40F628">0516:</FONT> 
+<FONT COLOR="#40F628">0517:</FONT>             pMtrl = m_pMesh-&gt;m_pMaterials;
+<FONT COLOR="#40F628">0518:</FONT>             <FONT COLOR="#0000FF">for</FONT>( i=0; i&lt;m_pMesh-&gt;m_dwNumMaterials; i++ ) {
+<FONT COLOR="#40F628">0519:</FONT>                 v.x = pMtrl-&gt;Diffuse.r;
+<FONT COLOR="#40F628">0520:</FONT>                 v.y = pMtrl-&gt;Diffuse.g;
+<FONT COLOR="#40F628">0521:</FONT>                 v.z = pMtrl-&gt;Diffuse.b;
+<FONT COLOR="#40F628">0522:</FONT>                 v.w = pMtrl-&gt;Diffuse.a;
+<FONT COLOR="#40F628">0523:</FONT>                 m_pEffect-&gt;SetVector( m_hvCol, &amp;v );
+<FONT COLOR="#40F628">0524:</FONT>                 m_pMesh-&gt;m_pLocalMesh-&gt;DrawSubset( i );  <FONT COLOR="#008000">// 描画</FONT>
+<FONT COLOR="#40F628">0525:</FONT>                 pMtrl++;
+<FONT COLOR="#40F628">0526:</FONT>             }
+<FONT COLOR="#40F628">0527:</FONT> 
+<FONT COLOR="#40F628">0528:</FONT>             m_pEffect-&gt;End();
+<FONT COLOR="#40F628">0529:</FONT> 
+<FONT COLOR="#40F628">0530:</FONT>             <FONT COLOR="#008000">//-------------------------------------------------</FONT>
+<FONT COLOR="#40F628">0531:</FONT>             <FONT COLOR="#008000">// 縮小マップの作成</FONT>
+<FONT COLOR="#40F628">0532:</FONT>             <FONT COLOR="#008000">//-------------------------------------------------</FONT>
+<FONT COLOR="#40F628">0533:</FONT>             m_pd3dDevice-&gt;SetRenderTarget(0, m_pLumSurf);
+<FONT COLOR="#40F628">0534:</FONT>             D3DVIEWPORT9 viewport_map = {0,0      <FONT COLOR="#008000">// 左上の座標</FONT>
+<FONT COLOR="#40F628">0535:</FONT>                         , MAP_WIDTH  <FONT COLOR="#008000">// 幅</FONT>
+<FONT COLOR="#40F628">0536:</FONT>                         , MAP_HEIGHT <FONT COLOR="#008000">// 高さ</FONT>
+<FONT COLOR="#40F628">0537:</FONT>                         , 0.0f,1.0f};     <FONT COLOR="#008000">// 前面、後面</FONT>
+<FONT COLOR="#40F628">0538:</FONT>             m_pd3dDevice-&gt;SetViewport(&amp;viewport_map);
+<FONT COLOR="#40F628">0539:</FONT> 
+<FONT COLOR="#40F628">0540:</FONT>             RS( D3DRS_ZENABLE, FALSE );
+<FONT COLOR="#40F628">0541:</FONT>             RS( D3DRS_LIGHTING, FALSE );
+<FONT COLOR="#40F628">0542:</FONT>             TSS(0,D3DTSS_COLOROP,   D3DTOP_SELECTARG1);
+<FONT COLOR="#40F628">0543:</FONT>             TSS(0,D3DTSS_COLORARG1, D3DTA_TEXTURE);
+<FONT COLOR="#40F628">0544:</FONT>             TSS(1,D3DTSS_COLOROP,    D3DTOP_DISABLE);
+<FONT COLOR="#40F628">0545:</FONT> 
+<FONT COLOR="#40F628">0546:</FONT>             FLOAT w = (FLOAT)MAP_WIDTH;
+<FONT COLOR="#40F628">0547:</FONT>             FLOAT h = (FLOAT)MAP_HEIGHT;
+<FONT COLOR="#40F628">0548:</FONT>             FLOAT du = 0.5f/RENDERING_WIDTH;
+<FONT COLOR="#40F628">0549:</FONT>             FLOAT dv = 0.5f/RENDERING_HEIGHT;
+<FONT COLOR="#40F628">0550:</FONT>             TVERTEX Vertex0[4] = {
+<FONT COLOR="#40F628">0551:</FONT>                 <FONT COLOR="#008000">//x  y   z    rhw    tu    tv</FONT>
+<FONT COLOR="#40F628">0552:</FONT>                 { 0, 0, 0.1f, 1.0f, 0+du, 0+dv,},
+<FONT COLOR="#40F628">0553:</FONT>                 { w, 0, 0.1f, 1.0f, 1+du, 0+dv,},
+<FONT COLOR="#40F628">0554:</FONT>                 { w, h, 0.1f, 1.0f, 1+du, 1+dv,},
+<FONT COLOR="#40F628">0555:</FONT>                 { 0, h, 0.1f, 1.0f, 0+du, 1+dv,},
+<FONT COLOR="#40F628">0556:</FONT>             };
+<FONT COLOR="#40F628">0557:</FONT>             m_pd3dDevice-&gt;SetFVF( D3DFVF_XYZRHW | D3DFVF_TEX1 );
+<FONT COLOR="#40F628">0558:</FONT>             m_pd3dDevice-&gt;SetTexture(0, m_pOriginalTex);
+<FONT COLOR="#40F628">0559:</FONT> 
+<FONT COLOR="#40F628">0560:</FONT>             m_pEffect-&gt;SetTechnique( m_hTechnique );
+<FONT COLOR="#40F628">0561:</FONT>             m_pEffect-&gt;Begin( NULL, 0 );
+<FONT COLOR="#40F628">0562:</FONT>             m_pEffect-&gt;Pass( PASS_REDUCTION );
+<FONT COLOR="#40F628">0563:</FONT>             m_pEffect-&gt;SetTexture(m_htSrcMap, m_pOriginalTex);
+<FONT COLOR="#40F628">0564:</FONT> 
+<FONT COLOR="#40F628">0565:</FONT>             m_pd3dDevice-&gt;DrawPrimitiveUP( D3DPT_TRIANGLEFAN
+<FONT COLOR="#40F628">0566:</FONT>                                 , 2, Vertex0, <FONT COLOR="#0000FF">sizeof</FONT>( TVERTEX ) );
+<FONT COLOR="#40F628">0567:</FONT> 
+<FONT COLOR="#40F628">0568:</FONT>             m_pEffect-&gt;End();
+<FONT COLOR="#40F628">0569:</FONT> 
+<FONT COLOR="#40F628">0570:</FONT>             <FONT COLOR="#008000">//-------------------------------------------------</FONT>
+<FONT COLOR="#40F628">0571:</FONT>             <FONT COLOR="#008000">// シェーダの設定</FONT>
+<FONT COLOR="#40F628">0572:</FONT>             <FONT COLOR="#008000">//-------------------------------------------------</FONT>
+<FONT COLOR="#40F628">0573:</FONT>             m_pEffect-&gt;SetTechnique( m_hTechnique );
+<FONT COLOR="#40F628">0574:</FONT>             m_pEffect-&gt;Begin( NULL, 0 );
+<FONT COLOR="#40F628">0575:</FONT> 
+<FONT COLOR="#40F628">0576:</FONT>             <FONT COLOR="#008000">//-------------------------------------------------</FONT>
+<FONT COLOR="#40F628">0577:</FONT>             <FONT COLOR="#008000">// 大きなぼかしx</FONT>
+<FONT COLOR="#40F628">0578:</FONT>             <FONT COLOR="#008000">//-------------------------------------------------</FONT>
+<FONT COLOR="#40F628">0579:</FONT>             <FONT COLOR="#0000FF">typedef</FONT> <FONT COLOR="#0000FF">struct</FONT> {FLOAT p[3];FLOAT tu, tv;} VERTEX;
+<FONT COLOR="#40F628">0580:</FONT>             VERTEX Vertex1[4] = {
+<FONT COLOR="#40F628">0581:</FONT>                 <FONT COLOR="#008000">//   x      y     z      tu tv</FONT>
+<FONT COLOR="#40F628">0582:</FONT>                 {{  1.0f, -1.0f, 0.1f},   1, 1,},
+<FONT COLOR="#40F628">0583:</FONT>                 {{ -1.0f, -1.0f, 0.1f},   0, 1,},
+<FONT COLOR="#40F628">0584:</FONT>                 {{ -1.0f,  1.0f, 0.1f},   0, 0,},
+<FONT COLOR="#40F628">0585:</FONT>                 {{  1.0f,  1.0f, 0.1f},   1, 0,},
+<FONT COLOR="#40F628">0586:</FONT>             };
+<FONT COLOR="#40F628">0587:</FONT>             m_pd3dDevice-&gt;SetRenderTarget(0, m_pXMapSurf);
+<FONT COLOR="#40F628">0588:</FONT>             m_pEffect-&gt;Pass( PASS_X );
+<FONT COLOR="#40F628">0589:</FONT>             m_pEffect-&gt;SetVectorArray(m_hafWeight
+<FONT COLOR="#40F628">0590:</FONT>                                     , m_tbl[0], WEIGHT_MUN);
+<FONT COLOR="#40F628">0591:</FONT> 
+<FONT COLOR="#40F628">0592:</FONT>             m_pd3dDevice-&gt;SetVertexDeclaration( m_pDecl );
+<FONT COLOR="#40F628">0593:</FONT>             m_pEffect-&gt;SetTexture(m_htSrcMap, m_pLumTex);
+<FONT COLOR="#40F628">0594:</FONT>             m_pd3dDevice-&gt;DrawPrimitiveUP( D3DPT_TRIANGLEFAN
+<FONT COLOR="#40F628">0595:</FONT>                             , 2, Vertex1, <FONT COLOR="#0000FF">sizeof</FONT>( VERTEX ) );
+<FONT COLOR="#40F628">0596:</FONT> 
+<FONT COLOR="#40F628">0597:</FONT>             <FONT COLOR="#008000">//-------------------------------------------------</FONT>
+<FONT COLOR="#40F628">0598:</FONT>             <FONT COLOR="#008000">// 大きなぼかしy</FONT>
+<FONT COLOR="#40F628">0599:</FONT>             <FONT COLOR="#008000">//-------------------------------------------------</FONT>
+<FONT COLOR="#40F628">0600:</FONT>             m_pd3dDevice-&gt;SetRenderTarget(0, m_pLargeSurf);
+<FONT COLOR="#40F628">0601:</FONT>             m_pEffect-&gt;Pass( PASS_Y );
+<FONT COLOR="#40F628">0602:</FONT> 
+<FONT COLOR="#40F628">0603:</FONT>             m_pEffect-&gt;SetTexture(m_htSrcMap, m_pXMap);
+<FONT COLOR="#40F628">0604:</FONT>             m_pd3dDevice-&gt;DrawPrimitiveUP( D3DPT_TRIANGLEFAN
+<FONT COLOR="#40F628">0605:</FONT>                             , 2, Vertex1, <FONT COLOR="#0000FF">sizeof</FONT>( VERTEX ) );
+<FONT COLOR="#40F628">0606:</FONT> 
+<FONT COLOR="#40F628">0607:</FONT>             <FONT COLOR="#008000">//-------------------------------------------------</FONT>
+<FONT COLOR="#40F628">0608:</FONT>             <FONT COLOR="#008000">// 小さなぼかしx</FONT>
+<FONT COLOR="#40F628">0609:</FONT>             <FONT COLOR="#008000">//-------------------------------------------------</FONT>
+<FONT COLOR="#40F628">0610:</FONT>             m_pd3dDevice-&gt;SetRenderTarget(0, m_pXMapSurf);
+<FONT COLOR="#40F628">0611:</FONT>             m_pEffect-&gt;Pass( PASS_X );
+<FONT COLOR="#40F628">0612:</FONT>             m_pEffect-&gt;SetVectorArray(m_hafWeight
+<FONT COLOR="#40F628">0613:</FONT>                                     , m_tbl[1], WEIGHT_MUN);
+<FONT COLOR="#40F628">0614:</FONT> 
+<FONT COLOR="#40F628">0615:</FONT>             m_pEffect-&gt;SetTexture(m_htSrcMap, m_pLumTex);
+<FONT COLOR="#40F628">0616:</FONT>             m_pd3dDevice-&gt;DrawPrimitiveUP( D3DPT_TRIANGLEFAN
+<FONT COLOR="#40F628">0617:</FONT>                             , 2, Vertex1, <FONT COLOR="#0000FF">sizeof</FONT>( VERTEX ) );
+<FONT COLOR="#40F628">0618:</FONT> 
+<FONT COLOR="#40F628">0619:</FONT>             <FONT COLOR="#008000">//-------------------------------------------------</FONT>
+<FONT COLOR="#40F628">0620:</FONT>             <FONT COLOR="#008000">// 小さなぼかしy</FONT>
+<FONT COLOR="#40F628">0621:</FONT>             <FONT COLOR="#008000">//-------------------------------------------------</FONT>
+<FONT COLOR="#40F628">0622:</FONT>             m_pd3dDevice-&gt;SetRenderTarget(0, m_pSmallSurf);
+<FONT COLOR="#40F628">0623:</FONT>             m_pEffect-&gt;Pass( PASS_Y );
+<FONT COLOR="#40F628">0624:</FONT> 
+<FONT COLOR="#40F628">0625:</FONT>             m_pEffect-&gt;SetTexture(m_htSrcMap, m_pXMap);
+<FONT COLOR="#40F628">0626:</FONT>             m_pd3dDevice-&gt;DrawPrimitiveUP( D3DPT_TRIANGLEFAN
+<FONT COLOR="#40F628">0627:</FONT>                             , 2, Vertex1, <FONT COLOR="#0000FF">sizeof</FONT>( VERTEX ) );
+<FONT COLOR="#40F628">0628:</FONT> 
+<FONT COLOR="#40F628">0629:</FONT>             m_pEffect-&gt;End();
+<FONT COLOR="#40F628">0630:</FONT>         }
+<FONT COLOR="#40F628">0631:</FONT> 
+<FONT COLOR="#40F628">0632:</FONT>         <FONT COLOR="#008000">//-----------------------------------------------------</FONT>
+<FONT COLOR="#40F628">0633:</FONT>         <FONT COLOR="#008000">// レンダリングターゲットを元に戻す</FONT>
+<FONT COLOR="#40F628">0634:</FONT>         <FONT COLOR="#008000">//-----------------------------------------------------</FONT>
+<FONT COLOR="#40F628">0635:</FONT>         m_pd3dDevice-&gt;SetRenderTarget(0, pOldBackBuffer);
+<FONT COLOR="#40F628">0636:</FONT>         m_pd3dDevice-&gt;SetDepthStencilSurface(pOldZBuffer);
+<FONT COLOR="#40F628">0637:</FONT>         m_pd3dDevice-&gt;SetViewport(&amp;oldViewport);
+<FONT COLOR="#40F628">0638:</FONT>         pOldBackBuffer-&gt;Release();
+<FONT COLOR="#40F628">0639:</FONT>         pOldZBuffer-&gt;Release();
+<FONT COLOR="#40F628">0640:</FONT> 
+<FONT COLOR="#40F628">0641:</FONT>         <FONT COLOR="#008000">// バッファのクリア</FONT>
+<FONT COLOR="#40F628">0642:</FONT>         m_pd3dDevice-&gt;Clear( 0L, NULL
+<FONT COLOR="#40F628">0643:</FONT>                         , D3DCLEAR_TARGET|D3DCLEAR_ZBUFFER
+<FONT COLOR="#40F628">0644:</FONT>                         , 0x00404080, 1.0f, 0L );
+<FONT COLOR="#40F628">0645:</FONT> 
+<FONT COLOR="#40F628">0646:</FONT>         <FONT COLOR="#008000">//-----------------------------------------------------</FONT>
+<FONT COLOR="#40F628">0647:</FONT>         <FONT COLOR="#008000">// そのまま張る</FONT>
+<FONT COLOR="#40F628">0648:</FONT>         <FONT COLOR="#008000">//-----------------------------------------------------</FONT>
+<FONT COLOR="#40F628">0649:</FONT>         FLOAT w = (FLOAT)oldViewport.Width;
+<FONT COLOR="#40F628">0650:</FONT>         FLOAT h = (FLOAT)oldViewport.Height;
+<FONT COLOR="#40F628">0651:</FONT>         TVERTEX Vertex1[4] = {
+<FONT COLOR="#40F628">0652:</FONT>             <FONT COLOR="#008000">//x  y   z    rhw  tu tv</FONT>
+<FONT COLOR="#40F628">0653:</FONT>             { 0, 0, 0.1f, 1.0f, 0+0.5f/RENDERING_WIDTH, 0+0.5f/RENDERING_HEIGHT,},
+<FONT COLOR="#40F628">0654:</FONT>             { w, 0, 0.1f, 1.0f, 1+0.5f/RENDERING_WIDTH, 0+0.5f/RENDERING_HEIGHT,},
+<FONT COLOR="#40F628">0655:</FONT>             { w, h, 0.1f, 1.0f, 1+0.5f/RENDERING_WIDTH, 1+0.5f/RENDERING_HEIGHT,},
+<FONT COLOR="#40F628">0656:</FONT>             { 0, h, 0.1f, 1.0f, 0+0.5f/RENDERING_WIDTH, 1+0.5f/RENDERING_HEIGHT,},
+<FONT COLOR="#40F628">0657:</FONT>         };
+<FONT COLOR="#40F628">0658:</FONT>         m_pd3dDevice-&gt;SetFVF( D3DFVF_XYZRHW | D3DFVF_TEX1 );
+<FONT COLOR="#40F628">0659:</FONT>         m_pd3dDevice-&gt;SetTexture(0, m_pOriginalTex);
+<FONT COLOR="#40F628">0660:</FONT>         m_pd3dDevice-&gt;DrawPrimitiveUP( D3DPT_TRIANGLEFAN
+<FONT COLOR="#40F628">0661:</FONT>                             , 2, Vertex1, <FONT COLOR="#0000FF">sizeof</FONT>( TVERTEX ) );
+<FONT COLOR="#40F628">0662:</FONT>         
+<FONT COLOR="#40F628">0663:</FONT>         <FONT COLOR="#008000">//-----------------------------------------------------</FONT>
+<FONT COLOR="#40F628">0664:</FONT>         <FONT COLOR="#008000">// 最終的に合成する</FONT>
+<FONT COLOR="#40F628">0665:</FONT>         <FONT COLOR="#008000">//-----------------------------------------------------</FONT>
+<FONT COLOR="#40F628">0666:</FONT>         <FONT COLOR="#0000FF">if</FONT>(m_pEffect){
+<FONT COLOR="#40F628">0667:</FONT>             FLOAT du = 1.5f/MAP_WIDTH;
+<FONT COLOR="#40F628">0668:</FONT>             FLOAT dv = 1.5f/MAP_HEIGHT;
+<FONT COLOR="#40F628">0669:</FONT>             T2VERTEX Vertex2[4] = {
+<FONT COLOR="#40F628">0670:</FONT>                 <FONT COLOR="#008000">//   x    y   z    rhw     tu1      tv1      tu2      tv2</FONT>
+<FONT COLOR="#40F628">0671:</FONT>                 { 0.0f,   0, 0.1f, 1.0f, 0.0f+du, 0.0f+dv, 0.0f+du, 0.0f+dv,},
+<FONT COLOR="#40F628">0672:</FONT>                 { 1.0f*w, 0, 0.1f, 1.0f, 1.0f+du, 0.0f+dv, 1.0f+du, 0.0f+dv,},
+<FONT COLOR="#40F628">0673:</FONT>                 { 1.0f*w, h, 0.1f, 1.0f, 1.0f+du, 1.0f+dv, 1.0f+du, 1.0f+dv,},
+<FONT COLOR="#40F628">0674:</FONT>                 { 0.0f,   h, 0.1f, 1.0f, 0.0f+du, 1.0f+dv, 0.0f+du, 1.0f+dv,},
+<FONT COLOR="#40F628">0675:</FONT>             };
+<FONT COLOR="#40F628">0676:</FONT>             m_pEffect-&gt;SetTechnique( m_hTechnique );
+<FONT COLOR="#40F628">0677:</FONT>             m_pEffect-&gt;Begin( NULL, 0 );
+<FONT COLOR="#40F628">0678:</FONT>             m_pEffect-&gt;Pass( PASS_FINAL );
+<FONT COLOR="#40F628">0679:</FONT> 
+<FONT COLOR="#40F628">0680:</FONT>             RS(D3DRS_ALPHABLENDENABLE, TRUE);
+<FONT COLOR="#40F628">0681:</FONT>             RS(D3DRS_SRCBLEND , D3DBLEND_ONE);
+<FONT COLOR="#40F628">0682:</FONT>             RS(D3DRS_DESTBLEND , D3DBLEND_ONE);
+<FONT COLOR="#40F628">0683:</FONT>             m_pd3dDevice-&gt;SetFVF( D3DFVF_XYZRHW | D3DFVF_TEX2 );
+<FONT COLOR="#40F628">0684:</FONT>             m_pEffect-&gt;SetTexture(m_htSrcMap,  m_pLargeTex);
+<FONT COLOR="#40F628">0685:</FONT>             m_pEffect-&gt;SetTexture(m_htSrcMap2, m_pSmallTex);
+<FONT COLOR="#40F628">0686:</FONT>             m_pd3dDevice-&gt;DrawPrimitiveUP( D3DPT_TRIANGLEFAN
+<FONT COLOR="#40F628">0687:</FONT>                                 , 2, Vertex2, <FONT COLOR="#0000FF">sizeof</FONT>( T2VERTEX ) );
+<FONT COLOR="#40F628">0688:</FONT>             m_pEffect-&gt;End();
+<FONT COLOR="#40F628">0689:</FONT>         }
+<FONT COLOR="#40F628">0690:</FONT> 
+<FONT COLOR="#40F628">0691:</FONT>         RS( D3DRS_ZENABLE, TRUE );
+<FONT COLOR="#40F628">0692:</FONT>         RS( D3DRS_LIGHTING, TRUE );
+<FONT COLOR="#40F628">0693:</FONT>         RS(D3DRS_ALPHABLENDENABLE, FALSE );
+<FONT COLOR="#40F628">0694:</FONT> 
+<FONT COLOR="#40F628">0695:</FONT>         <FONT COLOR="#008000">// ヘルプの表示</FONT>
+<FONT COLOR="#40F628">0696:</FONT>         RenderText();
+<FONT COLOR="#40F628">0697:</FONT> 
+<FONT COLOR="#40F628">0698:</FONT> <FONT COLOR="#0000FF">#if</FONT> 1 <FONT COLOR="#008000">// デバッグ用にテクスチャを表示する</FONT>
+<FONT COLOR="#40F628">0699:</FONT>         {
+<FONT COLOR="#40F628">0700:</FONT>         m_pd3dDevice-&gt;SetTextureStageState(0,D3DTSS_COLOROP,    D3DTOP_SELECTARG1);
+<FONT COLOR="#40F628">0701:</FONT>         m_pd3dDevice-&gt;SetTextureStageState(0,D3DTSS_COLORARG1,  D3DTA_TEXTURE);
+<FONT COLOR="#40F628">0702:</FONT>         m_pd3dDevice-&gt;SetTextureStageState(1,D3DTSS_COLOROP,    D3DTOP_DISABLE);
+<FONT COLOR="#40F628">0703:</FONT>         m_pd3dDevice-&gt;SetVertexShader(NULL);
+<FONT COLOR="#40F628">0704:</FONT>         m_pd3dDevice-&gt;SetFVF( D3DFVF_XYZRHW | D3DFVF_TEX1 );
+<FONT COLOR="#40F628">0705:</FONT>         m_pd3dDevice-&gt;SetPixelShader(0);
+<FONT COLOR="#40F628">0706:</FONT>         <FONT COLOR="#0000FF">float</FONT> scale = 100.0f;
+<FONT COLOR="#40F628">0707:</FONT>         <FONT COLOR="#0000FF">for</FONT>(DWORD i=0; i&lt;5; i++){
+<FONT COLOR="#40F628">0708:</FONT>             TVERTEX Vertex[4] = {
+<FONT COLOR="#40F628">0709:</FONT>                 <FONT COLOR="#008000">// x  y  z rhw tu tv</FONT>
+<FONT COLOR="#40F628">0710:</FONT>                 {(i+0)*scale,    0,0, 1, 0, 0,},
+<FONT COLOR="#40F628">0711:</FONT>                 {(i+1)*scale,    0,0, 1, 1, 0,},
+<FONT COLOR="#40F628">0712:</FONT>                 {(i+1)*scale,scale,0, 1, 1, 1,},
+<FONT COLOR="#40F628">0713:</FONT>                 {(i+0)*scale,scale,0, 1, 0, 1,},
+<FONT COLOR="#40F628">0714:</FONT>             };
+<FONT COLOR="#40F628">0715:</FONT>             <FONT COLOR="#0000FF">if</FONT>(0==i) m_pd3dDevice-&gt;SetTexture( 0, m_pOriginalTex );
+<FONT COLOR="#40F628">0716:</FONT>             <FONT COLOR="#0000FF">if</FONT>(1==i) m_pd3dDevice-&gt;SetTexture( 0, m_pLumTex );
+<FONT COLOR="#40F628">0717:</FONT>             <FONT COLOR="#0000FF">if</FONT>(2==i) m_pd3dDevice-&gt;SetTexture( 0, m_pXMap );
+<FONT COLOR="#40F628">0718:</FONT>             <FONT COLOR="#0000FF">if</FONT>(3==i) m_pd3dDevice-&gt;SetTexture( 0, m_pLargeTex );
+<FONT COLOR="#40F628">0719:</FONT>             <FONT COLOR="#0000FF">if</FONT>(4==i) m_pd3dDevice-&gt;SetTexture( 0, m_pSmallTex );
+<FONT COLOR="#40F628">0720:</FONT>             m_pd3dDevice-&gt;DrawPrimitiveUP( D3DPT_TRIANGLEFAN, 2, Vertex, <FONT COLOR="#0000FF">sizeof</FONT>( TVERTEX ) );
+<FONT COLOR="#40F628">0721:</FONT>         }
+<FONT COLOR="#40F628">0722:</FONT>         }
+<FONT COLOR="#40F628">0723:</FONT> <FONT COLOR="#0000FF">#endif</FONT>      
+<FONT COLOR="#40F628">0724:</FONT> 
+<FONT COLOR="#40F628">0725:</FONT>         <FONT COLOR="#008000">// 描画の終了</FONT>
+<FONT COLOR="#40F628">0726:</FONT>         m_pd3dDevice-&gt;EndScene();
+<FONT COLOR="#40F628">0727:</FONT>     }
+<FONT COLOR="#40F628">0728:</FONT> 
+<FONT COLOR="#40F628">0729:</FONT>     <FONT COLOR="#0000FF">return</FONT> S_OK;
+<FONT COLOR="#40F628">0730:</FONT> }
+<FONT COLOR="#40F628">0731:</FONT> 
+<FONT COLOR="#40F628">0732:</FONT> 
+<FONT COLOR="#40F628">0733:</FONT> 
+<FONT COLOR="#40F628">0734:</FONT> 
+<FONT COLOR="#40F628">0735:</FONT> <FONT COLOR="#008000">//-------------------------------------------------------------</FONT>
+<FONT COLOR="#40F628">0736:</FONT> <FONT COLOR="#008000">// Name: RenderText()</FONT>
+<FONT COLOR="#40F628">0737:</FONT> <FONT COLOR="#008000">// Desc: 状態やヘルプを画面に表示する</FONT>
+<FONT COLOR="#40F628">0738:</FONT> <FONT COLOR="#008000">//-------------------------------------------------------------</FONT>
+<FONT COLOR="#40F628">0739:</FONT> HRESULT CMyD3DApplication::RenderText()
+<FONT COLOR="#40F628">0740:</FONT> {
+<FONT COLOR="#40F628">0741:</FONT>     D3DCOLOR fontColor        = D3DCOLOR_ARGB(255,255,255,0);
+<FONT COLOR="#40F628">0742:</FONT>     TCHAR szMsg[MAX_PATH] = TEXT("<FONT COLOR="#600000"></FONT>");
+<FONT COLOR="#40F628">0743:</FONT> 
+<FONT COLOR="#40F628">0744:</FONT>     FLOAT fNextLine = 40.0f; <FONT COLOR="#008000">// 表示する高さ</FONT>
+<FONT COLOR="#40F628">0745:</FONT> 
+<FONT COLOR="#40F628">0746:</FONT>     <FONT COLOR="#008000">// 操作法やパラメータを表示する</FONT>
+<FONT COLOR="#40F628">0747:</FONT>     fNextLine = (FLOAT) m_d3dsdBackBuffer.Height; 
+<FONT COLOR="#40F628">0748:</FONT>     lstrcpy( szMsg, TEXT("<FONT COLOR="#600000">Press 'F2' to configure display</FONT>") );
+<FONT COLOR="#40F628">0749:</FONT>     fNextLine -= 20.0f;
+<FONT COLOR="#40F628">0750:</FONT>     m_pFont-&gt;DrawText( 2, fNextLine, fontColor, szMsg );
+<FONT COLOR="#40F628">0751:</FONT> 
+<FONT COLOR="#40F628">0752:</FONT>     lstrcpy( szMsg, m_strDeviceStats );
+<FONT COLOR="#40F628">0753:</FONT>     fNextLine -= 20.0f;
+<FONT COLOR="#40F628">0754:</FONT>     m_pFont-&gt;DrawText( 2, fNextLine, fontColor, szMsg );
+<FONT COLOR="#40F628">0755:</FONT>     lstrcpy( szMsg, m_strFrameStats );
+<FONT COLOR="#40F628">0756:</FONT>     fNextLine -= 20.0f;
+<FONT COLOR="#40F628">0757:</FONT>     m_pFont-&gt;DrawText( 2, fNextLine, fontColor, szMsg );
+<FONT COLOR="#40F628">0758:</FONT>     
+<FONT COLOR="#40F628">0759:</FONT>     <FONT COLOR="#0000FF">return</FONT> S_OK;
+<FONT COLOR="#40F628">0760:</FONT> }
+<FONT COLOR="#40F628">0761:</FONT> 
+<FONT COLOR="#40F628">0762:</FONT> 
+<FONT COLOR="#40F628">0763:</FONT> 
+<FONT COLOR="#40F628">0764:</FONT> 
+<FONT COLOR="#40F628">0765:</FONT> <FONT COLOR="#008000">//-------------------------------------------------------------</FONT>
+<FONT COLOR="#40F628">0766:</FONT> <FONT COLOR="#008000">// Name: MsgProc()</FONT>
+<FONT COLOR="#40F628">0767:</FONT> <FONT COLOR="#008000">// Desc: WndProc をオーバーライドしたもの</FONT>
+<FONT COLOR="#40F628">0768:</FONT> <FONT COLOR="#008000">//-------------------------------------------------------------</FONT>
+<FONT COLOR="#40F628">0769:</FONT> LRESULT CMyD3DApplication::MsgProc( HWND hWnd, UINT msg,
+<FONT COLOR="#40F628">0770:</FONT>                                  WPARAM wParam, LPARAM lParam )
+<FONT COLOR="#40F628">0771:</FONT> {
+<FONT COLOR="#40F628">0772:</FONT>     <FONT COLOR="#0000FF">switch</FONT>( msg )
+<FONT COLOR="#40F628">0773:</FONT>     {
+<FONT COLOR="#40F628">0774:</FONT>         <FONT COLOR="#0000FF">case</FONT> WM_PAINT:
+<FONT COLOR="#40F628">0775:</FONT>         {
+<FONT COLOR="#40F628">0776:</FONT>             <FONT COLOR="#0000FF">if</FONT>( m_bLoadingApp )
+<FONT COLOR="#40F628">0777:</FONT>             {
+<FONT COLOR="#40F628">0778:</FONT>                 <FONT COLOR="#008000">// ロード中</FONT>
+<FONT COLOR="#40F628">0779:</FONT>                 HDC hDC = GetDC( hWnd );
+<FONT COLOR="#40F628">0780:</FONT>                 TCHAR strMsg[MAX_PATH];
+<FONT COLOR="#40F628">0781:</FONT>                 wsprintf(strMsg, TEXT("<FONT COLOR="#600000">Loading... Please wait</FONT>"));
+<FONT COLOR="#40F628">0782:</FONT>                 RECT rct;
+<FONT COLOR="#40F628">0783:</FONT>                 GetClientRect( hWnd, &amp;rct );
+<FONT COLOR="#40F628">0784:</FONT>                 DrawText( hDC, strMsg, -1, &amp;rct
+<FONT COLOR="#40F628">0785:</FONT>                         , DT_CENTER|DT_VCENTER|DT_SINGLELINE );
+<FONT COLOR="#40F628">0786:</FONT>                 ReleaseDC( hWnd, hDC );
+<FONT COLOR="#40F628">0787:</FONT>             }
+<FONT COLOR="#40F628">0788:</FONT>             <FONT COLOR="#0000FF">break</FONT>;
+<FONT COLOR="#40F628">0789:</FONT>         }
+<FONT COLOR="#40F628">0790:</FONT> 
+<FONT COLOR="#40F628">0791:</FONT>     }
+<FONT COLOR="#40F628">0792:</FONT> 
+<FONT COLOR="#40F628">0793:</FONT>     <FONT COLOR="#0000FF">return</FONT> CD3DApplication::MsgProc( hWnd, msg, wParam, lParam );
+<FONT COLOR="#40F628">0794:</FONT> }
+<FONT COLOR="#40F628">0795:</FONT> 
+<FONT COLOR="#40F628">0796:</FONT> 
+<FONT COLOR="#40F628">0797:</FONT> 
+<FONT COLOR="#40F628">0798:</FONT> 
+<FONT COLOR="#40F628">0799:</FONT> <FONT COLOR="#008000">//-------------------------------------------------------------</FONT>
+<FONT COLOR="#40F628">0800:</FONT> <FONT COLOR="#008000">// Name: InvalidateDeviceObjects()</FONT>
+<FONT COLOR="#40F628">0801:</FONT> <FONT COLOR="#008000">// Desc: RestoreDeviceObjects() で作成したオブジェクトの開放</FONT>
+<FONT COLOR="#40F628">0802:</FONT> <FONT COLOR="#008000">//-------------------------------------------------------------</FONT>
+<FONT COLOR="#40F628">0803:</FONT> HRESULT CMyD3DApplication::InvalidateDeviceObjects()
+<FONT COLOR="#40F628">0804:</FONT> {
+<FONT COLOR="#40F628">0805:</FONT>     <FONT COLOR="#008000">// シャドウマップ</FONT>
+<FONT COLOR="#40F628">0806:</FONT>     SAFE_RELEASE(m_pLargeSurf);
+<FONT COLOR="#40F628">0807:</FONT>     SAFE_RELEASE(m_pLargeTex);
+<FONT COLOR="#40F628">0808:</FONT>     SAFE_RELEASE(m_pSmallSurf);
+<FONT COLOR="#40F628">0809:</FONT>     SAFE_RELEASE(m_pSmallTex);
+<FONT COLOR="#40F628">0810:</FONT>     SAFE_RELEASE(m_pXMapSurf);
+<FONT COLOR="#40F628">0811:</FONT>     SAFE_RELEASE(m_pXMap);
+<FONT COLOR="#40F628">0812:</FONT>     SAFE_RELEASE(m_pLumSurf);
+<FONT COLOR="#40F628">0813:</FONT>     SAFE_RELEASE(m_pLumTex);
+<FONT COLOR="#40F628">0814:</FONT>     SAFE_RELEASE(m_pOriginalSurf);
+<FONT COLOR="#40F628">0815:</FONT>     SAFE_RELEASE(m_pOriginalTex);
+<FONT COLOR="#40F628">0816:</FONT>     SAFE_RELEASE(m_pMapZ);
+<FONT COLOR="#40F628">0817:</FONT> 
+<FONT COLOR="#40F628">0818:</FONT>     m_pMesh  -&gt;InvalidateDeviceObjects(); <FONT COLOR="#008000">// メッシュ</FONT>
+<FONT COLOR="#40F628">0819:</FONT> 
+<FONT COLOR="#40F628">0820:</FONT>     m_pFont-&gt;InvalidateDeviceObjects(); <FONT COLOR="#008000">// フォント</FONT>
+<FONT COLOR="#40F628">0821:</FONT> 
+<FONT COLOR="#40F628">0822:</FONT>     <FONT COLOR="#008000">// シェーダ</FONT>
+<FONT COLOR="#40F628">0823:</FONT>     <FONT COLOR="#0000FF">if</FONT>( m_pEffect != NULL ) m_pEffect-&gt;OnLostDevice();
+<FONT COLOR="#40F628">0824:</FONT> 
+<FONT COLOR="#40F628">0825:</FONT>     <FONT COLOR="#0000FF">return</FONT> S_OK;
+<FONT COLOR="#40F628">0826:</FONT> }
+<FONT COLOR="#40F628">0827:</FONT> 
+<FONT COLOR="#40F628">0828:</FONT> 
+<FONT COLOR="#40F628">0829:</FONT> 
+<FONT COLOR="#40F628">0830:</FONT> 
+<FONT COLOR="#40F628">0831:</FONT> <FONT COLOR="#008000">//-------------------------------------------------------------</FONT>
+<FONT COLOR="#40F628">0832:</FONT> <FONT COLOR="#008000">// Name: DeleteDeviceObjects()</FONT>
+<FONT COLOR="#40F628">0833:</FONT> <FONT COLOR="#008000">// Desc: InitDeviceObjects() で作成したオブジェクトを開放する</FONT>
+<FONT COLOR="#40F628">0834:</FONT> <FONT COLOR="#008000">//-------------------------------------------------------------</FONT>
+<FONT COLOR="#40F628">0835:</FONT> HRESULT CMyD3DApplication::DeleteDeviceObjects()
+<FONT COLOR="#40F628">0836:</FONT> {
+<FONT COLOR="#40F628">0837:</FONT>     <FONT COLOR="#008000">// シェーダ</FONT>
+<FONT COLOR="#40F628">0838:</FONT>     SAFE_RELEASE( m_pEffect );
+<FONT COLOR="#40F628">0839:</FONT>     SAFE_RELEASE( m_pDecl );
+<FONT COLOR="#40F628">0840:</FONT>     
+<FONT COLOR="#40F628">0841:</FONT>     <FONT COLOR="#008000">// メッシュ</FONT>
+<FONT COLOR="#40F628">0842:</FONT>     m_pMesh  -&gt;Destroy();
+<FONT COLOR="#40F628">0843:</FONT> 
+<FONT COLOR="#40F628">0844:</FONT>     <FONT COLOR="#008000">// フォント</FONT>
+<FONT COLOR="#40F628">0845:</FONT>     m_pFont-&gt;DeleteDeviceObjects();
+<FONT COLOR="#40F628">0846:</FONT> 
+<FONT COLOR="#40F628">0847:</FONT>     <FONT COLOR="#0000FF">return</FONT> S_OK;
+<FONT COLOR="#40F628">0848:</FONT> }
+<FONT COLOR="#40F628">0849:</FONT> 
+<FONT COLOR="#40F628">0850:</FONT> 
+<FONT COLOR="#40F628">0851:</FONT> 
+<FONT COLOR="#40F628">0852:</FONT> 
+<FONT COLOR="#40F628">0853:</FONT> <FONT COLOR="#008000">//-------------------------------------------------------------</FONT>
+<FONT COLOR="#40F628">0854:</FONT> <FONT COLOR="#008000">// Name: FinalCleanup()</FONT>
+<FONT COLOR="#40F628">0855:</FONT> <FONT COLOR="#008000">// Desc: 終了する直線に呼ばれる</FONT>
+<FONT COLOR="#40F628">0856:</FONT> <FONT COLOR="#008000">//-------------------------------------------------------------</FONT>
+<FONT COLOR="#40F628">0857:</FONT> HRESULT CMyD3DApplication::FinalCleanup()
+<FONT COLOR="#40F628">0858:</FONT> {
+<FONT COLOR="#40F628">0859:</FONT>     SAFE_DELETE( m_pMesh );
+<FONT COLOR="#40F628">0860:</FONT> 
+<FONT COLOR="#40F628">0861:</FONT>     SAFE_DELETE( m_pFont ); <FONT COLOR="#008000">// フォント</FONT>
+<FONT COLOR="#40F628">0862:</FONT> 
+<FONT COLOR="#40F628">0863:</FONT>     <FONT COLOR="#0000FF">return</FONT> S_OK;
+<FONT COLOR="#40F628">0864:</FONT> }
+<FONT COLOR="#40F628">0865:</FONT> 
+<FONT COLOR="#40F628">0866:</FONT> 
+<FONT COLOR="#40F628">0867:</FONT> 
+<FONT COLOR="#40F628">0868:</FONT> 
+<FONT COLOR="#40F628">0869:</FONT> </PRE>
+</BODY>
+</HTML>

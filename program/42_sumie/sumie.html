@@ -1,0 +1,221 @@
+<head>
+	<title>t-pot『墨絵シェーダー(Sumi-e Shader)』</title>
+	<link rel="stylesheet" type="text/css" href="../if.css">
+</head>
+<meta http-equiv=Content-Type content="text/html; charset=shift_jis">
+<body text=#ffffff>
+
+<center>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<h1>墨絵シェーダー(Sumi-e Shader)</h1><br>
+<h3>～にじんでゆく～～</h3>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+</center>
+
+
+<h2>■はじめに</h2>
+
+
+<p>
+突発的にやりたくなったので、NPR のネタの１つ、動的な墨絵シェーダーを作ってみました。<br>
+本当は、「波」を作ろうかと思ったのですけど、動的にテクスチャーを生成するネタで墨絵シェーダーが浮かんだので、実装しました。<br>
+マウスで画面の上をドラッグすると、点を打ちます。その点がいい感じにぼやけて広がっていきます。
+</p>
+<image src = "title.png">
+<p>
+ちなみに使用前
+</p>
+<image src = "off.png" width = 256 height=256>
+<p>
+点を、置いているのがわかります。
+</p>
+<ul style = "LIST-STYLE-TYPE:none">
+<li><a href="sumie.lzh">sumie.lzh (墨絵シェーダーのサンプル:DirectX8.1)</a>
+</ul>
+
+<p>
+まぁ、いつものように適当にファイルが入っています。<br>
+</p>
+<table>
+<tr><td><a href="sumie_vsh.html">sumie.psh</a></td><td>頂点シェーダー。</td></tr>
+<tr><td><a href="sumie_psh.html">sumie.psh</a></td><td>ピクセルシェーダー。</td></tr>
+<tr><td><a href="draw_cpp.html">draw.cpp</a></td><td>メインの描画部分。</td></tr>
+<tr><td><a href="draw_h.html">draw.h</a></td><td>描画の各関数の定義。</td></tr>
+<tr><td><a href="main_h.html">main.h</a></td><td>基本的な定数など。今回も出番無し。</td></tr>
+<tr><td><a href="main_cpp.html">main.cpp</a></td><td>描画に関係しないシステム的な部分。変更が無いので、出番無し。</td></tr>
+<tr><td><a href="load_cpp.html">load.cpp</a></td><td>ロード。</td></tr>
+<tr><td><a href="load_h.html">load.h</a></td><td>ロードのインターフェイス。</td></tr>
+
+</table>
+<image src = "mask.png" width = 64 height=64>mask.bmp (点を打つときに使う)<br>
+<p>
+あと、実行ファイル及び、プロジェクトファイルが入っています。
+</p>
+
+
+<h2>■頂点シェーダー</h2>
+
+<p>
+ぼかすために、４つのテクスチャーを重ねています。
+</p>
+<image src = "tex.png">
+<p>
+中心に基準となる１つと、ピクセルを１つ分ずらして、正三角形になるように配置しました。
+</p>
+
+<p>
+頂点シェーダーは、透視変換済みの頂点をコピーし、テクスチャー座標は固定レジスタを使って基準の位置からずらし、４つおけるようにします。
+</p>
+<pre class="CodeBlock">
+<font color = deepskyblue>0001:</font> <font color = blue>; sumie.vsh</font>
+<font color = deepskyblue>0002:</font> 
+<font color = deepskyblue>0003:</font> vs.1.1
+<font color = deepskyblue>0004:</font> 
+<font color = deepskyblue>0005:</font> mov oPos, v0
+<font color = deepskyblue>0006:</font> 
+<font color = deepskyblue>0007:</font> add oT0, v7, c20
+<font color = deepskyblue>0008:</font> add oT1, v7, c21
+<font color = deepskyblue>0009:</font> add oT2, v7, c22
+<font color = deepskyblue>0010:</font> add oT3, v7, c23
+</pre>
+
+
+<h2>■ピクセルシェーダー</h2>
+
+
+<p>
+ピクセルシェーダープログラムですが、入力の型情報とプログラムで成り立っています。<br>
+</p>
+
+<pre class="CodeBlock">
+<font color = deepskyblue>0001:</font> <font color = cyan>; sumie.psh</font>
+<font color = deepskyblue>0002:</font> <font color = cyan>;</font>
+<font color = deepskyblue>0003:</font> ps.1.0
+<font color = deepskyblue>0004:</font> 
+<font color = deepskyblue>0005:</font> def c0, 0.05f, 0.05f, 0.05f, 0.0f
+<font color = deepskyblue>0006:</font> 
+<font color = deepskyblue>0007:</font> <font color = cyan>; テクスチャーの色を引っ張ってくる</font>
+<font color = deepskyblue>0008:</font> tex t0      <font color = cyan>; 0:0 0 0  1:0 1 0  2:0 0 0  3:0 0 0</font>
+<font color = deepskyblue>0009:</font> tex t1      <font color = cyan>;   0 1 0    0 0 0    0 0 0    0 0 0</font>
+<font color = deepskyblue>0010:</font> tex t2      <font color = cyan>;   0 0 0    0 0 0    1 0 0    0 0 1</font>
+<font color = deepskyblue>0011:</font> tex t3
+<font color = deepskyblue>0012:</font> 
+<font color = deepskyblue>0013:</font> mov r1, t0
+<font color = deepskyblue>0014:</font> add r0, t1, -r1
+<font color = deepskyblue>0015:</font> mad r0, r0, c0, t0
+<font color = deepskyblue>0016:</font> 
+<font color = deepskyblue>0017:</font> add r1, t2, -r1
+<font color = deepskyblue>0018:</font> mad r0, r1, c0, r0
+<font color = deepskyblue>0019:</font> 
+<font color = deepskyblue>0020:</font> mov r1, t0
+<font color = deepskyblue>0021:</font> add r1, t3, -r1
+<font color = deepskyblue>0022:</font> mad r0, r1, c0, r0
+</pre>
+
+<p>
+さて、ここが曲者です。<br>
+ざっと見ると、
+</p>
+<pre class="CodeBlock">
+出力 = t0 + 0.05(t1-t0) + 0.05(t2-t0) + 0.05(t3-t0)
+</pre>
+<p>
+に見えます。<br>
+実はそうではありません。<br>
+なぜなら、上の計算では、周りの色が暗い限り散逸が発生するので、最終的には均一な色になるからです。<br>
+今回の計算は、アンダーフローを積極的に利用しています。<br>
+DirectXのピクセルシェーダーの精度は、最低 8 ビットと決まっています。しかし、８ビットしか持っていない場合がほとんどです
+（将来的には精度は上がるでしょうから、そのときにはシェーダーを変更しなくてはなりません）。<br>
+-1～1の間の８ビットなので、実質、７ビットが小数の値として使えます。それぞれの値は、
+</p>
+<pre class="CodeBlock">
+2^-1=0.5
+2^-2=0.25
+2^-3=0.125
+2^-4=0.0625
+2^-5=0.03125
+2^-6=0.015625
+2^-7=0.0078125
+</pre>
+<p>
+です。この精度で、0.05は、0.05 = 2^-5 + 2^-6になります。<br>
+従って、t1-t0 の値が、2^-3以下だったら、その積は、2^-7よりも小さいので、アンダーフローを起こして0になります。<br>
+色にすると、2^-3=0.125に128倍して、16が有効な色の差になります。<br>
+隣との色の差が16以内だったら、同じ色として扱われて、散逸は発生しなくなります。<br>
+色が256段階とすると、16段階の階層分けが行われます。１テクセル１段階とすると、１６テクセルになります。<br>
+墨絵の絵のにじみの大きさも、大体そんな具合ではないでしょうか。
+</p>
+<p>
+と、考えているけど、ほんとかなぁ？<br>
+何にせよ、短くまとめてしまうと、散逸して黒い部分が消えてしまうので、絶妙なバランスをとっていることは確かです。<br>
+<br>
+ほんとは、別の方法で実装しようと考えていたのですが、命令数が足りなくなって、この方法に落ち着きました。
+</p>
+
+
+<h2>■最後に</h2>
+
+
+<p>
+また、一発芸をしました。<br>
+今回の方法のように、座標をずらしたテクスチャーを重ねれば、「波」が作れます。
+</p>
+
+
+
+<h2>■追記：Cg言語</h2>
+
+
+<p>
+<a href="http://www.cgshaders.org/">Cg Shaders</a>の<a href="http://www.cgshaders.org/contest/">cgshaders.org contest</a>に、
+この墨絵をCg言語で記述したものを応募してみました（結果は芳しくありませんでしたが）。
+</p>
+<ul style = "LIST-STYLE-TYPE:none">
+<li><a href="./cg/Sumi-e-bin.zip">Sumi-e-bin.zip (墨絵シェーダーの実行ファイル:Cg言語)</a>
+<li><a href="./cg/Sumi-e-src.zip">Sumi-e-src.zip (墨絵シェーダーのソース:Cg言語)</a>
+</ul>
+<p>
+内容は似たようなもんです。
+</p>
+<table>
+<tr><td><a href="./cg/sumie_vsh.html">sumie.psh</a></td><td>頂点シェーダー。</td></tr>
+<tr><td><a href="./cg/sumie_psh.html">sumie.vsh</a></td><td>ピクセルシェーダー。</td></tr>
+<tr><td><a href="./cg/draw_cpp.html">draw.cpp</a></td><td>メインの描画部分。</td></tr>
+<tr><td><a href="./cg/draw_h.html">draw.h</a></td><td>描画の各関数の定義。</td></tr>
+<tr><td><a href="./cg/main_h.html">main.h</a></td><td>基本的な定数など。</td></tr>
+<tr><td><a href="./cg/main_cpp.html">main.cpp</a></td><td>描画に関係しないシステム的な部分。</td></tr>
+<tr><td><a href="./cg/license.txt">license.txt</a></td><td>フリー宣言のライセンス</td></tr>
+</table>
+<p>
+<image src = "mask.png" width = 64 height=64>mask.bmp (点を打つときに使う)
+</p>
+
+</p>
+一番苦労した点は、「そのままではコンパイルが通らない」ということです。<br>
+コンパイラの最適化によると思うのですが、ピクセルシェーダーの命令数が少なくて、べたに数式に落としたときに通りませんでした。<br>
+試行錯誤を繰り返した結果、最終的に次の式でコンパイルが通りました。
+</p>
+<pre class="CodeBlock">
+O.col = 0.15f*(t2-t0+t3-t0+t1-t0)+t0;
+</pre>
+<p>
+t0がいたるところにありますが、これを一箇所にまとめると、アンダーフローが起きなくなって墨は完全に紙に吸い込まれてしまいます。<br>
+同じ見た目を出すためにパラメータを調整した結果、係数は0.15になりました。３つ分足してるので、誤差が小さくなってるんですかね？
+</p>
+<p>
+英語できちんと表現できる能力が欲しいと痛烈に感じた、今日この頃です。
+</p>
+
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<center>
+<p><a href="../index.html">もどる</a></p>
+<p><a href="mailto:imagire@gmail.com">imagire@gmail.com</a></p>
+</center>
+
+</body>
+</html>

@@ -1,0 +1,128 @@
+<head>
+	<title>t-pot 『3次曲線』</title>
+	<link rel="stylesheet" type="text/css" href="../if.css">
+</head>
+<body>
+<div class="contents">
+<center>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<h1>B-Spline曲線</h1><br>
+<h3>～NURBS への道です～</h3>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+</center>
+<h2>■UBS</h2>
+<p>
+今回は B-Spline 曲線についてまとめたいと思います。
+目的は NURBS (Non-Uniform Rational B-Spline) を解説することです。
+今後（もうやっているところがあるかも）、モデリングは NURBS が用いられ、
+LOD (Level of detail : 奥行きなどによって決まる詳細度)に応じてポリゴン分割して表示、
+もしくはハードウェア的に曲面を描くようになるでしょうから、
+これを勉強するのは有用なことに思われます。
+</p>
+<p>
+まず、UBS (Uniform B-Spline) です。
+前回、Bezier 曲線を、
+</p>
+<pre class="CodeBlock">
+<b>x</b>(t) = Σ<sup>3</sup><sub>i=0</sub>  <sub>3</sub>C<sub>i</sub> t<sup>i</sup>(1-t)<sup>3-i</sup> <b>P</b><sub>i</sub>,
+</pre>
+<p>
+の形に書きました。B-Spline 曲線は、この曲線と同様に、
+</p>
+<pre class="CodeBlock">
+<b>x</b>(t) = Σ<sup>n</sup><sub>i=0</sub>  N<sub>i,M</sub> (t) <b>P</b><sub>i</sub>,
+</pre>
+<p>
+によって、定義されます。但し、
+</p>
+<pre class="CodeBlock">
+<sub>   </sub>         t  -  t<sub>i</sub>              t<sub>i+M</sub> -  t
+N<sub>i,M</sub>(t) = ――――― N<sub>i,M-1</sub>(t) + ―――――― N<sub>i+1,M-1</sub> (t),
+<sub>   </sub>        t<sub>i+M-1</sub> - t<sub>i</sub>             t<sub>i+M</sub> - t<sub>i+1</sub>
+
+	N<sub>i,1</sub>(t) = 1, (t<sub>i</sub> ≦ t < t<sub>i+1</sub>)
+	N<sub>i,1</sub>(t) = 0, (それ以外)
+</pre>
+<p>
+で、再起的に定義されます。M は曲線の時間に関する次数＋１で、３次曲線の場合は M = 4 になります。
+</p>
+
+<p>
+さて、t<sub>i</sub> を説明していませんでした。
+t<sub>i</sub> はノットと呼ばれます。
+n 個の制御点で決まる M 次の B-Spline 曲線に関して、
+上の係数の最大と、最小の添え字を数えると、t<sub>0</sub> から、t<sub>n+M-1</sub> の n+M 個のノットが必要です。
+これらの点をまとめた、
+</p>
+<pre class="CodeBlock">
+<b>T</b> = [t<sub>0</sub> t<sub>1</sub> t<sub>2</sub> ･･･ t<sub>n+M-1</sub>],
+</pre>
+<p>
+を、ノットベクトルと呼びます。ノットは、有効な N<sub>i,M</sub>(t) の範囲を決める点なので、
+t<sub>i</sub> ≦ t<sub>i+1</sub> でなければいけません。
+</p>
+
+<p>
+実は今までのは、NUBS のお話です。UBS は N が取れます。
+UBS は NUBS の具体例の一つで、ノットベクトルの増加率が Uniform (一様)になります。
+４つの制御点 (n = 4) 、で３次曲線 (M = 4) を表現する場合の、UBS のノットベクトルは、
+</p>
+<pre class="CodeBlock">
+<b>T</b> = [-3 -2 -1 0 1 2 3],
+</pre>
+<p>
+になります。
+この場合の UBS 曲線を計算し、書き下すと、
+</p>
+<pre class="CodeBlock">
+        1
+<b>x</b>(t) = ― (1 - t)<sup>3</sup> <b>P</b><sub>0</sub>
+        6
+          1           2
+      + (― t<sup>3</sup> - t<sup>2</sup> + ― ) <b>P</b><sub>1</sub>
+          2           3
+           <sup> </sup>1    <sup> </sup>  1<sup> </sup>      1      1
+      + (- ― t<sup>3</sup> + ― t<sup>2</sup> + ― t + ― ) <b>P</b><sub>2</sub>
+           <sup> </sup>2    <sup> </sup>  2<sup> </sup>      2      6
+         1
+      + ― t<sup>3</sup> <b>P</b><sub>3</sub>
+         6
+</pre>
+<p>
+になります。下にこの曲線を図示してみました。
+</p>
+<pre class="CodeBlock">
+<img src = "prog31.gif">
+</pre>
+<p>
+UBS 曲線は、2つめの制御点と3つめの制御点の近くを通ります。
+また、始点と終点の速度の関係が似たものになっています。
+制御点を沢山用意した場合、３次の UBS 曲線に関して、
+制御点を一つずつずらして繋げれば、滑らかな曲線を作ることができます。
+</p>
+<p>
+UBS 曲線の終点の位置は、<b>P</b><sub>1</sub> には依存しません。
+また、始点の位置も <b>P</b><sub>2</sub> によりません。
+つまり、連結したUBS 曲線を考えた場合に、制御点を一点だけ動かしても、隣の制御点の近くの境界点（始点及び終点）は
+変化しないので、形の制御がしやすのです。
+これが、モデラーなどで、B-Spline 曲線がつかわれる理由だとおもいます。
+</p>
+
+<p>
+きょうはここまで、<br>
+う～ん、B-Spline 曲線は、あまり思い入れがないので、話が進みません。
+後々直していきたいと思います。
+</p>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<center>
+<hr>
+<p><a href="../index.html">もどる</a></p>
+<p><a href="mailto:imagire@gmail.com">imagire@gmail.com</a></p>
+</center>
+</body>
+</html>

@@ -1,0 +1,462 @@
+<head>
+	<title>t-pot『ディスプレースメントマップ』</title>
+	<link rel="stylesheet" type="text/css" href="../if.css">
+</head>
+<meta http-equiv=Content-Type content="text/html; charset=shift_jis">
+<body>
+
+
+<div class="contents">
+<center>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<h1>ディスプレースメントマップ</h1><br>
+<h3>～ Displacement mapping ～</h3>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<image src = "title.jpg">
+<br>
+<hr>
+</center>
+<div>
+
+
+<h2>■はじめに</h2>
+
+
+<p>
+さて、皆さんが一番期待していて、実装が一番期待できないのがディスプレースメントマップです。<br>
+NVIDIA はやる気ありませんし（あくまでもDirectX9の方法に関してですが）、ATIも実装されていません
+(今回のボードはRADEON9700proですが、タイトル画像が50fps なのは、タイミング的に表示されてしまったもので、こんなには出ません)。<br>
+唯一まともに動くのが Matrox の Parhelia だけですが、持っている人もほとんどいないでしょう。
+</p>
+<p>
+かわいそうだから、やってあげましょう。<br>
+ハードウェア的にサポートさてていないグラフィックボードをお使いの方は、リファレンスラスタライザで実行してください。
+</p>
+<ul style = "LIST-STYLE-TYPE:none">
+<li><a href="src.lzh">src.lzh (ディスプレースメントマップ:DirectX9)</a>
+</ul>
+
+<p>
+まぁ、いつものように適当にファイルが入っています。<br>
+ほとんどが APP WIZARD から出力されるファイルで、もう飽きたのでその辺のファイルはもう無視します。
+</p>
+<table>
+<tr><td><a href="hlsl_fx.html">hlsl.fx</a></td><td>シェーダの入ったエフェクトファイル</td></tr>
+<tr><td><a href="main_h.html">main.h</a></td><td>アプリケーションのヘッダ</td></tr>
+<tr><td><a href="main_cpp.html">main.cpp</a></td><td>アプリケーションのソース</td></tr>
+</table>
+<p>
+あと、実行ファイル、表示用モデル及び、プロジェクトファイルが入っています。
+</p>
+
+
+<h2>■ディスプレースメントマップとは</h2>
+
+
+<p>
+ディスプレースメントマップとは、バンプマップのすんごいのです。<br>
+といっても、バンプマップを知らない方には何も意味をなさないので、もう少しまじめに説明すると、
+テクスチャの色に応じて、モデルをでこぼこさせる方法のことです。<br>
+例えば、下のような、中心が白で、周りが黒の板にディスプレースメントマップを施すと、
+色の強い真ん中の部分が盛り上がります。
+</p>
+<image src = "circle0.jpg">使用前
+<image src = "circle1.jpg">使用後
+<p>
+今の場合には、（16x16の四角形に分割した）板にディスプレースメントマップを施した場合ですが、
+一般のモデルに関しては、法線ベクトルの方向に頂点を施します。<br>
+例えば、いつものトラ君が
+</p>
+<image src = "zero.jpg">
+<p>
+太ったり
+</p>
+<image src = "title.jpg">
+<p>
+やせたりします。
+</p>
+<image src = "negative.jpg">
+
+
+<h2>■方法</h2>
+
+
+<p>
+では、ディスプレースメントマップはどのようにして実現されているのでしょうか。<br>
+それを見るには、頂点シェーダを見るのが早いと思います。<br>
+頂点シェーダプログラムは、次のようになっています。
+</p>
+<pre class="CodeBlock">
+hlsl.fx
+<font color="deepskyblue">0007:</font> <font color="cyan">// -------------------------------------------------------------</font>
+<font color="deepskyblue">0008:</font> <font color="cyan">// 頂点シェーダプログラム</font>
+<font color="deepskyblue">0009:</font> <font color="cyan">//  c0 - c3 - 座標変換</font>
+<font color="deepskyblue">0010:</font> <font color="cyan">//  c4.x    - ディスプレースする量</font>
+<font color="deepskyblue">0011:</font> <font color="cyan">//  c12     - (0.0, 0.5, 1.0, 2.0)</font>
+<font color="deepskyblue">0012:</font> <font color="cyan">//  c13     - 光源の方向</font>
+<font color="deepskyblue">0013:</font> <font color="cyan">// -------------------------------------------------------------</font>
+<font color="deepskyblue">0014:</font> VertexShader VS = asm
+<font color="deepskyblue">0015:</font> {
+<font color="deepskyblue">0016:</font>     vs_1_1
+<font color="deepskyblue">0017:</font>     
+<font color="deepskyblue">0018:</font>     dcl_position0 v0
+<font color="deepskyblue">0019:</font>     dcl_normal0   v1
+<font color="deepskyblue">0020:</font>     dcl_texcoord0 v2
+<font color="deepskyblue">0021:</font>     dcl_sample0   v3
+<font color="deepskyblue">0022:</font>     
+<font color="deepskyblue">0023:</font>     <font color="yellow">mul r0, v1, c4.x    <font color="cyan">// 法線にディスプレースの大きさを掛ける</font>
+<font color="deepskyblue">0024:</font>     mul r0, r0, v3.x    <font color="cyan">// ★さらにマップの値を掛ける</font>
+<font color="deepskyblue">0025:</font>     add r0, v0, r0      <font color="cyan">// 変位を頂点に足す</font></font>
+<font color="deepskyblue">0026:</font>     mov r0.w, v0.w      <font color="cyan">// w成分は1</font>
+<font color="deepskyblue">0027:</font>     m4x4 oPos, r0, c0   <font color="cyan">// 座標変換</font>
+<font color="deepskyblue">0028:</font>     
+<font color="deepskyblue">0029:</font>     dp3 r0, v1, c13     <font color="cyan">// ランバート拡散</font>
+<font color="deepskyblue">0030:</font>     max r0, r0, c12.x
+<font color="deepskyblue">0031:</font>     add oD0, r0, c13.w
+<font color="deepskyblue">0032:</font>     
+<font color="deepskyblue">0033:</font>     mov oT0, v2         <font color="cyan">// テクスチャ座標</font>
+<font color="deepskyblue">0034:</font> };
+</pre>
+<p>
+今回は、HLSL ではありません。これは、肝心かなめの、
+ディスプレースメントマップのテクスチャを頂点シェーダで読むための定数が、定義されていないからです。<br>
+先頭の頂点宣言を見ると、見慣れない dcl_sample0 があるが気づくと思います
+(そもそも頂点宣言の説明をしていませんでしたね。DirectX9 では、頂点シェーダの最初の部分に、
+使用するレジスタの宣言をします)。<br>
+これが、ディスプレースメントマップのテクスチャの輝度値になります。<br>
+ここに頂点のUV値でサンプリングされたテクスチャの値が０から１の範囲で入ってきます<br>
+（UV値は頂点データとして与えられます）。<br>
+あとは、適当な定数と法線ベクトルを掛けて位置座標に足しこんでやればディスプレースメントの完了です。<br>
+光源計算やデカールのテクスチャを張る部分はいつもと同じです。
+</p>
+<p>
+気づいた方も折られると思いますが、変位は別に法線方向だけとは限りません。<br>
+接ベクトルや別の定数ベクトルなどを用いればさまざまなバリエーションが可能です。<br>
+あまり考えられませんが、フォグの変位もディスプレースメントマップでできるのではないでしょうか
+（それ以外はピクセルシェーダでやればいいですね）。
+</p>
+
+
+<h2>■オブジェクト</h2>
+
+
+<p>
+さて、ディスプレースメントマップを実装する手順を追ってみましょう。<br>
+ディスプレースメントマップには、いつものメッシュの取り扱いのほかにも、
+ディスプレースメントマップのテクスチャオブジェクトが必要になります。<br>
+さらに、DirectX9で導入された頂点宣言のオブジェクト LPDIRECT3DVERTEXDECLARATION9 もきちんと設定しなくてはなりません。
+</p>
+<pre class="CodeBlock">
+main.h
+<font color="deepskyblue">0038:</font> <font color="blue">class</font> CMyD3DApplication : <font color="blue">public</font> CD3DApplication
+<font color="deepskyblue">0039:</font> {
+<font color="deepskyblue">0040:</font>     BOOL                            m_bDMap;    <font color="cyan">// ディスプレースメントマップをサポートしているか</font>
+<font color="deepskyblue">0041:</font>     FLOAT                           m_degree;   <font color="cyan">// 変化させる量</font>
+<font color="deepskyblue">0042:</font>     CD3DMesh                        *m_pMesh;   <font color="cyan">// 表示するメッシュ</font>
+<font color="deepskyblue">0043:</font>     LPDIRECT3DVERTEXDECLARATION9    m_pDecl;    <font color="cyan">// 頂点宣言</font>
+<font color="deepskyblue">0044:</font>     LPDIRECT3DTEXTURE9              m_pDispMap; <font color="cyan">// ディスプレースメントマップのオブジェクト</font>
+<font color="deepskyblue">0045:</font>     LPD3DXEFFECT                    m_pEffect;  <font color="cyan">// シェーダが書かれたエフェクト</font>
+<font color="deepskyblue">0046:</font> 
+</pre>
+
+
+<h2>■能力チェック</h2>
+
+
+<p>
+さて、必ず必要なことに、グラフィックカードの能力を調べなくてはなりません。<br>
+ところが、IDirect3DDevice9 オブジェクトを生成した後にしか調べられない能力もあるので、
+まず、シェーダが使えるかを先にしておきましょう。
+</p>
+<pre class="CodeBlock">
+main.cpp
+<font color="deepskyblue">0147:</font> HRESULT CMyD3DApplication::ConfirmDevice( D3DCAPS9* pCaps, DWORD dwBehavior,
+<font color="deepskyblue">0148:</font>                                           D3DFORMAT Format )
+<font color="deepskyblue">0149:</font> {
+<font color="deepskyblue">0150:</font>     UNREFERENCED_PARAMETER( Format );
+<font color="deepskyblue">0151:</font>     UNREFERENCED_PARAMETER( dwBehavior );
+<font color="deepskyblue">0152:</font>     UNREFERENCED_PARAMETER( pCaps );
+<font color="deepskyblue">0153:</font>     
+<font color="deepskyblue">0154:</font>     BOOL bCapsAcceptable;
+<font color="deepskyblue">0155:</font> 
+<font color="deepskyblue">0156:</font>     <font color="cyan">// TODO: Perform checks to see if these display caps are acceptable.</font>
+<font color="deepskyblue">0157:</font>     bCapsAcceptable = TRUE;
+<font color="deepskyblue">0158:</font>     
+<font color="deepskyblue">0159:</font>     <font color="cyan">// シェーダのチェック</font>
+<font color="deepskyblue">0160:</font>     <font color = "yellow">bCapsAcceptable &amp;= (D3DPS_VERSION(1,1) &lt;= pCaps-&gt;PixelShaderVersion);
+<font color="deepskyblue">0161:</font>     bCapsAcceptable &amp;= (D3DVS_VERSION(1,1) &lt;= pCaps-&gt;VertexShaderVersion);</font>
+<font color="deepskyblue">0162:</font>     
+<font color="deepskyblue">0163:</font>     <font color="blue">if</font>( bCapsAcceptable )         
+<font color="deepskyblue">0164:</font>         <font color="blue">return</font> S_OK;
+<font color="deepskyblue">0165:</font>     <font color="blue">else</font>
+<font color="deepskyblue">0166:</font>         <font color="blue">return</font> E_FAIL;
+<font color="deepskyblue">0167:</font> }
+</pre>
+
+<p>
+生成したら、頂点計算をハードウェアで行えるか、
+また、m_d3dCaps.DevCaps2 を見て、N-パッチがサポートされているかどうか調べます。<br>
+N-パッチとはポリゴンを分割する方法で、３角形を相似な４つのテクスチャに分割し、分割されて新たにできた頂点の位置は法線ベクトルの方向に内挿します。
+実際には、これはN-パッチとの１回（セグメント）の分割で、できた３角形に同様の分割を行うことによって、再帰的にポリゴンを分割することができます。<br>
+ディスプレースメントマップは、N-パッチの拡張として実装されているようなので、とりあえず、N-パッチが使えなければ話になりません。<br>
+個人的には、頂点座標を動かせればよくて頂点分割はいらないので、N-パッチを使わない方法にしてほしいと思います。<br>
+さらに、ディスプレースメントマップのテクスチャがサポートされているか調べます。<br>
+これら一連のテストをクリアしたら、ディスプレースメントマップを使うことができます。
+</p>
+
+<pre class="CodeBlock">
+main.cpp
+<font color="deepskyblue">0180:</font> HRESULT CMyD3DApplication::InitDeviceObjects()
+<font color="deepskyblue">0181:</font> {
+中略
+<font color="deepskyblue">0193:</font>     
+<font color="deepskyblue">0194:</font>     <font color="cyan">// ディスプレースメントマップのできる条件</font>
+<font color="deepskyblue">0195:</font>     D3DFORMAT adapterFormat = m_d3dSettings.DisplayMode().Format;
+<font color="deepskyblue">0196:</font>     m_bDMap = ( (m_pd3dDevice-&gt;GetSoftwareVertexProcessing() == FALSE) &amp;&amp; 
+<font color="deepskyblue">0197:</font>                 (m_d3dCaps.DevCaps2 &amp; D3DDEVCAPS2_DMAPNPATCH ) &amp;&amp;
+<font color="deepskyblue">0198:</font>                  SUCCEEDED( m_pD3D-&gt;CheckDeviceFormat( m_d3dCaps.AdapterOrdinal,
+<font color="deepskyblue">0199:</font>                                                        m_d3dCaps.DeviceType,
+<font color="deepskyblue">0200:</font>                                                        adapterFormat,
+<font color="deepskyblue">0201:</font>                                                        D3DUSAGE_DMAP,
+<font color="deepskyblue">0202:</font>                                                        D3DRTYPE_TEXTURE,
+<font color="deepskyblue">0203:</font>                                                        D3DFMT_L8 ) ) );
+<font color="deepskyblue">0204:</font> 
+</pre>
+
+
+<h2>■初期化</h2>
+
+
+<p>
+それぞれのオブジェクトを初期化していきましょう。<br>
+まず、シェーダはいつもと同じように読み込みます。
+</p>
+<pre class="CodeBlock">
+main.cpp
+<font color="deepskyblue">0205:</font>     <font color="cyan">// シェーダの読み込み</font>
+<font color="deepskyblue">0206:</font>     <font color="blue">if</font>( FAILED( D3DXCreateEffectFromFile( m_pd3dDevice, "<font color="blue">hlsl.fx</font>", NULL, NULL, 
+<font color="deepskyblue">0207:</font>                                         0, NULL, &amp;m_pEffect, NULL ) ) ) <font color="blue">return</font> E_FAIL;
+</pre>
+<p>
+他には、頂点宣言のオブジェクトを生成します。<br>
+頂点宣言のオブジェクトは、レンダラに流し込むデータの構造を設定します。
+高度な FVF (柔軟なファイルフォーマット)と思ってください。<br>
+今回のように特別な頂点宣言を使うならば、必ず必要です。
+ほんとは、いつもしたほうがいいです。
+</p>
+<p>
+さて、頂点宣言のデータの４つめのデータがディスプレースメントマップのデータです。<br>
+頂点宣言のデータの２つめの引数が、データの構造体の先頭からのオフセットですが、３番目と４番目のデータは同じオフセット、つまり、同じデータを使います。<br>
+言い換えれば、今回は、デカールのテクスチャとディスプレースメントマップのＵＶ値に同じテクスチャ座標を使います。<br>
+一般に、デカールのテクスチャとディスプレースメントマップは違うテクスチャが使えます。もちろん、それぞれのテクスチャ座標に違うものを使うこともできます。<br>
+ディスプレースメントマップの頂点宣言のデータの３つめの引数は、D3DDECLMETHOD_LOOKUP を指定します。
+これが、テクスチャからのサンプリング結果を頂点シェーダの入力レジスタに入れる設定です。<br>
+次の、D3DDECLUSAGE_SAMPLE（と、さらに次のインデックスの０） が、シェーダの頂点宣言の dcl_sample0 に結果が入れられることを表現しています。<br>
+頂点宣言のデータの５番目の引数の usage の名前を見れば、どのような用途に用いるデータか判断できると思います。
+</p>
+<pre class="CodeBlock">
+main.cpp
+<font color="deepskyblue">0035:</font> <font color="cyan">// 頂点宣言</font>
+<font color="deepskyblue">0036:</font> D3DVERTEXELEMENT9 decl[] =
+<font color="deepskyblue">0037:</font> {
+<font color="deepskyblue">0038:</font>     {0,  0, D3DDECLTYPE_FLOAT3,   D3DDECLMETHOD_DEFAULT, D3DDECLUSAGE_POSITION, 0},<font color="cyan">//  位置</font>
+<font color="deepskyblue">0039:</font>     {0, 12, D3DDECLTYPE_FLOAT3,   D3DDECLMETHOD_DEFAULT, D3DDECLUSAGE_NORMAL,   0},<font color="cyan">//  法線</font>
+<font color="deepskyblue">0040:</font>     {0, 24, D3DDECLTYPE_FLOAT2,   D3DDECLMETHOD_DEFAULT, D3DDECLUSAGE_TEXCOORD, 0},<font color="cyan">//  テクスチャ座標</font>
+<font color="deepskyblue">0041:</font>     {0, 24, D3DDECLTYPE_FLOAT2,   D3DDECLMETHOD_LOOKUP,  D3DDECLUSAGE_SAMPLE,   0},<font color="cyan">//  ディスプレースメントマップ</font>
+<font color="deepskyblue">0042:</font>     D3DDECL_END()
+<font color="deepskyblue">0043:</font> };
+
+<font color="deepskyblue">0209:</font>     <font color="blue">if</font>(m_bDMap){
+<font color="deepskyblue">0210:</font>         <font color="cyan">// 頂点宣言のオブジェクトの生成</font>
+<font color="deepskyblue">0211:</font>         <font color="blue">if</font>( FAILED( hr = m_pd3dDevice-&gt;CreateVertexDeclaration( decl, &amp;m_pDecl ) ) )
+<font color="deepskyblue">0212:</font>             <font color="blue">return</font> DXTRACE_ERR( "<font color="blue">CreateVertexDeclaration</font>", hr );
+</pre>
+<p>
+後は、テクスチャの読み込みです。<br>
+今回は、R8B8G8 のテクスチャを読み込んだ後に、D3DFMT_L8 の輝度データへ変換してディスプレースメントマップに使用します。<br>
+このフォーマットの変換は、D3DXCreateTextureFromFileEx を使えば自動的に行えます。<br>
+このフォーマットでレンダリングターゲットに指定できるのか不明ですが、指定できれば動的なディスプレースメントマップ制御が可能になりますね。
+</p>
+<pre class="CodeBlock">
+main.cpp
+<font color="deepskyblue">0214:</font>         <font color="cyan">// ディスプレイスメントマップの読み込み</font>
+<font color="deepskyblue">0215:</font>         <font color="blue">if</font>(FAILED(hr = D3DXCreateTextureFromFileEx( m_pd3dDevice, "<font color="blue">tiger_disp.bmp</font>"
+<font color="deepskyblue">0216:</font>                                 , D3DX_DEFAULT      <font color="cyan">//  幅(ファイルから)</font>
+<font color="deepskyblue">0217:</font>                                 , D3DX_DEFAULT      <font color="cyan">//  高さ(ファイルから)</font>
+<font color="deepskyblue">0218:</font>                                 , D3DX_DEFAULT      <font color="cyan">// ミップ レベル</font>
+<font color="deepskyblue">0219:</font>                                 , D3DUSAGE_DMAP     <font color="cyan">// </font>
+<font color="deepskyblue">0220:</font>                                 , D3DFMT_L8         <font color="cyan">// </font>
+<font color="deepskyblue">0221:</font>                                 , D3DPOOL_MANAGED   <font color="cyan">// テクスチャの配置先となるメモリ クラス</font>
+<font color="deepskyblue">0222:</font>                                 , D3DX_DEFAULT      <font color="cyan">// フィルタリングする方法</font>
+<font color="deepskyblue">0223:</font>                                 , D3DX_DEFAULT      <font color="cyan">// フィルタリングする方法</font>
+<font color="deepskyblue">0224:</font>                                 , 0                 <font color="cyan">// 透明となる D3DCOLOR の値。</font>
+<font color="deepskyblue">0225:</font>                                 , NULL              <font color="cyan">// ソース イメージ ファイル内のデータの記述</font>
+<font color="deepskyblue">0226:</font>                                 , NULL              <font color="cyan">// 256 色パレット</font>
+<font color="deepskyblue">0227:</font>                                 , &amp;m_pDispMap
+<font color="deepskyblue">0228:</font>                                 )))
+<font color="deepskyblue">0229:</font>             <font color="blue">return</font> DXTRACE_ERR( "<font color="blue">Load Displacement Texture</font>", hr );
+</pre>
+<p>
+さて、後は、サンプラーステートでも指定しておきましょう。<br>
+サンプラーステートを指定するには、サンプリングの段階に D3DDMAPSAMPLER を指定します。<br>
+後は、他のテクスチャのサンプラーステートと同じように設定できます。
+</p>
+<pre class="CodeBlock">
+main.cpp
+<font color="deepskyblue">0230:</font>         <font color="cyan">// サンプラーステートの設定</font>
+<font color="deepskyblue">0231:</font>         m_pd3dDevice-&gt;SetSamplerState( D3DDMAPSAMPLER, D3DSAMP_ADDRESSU,  D3DTADDRESS_CLAMP );
+<font color="deepskyblue">0232:</font>         m_pd3dDevice-&gt;SetSamplerState( D3DDMAPSAMPLER, D3DSAMP_ADDRESSV,  D3DTADDRESS_CLAMP );
+<font color="deepskyblue">0233:</font>         m_pd3dDevice-&gt;SetSamplerState( D3DDMAPSAMPLER, D3DSAMP_MIPFILTER, D3DTEXF_NONE );
+<font color="deepskyblue">0234:</font>         m_pd3dDevice-&gt;SetSamplerState( D3DDMAPSAMPLER, D3DSAMP_MAGFILTER, D3DTEXF_LINEAR );
+<font color="deepskyblue">0235:</font>         m_pd3dDevice-&gt;SetSamplerState( D3DDMAPSAMPLER, D3DSAMP_MINFILTER, D3DTEXF_LINEAR );
+<font color="deepskyblue">0236:</font>     }
+</pre>
+<p>
+あと、デバイスがリセットされたときに呼ばれる RestoreDeviceObjects で、自分でメッシュを再構成しなくてはなりません。<br>
+普段は FVF を用いて CD3DMesh クラスが自動で行ってくれるのですが、メッシュがN-パッチに対応するように作り直さなくてはならないので、
+CloneMesh で自分で作り直します。<br>
+D3DXMESH_NPATCHES を忘れないようにしてくださいね。
+</p>
+<pre class="CodeBlock">
+main.cpp
+<font color="deepskyblue">0305:</font>     <font color="blue">if</font>(m_bDMap){
+<font color="deepskyblue">0306:</font>         <font color="cyan">//-------------------------------------------------------------------------</font>
+<font color="deepskyblue">0307:</font>         <font color="cyan">// ディスプレースメントマップのときは、自分でRestoreDeviceObjects</font>
+<font color="deepskyblue">0308:</font>         <font color="cyan">//-------------------------------------------------------------------------</font>
+<font color="deepskyblue">0309:</font>         <font color="blue">if</font>( m_pMesh-&gt;m_pSysMemMesh ){
+<font color="deepskyblue">0310:</font>             <font color="blue">if</font>( FAILED( m_pMesh-&gt;m_pSysMemMesh-&gt;CloneMesh( 0L|<font color="yellow">D3DXMESH_NPATCHES</font>, decl,
+<font color="deepskyblue">0311:</font>                                                 m_pd3dDevice, &amp;m_pMesh-&gt;m_pLocalMesh ) ) )
+<font color="deepskyblue">0312:</font>             <font color="blue">return</font> E_FAIL;
+<font color="deepskyblue">0313:</font>             D3DXComputeNormals( m_pMesh-&gt;m_pLocalMesh, NULL );
+<font color="deepskyblue">0314:</font>         }
+<font color="deepskyblue">0317:</font>     }
+</pre>
+
+
+<h2>■描画</h2>
+
+
+<p>
+さて、描画ですが、エフェクトファイルで描画する部分は他と同じです。
+</p>
+<pre class="CodeBlock">
+main.cpp
+<font color="deepskyblue">0398:</font> HRESULT CMyD3DApplication::Render()
+<font color="deepskyblue">0399:</font> {
+<font color="deepskyblue">0400:</font>     <font color="cyan">// Clear the viewport</font>
+<font color="deepskyblue">0401:</font>     m_pd3dDevice-&gt;Clear( 0L, NULL, D3DCLEAR_TARGET|D3DCLEAR_ZBUFFER,
+<font color="deepskyblue">0402:</font>                          0x000000ff, 1.0f, 0L );
+<font color="deepskyblue">0403:</font> 
+<font color="deepskyblue">0404:</font>     <font color="cyan">// Begin the scene</font>
+<font color="deepskyblue">0405:</font>     <font color="blue">if</font>( SUCCEEDED( m_pd3dDevice-&gt;BeginScene() ) )
+<font color="deepskyblue">0406:</font>     {
+<font color="deepskyblue">0407:</font>         <font color="blue">if</font>(m_bDMap){
+<font color="deepskyblue">0408:</font>             <font color="blue">if</font>( m_pEffect != NULL ) 
+<font color="deepskyblue">0409:</font>             {
+<font color="deepskyblue">0410:</font>                 <font color="cyan">//-------------------------------------------------------------------------</font>
+<font color="deepskyblue">0411:</font>                 <font color="cyan">// シェーダの設定</font>
+<font color="deepskyblue">0412:</font>                 <font color="cyan">//-------------------------------------------------------------------------</font>
+<font color="deepskyblue">0413:</font>             
+<font color="deepskyblue">0414:</font>                 D3DXHANDLE hTechnique = m_pEffect-&gt;GetTechniqueByName( "<font color="blue">TShader</font>" );
+<font color="deepskyblue">0415:</font>                 m_pEffect-&gt;SetTechnique( hTechnique );
+<font color="deepskyblue">0416:</font>                 m_pEffect-&gt;Begin( NULL, 0 );
+<font color="deepskyblue">0417:</font>                 m_pEffect-&gt;Pass( 0 );
+描画
+<font color="deepskyblue">0457:</font>                 m_pEffect-&gt;End();
+<font color="deepskyblue">0458:</font>             }
+<font color="deepskyblue">0462:</font>         }
+<font color="deepskyblue">0463:</font> 
+<font color="deepskyblue">0467:</font>         <font color="cyan">// End the scene.</font>
+<font color="deepskyblue">0468:</font>         m_pd3dDevice-&gt;EndScene();
+<font color="deepskyblue">0469:</font>     }
+<font color="deepskyblue">0470:</font> 
+<font color="deepskyblue">0471:</font>     <font color="blue">return</font> S_OK;
+<font color="deepskyblue">0472:</font> }
+</pre>
+
+<p>
+肝心な描画の内部です。<br>
+頂点シェーダの定数レジスタを設定する部分は今までとほとんど同じです（型情報を示す「F」が今までの定数レジスタの設定に付きました）。<br>
+デカールのテクスチャの設定もいつもどおりです。
+</p>
+<pre class="CodeBlock">
+main.cpp
+<font color="deepskyblue">0419:</font>                 <font color="cyan">// シェーダ定数の設定</font>
+<font color="deepskyblue">0420:</font>                 <font color="cyan">// 座標変換</font>
+<font color="deepskyblue">0421:</font>                 D3DXMATRIX m = m_mWorld * m_mView * m_mProj;
+<font color="deepskyblue">0422:</font>                 D3DXMatrixTranspose( &amp;m, &amp;m );
+<font color="deepskyblue">0423:</font>                 m_pd3dDevice-&gt;SetVertexShaderConstantF( 0,(<font color="blue">float</font>*)&amp;m,4 );
+<font color="deepskyblue">0424:</font>                 <font color="cyan">// 変位の大きさ</font>
+<font color="deepskyblue">0425:</font>                 D3DXVECTOR4 displacement = D3DXVECTOR4(m_degree,0.0f,0.0f,0.0f);
+<font color="deepskyblue">0426:</font>                 m_pd3dDevice-&gt;SetVertexShaderConstantF( 4,(<font color="blue">float</font>*)&amp;displacement,1 );
+<font color="deepskyblue">0427:</font>                 <font color="cyan">// 適当な定数</font>
+<font color="deepskyblue">0428:</font>                 D3DXVECTOR4 consts = D3DXVECTOR4(0.0f,0.5f,1.0f,2.0f);
+<font color="deepskyblue">0429:</font>                 m_pd3dDevice-&gt;SetVertexShaderConstantF(12,(<font color="blue">float</font>*)&amp;consts,1 );
+<font color="deepskyblue">0430:</font>                 <font color="cyan">// ライト</font>
+<font color="deepskyblue">0431:</font>                 D3DXVECTOR4 v;
+<font color="deepskyblue">0432:</font>                 D3DXMatrixInverse( &amp;m, NULL, &amp;m_mWorld);
+<font color="deepskyblue">0433:</font>                 D3DXVec4Transform( &amp;v, &amp;m_LighPos, &amp;m );
+<font color="deepskyblue">0434:</font>                 D3DXVec4Normalize( &amp;v, &amp;v );v.w = 0.3f;
+<font color="deepskyblue">0435:</font>                 m_pd3dDevice-&gt;SetVertexShaderConstantF(13,(<font color="blue">float</font>*)&amp;v,1 );
+<font color="deepskyblue">0436:</font> 
+<font color="deepskyblue">0437:</font>                 <font color="cyan">// テクスチャの設定</font>
+<font color="deepskyblue">0438:</font>                 m_pd3dDevice-&gt;SetTexture(0, m_pMesh-&gt;m_pTextures[0]);
+</pre>
+
+<p>
+いよいよディスプレースメントマップの設定です。<br>
+やはり、D3DDMAPSAMPLER の段階のテクスチャにディスプレースメントマップを設定します。<br>
+他に、N-パッチのセグメント（詳細レベル）を設定します。ここはどのくらい分割するかどうかなので、見た目で決めましょう。<br>
+後は、頂点宣言を設定して描画すればディスプレースメントマップを使った表示ができます。
+</p>
+<pre class="CodeBlock">
+main.cpp
+<font color="deepskyblue">0439:</font> <font color = "yellow">
+<font color="deepskyblue">0440:</font>                 <font color="cyan">//-------------------------------------------------------------------------</font>
+<font color="deepskyblue">0441:</font>                 <font color="cyan">// ディスプレースメントマップの設定</font>
+<font color="deepskyblue">0442:</font>                 <font color="cyan">//-------------------------------------------------------------------------</font>
+<font color="deepskyblue">0443:</font>                 m_pd3dDevice-&gt;SetTexture(D3DDMAPSAMPLER, m_pDispMap);
+<font color="deepskyblue">0444:</font>                 m_pd3dDevice-&gt;SetNPatchMode(4);<font color="cyan">// Nパッチのモードで動かす必要がある</font>
+<font color="deepskyblue">0445:</font>                 m_pd3dDevice-&gt;SetVertexDeclaration( m_pDecl );
+<font color="deepskyblue">0446:</font> </font>
+<font color="deepskyblue">0447:</font>                 <font color="cyan">//-------------------------------------------------------------------------</font>
+<font color="deepskyblue">0448:</font>                 <font color="cyan">// 描画</font>
+<font color="deepskyblue">0449:</font>                 <font color="cyan">//-------------------------------------------------------------------------</font>
+<font color="deepskyblue">0450:</font>                 m_pMesh-&gt;Render( m_pd3dDevice );
+<font color="deepskyblue">0451:</font> 
+<font color="deepskyblue">0452:</font>                 <font color="cyan">//-------------------------------------------------------------------------</font>
+<font color="deepskyblue">0453:</font>                 <font color="cyan">// 描画終了</font>
+<font color="deepskyblue">0454:</font>                 <font color="cyan">//-------------------------------------------------------------------------</font>
+<font color="deepskyblue">0455:</font>                 m_pd3dDevice-&gt;SetNPatchMode(0);
+<font color="deepskyblue">0456:</font>                 m_pd3dDevice-&gt;SetVertexShader( NULL );
+</pre>
+
+<p>
+終わったら、N-パッチの使用をやめたり、固定機能シェーダに戻します。
+</p>
+
+
+
+<h2>■最後に</h2>
+
+
+<p>
+使ってみると、やっぱり使えないのですが、面白いフィーチャーですね。<br>
+「一応作りました」的なノリが見えるのですが、DirectX9.1ぐらい（気が早いなぁ）には洗練されてくるのではないでしょうか。
+</p>
+
+</div>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<center>
+<hr>
+<p><a href="../index.html">もどる</a></p>
+<p><a href="mailto:imagire@gmail.com">imagire@gmail.com</a></p>
+</center>
+
+</body>
+</html>

@@ -1,0 +1,66 @@
+<HTML>
+<HEAD>
+<TITLE>draw.h</TITLE>
+<meta name="GENERATOR" content="cpp2html 2.0 by Niisaka">
+<meta http-equiv="Content-Type" content="text/html">
+<meta http-equiv="Content-Style-Type" content="text/css">
+<STYLE TYPE="text/css">
+<!--
+SPAN.comment { color:#008000; font-weight:normal; font-style:normal;}
+SPAN.keyword { color:#0000FF; font-weight:normal; font-style:normal;}
+SPAN.string { color:#600000; font-weight:normal; font-style:normal;}
+SPAN.linenum { color:#A0A0A0; font-weight:normal; font-style:normal;}
+-->
+</STYLE>
+</HEAD>
+<BODY TEXT="#000000" BGCOLOR="#FFFFFF">
+<PRE><SPAN CLASS="linenum">0001:</SPAN> <SPAN CLASS="comment">// ----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0002:</SPAN> <SPAN CLASS="comment">//</SPAN>
+<SPAN CLASS="linenum">0003:</SPAN> <SPAN CLASS="comment">// draw.h - 全体的な定義</SPAN>
+<SPAN CLASS="linenum">0004:</SPAN> <SPAN CLASS="comment">// </SPAN>
+<SPAN CLASS="linenum">0005:</SPAN> <SPAN CLASS="comment">// Copyright (c) 2001 if (if@edokko.com)</SPAN>
+<SPAN CLASS="linenum">0006:</SPAN> <SPAN CLASS="comment">// All Rights Reserved.</SPAN>
+<SPAN CLASS="linenum">0007:</SPAN> <SPAN CLASS="comment">//</SPAN>
+<SPAN CLASS="linenum">0008:</SPAN> <SPAN CLASS="comment">// ----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0009:</SPAN> <SPAN CLASS="keyword">#ifndef</SPAN> _DRAW_H
+<SPAN CLASS="linenum">0010:</SPAN> <SPAN CLASS="keyword">#define</SPAN> _DRAW_H
+<SPAN CLASS="linenum">0011:</SPAN> 
+<SPAN CLASS="linenum">0012:</SPAN> <SPAN CLASS="keyword">#include</SPAN> &lt;d3d8.h&gt;
+<SPAN CLASS="linenum">0013:</SPAN> <SPAN CLASS="keyword">#include</SPAN> &lt;d3dx8.h&gt;
+<SPAN CLASS="linenum">0014:</SPAN> 
+<SPAN CLASS="linenum">0015:</SPAN> 
+<SPAN CLASS="linenum">0016:</SPAN> HRESULT InitRender(LPDIRECT3DDEVICE8 lpD3DDEV);                 <SPAN CLASS="comment">// 初期化</SPAN>
+<SPAN CLASS="linenum">0017:</SPAN> <SPAN CLASS="keyword">void</SPAN> Render(LPDIRECT3DDEVICE8 lpD3DDEV);                        <SPAN CLASS="comment">// 描画</SPAN>
+<SPAN CLASS="linenum">0018:</SPAN> <SPAN CLASS="keyword">void</SPAN> CleanRender(LPDIRECT3DDEVICE8 lpD3DDEV);                   <SPAN CLASS="comment">// 後片付け</SPAN>
+<SPAN CLASS="linenum">0019:</SPAN> 
+<SPAN CLASS="linenum">0020:</SPAN> <SPAN CLASS="comment">// ----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0021:</SPAN> <SPAN CLASS="comment">// ビュー座標系の管理</SPAN>
+<SPAN CLASS="linenum">0022:</SPAN> <SPAN CLASS="comment">// ----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0023:</SPAN> <SPAN CLASS="keyword">class</SPAN> CMyView{
+<SPAN CLASS="linenum">0024:</SPAN>     D3DXMATRIX              m_mView;    <SPAN CLASS="comment">// ビュー行列</SPAN>
+<SPAN CLASS="linenum">0025:</SPAN>     D3DXVECTOR4             m_eye;      <SPAN CLASS="comment">// カメラの位置</SPAN>
+<SPAN CLASS="linenum">0026:</SPAN>     D3DXVECTOR4             m_lookAt;   <SPAN CLASS="comment">// カメラの注目点</SPAN>
+<SPAN CLASS="linenum">0027:</SPAN>     D3DXVECTOR4             m_up;       <SPAN CLASS="comment">// カメラの上方向</SPAN>
+<SPAN CLASS="linenum">0028:</SPAN> 
+<SPAN CLASS="linenum">0029:</SPAN>     <SPAN CLASS="keyword">void</SPAN> Calc(){D3DXMatrixLookAtLH(&amp;m_mView,(D3DXVECTOR3*)&amp;m_eye,(D3DXVECTOR3*)&amp;m_lookAt,(D3DXVECTOR3*)&amp;m_up);}
+<SPAN CLASS="linenum">0030:</SPAN> <SPAN CLASS="keyword">public</SPAN>:
+<SPAN CLASS="linenum">0031:</SPAN>     CMyView(){Init();}
+<SPAN CLASS="linenum">0032:</SPAN>     <SPAN CLASS="keyword">void</SPAN> Init(){m_eye.x    = 0.0f; m_eye.y    = 0.0f; m_eye.z    =-2.5f; m_eye.w    = 1.0f;
+<SPAN CLASS="linenum">0033:</SPAN>                 m_lookAt.x = 0.0f; m_lookAt.y = 0.0f; m_lookAt.z = 0.0f; m_lookAt.w = 1.0f; 
+<SPAN CLASS="linenum">0034:</SPAN>                 m_up.x     = 0.0f; m_up.y     = 1.0f; m_up.z     = 0.0f; m_up.w     = 1.0f; 
+<SPAN CLASS="linenum">0035:</SPAN>                 <SPAN CLASS="keyword">this</SPAN>-&gt;Calc();}
+<SPAN CLASS="linenum">0036:</SPAN>     <SPAN CLASS="keyword">void</SPAN> SetEye   (D3DXVECTOR4    eye){m_eye   =   eye;<SPAN CLASS="keyword">this</SPAN>-&gt;Calc();}
+<SPAN CLASS="linenum">0037:</SPAN>     <SPAN CLASS="keyword">void</SPAN> SetLookAt(D3DXVECTOR4 lookAt){m_lookAt=lookAt;<SPAN CLASS="keyword">this</SPAN>-&gt;Calc();}
+<SPAN CLASS="linenum">0038:</SPAN>     <SPAN CLASS="keyword">void</SPAN> SetUp    (D3DXVECTOR4     up){m_up    =    up;<SPAN CLASS="keyword">this</SPAN>-&gt;Calc();}
+<SPAN CLASS="linenum">0039:</SPAN>     D3DXVECTOR4 GetEye()   {<SPAN CLASS="keyword">return</SPAN> m_eye;}
+<SPAN CLASS="linenum">0040:</SPAN>     D3DXVECTOR4 GetLookAt(){<SPAN CLASS="keyword">return</SPAN> m_lookAt;}
+<SPAN CLASS="linenum">0041:</SPAN>     D3DXVECTOR4 GetUp()    {<SPAN CLASS="keyword">return</SPAN> m_up;}
+<SPAN CLASS="linenum">0042:</SPAN>     D3DXMATRIX Get(){<SPAN CLASS="keyword">return</SPAN> m_mView;}
+<SPAN CLASS="linenum">0043:</SPAN> };
+<SPAN CLASS="linenum">0044:</SPAN> <SPAN CLASS="keyword">extern</SPAN> CMyView  view;
+<SPAN CLASS="linenum">0045:</SPAN> 
+<SPAN CLASS="linenum">0046:</SPAN> 
+<SPAN CLASS="linenum">0047:</SPAN> <SPAN CLASS="keyword">#endif</SPAN> <SPAN CLASS="comment">/* !_DRAW_H */</SPAN>
+<SPAN CLASS="linenum">0048:</SPAN> </PRE>
+</BODY>
+</HTML>

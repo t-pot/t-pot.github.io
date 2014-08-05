@@ -1,0 +1,277 @@
+<PRE>   1: 
+   2: <FONT COLOR="#008040">//-----------------------------------------------------------------------------</FONT>
+   3: <FONT COLOR="#008040">// Global variables</FONT>
+   4: <FONT COLOR="#008040">//-----------------------------------------------------------------------------</FONT>
+   5: float4 MaterialAmbientColor = {<FONT COLOR="#FF0000">0.3</FONT>, <FONT COLOR="#FF0000">0.3</FONT>, <FONT COLOR="#FF0000">0.3</FONT>, <FONT COLOR="#FF0000">1.0</FONT>};
+   6: float4 MaterialDiffuseColor = {<FONT COLOR="#FF0000">0.7</FONT>, <FONT COLOR="#FF0000">0.7</FONT>, <FONT COLOR="#FF0000">0.7</FONT>, <FONT COLOR="#FF0000">0.0</FONT>};
+   7: 
+   8: <FONT COLOR="#0000FF">#define</FONT> LIGHT_DIR  <FONT COLOR="#FF0000">0.0</FONT>,<FONT COLOR="#FF0000">10.0</FONT>,<FONT COLOR="#FF0000">0.0</FONT>
+   9: float3 LightDir = normalize(float3(LIGHT_DIR));
+  10: float4 LightAmbient = { <FONT COLOR="#FF0000">1.0</FONT>f, <FONT COLOR="#FF0000">1.0</FONT>f, <FONT COLOR="#FF0000">1.0</FONT>f, <FONT COLOR="#FF0000">1.0</FONT>f };    <FONT COLOR="#008040">// ambient</FONT>
+  11: float4 LightDiffuse = { <FONT COLOR="#FF0000">1.0</FONT>f, <FONT COLOR="#FF0000">1.0</FONT>f, <FONT COLOR="#FF0000">1.0</FONT>f, <FONT COLOR="#FF0000">1.0</FONT>f };    <FONT COLOR="#008040">// diffuse</FONT>
+  12: 
+  13: float4x4 mWorld;
+  14: float4x4 mWorldViewProjection;
+  15: 
+  16: float4 weight;
+  17: <FONT COLOR="#0000FF">float</FONT> coeff_l;
+  18: <FONT COLOR="#0000FF">static</FONT> <FONT COLOR="#0000FF">const</FONT> <FONT COLOR="#0000FF">float</FONT> MAP_WIDTH  = <FONT COLOR="#FF0000">512</FONT>;
+  19: <FONT COLOR="#0000FF">static</FONT> <FONT COLOR="#0000FF">const</FONT> <FONT COLOR="#0000FF">float</FONT> MAP_HEIGHT = <FONT COLOR="#FF0000">512</FONT>;
+  20: float4 vBias = {<FONT COLOR="#FF0000">2</FONT>/MAP_WIDTH, <FONT COLOR="#FF0000">4</FONT>/MAP_WIDTH, <FONT COLOR="#FF0000">6</FONT>/MAP_WIDTH, <FONT COLOR="#FF0000">8</FONT>/MAP_WIDTH};
+  21: float4 hBias = {<FONT COLOR="#FF0000">2</FONT>/MAP_HEIGHT,<FONT COLOR="#FF0000">4</FONT>/MAP_HEIGHT,<FONT COLOR="#FF0000">6</FONT>/MAP_HEIGHT,<FONT COLOR="#FF0000">8</FONT>/MAP_HEIGHT};
+  22: 
+  23: <FONT COLOR="#008040">//-----------------------------------------------------------------------------</FONT>
+  24: <FONT COLOR="#008040">// Texture samplers</FONT>
+  25: <FONT COLOR="#008040">//-----------------------------------------------------------------------------</FONT>
+  26: texture RenderTargetTexture;
+  27: sampler RenderTargetSampler = 
+  28: sampler_state
+  29: {
+  30:     Texture = &lt;RenderTargetTexture&gt;;
+  31:     MinFilter = LINEAR;
+  32:     MagFilter = LINEAR;
+  33: 
+  34:     AddressU = Clamp;
+  35:     AddressV = Clamp;
+  36: };
+  37: 
+  38: texture MeshTexture;
+  39: sampler MeshTextureSampler = 
+  40: sampler_state
+  41: {
+  42:     Texture = &lt;MeshTexture&gt;;
+  43:     MinFilter = LINEAR;
+  44:     MagFilter = LINEAR;
+  45:     MipFilter = NONE;
+  46: 
+  47:     AddressU = Clamp;
+  48:     AddressV = Clamp;
+  49: };
+  50: 
+  51: <FONT COLOR="#008040">//-----------------------------------------------------------------------------</FONT>
+  52: <FONT COLOR="#008040">//-----------------------------------------------------------------------------</FONT>
+  53: float3 GetDiffuse(float3 normalW )
+  54: {
+  55:     <FONT COLOR="#0000FF">return</FONT> MaterialDiffuseColor * LightDiffuse * max(<FONT COLOR="#FF0000">0</FONT>,dot(normalW, LightDir))
+  56:            + MaterialAmbientColor * LightAmbient;
+  57: }
+  58: 
+  59: 
+  60: <FONT COLOR="#008040">//-----------------------------------------------------------------------------</FONT>
+  61: <FONT COLOR="#008040">// Vertex shader output structure</FONT>
+  62: <FONT COLOR="#008040">//-----------------------------------------------------------------------------</FONT>
+  63: <FONT COLOR="#0000FF">struct</FONT> VS_OUTPUT
+  64: {
+  65:     float4 Position : POSITION;
+  66:     float2 TextureUV : TEXCOORD0;
+  67:     float4 Diffuse : TEXCOORD1;
+  68: };
+  69: <FONT COLOR="#0000FF">struct</FONT> PS_OUTPUT
+  70: {
+  71:     float4 Color : Color0;
+  72: };
+  73: 
+  74: 
+  75: <FONT COLOR="#008040">//-----------------------------------------------------------------------------</FONT>
+  76: <FONT COLOR="#008040">// Name: SceneVertexShader</FONT>
+  77: <FONT COLOR="#008040">// Type: Vertex shader                                      </FONT>
+  78: <FONT COLOR="#008040">// Desc: In addition to standard transform and lighting, it calculates the blur</FONT>
+  79: <FONT COLOR="#008040">//       factor of the vertex and outputs this as a texture coord.</FONT>
+  80: <FONT COLOR="#008040">//-----------------------------------------------------------------------------</FONT>
+  81: VS_OUTPUT SceneVertexShader( float4 vPos : POSITION, 
+  82:                              float3 vNormal : NORMAL,
+  83:                              float2 vTexCoord0 : TEXCOORD0 )
+  84: {
+  85:     VS_OUTPUT Output;
+  86:     float3 vViewPosition;
+  87:     float3 vWorldNormal;
+  88:     <FONT COLOR="#0000FF">float</FONT>  fBlurFactor;
+  89:   
+  90:     <FONT COLOR="#008040">// tranform vertex position into screen space</FONT>
+  91:     Output<FONT COLOR="#FF0000">.</FONT>Position = mul(vPos, mWorldViewProjection);
+  92:     
+  93:     <FONT COLOR="#008040">// Compute simple lighting equation</FONT>
+  94:     vWorldNormal = mul(vNormal, (float3x3)mWorld);       
+  95:     Output<FONT COLOR="#FF0000">.</FONT>Diffuse = float4(GetDiffuse(vWorldNormal), <FONT COLOR="#FF0000">1.0</FONT>);
+  96:     
+  97:     <FONT COLOR="#008040">// Just copy the texture coordinate through</FONT>
+  98:     Output<FONT COLOR="#FF0000">.</FONT>TextureUV<FONT COLOR="#FF0000">.</FONT>xy = vTexCoord0;
+  99:     
+ 100:     <FONT COLOR="#0000FF">return</FONT> Output;
+ 101: }
+ 102: 
+ 103: 
+ 104: <FONT COLOR="#008040">//-----------------------------------------------------------------------------</FONT>
+ 105: <FONT COLOR="#008040">// Name: ScenePixelShader</FONT>
+ 106: <FONT COLOR="#008040">// Type: Pixel shader</FONT>
+ 107: <FONT COLOR="#008040">// Desc: This shader simply outputs the pixel's color </FONT>
+ 108: <FONT COLOR="#008040">//-----------------------------------------------------------------------------</FONT>
+ 109: PS_OUTPUT ScenePixelShader( VS_OUTPUT In )
+ 110: {
+ 111:     PS_OUTPUT Output;
+ 112: 
+ 113:     Output<FONT COLOR="#FF0000">.</FONT>Color = tex2D(MeshTextureSampler, In<FONT COLOR="#FF0000">.</FONT>TextureUV<FONT COLOR="#FF0000">.</FONT>xy) * In<FONT COLOR="#FF0000">.</FONT>Diffuse;
+ 114:     Output<FONT COLOR="#FF0000">.</FONT>Color<FONT COLOR="#FF0000">.</FONT>a = <FONT COLOR="#FF0000">1.0</FONT>f;
+ 115:     
+ 116:     <FONT COLOR="#0000FF">return</FONT> Output;
+ 117: }
+ 118: 
+ 119: 
+ 120: <FONT COLOR="#008040">//-----------------------------------------------------------------------------</FONT>
+ 121: <FONT COLOR="#008040">// Name: TechScene</FONT>
+ 122: <FONT COLOR="#008040">// Type: Technique                                     </FONT>
+ 123: <FONT COLOR="#008040">// Desc: Renders the scene's color to the render target and stores the</FONT>
+ 124: <FONT COLOR="#008040">//       depth information as a blur factor in the alpha channel.</FONT>
+ 125: <FONT COLOR="#008040">//-----------------------------------------------------------------------------</FONT>
+ 126: technique TechScene
+ 127: {
+ 128:     pass P0
+ 129:     {        
+ 130:         VertexShader = compile vs_1_1 SceneVertexShader();
+ 131:         PixelShader  = compile ps_2_0 ScenePixelShader();
+ 132:     }
+ 133: }
+ 134: 
+ 135: 
+ 136: 
+ 137: 
+ 138: <FONT COLOR="#008040">//-----------------------------------------------------------------------------</FONT>
+ 139: <FONT COLOR="#008040">// Name: RenderGaussX</FONT>
+ 140: <FONT COLOR="#008040">//-----------------------------------------------------------------------------</FONT>
+ 141: float4 RenderGaussX( in float2 OriginalUV : TEXCOORD0 ) : COLOR 
+ 142: {
+ 143:      float4 Color;
+ 144:      
+ 145:      half4 t00 = tex2D( MeshTextureSampler, OriginalUV );
+ 146:      half4 t10 = tex2D( MeshTextureSampler, OriginalUV + half2(vBias<FONT COLOR="#FF0000">.</FONT>x, <FONT COLOR="#FF0000">0</FONT>));
+ 147:      half4 t11 = tex2D( MeshTextureSampler, OriginalUV - half2(vBias<FONT COLOR="#FF0000">.</FONT>x, <FONT COLOR="#FF0000">0</FONT>));
+ 148:      half4 t20 = tex2D( MeshTextureSampler, OriginalUV + half2(vBias<FONT COLOR="#FF0000">.</FONT>y, <FONT COLOR="#FF0000">0</FONT>));
+ 149:      half4 t21 = tex2D( MeshTextureSampler, OriginalUV - half2(vBias<FONT COLOR="#FF0000">.</FONT>y, <FONT COLOR="#FF0000">0</FONT>));
+ 150:      half4 t30 = tex2D( MeshTextureSampler, OriginalUV + half2(vBias<FONT COLOR="#FF0000">.</FONT>z, <FONT COLOR="#FF0000">0</FONT>));
+ 151:      half4 t31 = tex2D( MeshTextureSampler, OriginalUV - half2(vBias<FONT COLOR="#FF0000">.</FONT>z, <FONT COLOR="#FF0000">0</FONT>));
+ 152:      half4 t40 = tex2D( MeshTextureSampler, OriginalUV + half2(vBias<FONT COLOR="#FF0000">.</FONT>w, <FONT COLOR="#FF0000">0</FONT>));
+ 153:      half4 t41 = tex2D( MeshTextureSampler, OriginalUV - half2(vBias<FONT COLOR="#FF0000">.</FONT>w, <FONT COLOR="#FF0000">0</FONT>));
+ 154:      
+ 155:      <FONT COLOR="#008040">// 中心との色の差</FONT>
+ 156:      half3 d10 = t10<FONT COLOR="#FF0000">.</FONT>rgb - t00<FONT COLOR="#FF0000">.</FONT>rgb;
+ 157:      half3 d20 = t20<FONT COLOR="#FF0000">.</FONT>rgb - t00<FONT COLOR="#FF0000">.</FONT>rgb;
+ 158:      half3 d30 = t30<FONT COLOR="#FF0000">.</FONT>rgb - t00<FONT COLOR="#FF0000">.</FONT>rgb;
+ 159:      half3 d40 = t40<FONT COLOR="#FF0000">.</FONT>rgb - t00<FONT COLOR="#FF0000">.</FONT>rgb;
+ 160:      half3 d11 = t11<FONT COLOR="#FF0000">.</FONT>rgb - t00<FONT COLOR="#FF0000">.</FONT>rgb;
+ 161:      half3 d21 = t21<FONT COLOR="#FF0000">.</FONT>rgb - t00<FONT COLOR="#FF0000">.</FONT>rgb;
+ 162:      half3 d31 = t31<FONT COLOR="#FF0000">.</FONT>rgb - t00<FONT COLOR="#FF0000">.</FONT>rgb;
+ 163:      half3 d41 = t41<FONT COLOR="#FF0000">.</FONT>rgb - t00<FONT COLOR="#FF0000">.</FONT>rgb;
+ 164: 
+ 165:      <FONT COLOR="#008040">// 中心との色の強さの差の２乗</FONT>
+ 166:      half4 l0, l1;
+ 167:      l0<FONT COLOR="#FF0000">.</FONT>x = dot(d10, d10);
+ 168:      l0<FONT COLOR="#FF0000">.</FONT>y = dot(d20, d20);
+ 169:      l0<FONT COLOR="#FF0000">.</FONT>z = dot(d30, d30);
+ 170:      l0<FONT COLOR="#FF0000">.</FONT>w = dot(d40, d40);
+ 171:      l1<FONT COLOR="#FF0000">.</FONT>x = dot(d11, d11);
+ 172:      l1<FONT COLOR="#FF0000">.</FONT>y = dot(d21, d21);
+ 173:      l1<FONT COLOR="#FF0000">.</FONT>z = dot(d31, d31);
+ 174:      l1<FONT COLOR="#FF0000">.</FONT>w = dot(d41, d41);
+ 175:      
+ 176:      l0 = weight * exp(coeff_l * l0);
+ 177:      l1 = weight * exp(coeff_l * l1);
+ 178: 
+ 179:      Color  = t00;
+ 180:      Color += l0<FONT COLOR="#FF0000">.</FONT>x * t10 + l1<FONT COLOR="#FF0000">.</FONT>x * t11;
+ 181:      Color += l0<FONT COLOR="#FF0000">.</FONT>y * t20 + l1<FONT COLOR="#FF0000">.</FONT>y * t21;
+ 182:      Color += l0<FONT COLOR="#FF0000">.</FONT>z * t30 + l1<FONT COLOR="#FF0000">.</FONT>z * t31;
+ 183:      Color += l0<FONT COLOR="#FF0000">.</FONT>w * t40 + l1<FONT COLOR="#FF0000">.</FONT>w * t41;
+ 184:      
+ 185:      <FONT COLOR="#0000FF">return</FONT> Color / <FONT COLOR="#FF0000">4</FONT>;<FONT COLOR="#008040">// 全部足すと精度が足りないようなので、適当に割っとく</FONT>
+ 186: }
+ 187: 
+ 188: 
+ 189: technique TechGaussX
+ 190: {
+ 191:     pass P0
+ 192:     {        
+ 193:         PixelShader = compile ps_2_0 RenderGaussX();
+ 194:     }
+ 195: }
+ 196: <FONT COLOR="#008040">//-----------------------------------------------------------------------------</FONT>
+ 197: <FONT COLOR="#008040">// Name: RenderGaussX</FONT>
+ 198: <FONT COLOR="#008040">//-----------------------------------------------------------------------------</FONT>
+ 199: float4 RenderGaussY( in float2 OriginalUV : TEXCOORD0 ) : COLOR 
+ 200: {
+ 201:      float4 Color;
+ 202:      
+ 203:      half4 t00 = tex2D( MeshTextureSampler, OriginalUV );
+ 204:      half4 t10 = tex2D( MeshTextureSampler, OriginalUV + half2(<FONT COLOR="#FF0000">0</FONT>, hBias<FONT COLOR="#FF0000">.</FONT>x));
+ 205:      half4 t11 = tex2D( MeshTextureSampler, OriginalUV - half2(<FONT COLOR="#FF0000">0</FONT>, hBias<FONT COLOR="#FF0000">.</FONT>x));
+ 206:      half4 t20 = tex2D( MeshTextureSampler, OriginalUV + half2(<FONT COLOR="#FF0000">0</FONT>, hBias<FONT COLOR="#FF0000">.</FONT>y));
+ 207:      half4 t21 = tex2D( MeshTextureSampler, OriginalUV - half2(<FONT COLOR="#FF0000">0</FONT>, hBias<FONT COLOR="#FF0000">.</FONT>y));
+ 208:      half4 t30 = tex2D( MeshTextureSampler, OriginalUV + half2(<FONT COLOR="#FF0000">0</FONT>, hBias<FONT COLOR="#FF0000">.</FONT>z));
+ 209:      half4 t31 = tex2D( MeshTextureSampler, OriginalUV - half2(<FONT COLOR="#FF0000">0</FONT>, hBias<FONT COLOR="#FF0000">.</FONT>z));
+ 210:      half4 t40 = tex2D( MeshTextureSampler, OriginalUV + half2(<FONT COLOR="#FF0000">0</FONT>, hBias<FONT COLOR="#FF0000">.</FONT>w));
+ 211:      half4 t41 = tex2D( MeshTextureSampler, OriginalUV - half2(<FONT COLOR="#FF0000">0</FONT>, hBias<FONT COLOR="#FF0000">.</FONT>w));
+ 212:      
+ 213:      <FONT COLOR="#008040">// 中心との色の差</FONT>
+ 214:      half3 d10 = t10<FONT COLOR="#FF0000">.</FONT>rgb - t00<FONT COLOR="#FF0000">.</FONT>rgb;
+ 215:      half3 d20 = t20<FONT COLOR="#FF0000">.</FONT>rgb - t00<FONT COLOR="#FF0000">.</FONT>rgb;
+ 216:      half3 d30 = t30<FONT COLOR="#FF0000">.</FONT>rgb - t00<FONT COLOR="#FF0000">.</FONT>rgb;
+ 217:      half3 d40 = t40<FONT COLOR="#FF0000">.</FONT>rgb - t00<FONT COLOR="#FF0000">.</FONT>rgb;
+ 218:      half3 d11 = t11<FONT COLOR="#FF0000">.</FONT>rgb - t00<FONT COLOR="#FF0000">.</FONT>rgb;
+ 219:      half3 d21 = t21<FONT COLOR="#FF0000">.</FONT>rgb - t00<FONT COLOR="#FF0000">.</FONT>rgb;
+ 220:      half3 d31 = t31<FONT COLOR="#FF0000">.</FONT>rgb - t00<FONT COLOR="#FF0000">.</FONT>rgb;
+ 221:      half3 d41 = t41<FONT COLOR="#FF0000">.</FONT>rgb - t00<FONT COLOR="#FF0000">.</FONT>rgb;
+ 222: 
+ 223:      <FONT COLOR="#008040">// 中心との色の強さの差の２乗</FONT>
+ 224:      half4 l0, l1;
+ 225:      l0<FONT COLOR="#FF0000">.</FONT>x = dot(d10, d10);
+ 226:      l0<FONT COLOR="#FF0000">.</FONT>y = dot(d20, d20);
+ 227:      l0<FONT COLOR="#FF0000">.</FONT>z = dot(d30, d30);
+ 228:      l0<FONT COLOR="#FF0000">.</FONT>w = dot(d40, d40);
+ 229:      l1<FONT COLOR="#FF0000">.</FONT>x = dot(d11, d11);
+ 230:      l1<FONT COLOR="#FF0000">.</FONT>y = dot(d21, d21);
+ 231:      l1<FONT COLOR="#FF0000">.</FONT>z = dot(d31, d31);
+ 232:      l1<FONT COLOR="#FF0000">.</FONT>w = dot(d41, d41);
+ 233:      
+ 234:      l0 = weight * exp(coeff_l * l0);
+ 235:      l1 = weight * exp(coeff_l * l1);
+ 236: 
+ 237:      Color  = t00;
+ 238:      Color += l0<FONT COLOR="#FF0000">.</FONT>x * t10 + l1<FONT COLOR="#FF0000">.</FONT>x * t11;
+ 239:      Color += l0<FONT COLOR="#FF0000">.</FONT>y * t20 + l1<FONT COLOR="#FF0000">.</FONT>y * t21;
+ 240:      Color += l0<FONT COLOR="#FF0000">.</FONT>z * t30 + l1<FONT COLOR="#FF0000">.</FONT>z * t31;
+ 241:      Color += l0<FONT COLOR="#FF0000">.</FONT>w * t40 + l1<FONT COLOR="#FF0000">.</FONT>w * t41;
+ 242:      
+ 243:      <FONT COLOR="#0000FF">return</FONT> Color/Color<FONT COLOR="#FF0000">.</FONT>a;
+ 244: }
+ 245: 
+ 246: 
+ 247: technique TechGaussY
+ 248: {
+ 249:     pass P0
+ 250:     {        
+ 251:         PixelShader = compile ps_2_0 RenderGaussY();
+ 252:     }
+ 253: }
+ 254: 
+ 255: 
+ 256: 
+ 257: float4 FinalPS( in float2 OriginalUV : TEXCOORD0 ) : COLOR 
+ 258: {
+ 259: 	<FONT COLOR="#0000FF">return</FONT> tex2D(MeshTextureSampler, OriginalUV);
+ 260: }
+ 261: 
+ 262: 
+ 263: <FONT COLOR="#008040">//-----------------------------------------------------------------------------</FONT>
+ 264: <FONT COLOR="#008040">// Name: TechFinal</FONT>
+ 265: <FONT COLOR="#008040">// Type: Technique</FONT>
+ 266: <FONT COLOR="#008040">//-----------------------------------------------------------------------------</FONT>
+ 267: technique TechFinal
+ 268: {
+ 269:     pass P0
+ 270:     {        
+ 271:         PixelShader = compile ps_1_1 FinalPS();
+ 272:         
+ 273:         ZEnable = <FONT COLOR="#0000FF">false</FONT>;
+ 274:         AlphaBlendEnable = <FONT COLOR="#0000FF">false</FONT>;
+ 275:     }
+ 276: }
+</PRE>

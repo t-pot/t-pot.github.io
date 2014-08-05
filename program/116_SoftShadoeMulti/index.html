@@ -1,0 +1,134 @@
+<head>
+	<title>t-pot『マルチサンプリングソフトシャドウ』</title>
+	<link rel="stylesheet" type="text/css" href="../if.css">
+</head>
+<meta http-equiv=Content-Type content="text/html; charset=shift_jis">
+<body>
+
+
+<div class="contents">
+<center>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<h1>マルチサンプリングソフトシャドウ</h1><br>
+<h3>～ Multi-sampling Soft Shadow ～</h3>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<image src = "title.png">
+<br>
+<hr>
+</center>
+<div>
+
+
+<h2>■はじめに</h2>
+
+
+<p>
+<a href="http://developer.nvidia.com/object/sdk_home.html">NVIDIA SDK 8.0</a>のサンプルコードに<a href="http://download.nvidia.com/developer/SDK/Individual_Samples/samples.html#HLSL_SoftShadows">ソフトシャドウ</a>があったので、そのWhitepaper を読んで実装しました。
+</p>
+
+<p>
+で、いつものようにプログラムです。<br>
+</p>
+<ul style = "LIST-STYLE-TYPE:none">
+<li><a href="src.zip">src.zip (実行ファイル:DirectX9c [Vertex shader 1_1, Pixel shader 2_0 要浮動小数点バッファのリニアサンプリングサポート])</a><br>
+</ul>
+<p>
+スライダーを動かすと、ボケ具合が変わります。
+</p>
+
+<p>
+ソースには、いつものように適当にファイルが入っています。
+大事なファイルは次のものです。
+</p>
+<table>
+<tr><td><a href="main_cpp.html">main.cpp</a></td><td>アプリケーションのソース</td></tr>
+<tr><td><a href="hlsl_fx.html">hlsl.fx</a></td><td>シェーダプログラム</td></tr>
+</table>
+
+
+<h2>■なにやってるの？</h2>
+
+<p>
+ガウスぼかしをするときのように適当に(12点)周辺をサンプリングして、それぞれのシャドウバッファの値と現在の深度値との比較をしてその平均をとります。
+</p>
+
+<pre class="CodeBlock">
+<font color="deepskyblue">0177:</font> float4 ShadowMap12PS( VS_OUTPUT_SHADOW In ) : COLOR
+<font color="deepskyblue">0178:</font> {
+<font color="deepskyblue">0179:</font>     float2 t = In.ShadowMap.xy / In.ShadowMap.w;
+<font color="deepskyblue">0180:</font>     float2 t0 = t + g_Offset[ 0].xy;
+<font color="deepskyblue">0181:</font>     float2 t1 = t + g_Offset[ 1].xy;
+<font color="deepskyblue">0182:</font>     float2 t2 = t + g_Offset[ 2].xy;
+<font color="deepskyblue">0183:</font>     float2 t3 = t + g_Offset[ 3].xy;
+<font color="deepskyblue">0184:</font>     float2 t4 = t + g_Offset[ 4].xy;
+<font color="deepskyblue">0185:</font>     float2 t5 = t + g_Offset[ 5].xy;
+<font color="deepskyblue">0186:</font>     float2 t6 = t + g_Offset[ 6].xy;
+<font color="deepskyblue">0187:</font>     float2 t7 = t + g_Offset[ 7].xy;
+<font color="deepskyblue">0188:</font>     float2 t8 = t + g_Offset[ 8].xy;
+<font color="deepskyblue">0189:</font>     float2 t9 = t + g_Offset[ 9].xy;
+<font color="deepskyblue">0190:</font>     float2 ta = t + g_Offset[10].xy;
+<font color="deepskyblue">0191:</font>     float2 tb = t + g_Offset[11].xy;
+<font color="deepskyblue">0192:</font>     
+<font color="deepskyblue">0193:</font>     <font color="blue">float</font> shadow_map0 = tex2D( ShadowSampler, t0 ).x;
+<font color="deepskyblue">0194:</font>     <font color="blue">float</font> shadow_map1 = tex2D( ShadowSampler, t1 ).x;
+<font color="deepskyblue">0195:</font>     <font color="blue">float</font> shadow_map2 = tex2D( ShadowSampler, t2 ).x;
+<font color="deepskyblue">0196:</font>     <font color="blue">float</font> shadow_map3 = tex2D( ShadowSampler, t3 ).x;
+<font color="deepskyblue">0197:</font>     <font color="blue">float</font> shadow_map4 = tex2D( ShadowSampler, t4 ).x;
+<font color="deepskyblue">0198:</font>     <font color="blue">float</font> shadow_map5 = tex2D( ShadowSampler, t5 ).x;
+<font color="deepskyblue">0199:</font>     <font color="blue">float</font> shadow_map6 = tex2D( ShadowSampler, t6 ).x;
+<font color="deepskyblue">0200:</font>     <font color="blue">float</font> shadow_map7 = tex2D( ShadowSampler, t7 ).x;
+<font color="deepskyblue">0201:</font>     <font color="blue">float</font> shadow_map8 = tex2D( ShadowSampler, t8 ).x;
+<font color="deepskyblue">0202:</font>     <font color="blue">float</font> shadow_map9 = tex2D( ShadowSampler, t9 ).x;
+<font color="deepskyblue">0203:</font>     <font color="blue">float</font> shadow_mapa = tex2D( ShadowSampler, ta ).x;
+<font color="deepskyblue">0204:</font>     <font color="blue">float</font> shadow_mapb = tex2D( ShadowSampler, tb ).x;
+<font color="deepskyblue">0205:</font>     
+<font color="deepskyblue">0206:</font>     <font color="blue">float</font> depth = In.Pos.z / In.Pos.w - 0.003;
+<font color="deepskyblue">0207:</font>     <font color="blue">float</font> shade = (( shadow_map0 &lt; depth ) ? 0 : 1)
+<font color="deepskyblue">0208:</font>                 + (( shadow_map1 &lt; depth ) ? 0 : 1)
+<font color="deepskyblue">0209:</font>                 + (( shadow_map2 &lt; depth ) ? 0 : 1)
+<font color="deepskyblue">0210:</font>                 + (( shadow_map3 &lt; depth ) ? 0 : 1)
+<font color="deepskyblue">0211:</font>                 + (( shadow_map4 &lt; depth ) ? 0 : 1)
+<font color="deepskyblue">0212:</font>                 + (( shadow_map5 &lt; depth ) ? 0 : 1)
+<font color="deepskyblue">0213:</font>                 + (( shadow_map6 &lt; depth ) ? 0 : 1)
+<font color="deepskyblue">0214:</font>                 + (( shadow_map7 &lt; depth ) ? 0 : 1)
+<font color="deepskyblue">0215:</font>                 + (( shadow_map8 &lt; depth ) ? 0 : 1)
+<font color="deepskyblue">0216:</font>                 + (( shadow_map9 &lt; depth ) ? 0 : 1)
+<font color="deepskyblue">0217:</font>                 + (( shadow_mapa &lt; depth ) ? 0 : 1)
+<font color="deepskyblue">0218:</font>                 + (( shadow_mapb &lt; depth ) ? 0 : 1);
+<font color="deepskyblue">0219:</font>                 
+<font color="deepskyblue">0220:</font>     <font color="blue">const</font> <font color="blue">float</font> ambient = 0.3;
+<font color="deepskyblue">0221:</font>     
+<font color="deepskyblue">0222:</font>     <font color="blue">return</font> tex2D( Sampler, In.TextureUV )
+<font color="deepskyblue">0223:</font>              * (((1.0-ambient)/12.0) * shade * In.Diffuse + ambient);
+<font color="deepskyblue">0224:</font> }
+</pre>
+
+<p>
+g_Offset[i] に、ガウス型の分布を入れています(係数は、ATIの数値そのままなので、ShaderX<sup>2</sup>でも見てください)。
+</p>
+
+<h2>■最後に</h2>
+
+
+<p>
+境界部分もぼけるので、使い道は限られるか。
+</p>
+
+
+
+
+</div>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<center>
+<hr>
+<p><a href="../index.html">もどる</a></p>
+<p><a href="mailto:imagire@gmail.com">imagire@gmail.com</a></p>
+</center>
+
+</body>
+</html>

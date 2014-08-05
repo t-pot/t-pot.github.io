@@ -1,0 +1,369 @@
+<head>
+	<title>t-pot 『Vertex Shader:モーションブラー』</title>
+	<link rel="stylesheet" type="text/css" href="../if.css">
+</head>
+<meta http-equiv=Content-Type content="text/html; charset=shift_jis">
+<body text=#ffffff>
+
+<div class="contents">
+<center>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<h1>Vertex Shader:モーションブラー</h1><br>
+<h3>～また、nVIDIAのサンプルかよ～</h3>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+</center>
+
+<h2>■はじめに</h2>
+
+<image src = "image.gif">
+<p>
+高速に移動するオブジェクトに後を引くエフェクトをつけるとスピード感が出ます。
+ゲームでは、JSRF (Jet Set Radio Future:株式会社SEGA) で、効果的に使われています。<br>
+これは、nVIDIA のサンプルの解説です。<br>
+いや、ネタ切れというわけでは・・・
+</p>
+
+<p>
+今回のソースは、次のものです。
+</p>
+<ul style = "LIST-STYLE-TYPE:none">
+<li><a href="blur.lzh">blur.lzh (バックミラーサンプルのソース)</a>
+</ul>
+
+<p>
+内容は次のとおりになっています。
+</p>
+<table>
+<tr><td><a href="main_h.html">main.h</a></td><td>基本的な定数など。今回も出番無し。</td></tr>
+<tr><td><a href="main_cpp.html">main.cpp</a></td><td>描画に関係しないシステム的な部分。変更が無いので、出番無し。</td></tr>
+<tr><td><a href="draw_h.html">draw.h</a></td><td>描画の各関数の定義。特に意味無いので出番無し。</td></tr>
+<tr><td><a href="draw_cpp.html">draw.cpp</a></td><td>メインの描画部分。主にここが説明される。</td></tr>
+<tr><td><a href="vs_vsh.html">vs.vsh</a></td><td>オブジェクト（車）表示用の頂点シェーダープログラム。平行光源ライト。</td></tr>
+</table>
+<p>
+あと、モデルとして、nsx.xと、実行ファイルの MyBase.exe 及び、
+VC++ でコンパイルするためのプロジェクトファイル MyBase.dsw MyBase.dsp が入っています。
+</p>
+
+<h2>■モーションブラーとは</h2>
+
+<p>
+モーションブラーの解説は<A HREF="http://www.daionet.gr.jp/~masa/">Masaさん</a>のHPに詳しいので、ここではあっさり流します。<br>
+Masa さん曰く、画像がぶれる効果には２種類のものが在るそうです。
+</p>
+<table>
+<tr><td>I</td><td>モーションブラー</td><td>：フィルムを写すときのシャッターを開く時間は有限であり、高速に移動するオブジェクトはぶれて感光される。</td></tr>
+<tr><td></td><td></td><td>動いた範囲を、一様な半透明のスーパーサンプリング（沢山の回数レンダリング）することにより表現可能。</td></tr>
+<tr><td>II</td><td>残像</td><td>：網膜に記録された画像が一瞬で消えずに時間とともに減衰していく</td></tr>
+<tr><td></td><td></td><td>目が自動的に行うはずなのでコンピューターで行う必要はない。</td></tr>
+</table>
+<p>
+今回行う方法は、モデルの一部を引き伸ばして、しかも引き伸ばした先が薄くなるようにレンダリングします。<br>
+従って上の立場から言うと、残像を擬似的に表現しているといえます。<br>
+まぁ、いろんな場所でモーションブラーとして紹介されているので、そのようにしておきます。
+</p>
+
+<p>
+N.B.) BBS で Masa さんから、<br>
+&gt モーションブラー関係で、当時は <br>
+&gt 残像はCGには必要ない」みたいなことを書いたのですが、 <br>
+&gt これは本当に「裸眼で見る」と同じような <br>
+&gt 写実」を求めるという意図で書いてました。 <br>
+&gt <br>
+&gt ゲームやリアルタイムCGで、 <br>
+&gt 良い意味での適度なディフォルメを施す場合、 <br>
+&gt 残像は逆に重要なファクタだと思っています。 <br>
+&gt ＃当時はあまりそうは考えてなかったのですけどね（汗 <br>
+&gt 今は残像の虜です（謎 <br>
+の、コメントをいただきました。<br>
+Non-Photorealistic Rendering の一つとして、残像はこれから非常に有用なものとなりそうです。
+</p>
+
+<h2>■方法</h2>
+
+<p>
+レンダリングの方法ですが、今回は普通のモデルと引き伸ばされた半透明のモデルの２回を描画しています。<br>
+引き伸ばしは、頂点シェーダーで実装しています。
+</p>
+<image src = "pos.gif">
+<p>
+移動量 V と法線 N を比較して、その値が負だったら（進行方向の裏を向いていた場合には）移動する前の座標を頂点に採用します。<br>
+今回は、大げさに見えるような演出として、進行方向の裏を向いていた頂点に関して、さらに後ろの頂点 (v0'=v0-3*V) を用いています。
+</p>
+<p>
+実際のレンダリング順は、Zバッファを上書きしないで半透明な引き伸ばされたモデルを描画した後、普通にモデルを描画します。<br>
+後で半透明のモデルを描画すると、頂点が重なった場所の近く（表と裏を向く境界付近）で、Zバッファの誤判定が起きたりして、汚くなる場合があります。<br>
+また、半透明のモデルを描画するときにZバッファの書き込みを切っておかないと、通常モデルが後で書き込めなくなります。<br>
+但し、深度チェックはしないと、壁の裏にモデルがいる場合に半透明の部分だけ壁の上に描画される現象が起きます。
+</p>
+<image src = "flow.gif"  width=360 height=270>
+
+
+
+<h2>■シェーダープログラム</h2>
+
+<p>
+では、シェーダープログラムです。<br>
+今回は引き伸ばしが起きるので、頂点が単純な透視変換ではありません。
+</p>
+<p>
+まず、現在と昔（前回）のビュー行列を使って座標をビュー座標系へ変換してからそれらの差分を取って速度ベクトルを算出します。<br>
+今回、ワールド座標ではなく、ビュー座標で差分を取ります。<br>
+この結果、カメラが移動したときにブラーがかかります。<br>
+カメラが移動したときはブラーがいらなければ、ワールド座標系で速度ベクトルを計算すればよいです。<br>
+あとは、差分をとって適当に引き伸ばした後、法線（のビュー座標系での表現）と速度ベクトルの内積の正負に応じて、
+引き伸ばされた座標を計算します。
+</p>
+
+<pre class="CodeBlock">
+<Font color = cyan>; c0     -- {0.0, 0.5, 1.0, 2.0}
+; c1     -- メッシュの色
+; c2     -- ブラーしたメッシュの色
+; c3     -- ブラー用パラメータ (メッシュのサイズ/2.0f, ブラーの長さの倍率, 1, 0)
+; c4-7   -- 透視変換行列
+; c8-11  -- 現在のビュー座標系
+; c12-15 -- 前のビュー座標系
+; c16-19 -- ビュー行列 の逆転置行列
+;
+; v0	頂点の座標値
+; v3	法線ベクトル
+; v7	テクスチャ座標0</Font>
+
+vs.1.0
+
+<Font color = cyan>;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; 座標変換</Font>
+
+<Font color = cyan>; 前のビュー座標系で座標を変換する</Font>
+dp4 r0.x, v0, c12
+dp4 r0.y, v0, c13
+dp4 r0.z, v0, c14
+
+<Font color = cyan>; 現在のビュー座標系で座標を変換する</Font>
+dp4 r1.x, v0, c8
+dp4 r1.y, v0, c9
+dp4 r1.z, v0, c10
+
+<Font color = cyan>;差を取って、速度ベクトルを求める</Font>
+add r2.xyz, r1, -r0
+
+<Font color = cyan>; 適当な係数を掛けて、ブラーの長さを調整する</Font>
+mul r2.xyz, r2, c3.y
+
+<Font color = cyan>; 法線をビュー座標系に変換する</Font>
+dp3 r3.x, v3, c16
+dp3 r3.y, v3, c17
+dp3 r3.z, v3, c18
+
+<Font color = cyan>; 速度の法線方向の成分を求める</Font>
+dp3 r2.w, r2, r3
+
+<Font color = cyan>; (r2.w < 0) ?  r4 = r1-r2 : r4 = r1</Font>
+slt  r3.w,   r2.w,  c0.x              <Font color = cyan>; r3.w   = (r2.w < 0.0f) ? 1.0f : 0.0f</Font>
+mad  r4.xyz, r3.w, -r2, r1            <Font color = cyan>; r4.xyz = (r2.w < 0.0f) ? r1-r2:r1</Font>
+mov  r4.w,   c0.z                     <Font color = cyan>; r4.w   = 1.0f</Font>
+
+<Font color = cyan>; r4 を透視変換</Font>
+dp4 oPos.x, r4, c4
+dp4 oPos.y, r4, c5
+dp4 oPos.z, r4, c6
+dp4 oPos.w, r4, c7
+
+<Font color = cyan>;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; 速度と法線の関係から色を計算する</Font>
+
+dp3 r2.w, r2,  r2
+rsq r1.w, r2.w
+mul r2.w, r2.w, r1.w                <Font color = cyan>; r2.w = 速度ベクトルの長さ</Font>
+
+mad r2.w, -r2.w, c3.x, c3.z         <Font color = cyan>; r2.w = 1 - 速度ベクトルの長さ/extent　（extent = メッシュのサイズ/2.0f）</Font>
+
+mul r5, c2, r2.w                    <Font color = cyan>; c2' = ブラーのついた基本色(c2) * r2.w</Font>
+
+add r5,  r5, - c1
+mad oD0, r3.w, r5, c1               <Font color = cyan>; 色 = c1 + Max(0,N･V)*(c2'-c1)</Font>
+                                    <Font color = cyan>;     法線と速度の向きが同じなら color(ブラーの色として設定された色)</Font>
+                                    <Font color = cyan>;     法線と速度の向き反対なら メッシュの色</Font>
+
+<Font color = cyan>;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; テクスチャーを張る</Font>
+mov oT0.xy, v7
+</pre>
+
+<p>
+頂点色もいじっています。<br>
+移動速度を求めて、その長さに応じて、色を薄くします。<br>
+今回は、移動量がモデルのサイズの 1/2 になったら切れる程度の長さにしています。<br>
+最後に頂点と同じように速度方向を向いているかどうかで普通の色か、ブラーのかかった薄い色を選択します。
+</p>
+<p>
+テクスチャーは普段どおりに張ります。
+</p>
+
+<h2>■Cソース</h2>
+
+<p>
+最後に描画部分です。<br>
+いつも通りワールド行列やビュー、射影行列を計算した後、レジスタを設定します。<br>
+今回は同心円状に移動するワールド行列を作りました。<br>
+MeshRadius はモデルの大きさです。初期化の時に MeshRadius = max(sqrt(x^2+y^2+z^2))で導出しています。<br>
+また、この MeshRadius は、ブラーした色の半透明度を決定する定数レジスタ c3 にも使っています。
+</p>
+
+<pre class="CodeBlock">
+void Render(LPDIRECT3DDEVICE8 lpD3DDev)
+{
+    if(NULL == pMeshVB) return;
+    
+    D3DXMATRIX m, mWorld, mView, mProj;
+    DWORD i;
+
+    <Font color = cyan>// ワールド行列</Font>
+    D3DXMatrixTranslation(&m, MeshRadius, 0,0);
+    D3DXMatrixRotationY( &mWorld, timeGetTime()/1000.0f );
+    mWorld = m * mWorld;
+    
+    <Font color = cyan>// ビュー行列</Font>
+    D3DXVECTOR3 eye   (0.0f,MeshRadius,2.5f*MeshRadius);
+    D3DXVECTOR3 lookAt(0.0f, 0.0f, 0.0f);
+    D3DXVECTOR3 up    (0.0f, 1.0f, 0.0f);
+    D3DXMatrixLookAtLH(&mView, &eye, &lookAt, &up);
+    <Font color = cyan>// 射影行列</Font>
+    D3DXMatrixPerspectiveFovLH(&mProj, PI/3.0f, (float)WIDTH/(float)HEIGHT, 0.01f, 100.0f);
+    
+    <Font color = cyan>// パラメータの設定</Font>
+    lpD3DDev->SetRenderState( D3DRS_ZENABLE,        TRUE );
+    
+    lpD3DDev->SetRenderState( D3DRS_ALPHABLENDENABLE, TRUE);      <Font color = cyan>// 半透明合成は内挿合成</Font>
+    lpD3DDev->SetRenderState( D3DRS_SRCBLEND,  D3DBLEND_SRCALPHA );
+    lpD3DDev->SetRenderState( D3DRS_DESTBLEND, D3DBLEND_INVSRCALPHA);
+
+    lpD3DDev->SetVertexShaderConstant(0, D3DXVECTOR4(0.0f,0.5f,1.0f,2.0f), 1);
+    lpD3DDev->SetVertexShaderConstant( 3, D3DXVECTOR4(
+        2.0f/MeshRadius,
+        3.0f,                <Font color = cyan>// ブラーの長さ</Font>
+        1.0f,0.0f),  1 );
+    
+    lpD3DDev->SetVertexShader(hVertexShader);
+    lpD3DDev->SetStreamSource(0, pMeshVB, sizeof(D3D_CUSTOMVERTEX));
+    lpD3DDev->SetIndices(pMeshIndex,0);
+    
+    <Font color = cyan>//メッシュの描画（透明なブラー部分）</Font>
+    <Font color = yellow>set_transform(1,lpD3DDev, mWorld, mView, mProj);
+    lpD3DDev->SetRenderState( D3DRS_ZWRITEENABLE, FALSE );    </Font><Font color = cyan>// 深度バッファの書き込みを止める</Font>
+    <Font color = yellow>for(i=0; i &lt dwNumMaterials; i++){</Font>
+        <Font color = cyan>//色をセット</Font>
+        <Font color = yellow>D3DXVECTOR4 c(pMeshMaterials[i].Diffuse.r,
+                      pMeshMaterials[i].Diffuse.g,
+                      pMeshMaterials[i].Diffuse.b,
+                      1.0f);
+        FLOAT const kBlurAlpha = 0.0f;
+
+        lpD3DDev->SetVertexShaderConstant( 1, &c,  1 );  </Font><Font color = cyan>// メッシュの色</Font>
+        <Font color = yellow>c[3] = kBlurAlpha;
+        lpD3DDev->SetVertexShaderConstant( 2, &c,  1 );  </Font><Font color = cyan>// ブラーしたメッシュの色</Font>
+
+        <Font color = yellow>lpD3DDev->SetTexture(0, pMeshTextures[i]);
+        lpD3DDev->DrawIndexedPrimitive(D3DPT_TRIANGLELIST, 
+                                        pSubsetTable[i].VertexStart,
+                                        pSubsetTable[i].VertexCount,
+                                        pSubsetTable[i].FaceStart * 3,
+                                        pSubsetTable[i].FaceCount);
+    }</Font>
+    
+    <Font color = cyan>//メッシュの描画(2パス目：通常描画)</Font>
+    <Font color = orange>set_transform(0,lpD3DDev, mWorld, mView, mProj);
+    lpD3DDev->SetRenderState( D3DRS_ZWRITEENABLE, TRUE );    </Font><Font color = cyan>// 深度バッファへ書き込む</Font>
+    <Font color = orange>for(i=0; i &lt dwNumMaterials;i++){</Font>
+        <Font color = cyan>//色をセット</Font>
+        <Font color = orange>D3DXVECTOR4 c(pMeshMaterials[i].Diffuse.r,
+                      pMeshMaterials[i].Diffuse.g,
+                      pMeshMaterials[i].Diffuse.b,
+                      1.0f);
+        lpD3DDev->SetVertexShaderConstant( 1, &c,  1 );  </Font><Font color = cyan>// メッシュの色</Font>
+        <Font color = orange>lpD3DDev->SetVertexShaderConstant( 2, &c,  1 );  </Font><Font color = cyan>// ブラーしたメッシュの色</Font>
+
+        <Font color = orange>lpD3DDev->SetTexture(0, pMeshTextures[i]);
+        lpD3DDev->DrawIndexedPrimitive(D3DPT_TRIANGLELIST, 
+                                        pSubsetTable[i].VertexStart,
+                                        pSubsetTable[i].VertexCount,
+                                        pSubsetTable[i].FaceStart * 3,
+                                        pSubsetTable[i].FaceCount);
+    }</Font>
+    
+    Sleep(100); <Font color = cyan>// 残像が残るための時間を確保します</Font>
+}
+</pre>
+
+<p>
+2回の描画部分を色分けしています。<br>
+set_transform で行列を設定していますが、これは後で。<br>
+Z バッファの書き込みを切り替えてから、いつもの様に描画します。<br>
+今回は色を設定するレジスタが２つあります。ブラーに使う色はα成分を０にしています。<br>
+頂点シェーダーで減衰しているので、必要なかったりもしますが、色が切れて消えるのがいやだったので、α成分で制御するようにもしました。
+</p>
+<p>
+一度描画した後（十分に尾が伸びる時間を待つため）、0.1 秒ほど待っています。
+</p>
+
+<p>
+通常描画部分ですが、同じ頂点シェーダープログラムを使っています。<br>
+違いは前のフレームの頂点を使うところで、現在の頂点を使うようにします。また、色も現在の色と前の色も同じにして、普通のレンダリングを実現します。<br>
+違いは set_transform で吸収しています。
+</p>
+
+<pre class="CodeBlock">
+static set_transform(bool bWithBlur, LPDIRECT3DDEVICE8 lpD3DDev, D3DXMATRIX mWorld, D3DXMATRIX mView, D3DXMATRIX mProj)
+{
+    D3DXMATRIX m, mWV, mWV_IT;
+    static D3DXMATRIX mLastWV;
+
+    D3DXMatrixMultiply(&mWV,   &mWorld, &mView);
+    D3DXMatrixInverse( &mWV_IT, NULL, &mWV);
+    
+    <Font color = cyan>// 射影行列</Font>
+    D3DXMatrixTranspose(&m, &mProj);
+    lpD3DDev->SetVertexShaderConstant(4, &m, 4);
+
+    <Font color = cyan>// ビュー行列</Font>
+    D3DXMatrixTranspose(&mWV, &mWV);
+    lpD3DDev->SetVertexShaderConstant(8, &mWV, 3);
+    if (bWithBlur){
+        <Font color = yellow>lpD3DDev->SetVertexShaderConstant(12, &mLastWV, 3);
+        mLastWV = mWV;</Font>
+    }else{
+        <Font color = cyan>// ブラーしないときは、現在のマトリックスを過去のものとして使用</Font>
+        <Font color = orange>lpD3DDev->SetVertexShaderConstant(12, &mWV, 3);</Font>
+    }
+
+    <Font color = cyan>// ビュー行列 の逆転置行列</Font>
+    lpD3DDev->SetVertexShaderConstant(16, &mWV_IT, 3);
+
+    return S_OK;
+}</pre>
+
+<p>
+set_transform では、最初の引数 bWithBlur でブラーの描画か通常の描画かを判定しています。<br>
+ブラーがかかる場合には、前回の行列を保存する静的変数 mLastWV に今回の行列を保存します。<br>
+あとは、必要な行列を設定します。
+</p>
+
+<h2>■最後に</h2>
+
+<p>
+今回は、頂点の引き伸ばしによるモーションブラーの表現をしました。<br>
+頂点をいじる演出は少ないですね（後は、輪郭抽出しか浮かびません）。ひょっとしてまだ発見されていない面白いエフェクトがあるかも。
+</p>
+
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<center>
+<p><a href="../index.html">もどる</a></p>
+<p><a href="mailto:imagire@gmail.com">imagire@gmail.com</a></p>
+</center>
+</body>
+</html>

@@ -1,0 +1,186 @@
+<head>
+	<title>t-pot『粘土ライティング』</title>
+	<link rel="stylesheet" type="text/css" href="../if.css">
+</head>
+<meta http-equiv=Content-Type content="text/html; charset=shift_jis">
+<body>
+
+
+<div class="contents">
+<center>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<h1>粘土ライティング</h1><br>
+<h3>～ Oren-Nayer Lighting ～</h3>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<image src = "title.png">
+<br>
+<hr>
+<br>
+<p>
+下の画像をクリックすると、通常のランバート照明からOren-Nayer照明の効果が次第に強くなるアニメーションが見られます。<br>
+<a href="anim.gif"><image src = "title.png" width = "10%" height = "10%"></a>
+</p>
+<hr>
+</center>
+<div>
+
+
+<h2>■はじめに</h2>
+
+
+<p>
+今回は、粘土やコンクリート、漆喰に適したライティングである、Oren-Nayar 照明モデルを扱います。<br>
+今回は、<a href="http://www.dimension3.host.sk/" target = "top">Michal Valient</a>さんのサイトが元になっています(ShaderX2でも発表されるようです)。
+</p>
+<ul style = "LIST-STYLE-TYPE:none">
+<li><a href="src.zip">src.zip (粘土ライティング:DirectX9)</a>
+</ul>
+
+<p>
+まぁ、いつものように適当にファイルが入っています。<br>
+APP WIZARD から出力されるフレームワークのファイルは紹介を省かせていただきます。
+</p>
+<table>
+<tr><td><a href="hlsl_fx.html">hlsl.fx</a></td><td>シェーダの入ったエフェクトファイル</td></tr>
+<tr><td><a href="main_h.html">main.h</a></td><td>アプリケーションのヘッダ</td></tr>
+<tr><td><a href="main_cpp.html">main.cpp</a></td><td>アプリケーションのソース</td></tr>
+</table>
+
+<p>
+あと、実行ファイル、モデル及び、プロジェクトファイルが入っています。
+</p>
+
+
+<h2>■Oren-Nayar 照明モデルとは</h2>
+
+
+<p>
+Oren-Nayar 照明モデルとは、1992年に <a href="http://www.cs.columbia.edu/~oren/">Michael Oren</a> と <a href="http://www.cs.columbia.edu/~nayar/">Shree K. Nayar </a>によって、提唱されたモデルで、1994年のSIGGRAPHで、「Generalization of Lambert's Reflectance Model」の題目で詳細な解説が行われています。<br>
+Oren-Nayar 照明モデルは、論文中では、O-N modelと書かれていましたが、王-長島と間違われるのを避けるため<font size=1>では絶対にないでしょうけど</font>Oren-Nayar 拡散照明モデルと呼ばれることが多いです。
+</p>
+<p>
+Oren-Nayar 照明モデルは、ランバート拡散を一般化したモデルです。<br>
+ランバート拡散は、つるつるなプラスチックを表現するのによいといわれていますが、
+Oren と Nayar は、ざらざらした表面にふさわしい照明モデルを提唱しました。<br>
+Oren-Nayar 照明モデルは、Cook-Trrance 金属照明モデルのように、表面を仮想的に細かく見たときのマイクロファセットを導入し、拡散照明を拡張しました。<br>
+Oren-Nayar 照明モデルは、視線に依存する拡散光のモデルです。
+表面に凸凹があるとすると、視線方向とライトの向きが近いと、明るい部分が多く目に入ってきますが、視線とライトの向きが離れていると、暗い部分が多く目に入るようになります。
+</p>
+<image src = "how2.png">
+<p>
+このようなマイクロファセットの向きによる光の照射量や、自己遮蔽、自己反射の効果が含まれています。<br>
+Oren と Nayar は、具体的な例として、
+マイクロファセットの向きが法線の向きとガウス分布の割合で離れている場合の計算をしました（その例の前に、一般論も展開されています）。<br>
+結果だけを書くと、
+</p>
+<pre class="CodeBlock">
+I = cos(N・L)*(A + B * max(0,cos(ae-al))*sin(M1)*tan(M2) )
+
+    A = 1 - 0.5*(D<sup>2</sup> / (D<sup>2</sup> + 0.33))
+    B = 0.45*(D<sup>2</sup> / (D<sup>2</sup> + 0.09))
+    cos(ae-al) = Noramlize(E - (N・E)N)・Noramlize(L - (N・L)N)
+    cos(M1) = max(N・L, N・E)
+    cos(M2) = min(N・L, N・E)
+</pre>
+
+<p>
+になります。<br>
+D は、マイクロファセットの分布の分散で、D=0のつるつるな表面の時には、A=1,B=0になって、ランバート拡散モデルと一致します。<br>
+ae-alは、法線と垂直な平面へ射影したライトベクトルと視線ベクトルなす角度です。<br>
+図で示すと、次のような各項の計算をしています。
+</p>
+<image src = "terms.png">
+
+
+<h2>■プログラム</h2>
+
+
+<p>
+では、プログラムを見ていきましょう。<br>
+今回は、ピクセルシェーダでほとんど済んでしまいます。<br>
+ピクセルシェーダには、ライトベクトル In.Light、法線ベクトル In.Normal および、視線ベクトル In.Eyeを入力します。
+</p>
+<p>
+最初にsin(M1)tan(M2)の計算をします。<br>
+この計算には、テクスチャによる参照をします。UV値に、N・L、N・E をいれて、テクスチャを使って計算をします（実際には、視線からの輪郭部分で誤差によるノイズが出てしまうので、視線の輪郭部分で負の値を防ぐために０クランプしています）。
+</p>
+<pre class="CodeBlock">
+hlsl.fx
+<font color="deepskyblue">0069:</font> <font color="cyan">// -------------------------------------------------------------</font>
+<font color="deepskyblue">0070:</font> <font color="cyan">// ピクセルシェーダ</font>
+<font color="deepskyblue">0071:</font> <font color="cyan">// -------------------------------------------------------------</font>
+<font color="deepskyblue">0072:</font> float4 PS(VS_OUTPUT In) : COLOR
+<font color="deepskyblue">0073:</font> {
+<font color="deepskyblue">0074:</font>     float4 Out = 0;
+<font color="deepskyblue">0075:</font>     
+<font color="deepskyblue">0076:</font>     float3 l = normalize(In.Light);
+<font color="deepskyblue">0077:</font>     float3 n = normalize(In.Normal);
+<font color="deepskyblue">0078:</font>     float3 e = normalize(In.Eye);
+<font color="deepskyblue">0079:</font>     
+<font color="deepskyblue">0080:</font>     float2 tcoord = {dot(l,n), max(0,dot(e,n))};
+<font color="deepskyblue">0081:</font>     <font color="blue">float</font> sintan = tex2D( SinTanSamp, 0.5f * tcoord + 0.5f ).x;
+<font color="deepskyblue">0082:</font>     
+<font color="deepskyblue">0083:</font>     float3 al = normalize(l-dot(l,n)*n);
+<font color="deepskyblue">0084:</font>     float3 ae = normalize(e-dot(e,n)*n);
+<font color="deepskyblue">0085:</font>     <font color="blue">float</font> C = max(0, dot(al,ae));
+<font color="deepskyblue">0086:</font> 
+<font color="deepskyblue">0087:</font>     Out = dot(l,n) * (A + B * C * sintan);
+<font color="deepskyblue">0088:</font>     
+<font color="deepskyblue">0091:</font>     <font color="blue">return</font> Out;
+<font color="deepskyblue">0092:</font> }
+</pre>
+<p>
+テクスチャには、次のような、sin(M1)tan(M2)を計算したテクスチャを使います。
+</p>
+<image src = "tex.jpg">
+<p>
+このテクスチャは、R16Fフォーマットのテクスチャで、
+実際には、左上の部分は値が負です。色が真っ赤な部分は、絶対値が大きい負の部分になります。<br>
+このテクスチャは、D3DXFillTexture を使って算術的に求められています。
+テクスチャを求める関数は、次のようになります。
+</p>
+
+<pre class="CodeBlock">
+main.cpp
+<font color="deepskyblue">0078:</font> <font color="cyan">//-------------------------------------------------------------</font>
+<font color="deepskyblue">0079:</font> <font color="cyan">// Name: SinTan()</font>
+<font color="deepskyblue">0080:</font> <font color="cyan">// Desc: sinAtanB テクスチャの作成</font>
+<font color="deepskyblue">0081:</font> <font color="cyan">//-------------------------------------------------------------</font>
+<font color="deepskyblue">0082:</font> VOID WINAPI SinTan (D3DXVECTOR4* pOut, CONST D3DXVECTOR2* pTexCoord, 
+<font color="deepskyblue">0083:</font> CONST D3DXVECTOR2* pTexelSize, LPVOID pData)
+<font color="deepskyblue">0084:</font> {
+<font color="deepskyblue">0085:</font>     FLOAT x = pTexCoord-&gt;x;
+<font color="deepskyblue">0086:</font>     FLOAT y = pTexCoord-&gt;y;
+<font color="deepskyblue">0087:</font>     FLOAT min = 2.0f*((x&lt;y)?x:y)-1.0f;
+<font color="deepskyblue">0088:</font>     FLOAT max = 2.0f*((x&lt;y)?y:x)-1.0f;
+<font color="deepskyblue">0089:</font>     pOut-&gt;x = sinf( acosf(min) ) * tanf( acosf(max) );
+<font color="deepskyblue">0090:</font> }
+</pre>
+<p>
+ピクセルシェーダの残りの部分は、計算式どおりに求めます。
+</p>
+
+<h2>■最後に</h2>
+
+
+<p>
+開発の鉄人では、「Lambertモデルに比べて計算が著しく重いが、
+見栄えはそれほど良くはならない」書かれてしまった Oren-Nayer ディフューズモデルですが、
+思ったよりも重くはなさそうですし、使っていっていい気がします。
+</p>
+
+</div>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<center>
+<hr>
+<p><a href="../index.html">もどる</a></p>
+<p><a href="mailto:imagire@gmail.com">imagire@gmail.com</a></p>
+</center>
+
+</body>
+</html>

@@ -1,0 +1,231 @@
+<head>
+	<title>t-pot『ジュリア集合』</title>
+	<link rel="stylesheet" type="text/css" href="../if.css">
+</head>
+<meta http-equiv=Content-Type content="text/html; charset=shift_jis">
+<body text=#ffffff>
+
+
+<div class="contents">
+<center>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<h1>ジュリア集合</h1><br>
+<h3>～なんとなくフラクタル～</h3>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+</center>
+
+
+<h2>■はじめに</h2>
+
+
+<p>
+ジュリア集合は、フラクタルの一つで、フランスの数学者ジュリアによって、１９１８年に発表された集合です。<br>
+フラクタルは、いたるところで微分不可能で、自己相似な曲線です
+（ハウスドルフ次元や位相次元から、集合がフラクタルかどうか検証されますが、ここでは、そんな難しいことはパスします）。<br>
+まぁ、ピクセルシェーダのテクスチャアドレッシング命令が使いたかっただけです。
+</p>
+<image src = "title.png">
+<p>
+<ul style = "LIST-STYLE-TYPE:none">
+<li><a href="fractal.lzh">fractal.lzh (ジュリア集合のサンプル:DirectX8.1)</a>
+</ul>
+
+<p>
+まぁ、いつものように適当にファイルが入っています。<br>
+</p>
+<table>
+<tr><td><a href="vs_vsh.html">vs.vsh</a></td><td>頂点シェーダー。</td></tr>
+<tr><td><a href="ps_psh.html">ps.psh</a></td><td>ピクセルシェーダー。</td></tr>
+<tr><td><a href="draw_cpp.html">draw.cpp</a></td><td>メインの描画部分。</td></tr>
+<tr><td><a href="draw_h.html">draw.h</a></td><td>描画の各関数の定義。</td></tr>
+<tr><td><a href="main_h.html">main.h</a></td><td>基本的な定数など。今回も出番無し。</td></tr>
+<tr><td><a href="main_cpp.html">main.cpp</a></td><td>描画に関係しないシステム的な部分。変更が無いので、出番無し。</td></tr>
+<tr><td><a href="load_cpp.html">load.cpp</a></td><td>ロード。</td></tr>
+<tr><td><a href="load_h.html">load.h</a></td><td>ロードのインターフェイス。</td></tr>
+</table>
+<p>
+あと、実行ファイル及び、プロジェクトファイルが入っています。
+</p>
+
+
+<h2>■やってること</h2>
+
+
+<p>
+ジュリア集合をもう少し詳しく解説すると、適当な複素数 A を固定して、複素平面の一点Z<sub>0</sub>から
+</p>
+<pre class="CodeBlock">
+Z<sub>n+1</sub> = Z<sub>n</sub> * Z<sub>n</sub> + A
+</pre>
+<p>
+の計算をはじめた時に、Z<sub>∞</sub>が発散する部分と発散しない部分の境界のことです。<br>
+複素平面は２次元の実平面と同じなので、テクスチャーの中心を原点としたテクスチャー座標でジュリア集合を表現します。
+</p>
+<p>
+実２次元平面の変換の式は、
+</p>
+<pre class="CodeBlock">
+Z<sub>n+1</sub> = Z<sub>n</sub> * Z<sub>n</sub> + A
+   = (X<sub>n</sub> + iY<sub>n</sub>) * (X<sub>n</sub> + iY<sub>n</sub>) + (A<sub>r</sub> + iA<sub>i</sub>)
+   = X<sub>n</sub> * X<sub>n</sub> - Y<sub>n</sub> * Y<sub>n</sub> + A<sub>r</sub> + i(2 X<sub>n</sub> * Y<sub>n</sub> + A<sub>i</sub>)
+</pre>
+<p>
+から、
+</p>
+<pre class="CodeBlock">
+X<sub>n+1</sub> = X<sub>n</sub> * X<sub>n</sub> - Y<sub>n</sub> * Y<sub>n</sub> + A<sub>r</sub>
+Y<sub>n+1</sub> = 2 X<sub>n</sub> * Y<sub>n</sub> + A<sub>i</sub>
+</pre>
+<p>
+に、なります。
+</p>
+
+
+<h2>■テクスチャアドレッシング命令</h2>
+
+<p>
+座標の変換はピクセル単位に行います。<br>
+そのために、今まで使ってこなかったピクセルシェーダのテクスチャアドレッシング命令を使います。<br>
+いままで、テクスチャーの読み込みに
+</p>
+<pre class="CodeBlock">
+tex t0
+</pre>
+<p>
+を使ってきました。<br>
+この命令は、実際には、「t0 に設定されているoT0のテクスチャー座標を使って、
+各ステージにセットされているテクスチャから色を引っ張り、t0 にその色を入れる」 作業をします。<br>
+tex 命令以外にもテクスチャアドレッシング命令は存在します。<br>
+今回使うのは、texreg2gb です。
+</p>
+<pre class="CodeBlock">
+texreg2gb t1, t0
+</pre>
+<p>
+あらかじめt0に(tex命令などを使って)テクスチャーをロードします。<br>
+texreg2gb は、t0の色ベクトルの緑成分と青成分で指定される 2次元ベクトルをテクスチャー座標として、
+次のステージのテクスチャを読み込みます。<br>
+つまり、(x0,y0)から、(x1,y1)へ変換するテーブルをテクスチャーの緑と青色の成分に入れておいて、
+テクスチャー座標を色として変換してから読みたい（前のフレームの）テクスチャー画像を読み込めば、
+非線形なテクスチャーのロードが実現します。
+</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h2>■テクスチャーの作成</h2>
+
+
+<p>
+この変換は、テクスチャーに保存します。<br>
+テクスチャーの緑色（ｙ）にX<sub>n</sub>の変換、青色（ｚ）にY<sub>n</sub>の変換を代入します。<br>
+算術的に変換のテクスチャーを作成すると、次のようになります。
+</p>
+<pre class="CodeBlock">
+draw.cpp
+<font color = deepskyblue>0134:</font> <font color = cyan>//-----------------------------------------------------------------------------</font>
+<font color = deepskyblue>0135:</font> <font color = cyan>// Name: MakeTexture()</font>
+<font color = deepskyblue>0136:</font> <font color = cyan>// Desc: 座標変換マップ</font>
+<font color = deepskyblue>0137:</font> <font color = cyan>//-----------------------------------------------------------------------------</font>
+<font color = deepskyblue>0138:</font> VOID MakeTexture(D3DXVECTOR4* pOut, D3DXVECTOR2 *pTexCoord, D3DXVECTOR2 *pTexelSize, LPVOID pData)
+<font color = deepskyblue>0139:</font> {
+<font color = deepskyblue>0140:</font>     float x = 2*pTexCoord->x-1;
+<font color = deepskyblue>0141:</font>     float y = 2*pTexCoord->y-1;
+<font color = deepskyblue>0142:</font>     float Ar = 0.378f;
+<font color = deepskyblue>0143:</font>     float Ai = 0.183f;
+<font color = deepskyblue>0144:</font>     
+<font color = deepskyblue>0145:</font>     float x1 = x*x-y*y+Ar;
+<font color = deepskyblue>0146:</font>     float y1 = 2*x*y+Ai;
+<font color = deepskyblue>0147:</font>     
+<font color = deepskyblue>0148:</font>     min(1,max(x1,0));
+<font color = deepskyblue>0149:</font>     min(1,max(y1,0));
+<font color = deepskyblue>0150:</font> 
+<font color = deepskyblue>0151:</font>     pOut->x = 0.0f;
+<font color = deepskyblue>0152:</font>     pOut->y = 0.5f*x1+0.5f;
+<font color = deepskyblue>0153:</font>     pOut->z = 0.5f*y1+0.5;
+<font color = deepskyblue>0154:</font>     pOut->w = 1.0f;
+<font color = deepskyblue>0155:</font> }
+</pre>
+<p>
+定数Aは、A = 0.378 + 0.183 iを採用しました。<br>
+この関数で作成したテクスチャーは、
+</p>
+<image src = "conv.png">
+<p>
+になります（このテクスチャーはタイトルの初期値としても使っています）。
+</p>
+<p>
+このテクスチャーを使って変換することにより次の画像を作成し、
+さらに次のテクスチャーは前のフレームの画像を変換して作ります。<br>
+この作業を続けると、ジュリア集合の境界を境に色が異なるので、フラクタルの模様が浮かび上がります。
+</p>
+<image src = "how.png">
+<p>
+上の図では最初の画像を変化させて、変換したものです。<br>
+本当は、はみ出た部分からも色を引っ張る必要があるのですが、それはできないので、
+その分が誤差となって、完全に綺麗な模様ではなくなっています。
+</p>
+
+
+<h2>■ピクセルシェーダー</h2>
+
+
+<p>
+実際のピクセルシェーダープログラムは次のようになります。<br>
+</p>
+
+<pre class="CodeBlock">
+ps.psh
+<font color = deepskyblue>0001:</font> ps.1.1
+<font color = deepskyblue>0002:</font> 
+<font color = deepskyblue>0003:</font> <font color = cyan>; テクスチャーの色を引っ張ってくる</font>
+<font color = deepskyblue>0004:</font> tex t0
+<font color = deepskyblue>0005:</font> texreg2gb t1, t0    <font color = cyan>; t0 の(緑,青)をテクスチャー座標とみなして</font>
+<font color = deepskyblue>0006:</font>                     <font color = cyan>; t1のテクスチャーから色を引っ張ってくる</font>
+<font color = deepskyblue>0007:</font> mov r0, t1
+</pre>
+
+<p>
+１つめのテクスチャーに変換のためのテクスチャーを入れて、
+一行目で UV値から次のテクスチャーを参照するベクトル（色の緑、青成分）を読み取ります。<br>
+次に texreg2gb 命令で、t0 に入ったテクスチャー座標を使って前のフレームの画像のテクスチャーのピクセルをt1に読み込みます。<br>
+あとは、拾ったテクスチャーの色を出力にそのまま出力します。
+</p>
+<p>
+これ以外のソースの部分は、レンダリングターゲットになるテクスチャーを毎フレーム切り替えて、
+一つ前のフレームの結果を変換元のテクスチャーに使用しています。
+</p>
+
+
+<h2>■最後に</h2>
+
+
+<p>
+非自明なテクスチャアドレッシング命令を作りたかっただけです。<br>
+作ってから言うのもなんですが、動的フラクタルは使いどころがあるんでしょうか？
+</p>
+
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<center>
+<p><a href="../index.html">もどる</a></p>
+<p><a href="mailto:imagire@gmail.com">imagire@gmail.com</a></p>
+</center>
+
+</body>
+</html>

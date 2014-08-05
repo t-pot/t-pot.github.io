@@ -1,0 +1,397 @@
+<HTML>
+<HEAD>
+<TITLE>draw.cpp</TITLE>
+<meta name="GENERATOR" content="cpp2html 2.1 by Niisaka">
+<meta http-equiv="Content-Type" content="text/html">
+<meta http-equiv="Content-Style-Type" content="text/css">
+<STYLE TYPE="text/css">
+<!--
+SPAN.comment { color:#008000; font-weight:normal; font-style:normal;}
+SPAN.keyword { color:#0000FF; font-weight:normal; font-style:normal;}
+SPAN.string { color:#600000; font-weight:normal; font-style:normal;}
+SPAN.linenum { color:#A0A0A0; font-weight:normal; font-style:normal;}
+-->
+</STYLE>
+</HEAD>
+<BODY TEXT="#000000" BGCOLOR="#FFFFFF">
+<PRE><SPAN CLASS="linenum">0001:</SPAN> <SPAN CLASS="comment">// ----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0002:</SPAN> <SPAN CLASS="comment">//</SPAN>
+<SPAN CLASS="linenum">0003:</SPAN> <SPAN CLASS="comment">// draw.cpp - 描画部分</SPAN>
+<SPAN CLASS="linenum">0004:</SPAN> <SPAN CLASS="comment">// </SPAN>
+<SPAN CLASS="linenum">0005:</SPAN> <SPAN CLASS="comment">// Copyright (c) 2001 imagire takashi (imagire@gmail.com)</SPAN>
+<SPAN CLASS="linenum">0006:</SPAN> <SPAN CLASS="comment">// All Rights Reserved.</SPAN>
+<SPAN CLASS="linenum">0007:</SPAN> <SPAN CLASS="comment">//</SPAN>
+<SPAN CLASS="linenum">0008:</SPAN> <SPAN CLASS="comment">// ----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0009:</SPAN> <SPAN CLASS="keyword">#define</SPAN> STRICT
+<SPAN CLASS="linenum">0010:</SPAN> 
+<SPAN CLASS="linenum">0011:</SPAN> <SPAN CLASS="keyword">#include</SPAN> &lt;windows.h&gt;
+<SPAN CLASS="linenum">0012:</SPAN> <SPAN CLASS="keyword">#include</SPAN> "<SPAN CLASS="string">main.h</SPAN>"
+<SPAN CLASS="linenum">0013:</SPAN> <SPAN CLASS="keyword">#include</SPAN> "<SPAN CLASS="string">draw.h</SPAN>"
+<SPAN CLASS="linenum">0014:</SPAN> <SPAN CLASS="keyword">#include</SPAN> "<SPAN CLASS="string">load.h</SPAN>"
+<SPAN CLASS="linenum">0015:</SPAN> 
+<SPAN CLASS="linenum">0016:</SPAN> 
+<SPAN CLASS="linenum">0017:</SPAN> 
+<SPAN CLASS="linenum">0018:</SPAN> <SPAN CLASS="comment">// ぼかした絵を作るためのオブジェクト</SPAN>
+<SPAN CLASS="linenum">0019:</SPAN> LPDIRECT3DSURFACE8      pBackbuffer = NULL;
+<SPAN CLASS="linenum">0020:</SPAN> LPDIRECT3DTEXTURE8      pRenderTexture[2] = {NULL,NULL};
+<SPAN CLASS="linenum">0021:</SPAN> LPDIRECT3DSURFACE8      pRenderSurface[2] = {NULL,NULL};
+<SPAN CLASS="linenum">0022:</SPAN> 
+<SPAN CLASS="linenum">0023:</SPAN> <SPAN CLASS="comment">// ----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0024:</SPAN> <SPAN CLASS="comment">// 点を打つ</SPAN>
+<SPAN CLASS="linenum">0025:</SPAN> <SPAN CLASS="comment">// ----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0026:</SPAN> LPDIRECT3DTEXTURE8      pDropTexture = NULL;        <SPAN CLASS="comment">// 点用テクスチャー</SPAN>
+<SPAN CLASS="linenum">0027:</SPAN> LPDIRECT3DVERTEXBUFFER8 pDropVB = NULL;
+<SPAN CLASS="linenum">0028:</SPAN> 
+<SPAN CLASS="linenum">0029:</SPAN> <SPAN CLASS="keyword">typedef</SPAN> <SPAN CLASS="keyword">struct</SPAN> {
+<SPAN CLASS="linenum">0030:</SPAN>     <SPAN CLASS="keyword">float</SPAN> x, y, z, rhw;
+<SPAN CLASS="linenum">0031:</SPAN>     <SPAN CLASS="keyword">float</SPAN> tu,tv;
+<SPAN CLASS="linenum">0032:</SPAN> }D3D_DROP_VERTEX;
+<SPAN CLASS="linenum">0033:</SPAN> <SPAN CLASS="keyword">#define</SPAN> D3DFVF_DROP_VERTEX      (D3DFVF_XYZRHW  | D3DFVF_TEX1)
+<SPAN CLASS="linenum">0034:</SPAN> 
+<SPAN CLASS="linenum">0035:</SPAN> DWORD dwDropDecl[] = {
+<SPAN CLASS="linenum">0036:</SPAN>     D3DVSD_STREAM(0),
+<SPAN CLASS="linenum">0037:</SPAN>     D3DVSD_REG(D3DVSDE_POSITION, D3DVSDT_FLOAT3 ),          <SPAN CLASS="comment">//D3DVSDE_POSITION,  0</SPAN>
+<SPAN CLASS="linenum">0038:</SPAN>     D3DVSD_REG(D3DVSDE_TEXCOORD0,D3DVSDT_FLOAT2 ),          <SPAN CLASS="comment">//D3DVSDE_TEXCOORD0, 7  </SPAN>
+<SPAN CLASS="linenum">0039:</SPAN>     D3DVSD_END()
+<SPAN CLASS="linenum">0040:</SPAN> };
+<SPAN CLASS="linenum">0041:</SPAN> 
+<SPAN CLASS="linenum">0042:</SPAN> <SPAN CLASS="comment">// ----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0043:</SPAN> <SPAN CLASS="comment">// 初期化</SPAN>
+<SPAN CLASS="linenum">0044:</SPAN> HRESULT InitDrop(LPDIRECT3DDEVICE8 lpD3DDev)
+<SPAN CLASS="linenum">0045:</SPAN> {
+<SPAN CLASS="linenum">0046:</SPAN>     HRESULT hr = S_OK;
+<SPAN CLASS="linenum">0047:</SPAN> 
+<SPAN CLASS="linenum">0048:</SPAN>     <SPAN CLASS="comment">// 頂点バッファの作成 </SPAN>
+<SPAN CLASS="linenum">0049:</SPAN>     D3D_DROP_VERTEX vertices[] = {
+<SPAN CLASS="linenum">0050:</SPAN>         <SPAN CLASS="comment">//     x,      y,    z,  rhw,  tu  tv</SPAN>
+<SPAN CLASS="linenum">0051:</SPAN>         { 100.0f, 100.0f, 0.5f, 1.0f, 0.0f,0.0f,},
+<SPAN CLASS="linenum">0052:</SPAN>         { 420.0f, 100.0f, 0.5f, 1.0f, 1.0f,0.0f,},
+<SPAN CLASS="linenum">0053:</SPAN>         { 100.0f, 340.0f, 0.5f, 1.0f, 0.0f,1.0f,},
+<SPAN CLASS="linenum">0054:</SPAN>         { 420.0f, 340.0f, 0.5f, 1.0f, 1.0f,1.0f,},
+<SPAN CLASS="linenum">0055:</SPAN>     };
+<SPAN CLASS="linenum">0056:</SPAN>     
+<SPAN CLASS="linenum">0057:</SPAN>     hr = lpD3DDev-&gt;CreateVertexBuffer( 4*<SPAN CLASS="keyword">sizeof</SPAN>(D3D_DROP_VERTEX),0,
+<SPAN CLASS="linenum">0058:</SPAN>                     D3DFVF_DROP_VERTEX, D3DPOOL_DEFAULT, &amp;pDropVB);
+<SPAN CLASS="linenum">0059:</SPAN>     <SPAN CLASS="keyword">if</SPAN>(FAILED(hr)) <SPAN CLASS="keyword">return</SPAN> E_FAIL;
+<SPAN CLASS="linenum">0060:</SPAN> 
+<SPAN CLASS="linenum">0061:</SPAN>     VOID* pVertices;
+<SPAN CLASS="linenum">0062:</SPAN>     hr = pDropVB-&gt;Lock( 0, <SPAN CLASS="keyword">sizeof</SPAN>(vertices), (BYTE**)&amp;pVertices, 0);
+<SPAN CLASS="linenum">0063:</SPAN>     <SPAN CLASS="keyword">if</SPAN>(FAILED(hr)) <SPAN CLASS="keyword">return</SPAN> E_FAIL;
+<SPAN CLASS="linenum">0064:</SPAN>     memcpy( pVertices, vertices, <SPAN CLASS="keyword">sizeof</SPAN>(vertices) );
+<SPAN CLASS="linenum">0065:</SPAN>     pDropVB-&gt;Unlock();
+<SPAN CLASS="linenum">0066:</SPAN> 
+<SPAN CLASS="linenum">0067:</SPAN>     <SPAN CLASS="comment">// マスク用テクスチャーの読み込み</SPAN>
+<SPAN CLASS="linenum">0068:</SPAN>     <SPAN CLASS="keyword">if</SPAN> ( FAILED(hr = CTextureMgr::Load(lpD3DDev, "<SPAN CLASS="string">mask.bmp</SPAN>",     &amp;pDropTexture)) ) <SPAN CLASS="keyword">return</SPAN> hr;
+<SPAN CLASS="linenum">0069:</SPAN>     
+<SPAN CLASS="linenum">0070:</SPAN>     <SPAN CLASS="keyword">return</SPAN> hr;
+<SPAN CLASS="linenum">0071:</SPAN> }
+<SPAN CLASS="linenum">0072:</SPAN> <SPAN CLASS="comment">// ----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0073:</SPAN> <SPAN CLASS="comment">// リクエスト</SPAN>
+<SPAN CLASS="linenum">0074:</SPAN> <SPAN CLASS="keyword">static</SPAN> <SPAN CLASS="keyword">float</SPAN> drop_x=0;
+<SPAN CLASS="linenum">0075:</SPAN> <SPAN CLASS="keyword">static</SPAN> <SPAN CLASS="keyword">float</SPAN> drop_y=0;
+<SPAN CLASS="linenum">0076:</SPAN> <SPAN CLASS="keyword">static</SPAN> <SPAN CLASS="keyword">int</SPAN> drop = 0;
+<SPAN CLASS="linenum">0077:</SPAN> <SPAN CLASS="comment">// ----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0078:</SPAN> <SPAN CLASS="keyword">void</SPAN> SetDrop(<SPAN CLASS="keyword">float</SPAN> x , <SPAN CLASS="keyword">float</SPAN> y)
+<SPAN CLASS="linenum">0079:</SPAN> {
+<SPAN CLASS="linenum">0080:</SPAN>     drop = 100;
+<SPAN CLASS="linenum">0081:</SPAN>     drop_x = x;
+<SPAN CLASS="linenum">0082:</SPAN>     drop_y = y;
+<SPAN CLASS="linenum">0083:</SPAN> }
+<SPAN CLASS="linenum">0084:</SPAN> <SPAN CLASS="comment">// ----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0085:</SPAN> <SPAN CLASS="keyword">void</SPAN> ResetDrop()
+<SPAN CLASS="linenum">0086:</SPAN> {
+<SPAN CLASS="linenum">0087:</SPAN>     drop = 0;
+<SPAN CLASS="linenum">0088:</SPAN> }
+<SPAN CLASS="linenum">0089:</SPAN> <SPAN CLASS="comment">// ----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0090:</SPAN> <SPAN CLASS="keyword">int</SPAN> IsDrop()
+<SPAN CLASS="linenum">0091:</SPAN> {
+<SPAN CLASS="linenum">0092:</SPAN>     <SPAN CLASS="keyword">return</SPAN> drop;
+<SPAN CLASS="linenum">0093:</SPAN> }
+<SPAN CLASS="linenum">0094:</SPAN> <SPAN CLASS="comment">// ----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0095:</SPAN> <SPAN CLASS="comment">// 描画</SPAN>
+<SPAN CLASS="linenum">0096:</SPAN> <SPAN CLASS="keyword">void</SPAN> RenderDrop(LPDIRECT3DDEVICE8 lpD3DDev)
+<SPAN CLASS="linenum">0097:</SPAN> {
+<SPAN CLASS="linenum">0098:</SPAN>     <SPAN CLASS="keyword">if</SPAN>(drop){
+<SPAN CLASS="linenum">0099:</SPAN> <SPAN CLASS="comment">//      drop--;</SPAN>
+<SPAN CLASS="linenum">0100:</SPAN> 
+<SPAN CLASS="linenum">0101:</SPAN>         D3D_DROP_VERTEX *p;
+<SPAN CLASS="linenum">0102:</SPAN>         pDropVB-&gt;Lock( 0, 4*<SPAN CLASS="keyword">sizeof</SPAN>(D3D_DROP_VERTEX), (BYTE**)&amp;p, 0);
+<SPAN CLASS="linenum">0103:</SPAN>         <SPAN CLASS="keyword">const</SPAN> <SPAN CLASS="keyword">float</SPAN> r = 8.0f;
+<SPAN CLASS="linenum">0104:</SPAN>         p[0].x = p[2].x = drop_x-r;
+<SPAN CLASS="linenum">0105:</SPAN>         p[1].x = p[3].x = drop_x+r;
+<SPAN CLASS="linenum">0106:</SPAN>         p[0].y = p[1].y = drop_y-r;
+<SPAN CLASS="linenum">0107:</SPAN>         p[2].y = p[3].y = drop_y+r;
+<SPAN CLASS="linenum">0108:</SPAN>         pDropVB-&gt;Unlock();
+<SPAN CLASS="linenum">0109:</SPAN> 
+<SPAN CLASS="linenum">0110:</SPAN>         lpD3DDev-&gt;SetRenderState(D3DRS_ALPHABLENDENABLE, TRUE);
+<SPAN CLASS="linenum">0111:</SPAN>         lpD3DDev-&gt;SetRenderState(D3DRS_DESTBLEND, D3DBLEND_INVSRCCOLOR);
+<SPAN CLASS="linenum">0112:</SPAN>         lpD3DDev-&gt;SetRenderState(D3DRS_SRCBLEND,  D3DBLEND_ZERO);
+<SPAN CLASS="linenum">0113:</SPAN> 
+<SPAN CLASS="linenum">0114:</SPAN>         lpD3DDev-&gt;SetTexture( 0, pDropTexture);
+<SPAN CLASS="linenum">0115:</SPAN>         lpD3DDev-&gt;SetTexture( 1, 0);
+<SPAN CLASS="linenum">0116:</SPAN>         lpD3DDev-&gt;SetTexture( 2, 0);
+<SPAN CLASS="linenum">0117:</SPAN>         lpD3DDev-&gt;SetTexture( 3, 0);
+<SPAN CLASS="linenum">0118:</SPAN>         lpD3DDev-&gt;SetStreamSource( 0, pDropVB, <SPAN CLASS="keyword">sizeof</SPAN>(D3D_DROP_VERTEX) );
+<SPAN CLASS="linenum">0119:</SPAN>         lpD3DDev-&gt;SetVertexShader( D3DFVF_DROP_VERTEX );
+<SPAN CLASS="linenum">0120:</SPAN>         lpD3DDev-&gt;SetPixelShader ( 0 );
+<SPAN CLASS="linenum">0121:</SPAN>         lpD3DDev-&gt;DrawPrimitive(  D3DPT_TRIANGLESTRIP, 0, 2 );
+<SPAN CLASS="linenum">0122:</SPAN> 
+<SPAN CLASS="linenum">0123:</SPAN>         lpD3DDev-&gt;SetRenderState(D3DRS_ALPHABLENDENABLE, FALSE);
+<SPAN CLASS="linenum">0124:</SPAN>     }
+<SPAN CLASS="linenum">0125:</SPAN> }
+<SPAN CLASS="linenum">0126:</SPAN> <SPAN CLASS="comment">// ----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0127:</SPAN> <SPAN CLASS="comment">// 後始末</SPAN>
+<SPAN CLASS="linenum">0128:</SPAN> <SPAN CLASS="keyword">static</SPAN> <SPAN CLASS="keyword">void</SPAN> CleanDrop(LPDIRECT3DDEVICE8 lpD3DDev)
+<SPAN CLASS="linenum">0129:</SPAN> {
+<SPAN CLASS="linenum">0130:</SPAN>     RELEASE(pDropVB);
+<SPAN CLASS="linenum">0131:</SPAN>     RELEASE(pDropTexture);
+<SPAN CLASS="linenum">0132:</SPAN> }
+<SPAN CLASS="linenum">0133:</SPAN> 
+<SPAN CLASS="linenum">0134:</SPAN> <SPAN CLASS="comment">// ----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0135:</SPAN> <SPAN CLASS="comment">// 描画テクスチャー</SPAN>
+<SPAN CLASS="linenum">0136:</SPAN> <SPAN CLASS="comment">// ----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0137:</SPAN> DWORD                   hSumieVertexShader=~0;
+<SPAN CLASS="linenum">0138:</SPAN> DWORD                   hSumiePixelShader=~0;
+<SPAN CLASS="linenum">0139:</SPAN> LPDIRECT3DVERTEXBUFFER8 pSumieVB = NULL;
+<SPAN CLASS="linenum">0140:</SPAN> LPDIRECT3DINDEXBUFFER8  pSumieIB = NULL;
+<SPAN CLASS="linenum">0141:</SPAN> 
+<SPAN CLASS="linenum">0142:</SPAN> <SPAN CLASS="keyword">typedef</SPAN> <SPAN CLASS="keyword">struct</SPAN> {
+<SPAN CLASS="linenum">0143:</SPAN>     <SPAN CLASS="keyword">float</SPAN> x, y, z;
+<SPAN CLASS="linenum">0144:</SPAN>     <SPAN CLASS="keyword">float</SPAN> tu,tv;
+<SPAN CLASS="linenum">0145:</SPAN> }D3D_SUMIE_VERTEX;
+<SPAN CLASS="linenum">0146:</SPAN> <SPAN CLASS="keyword">#define</SPAN> D3DFVF_SUMIE_VERTEX         (D3DFVF_XYZ | D3DFVF_TEX1 )
+<SPAN CLASS="linenum">0147:</SPAN> 
+<SPAN CLASS="linenum">0148:</SPAN> DWORD dwSumieDecl[] = {
+<SPAN CLASS="linenum">0149:</SPAN>     D3DVSD_STREAM(0),
+<SPAN CLASS="linenum">0150:</SPAN>     D3DVSD_REG(D3DVSDE_POSITION, D3DVSDT_FLOAT3 ),          <SPAN CLASS="comment">//D3DVSDE_POSITION,  0</SPAN>
+<SPAN CLASS="linenum">0151:</SPAN>     D3DVSD_REG(D3DVSDE_TEXCOORD0,D3DVSDT_FLOAT2 ),          <SPAN CLASS="comment">//D3DVSDE_TEXCOORD0, 7  </SPAN>
+<SPAN CLASS="linenum">0152:</SPAN>     D3DVSD_END()
+<SPAN CLASS="linenum">0153:</SPAN> };
+<SPAN CLASS="linenum">0154:</SPAN> 
+<SPAN CLASS="linenum">0155:</SPAN> 
+<SPAN CLASS="linenum">0156:</SPAN> 
+<SPAN CLASS="linenum">0157:</SPAN> 
+<SPAN CLASS="linenum">0158:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0159:</SPAN> <SPAN CLASS="comment">// Name: InitRenderTexture()</SPAN>
+<SPAN CLASS="linenum">0160:</SPAN> <SPAN CLASS="comment">// Desc: ボケたテクスチャー用の下準備</SPAN>
+<SPAN CLASS="linenum">0161:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0162:</SPAN> HRESULT InitRenderTexture(LPDIRECT3DDEVICE8 lpD3DDev)
+<SPAN CLASS="linenum">0163:</SPAN> {
+<SPAN CLASS="linenum">0164:</SPAN>     HRESULT hr;
+<SPAN CLASS="linenum">0165:</SPAN>     DWORD i;
+<SPAN CLASS="linenum">0166:</SPAN>     
+<SPAN CLASS="linenum">0167:</SPAN>     <SPAN CLASS="comment">// 頂点バッファの作成 </SPAN>
+<SPAN CLASS="linenum">0168:</SPAN>     D3D_SUMIE_VERTEX *pDest;
+<SPAN CLASS="linenum">0169:</SPAN>     WORD *pIndex;
+<SPAN CLASS="linenum">0170:</SPAN>     hr = lpD3DDev-&gt;CreateVertexBuffer( 4 * <SPAN CLASS="keyword">sizeof</SPAN>(D3D_SUMIE_VERTEX),
+<SPAN CLASS="linenum">0171:</SPAN>                                 D3DUSAGE_WRITEONLY, D3DFVF_SUMIE_VERTEX, D3DPOOL_MANAGED,
+<SPAN CLASS="linenum">0172:</SPAN>                                 &amp;pSumieVB );
+<SPAN CLASS="linenum">0173:</SPAN>     <SPAN CLASS="comment">// 頂点をセットアップ</SPAN>
+<SPAN CLASS="linenum">0174:</SPAN>     pSumieVB-&gt;Lock ( 0, 0, (BYTE**)&amp;pDest, 0 );
+<SPAN CLASS="linenum">0175:</SPAN>     <SPAN CLASS="keyword">for</SPAN> (i = 0; i &lt; 4; i++) {
+<SPAN CLASS="linenum">0176:</SPAN>         pDest-&gt;x   = (i == 0 || i == 1)?-1:(<SPAN CLASS="keyword">float</SPAN>)1;
+<SPAN CLASS="linenum">0177:</SPAN>         pDest-&gt;y   = (i == 0 || i == 2)?-1:(<SPAN CLASS="keyword">float</SPAN>)1;
+<SPAN CLASS="linenum">0178:</SPAN>         pDest-&gt;z   = 0.5f;
+<SPAN CLASS="linenum">0179:</SPAN>         pDest-&gt;tu = (i == 2 || i == 3)?1:(<SPAN CLASS="keyword">float</SPAN>)0;
+<SPAN CLASS="linenum">0180:</SPAN>         pDest-&gt;tv = (i == 0 || i == 2)?1:(<SPAN CLASS="keyword">float</SPAN>)0;
+<SPAN CLASS="linenum">0181:</SPAN>         pDest++;
+<SPAN CLASS="linenum">0182:</SPAN>     }       
+<SPAN CLASS="linenum">0183:</SPAN>     pSumieVB-&gt;Unlock ();
+<SPAN CLASS="linenum">0184:</SPAN>     <SPAN CLASS="comment">// インデックスをセットアップ</SPAN>
+<SPAN CLASS="linenum">0185:</SPAN>     hr = lpD3DDev-&gt;CreateIndexBuffer( 6 * <SPAN CLASS="keyword">sizeof</SPAN>(WORD),
+<SPAN CLASS="linenum">0186:</SPAN>                                0,
+<SPAN CLASS="linenum">0187:</SPAN>                                D3DFMT_INDEX16, D3DPOOL_MANAGED,
+<SPAN CLASS="linenum">0188:</SPAN>                                &amp;pSumieIB );
+<SPAN CLASS="linenum">0189:</SPAN>     pSumieIB-&gt;Lock ( 0, 0, (BYTE**)&amp;pIndex, 0 );
+<SPAN CLASS="linenum">0190:</SPAN>     pIndex[0] = 0;  pIndex[1] = 1;  pIndex[2] = 2;
+<SPAN CLASS="linenum">0191:</SPAN>     pIndex[3] = 1;  pIndex[4] = 3;  pIndex[5] = 2;
+<SPAN CLASS="linenum">0192:</SPAN>     pSumieIB-&gt;Unlock ();
+<SPAN CLASS="linenum">0193:</SPAN> 
+<SPAN CLASS="linenum">0194:</SPAN>     <SPAN CLASS="comment">// シェ－ダーのロード</SPAN>
+<SPAN CLASS="linenum">0195:</SPAN>     <SPAN CLASS="keyword">if</SPAN> ( FAILED(hr = CVertexShaderMgr::Load(lpD3DDev, "<SPAN CLASS="string">sumie.vsh</SPAN>",     &amp;hSumieVertexShader, dwSumieDecl)) ) <SPAN CLASS="keyword">return</SPAN> hr;
+<SPAN CLASS="linenum">0196:</SPAN>     <SPAN CLASS="keyword">if</SPAN> ( FAILED(hr =  CPixelShaderMgr::Load(lpD3DDev, "<SPAN CLASS="string">sumie.psh</SPAN>",     &amp;hSumiePixelShader)) ) <SPAN CLASS="keyword">return</SPAN> hr;
+<SPAN CLASS="linenum">0197:</SPAN> 
+<SPAN CLASS="linenum">0198:</SPAN>     <SPAN CLASS="comment">// 定数レジスタの設定</SPAN>
+<SPAN CLASS="linenum">0199:</SPAN>     <SPAN CLASS="keyword">float</SPAN> <SPAN CLASS="keyword">const</SPAN> inv_w = 1.0f / (<SPAN CLASS="keyword">float</SPAN>)WIDTH;
+<SPAN CLASS="linenum">0200:</SPAN>     <SPAN CLASS="keyword">float</SPAN> <SPAN CLASS="keyword">const</SPAN> inv_h = 1.0f / (<SPAN CLASS="keyword">float</SPAN>)HEIGHT;
+<SPAN CLASS="linenum">0201:</SPAN>     lpD3DDev-&gt;SetVertexShaderConstant(20, &amp;D3DXVECTOR4  (( 0.0f    +0.5f)*inv_w, ( 0.0f+0.5f)*inv_h, 0.0f, 0.0f), 1);
+<SPAN CLASS="linenum">0202:</SPAN>     lpD3DDev-&gt;SetVertexShaderConstant(21, &amp;D3DXVECTOR4  (( 0.0f    +0.5f)*inv_w, (-1.0f+0.5f)*inv_h, 0.0f, 0.0f), 1);
+<SPAN CLASS="linenum">0203:</SPAN>     lpD3DDev-&gt;SetVertexShaderConstant(22, &amp;D3DXVECTOR4  ((-0.57735f+0.5f)*inv_w, ( 0.5f+0.5f)*inv_h, 0.0f, 0.0f), 1);
+<SPAN CLASS="linenum">0204:</SPAN>     lpD3DDev-&gt;SetVertexShaderConstant(23, &amp;D3DXVECTOR4  ((+0.57735f+0.5f)*inv_w, ( 0.5f+0.5f)*inv_h, 0.0f, 0.0f), 1);
+<SPAN CLASS="linenum">0205:</SPAN> 
+<SPAN CLASS="linenum">0206:</SPAN> 
+<SPAN CLASS="linenum">0207:</SPAN>     <SPAN CLASS="comment">// 描画用テクスチャーを用意する</SPAN>
+<SPAN CLASS="linenum">0208:</SPAN>     D3DSURFACE_DESC Desc;
+<SPAN CLASS="linenum">0209:</SPAN>     LPDIRECT3DSURFACE8 lpZbuffer = NULL;
+<SPAN CLASS="linenum">0210:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( FAILED(hr = lpD3DDev-&gt;GetRenderTarget(&amp;pBackbuffer))) <SPAN CLASS="keyword">return</SPAN> hr;
+<SPAN CLASS="linenum">0211:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( FAILED(hr = pBackbuffer-&gt;GetDesc( &amp;Desc ))) <SPAN CLASS="keyword">return</SPAN> hr;
+<SPAN CLASS="linenum">0212:</SPAN> 
+<SPAN CLASS="linenum">0213:</SPAN>     <SPAN CLASS="comment">// 深度バッファのサーフェスを確保する</SPAN>
+<SPAN CLASS="linenum">0214:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( FAILED(hr = lpD3DDev-&gt;GetDepthStencilSurface( &amp;lpZbuffer ))) <SPAN CLASS="keyword">return</SPAN> hr;
+<SPAN CLASS="linenum">0215:</SPAN>     
+<SPAN CLASS="linenum">0216:</SPAN>     <SPAN CLASS="keyword">for</SPAN>( i=0 ; i&lt;2 ; i++ ){
+<SPAN CLASS="linenum">0217:</SPAN>         <SPAN CLASS="comment">// ぼけテクスチャー作成用のリソースを確保する</SPAN>
+<SPAN CLASS="linenum">0218:</SPAN>         <SPAN CLASS="keyword">if</SPAN>( FAILED(hr = lpD3DDev-&gt;CreateTexture(Desc.Width, Desc.Height, 1
+<SPAN CLASS="linenum">0219:</SPAN>                                 , D3DUSAGE_RENDERTARGET, D3DFMT_A8R8G8B8, D3DPOOL_DEFAULT, &amp;pRenderTexture[i]))) <SPAN CLASS="keyword">return</SPAN> hr;
+<SPAN CLASS="linenum">0220:</SPAN>         <SPAN CLASS="comment">// テクスチャーとサーフェスを関連づける</SPAN>
+<SPAN CLASS="linenum">0221:</SPAN>         <SPAN CLASS="keyword">if</SPAN>( FAILED(hr = pRenderTexture[i]-&gt;GetSurfaceLevel(0,&amp;pRenderSurface[i]))) <SPAN CLASS="keyword">return</SPAN> hr;
+<SPAN CLASS="linenum">0222:</SPAN>         <SPAN CLASS="comment">// テクスチャー用の描画と深度バッファを関連付ける</SPAN>
+<SPAN CLASS="linenum">0223:</SPAN>         <SPAN CLASS="keyword">if</SPAN>( FAILED(hr = lpD3DDev-&gt;SetRenderTarget(pRenderSurface[i], lpZbuffer ))) <SPAN CLASS="keyword">return</SPAN> hr;
+<SPAN CLASS="linenum">0224:</SPAN>     }
+<SPAN CLASS="linenum">0225:</SPAN> 
+<SPAN CLASS="linenum">0226:</SPAN>     <SPAN CLASS="comment">// 描画を元の画面に戻す</SPAN>
+<SPAN CLASS="linenum">0227:</SPAN>     lpD3DDev-&gt;SetRenderTarget(pBackbuffer, lpZbuffer );
+<SPAN CLASS="linenum">0228:</SPAN>     
+<SPAN CLASS="linenum">0229:</SPAN>     <SPAN CLASS="keyword">return</SPAN> S_OK;
+<SPAN CLASS="linenum">0230:</SPAN> }
+<SPAN CLASS="linenum">0231:</SPAN> <SPAN CLASS="comment">// ----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0232:</SPAN> <SPAN CLASS="comment">// 描画</SPAN>
+<SPAN CLASS="linenum">0233:</SPAN> <SPAN CLASS="keyword">void</SPAN> RenderSumie(LPDIRECT3DDEVICE8 lpD3DDev, <SPAN CLASS="keyword">int</SPAN> id)
+<SPAN CLASS="linenum">0234:</SPAN> {
+<SPAN CLASS="linenum">0235:</SPAN>     <SPAN CLASS="keyword">int</SPAN> i;
+<SPAN CLASS="linenum">0236:</SPAN>     
+<SPAN CLASS="linenum">0237:</SPAN>     <SPAN CLASS="keyword">for</SPAN> (i = 0; i &lt; 4; i++) lpD3DDev-&gt;SetTexture(i, pRenderTexture[id]);
+<SPAN CLASS="linenum">0238:</SPAN>     lpD3DDev-&gt;SetVertexShader( hSumieVertexShader );
+<SPAN CLASS="linenum">0239:</SPAN>     lpD3DDev-&gt;SetPixelShader ( hSumiePixelShader );
+<SPAN CLASS="linenum">0240:</SPAN>     lpD3DDev-&gt;SetStreamSource( 0, pSumieVB, <SPAN CLASS="keyword">sizeof</SPAN>(D3D_SUMIE_VERTEX) );
+<SPAN CLASS="linenum">0241:</SPAN>     lpD3DDev-&gt;SetIndices(pSumieIB,0);
+<SPAN CLASS="linenum">0242:</SPAN>     lpD3DDev-&gt;DrawIndexedPrimitive( D3DPT_TRIANGLELIST, 0, 4, 0, 2 );
+<SPAN CLASS="linenum">0243:</SPAN> }
+<SPAN CLASS="linenum">0244:</SPAN> 
+<SPAN CLASS="linenum">0245:</SPAN> <SPAN CLASS="comment">// ----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0246:</SPAN> <SPAN CLASS="comment">// 最終描画</SPAN>
+<SPAN CLASS="linenum">0247:</SPAN> <SPAN CLASS="comment">// ----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0248:</SPAN> LPDIRECT3DVERTEXBUFFER8 pFinalVB = NULL;
+<SPAN CLASS="linenum">0249:</SPAN> 
+<SPAN CLASS="linenum">0250:</SPAN> <SPAN CLASS="keyword">typedef</SPAN> <SPAN CLASS="keyword">struct</SPAN> {
+<SPAN CLASS="linenum">0251:</SPAN>     <SPAN CLASS="keyword">float</SPAN> x, y, z, rhw;
+<SPAN CLASS="linenum">0252:</SPAN>     <SPAN CLASS="keyword">float</SPAN> tu,tv;
+<SPAN CLASS="linenum">0253:</SPAN> }D3D_FINAL_VERTEX;
+<SPAN CLASS="linenum">0254:</SPAN> <SPAN CLASS="keyword">#define</SPAN> D3DFVF_FINAL_VERTEX         (D3DFVF_XYZRHW | D3DFVF_TEX1)
+<SPAN CLASS="linenum">0255:</SPAN> 
+<SPAN CLASS="linenum">0256:</SPAN> <SPAN CLASS="comment">// ----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0257:</SPAN> <SPAN CLASS="comment">// 初期化</SPAN>
+<SPAN CLASS="linenum">0258:</SPAN> HRESULT InitFinal(LPDIRECT3DDEVICE8 lpD3DDev)
+<SPAN CLASS="linenum">0259:</SPAN> {
+<SPAN CLASS="linenum">0260:</SPAN>     HRESULT hr = S_OK;
+<SPAN CLASS="linenum">0261:</SPAN> 
+<SPAN CLASS="linenum">0262:</SPAN>     <SPAN CLASS="comment">// 頂点バッファの作成 </SPAN>
+<SPAN CLASS="linenum">0263:</SPAN>     D3D_DROP_VERTEX vertices[] = {
+<SPAN CLASS="linenum">0264:</SPAN>         <SPAN CLASS="comment">//  x,      y,    z,   rhw,  tu  tv</SPAN>
+<SPAN CLASS="linenum">0265:</SPAN>         {  0.0f,   0.0f, 0.5f, 1.0f, 0.0f,0.0f,},
+<SPAN CLASS="linenum">0266:</SPAN>         { WIDTH,   0.0f, 0.5f, 1.0f, 1.0f,0.0f,},
+<SPAN CLASS="linenum">0267:</SPAN>         {  0.0f, HEIGHT, 0.5f, 1.0f, 0.0f,1.0f,},
+<SPAN CLASS="linenum">0268:</SPAN>         { WIDTH, HEIGHT, 0.5f, 1.0f, 1.0f,1.0f,},
+<SPAN CLASS="linenum">0269:</SPAN>     };
+<SPAN CLASS="linenum">0270:</SPAN>     
+<SPAN CLASS="linenum">0271:</SPAN>     hr = lpD3DDev-&gt;CreateVertexBuffer( 4*<SPAN CLASS="keyword">sizeof</SPAN>(D3D_FINAL_VERTEX),0,
+<SPAN CLASS="linenum">0272:</SPAN>                     D3DFVF_DROP_VERTEX, D3DPOOL_DEFAULT, &amp;pFinalVB);
+<SPAN CLASS="linenum">0273:</SPAN>     <SPAN CLASS="keyword">if</SPAN>(FAILED(hr)) <SPAN CLASS="keyword">return</SPAN> hr;
+<SPAN CLASS="linenum">0274:</SPAN> 
+<SPAN CLASS="linenum">0275:</SPAN>     VOID* pVertices;
+<SPAN CLASS="linenum">0276:</SPAN>     hr = pFinalVB-&gt;Lock( 0, <SPAN CLASS="keyword">sizeof</SPAN>(vertices), (BYTE**)&amp;pVertices, 0);
+<SPAN CLASS="linenum">0277:</SPAN>     <SPAN CLASS="keyword">if</SPAN>(FAILED(hr)) <SPAN CLASS="keyword">return</SPAN> hr;
+<SPAN CLASS="linenum">0278:</SPAN>     memcpy( pVertices, vertices, <SPAN CLASS="keyword">sizeof</SPAN>(vertices) );
+<SPAN CLASS="linenum">0279:</SPAN>     pFinalVB-&gt;Unlock();
+<SPAN CLASS="linenum">0280:</SPAN> 
+<SPAN CLASS="linenum">0281:</SPAN>     <SPAN CLASS="keyword">return</SPAN> hr;
+<SPAN CLASS="linenum">0282:</SPAN> }
+<SPAN CLASS="linenum">0283:</SPAN> <SPAN CLASS="comment">// ----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0284:</SPAN> <SPAN CLASS="comment">// 描画</SPAN>
+<SPAN CLASS="linenum">0285:</SPAN> <SPAN CLASS="keyword">void</SPAN> RenderFinal(LPDIRECT3DDEVICE8 lpD3DDev)
+<SPAN CLASS="linenum">0286:</SPAN> {
+<SPAN CLASS="linenum">0287:</SPAN>     lpD3DDev-&gt;SetStreamSource( 0, pFinalVB, <SPAN CLASS="keyword">sizeof</SPAN>(D3D_DROP_VERTEX) );
+<SPAN CLASS="linenum">0288:</SPAN>     lpD3DDev-&gt;SetVertexShader( D3DFVF_DROP_VERTEX );
+<SPAN CLASS="linenum">0289:</SPAN>     lpD3DDev-&gt;SetPixelShader(NULL); 
+<SPAN CLASS="linenum">0290:</SPAN>     lpD3DDev-&gt;DrawPrimitive(  D3DPT_TRIANGLESTRIP, 0, 2 );
+<SPAN CLASS="linenum">0291:</SPAN> }
+<SPAN CLASS="linenum">0292:</SPAN> 
+<SPAN CLASS="linenum">0293:</SPAN> 
+<SPAN CLASS="linenum">0294:</SPAN> 
+<SPAN CLASS="linenum">0295:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0296:</SPAN> <SPAN CLASS="comment">// Name: InitRender()</SPAN>
+<SPAN CLASS="linenum">0297:</SPAN> <SPAN CLASS="comment">// Desc: Load the mesh and build the material and texture arrays</SPAN>
+<SPAN CLASS="linenum">0298:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0299:</SPAN> HRESULT InitRender(LPDIRECT3DDEVICE8 lpD3DDev)
+<SPAN CLASS="linenum">0300:</SPAN> {
+<SPAN CLASS="linenum">0301:</SPAN>     HRESULT hr = S_OK;
+<SPAN CLASS="linenum">0302:</SPAN>     <SPAN CLASS="keyword">int</SPAN> i;
+<SPAN CLASS="linenum">0303:</SPAN> 
+<SPAN CLASS="linenum">0304:</SPAN>     <SPAN CLASS="keyword">if</SPAN> ( FAILED(hr = InitDrop(lpD3DDev)))<SPAN CLASS="keyword">return</SPAN> hr;
+<SPAN CLASS="linenum">0305:</SPAN> 
+<SPAN CLASS="linenum">0306:</SPAN>     <SPAN CLASS="comment">// レンダリングテクスチャー用の初期化</SPAN>
+<SPAN CLASS="linenum">0307:</SPAN>     <SPAN CLASS="keyword">if</SPAN> ( FAILED(hr = InitRenderTexture(lpD3DDev)))<SPAN CLASS="keyword">return</SPAN> hr;
+<SPAN CLASS="linenum">0308:</SPAN> 
+<SPAN CLASS="linenum">0309:</SPAN>     <SPAN CLASS="comment">// 最終描画頂点バッファの初期化</SPAN>
+<SPAN CLASS="linenum">0310:</SPAN>     <SPAN CLASS="keyword">if</SPAN> ( FAILED(hr = InitFinal(lpD3DDev)))<SPAN CLASS="keyword">return</SPAN> hr;
+<SPAN CLASS="linenum">0311:</SPAN> 
+<SPAN CLASS="linenum">0312:</SPAN>     <SPAN CLASS="comment">// 不変なレジスタの設定</SPAN>
+<SPAN CLASS="linenum">0313:</SPAN>     lpD3DDev-&gt;SetRenderState( D3DRS_ZENABLE, TRUE );
+<SPAN CLASS="linenum">0314:</SPAN>     lpD3DDev-&gt;SetRenderState( D3DRS_LIGHTING,  FALSE );
+<SPAN CLASS="linenum">0315:</SPAN>     <SPAN CLASS="keyword">for</SPAN> (i = 0; i &lt; 4; ++i) {
+<SPAN CLASS="linenum">0316:</SPAN>         lpD3DDev-&gt;SetTextureStageState(i, D3DTSS_MAGFILTER, D3DTEXF_LINEAR);
+<SPAN CLASS="linenum">0317:</SPAN>         lpD3DDev-&gt;SetTextureStageState(i, D3DTSS_MINFILTER, D3DTEXF_LINEAR);
+<SPAN CLASS="linenum">0318:</SPAN>         lpD3DDev-&gt;SetTextureStageState(i, D3DTSS_MIPFILTER, D3DTEXF_NONE);
+<SPAN CLASS="linenum">0319:</SPAN>         lpD3DDev-&gt;SetTextureStageState(i, D3DTSS_ADDRESSU,  D3DTADDRESS_CLAMP);
+<SPAN CLASS="linenum">0320:</SPAN>         lpD3DDev-&gt;SetTextureStageState(i, D3DTSS_ADDRESSV,  D3DTADDRESS_CLAMP);
+<SPAN CLASS="linenum">0321:</SPAN>         lpD3DDev-&gt;SetTextureStageState(i, D3DTSS_COLOROP,   D3DTOP_SELECTARG1);
+<SPAN CLASS="linenum">0322:</SPAN>         lpD3DDev-&gt;SetTextureStageState(i, D3DTSS_COLORARG1, D3DTA_TEXTURE);
+<SPAN CLASS="linenum">0323:</SPAN>     }
+<SPAN CLASS="linenum">0324:</SPAN> 
+<SPAN CLASS="linenum">0325:</SPAN>     <SPAN CLASS="keyword">return</SPAN> hr;
+<SPAN CLASS="linenum">0326:</SPAN> }
+<SPAN CLASS="linenum">0327:</SPAN> 
+<SPAN CLASS="linenum">0328:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0329:</SPAN> <SPAN CLASS="comment">// Name: Render()</SPAN>
+<SPAN CLASS="linenum">0330:</SPAN> <SPAN CLASS="comment">// Desc: Draws the scene</SPAN>
+<SPAN CLASS="linenum">0331:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0332:</SPAN> VOID Render(LPDIRECT3DDEVICE8 lpD3DDev)
+<SPAN CLASS="linenum">0333:</SPAN> {
+<SPAN CLASS="linenum">0334:</SPAN>     <SPAN CLASS="keyword">static</SPAN> DWORD id = 0;
+<SPAN CLASS="linenum">0335:</SPAN>     id = 1-id;
+<SPAN CLASS="linenum">0336:</SPAN> 
+<SPAN CLASS="linenum">0337:</SPAN>     LPDIRECT3DSURFACE8 lpZbuffer = NULL;
+<SPAN CLASS="linenum">0338:</SPAN>     lpD3DDev-&gt;GetDepthStencilSurface( &amp;lpZbuffer );
+<SPAN CLASS="linenum">0339:</SPAN>     lpD3DDev-&gt;SetRenderTarget(pRenderSurface[id], lpZbuffer);
+<SPAN CLASS="linenum">0340:</SPAN> 
+<SPAN CLASS="linenum">0341:</SPAN>     RenderSumie(lpD3DDev, 1-id);
+<SPAN CLASS="linenum">0342:</SPAN>     RenderDrop(lpD3DDev);
+<SPAN CLASS="linenum">0343:</SPAN> 
+<SPAN CLASS="linenum">0344:</SPAN>     <SPAN CLASS="keyword">static</SPAN> <SPAN CLASS="keyword">int</SPAN> first = 2;
+<SPAN CLASS="linenum">0345:</SPAN>     <SPAN CLASS="keyword">if</SPAN>(0&lt;first){
+<SPAN CLASS="linenum">0346:</SPAN>         first--;
+<SPAN CLASS="linenum">0347:</SPAN>         lpD3DDev-&gt;Clear(0,NULL,D3DCLEAR_TARGET | D3DCLEAR_ZBUFFER, D3DCOLOR_RGBA(255,255,255,255),1.0f,0);
+<SPAN CLASS="linenum">0348:</SPAN>     }
+<SPAN CLASS="linenum">0349:</SPAN> 
+<SPAN CLASS="linenum">0350:</SPAN>     lpD3DDev-&gt;SetRenderTarget(pBackbuffer, lpZbuffer );                 <SPAN CLASS="comment">// 描画をバックバッファに戻す</SPAN>
+<SPAN CLASS="linenum">0351:</SPAN>     lpD3DDev-&gt;SetTexture( 0, pRenderTexture[id]);
+<SPAN CLASS="linenum">0352:</SPAN>     lpD3DDev-&gt;SetTexture( 1, NULL);
+<SPAN CLASS="linenum">0353:</SPAN>     lpD3DDev-&gt;SetTexture( 2, NULL);
+<SPAN CLASS="linenum">0354:</SPAN>     lpD3DDev-&gt;SetTexture( 3, NULL);
+<SPAN CLASS="linenum">0355:</SPAN>     RenderFinal(lpD3DDev);
+<SPAN CLASS="linenum">0356:</SPAN> }
+<SPAN CLASS="linenum">0357:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0358:</SPAN> <SPAN CLASS="comment">// Name: CleanRender()</SPAN>
+<SPAN CLASS="linenum">0359:</SPAN> <SPAN CLASS="comment">// Desc: 後始末</SPAN>
+<SPAN CLASS="linenum">0360:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0361:</SPAN> <SPAN CLASS="keyword">void</SPAN> CleanRender(LPDIRECT3DDEVICE8 lpD3DDev)
+<SPAN CLASS="linenum">0362:</SPAN> {
+<SPAN CLASS="linenum">0363:</SPAN>     DWORD i;
+<SPAN CLASS="linenum">0364:</SPAN> 
+<SPAN CLASS="linenum">0365:</SPAN>     RELEASE(pFinalVB);
+<SPAN CLASS="linenum">0366:</SPAN>     
+<SPAN CLASS="linenum">0367:</SPAN>     <SPAN CLASS="keyword">for</SPAN>( i=0 ; i&lt;2 ; i++ ){
+<SPAN CLASS="linenum">0368:</SPAN>         RELEASE(pRenderSurface[i]);
+<SPAN CLASS="linenum">0369:</SPAN>         RELEASE(pRenderTexture[i]);
+<SPAN CLASS="linenum">0370:</SPAN>     }
+<SPAN CLASS="linenum">0371:</SPAN>     
+<SPAN CLASS="linenum">0372:</SPAN>     RELEASE(pBackbuffer);
+<SPAN CLASS="linenum">0373:</SPAN>     
+<SPAN CLASS="linenum">0374:</SPAN>      CPixelShaderMgr::Release(lpD3DDev, &amp;hSumiePixelShader);
+<SPAN CLASS="linenum">0375:</SPAN>     CVertexShaderMgr::Release(lpD3DDev, &amp;hSumieVertexShader);
+<SPAN CLASS="linenum">0376:</SPAN>     
+<SPAN CLASS="linenum">0377:</SPAN>     CleanDrop(lpD3DDev);
+<SPAN CLASS="linenum">0378:</SPAN> }
+<SPAN CLASS="linenum">0379:</SPAN> </PRE>
+</BODY>
+</HTML>

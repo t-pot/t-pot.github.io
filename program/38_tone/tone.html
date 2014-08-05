@@ -1,0 +1,181 @@
+<head>
+	<title>t-pot 『DirectX 8.1:トーンシェーダー』</title>
+	<link rel="stylesheet" type="text/css" href="../if.css">
+</head>
+<meta http-equiv=Content-Type content="text/html; charset=shift_jis">
+<body text=#ffffff>
+
+<div class="contents">
+<center>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<h1>DirectX 8.1:トーンシェーダー</h1><br>
+<h3>～ツゥーンじゃないよ、スクリーントーンだよ～</h3>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+</center>
+
+
+<h2>■はじめに</h2>
+
+
+<p>
+<a href="http://www.wgn.co.jp/cgw/">CGワールド</a>のVol.46に、
+<a href="http://www.garakuta-studio.com/f_set.html">ガラクタスタジオ</a>さんのラクガキ王国の記事が載っていました。
+その中にボツになった記事として、スクリーントーンを張った、トーンシェーダーの記事が載っていましたので、
+挑戦してみました。<br>
+今回は、ツゥーンシェーダーを施すのと同時に、暗い部分にてんてんのスクリーントーンを張りました。
+</p>
+<br>
+<image src = "title.gif">
+<p>
+今回のソースは、次のものです（DirectX8.1用です）。
+</p>
+<ul style = "LIST-STYLE-TYPE:none">
+<li><a href="tone.lzh">tone.lzh (トーンシェーダーのソース)</a>
+</ul>
+
+<p>
+まぁ、いつものように適当にファイルが入っています。<br>
+前回と頂点シェーダプログラムと、draw.cpp が変化しています。
+</p>
+<table>
+<tr><td><a href="ps_psh.html">ps.sh</a></td><td>ピクセルシェーダープログラム。今回、ここが複合技。</td></tr>
+<tr><td><a href="vs_vsh.html">vs.vsh</a></td><td>頂点シェーダープログラム。</td></tr>
+<tr><td><a href="draw_cpp.html">draw.cpp</a></td><td>メインの描画部分。</td></tr>
+<tr><td><a href="draw_h.html">draw.h</a></td><td>描画の各関数の定義。特に意味無いので出番無し。</td></tr>
+<tr><td><a href="main_h.html">main.h</a></td><td>基本的な定数など。今回も出番無し。</td></tr>
+<tr><td><a href="main_cpp.html">main.cpp</a></td><td>描画に関係しないシステム的な部分。変更が無いので、出番無し。</td></tr>
+
+</table>
+<image src = "tone.gif" width = 128 height=128>tone.bmp (スクリーントーンテクスチャー)
+<image src = "toon.gif" width = 128 height=128>toon.bmp (ツゥーンテクスチャー)
+<p>
+あと、いつもの様に、モデルと、実行ファイル及び、プロジェクトファイルが入っています。
+</p>
+
+
+<h2>■やってること</h2>
+
+
+<p>
+トーン用のテクスチャーで特別なことは、スクリーン座標を使うことです。<br>
+透視変換した後の座標値を（いい感じに見えるように）適当にスケールをかけて、テクスチャー座標に使います。
+</p>
+<image src = "coor.png">
+<p>
+また、ツゥーンシェーダーした光の強さを計算して、一定の（0.3）以下の光の強さ以下のときにトーンを張るようにピクセルシェーダープログラムを組んでいます。
+</p>
+<image src = "tex.png">
+
+<h2>■ソース解説</h2>
+
+
+<p>
+今回は、ツゥーンシェーダーの時と比較して、<br>
+・２つめのテクスチャーをトーン用のテクスチャーにしている<br>
+・シェーダープログラムを書き換えた<br>
+という違いしかないので、シェーダープログラムだけの解説に絞ります。
+</p>
+<p>
+頂点シェーダープログラムは、次のようになります。
+</p>
+<pre class="CodeBlock">
+<font color = deepskyblue>0001:</font> vs.1.0
+<font color = deepskyblue>0002:</font> 
+<font color = deepskyblue>0003:</font> <font color = cyan>; c0-3   -- world + ビュー + 透視変換行列</font>
+<font color = deepskyblue>0006:</font> <font color = cyan>; c12    -- {0.0, 0.5, 1.0, 2.5}</font>
+<font color = deepskyblue>0007:</font> <font color = cyan>; c13    -- ライトのベクトル</font>
+<font color = deepskyblue>0009:</font> <font color = cyan>; c15    -- メッシュの色</font>
+<font color = deepskyblue>0010:</font> <font color = cyan>;</font>
+<font color = deepskyblue>0011:</font> <font color = cyan>; v0    頂点の座標値</font>
+<font color = deepskyblue>0012:</font> <font color = cyan>; v3    法線ベクトル</font>
+<font color = deepskyblue>0015:</font> 
+<font color = deepskyblue>0016:</font> <font color = cyan>;座標変換</font>
+<font color = deepskyblue>0017:</font> dp4 oPos.x, v0, c0
+<font color = deepskyblue>0018:</font> dp4 oPos.y, v0, c1
+<font color = deepskyblue>0019:</font> dp4 oPos.z, v0, c2
+<font color = deepskyblue>0020:</font> dp4 oPos.w, v0, c3
+<font color = deepskyblue>0021:</font> 
+<font color = deepskyblue>0022:</font> <font color = cyan>; ((l,n)+1)/2 (平行光源のライティングを0～1に範囲変更)</font>
+<font color = deepskyblue>0023:</font> dp3 r0.x,   v3,   c13
+<font color = deepskyblue>0024:</font> add r0.x,   r0,   c12.z
+<font color = deepskyblue>0025:</font> mul oT0.x,  r0.x, c12.y
+<font color = deepskyblue>0026:</font> 
+<font color = deepskyblue>0027:</font> <font color = cyan>; スクリーン座標をテクスチャー座標に設定</font>
+<font color = deepskyblue>0028:</font> <font color = "yellow">dp4 r0.x,   v0, c0</font>
+<font color = deepskyblue>0029:</font> <font color = "yellow">dp4 r0.y,   v0, c1</font>
+<font color = deepskyblue>0030:</font> <font color = "yellow">dp4 r0.w,   v0, c3</font>
+<font color = deepskyblue>0031:</font> <font color = "yellow">rcp r0.w,   r0.w</font>
+<font color = deepskyblue>0032:</font> <font color = "yellow">mul r0.xy,  r0, r0.w</font>
+<font color = deepskyblue>0033:</font> <font color = "yellow">mul oT1.xy, r0, c12.ww</font>
+<font color = deepskyblue>0034:</font> 
+<font color = deepskyblue>0035:</font> <font color = cyan>; メッシュの色</font>
+<font color = deepskyblue>0036:</font> mov oD0, c15
+</pre>
+<p>
+変わった部分は、２つめのテクスチャー座標 oT1 の設定です。<br>
+XY成分と、同次座標の計算用のW成分のスクリーン座標を求めます。<br>
+その後、w=1.0fの空間に変換し、適当なスケール c12.w = 2.5f を掛けて座標にしています。<br>
+c12.w をいろいろと変えると、スクリーントーンの点の大きさが変わります。
+</p>
+
+<p>
+ピクセルシェーダープログラムは、いままでの組み合わせです。<br>
+下のソースの黄色の部分ですが、モノトーンフィルターでやった方法で、ツゥーンシェーダーの結果の色 t0 の色の強さを求めます。<br>
+次に、c0.w = 0.2 を減算して、トーンを掛ける部分と掛けない部分を切断する色の強さを調整します。<br>
+後は、比較命令 cnd を持ちいて、トーンを掛ける部分(明るさが0.3以下)と、掛けない部分(明るさが0.3以上)を決定します。
+</p>
+
+<pre class="CodeBlock">
+<font color = deepskyblue>0004:</font> ps.1.0
+<font color = deepskyblue>0005:</font> 
+<font color = deepskyblue>0006:</font> def c0, 0.0f,   0.0f,   0.0f,   0.2f
+<font color = deepskyblue>0007:</font> def c1, 0.299f, 0.587f, 0.114f,1.000f  <font color = cyan>; v = 0.299*R + 0.587*G + 0.114*G</font>
+<font color = deepskyblue>0008:</font> 
+<font color = deepskyblue>0009:</font> <font color = cyan>; テクスチャーの色を引っ張ってくる</font>
+<font color = deepskyblue>0010:</font> tex t0                              <font color = cyan>; ツゥーンテクスチャー</font>
+<font color = deepskyblue>0011:</font> tex t1                              <font color = cyan>; トーンテクスチャー</font>
+<font color = deepskyblue>0012:</font> 
+<font color = deepskyblue>0013:</font> mul r1, t0, v0                      <font color = cyan>; ツゥーンシェーディング</font>
+<font color = deepskyblue>0014:</font> 
+<font color = deepskyblue>0015:</font> <font color = "yellow">dp3 r0.rgba, t0, c1</font>                 <font color = cyan>; 色の強さを求める</font>
+<font color = deepskyblue>0018:</font> <font color = "orange">add r0.a, r0, -c0</font>                   <font color = cyan>; 切断色を調整する</font>
+<font color = deepskyblue>0016:</font> <font color = "orange">mov r0.rgb,  t1</font>                     <font color = cyan>; トーンテクスチャーを引っ張る</font>
+<font color = deepskyblue>0020:</font> <font color = "orange">cnd r0, r0.a, c1.aaa, r0</font>            <font color = cyan>; (0.5 < 色の強さ-0.2) ? 1 ? トーンテクスチャー</font>
+<font color = deepskyblue>0021:</font> 
+<font color = deepskyblue>0022:</font> mul r0, r0, r1                      <font color = cyan>; 最終色＝トーン＊ツゥーン＊オブジェクトの色</font>
+</pre>
+
+
+<h2>■問題点</h2>
+
+<p>
+作っていて気が付いたのですが、ドアの部分などで、不自然にスクリーントーンが引き伸ばされる場合があります。
+</p>
+<image src = "side.gif">
+<p>
+テクスチャーを繰り返しモード（D3DTADDRESS_WRAP）で貼り付けているのですが、その処理が正常になされないようです。
+（テクスチャーの値が0～1にクリップされる？）<br>
+従って、テクスチャーのサイズを大きくするか、ポリゴンを細かく分割するかの対応が必要そうです。
+</p>
+
+
+<h2>■最後に</h2>
+
+
+<p>
+静止画で見ると、そこそこ見れるのですが、動くと「ブキミ」ですね。<br>
+うまくオブジェクトに貼り付けて、ツゥーン処理と絡めれば、そこそこ使えるかと思います。
+</p>
+
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<center>
+<p><a href="../index.html">もどる</a></p>
+<p><a href="mailto:imagire@gmail.com">imagire@gmail.com</a></p>
+</center>
+</body>
+</html>

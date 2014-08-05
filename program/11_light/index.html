@@ -1,0 +1,125 @@
+<head>
+	<title>t-pot 『DirectX8.0 入門:ライトを使う』</title>
+	<link rel="stylesheet" type="text/css" href="../if.css">
+</head>
+<meta http-equiv=Content-Type content="text/html; charset=shift_jis">
+<body>
+<div class="contents">
+<center>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<h1>ライトを使う</h1><br>
+<h3>～もう、モデルがのっぺり見えません ～</h3>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+</center>
+<h2>■はじめに</h2>
+
+<p>
+前回の X ファイルの表示では、テクスチャーも何も張っていなかったので、のっぺりしていました。<br>
+今回は、ライトを用いて、車の形が分かるようにします。
+</p>
+<right><image src = "light.gif"></right>
+
+<p>
+いつも通り、以下のファイルをダウンロードしてください。
+</p>
+<ul style = "LIST-STYLE-TYPE:none">
+<li><a href="light.lzh">light.lzh (ライトを使ったモデルのサンプル)</a>
+</ul>
+<p>
+前回のモデルが夕日に照らされたかのように、オレンジ色に表示されます。
+</p>
+
+<h2>■今回の変更</h2>
+
+<p>
+今回は、前回のプログラムから、初期化部分の InitRender を書き換えただけです。<br>
+</p>
+
+<pre class="CodeBlock">
+HRESULT InitRender(LPDIRECT3DDEVICE8 lpD3DDEV)
+{
+    HRESULT hr;
+    LPD3DXBUFFER pD3DXMtrlBuffer;
+
+    // X ファイルのロード
+    hr = D3DXLoadMeshFromX( "car.x", D3DXMESH_SYSTEMMEM, 
+                                   lpD3DDEV, NULL, 
+                                   &pD3DXMtrlBuffer, &dwNumMaterials, 
+                                   &pMesh );
+    if(FAILED(hr)) return E_FAIL;
+
+    // pD3DXMtrlBuffer から、質感やテクスチャーの情報を読み取る
+    D3DXMATERIAL* d3dxMaterials = (D3DXMATERIAL*)pD3DXMtrlBuffer->GetBufferPointer();
+    pMeshMaterials = new D3DMATERIAL8[dwNumMaterials];
+    pMeshTextures  = new LPDIRECT3DTEXTURE8[dwNumMaterials];
+
+    for( DWORD i=0; i < dwNumMaterials; i++ ){
+        pMeshMaterials[i] = d3dxMaterials[i].MatD3D;// 質感のコピー
+        pMeshMaterials[i].Ambient = pMeshMaterials[i].Diffuse;// マテリアルの環境色を設定する
+     
+        hr = D3DXCreateTextureFromFile( lpD3DDEV, 
+                                        d3dxMaterials[i].pTextureFilename, 
+                                        &pMeshTextures[i] );
+        if(FAILED(hr)) pMeshTextures[i] = NULL;
+    }
+
+    RELEASE(pD3DXMtrlBuffer);
+    
+    lpD3DDEV->SetRenderState( D3DRS_ZENABLE, TRUE);
+    <Font color = orange><b>
+    D3DLIGHT8 light;
+    ZeroMemory( &light, sizeof(D3DLIGHT8) );
+    light.Type       = D3DLIGHT_DIRECTIONAL;
+    light.Diffuse.r  = 1.0f;
+    light.Diffuse.g  = 0.3f;
+    light.Diffuse.b  = 0.3f;
+    D3DXVECTOR3 vecDir;
+    vecDir = D3DXVECTOR3(-1.0f, -1.0f, -0.1f);
+    D3DXVec3Normalize( (D3DXVECTOR3*)&light.Direction, &vecDir );
+    lpD3DDEV->SetLight( 0, &light );
+    lpD3DDEV->LightEnable( 0, TRUE );
+    lpD3DDEV->SetRenderState( D3DRS_LIGHTING, TRUE );
+    lpD3DDEV->SetRenderState( D3DRS_AMBIENT, 0x00202020 );
+    </b></font>
+    return S_OK;
+}
+</pre>
+<p>
+さてさて、追加分ですが、D3DLIGHT8 にライトの設定をした後、lpD3DDEV->SetLight で、その設定を有効にします。<br>
+中身ですが、Type の設定を D3DLIGHT_DIRECTIONAL にしました。これは、直訳すると『方向光源』で、方向だけを
+持つライトです（通常の和訳は平行光源です）。
+太陽のように、非常に遠くにあって、地表に一面に降り注ぐ光を表現しています。<br>
+Diffuse はライトの色を設定しています。今回は、赤色の成分が強い光、つまり赤い光を当てています。<br>
+次に、vecDir を使って、方向を設定しています。ほぼ、左手上方から光を降り注がせます。
+D3DXVec3Normalize は、ライトを『方向』の情報にするために必要な手続きです。
+これを行わないと、不自然に明るかったり、暗すぎるライトが出来上がります。
+</p>
+<p>
+後は、ライトを有効にする設定だけです。
+D3DRS_AMBIENT は、前にも出てきた、全体的な明るさを設定するライトで、暗い白色にしました。
+描画される絵の、ライトが当たっていない場所を良く見ると、黄色になっています。
+これは、元の車の色で、ここが環境光しか当たっていない部分になります。<br>
+環境光がない部分は真っ暗になります。現実の物体には、他の物体からの反射などで、
+光が直接当たっていない部分も見えます。この効果を表現したものが環境光です。
+</p>
+
+<p>
+さて、どうでしょうか？<rb>
+結構、簡単に光を当てることができます。
+これ以外にも、スポットライトなど、いろいろな種類の光があるのですが、
+他のライトは処理が重たいので、ここでは、これだけを紹介することにします。
+</p>
+
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<center>
+<br>
+<p><a href="../index.html">もどる</a></p>
+<p><a href="mailto:imagire@gmail.com">imagire@gmail.com</a></p>
+</center>
+</body>
+</html>

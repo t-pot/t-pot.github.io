@@ -1,0 +1,174 @@
+<head>
+	<title>t-pot『ぼかしフィルター』</title>
+	<link rel="stylesheet" type="text/css" href="../if.css">
+</head>
+<meta http-equiv=Content-Type content="text/html; charset=shift_jis">
+<body>
+
+
+<div class="contents">
+<center>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<h1>ぼかしフィルター</h1><br>
+<h3>～線形補間ラッシュラッシュ～</h3>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<image src = "title.png">
+</center>
+
+
+<h2>■はじめに</h2>
+
+
+<p>
+エッジフィルターを行いましたが、他にも使えるフィルターがあります。それがぼかしフィルターです。<br>
+画像は、左半分が普通にレンダリングした結果、右半分がぼかした結果になっています。
+</p>
+<p>
+<ul style = "LIST-STYLE-TYPE:none">
+<li><a href="src.lzh">src.lzh (ぼかしフィルターのサンプル:DirectX8.1)</a>
+</ul>
+
+<p>
+まぁ、いつものように適当にファイルが入っています。<br>
+</p>
+<table>
+<tr><td><a href="vs_vsh.html">vs.vsh</a></td><td>通常色の頂点シェーダー。</td></tr>
+<tr><td><a href="ps_psh.html">ps.psh</a></td><td>通常色のピクセルシェーダー。</td></tr>
+<tr><td><a href="final_vsh.html">final.vsh</a></td><td>ぼかしの頂点シェーダー。</td></tr>
+<tr><td><a href="final_psh.html">final.psh</a></td><td>ぼかしのピクセルシェーダー。</td></tr>
+<tr><td><a href="draw_cpp.html">draw.cpp</a></td><td>メインの描画部分。</td></tr>
+<tr><td><a href="draw_h.html">draw.h</a></td><td>描画の各関数の定義。</td></tr>
+<tr><td><a href="bg_cpp.html">bg.cpp</a></td><td>背景の描画。</td></tr>
+<tr><td><a href="main_h.html">main.h</a></td><td>基本的な定数など。</td></tr>
+<tr><td><a href="main_cpp.html">main.cpp</a></td><td>描画に関係しないシステム的な部分。</td></tr>
+<tr><td><a href="load_cpp.html">load.cpp</a></td><td>ロード。</td></tr>
+<tr><td><a href="load_h.html">load.h</a></td><td>ロードのインターフェイス。</td></tr>
+</table>
+<image src = "tile_bmp.jpg" width = 64 height=64>tile.bmp (床デカール)<br>
+<image src = "sky_bmp.jpg" width = 64 height=64>sky.bmp (空デカール)<br>
+<p>
+あと、実行ファイル及び、プロジェクトファイルが入っています。
+</p>
+
+
+<h2>■方法</h2>
+
+
+<p>
+ぼかしフィルターはバイリニアサンプリングを応用します。<br>
+ここでいうバイリニアサンプリングとは、テクスチャーからの色を引っ張るときの方法です。<br>
+テクスチャー座標がどっしりとテクセル（テクスチャーの画素）の中心に乗っていない時、
+近くにある４つのテクセルの色を、テクスチャー座標とテクセルの中心との距離に応じて混ぜ合わせる方法です。<br>
+実際の方法は、４つのテクセルのうち、２つの色に関してテクスチャー座標に応じて線形補間します。
+線形保管した色及び保管した座標は２つできるので、さらにその２つの点に関して線形補間して最終的な色を決めます。
+リニア（線形）な補間を２回行うので、バイリニアとよばれます。<br>
+最近のビデオチップはほぼ間違いなくバイリニア補間をサポートしています
+（サポートしていない場合は、テクスチャー座標の乗っているテクセルの色だけを引っ張るポイントサンプリングが使われます。
+（さらに未来にはより高度なサンプリングしかサポートしない場合がありますが、それはまたのお話で…））。
+</p>
+<p>
+さて、４つのテクセルの中心座標のちょうど中間にテクスチャー座標を配置すると、それぞれの色を等しくサンプリングします。<br>
+つまり、それぞれの色を１/４ずつ混ぜ合わせた色が取り出せます。<br>
+さらに、２つのテクセルの間を開けた座標を四角形の形に４つサンプリングして、平均を取ると４ｘ４のテクセルの平均した色が求められます。<br>
+遠くの色を引っ張ってくるということは、色がにじんだということになります。つまり、色がボケます。
+</p>
+<image src = "sample.png">
+
+
+<h2>■シェーダープログラム</h2>
+
+<p>
+さて、どのようにして、以上の手続きを実現するか、ピクセルシェーダーのプログラムを見てみましょう。
+</p>
+<p>
+合成するピクセルシェーダーを見ましょう。
+テクスチャーに１度レンダリングします。<br>
+レンダリングしたテクスチャーをテクスチャーの０から３まで全てに仕込みます。<br>
+頂点シェーダーでテクスチャー座標をずらしておきます。<br>
+この後が、ピクセルシェーダーです。<br>
+0.5を掛けながら、色を加算して、最後に線形補間命令lrpで、線形補間して４つのテクセルのバイリニアサンプリングを行います。<br>
+サンプリングされた色は、tex命令で色をもってくる時点でバイリニアサンプリングされた色が引っ張られるので、この結果は１６このテクセルを合成した色になります。<br>
+今回のものは、nVIDIA のものよりも１命令多いですが、マッハバンドが小さくなっています。
+</p>
+<pre class="CodeBlock">
+<font color="deepskyblue">0001:</font> <font color="cyan">; final.psh</font>
+<font color="deepskyblue">0002:</font> <font color="cyan">;      (c) 2002 IMAGIRE Takashi</font>
+<font color="deepskyblue">0003:</font> 
+<font color="deepskyblue">0004:</font> ps.1.0
+<font color="deepskyblue">0005:</font> 
+<font color="deepskyblue">0006:</font> def c0, 0.5f, 0.5f, 0.5f, 0.5f
+<font color="deepskyblue">0007:</font> 
+<font color="deepskyblue">0008:</font> tex t0      <font color="cyan">; 0:1 0  1:0 1  2:0 0  3:0 0</font>
+<font color="deepskyblue">0009:</font> tex t1      <font color="cyan">;   0 0    0 0    1 0    0 1</font>
+<font color="deepskyblue">0010:</font> tex t2
+<font color="deepskyblue">0011:</font> tex t3
+<font color="deepskyblue">0012:</font> 
+<font color="deepskyblue">0013:</font> mul r0, t0, c0       <font color="cyan">; r0 = 0.5*t0</font>
+<font color="deepskyblue">0014:</font> mul r1, t1, c0       <font color="cyan">; r1 = 0.5*t1</font>
+<font color="deepskyblue">0015:</font> mad r0, t2, c0, r0   <font color="cyan">; r0 = 0.5*(t0+t2)</font>
+<font color="deepskyblue">0016:</font> mad r1, t3, c0, r1   <font color="cyan">; r1 = 0.5*(t1+t3)</font>
+<font color="deepskyblue">0017:</font> lrp r0, c0, r0, r1   <font color="cyan">; r0 = 0.5*0.5*(t0+t2+t1+t3)=(t0+t2+t1+t3)/4</font>
+</pre>
+<p>
+実際にテクスチャー座標をずらす頂点シェーダーでは、定数を足して平行移動を実現します。
+</p>
+<pre class="CodeBlock">
+<font color="deepskyblue">0001:</font> <font color="cyan">; normaledge.vsh</font>
+<font color="deepskyblue">0002:</font> <font color="cyan">; c20-23   -- テクスチャーをずらすオフセット</font>
+<font color="deepskyblue">0003:</font> <font color="cyan">;             (0,0), (1,0), (0,1), (1,1)</font>
+<font color="deepskyblue">0004:</font> <font color="cyan">; v0    頂点の座標値</font>
+<font color="deepskyblue">0005:</font> <font color="cyan">; v7    テクスチャ座標</font>
+<font color="deepskyblue">0006:</font> 
+<font color="deepskyblue">0007:</font> vs.1.0
+<font color="deepskyblue">0008:</font> 
+<font color="deepskyblue">0009:</font> <font color="cyan">; 座標を代入</font>
+<font color="deepskyblue">0010:</font> mov oPos, v0
+<font color="deepskyblue">0011:</font> 
+<font color="deepskyblue">0012:</font> <font color="cyan">; それぞれテクスチャーの位置をずらして出力</font>
+<font color="deepskyblue">0013:</font> add oT0, v7, c20
+<font color="deepskyblue">0014:</font> add oT1, v7, c21
+<font color="deepskyblue">0015:</font> add oT2, v7, c22
+<font color="deepskyblue">0016:</font> add oT3, v7, c23
+</pre>
+<p>
+ずらす値は、テクスチャーの幅の逆数が１つのテクセルの幅になるので、
+その２倍の値を使って、２つのピクセルの間を開けたテクスチャー座標のずれを実現します。
+</p>
+<pre class="CodeBlock">
+draw.c
+<font color="deepskyblue">0210:</font>     float const inv_w = 1.0f / (float)RENDER_SIZE;
+<font color="deepskyblue">0211:</font>     float const inv_h = 1.0f / (float)RENDER_SIZE;
+<font color="deepskyblue">0212:</font>     lpD3DDev->SetVertexShaderConstant(20, &D3DXVECTOR4  (0.0f*inv_w, 0.0f*inv_h, 0.0f, 0.0f), 1);
+<font color="deepskyblue">0213:</font>     lpD3DDev->SetVertexShaderConstant(21, &D3DXVECTOR4  (2.0f*inv_w, 0.0f*inv_h, 0.0f, 0.0f), 1);
+<font color="deepskyblue">0214:</font>     lpD3DDev->SetVertexShaderConstant(22, &D3DXVECTOR4  (0.0f*inv_w, 2.0f*inv_h, 0.0f, 0.0f), 1);
+<font color="deepskyblue">0215:</font>     lpD3DDev->SetVertexShaderConstant(23, &D3DXVECTOR4  (2.0f*inv_w, 2.0f*inv_h, 0.0f, 0.0f), 1);
+</pre>
+
+
+<h2>■最後に</h2>
+
+
+<p>
+今回はテクセル２つ分の間を開けてサンプリングしましたが、
+１つだけ開けた場合のぼかしを９サンプルコーンフィルタといって、
+ボケる量は少なくなりますが、うっすらとぼやけた画像も得られます。
+</p>
+<image src = "quad.png">
+<p>
+あと、面白いのはエッジ抽出フィルターとかメディアンフィルターですが、そこらへんはちょっとGeForce3じゃ難しくなってきそうですね。<br>
+やっぱりRADEONを買うしか･･･
+</p>
+
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<center>
+<p><a href="../index.html">もどる</a></p>
+<p><a href="mailto:imagire@gmail.com">imagire@gmail.com</a></p>
+</center>
+
+</body>
+</html>

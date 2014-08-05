@@ -1,0 +1,139 @@
+<head>
+	<title>t-pot『NV40テスト』</title>
+	<link rel="stylesheet" type="text/css" href="../if.css">
+</head>
+<meta http-equiv=Content-Type content="text/html; charset=shift_jis">
+<body>
+
+
+<div class="contents">
+<center>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<h1>NV40テスト</h1><br>
+<h3>～ Test for NV40 ～</h3>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<image src = "title.png">
+<br>
+<hr>
+</center>
+<div>
+
+
+<h2>■はじめに</h2>
+
+
+<p>
+Real-time translucent global illuminaton を作っているときに、GeForce 6800 でおかしな挙動を見つけたので、簡単なプログラムを組んでみました。<br>
+128x128のテクスチャ（左）をボックスサンプリングで、16x16に縮小します。<br>
+真ん中と右は、同じ結果になるはずなのですが、なりませんでした。
+</p>
+
+<p>
+で、いつものようにプログラムです。<br>
+</p>
+<ul style = "LIST-STYLE-TYPE:none">
+<li><a href="src.zip">src.zip (実行ファイル:DirectX9c [Vertex shader 1_1, Pixel shader 2_0])</a><br>
+</ul>
+
+<p>
+ソースには、いつものように適当にファイルが入っています。
+大事なファイルは次のものです。
+</p>
+<table>
+<tr><td><a href="main_cpp.html">main.cpp</a></td><td>アプリケーションのソース</td></tr>
+<tr><td><a href="main_h.html">main.h</a></td><td>アプリケーションのヘッダ</td></tr>
+<tr><td><a href="hlsl_fx.html">hlsl.fx</a></td><td>シェーダプログラム</td></tr>
+</table>
+
+
+<h2>■なにやってるの？</h2>
+
+<p>
+左の画像をボックスサンプリングします。
+</p>
+<p>
+真ん中の画像は GeForce 6800 でおかしくなるプログラムです。<br>
+シェーダプログラムは、次のようになります。
+</p>
+<pre class="CodeBlock">
+<font color="deepskyblue">0072:</font> float4 PS_Bad ( VS_OUTPUT_64BOX_SAMPLING In ) : COLOR0
+<font color="deepskyblue">0073:</font> {
+<font color="deepskyblue">0074:</font>     float4 t0 = tex2D(SrcSamp, In.Tex0);
+<font color="deepskyblue">0075:</font>     float4 t1 = tex2D(SrcSamp, In.Tex1);
+<font color="deepskyblue">0076:</font>     float4 t2 = tex2D(SrcSamp, In.Tex2);
+<font color="deepskyblue">0077:</font>     float4 t3 = tex2D(SrcSamp, In.Tex3);
+<font color="deepskyblue">0078:</font>     
+<font color="deepskyblue">0079:</font>     float4 t4 = tex2D(SrcSamp, In.Tex4);
+<font color="deepskyblue">0080:</font>     float4 t5 = tex2D(SrcSamp, In.Tex5);
+<font color="deepskyblue">0081:</font>     float4 t6 = tex2D(SrcSamp, In.Tex6);
+<font color="deepskyblue">0082:</font>     float4 t7 = tex2D(SrcSamp, In.Tex7);
+<font color="deepskyblue">0083:</font>     
+<font color="deepskyblue">0084:</font>     float4 t8 = tex2D(SrcSamp, In.Tex0 + float2(+4.0f/MAP_WIDTH, 0));
+<font color="deepskyblue">0085:</font>     float4 t9 = tex2D(SrcSamp, In.Tex1 + float2(+4.0f/MAP_WIDTH, 0));
+<font color="deepskyblue">0086:</font>     float4 ta = tex2D(SrcSamp, In.Tex2 + float2(+4.0f/MAP_WIDTH, 0));
+<font color="deepskyblue">0087:</font>     float4 tb = tex2D(SrcSamp, In.Tex3 + float2(+4.0f/MAP_WIDTH, 0));
+<font color="deepskyblue">0088:</font>     
+<font color="deepskyblue">0089:</font>     float4 tc = tex2D(SrcSamp, In.Tex4 + float2(+4.0f/MAP_WIDTH, 0));
+<font color="deepskyblue">0090:</font>     float4 td = tex2D(SrcSamp, In.Tex5 + float2(+4.0f/MAP_WIDTH, 0));
+<font color="deepskyblue">0091:</font>     float4 te = tex2D(SrcSamp, In.Tex6 + float2(+4.0f/MAP_WIDTH, 0));
+<font color="deepskyblue">0092:</font>     float4 tf = tex2D(SrcSamp, In.Tex7 + float2(+4.0f/MAP_WIDTH, 0));
+<font color="deepskyblue">0093:</font>     
+<font color="deepskyblue">0094:</font>     <font color="blue">return</font> ((t0+t1+t2+t3)
+<font color="deepskyblue">0095:</font>            +(t4+t5+t6+t7)
+<font color="deepskyblue">0096:</font>            +(t8+t9+ta+tb)
+<font color="deepskyblue">0097:</font>            +(tc+td+te+tf))/16;
+<font color="deepskyblue">0098:</font> }
+</pre>
+<p>
+右の画像は GeForce 6800 でもきちんと動くプログラムです。<br>
+シェーダプログラムは、次のようになります。
+</p>
+<pre class="CodeBlock">
+<font color="deepskyblue">0103:</font> float4 PS_Good ( VS_OUTPUT_64BOX_SAMPLING In ) : COLOR0
+<font color="deepskyblue">0104:</font> {
+<font color="deepskyblue">0105:</font>     float4 t0 = tex2D(SrcSamp, In.Tex0);
+<font color="deepskyblue">0106:</font>     float4 t1 = tex2D(SrcSamp, In.Tex1);
+<font color="deepskyblue">0107:</font>     float4 t2 = tex2D(SrcSamp, In.Tex2);
+<font color="deepskyblue">0108:</font>     float4 t3 = tex2D(SrcSamp, In.Tex3);
+<font color="deepskyblue">0109:</font>     
+<font color="deepskyblue">0110:</font>     float4 t4 = tex2D(SrcSamp, In.Tex4);
+<font color="deepskyblue">0111:</font>     float4 t5 = tex2D(SrcSamp, In.Tex5);
+<font color="deepskyblue">0112:</font>     float4 t6 = tex2D(SrcSamp, In.Tex6);
+<font color="deepskyblue">0113:</font>     float4 t7 = tex2D(SrcSamp, In.Tex7);
+<font color="deepskyblue">0114:</font>     
+<font color="deepskyblue">0115:</font>     float4 t8 = tex2D(SrcSamp, In.Tex0 + float2(+4.0f/MAP_WIDTH, 0));
+<font color="deepskyblue">0116:</font>     float4 t9 = tex2D(SrcSamp, In.Tex1 + float2(+4.0f/MAP_WIDTH, 0));
+<font color="deepskyblue">0117:</font>     float4 ta = tex2D(SrcSamp, In.Tex2 + float2(+4.0f/MAP_WIDTH, 0));
+<font color="deepskyblue">0118:</font>     float4 tb = tex2D(SrcSamp, In.Tex3 + float2(+4.0f/MAP_WIDTH, 0));
+<font color="deepskyblue">0119:</font>     
+<font color="deepskyblue">0120:</font>     float4 tc = tex2D(SrcSamp, In.Tex4 + float2(+4.0f/MAP_WIDTH, 0));
+<font color="deepskyblue">0121:</font>     float4 td = tex2D(SrcSamp, In.Tex5 + float2(+4.0f/MAP_WIDTH, 0));
+<font color="deepskyblue">0122:</font>     float4 te = tex2D(SrcSamp, In.Tex6 + float2(+4.0f/MAP_WIDTH, 0));
+<font color="deepskyblue">0123:</font>     float4 tf = tex2D(SrcSamp, In.Tex7 + float2(+4.0f/MAP_WIDTH, 0));
+<font color="deepskyblue">0124:</font>     
+<font color="deepskyblue">0125:</font>     <font color="blue">return</font> 0.25*(
+<font color="deepskyblue">0126:</font>             0.25*(t0+t1+t2+t3
+<font color="deepskyblue">0127:</font>            +      t4+t5+t6+t7)
+<font color="deepskyblue">0128:</font>            +0.25*(t8+t9+ta+tb
+<font color="deepskyblue">0129:</font>            +      tc+td+te+tf));
+<font color="deepskyblue">0130:</font> }
+</pre>
+
+
+
+
+</div>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<center>
+<hr>
+<p><a href="../index.html">もどる</a></p>
+<p><a href="mailto:imagire@gmail.com">imagire@gmail.com</a></p>
+</center>
+
+</body>
+</html>

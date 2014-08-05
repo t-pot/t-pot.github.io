@@ -1,0 +1,204 @@
+<HTML>
+<HEAD>
+<TITLE>matrix.cpp</TITLE>
+<meta name="GENERATOR" content="cpp2html 2.1 by Niisaka">
+<meta http-equiv="Content-Type" content="text/html">
+<meta http-equiv="Content-Style-Type" content="text/css">
+<STYLE TYPE="text/css">
+<!--
+SPAN.comment { color:#008000; font-weight:normal; font-style:normal;}
+SPAN.keyword { color:#0000FF; font-weight:normal; font-style:normal;}
+SPAN.string { color:#600000; font-weight:normal; font-style:normal;}
+SPAN.linenum { color:#A0A0A0; font-weight:normal; font-style:normal;}
+-->
+</STYLE>
+</HEAD>
+<BODY TEXT="#000000" BGCOLOR="#FFFFFF">
+<PRE><SPAN CLASS="linenum">0001:</SPAN> <SPAN CLASS="comment">// ----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0002:</SPAN> <SPAN CLASS="comment">//</SPAN>
+<SPAN CLASS="linenum">0003:</SPAN> <SPAN CLASS="comment">// matrix.cpp - çsóÒåvéZ</SPAN>
+<SPAN CLASS="linenum">0004:</SPAN> <SPAN CLASS="comment">// </SPAN>
+<SPAN CLASS="linenum">0005:</SPAN> <SPAN CLASS="comment">// Copyright (c) 2002 ç°ããÍt ó≤ (imagire@nify.com)</SPAN>
+<SPAN CLASS="linenum">0006:</SPAN> <SPAN CLASS="comment">// All Rights Reserved.</SPAN>
+<SPAN CLASS="linenum">0007:</SPAN> <SPAN CLASS="comment">//</SPAN>
+<SPAN CLASS="linenum">0008:</SPAN> <SPAN CLASS="comment">// ----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0009:</SPAN> <SPAN CLASS="keyword">#include</SPAN> &lt;math.h&gt;
+<SPAN CLASS="linenum">0010:</SPAN> <SPAN CLASS="keyword">#include</SPAN> "<SPAN CLASS="string">matrix.h</SPAN>"
+<SPAN CLASS="linenum">0011:</SPAN> 
+<SPAN CLASS="linenum">0012:</SPAN> <SPAN CLASS="comment">// ----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0013:</SPAN> <SPAN CLASS="comment">// çsóÒåvéZ</SPAN>
+<SPAN CLASS="linenum">0014:</SPAN> <SPAN CLASS="comment">// ----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0015:</SPAN> ifMatrix *ifMatrixIdentity( ifMatrix *pOut )
+<SPAN CLASS="linenum">0016:</SPAN> {
+<SPAN CLASS="linenum">0017:</SPAN>     <SPAN CLASS="keyword">int</SPAN> i, j;
+<SPAN CLASS="linenum">0018:</SPAN>     
+<SPAN CLASS="linenum">0019:</SPAN>     <SPAN CLASS="keyword">for</SPAN>(i=0;i&lt;4;i++)
+<SPAN CLASS="linenum">0020:</SPAN>         <SPAN CLASS="keyword">for</SPAN>(j=0;j&lt;4;j++)
+<SPAN CLASS="linenum">0021:</SPAN>             (*pOut)[i][j] = (i==j)?1.0f:0.0f;
+<SPAN CLASS="linenum">0022:</SPAN>     
+<SPAN CLASS="linenum">0023:</SPAN>     <SPAN CLASS="keyword">return</SPAN> pOut;
+<SPAN CLASS="linenum">0024:</SPAN> }
+<SPAN CLASS="linenum">0025:</SPAN> <SPAN CLASS="comment">// ----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0026:</SPAN> ifMatrix* ifMatrixMultiply( ifMatrix *pOut,
+<SPAN CLASS="linenum">0027:</SPAN>                             <SPAN CLASS="keyword">const</SPAN> ifMatrix *pM1,
+<SPAN CLASS="linenum">0028:</SPAN>                             <SPAN CLASS="keyword">const</SPAN> ifMatrix *pM2
+<SPAN CLASS="linenum">0029:</SPAN>                             )
+<SPAN CLASS="linenum">0030:</SPAN> {
+<SPAN CLASS="linenum">0031:</SPAN>     ifMatrix tmp;<SPAN CLASS="comment">// (*pOut) Ç∆pM1Ç‡ÇµÇ≠ÇÕpM2Ç™ìôÇµÇ©Ç¡ÇΩéûÇ…ä‘à·Ç¶ÇÈÇÃÇ≈àÍéûï€ë∂</SPAN>
+<SPAN CLASS="linenum">0032:</SPAN>     <SPAN CLASS="keyword">int</SPAN> i, j;
+<SPAN CLASS="linenum">0033:</SPAN>     
+<SPAN CLASS="linenum">0034:</SPAN>     <SPAN CLASS="keyword">for</SPAN>(i=0;i&lt;4;i++){
+<SPAN CLASS="linenum">0035:</SPAN>         <SPAN CLASS="keyword">for</SPAN>(j=0;j&lt;4;j++){
+<SPAN CLASS="linenum">0036:</SPAN>             tmp[i][j] = (*pM1)[i][0]*(*pM2)[0][j]
+<SPAN CLASS="linenum">0037:</SPAN>                       + (*pM1)[i][1]*(*pM2)[1][j]
+<SPAN CLASS="linenum">0038:</SPAN>                       + (*pM1)[i][2]*(*pM2)[2][j]
+<SPAN CLASS="linenum">0039:</SPAN>                       + (*pM1)[i][3]*(*pM2)[3][j];
+<SPAN CLASS="linenum">0040:</SPAN>         }
+<SPAN CLASS="linenum">0041:</SPAN>     }
+<SPAN CLASS="linenum">0042:</SPAN>     <SPAN CLASS="keyword">for</SPAN>(i=0;i&lt;4;i++){
+<SPAN CLASS="linenum">0043:</SPAN>         <SPAN CLASS="keyword">for</SPAN>(j=0;j&lt;4;j++){
+<SPAN CLASS="linenum">0044:</SPAN>             (*pOut)[i][j] = tmp[i][j];
+<SPAN CLASS="linenum">0045:</SPAN>         }
+<SPAN CLASS="linenum">0046:</SPAN>     }
+<SPAN CLASS="linenum">0047:</SPAN>     
+<SPAN CLASS="linenum">0048:</SPAN>     <SPAN CLASS="keyword">return</SPAN> pOut;
+<SPAN CLASS="linenum">0049:</SPAN> }
+<SPAN CLASS="linenum">0050:</SPAN> <SPAN CLASS="comment">// ----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0051:</SPAN> ifMatrix* ifMatrixRotationX( ifMatrix *pOut, <SPAN CLASS="keyword">float</SPAN> Angle )
+<SPAN CLASS="linenum">0052:</SPAN> {
+<SPAN CLASS="linenum">0053:</SPAN>     <SPAN CLASS="keyword">float</SPAN> c = (<SPAN CLASS="keyword">float</SPAN>)cos(Angle);
+<SPAN CLASS="linenum">0054:</SPAN>     <SPAN CLASS="keyword">float</SPAN> s = (<SPAN CLASS="keyword">float</SPAN>)sin(Angle);
+<SPAN CLASS="linenum">0055:</SPAN>     
+<SPAN CLASS="linenum">0056:</SPAN>     (*pOut)[0][0] = 1.0f; (*pOut)[0][1] = 0.0f; (*pOut)[0][2] = 0.0f; (*pOut)[0][3] = 0.0f;
+<SPAN CLASS="linenum">0057:</SPAN>     (*pOut)[1][0] = 0.0f; (*pOut)[1][1] =    c; (*pOut)[1][2] =    s; (*pOut)[1][3] = 0.0f;
+<SPAN CLASS="linenum">0058:</SPAN>     (*pOut)[2][0] = 0.0f; (*pOut)[2][1] =   -s; (*pOut)[2][2] =    c; (*pOut)[2][3] = 0.0f;
+<SPAN CLASS="linenum">0059:</SPAN>     (*pOut)[3][0] = 0.0f; (*pOut)[3][1] = 0.0f; (*pOut)[3][2] = 0.0f; (*pOut)[3][3] = 1.0f;
+<SPAN CLASS="linenum">0060:</SPAN>     
+<SPAN CLASS="linenum">0061:</SPAN>     <SPAN CLASS="keyword">return</SPAN> pOut;
+<SPAN CLASS="linenum">0062:</SPAN> }
+<SPAN CLASS="linenum">0063:</SPAN> <SPAN CLASS="comment">// ----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0064:</SPAN> ifMatrix* ifMatrixRotationY( ifMatrix *pOut, <SPAN CLASS="keyword">float</SPAN> Angle )
+<SPAN CLASS="linenum">0065:</SPAN> {
+<SPAN CLASS="linenum">0066:</SPAN>     <SPAN CLASS="keyword">float</SPAN> c = (<SPAN CLASS="keyword">float</SPAN>)cos(Angle);
+<SPAN CLASS="linenum">0067:</SPAN>     <SPAN CLASS="keyword">float</SPAN> s = (<SPAN CLASS="keyword">float</SPAN>)sin(Angle);
+<SPAN CLASS="linenum">0068:</SPAN>     
+<SPAN CLASS="linenum">0069:</SPAN>     (*pOut)[0][0] =    c; (*pOut)[0][1] = 0.0f; (*pOut)[0][2] =   -s; (*pOut)[0][3] = 0.0f;
+<SPAN CLASS="linenum">0070:</SPAN>     (*pOut)[1][0] = 0.0f; (*pOut)[1][1] = 1.0f; (*pOut)[1][2] = 0.0f; (*pOut)[1][3] = 0.0f;
+<SPAN CLASS="linenum">0071:</SPAN>     (*pOut)[2][0] =    s; (*pOut)[2][1] = 0.0f; (*pOut)[2][2] =    c; (*pOut)[2][3] = 0.0f;
+<SPAN CLASS="linenum">0072:</SPAN>     (*pOut)[3][0] = 0.0f; (*pOut)[3][1] = 0.0f; (*pOut)[3][2] = 0.0f; (*pOut)[3][3] = 1.0f;
+<SPAN CLASS="linenum">0073:</SPAN>     
+<SPAN CLASS="linenum">0074:</SPAN>     <SPAN CLASS="keyword">return</SPAN> pOut;
+<SPAN CLASS="linenum">0075:</SPAN> }
+<SPAN CLASS="linenum">0076:</SPAN> <SPAN CLASS="comment">// ----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0077:</SPAN> ifMatrix* ifMatrixRotationZ( ifMatrix *pOut, <SPAN CLASS="keyword">float</SPAN> Angle )
+<SPAN CLASS="linenum">0078:</SPAN> {
+<SPAN CLASS="linenum">0079:</SPAN>     <SPAN CLASS="keyword">float</SPAN> c = (<SPAN CLASS="keyword">float</SPAN>)cos(Angle);
+<SPAN CLASS="linenum">0080:</SPAN>     <SPAN CLASS="keyword">float</SPAN> s = (<SPAN CLASS="keyword">float</SPAN>)sin(Angle);
+<SPAN CLASS="linenum">0081:</SPAN>     
+<SPAN CLASS="linenum">0082:</SPAN>     (*pOut)[0][0] =    c; (*pOut)[0][1] =    s; (*pOut)[0][2] = 0.0f; (*pOut)[0][3] = 0.0f;
+<SPAN CLASS="linenum">0083:</SPAN>     (*pOut)[1][0] =   -s; (*pOut)[1][1] =    c; (*pOut)[1][2] = 0.0f; (*pOut)[1][3] = 0.0f;
+<SPAN CLASS="linenum">0084:</SPAN>     (*pOut)[2][0] = 0.0f; (*pOut)[2][1] = 0.0f; (*pOut)[2][2] = 1.0f; (*pOut)[2][3] = 0.0f;
+<SPAN CLASS="linenum">0085:</SPAN>     (*pOut)[3][0] = 0.0f; (*pOut)[3][1] = 0.0f; (*pOut)[3][2] = 0.0f; (*pOut)[3][3] = 1.0f;
+<SPAN CLASS="linenum">0086:</SPAN>     
+<SPAN CLASS="linenum">0087:</SPAN>     <SPAN CLASS="keyword">return</SPAN> pOut;
+<SPAN CLASS="linenum">0088:</SPAN> }
+<SPAN CLASS="linenum">0089:</SPAN> <SPAN CLASS="comment">// ----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0090:</SPAN> ifMatrix* ifMatrixScaling( ifMatrix *pOut, <SPAN CLASS="keyword">float</SPAN> sx, <SPAN CLASS="keyword">float</SPAN> sy, <SPAN CLASS="keyword">float</SPAN> sz)
+<SPAN CLASS="linenum">0091:</SPAN> {
+<SPAN CLASS="linenum">0092:</SPAN>     (*pOut)[0][0] =   sx; (*pOut)[0][1] = 0.0f; (*pOut)[0][2] = 0.0f; (*pOut)[0][3] = 0.0f;
+<SPAN CLASS="linenum">0093:</SPAN>     (*pOut)[1][0] = 0.0f; (*pOut)[1][1] =   sy; (*pOut)[1][2] = 0.0f; (*pOut)[1][3] = 0.0f;
+<SPAN CLASS="linenum">0094:</SPAN>     (*pOut)[2][0] = 0.0f; (*pOut)[2][1] = 0.0f; (*pOut)[2][2] =   sz; (*pOut)[2][3] = 0.0f;
+<SPAN CLASS="linenum">0095:</SPAN>     (*pOut)[3][0] = 0.0f; (*pOut)[3][1] = 0.0f; (*pOut)[3][2] = 0.0f; (*pOut)[3][3] = 1.0f;
+<SPAN CLASS="linenum">0096:</SPAN>     
+<SPAN CLASS="linenum">0097:</SPAN>     <SPAN CLASS="keyword">return</SPAN> pOut;
+<SPAN CLASS="linenum">0098:</SPAN> }
+<SPAN CLASS="linenum">0099:</SPAN> <SPAN CLASS="comment">// ----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0100:</SPAN> ifMatrix* ifMatrixTranslation( ifMatrix *pOut, <SPAN CLASS="keyword">float</SPAN> x, <SPAN CLASS="keyword">float</SPAN> y, <SPAN CLASS="keyword">float</SPAN> z )
+<SPAN CLASS="linenum">0101:</SPAN> {
+<SPAN CLASS="linenum">0102:</SPAN>     (*pOut)[0][0] = 1.0f; (*pOut)[0][1] = 0.0f; (*pOut)[0][2] = 0.0f; (*pOut)[0][3] = 0.0f;
+<SPAN CLASS="linenum">0103:</SPAN>     (*pOut)[1][0] = 0.0f; (*pOut)[1][1] = 1.0f; (*pOut)[1][2] = 0.0f; (*pOut)[1][3] = 0.0f;
+<SPAN CLASS="linenum">0104:</SPAN>     (*pOut)[2][0] = 0.0f; (*pOut)[2][1] = 0.0f; (*pOut)[2][2] = 1.0f; (*pOut)[2][3] = 0.0f;
+<SPAN CLASS="linenum">0105:</SPAN>     (*pOut)[3][0] =    x; (*pOut)[3][1] =    y; (*pOut)[3][2] =    z; (*pOut)[3][3] = 1.0f;
+<SPAN CLASS="linenum">0106:</SPAN>     
+<SPAN CLASS="linenum">0107:</SPAN>     <SPAN CLASS="keyword">return</SPAN> pOut;
+<SPAN CLASS="linenum">0108:</SPAN> }
+<SPAN CLASS="linenum">0109:</SPAN> <SPAN CLASS="comment">// ----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0110:</SPAN> <SPAN CLASS="comment">// ÇRéüå≥ÇÃì]íuçsóÒ</SPAN>
+<SPAN CLASS="linenum">0111:</SPAN> ifMatrix* ifMatrixTranspose( ifMatrix *pOut, <SPAN CLASS="keyword">const</SPAN> ifMatrix *pM )
+<SPAN CLASS="linenum">0112:</SPAN> {
+<SPAN CLASS="linenum">0113:</SPAN>     <SPAN CLASS="keyword">float</SPAN> m01 = (*pM)[0][1];
+<SPAN CLASS="linenum">0114:</SPAN>     <SPAN CLASS="keyword">float</SPAN> m02 = (*pM)[0][2];
+<SPAN CLASS="linenum">0115:</SPAN>     <SPAN CLASS="keyword">float</SPAN> m12 = (*pM)[1][2];
+<SPAN CLASS="linenum">0116:</SPAN>     <SPAN CLASS="keyword">float</SPAN> m03 = (*pM)[0][3];
+<SPAN CLASS="linenum">0117:</SPAN>     <SPAN CLASS="keyword">float</SPAN> m13 = (*pM)[1][3];
+<SPAN CLASS="linenum">0118:</SPAN>     <SPAN CLASS="keyword">float</SPAN> m23 = (*pM)[2][3];
+<SPAN CLASS="linenum">0119:</SPAN>     
+<SPAN CLASS="linenum">0120:</SPAN>     (*pOut)[0][1] = (*pM)[1][0];
+<SPAN CLASS="linenum">0121:</SPAN>     (*pOut)[0][2] = (*pM)[2][0];
+<SPAN CLASS="linenum">0122:</SPAN>     (*pOut)[1][2] = (*pM)[2][1];
+<SPAN CLASS="linenum">0123:</SPAN>     (*pOut)[0][3] = (*pM)[3][0];
+<SPAN CLASS="linenum">0124:</SPAN>     (*pOut)[1][3] = (*pM)[3][1];
+<SPAN CLASS="linenum">0125:</SPAN>     (*pOut)[2][3] = (*pM)[3][2];
+<SPAN CLASS="linenum">0126:</SPAN>     (*pOut)[1][0] = m01;
+<SPAN CLASS="linenum">0127:</SPAN>     (*pOut)[2][0] = m02;
+<SPAN CLASS="linenum">0128:</SPAN>     (*pOut)[2][1] = m12;
+<SPAN CLASS="linenum">0129:</SPAN>     (*pOut)[3][0] = m03;
+<SPAN CLASS="linenum">0130:</SPAN>     (*pOut)[3][1] = m13;
+<SPAN CLASS="linenum">0131:</SPAN>     (*pOut)[3][2] = m23;
+<SPAN CLASS="linenum">0132:</SPAN>     (*pOut)[0][0] = (*pM)[0][0];
+<SPAN CLASS="linenum">0133:</SPAN>     (*pOut)[1][1] = (*pM)[1][1];
+<SPAN CLASS="linenum">0134:</SPAN>     (*pOut)[2][2] = (*pM)[2][2];
+<SPAN CLASS="linenum">0135:</SPAN>     (*pOut)[3][3] = (*pM)[3][3];
+<SPAN CLASS="linenum">0136:</SPAN>     
+<SPAN CLASS="linenum">0137:</SPAN>     <SPAN CLASS="keyword">return</SPAN> pOut;
+<SPAN CLASS="linenum">0138:</SPAN> }
+<SPAN CLASS="linenum">0139:</SPAN> <SPAN CLASS="comment">// ----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0140:</SPAN> 
+<SPAN CLASS="linenum">0141:</SPAN> <SPAN CLASS="comment">// ----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0142:</SPAN> <SPAN CLASS="comment">// ÉxÉNÉgÉãåvéZ</SPAN>
+<SPAN CLASS="linenum">0143:</SPAN> <SPAN CLASS="comment">// ----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0144:</SPAN> ifVector4* ifVec4Add( ifVector4* pOut
+<SPAN CLASS="linenum">0145:</SPAN>                     , <SPAN CLASS="keyword">const</SPAN> ifVector4* pV1, <SPAN CLASS="keyword">const</SPAN> ifVector4* pV2)
+<SPAN CLASS="linenum">0146:</SPAN> {
+<SPAN CLASS="linenum">0147:</SPAN>     (*pOut)[0] = (*pV1)[0]+(*pV2)[0];
+<SPAN CLASS="linenum">0148:</SPAN>     (*pOut)[1] = (*pV1)[1]+(*pV2)[1];
+<SPAN CLASS="linenum">0149:</SPAN>     (*pOut)[2] = (*pV1)[2]+(*pV2)[2];
+<SPAN CLASS="linenum">0150:</SPAN>     (*pOut)[3] = (*pV1)[3]+(*pV2)[3];
+<SPAN CLASS="linenum">0151:</SPAN> 
+<SPAN CLASS="linenum">0152:</SPAN>     <SPAN CLASS="keyword">return</SPAN> pOut;
+<SPAN CLASS="linenum">0153:</SPAN> }
+<SPAN CLASS="linenum">0154:</SPAN> <SPAN CLASS="comment">// ----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0155:</SPAN> ifVector4* ifVec4Normalize( ifVector4 *pOut, <SPAN CLASS="keyword">const</SPAN> ifVector4 *pV )
+<SPAN CLASS="linenum">0156:</SPAN> {
+<SPAN CLASS="linenum">0157:</SPAN>     <SPAN CLASS="keyword">float</SPAN> rsq = 1.0f/(<SPAN CLASS="keyword">float</SPAN>)sqrt( (*pV)[0] * (*pV)[0]
+<SPAN CLASS="linenum">0158:</SPAN>                                 + (*pV)[1] * (*pV)[1]
+<SPAN CLASS="linenum">0159:</SPAN>                                 + (*pV)[2] * (*pV)[2]
+<SPAN CLASS="linenum">0160:</SPAN>                                 + (*pV)[3] * (*pV)[3] );
+<SPAN CLASS="linenum">0161:</SPAN>     (*pOut)[0] = (*pV)[0]*rsq;
+<SPAN CLASS="linenum">0162:</SPAN>     (*pOut)[1] = (*pV)[1]*rsq;
+<SPAN CLASS="linenum">0163:</SPAN>     (*pOut)[2] = (*pV)[2]*rsq;
+<SPAN CLASS="linenum">0164:</SPAN>     (*pOut)[3] = (*pV)[3]*rsq;
+<SPAN CLASS="linenum">0165:</SPAN> 
+<SPAN CLASS="linenum">0166:</SPAN>     <SPAN CLASS="keyword">return</SPAN> pOut;
+<SPAN CLASS="linenum">0167:</SPAN> }
+<SPAN CLASS="linenum">0168:</SPAN> <SPAN CLASS="comment">// ----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0169:</SPAN> ifVector4* ifVec4Transform( ifVector4 *pOut
+<SPAN CLASS="linenum">0170:</SPAN>                     , <SPAN CLASS="keyword">const</SPAN> ifVector4 *pIn, <SPAN CLASS="keyword">const</SPAN> ifMatrix *pM )
+<SPAN CLASS="linenum">0171:</SPAN> {
+<SPAN CLASS="linenum">0172:</SPAN>     ifVector4 tmp;
+<SPAN CLASS="linenum">0173:</SPAN> 
+<SPAN CLASS="linenum">0174:</SPAN>     tmp[0] = (*pIn)[0]*(*pM)[0][0] + (*pIn)[1]*(*pM)[1][0] + (*pIn)[2]*(*pM)[2][0] + (*pIn)[3]*(*pM)[3][0];
+<SPAN CLASS="linenum">0175:</SPAN>     tmp[1] = (*pIn)[0]*(*pM)[0][1] + (*pIn)[1]*(*pM)[1][1] + (*pIn)[2]*(*pM)[2][1] + (*pIn)[3]*(*pM)[3][1];
+<SPAN CLASS="linenum">0176:</SPAN>     tmp[2] = (*pIn)[0]*(*pM)[0][2] + (*pIn)[1]*(*pM)[1][2] + (*pIn)[2]*(*pM)[2][2] + (*pIn)[3]*(*pM)[3][2];
+<SPAN CLASS="linenum">0177:</SPAN>     tmp[3] = (*pIn)[0]*(*pM)[0][3] + (*pIn)[1]*(*pM)[1][3] + (*pIn)[2]*(*pM)[2][3] + (*pIn)[3]*(*pM)[3][3];
+<SPAN CLASS="linenum">0178:</SPAN>     
+<SPAN CLASS="linenum">0179:</SPAN>     (*pOut)[0] = tmp[0];
+<SPAN CLASS="linenum">0180:</SPAN>     (*pOut)[1] = tmp[1];
+<SPAN CLASS="linenum">0181:</SPAN>     (*pOut)[2] = tmp[2];
+<SPAN CLASS="linenum">0182:</SPAN>     (*pOut)[3] = tmp[3];
+<SPAN CLASS="linenum">0183:</SPAN> 
+<SPAN CLASS="linenum">0184:</SPAN>     <SPAN CLASS="keyword">return</SPAN> pOut;
+<SPAN CLASS="linenum">0185:</SPAN> }
+<SPAN CLASS="linenum">0186:</SPAN> </PRE>
+</BODY>
+</HTML>

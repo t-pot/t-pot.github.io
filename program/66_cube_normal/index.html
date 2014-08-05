@@ -1,0 +1,274 @@
+<head>
+	<title>t-pot『正規化キューブマップ』</title>
+	<link rel="stylesheet" type="text/css" href="../if.css">
+</head>
+<meta http-equiv=Content-Type content="text/html; charset=shift_jis">
+<body>
+
+
+<div class="contents">
+<center>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<h1>正規化キューブマップ</h1><br>
+<h3>～ Normalization cube map ～</h3>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<image src = "title.jpg">
+<br>
+<hr>
+</center>
+<div>
+
+
+<h2>■はじめに</h2>
+
+
+<p>
+正規化キューブマップという言葉はよく聞きますが、実際に見たことがありません。
+では、ちょっと見てみましょう。
+</p>
+<ul style = "LIST-STYLE-TYPE:none">
+<li><a href="src.lzh">src.lzh (正規化キューブマップのサンプル:DirectX8.1)</a>
+</ul>
+
+<p>
+まぁ、いつものように適当にファイルが入っています。
+</p>
+<table>
+<tr><td><a href="vs_vsh.html">vs.vsh</a></td><td>頂点シェーダー。</td></tr>
+<tr><td><a href="ps_psh.html">ps.psh</a></td><td>ピクセルシェーダー。</td></tr>
+<tr><td><a href="draw_cpp.html">draw.cpp</a></td><td>メインの描画部分。</td></tr>
+<tr><td><a href="draw_h.html">draw.h</a></td><td>描画の各関数の定義。</td></tr>
+<tr><td><a href="bg_cpp.html">bg.cpp</a></td><td>背景の描画。</td></tr>
+<tr><td><a href="main_h.html">main.h</a></td><td>基本的な定数など。</td></tr>
+<tr><td><a href="main_cpp.html">main.cpp</a></td><td>描画に関係しないシステム的な部分。</td></tr>
+<tr><td><a href="load_cpp.html">load.cpp</a></td><td>ロード。</td></tr>
+<tr><td><a href="load_h.html">load.h</a></td><td>ロードのインターフェイス。</td></tr>
+</table>
+<image src = "../media/tile_bmp.jpg" width = 64 height=64>tile.bmp (床デカール)<br>
+<image src = "../media/sky_bmp.jpg" width = 64 height=64>sky.bmp (空デカール)<br>
+<p>
+あと、実行ファイル及び、プロジェクトファイルが入っています。
+</p>
+
+
+<h2>■やっていること</h2>
+
+
+<p>
+正規化キューブマップとは、ベクトルを正規化するために使います。<br>
+実際の使い方としては、頂点シェーダで法線ベクトル等をピクセルシェーダに渡すことが多いです。
+渡されたベクトルはピクセル単位では、正規化されていないので、
+正規化キューブマップを使って正規化してスペキュラ計算などを行ないます。<br>
+</p>
+<p>
+正規化キューブマップとは、次の色をしたキューブマップです(切り取って張り合わせてみよう！)。
+</p>
+<image src = "cubemap.jpg">
+<p>
+正規化キューブマップは、キューブマップの各ピクセルの位置に関して正規化したベクトルを、
+法線マップのように色落とし込みます。
+</p>
+<p>
+正規化キューブマップを使って、ワールド座標での法線ベクトルをマッピングすると、
+</p>
+<image src = "normal.jpg">
+<p>
+になります。
+手前の面が青、上の面が緑、左側が赤と、
+法線ベクトルの向きに応じて色が付けられているのが見て取れます。<br>
+ハーフベクトルなら
+</p>
+<image src = "half.jpg">
+<p>
+になります。<br>
+ハーフベクトルは、視線ベクトルが頂点座標で決まるので、位置に関して滑らかな変化を見せます。
+</p>
+
+
+<h2>■正規化キューブマップの作成</h2>
+
+
+<p>
+肝心の正規化キューブマップの作り方ですが、基本的にはキューブマップなので、
+あらかじめ、LPDIRECT3DCUBETEXTURE8のオブジェクトを用意しておき、
+CreateCubeTextureでテクスチャを生成します。<br>
+あとは、算術的にテクスチャを作成する関数のD3DXFillCubeTextureを使ってテクスチャを塗りつぶします。
+</p>
+<pre class="CodeBlock">
+draw.cpp
+<font color="deepskyblue">0031:</font> LPDIRECT3DCUBETEXTURE8  pCubeMap=NULL;
+<font color="deepskyblue">0242:</font>     <font color="cyan">// 正規化キューブマップの作成</font>
+<font color="deepskyblue">0243:</font>     hr = lpD3DDev-&gt;CreateCubeTexture( 512, 1, D3DUSAGE_RENDERTARGET, D3DFMT_A8R8G8B8,
+<font color="deepskyblue">0244:</font>                                 D3DPOOL_DEFAULT , &amp;pCubeMap );
+<font color="deepskyblue">0245:</font>     <font color="blue">if</font> ( FAILED(hr) ) <font color="blue">return</font> hr;
+<font color="deepskyblue">0246:</font>     hr = D3DXFillCubeTexture( pCubeMap, make_normalize_cubemap, NULL );
+<font color="deepskyblue">0247:</font>     <font color="blue">if</font> ( FAILED(hr) ) <font color="blue">return</font> hr;
+</pre>
+<p>
+キューブマップを塗りつぶす部分は、次のようになります。<br>
+テクスチャの座標を正規化した後に、０～１に値をクランプして、色として出力します。
+</p>
+<pre class="CodeBlock">
+draw.cpp
+<font color="deepskyblue">0207:</font> <font color="cyan">//-----------------------------------------------------------------------------</font>
+<font color="deepskyblue">0208:</font> <font color="cyan">// 正規化キューブマップの塗りつぶし</font>
+<font color="deepskyblue">0209:</font> <font color="cyan">//-----------------------------------------------------------------------------</font>
+<font color="deepskyblue">0210:</font> <font color="blue">void</font> make_normalize_cubemap( D3DXVECTOR4 *pOut, D3DXVECTOR3 *pTexCoord,
+<font color="deepskyblue">0211:</font> D3DXVECTOR3 *pTexelSize, LPVOID pData)
+<font color="deepskyblue">0212:</font> {
+<font color="deepskyblue">0213:</font>     D3DXVECTOR3 n;
+<font color="deepskyblue">0214:</font>     D3DXVec3Normalize( &amp;n, pTexCoord );
+<font color="deepskyblue">0215:</font> 
+<font color="deepskyblue">0216:</font>     pOut-&gt;x = 0.5f*(n.x + 1.0f);
+<font color="deepskyblue">0217:</font>     pOut-&gt;y = 0.5f*(n.y + 1.0f);
+<font color="deepskyblue">0218:</font>     pOut-&gt;z = 0.5f*(n.z + 1.0f);
+<font color="deepskyblue">0219:</font>     pOut-&gt;w = 1.0f;
+<font color="deepskyblue">0220:</font> }
+</pre>
+<p>
+実際の使い方は、普通のテクスチャと何ら変わりません。
+SetTexture で、設定して、テクスチャを使います。
+</p>
+<pre class="CodeBlock">
+<font color="deepskyblue">0403:</font>     lpD3DDev-&gt;SetTexture( 0, pCubeMap );
+<font color="deepskyblue">0404:</font>     lpD3DDev-&gt;SetTexture( 1, pCubeMap );
+</pre>
+
+
+<h2>■シェーダ</h2>
+
+
+<p>
+では、表示するためのシェーダを見ていきましょう。<br>
+今回は、oT0 に法線ベクトル、oT1にハーフベクトルを出力します。
+</p>
+<pre class="CodeBlock">
+vs.vsh
+<font color="deepskyblue">0001:</font> <font color="cyan">; c0-3   -- world + ビュー + 透視変換行列</font>
+<font color="deepskyblue">0002:</font> <font color="cyan">; c4-7   -- world</font>
+<font color="deepskyblue">0003:</font> <font color="cyan">; c12    -- {0.0, 0.5, 1.0, 2.0}</font>
+<font color="deepskyblue">0004:</font> <font color="cyan">;</font>
+<font color="deepskyblue">0005:</font> <font color="cyan">; v0    頂点の座標値</font>
+<font color="deepskyblue">0006:</font> <font color="cyan">; v3    法線ベクトル (w成分は1.0f)</font>
+<font color="deepskyblue">0007:</font> 
+<font color="deepskyblue">0008:</font> vs.1.0
+<font color="deepskyblue">0009:</font> 
+<font color="deepskyblue">0010:</font> <font color="cyan">;座標変換</font>
+<font color="deepskyblue">0011:</font> m4x4 oPos,  v0,   c0
+<font color="deepskyblue">0012:</font> 
+<font color="deepskyblue">0013:</font> <font color="cyan">; Lambert 拡散</font>
+<font color="deepskyblue">0014:</font> dp4 r0, v3, c13
+<font color="deepskyblue">0015:</font> max r0, r0, c13.w
+<font color="deepskyblue">0016:</font> mul oD0, r0, c14
+<font color="deepskyblue">0017:</font> 
+<font color="deepskyblue">0018:</font> <font color="cyan">; 視線ベクトル</font>
+<font color="deepskyblue">0019:</font> m4x4 r0,  v0,   c4
+<font color="deepskyblue">0020:</font> add r0, c15, -r0
+<font color="deepskyblue">0021:</font> dp3 r0.w, r0, r0    <font color="cyan">; 正規化</font>
+<font color="deepskyblue">0022:</font> rsq r0.w, r0.w
+<font color="deepskyblue">0023:</font> mul r0, r0, r0.w
+<font color="deepskyblue">0024:</font> 
+<font color="deepskyblue">0025:</font> <font color="cyan">; Half ベクトル</font>
+<font color="deepskyblue">0026:</font> add oT1, r0, c11
+<font color="deepskyblue">0027:</font> 
+<font color="deepskyblue">0028:</font> <font color="cyan">; ワールド座標での法線ベクトル</font>
+<font color="deepskyblue">0029:</font> m3x3 oT0,  v3,   c4
+</pre>
+<p>
+座標変換と、拡散光は普通に計算します。<br>
+あとは、正規化した視線ベクトルとライトベクトルを足して、ハーフベクトルを計算し、
+正規化は正規化キューブマップがやってくれるので、正規化しないで出力します。<br>
+法線ベクトルは、ワールド座標系に変換してから出力します。<br>
+ここまで作って気が付いたのですが、ローカル座標系で計算すれば命令数が減らせそうですね。
+</p>
+<p>
+ピクセルシェーダでは、tex 命令を使えばキューブマップをサンプリングしてくれるので、
+法線、ハーフベクトル共に正規化キューブマップで正規化して、べき乗して鏡面反射成分を求めます。
+</p>
+<pre class="CodeBlock">
+ps.psh
+<font color="deepskyblue">0001:</font> <font color="cyan">; ps.psh</font>
+<font color="deepskyblue">0002:</font> 
+<font color="deepskyblue">0003:</font> ps.1.1
+<font color="deepskyblue">0004:</font> 
+<font color="deepskyblue">0005:</font> def c0, 0.7f, 0.7f, 0.7f, 1.0f  <font color="cyan">; ライトの色</font>
+<font color="deepskyblue">0006:</font> 
+<font color="deepskyblue">0007:</font> tex t0
+<font color="deepskyblue">0008:</font> tex t1
+<font color="deepskyblue">0009:</font> 
+<font color="deepskyblue">0010:</font> dp3_sat r0, t1_bx2, t0_bx2  <font color="cyan">; (N･H)</font>
+<font color="deepskyblue">0011:</font> mul r0, r0, r0              <font color="cyan">; (N･H)^2</font>
+<font color="deepskyblue">0012:</font> mul r0, r0, r0              <font color="cyan">; (N･H)^4</font>
+<font color="deepskyblue">0013:</font> mul r0, r0, r0              <font color="cyan">; (N･H)^8</font>
+<font color="deepskyblue">0014:</font> <font color="cyan">;mul r0, r0, r0             ; (N･H)^16</font>
+<font color="deepskyblue">0015:</font> <font color="cyan">;mul r0, r0, r0             ; (N･H)^32</font>
+<font color="deepskyblue">0016:</font> 
+<font color="deepskyblue">0017:</font> mad r0, r0, c0, v0          <font color="cyan">; out = co*(N･H)^n + 拡散光</font>
+</pre>
+<p>
+_bx2修飾子をつけると、サンプリングした色をそのままベクトルとして使えます。<br>
+後は、内積の負の部分は要らないので、_sat修飾子で負の部分を切り取りました。
+</p>
+
+
+<h2>■テクスチャサイズ</h2>
+
+
+<p>
+さて、タイトルの絵のキューブマップの大きさは、512x512です。
+このテクスチャは、512x512x6(枚)x4(bytes/pixel)=6Mbytes のメモリを使っています。
+現在の128MBが標準のビデオメモリとしては5%程度の大きさですが、皆さんは、この大きさを許せますか？
+</p>
+<p>
+では、サイズが変わったときの変化を見ていきましょう。<br>
+テクスチャのサイズを16x16にすると、次の画像が得られます。
+</p>
+<image src = "16.jpg">
+<p>
+中央の車の窓に注目してください。ひし形の模様が見えると思います。<br>
+これが解像度が小さいテクスチャの結果です。<br>
+動かしてみるとわかるのですが、このひし形の模様は車が動いてもそれほど動かず、
+結構目立ちます。<br>
+比較として、512x512の画像を見ると、
+</p>
+<image src = "512.jpg">
+<p>
+のように、模様は目立ちませんが、ざらついています。<br>
+個人的には、この画像で、1024x1024の大きさを持つと非常に滑らかになると思います
+（24Mですね。勇気がいるサイズです）。<br>
+では、中間を見てみますと、128x128で
+</p>
+<image src = "128.jpg">
+<p>
+になります。ぱっと見、模様は見えませんが、やはり模様はあって、
+見る人が見れば気になるレベルになっています。<br>
+なんともいえませんね。
+メモリと相談して、サイズを決めてください。<br>
+あっ、そういえば、ミップマップをしていないので、それで変わるかも。
+</p>
+
+<h2>■最後に</h2>
+
+
+<p>
+さて、正規化キューブマップをやってみました。<br>
+これからのスペキュラ計算は、ピクセルシェーダによる計算に移っていくとは思いますが、
+Xbox や、DirectX8世代のグラフィックチップの対応にまだまだ使われる技術だと思います。<br>
+一個作っておけば、使いまわせるので、１つ用意されてはいかがでしょうか。
+</p>
+
+</div>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<center>
+<hr>
+<p><a href="../index.html">もどる</a></p>
+<p><a href="mailto:imagire@gmail.com">imagire@gmail.com</a></p>
+</center>
+
+</body>
+</html>

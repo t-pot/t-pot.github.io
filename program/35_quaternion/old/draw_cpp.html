@@ -1,0 +1,178 @@
+<HTML>
+<HEAD>
+<TITLE>draw.cpp</TITLE>
+<meta name="GENERATOR" content="cpp2html 2.0 by Niisaka">
+<meta http-equiv="Content-Type" content="text/html">
+<meta http-equiv="Content-Style-Type" content="text/css">
+<STYLE TYPE="text/css">
+<!--
+SPAN.comment { color:#008000; font-weight:normal; font-style:normal;}
+SPAN.keyword { color:#0000FF; font-weight:normal; font-style:normal;}
+SPAN.string { color:#600000; font-weight:normal; font-style:normal;}
+SPAN.linenum { color:#A0A0A0; font-weight:normal; font-style:normal;}
+-->
+</STYLE>
+</HEAD>
+<BODY TEXT="#000000" BGCOLOR="#FFFFFF">
+<PRE><SPAN CLASS="linenum">0001:</SPAN> <SPAN CLASS="comment">// ----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0002:</SPAN> <SPAN CLASS="comment">//</SPAN>
+<SPAN CLASS="linenum">0003:</SPAN> <SPAN CLASS="comment">// draw.cpp - 描画部分</SPAN>
+<SPAN CLASS="linenum">0004:</SPAN> <SPAN CLASS="comment">// </SPAN>
+<SPAN CLASS="linenum">0005:</SPAN> <SPAN CLASS="comment">// Copyright (c) 2001 imagire (imagire@gmail.com)</SPAN>
+<SPAN CLASS="linenum">0006:</SPAN> <SPAN CLASS="comment">// All Rights Reserved.</SPAN>
+<SPAN CLASS="linenum">0007:</SPAN> <SPAN CLASS="comment">//</SPAN>
+<SPAN CLASS="linenum">0008:</SPAN> <SPAN CLASS="comment">// ----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0009:</SPAN> <SPAN CLASS="keyword">#define</SPAN> STRICT
+<SPAN CLASS="linenum">0010:</SPAN> 
+<SPAN CLASS="linenum">0011:</SPAN> <SPAN CLASS="keyword">#include</SPAN> &lt;windows.h&gt;
+<SPAN CLASS="linenum">0012:</SPAN> <SPAN CLASS="keyword">#include</SPAN> "<SPAN CLASS="string">main.h</SPAN>"
+<SPAN CLASS="linenum">0013:</SPAN> <SPAN CLASS="keyword">#include</SPAN> "<SPAN CLASS="string">draw.h</SPAN>"
+<SPAN CLASS="linenum">0014:</SPAN> <SPAN CLASS="keyword">#include</SPAN> "<SPAN CLASS="string">load.h</SPAN>"
+<SPAN CLASS="linenum">0015:</SPAN> <SPAN CLASS="keyword">#include</SPAN> "<SPAN CLASS="string">rigidbody.h</SPAN>"
+<SPAN CLASS="linenum">0016:</SPAN> 
+<SPAN CLASS="linenum">0017:</SPAN> CMyMesh mesh;
+<SPAN CLASS="linenum">0018:</SPAN> CMyView view;
+<SPAN CLASS="linenum">0019:</SPAN> 
+<SPAN CLASS="linenum">0020:</SPAN> D3DXVECTOR4 rot = D3DXVECTOR4(PI/12.0f, -PI, 0.0f, 0.0f);
+<SPAN CLASS="linenum">0021:</SPAN> 
+<SPAN CLASS="linenum">0022:</SPAN> <SPAN CLASS="comment">// ライトの方向</SPAN>
+<SPAN CLASS="linenum">0023:</SPAN> <SPAN CLASS="keyword">static</SPAN> D3DXVECTOR4 lpos;
+<SPAN CLASS="linenum">0024:</SPAN> D3DXVECTOR4 lrot = D3DXVECTOR4(PI/6.0f, PI/4.0f, 0.0f, 0.0f);
+<SPAN CLASS="linenum">0025:</SPAN> 
+<SPAN CLASS="linenum">0026:</SPAN> <SPAN CLASS="comment">// ----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0027:</SPAN> <SPAN CLASS="comment">// 外部変数</SPAN>
+<SPAN CLASS="linenum">0028:</SPAN> <SPAN CLASS="keyword">void</SPAN> SetLight(LPDIRECT3DDEVICE8 lpD3DDEV, D3DXVECTOR4 *pRot);
+<SPAN CLASS="linenum">0029:</SPAN> <SPAN CLASS="keyword">void</SPAN> InitLightEff(LPDIRECT3DDEVICE8 lpD3DDEV, D3DXVECTOR4 pos);
+<SPAN CLASS="linenum">0030:</SPAN> <SPAN CLASS="keyword">void</SPAN> DrawLightEff(LPDIRECT3DDEVICE8 lpD3DDEV, D3DXMATRIX mView, D3DXMATRIX mProj);
+<SPAN CLASS="linenum">0031:</SPAN> <SPAN CLASS="keyword">void</SPAN> CleanLightEff();
+<SPAN CLASS="linenum">0032:</SPAN> 
+<SPAN CLASS="linenum">0033:</SPAN> <SPAN CLASS="keyword">void</SPAN> InitBg(LPDIRECT3DDEVICE8 lpD3DDev);
+<SPAN CLASS="linenum">0034:</SPAN> <SPAN CLASS="keyword">void</SPAN> DrawBg(LPDIRECT3DDEVICE8 lpD3DDev, D3DXMATRIX *pWorld);
+<SPAN CLASS="linenum">0035:</SPAN> <SPAN CLASS="keyword">void</SPAN> CleanBg(LPDIRECT3DDEVICE8 lpD3DDev);
+<SPAN CLASS="linenum">0036:</SPAN> 
+<SPAN CLASS="linenum">0037:</SPAN> <SPAN CLASS="comment">// ----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0038:</SPAN> <SPAN CLASS="comment">// Name: Render()</SPAN>
+<SPAN CLASS="linenum">0039:</SPAN> <SPAN CLASS="comment">// Desc: ポリゴンの初期化</SPAN>
+<SPAN CLASS="linenum">0040:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0041:</SPAN> <SPAN CLASS="keyword">typedef</SPAN> <SPAN CLASS="keyword">struct</SPAN>{
+<SPAN CLASS="linenum">0042:</SPAN>     <SPAN CLASS="keyword">char</SPAN> *name;
+<SPAN CLASS="linenum">0043:</SPAN> }VS_INFO;
+<SPAN CLASS="linenum">0044:</SPAN> HRESULT InitRender(LPDIRECT3DDEVICE8 lpD3DDEV)
+<SPAN CLASS="linenum">0045:</SPAN> {
+<SPAN CLASS="linenum">0046:</SPAN>     HRESULT hr;
+<SPAN CLASS="linenum">0047:</SPAN> 
+<SPAN CLASS="linenum">0048:</SPAN>     hr = mesh.Load(lpD3DDEV, "<SPAN CLASS="string">nsx.x</SPAN>");
+<SPAN CLASS="linenum">0049:</SPAN>  
+<SPAN CLASS="linenum">0050:</SPAN>     <SPAN CLASS="comment">// レンダリングの状態の設定</SPAN>
+<SPAN CLASS="linenum">0051:</SPAN>     lpD3DDEV-&gt;SetRenderState( D3DRS_ZENABLE, TRUE);
+<SPAN CLASS="linenum">0052:</SPAN>     lpD3DDEV-&gt;SetRenderState( D3DRS_AMBIENT, 0x00404040 );
+<SPAN CLASS="linenum">0053:</SPAN>     lpD3DDEV-&gt;SetRenderState( D3DRS_LIGHTING,  FALSE );
+<SPAN CLASS="linenum">0054:</SPAN>     SetLight(lpD3DDEV, &amp;lrot);  <SPAN CLASS="comment">// 光源の初期化</SPAN>
+<SPAN CLASS="linenum">0055:</SPAN>     
+<SPAN CLASS="linenum">0056:</SPAN>     InitBg(lpD3DDEV);
+<SPAN CLASS="linenum">0057:</SPAN> 
+<SPAN CLASS="linenum">0058:</SPAN>     car.Init();
+<SPAN CLASS="linenum">0059:</SPAN> 
+<SPAN CLASS="linenum">0060:</SPAN>     <SPAN CLASS="keyword">return</SPAN> S_OK;
+<SPAN CLASS="linenum">0061:</SPAN> }
+<SPAN CLASS="linenum">0062:</SPAN> <SPAN CLASS="comment">// ----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0063:</SPAN> <SPAN CLASS="comment">// Name: Render()</SPAN>
+<SPAN CLASS="linenum">0064:</SPAN> <SPAN CLASS="comment">// Desc: ポリゴンの描画</SPAN>
+<SPAN CLASS="linenum">0065:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0066:</SPAN> <SPAN CLASS="keyword">void</SPAN> Render(LPDIRECT3DDEVICE8 lpD3DDEV)
+<SPAN CLASS="linenum">0067:</SPAN> {
+<SPAN CLASS="linenum">0068:</SPAN>     <SPAN CLASS="keyword">if</SPAN>(!mesh.bActive) <SPAN CLASS="keyword">return</SPAN>;
+<SPAN CLASS="linenum">0069:</SPAN>     
+<SPAN CLASS="linenum">0070:</SPAN>     car.Control();
+<SPAN CLASS="linenum">0071:</SPAN> 
+<SPAN CLASS="linenum">0072:</SPAN>     D3DXMATRIX m, mp, mn, mLocal, mWorld, mLW, mProj;
+<SPAN CLASS="linenum">0073:</SPAN>     D3DXVECTOR4 tr;
+<SPAN CLASS="linenum">0074:</SPAN> 
+<SPAN CLASS="linenum">0075:</SPAN>     D3DXMatrixPerspectiveFovLH(&amp;mProj
+<SPAN CLASS="linenum">0076:</SPAN>         ,60.0f*PI/180.0f                        <SPAN CLASS="comment">// 視野角</SPAN>
+<SPAN CLASS="linenum">0077:</SPAN>         ,(<SPAN CLASS="keyword">float</SPAN>)WIDTH/(<SPAN CLASS="keyword">float</SPAN>)HEIGHT             <SPAN CLASS="comment">// アスペクト比</SPAN>
+<SPAN CLASS="linenum">0078:</SPAN>         ,0.1f                                   <SPAN CLASS="comment">// 最近接距離</SPAN>
+<SPAN CLASS="linenum">0079:</SPAN>         ,500.0f                                 <SPAN CLASS="comment">// 最遠方距離</SPAN>
+<SPAN CLASS="linenum">0080:</SPAN>         );
+<SPAN CLASS="linenum">0081:</SPAN>     D3DXMatrixRotationYawPitchRoll(&amp;mWorld, rot.y, rot.x, rot.z);
+<SPAN CLASS="linenum">0082:</SPAN>     tr = car.GetTranslate();
+<SPAN CLASS="linenum">0083:</SPAN>     D3DXMatrixTranslation(&amp;m, -tr.x, -tr.y, -tr.z);
+<SPAN CLASS="linenum">0084:</SPAN>     mWorld = m * mWorld;
+<SPAN CLASS="linenum">0085:</SPAN> 
+<SPAN CLASS="linenum">0086:</SPAN>     D3DXMatrixTranslation(&amp;mp, 0.0f, 2.2f, 0.0f);
+<SPAN CLASS="linenum">0087:</SPAN>     D3DXMatrixTranslation(&amp;mn, 0.0f,-2.2f, 0.0f);
+<SPAN CLASS="linenum">0088:</SPAN>     mLocal = mn * car.GetRotation() * mp;<SPAN CLASS="comment">// 重心は少し上にあるので、その効果</SPAN>
+<SPAN CLASS="linenum">0089:</SPAN>     D3DXMatrixTranslation(&amp;m, tr.x, tr.y, tr.z);
+<SPAN CLASS="linenum">0090:</SPAN>     mLocal = mLocal * m;
+<SPAN CLASS="linenum">0091:</SPAN>     mLW = mLocal*mWorld;
+<SPAN CLASS="linenum">0092:</SPAN>     
+<SPAN CLASS="linenum">0093:</SPAN>     <SPAN CLASS="comment">// 背景描画</SPAN>
+<SPAN CLASS="linenum">0094:</SPAN>     lpD3DDEV-&gt;SetTransform( D3DTS_WORLD, &amp;mWorld );
+<SPAN CLASS="linenum">0095:</SPAN>     lpD3DDEV-&gt;SetTransform( D3DTS_VIEW, &amp;view.Get() );
+<SPAN CLASS="linenum">0096:</SPAN>     lpD3DDEV-&gt;SetTransform( D3DTS_PROJECTION, &amp;mProj );
+<SPAN CLASS="linenum">0097:</SPAN>     DrawBg(lpD3DDEV, &amp;mWorld);
+<SPAN CLASS="linenum">0098:</SPAN> 
+<SPAN CLASS="linenum">0099:</SPAN>     <SPAN CLASS="comment">// ライト</SPAN>
+<SPAN CLASS="linenum">0100:</SPAN>     D3DLIGHT8 light;
+<SPAN CLASS="linenum">0101:</SPAN>     ZeroMemory( &amp;light, <SPAN CLASS="keyword">sizeof</SPAN>(D3DLIGHT8) );
+<SPAN CLASS="linenum">0102:</SPAN>     light.Type       = D3DLIGHT_DIRECTIONAL;
+<SPAN CLASS="linenum">0103:</SPAN>     light.Diffuse.r  = 0.7f;
+<SPAN CLASS="linenum">0104:</SPAN>     light.Diffuse.g  = 0.7f;
+<SPAN CLASS="linenum">0105:</SPAN>     light.Diffuse.b  = 0.7f;
+<SPAN CLASS="linenum">0106:</SPAN>     light.Direction.x = -lpos[0];
+<SPAN CLASS="linenum">0107:</SPAN>     light.Direction.y = -lpos[1];
+<SPAN CLASS="linenum">0108:</SPAN>     light.Direction.z = -lpos[2];
+<SPAN CLASS="linenum">0109:</SPAN>     lpD3DDEV-&gt;SetLight( 0, &amp;light );
+<SPAN CLASS="linenum">0110:</SPAN>     lpD3DDEV-&gt;LightEnable( 0, TRUE );
+<SPAN CLASS="linenum">0111:</SPAN>     lpD3DDEV-&gt;SetRenderState( D3DRS_LIGHTING,  TRUE );
+<SPAN CLASS="linenum">0112:</SPAN>     
+<SPAN CLASS="linenum">0113:</SPAN> 
+<SPAN CLASS="linenum">0114:</SPAN>     <SPAN CLASS="comment">// モデル描画</SPAN>
+<SPAN CLASS="linenum">0115:</SPAN>     lpD3DDEV-&gt;SetTransform( D3DTS_WORLD, &amp;mLW );
+<SPAN CLASS="linenum">0116:</SPAN>     lpD3DDEV-&gt;SetVertexShader(D3DFVF_CUSTOMVERTEX);
+<SPAN CLASS="linenum">0117:</SPAN>     lpD3DDEV-&gt;SetStreamSource(0, mesh.pVB, <SPAN CLASS="keyword">sizeof</SPAN>(D3D_CUSTOMVERTEX));
+<SPAN CLASS="linenum">0118:</SPAN>     lpD3DDEV-&gt;SetIndices(mesh.pIndex,0);
+<SPAN CLASS="linenum">0119:</SPAN>     lpD3DDEV-&gt;SetTextureStageState(0,D3DTSS_COLOROP,    D3DTOP_SELECTARG1);
+<SPAN CLASS="linenum">0120:</SPAN>     
+<SPAN CLASS="linenum">0121:</SPAN>     <SPAN CLASS="keyword">for</SPAN>(DWORD i=0;i&lt;mesh.dwNumMaterials;i++){
+<SPAN CLASS="linenum">0122:</SPAN>         lpD3DDEV-&gt;SetMaterial( &amp;mesh.pMaterials[i] );
+<SPAN CLASS="linenum">0123:</SPAN>         lpD3DDEV-&gt;SetTexture( 0, mesh.pTextures[i] );
+<SPAN CLASS="linenum">0124:</SPAN> 
+<SPAN CLASS="linenum">0125:</SPAN>         lpD3DDEV-&gt;DrawIndexedPrimitive(D3DPT_TRIANGLELIST, 
+<SPAN CLASS="linenum">0126:</SPAN>                                         mesh.pSubsetTable[i].VertexStart,
+<SPAN CLASS="linenum">0127:</SPAN>                                         mesh.pSubsetTable[i].VertexCount,
+<SPAN CLASS="linenum">0128:</SPAN>                                         mesh.pSubsetTable[i].FaceStart * 3,
+<SPAN CLASS="linenum">0129:</SPAN>                                         mesh.pSubsetTable[i].FaceCount);
+<SPAN CLASS="linenum">0130:</SPAN>     }
+<SPAN CLASS="linenum">0131:</SPAN>     
+<SPAN CLASS="linenum">0132:</SPAN>    lpD3DDEV-&gt;SetRenderState( D3DRS_LIGHTING,  FALSE );
+<SPAN CLASS="linenum">0133:</SPAN> 
+<SPAN CLASS="linenum">0134:</SPAN>     <SPAN CLASS="comment">// 光源の位置を描く</SPAN>
+<SPAN CLASS="linenum">0135:</SPAN>     DrawLightEff(lpD3DDEV, view.Get(), mProj);
+<SPAN CLASS="linenum">0136:</SPAN> }
+<SPAN CLASS="linenum">0137:</SPAN> 
+<SPAN CLASS="linenum">0138:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0139:</SPAN> <SPAN CLASS="comment">// 光源の設定</SPAN>
+<SPAN CLASS="linenum">0140:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0141:</SPAN> <SPAN CLASS="keyword">void</SPAN> SetLight(LPDIRECT3DDEVICE8 lpD3DDEV, D3DXVECTOR4 *pRot)
+<SPAN CLASS="linenum">0142:</SPAN> {
+<SPAN CLASS="linenum">0143:</SPAN>     D3DXMATRIX m;
+<SPAN CLASS="linenum">0144:</SPAN>     D3DXMatrixRotationYawPitchRoll(&amp;m, pRot-&gt;y, pRot-&gt;x, pRot-&gt;z);
+<SPAN CLASS="linenum">0145:</SPAN>     D3DXVec4Transform(&amp;lpos, &amp;D3DXVECTOR4(0.0f, 0.0f,-1.0f, 0.0f), &amp;m);
+<SPAN CLASS="linenum">0146:</SPAN>     D3DXVec4Normalize(&amp;lpos, &amp;lpos);
+<SPAN CLASS="linenum">0147:</SPAN>     InitLightEff(lpD3DDEV, lpos);
+<SPAN CLASS="linenum">0148:</SPAN> }
+<SPAN CLASS="linenum">0149:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0150:</SPAN> <SPAN CLASS="comment">// Name: CleanRender()</SPAN>
+<SPAN CLASS="linenum">0151:</SPAN> <SPAN CLASS="comment">// Desc: 後始末</SPAN>
+<SPAN CLASS="linenum">0152:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0153:</SPAN> <SPAN CLASS="keyword">void</SPAN> CleanRender(LPDIRECT3DDEVICE8 lpD3DDEV)
+<SPAN CLASS="linenum">0154:</SPAN> {
+<SPAN CLASS="linenum">0155:</SPAN>     CleanBg(lpD3DDEV);
+<SPAN CLASS="linenum">0156:</SPAN>     CleanLightEff();
+<SPAN CLASS="linenum">0157:</SPAN>     
+<SPAN CLASS="linenum">0158:</SPAN>     mesh.Release();
+<SPAN CLASS="linenum">0159:</SPAN> }
+<SPAN CLASS="linenum">0160:</SPAN> </PRE>
+</BODY>
+</HTML>

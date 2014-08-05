@@ -1,0 +1,161 @@
+<head>
+	<title>t-pot『四面体環境マップ』</title>
+	<link rel="stylesheet" type="text/css" href="../if.css">
+</head>
+<meta http-equiv=Content-Type content="text/html; charset=shift_jis">
+<body>
+
+
+<div class="contents">
+<center>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<h1>四面体環境マップ</h1><br>
+<h3>～ Tetrahedron environment mapping～</h3>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<image src = "title.png">
+<br>
+<hr>
+</center>
+<div>
+
+
+<h2>■はじめに</h2>
+
+
+<p>
+<a href="http://www.dodgson.org/omo/hiki.cgi?Hanami2004">ドジ研の花見会</a>で
+<a href="http://www.daionet.gr.jp/~masa/">Masa</a>さんやtejimaさん相手に「パラボロイド最高」と叫んでいたのですが、Masaさん的には、非線形な座標変換はお嫌いらしく（シェーダを倍の数だけ書かないといけなくなりますしね）、「全景360度をワールド基準で４面体程度で線形にレンダリングして、それを二次元画像として非線型変換-->デュアルパラボロイド-->ミップマップ＆フィルタというのが、今後のスタンダードかも知れません。」ということです。<br>
+４面レンダリングしてしまうと、パラボロイドにするうまみが減ってしまいそうなので、なんとも微妙ですが（ピクセル処理はテクスチャサイズで調整できますが、頂点処理はパス数に比例しますから）、ちょっと実装してみましょう。
+</p>
+
+<p>
+で、いつものようにプログラムです。<br>
+</p>
+<ul style = "LIST-STYLE-TYPE:none">
+<li><a href="src.zip">src.zip (四面体環境マップ:DirectX9 [Vertex shader 1_1, Pixel shader 2_0])</a>
+</ul>
+<p>
+フレネル処理のためにps_2_0になっていますが、その部分を何とかすれば、ps_1_Xで可能ですので、適当に修正してください。
+</p>
+<p>
+カーソルキーで、カメラが回って、zやxでズームが変えられます。<br>
+pキーでティーポットの動きを止めることができます。
+</p>
+<p>
+ソースには、いつものように適当にファイルが入っています。
+大事なファイルは次のものです。
+</p>
+<table>
+<tr><td><a href="main_h.html">main.h</a></td><td>アプリケーションのヘッダ</td></tr>
+<tr><td><a href="main_cpp.html">main.cpp</a></td><td>アプリケーションのソース</td></tr>
+<tr><td><a href="bg_cpp.html">bg.cpp</a></td><td>四角形のメュシュのソース</td></tr>
+<tr><td><a href="hlsl_fx.html">hlsl.fx</a></td><td>シェーダプログラム</td></tr>
+<tr><td><a href="paraboloid_fx.html">paraboloid.fx</a></td><td>Dual paraboloid マップのためのシェーダ</td></tr>
+</table>
+
+
+<h2>■何をやっているの</h2>
+
+
+<p>
+閉じたオブジェクトを作るためには、最低４面必要なことは良く知られています。<br>
+特に、一番ゆがみが小さな形をしたものは、正四面体になります。<br>
+さて、正四面体に環境マップを作れば良いのですが、どのようにすればよいのでしょうか？<br>
+その答えはダイヤモンドにあります。<br>
+ダイヤモンドは、ある原子から４方向に別の原子へ足が伸びています。
+この足は、別の足とarccos(-1/3)だけ平等に離れています。<br>
+これこそがまさに我々が欲するレンダリングする方向です。<br>
+このぞれぞれの方向へカメラを向けてレンダリングし、視野角をarccos(-1/3)にしてレンダリングすれば、我々の欲する環境マップを得ることができます。
+</p>
+
+<image src = "diamond.png">
+<p>
+あとは、作成した４枚のテクスチャをパラボロイドマップにメッシュで張り込んで、２枚のパラボロイドマップを作成します。<br>
+このとき、ｚテストを効かせて描画すれば、中心に近い、よりゆがみが少ない画像が参照されます。<br>
+今回は、ゆがみを均等にするために、テクスチャの境界線の中心がパラボロイドマップの中心を通過するようにしてみました。
+</p>
+<image src = "how2.png">
+<p>
+実際の描画時は、デュアルパラボロイドマッピングを行います。
+</p>
+<p>
+今回は、パラボロイドマップですが、ひょっとしたらキューブマップに張り込んだほうがハードウェアのサポートが得られるので、お得かもしれません。<br>
+また、張るときもメッシュで張り込むのではなく、テクスチャを使ったルックアップテーブルを使うほうがひょっとしたらいいのかもしれません。
+</p>
+
+
+<h2>■ビュー行列</h2>
+
+
+
+<p>
+ソースを全て解説すると長くなるので、肝となるビュー及びア射影行列の作成に注力します。<br>
+４つのカメラの向きは、arccos(-1/3)だけ離れていることは分かっているので、１つをｚ軸に、残りをそこからarccos(-1/3)まわしたものを作成します。<br>
+その後、パラボロイドに射影したときに境界の中心がパラボロイドの中心になるように、全体をarccos(-1/3)/2だけまわします。<br>
+今回の方法のほかにも、ダイアモンドの構造のそれぞれの位置から直接カメラの向きを求める方法も考えられます。
+</p>
+<pre class="CodeBlock">
+main.cpp
+<font color="deepskyblue">0313:</font>     <font color="cyan">// Tetrahedron Matrix</font>
+<font color="deepskyblue">0314:</font>     D3DXVECTOR3 lookat[4];
+<font color="deepskyblue">0315:</font>     D3DXVECTOR3 center;
+<font color="deepskyblue">0316:</font>     D3DXMATRIX mRot;
+<font color="deepskyblue">0317:</font>     <font color="blue">float</font> theta = 109.0f * D3DX_PI / 180.0f;
+<font color="deepskyblue">0318:</font>     center = D3DXVECTOR3(0,0,0);
+<font color="deepskyblue">0319:</font>     lookat[0] = D3DXVECTOR3(0,0,1);
+<font color="deepskyblue">0320:</font>     lookat[1] = D3DXVECTOR3(sinf(theta)*cosf(0.0*D3DX_PI/3.0f),sinf(theta)*sinf(0.0*D3DX_PI/3.0f), cosf(theta));
+<font color="deepskyblue">0321:</font>     lookat[2] = D3DXVECTOR3(sinf(theta)*cosf(2.0*D3DX_PI/3.0f),sinf(theta)*sinf(2.0*D3DX_PI/3.0f), cosf(theta));
+<font color="deepskyblue">0322:</font>     lookat[3] = D3DXVECTOR3(sinf(theta)*cosf(4.0*D3DX_PI/3.0f),sinf(theta)*sinf(4.0*D3DX_PI/3.0f), cosf(theta));
+<font color="deepskyblue">0323:</font>     
+<font color="deepskyblue">0324:</font>     D3DXMatrixRotationY( &amp;mRot, -acosf(-1.0f/3.0f)/2.0f );
+<font color="deepskyblue">0325:</font>     D3DXVec3TransformCoord( &amp;lookat[0], &amp;lookat[0], &amp;mRot);
+<font color="deepskyblue">0326:</font>     D3DXVec3TransformCoord( &amp;lookat[1], &amp;lookat[1], &amp;mRot);
+<font color="deepskyblue">0327:</font>     D3DXVec3TransformCoord( &amp;lookat[2], &amp;lookat[2], &amp;mRot);
+<font color="deepskyblue">0328:</font>     D3DXVec3TransformCoord( &amp;lookat[3], &amp;lookat[3], &amp;mRot);
+<font color="deepskyblue">0329:</font>     <font color="blue">for</font>( i = 0; i &lt; 4; i++ )
+<font color="deepskyblue">0330:</font>     {
+<font color="deepskyblue">0331:</font>         D3DXMatrixLookAtLH( &amp;m_mViewTetrahedron[i], &amp;center, &amp;lookat[i], &amp;lookat[(i+1)&amp;3] );
+<font color="deepskyblue">0332:</font>     }
+</pre>
+<p>
+アップベクトルは、別のカメラの向きを採用しました。このようにすると、張り合わせるときに、自分が採用される部分が逆３角形になることが分かるので、今後、使わない部分を除去する最適化などを図ることができます。
+</p>
+<p>
+射影行列ですが、視野角をarccos(-1/3)、アスペクト比を１になるように作成します。<br>
+と思ったのですが、実際にやってみると、138度ほど広げないと隙間が開いてしまいました？？？
+</p>
+<pre class="CodeBlock">
+main.cpp
+<font color="deepskyblue">0317:</font>     <font color="blue">float</font> theta = 109.0f * D3DX_PI / 180.0f;
+<font color="deepskyblue">0333:</font>     D3DXMatrixPerspectiveFovLH( &amp;m_mProjTetrahedron, 1.27f * theta, 1.0f, 0.1f, 100.0f );
+</pre>
+
+
+<h2>■最後に</h2>
+
+
+<p>
+ということで、線型なレンダリングでキューブマップよりも負荷が低いテトラヘドロン環境マップですが、やっぱり１回別の環境マップへ射影するのではなくて、ハードウェアサポートされて欲しいですね。
+</p>
+<p>
+それにしても、これからレースゲームとかで使われるようになるのでしょうか？
+</p>
+
+
+
+
+</div>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<center>
+<hr>
+<p><a href="../index.html">もどる</a></p>
+<p><a href="mailto:imagire@gmail.com">imagire@gmail.com</a></p>
+</center>
+
+</body>
+</html>

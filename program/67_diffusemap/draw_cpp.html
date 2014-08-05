@@ -1,0 +1,806 @@
+<HTML>
+<HEAD>
+<TITLE>draw.cpp</TITLE>
+<meta name="GENERATOR" content="cpp2html 2.1 by Niisaka">
+<meta http-equiv="Content-Type" content="text/html">
+<meta http-equiv="Content-Style-Type" content="text/css">
+<STYLE TYPE="text/css">
+<!--
+SPAN.comment { color:#008000; font-weight:normal; font-style:normal;}
+SPAN.keyword { color:#0000FF; font-weight:normal; font-style:normal;}
+SPAN.string { color:#600000; font-weight:normal; font-style:normal;}
+SPAN.linenum { color:#A0A0A0; font-weight:normal; font-style:normal;}
+-->
+</STYLE>
+</HEAD>
+<BODY TEXT="#000000" BGCOLOR="#FFFFFF">
+<PRE><SPAN CLASS="linenum">0001:</SPAN> <SPAN CLASS="comment">// ----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0002:</SPAN> <SPAN CLASS="comment">//</SPAN>
+<SPAN CLASS="linenum">0003:</SPAN> <SPAN CLASS="comment">// draw.cpp - 描画部分</SPAN>
+<SPAN CLASS="linenum">0004:</SPAN> <SPAN CLASS="comment">// </SPAN>
+<SPAN CLASS="linenum">0005:</SPAN> <SPAN CLASS="comment">// Copyright (c) 2002 IMAGIRE Takashi (imagire@gmail.com)</SPAN>
+<SPAN CLASS="linenum">0006:</SPAN> <SPAN CLASS="comment">// All Rights Reserved.</SPAN>
+<SPAN CLASS="linenum">0007:</SPAN> <SPAN CLASS="comment">//</SPAN>
+<SPAN CLASS="linenum">0008:</SPAN> <SPAN CLASS="comment">// ----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0009:</SPAN> <SPAN CLASS="keyword">#define</SPAN> STRICT
+<SPAN CLASS="linenum">0010:</SPAN> 
+<SPAN CLASS="linenum">0011:</SPAN> <SPAN CLASS="keyword">#include</SPAN> &lt;windows.h&gt;
+<SPAN CLASS="linenum">0012:</SPAN> <SPAN CLASS="keyword">#include</SPAN> "<SPAN CLASS="string">main.h</SPAN>"
+<SPAN CLASS="linenum">0013:</SPAN> <SPAN CLASS="keyword">#include</SPAN> "<SPAN CLASS="string">draw.h</SPAN>"
+<SPAN CLASS="linenum">0014:</SPAN> <SPAN CLASS="keyword">#include</SPAN> "<SPAN CLASS="string">load.h</SPAN>"
+<SPAN CLASS="linenum">0015:</SPAN> 
+<SPAN CLASS="linenum">0016:</SPAN> <SPAN CLASS="keyword">#define</SPAN> frand()   rand()/((<SPAN CLASS="keyword">float</SPAN>)RAND_MAX)
+<SPAN CLASS="linenum">0017:</SPAN> 
+<SPAN CLASS="linenum">0018:</SPAN> <SPAN CLASS="keyword">static</SPAN> <SPAN CLASS="keyword">const</SPAN> <SPAN CLASS="keyword">int</SPAN> SHADOWMAP_HEIGHT = 512;
+<SPAN CLASS="linenum">0019:</SPAN> <SPAN CLASS="keyword">static</SPAN> <SPAN CLASS="keyword">const</SPAN> <SPAN CLASS="keyword">int</SPAN> SHADOWMAP_WIDTH = 512;
+<SPAN CLASS="linenum">0020:</SPAN> 
+<SPAN CLASS="linenum">0021:</SPAN> LPDIRECT3DVERTEXBUFFER8 pMeshVB = NULL;
+<SPAN CLASS="linenum">0022:</SPAN> LPDIRECT3DINDEXBUFFER8  pMeshIndex = NULL;
+<SPAN CLASS="linenum">0023:</SPAN> D3DXATTRIBUTERANGE      *pSubsetTable = NULL;
+<SPAN CLASS="linenum">0024:</SPAN> DWORD                   nMeshFaces = 0;
+<SPAN CLASS="linenum">0025:</SPAN> DWORD                   nMeshVertices = 0;
+<SPAN CLASS="linenum">0026:</SPAN> D3DMATERIAL8            *pMeshMaterials = NULL;     <SPAN CLASS="comment">// メッシュの質感</SPAN>
+<SPAN CLASS="linenum">0027:</SPAN> LPDIRECT3DTEXTURE8      *pMeshTextures  = NULL;     <SPAN CLASS="comment">// メッシュのテクスチャー</SPAN>
+<SPAN CLASS="linenum">0028:</SPAN> DWORD                   dwNumMaterials = 0L;        <SPAN CLASS="comment">// マテリアルの数</SPAN>
+<SPAN CLASS="linenum">0029:</SPAN> FLOAT                   MeshRadius;                 <SPAN CLASS="comment">// メッシュの大きさ</SPAN>
+<SPAN CLASS="linenum">0030:</SPAN> 
+<SPAN CLASS="linenum">0031:</SPAN> DWORD                   hVertexShader=~0;           <SPAN CLASS="comment">// モデルの描画</SPAN>
+<SPAN CLASS="linenum">0032:</SPAN> DWORD                   hPixelShader=~0;            <SPAN CLASS="comment">// モデルの描画</SPAN>
+<SPAN CLASS="linenum">0033:</SPAN> LPDIRECT3DCUBETEXTURE8  pNormalCubeMap=NULL;
+<SPAN CLASS="linenum">0034:</SPAN> LPDIRECT3DCUBETEXTURE8  pCubeMap=NULL;
+<SPAN CLASS="linenum">0035:</SPAN> 
+<SPAN CLASS="linenum">0036:</SPAN> DWORD                   hDiffuseVertexShader=~0;    <SPAN CLASS="comment">// モデルの描画</SPAN>
+<SPAN CLASS="linenum">0037:</SPAN> DWORD                   hDiffusePixelShader=~0;     <SPAN CLASS="comment">// モデルの描画</SPAN>
+<SPAN CLASS="linenum">0038:</SPAN> LPDIRECT3DCUBETEXTURE8  pDiffuseMap=NULL;
+<SPAN CLASS="linenum">0039:</SPAN> 
+<SPAN CLASS="linenum">0040:</SPAN> LPDIRECT3DVERTEXBUFFER8 pBlurVB = NULL;
+<SPAN CLASS="linenum">0041:</SPAN> LPDIRECT3DINDEXBUFFER8  pBlurIB = NULL;
+<SPAN CLASS="linenum">0042:</SPAN> <SPAN CLASS="keyword">typedef</SPAN> <SPAN CLASS="keyword">struct</SPAN> {
+<SPAN CLASS="linenum">0043:</SPAN>     <SPAN CLASS="keyword">float</SPAN> x,y,z;
+<SPAN CLASS="linenum">0044:</SPAN>     <SPAN CLASS="keyword">float</SPAN> tu,tv;
+<SPAN CLASS="linenum">0045:</SPAN> }D3D_BLUR_VERTEX;
+<SPAN CLASS="linenum">0046:</SPAN> <SPAN CLASS="keyword">#define</SPAN> D3DFVF_BLUR_VERTEX      (D3DFVF_XYZ | D3DFVF_TEX1)
+<SPAN CLASS="linenum">0047:</SPAN> 
+<SPAN CLASS="linenum">0048:</SPAN> DWORD dwBlurDecl[] = {
+<SPAN CLASS="linenum">0049:</SPAN>     D3DVSD_STREAM(0),
+<SPAN CLASS="linenum">0050:</SPAN>     D3DVSD_REG(D3DVSDE_POSITION, D3DVSDT_FLOAT3 ),          <SPAN CLASS="comment">//D3DVSDE_POSITION,  0</SPAN>
+<SPAN CLASS="linenum">0051:</SPAN>     D3DVSD_REG(D3DVSDE_TEXCOORD0,D3DVSDT_FLOAT2 ),          <SPAN CLASS="comment">//D3DVSDE_TEXCOORD0, 7  </SPAN>
+<SPAN CLASS="linenum">0052:</SPAN>     D3DVSD_END()
+<SPAN CLASS="linenum">0053:</SPAN> };
+<SPAN CLASS="linenum">0054:</SPAN> 
+<SPAN CLASS="linenum">0055:</SPAN> <SPAN CLASS="comment">// ----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0056:</SPAN> <SPAN CLASS="comment">// 外部関数</SPAN>
+<SPAN CLASS="linenum">0057:</SPAN> <SPAN CLASS="keyword">void</SPAN> InitBg ( LPDIRECT3DDEVICE8 lpD3DDev );
+<SPAN CLASS="linenum">0058:</SPAN> <SPAN CLASS="keyword">void</SPAN> DrawBg ( LPDIRECT3DDEVICE8 lpD3DDev );
+<SPAN CLASS="linenum">0059:</SPAN> <SPAN CLASS="keyword">void</SPAN> CleanBg( LPDIRECT3DDEVICE8 lpD3DDev );
+<SPAN CLASS="linenum">0060:</SPAN> 
+<SPAN CLASS="linenum">0061:</SPAN> 
+<SPAN CLASS="linenum">0062:</SPAN> 
+<SPAN CLASS="linenum">0063:</SPAN> <SPAN CLASS="comment">// ----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0064:</SPAN> <SPAN CLASS="comment">// Name: LoadXFile(char* filename, LPDIRECT3DDEVICE8 lpD3DDev)</SPAN>
+<SPAN CLASS="linenum">0065:</SPAN> <SPAN CLASS="comment">// Desc: X-Fileの読み込み</SPAN>
+<SPAN CLASS="linenum">0066:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0067:</SPAN> HRESULT LoadXFile(<SPAN CLASS="keyword">char</SPAN>* filename, LPDIRECT3DDEVICE8 lpD3DDev)
+<SPAN CLASS="linenum">0068:</SPAN> {
+<SPAN CLASS="linenum">0069:</SPAN>     LPD3DXMESH pMesh, pMeshOpt;
+<SPAN CLASS="linenum">0070:</SPAN>     LPD3DXBUFFER pD3DXMtrlBuffer = NULL;
+<SPAN CLASS="linenum">0071:</SPAN>     DWORD i;
+<SPAN CLASS="linenum">0072:</SPAN>     HRESULT hr;
+<SPAN CLASS="linenum">0073:</SPAN> 
+<SPAN CLASS="linenum">0074:</SPAN>     hr = D3DXLoadMeshFromX(filename, D3DXMESH_MANAGED,
+<SPAN CLASS="linenum">0075:</SPAN>                                 lpD3DDev, NULL,
+<SPAN CLASS="linenum">0076:</SPAN>                                 &amp;pD3DXMtrlBuffer, &amp;dwNumMaterials,
+<SPAN CLASS="linenum">0077:</SPAN>                                 &amp;pMesh);
+<SPAN CLASS="linenum">0078:</SPAN>     <SPAN CLASS="keyword">if</SPAN>(FAILED(hr)) <SPAN CLASS="keyword">return</SPAN> E_FAIL;
+<SPAN CLASS="linenum">0079:</SPAN> 
+<SPAN CLASS="linenum">0080:</SPAN>     <SPAN CLASS="comment">//並び替えておく</SPAN>
+<SPAN CLASS="linenum">0081:</SPAN>     pMesh-&gt;Optimize(D3DXMESHOPT_ATTRSORT, NULL, NULL, NULL, NULL, &amp;pMeshOpt);
+<SPAN CLASS="linenum">0082:</SPAN>     RELEASE(pMesh);
+<SPAN CLASS="linenum">0083:</SPAN> 
+<SPAN CLASS="linenum">0084:</SPAN>     <SPAN CLASS="comment">//アトリビュートテーブル</SPAN>
+<SPAN CLASS="linenum">0085:</SPAN>     pMeshOpt-&gt;GetAttributeTable(NULL,&amp;dwNumMaterials);
+<SPAN CLASS="linenum">0086:</SPAN>     pSubsetTable = <SPAN CLASS="keyword">new</SPAN> D3DXATTRIBUTERANGE[dwNumMaterials];
+<SPAN CLASS="linenum">0087:</SPAN>     pMeshOpt-&gt;GetAttributeTable(pSubsetTable, &amp;dwNumMaterials);
+<SPAN CLASS="linenum">0088:</SPAN> 
+<SPAN CLASS="linenum">0089:</SPAN>     <SPAN CLASS="comment">// FVF変換</SPAN>
+<SPAN CLASS="linenum">0090:</SPAN>     hr = pMeshOpt-&gt;CloneMeshFVF(pMeshOpt-&gt;GetOptions(), D3DFVF_VERTEX, lpD3DDev, &amp;pMesh);
+<SPAN CLASS="linenum">0091:</SPAN>     <SPAN CLASS="keyword">if</SPAN>(FAILED(hr)) <SPAN CLASS="keyword">return</SPAN> E_FAIL;
+<SPAN CLASS="linenum">0092:</SPAN>     RELEASE(pMeshOpt);
+<SPAN CLASS="linenum">0093:</SPAN>     D3DXComputeNormals(pMesh, NULL);
+<SPAN CLASS="linenum">0094:</SPAN> 
+<SPAN CLASS="linenum">0095:</SPAN>     <SPAN CLASS="comment">//Vertex Bufferにコピーする</SPAN>
+<SPAN CLASS="linenum">0096:</SPAN>     D3DVERTEX* pSrc;
+<SPAN CLASS="linenum">0097:</SPAN>     D3D_CUSTOMVERTEX* pDest;
+<SPAN CLASS="linenum">0098:</SPAN>     LPDIRECT3DINDEXBUFFER8 pSrcIndex;
+<SPAN CLASS="linenum">0099:</SPAN>     WORD* pISrc;
+<SPAN CLASS="linenum">0100:</SPAN>     WORD* pIDest;
+<SPAN CLASS="linenum">0101:</SPAN> 
+<SPAN CLASS="linenum">0102:</SPAN>     DWORD nMeshVertices = pMesh-&gt;GetNumVertices();
+<SPAN CLASS="linenum">0103:</SPAN>     DWORD nMeshFaces = pMesh-&gt;GetNumFaces();
+<SPAN CLASS="linenum">0104:</SPAN>     lpD3DDev-&gt;CreateVertexBuffer(nMeshVertices * <SPAN CLASS="keyword">sizeof</SPAN>(D3D_CUSTOMVERTEX),0,D3DFVF_CUSTOMVERTEX,D3DPOOL_MANAGED,&amp;pMeshVB);
+<SPAN CLASS="linenum">0105:</SPAN>     lpD3DDev-&gt;CreateIndexBuffer(nMeshFaces * 3 * <SPAN CLASS="keyword">sizeof</SPAN>(WORD),0,D3DFMT_INDEX16,D3DPOOL_MANAGED,&amp;pMeshIndex);
+<SPAN CLASS="linenum">0106:</SPAN> 
+<SPAN CLASS="linenum">0107:</SPAN>     LPDIRECT3DVERTEXBUFFER8 pVB;
+<SPAN CLASS="linenum">0108:</SPAN>     pMesh-&gt;GetVertexBuffer(&amp;pVB);
+<SPAN CLASS="linenum">0109:</SPAN>     pVB-&gt;Lock(0,0,(BYTE**)&amp;pSrc,0);
+<SPAN CLASS="linenum">0110:</SPAN>     pMeshVB-&gt;Lock(0,0,(BYTE**)&amp;pDest,0);
+<SPAN CLASS="linenum">0111:</SPAN>     MeshRadius = 0.0f;
+<SPAN CLASS="linenum">0112:</SPAN>     <SPAN CLASS="keyword">for</SPAN>(i=0;i&lt;nMeshVertices;i++){
+<SPAN CLASS="linenum">0113:</SPAN>         pDest-&gt;x = pSrc-&gt;x;
+<SPAN CLASS="linenum">0114:</SPAN>         pDest-&gt;y = pSrc-&gt;y;
+<SPAN CLASS="linenum">0115:</SPAN>         pDest-&gt;z = pSrc-&gt;z;
+<SPAN CLASS="linenum">0116:</SPAN>         pDest-&gt;nx = pSrc-&gt;nx;
+<SPAN CLASS="linenum">0117:</SPAN>         pDest-&gt;ny = pSrc-&gt;ny;
+<SPAN CLASS="linenum">0118:</SPAN>         pDest-&gt;nz = pSrc-&gt;nz;
+<SPAN CLASS="linenum">0119:</SPAN>         pDest-&gt;tu0 = pSrc-&gt;tu0;
+<SPAN CLASS="linenum">0120:</SPAN>         pDest-&gt;tu0 = pSrc-&gt;tu0;
+<SPAN CLASS="linenum">0121:</SPAN>         <SPAN CLASS="comment">// サイズの計算</SPAN>
+<SPAN CLASS="linenum">0122:</SPAN>         FLOAT radius = sqrtf( pSrc-&gt;x*pSrc-&gt;x + pSrc-&gt;y*pSrc-&gt;y + pSrc-&gt;z*pSrc-&gt;z );
+<SPAN CLASS="linenum">0123:</SPAN>         <SPAN CLASS="keyword">if</SPAN> (MeshRadius &lt; radius) MeshRadius = radius;
+<SPAN CLASS="linenum">0124:</SPAN>         
+<SPAN CLASS="linenum">0125:</SPAN>         pSrc += 1;
+<SPAN CLASS="linenum">0126:</SPAN>         pDest += 1;
+<SPAN CLASS="linenum">0127:</SPAN>     }
+<SPAN CLASS="linenum">0128:</SPAN>     pVB-&gt;Unlock();
+<SPAN CLASS="linenum">0129:</SPAN>     pVB-&gt;Release();
+<SPAN CLASS="linenum">0130:</SPAN>     pMeshVB-&gt;Unlock();
+<SPAN CLASS="linenum">0131:</SPAN> 
+<SPAN CLASS="linenum">0132:</SPAN>     <SPAN CLASS="comment">//インデックスのコピー</SPAN>
+<SPAN CLASS="linenum">0133:</SPAN>     pMesh-&gt;GetIndexBuffer(&amp;pSrcIndex);
+<SPAN CLASS="linenum">0134:</SPAN>     pSrcIndex-&gt;Lock(0,0,(BYTE**)&amp;pISrc,0);
+<SPAN CLASS="linenum">0135:</SPAN>     pMeshIndex-&gt;Lock(0,0,(BYTE**)&amp;pIDest,0);
+<SPAN CLASS="linenum">0136:</SPAN>     CopyMemory(pIDest,pISrc,nMeshFaces * 3 * <SPAN CLASS="keyword">sizeof</SPAN>(WORD));
+<SPAN CLASS="linenum">0137:</SPAN>     pSrcIndex-&gt;Unlock();
+<SPAN CLASS="linenum">0138:</SPAN>     pMeshIndex-&gt;Unlock();
+<SPAN CLASS="linenum">0139:</SPAN>     pSrcIndex-&gt;Release();
+<SPAN CLASS="linenum">0140:</SPAN> 
+<SPAN CLASS="linenum">0141:</SPAN>     <SPAN CLASS="comment">// pD3DXMtrlBuffer から、質感やテクスチャーの情報を読み取る</SPAN>
+<SPAN CLASS="linenum">0142:</SPAN>     D3DXMATERIAL* d3dxMaterials = (D3DXMATERIAL*)pD3DXMtrlBuffer-&gt;GetBufferPointer();
+<SPAN CLASS="linenum">0143:</SPAN>     pMeshTextures = <SPAN CLASS="keyword">new</SPAN> LPDIRECT3DTEXTURE8[dwNumMaterials];
+<SPAN CLASS="linenum">0144:</SPAN>     pMeshMaterials = <SPAN CLASS="keyword">new</SPAN> D3DMATERIAL8[dwNumMaterials];
+<SPAN CLASS="linenum">0145:</SPAN> 
+<SPAN CLASS="linenum">0146:</SPAN>     <SPAN CLASS="keyword">for</SPAN>(i = 0; i &lt; dwNumMaterials; i++){
+<SPAN CLASS="linenum">0147:</SPAN>         pMeshMaterials[i] = d3dxMaterials[i].MatD3D;
+<SPAN CLASS="linenum">0148:</SPAN>         pMeshMaterials[i].Ambient = pMeshMaterials[i].Diffuse;
+<SPAN CLASS="linenum">0149:</SPAN>         hr = D3DXCreateTextureFromFile( lpD3DDev, 
+<SPAN CLASS="linenum">0150:</SPAN>                                         d3dxMaterials[i].pTextureFilename, 
+<SPAN CLASS="linenum">0151:</SPAN>                                         &amp;pMeshTextures[i] );
+<SPAN CLASS="linenum">0152:</SPAN>         <SPAN CLASS="keyword">if</SPAN>(FAILED(hr)) pMeshTextures[i] = NULL;
+<SPAN CLASS="linenum">0153:</SPAN>     }
+<SPAN CLASS="linenum">0154:</SPAN>     RELEASE(pD3DXMtrlBuffer);
+<SPAN CLASS="linenum">0155:</SPAN>     
+<SPAN CLASS="linenum">0156:</SPAN>     RELEASE(pMesh);
+<SPAN CLASS="linenum">0157:</SPAN> 
+<SPAN CLASS="linenum">0158:</SPAN>     <SPAN CLASS="keyword">return</SPAN> S_OK;
+<SPAN CLASS="linenum">0159:</SPAN> }
+<SPAN CLASS="linenum">0160:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0161:</SPAN> <SPAN CLASS="comment">// 正規化キューブマップの作成</SPAN>
+<SPAN CLASS="linenum">0162:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0163:</SPAN> <SPAN CLASS="keyword">void</SPAN> make_normalize_cubemap( D3DXVECTOR4 *pOut, D3DXVECTOR3 *pTexCoord,
+<SPAN CLASS="linenum">0164:</SPAN> D3DXVECTOR3 *pTexelSize, LPVOID pData)
+<SPAN CLASS="linenum">0165:</SPAN> {
+<SPAN CLASS="linenum">0166:</SPAN>     D3DXVECTOR3 n;
+<SPAN CLASS="linenum">0167:</SPAN>     D3DXVec3Normalize( &amp;n, pTexCoord );
+<SPAN CLASS="linenum">0168:</SPAN> 
+<SPAN CLASS="linenum">0169:</SPAN>     pOut-&gt;x = 0.5f*(n.x + 1.0f);
+<SPAN CLASS="linenum">0170:</SPAN>     pOut-&gt;y = 0.5f*(n.y + 1.0f);
+<SPAN CLASS="linenum">0171:</SPAN>     pOut-&gt;z = 0.5f*(n.z + 1.0f);
+<SPAN CLASS="linenum">0172:</SPAN>     pOut-&gt;w = 1.0f;
+<SPAN CLASS="linenum">0173:</SPAN> }
+<SPAN CLASS="linenum">0174:</SPAN> <SPAN CLASS="keyword">static</SPAN> <SPAN CLASS="keyword">const</SPAN> <SPAN CLASS="keyword">int</SPAN> BLUR_GRID = 10;
+<SPAN CLASS="linenum">0175:</SPAN> <SPAN CLASS="keyword">static</SPAN> <SPAN CLASS="keyword">const</SPAN> <SPAN CLASS="keyword">float</SPAN> BLURSIZE = 1.0f;
+<SPAN CLASS="linenum">0176:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0177:</SPAN> <SPAN CLASS="comment">// Name: InitRender()</SPAN>
+<SPAN CLASS="linenum">0178:</SPAN> <SPAN CLASS="comment">// Desc: Load the mesh and build the material and texture arrays</SPAN>
+<SPAN CLASS="linenum">0179:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0180:</SPAN> HRESULT InitRender(LPDIRECT3DDEVICE8 lpD3DDev)
+<SPAN CLASS="linenum">0181:</SPAN> {
+<SPAN CLASS="linenum">0182:</SPAN>     HRESULT hr;
+<SPAN CLASS="linenum">0183:</SPAN> 
+<SPAN CLASS="linenum">0184:</SPAN>     <SPAN CLASS="comment">// モデルの読み込み</SPAN>
+<SPAN CLASS="linenum">0185:</SPAN>     <SPAN CLASS="keyword">if</SPAN> ( FAILED(hr = LoadXFile("<SPAN CLASS="string">nsx.x</SPAN>", lpD3DDev)) ) <SPAN CLASS="keyword">return</SPAN> hr;
+<SPAN CLASS="linenum">0186:</SPAN>     
+<SPAN CLASS="linenum">0187:</SPAN>     <SPAN CLASS="comment">// 頂点バッファの作成 </SPAN>
+<SPAN CLASS="linenum">0188:</SPAN>     D3D_BLUR_VERTEX *pBlurDest;
+<SPAN CLASS="linenum">0189:</SPAN>     lpD3DDev-&gt;CreateVertexBuffer( (BLUR_GRID+1)*(BLUR_GRID+1)*<SPAN CLASS="keyword">sizeof</SPAN>(D3DVERTEX),
+<SPAN CLASS="linenum">0190:</SPAN>                                 D3DUSAGE_WRITEONLY, D3DFVF_VERTEX, D3DPOOL_MANAGED,
+<SPAN CLASS="linenum">0191:</SPAN>                                 &amp;pBlurVB );
+<SPAN CLASS="linenum">0192:</SPAN>     <SPAN CLASS="comment">// 頂点をセットアップ</SPAN>
+<SPAN CLASS="linenum">0193:</SPAN>     {
+<SPAN CLASS="linenum">0194:</SPAN>     pBlurVB-&gt;Lock ( 0, 0, (BYTE**)&amp;pBlurDest, 0 );
+<SPAN CLASS="linenum">0195:</SPAN>     <SPAN CLASS="keyword">float</SPAN> pos_z = -BLURSIZE;
+<SPAN CLASS="linenum">0196:</SPAN>     <SPAN CLASS="keyword">for</SPAN>(DWORD z = 0; z &lt;= BLUR_GRID; z++){
+<SPAN CLASS="linenum">0197:</SPAN>         <SPAN CLASS="keyword">float</SPAN> pos_x = -BLURSIZE;
+<SPAN CLASS="linenum">0198:</SPAN>         <SPAN CLASS="keyword">for</SPAN>(DWORD x = 0; x &lt;= BLUR_GRID; x++){
+<SPAN CLASS="linenum">0199:</SPAN>             pBlurDest-&gt;x  = pos_x;
+<SPAN CLASS="linenum">0200:</SPAN>             pBlurDest-&gt;y  = pos_z;
+<SPAN CLASS="linenum">0201:</SPAN>             pBlurDest-&gt;z  = 1.0f;
+<SPAN CLASS="linenum">0202:</SPAN>             pBlurDest-&gt;tu = (pos_x+BLURSIZE)/(2.0f*BLURSIZE);
+<SPAN CLASS="linenum">0203:</SPAN>             pBlurDest-&gt;tv = (pos_z+BLURSIZE)/(2.0f*BLURSIZE);
+<SPAN CLASS="linenum">0204:</SPAN>             pBlurDest++;
+<SPAN CLASS="linenum">0205:</SPAN>             pos_x += 2*BLURSIZE/BLUR_GRID;
+<SPAN CLASS="linenum">0206:</SPAN>         }
+<SPAN CLASS="linenum">0207:</SPAN>         pos_z += 2*BLURSIZE/BLUR_GRID;
+<SPAN CLASS="linenum">0208:</SPAN>     }
+<SPAN CLASS="linenum">0209:</SPAN>     pBlurVB-&gt;Unlock ();
+<SPAN CLASS="linenum">0210:</SPAN>     }
+<SPAN CLASS="linenum">0211:</SPAN> 
+<SPAN CLASS="linenum">0212:</SPAN> 
+<SPAN CLASS="linenum">0213:</SPAN>     <SPAN CLASS="comment">// インデックスをセットアップ</SPAN>
+<SPAN CLASS="linenum">0214:</SPAN>     WORD *pIndex;
+<SPAN CLASS="linenum">0215:</SPAN>     lpD3DDev-&gt;CreateIndexBuffer( 3*2*BLUR_GRID*BLUR_GRID * <SPAN CLASS="keyword">sizeof</SPAN>(WORD),
+<SPAN CLASS="linenum">0216:</SPAN>                                0,
+<SPAN CLASS="linenum">0217:</SPAN>                                D3DFMT_INDEX16, D3DPOOL_MANAGED,
+<SPAN CLASS="linenum">0218:</SPAN>                                &amp;pBlurIB );
+<SPAN CLASS="linenum">0219:</SPAN>     pBlurIB-&gt;Lock ( 0, 0, (BYTE**)&amp;pIndex, 0 );
+<SPAN CLASS="linenum">0220:</SPAN>     {
+<SPAN CLASS="linenum">0221:</SPAN>     <SPAN CLASS="keyword">for</SPAN> (WORD i = 0; i &lt; BLUR_GRID; i++) {
+<SPAN CLASS="linenum">0222:</SPAN>         <SPAN CLASS="keyword">for</SPAN> (WORD j = 0; j &lt; BLUR_GRID; j++) {
+<SPAN CLASS="linenum">0223:</SPAN>             *pIndex++ = j + 0 + (i+0) * (BLUR_GRID+1);
+<SPAN CLASS="linenum">0224:</SPAN>             *pIndex++ = j + 0 + (i+1) * (BLUR_GRID+1);
+<SPAN CLASS="linenum">0225:</SPAN>             *pIndex++ = j + 1 + (i+0) * (BLUR_GRID+1);
+<SPAN CLASS="linenum">0226:</SPAN> 
+<SPAN CLASS="linenum">0227:</SPAN>             *pIndex++ = j + 1 + (i+0) * (BLUR_GRID+1);
+<SPAN CLASS="linenum">0228:</SPAN>             *pIndex++ = j + 0 + (i+1) * (BLUR_GRID+1);
+<SPAN CLASS="linenum">0229:</SPAN>             *pIndex++ = j + 1 + (i+1) * (BLUR_GRID+1);
+<SPAN CLASS="linenum">0230:</SPAN>         }
+<SPAN CLASS="linenum">0231:</SPAN>     }
+<SPAN CLASS="linenum">0232:</SPAN>     }
+<SPAN CLASS="linenum">0233:</SPAN> 
+<SPAN CLASS="linenum">0234:</SPAN>     pBlurIB-&gt;Unlock ();
+<SPAN CLASS="linenum">0235:</SPAN> 
+<SPAN CLASS="linenum">0236:</SPAN>     
+<SPAN CLASS="linenum">0237:</SPAN>     
+<SPAN CLASS="linenum">0238:</SPAN>     <SPAN CLASS="comment">// シェ－ダーのロード</SPAN>
+<SPAN CLASS="linenum">0239:</SPAN>     <SPAN CLASS="keyword">if</SPAN> ( FAILED(CVertexShaderMgr::Load(lpD3DDev, "<SPAN CLASS="string">vs.vsh</SPAN>",     &amp;hVertexShader, dwDecl)) ) <SPAN CLASS="keyword">return</SPAN> hr;
+<SPAN CLASS="linenum">0240:</SPAN>     <SPAN CLASS="keyword">if</SPAN> ( FAILED( CPixelShaderMgr::Load(lpD3DDev, "<SPAN CLASS="string">ps.psh</SPAN>",     &amp;hPixelShader)) ) <SPAN CLASS="keyword">return</SPAN> hr;
+<SPAN CLASS="linenum">0241:</SPAN>     <SPAN CLASS="keyword">if</SPAN> ( FAILED(CVertexShaderMgr::Load(lpD3DDev, "<SPAN CLASS="string">diffuse.vsh</SPAN>",&amp;hDiffuseVertexShader, dwBlurDecl)) ) <SPAN CLASS="keyword">return</SPAN> hr;
+<SPAN CLASS="linenum">0242:</SPAN>     <SPAN CLASS="keyword">if</SPAN> ( FAILED( CPixelShaderMgr::Load(lpD3DDev, "<SPAN CLASS="string">diffuse.psh</SPAN>", &amp;hDiffusePixelShader)) ) <SPAN CLASS="keyword">return</SPAN> hr;
+<SPAN CLASS="linenum">0243:</SPAN>     
+<SPAN CLASS="linenum">0244:</SPAN>     <SPAN CLASS="comment">// 正規化キューブマップの作成</SPAN>
+<SPAN CLASS="linenum">0245:</SPAN>     hr = lpD3DDev-&gt;CreateCubeTexture( 512, 1, D3DUSAGE_RENDERTARGET, D3DFMT_A8R8G8B8,
+<SPAN CLASS="linenum">0246:</SPAN>                                 D3DPOOL_DEFAULT , &amp;pNormalCubeMap );
+<SPAN CLASS="linenum">0247:</SPAN>     <SPAN CLASS="keyword">if</SPAN> ( FAILED(hr) ) <SPAN CLASS="keyword">return</SPAN> hr;
+<SPAN CLASS="linenum">0248:</SPAN>     hr = D3DXFillCubeTexture( pNormalCubeMap, make_normalize_cubemap, NULL );
+<SPAN CLASS="linenum">0249:</SPAN>     <SPAN CLASS="keyword">if</SPAN> ( FAILED(hr) ) <SPAN CLASS="keyword">return</SPAN> hr;
+<SPAN CLASS="linenum">0250:</SPAN> 
+<SPAN CLASS="linenum">0251:</SPAN>     <SPAN CLASS="comment">// 環境キューブマップの作成</SPAN>
+<SPAN CLASS="linenum">0252:</SPAN>     hr = lpD3DDev-&gt;CreateCubeTexture( 512, 1, D3DUSAGE_RENDERTARGET, D3DFMT_A8R8G8B8,
+<SPAN CLASS="linenum">0253:</SPAN>                                 D3DPOOL_DEFAULT , &amp;pCubeMap );
+<SPAN CLASS="linenum">0254:</SPAN>     <SPAN CLASS="keyword">if</SPAN> ( FAILED(hr) ) <SPAN CLASS="keyword">return</SPAN> hr;
+<SPAN CLASS="linenum">0255:</SPAN>     <SPAN CLASS="comment">// ディフューズマップの作成</SPAN>
+<SPAN CLASS="linenum">0256:</SPAN>     hr = lpD3DDev-&gt;CreateCubeTexture( 512, 1, D3DUSAGE_RENDERTARGET, D3DFMT_A8R8G8B8,
+<SPAN CLASS="linenum">0257:</SPAN>                                 D3DPOOL_DEFAULT , &amp;pDiffuseMap );
+<SPAN CLASS="linenum">0258:</SPAN>     <SPAN CLASS="keyword">if</SPAN> ( FAILED(hr) ) <SPAN CLASS="keyword">return</SPAN> hr;
+<SPAN CLASS="linenum">0259:</SPAN> 
+<SPAN CLASS="linenum">0260:</SPAN>     <SPAN CLASS="comment">// 背景部分の初期化</SPAN>
+<SPAN CLASS="linenum">0261:</SPAN>     InitBg(lpD3DDev);
+<SPAN CLASS="linenum">0262:</SPAN> 
+<SPAN CLASS="linenum">0263:</SPAN>     <SPAN CLASS="comment">// 不変なレジスタの設定</SPAN>
+<SPAN CLASS="linenum">0264:</SPAN>     lpD3DDev-&gt;SetRenderState( D3DRS_ZENABLE, TRUE );
+<SPAN CLASS="linenum">0265:</SPAN>     lpD3DDev-&gt;SetRenderState( D3DRS_LIGHTING,  FALSE );
+<SPAN CLASS="linenum">0266:</SPAN>     lpD3DDev-&gt;SetRenderState( D3DRS_ALPHABLENDENABLE, FALSE);
+<SPAN CLASS="linenum">0267:</SPAN>     lpD3DDev-&gt;SetVertexShaderConstant(12, &amp;D3DXVECTOR4(0.0f, 0.5f, 1.0f, 2.0f), 1);
+<SPAN CLASS="linenum">0268:</SPAN> 
+<SPAN CLASS="linenum">0269:</SPAN>     lpD3DDev-&gt;SetTextureStageState(0, D3DTSS_MINFILTER, D3DTEXF_LINEAR);
+<SPAN CLASS="linenum">0270:</SPAN>     lpD3DDev-&gt;SetTextureStageState(1, D3DTSS_MINFILTER, D3DTEXF_LINEAR);
+<SPAN CLASS="linenum">0271:</SPAN>     lpD3DDev-&gt;SetTextureStageState(2, D3DTSS_MINFILTER, D3DTEXF_LINEAR);
+<SPAN CLASS="linenum">0272:</SPAN>     lpD3DDev-&gt;SetTextureStageState(3, D3DTSS_MINFILTER, D3DTEXF_LINEAR);
+<SPAN CLASS="linenum">0273:</SPAN>     lpD3DDev-&gt;SetTextureStageState(0, D3DTSS_MAGFILTER, D3DTEXF_LINEAR);
+<SPAN CLASS="linenum">0274:</SPAN>     lpD3DDev-&gt;SetTextureStageState(1, D3DTSS_MAGFILTER, D3DTEXF_LINEAR);
+<SPAN CLASS="linenum">0275:</SPAN>     lpD3DDev-&gt;SetTextureStageState(2, D3DTSS_MAGFILTER, D3DTEXF_LINEAR);
+<SPAN CLASS="linenum">0276:</SPAN>     lpD3DDev-&gt;SetTextureStageState(3, D3DTSS_MAGFILTER, D3DTEXF_LINEAR);
+<SPAN CLASS="linenum">0277:</SPAN>     lpD3DDev-&gt;SetTextureStageState(0, D3DTSS_MIPFILTER, D3DTEXF_NONE);
+<SPAN CLASS="linenum">0278:</SPAN>     lpD3DDev-&gt;SetTextureStageState(1, D3DTSS_MIPFILTER, D3DTEXF_NONE);
+<SPAN CLASS="linenum">0279:</SPAN>     lpD3DDev-&gt;SetTextureStageState(2, D3DTSS_MIPFILTER, D3DTEXF_NONE);
+<SPAN CLASS="linenum">0280:</SPAN>     lpD3DDev-&gt;SetTextureStageState(3, D3DTSS_MIPFILTER, D3DTEXF_NONE);
+<SPAN CLASS="linenum">0281:</SPAN>     lpD3DDev-&gt;SetTextureStageState(0, D3DTSS_ADDRESSU, D3DTADDRESS_CLAMP);
+<SPAN CLASS="linenum">0282:</SPAN>     lpD3DDev-&gt;SetTextureStageState(0, D3DTSS_ADDRESSV, D3DTADDRESS_CLAMP);
+<SPAN CLASS="linenum">0283:</SPAN>     lpD3DDev-&gt;SetTextureStageState(1, D3DTSS_ADDRESSU, D3DTADDRESS_CLAMP);
+<SPAN CLASS="linenum">0284:</SPAN>     lpD3DDev-&gt;SetTextureStageState(1, D3DTSS_ADDRESSV, D3DTADDRESS_CLAMP);
+<SPAN CLASS="linenum">0285:</SPAN>     lpD3DDev-&gt;SetTextureStageState(2, D3DTSS_ADDRESSU, D3DTADDRESS_CLAMP);
+<SPAN CLASS="linenum">0286:</SPAN>     lpD3DDev-&gt;SetTextureStageState(2, D3DTSS_ADDRESSV, D3DTADDRESS_CLAMP);
+<SPAN CLASS="linenum">0287:</SPAN>     lpD3DDev-&gt;SetTextureStageState(3, D3DTSS_ADDRESSU, D3DTADDRESS_CLAMP);
+<SPAN CLASS="linenum">0288:</SPAN>     lpD3DDev-&gt;SetTextureStageState(3, D3DTSS_ADDRESSV, D3DTADDRESS_CLAMP);
+<SPAN CLASS="linenum">0289:</SPAN> 
+<SPAN CLASS="linenum">0290:</SPAN>     <SPAN CLASS="keyword">return</SPAN> S_OK;
+<SPAN CLASS="linenum">0291:</SPAN> }
+<SPAN CLASS="linenum">0292:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0293:</SPAN> <SPAN CLASS="comment">// Name: Render()</SPAN>
+<SPAN CLASS="linenum">0294:</SPAN> <SPAN CLASS="comment">// Desc: Draws the scene</SPAN>
+<SPAN CLASS="linenum">0295:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0296:</SPAN> <SPAN CLASS="keyword">const</SPAN> <SPAN CLASS="keyword">float</SPAN> z_min =   1.0f;
+<SPAN CLASS="linenum">0297:</SPAN> <SPAN CLASS="keyword">const</SPAN> <SPAN CLASS="keyword">float</SPAN> z_max  = 80.0f;
+<SPAN CLASS="linenum">0298:</SPAN> D3DXVECTOR4 lightDir(1.0f, 1.0f, 0.0, 0.0f);
+<SPAN CLASS="linenum">0299:</SPAN> 
+<SPAN CLASS="linenum">0300:</SPAN> VOID DrawModel( LPDIRECT3DDEVICE8 lpD3DDev )
+<SPAN CLASS="linenum">0301:</SPAN> {
+<SPAN CLASS="linenum">0302:</SPAN>     D3DXMATRIX mVP,  mWorld, mView,  mProj, mTex;
+<SPAN CLASS="linenum">0303:</SPAN>     D3DXMATRIX mVPL, mLight, mViewL, mProjL;
+<SPAN CLASS="linenum">0304:</SPAN>     D3DXMATRIX  m;
+<SPAN CLASS="linenum">0305:</SPAN>     D3DXVECTOR4 vl;
+<SPAN CLASS="linenum">0306:</SPAN>     DWORD i;
+<SPAN CLASS="linenum">0307:</SPAN>     
+<SPAN CLASS="linenum">0308:</SPAN>     D3DXVec4Normalize(&amp;vl, &amp;lightDir);
+<SPAN CLASS="linenum">0309:</SPAN>     lpD3DDev-&gt;SetVertexShaderConstant(11, &amp;vl, 1);
+<SPAN CLASS="linenum">0310:</SPAN> 
+<SPAN CLASS="linenum">0311:</SPAN>     <SPAN CLASS="comment">// </SPAN>
+<SPAN CLASS="linenum">0312:</SPAN>     <SPAN CLASS="comment">// 通常レンダリング用の行列を作成</SPAN>
+<SPAN CLASS="linenum">0313:</SPAN>     <SPAN CLASS="comment">// </SPAN>
+<SPAN CLASS="linenum">0314:</SPAN>     <SPAN CLASS="comment">// ビュー行列</SPAN>
+<SPAN CLASS="linenum">0315:</SPAN>     D3DXVECTOR3 eye    = D3DXVECTOR3(0.0f,1.4f*MeshRadius, 2.5f*MeshRadius);
+<SPAN CLASS="linenum">0316:</SPAN>     D3DXVECTOR3 lookAt = D3DXVECTOR3(0.0f,  0.0f,  0.0f);
+<SPAN CLASS="linenum">0317:</SPAN>     D3DXVECTOR3 up     = D3DXVECTOR3(0.0f,  1.0f,  0.0f);
+<SPAN CLASS="linenum">0318:</SPAN>     D3DXMatrixLookAtLH(&amp;mView, &amp;eye, &amp;lookAt, &amp;up);
+<SPAN CLASS="linenum">0319:</SPAN>     <SPAN CLASS="comment">// 射影行列</SPAN>
+<SPAN CLASS="linenum">0320:</SPAN>     D3DXMatrixPerspectiveFovLH(&amp;mProj
+<SPAN CLASS="linenum">0321:</SPAN>         , D3DXToRadian(60.0f)                       <SPAN CLASS="comment">// 視野角</SPAN>
+<SPAN CLASS="linenum">0322:</SPAN>         , (<SPAN CLASS="keyword">float</SPAN>)WIDTH/(<SPAN CLASS="keyword">float</SPAN>)HEIGHT                <SPAN CLASS="comment">// アスペクト比</SPAN>
+<SPAN CLASS="linenum">0323:</SPAN>         , z_min, z_max                              <SPAN CLASS="comment">// 最近接距離,最遠方距離</SPAN>
+<SPAN CLASS="linenum">0324:</SPAN>         );
+<SPAN CLASS="linenum">0325:</SPAN>     
+<SPAN CLASS="linenum">0326:</SPAN>     mVP = mView * mProj;
+<SPAN CLASS="linenum">0327:</SPAN>     lpD3DDev-&gt;SetVertexShaderConstant( 15, &amp;eye, 1);
+<SPAN CLASS="linenum">0328:</SPAN> 
+<SPAN CLASS="linenum">0329:</SPAN>     <SPAN CLASS="comment">//</SPAN>
+<SPAN CLASS="linenum">0330:</SPAN>     <SPAN CLASS="comment">// 外側もでる描画</SPAN>
+<SPAN CLASS="linenum">0331:</SPAN>     <SPAN CLASS="comment">//</SPAN>
+<SPAN CLASS="linenum">0332:</SPAN>     <SPAN CLASS="keyword">float</SPAN> t = 0.0001f*(timeGetTime()%10000);
+<SPAN CLASS="linenum">0333:</SPAN>     D3DXMatrixTranslation(&amp;m, 1.5f*MeshRadius, 0,0);
+<SPAN CLASS="linenum">0334:</SPAN>     D3DXMatrixRotationY( &amp;mWorld, 3.0f*2.0f*D3DX_PI*t );
+<SPAN CLASS="linenum">0335:</SPAN> <SPAN CLASS="comment">//D3DXMatrixRotationY( &amp;mWorld, -0.2*PI/2 ); // 撮影角度</SPAN>
+<SPAN CLASS="linenum">0336:</SPAN>     mWorld = m * mWorld;
+<SPAN CLASS="linenum">0337:</SPAN>     
+<SPAN CLASS="linenum">0338:</SPAN>     m = mWorld * mVP;
+<SPAN CLASS="linenum">0339:</SPAN>     lpD3DDev-&gt;SetVertexShaderConstant( 0,D3DXMatrixTranspose(&amp;m,&amp;m), 4);
+<SPAN CLASS="linenum">0340:</SPAN>     lpD3DDev-&gt;SetVertexShaderConstant( 4,D3DXMatrixTranspose(&amp;m,&amp;mWorld), 4);
+<SPAN CLASS="linenum">0341:</SPAN> 
+<SPAN CLASS="linenum">0342:</SPAN>     D3DXMatrixInverse( &amp;m,  NULL, &amp;mWorld);
+<SPAN CLASS="linenum">0343:</SPAN>     D3DXVec4Transform(&amp;vl, &amp;lightDir, &amp;m);
+<SPAN CLASS="linenum">0344:</SPAN>     D3DXVec4Normalize(&amp;vl, &amp;vl);
+<SPAN CLASS="linenum">0345:</SPAN>     vl.w = 0.3f;
+<SPAN CLASS="linenum">0346:</SPAN>     lpD3DDev-&gt;SetVertexShaderConstant(13, &amp;vl, 1);
+<SPAN CLASS="linenum">0347:</SPAN>     
+<SPAN CLASS="linenum">0348:</SPAN>     lpD3DDev-&gt;SetStreamSource(0, pMeshVB, <SPAN CLASS="keyword">sizeof</SPAN>(D3D_CUSTOMVERTEX));
+<SPAN CLASS="linenum">0349:</SPAN>     lpD3DDev-&gt;SetIndices(pMeshIndex,0);
+<SPAN CLASS="linenum">0350:</SPAN>     
+<SPAN CLASS="linenum">0351:</SPAN>     <SPAN CLASS="keyword">for</SPAN>(i=0;i&lt;dwNumMaterials;i++){
+<SPAN CLASS="linenum">0352:</SPAN>         <SPAN CLASS="comment">//色をセット</SPAN>
+<SPAN CLASS="linenum">0353:</SPAN>         D3DXVECTOR4 vl;
+<SPAN CLASS="linenum">0354:</SPAN>         vl.x = pMeshMaterials[i].Diffuse.r;
+<SPAN CLASS="linenum">0355:</SPAN>         vl.y = pMeshMaterials[i].Diffuse.g;
+<SPAN CLASS="linenum">0356:</SPAN>         vl.z = pMeshMaterials[i].Diffuse.b;
+<SPAN CLASS="linenum">0357:</SPAN>         lpD3DDev-&gt;SetVertexShaderConstant(14, &amp;vl, 1);
+<SPAN CLASS="linenum">0358:</SPAN> 
+<SPAN CLASS="linenum">0359:</SPAN>         lpD3DDev-&gt;DrawIndexedPrimitive(D3DPT_TRIANGLELIST, 
+<SPAN CLASS="linenum">0360:</SPAN>                                         pSubsetTable[i].VertexStart,
+<SPAN CLASS="linenum">0361:</SPAN>                                         pSubsetTable[i].VertexCount,
+<SPAN CLASS="linenum">0362:</SPAN>                                         pSubsetTable[i].FaceStart * 3,
+<SPAN CLASS="linenum">0363:</SPAN>                                         pSubsetTable[i].FaceCount);
+<SPAN CLASS="linenum">0364:</SPAN>     }
+<SPAN CLASS="linenum">0365:</SPAN>     <SPAN CLASS="comment">//</SPAN>
+<SPAN CLASS="linenum">0366:</SPAN>     <SPAN CLASS="comment">// 内側モデル</SPAN>
+<SPAN CLASS="linenum">0367:</SPAN>     <SPAN CLASS="comment">//</SPAN>
+<SPAN CLASS="linenum">0368:</SPAN>     D3DXMatrixRotationY( &amp;mWorld, -1.0f*2.0f*D3DX_PI*t );
+<SPAN CLASS="linenum">0369:</SPAN> <SPAN CLASS="comment">//D3DXMatrixRotationY( &amp;mWorld,-1.10f*PI/2 ); // 撮影角度</SPAN>
+<SPAN CLASS="linenum">0370:</SPAN> 
+<SPAN CLASS="linenum">0371:</SPAN>     m = mWorld * mVP;
+<SPAN CLASS="linenum">0372:</SPAN>     lpD3DDev-&gt;SetVertexShaderConstant( 0,D3DXMatrixTranspose(&amp;m,&amp;m), 4);
+<SPAN CLASS="linenum">0373:</SPAN>     lpD3DDev-&gt;SetVertexShaderConstant( 4,D3DXMatrixTranspose(&amp;m,&amp;mWorld), 4);
+<SPAN CLASS="linenum">0374:</SPAN> 
+<SPAN CLASS="linenum">0375:</SPAN>     D3DXMatrixInverse( &amp;m,  NULL, &amp;mWorld);
+<SPAN CLASS="linenum">0376:</SPAN>     D3DXVec4Transform(&amp;vl, &amp;lightDir, &amp;m);
+<SPAN CLASS="linenum">0377:</SPAN>     D3DXVec4Normalize(&amp;vl, &amp;vl);
+<SPAN CLASS="linenum">0378:</SPAN>     lpD3DDev-&gt;SetVertexShaderConstant(13, &amp;vl, 1);
+<SPAN CLASS="linenum">0379:</SPAN>     
+<SPAN CLASS="linenum">0380:</SPAN>     <SPAN CLASS="keyword">for</SPAN>(i=0;i&lt;dwNumMaterials;i++){
+<SPAN CLASS="linenum">0381:</SPAN>         <SPAN CLASS="comment">//色をセット</SPAN>
+<SPAN CLASS="linenum">0382:</SPAN>         D3DXVECTOR4 vl;
+<SPAN CLASS="linenum">0383:</SPAN>         vl.x = pMeshMaterials[i].Diffuse.r;
+<SPAN CLASS="linenum">0384:</SPAN>         vl.y = pMeshMaterials[i].Diffuse.g;
+<SPAN CLASS="linenum">0385:</SPAN>         vl.z = pMeshMaterials[i].Diffuse.b;
+<SPAN CLASS="linenum">0386:</SPAN>         lpD3DDev-&gt;SetVertexShaderConstant(14, &amp;vl, 1);
+<SPAN CLASS="linenum">0387:</SPAN> 
+<SPAN CLASS="linenum">0388:</SPAN>         lpD3DDev-&gt;DrawIndexedPrimitive(D3DPT_TRIANGLELIST, 
+<SPAN CLASS="linenum">0389:</SPAN>                                         pSubsetTable[i].VertexStart,
+<SPAN CLASS="linenum">0390:</SPAN>                                         pSubsetTable[i].VertexCount,
+<SPAN CLASS="linenum">0391:</SPAN>                                         pSubsetTable[i].FaceStart * 3,
+<SPAN CLASS="linenum">0392:</SPAN>                                         pSubsetTable[i].FaceCount);
+<SPAN CLASS="linenum">0393:</SPAN>     }
+<SPAN CLASS="linenum">0394:</SPAN> 
+<SPAN CLASS="linenum">0395:</SPAN>     <SPAN CLASS="comment">//</SPAN>
+<SPAN CLASS="linenum">0396:</SPAN>     <SPAN CLASS="comment">// 背景描画</SPAN>
+<SPAN CLASS="linenum">0397:</SPAN>     <SPAN CLASS="comment">// </SPAN>
+<SPAN CLASS="linenum">0398:</SPAN>     D3DXMatrixIdentity(&amp;mWorld);
+<SPAN CLASS="linenum">0399:</SPAN>     lpD3DDev-&gt;SetTransform(D3DTS_WORLD, &amp;mWorld);
+<SPAN CLASS="linenum">0400:</SPAN>     lpD3DDev-&gt;SetTransform(D3DTS_VIEW,  &amp;mView);
+<SPAN CLASS="linenum">0401:</SPAN>     lpD3DDev-&gt;SetTransform(D3DTS_PROJECTION, &amp;mProj);
+<SPAN CLASS="linenum">0402:</SPAN>     lpD3DDev-&gt;SetTexture( 1, NULL );
+<SPAN CLASS="linenum">0403:</SPAN>     lpD3DDev-&gt;SetTexture( 2, NULL );
+<SPAN CLASS="linenum">0404:</SPAN>     lpD3DDev-&gt;SetPixelShader (  0 );
+<SPAN CLASS="linenum">0405:</SPAN> 
+<SPAN CLASS="linenum">0406:</SPAN>     DrawBg(lpD3DDev);
+<SPAN CLASS="linenum">0407:</SPAN> }
+<SPAN CLASS="linenum">0408:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0409:</SPAN> <SPAN CLASS="comment">// Name: MakeCubeMap()</SPAN>
+<SPAN CLASS="linenum">0410:</SPAN> <SPAN CLASS="comment">// Desc: 環境マップを作成する</SPAN>
+<SPAN CLASS="linenum">0411:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0412:</SPAN> VOID MakeCubeMap(LPDIRECT3DDEVICE8 lpD3DDev )
+<SPAN CLASS="linenum">0413:</SPAN> {
+<SPAN CLASS="linenum">0414:</SPAN>     <SPAN CLASS="comment">// デバイスのトランスフォーム行列を保存する。</SPAN>
+<SPAN CLASS="linenum">0415:</SPAN>     D3DXMATRIX matProjSave, matViewSave;
+<SPAN CLASS="linenum">0416:</SPAN>     lpD3DDev-&gt;GetTransform( D3DTS_VIEW,       &amp;matViewSave );
+<SPAN CLASS="linenum">0417:</SPAN>     lpD3DDev-&gt;GetTransform( D3DTS_PROJECTION, &amp;matProjSave );
+<SPAN CLASS="linenum">0418:</SPAN> 
+<SPAN CLASS="linenum">0419:</SPAN>     <SPAN CLASS="comment">// 現在のバック バッファと z バッファを格納する。</SPAN>
+<SPAN CLASS="linenum">0420:</SPAN>     LPDIRECT3DSURFACE8 pBackBuffer, pZBuffer;
+<SPAN CLASS="linenum">0421:</SPAN>     lpD3DDev-&gt;GetRenderTarget( &amp;pBackBuffer );
+<SPAN CLASS="linenum">0422:</SPAN>     lpD3DDev-&gt;GetDepthStencilSurface( &amp;pZBuffer );
+<SPAN CLASS="linenum">0423:</SPAN> 
+<SPAN CLASS="linenum">0424:</SPAN>     <SPAN CLASS="comment">// 90°の視野を射影に使用する。</SPAN>
+<SPAN CLASS="linenum">0425:</SPAN>     D3DXMATRIX matProj;
+<SPAN CLASS="linenum">0426:</SPAN>     D3DXMatrixPerspectiveFovLH( &amp;matProj, D3DX_PI/2, 1.0f, 0.5f, 1000.0f );
+<SPAN CLASS="linenum">0427:</SPAN>     lpD3DDev-&gt;SetTransform( D3DTS_PROJECTION, &amp;matProj );
+<SPAN CLASS="linenum">0428:</SPAN> 
+<SPAN CLASS="linenum">0429:</SPAN>     <SPAN CLASS="comment">// キューブ マップの 6 つのサーフェスに対してループ処理を実行する。</SPAN>
+<SPAN CLASS="linenum">0430:</SPAN>     <SPAN CLASS="keyword">for</SPAN>( DWORD i=0 ; i&lt;6 ; i++ ) {
+<SPAN CLASS="linenum">0431:</SPAN>         D3DXVECTOR3 vEnvEyePt = D3DXVECTOR3( 0.0f, 10.0f, 0.0f );
+<SPAN CLASS="linenum">0432:</SPAN>         D3DXVECTOR3 vLookatPt, vUpVec;
+<SPAN CLASS="linenum">0433:</SPAN> 
+<SPAN CLASS="linenum">0434:</SPAN>         <SPAN CLASS="keyword">switch</SPAN>( i ){
+<SPAN CLASS="linenum">0435:</SPAN>         <SPAN CLASS="keyword">case</SPAN> D3DCUBEMAP_FACE_POSITIVE_X:
+<SPAN CLASS="linenum">0436:</SPAN>             vLookatPt = D3DXVECTOR3( 1.0f, 0.0f, 0.0f )+vEnvEyePt;
+<SPAN CLASS="linenum">0437:</SPAN>             vUpVec    = D3DXVECTOR3( 0.0f, 1.0f, 0.0f );
+<SPAN CLASS="linenum">0438:</SPAN>             <SPAN CLASS="keyword">break</SPAN>;
+<SPAN CLASS="linenum">0439:</SPAN>         <SPAN CLASS="keyword">case</SPAN> D3DCUBEMAP_FACE_NEGATIVE_X:
+<SPAN CLASS="linenum">0440:</SPAN>             vLookatPt = D3DXVECTOR3(-1.0f, 0.0f, 0.0f )+vEnvEyePt;
+<SPAN CLASS="linenum">0441:</SPAN>             vUpVec    = D3DXVECTOR3( 0.0f, 1.0f, 0.0f );
+<SPAN CLASS="linenum">0442:</SPAN>             <SPAN CLASS="keyword">break</SPAN>;
+<SPAN CLASS="linenum">0443:</SPAN>         <SPAN CLASS="keyword">case</SPAN> D3DCUBEMAP_FACE_POSITIVE_Y:
+<SPAN CLASS="linenum">0444:</SPAN>             vLookatPt = D3DXVECTOR3( 0.0f, 1.0f, 0.0f )+vEnvEyePt;
+<SPAN CLASS="linenum">0445:</SPAN>             vUpVec    = D3DXVECTOR3( 0.0f, 0.0f,-1.0f );
+<SPAN CLASS="linenum">0446:</SPAN>             <SPAN CLASS="keyword">break</SPAN>;
+<SPAN CLASS="linenum">0447:</SPAN>         <SPAN CLASS="keyword">case</SPAN> D3DCUBEMAP_FACE_NEGATIVE_Y:
+<SPAN CLASS="linenum">0448:</SPAN>             vLookatPt = D3DXVECTOR3( 0.0f,-1.0f, 0.0f )+vEnvEyePt;
+<SPAN CLASS="linenum">0449:</SPAN>             vUpVec    = D3DXVECTOR3( 0.0f, 0.0f, 1.0f );
+<SPAN CLASS="linenum">0450:</SPAN>             <SPAN CLASS="keyword">break</SPAN>;
+<SPAN CLASS="linenum">0451:</SPAN>         <SPAN CLASS="keyword">case</SPAN> D3DCUBEMAP_FACE_POSITIVE_Z:
+<SPAN CLASS="linenum">0452:</SPAN>             vLookatPt = D3DXVECTOR3( 0.0f, 0.0f, 1.0f )+vEnvEyePt;
+<SPAN CLASS="linenum">0453:</SPAN>             vUpVec    = D3DXVECTOR3( 0.0f, 1.0f, 0.0f );
+<SPAN CLASS="linenum">0454:</SPAN>             <SPAN CLASS="keyword">break</SPAN>;
+<SPAN CLASS="linenum">0455:</SPAN>         <SPAN CLASS="keyword">case</SPAN> D3DCUBEMAP_FACE_NEGATIVE_Z:
+<SPAN CLASS="linenum">0456:</SPAN>             vLookatPt = D3DXVECTOR3( 0.0f, 0.0f,-1.0f )+vEnvEyePt;
+<SPAN CLASS="linenum">0457:</SPAN>             vUpVec    = D3DXVECTOR3( 0.0f, 1.0f, 0.0f );
+<SPAN CLASS="linenum">0458:</SPAN>             <SPAN CLASS="keyword">break</SPAN>;
+<SPAN CLASS="linenum">0459:</SPAN>         }
+<SPAN CLASS="linenum">0460:</SPAN> 
+<SPAN CLASS="linenum">0461:</SPAN>         D3DXMATRIX matView;
+<SPAN CLASS="linenum">0462:</SPAN>         D3DXMatrixLookAtLH( &amp;matView, &amp;vEnvEyePt, &amp;vLookatPt, &amp;vUpVec );
+<SPAN CLASS="linenum">0463:</SPAN>         lpD3DDev-&gt;SetTransform( D3DTS_VIEW, &amp;matView );
+<SPAN CLASS="linenum">0464:</SPAN> 
+<SPAN CLASS="linenum">0465:</SPAN>         <SPAN CLASS="comment">//レンダリングするサーフェスへのポインタを取得する。</SPAN>
+<SPAN CLASS="linenum">0466:</SPAN>         LPDIRECT3DSURFACE8 pFace;
+<SPAN CLASS="linenum">0467:</SPAN>         pCubeMap-&gt;GetCubeMapSurface( (D3DCUBEMAP_FACES)i, 0, &amp;pFace );
+<SPAN CLASS="linenum">0468:</SPAN>         lpD3DDev-&gt;SetRenderTarget ( pFace , pZBuffer );
+<SPAN CLASS="linenum">0469:</SPAN>         pFace-&gt;Release();
+<SPAN CLASS="linenum">0470:</SPAN> 
+<SPAN CLASS="linenum">0471:</SPAN>         lpD3DDev-&gt;Clear(0, NULL, D3DCLEAR_TARGET | D3DCLEAR_ZBUFFER, 0x000000, 1.0f, 0L);
+<SPAN CLASS="linenum">0472:</SPAN>         lpD3DDev-&gt;BeginScene();
+<SPAN CLASS="linenum">0473:</SPAN>         <SPAN CLASS="comment">// ここで、シーンをレンダリングする。</SPAN>
+<SPAN CLASS="linenum">0474:</SPAN>         DrawBg(lpD3DDev);
+<SPAN CLASS="linenum">0475:</SPAN>         lpD3DDev-&gt;EndScene();
+<SPAN CLASS="linenum">0476:</SPAN>     }
+<SPAN CLASS="linenum">0477:</SPAN> 
+<SPAN CLASS="linenum">0478:</SPAN>     <SPAN CLASS="comment">// レンダリング ターゲットをメイン バック バッファに戻す。</SPAN>
+<SPAN CLASS="linenum">0479:</SPAN>     lpD3DDev-&gt;SetRenderTarget( pBackBuffer, pZBuffer );
+<SPAN CLASS="linenum">0480:</SPAN>     pBackBuffer-&gt;Release();
+<SPAN CLASS="linenum">0481:</SPAN>     pZBuffer-&gt;Release();
+<SPAN CLASS="linenum">0482:</SPAN> 
+<SPAN CLASS="linenum">0483:</SPAN>     <SPAN CLASS="comment">// 元のトランスフォーム行列をリストアする。</SPAN>
+<SPAN CLASS="linenum">0484:</SPAN>     lpD3DDev-&gt;SetTransform( D3DTS_VIEW,       &amp;matViewSave );
+<SPAN CLASS="linenum">0485:</SPAN>     lpD3DDev-&gt;SetTransform( D3DTS_PROJECTION, &amp;matProjSave );
+<SPAN CLASS="linenum">0486:</SPAN> }
+<SPAN CLASS="linenum">0487:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0488:</SPAN> <SPAN CLASS="comment">// Name: MakeDiffuseMap()</SPAN>
+<SPAN CLASS="linenum">0489:</SPAN> <SPAN CLASS="comment">// Desc: 拡散マップを作成する</SPAN>
+<SPAN CLASS="linenum">0490:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0491:</SPAN> VOID MakeDiffuseMap(LPDIRECT3DDEVICE8 lpD3DDev
+<SPAN CLASS="linenum">0492:</SPAN>                     , LPDIRECT3DCUBETEXTURE8 pDiffuseMap
+<SPAN CLASS="linenum">0493:</SPAN>                     , LPDIRECT3DCUBETEXTURE8 pEnvMap )
+<SPAN CLASS="linenum">0494:</SPAN> {
+<SPAN CLASS="linenum">0495:</SPAN>     <SPAN CLASS="keyword">static</SPAN> <SPAN CLASS="keyword">int</SPAN> n = 0;
+<SPAN CLASS="linenum">0496:</SPAN>     
+<SPAN CLASS="linenum">0497:</SPAN>     <SPAN CLASS="keyword">if</SPAN>(256&lt;=n)<SPAN CLASS="keyword">return</SPAN>;
+<SPAN CLASS="linenum">0498:</SPAN>     n++;
+<SPAN CLASS="linenum">0499:</SPAN> 
+<SPAN CLASS="linenum">0500:</SPAN>     lpD3DDev-&gt;SetTextureStageState(0, D3DTSS_COLORARG1, D3DTA_DIFFUSE );
+<SPAN CLASS="linenum">0501:</SPAN>     lpD3DDev-&gt;SetTextureStageState(0, D3DTSS_COLOROP,   D3DTOP_SELECTARG1);
+<SPAN CLASS="linenum">0502:</SPAN>     lpD3DDev-&gt;SetTextureStageState(1, D3DTSS_COLORARG1, D3DTA_TEXTURE );
+<SPAN CLASS="linenum">0503:</SPAN>     lpD3DDev-&gt;SetTextureStageState(1, D3DTSS_COLOROP,   D3DTOP_SELECTARG1);
+<SPAN CLASS="linenum">0504:</SPAN>     lpD3DDev-&gt;SetTextureStageState(2, D3DTSS_COLORARG1, D3DTA_TEXTURE );
+<SPAN CLASS="linenum">0505:</SPAN>     lpD3DDev-&gt;SetTextureStageState(2, D3DTSS_COLOROP,   D3DTOP_SELECTARG1);
+<SPAN CLASS="linenum">0506:</SPAN>     lpD3DDev-&gt;SetTextureStageState(3, D3DTSS_COLORARG1, D3DTA_TEXTURE );
+<SPAN CLASS="linenum">0507:</SPAN>     lpD3DDev-&gt;SetTextureStageState(3, D3DTSS_COLOROP,   D3DTOP_SELECTARG1);
+<SPAN CLASS="linenum">0508:</SPAN> 
+<SPAN CLASS="linenum">0509:</SPAN>     lpD3DDev-&gt;SetRenderState(D3DRS_ALPHABLENDENABLE, TRUE);
+<SPAN CLASS="linenum">0510:</SPAN>     lpD3DDev-&gt;SetRenderState(D3DRS_DESTBLEND, D3DBLEND_INVSRCALPHA);
+<SPAN CLASS="linenum">0511:</SPAN>     lpD3DDev-&gt;SetRenderState(D3DRS_SRCBLEND, D3DBLEND_SRCALPHA);
+<SPAN CLASS="linenum">0512:</SPAN>     lpD3DDev-&gt;SetVertexShader( hDiffuseVertexShader );
+<SPAN CLASS="linenum">0513:</SPAN>     lpD3DDev-&gt;SetPixelShader ( hDiffusePixelShader );
+<SPAN CLASS="linenum">0514:</SPAN>     lpD3DDev-&gt;SetTexture( 0, pEnvMap );
+<SPAN CLASS="linenum">0515:</SPAN>     lpD3DDev-&gt;SetTexture( 1, pEnvMap );
+<SPAN CLASS="linenum">0516:</SPAN>     lpD3DDev-&gt;SetTexture( 2, pEnvMap );
+<SPAN CLASS="linenum">0517:</SPAN>     lpD3DDev-&gt;SetTexture( 3, pEnvMap );
+<SPAN CLASS="linenum">0518:</SPAN> 
+<SPAN CLASS="linenum">0519:</SPAN>     <SPAN CLASS="comment">// デバイスのトランスフォーム行列を保存する。</SPAN>
+<SPAN CLASS="linenum">0520:</SPAN>     D3DXMATRIX matProjSave, matViewSave;
+<SPAN CLASS="linenum">0521:</SPAN>     lpD3DDev-&gt;GetTransform( D3DTS_VIEW,       &amp;matViewSave );
+<SPAN CLASS="linenum">0522:</SPAN>     lpD3DDev-&gt;GetTransform( D3DTS_PROJECTION, &amp;matProjSave );
+<SPAN CLASS="linenum">0523:</SPAN> 
+<SPAN CLASS="linenum">0524:</SPAN>     <SPAN CLASS="comment">// 現在のバック バッファと z バッファを格納する。</SPAN>
+<SPAN CLASS="linenum">0525:</SPAN>     LPDIRECT3DSURFACE8 pBackBuffer, pZBuffer;
+<SPAN CLASS="linenum">0526:</SPAN>     lpD3DDev-&gt;GetRenderTarget( &amp;pBackBuffer );
+<SPAN CLASS="linenum">0527:</SPAN>     lpD3DDev-&gt;GetDepthStencilSurface( &amp;pZBuffer );
+<SPAN CLASS="linenum">0528:</SPAN> 
+<SPAN CLASS="linenum">0529:</SPAN>     <SPAN CLASS="comment">// 90°の視野を射影に使用する。</SPAN>
+<SPAN CLASS="linenum">0530:</SPAN>     D3DXMATRIX matProj;
+<SPAN CLASS="linenum">0531:</SPAN>     D3DXMatrixPerspectiveFovLH( &amp;matProj, D3DX_PI/2, 1.0f, 0.5f, 1000.0f );
+<SPAN CLASS="linenum">0532:</SPAN>     lpD3DDev-&gt;SetTransform( D3DTS_PROJECTION, &amp;matProj );
+<SPAN CLASS="linenum">0533:</SPAN> 
+<SPAN CLASS="linenum">0534:</SPAN>     <SPAN CLASS="comment">// キューブ マップの 6 つのサーフェスに対してループ処理を実行する。</SPAN>
+<SPAN CLASS="linenum">0535:</SPAN>     <SPAN CLASS="keyword">for</SPAN>( DWORD i=0 ; i&lt;6 ; i++ ) {
+<SPAN CLASS="linenum">0536:</SPAN>         D3DXVECTOR3 vEnvEyePt = D3DXVECTOR3( 0.0f, 10.0f, 0.0f );
+<SPAN CLASS="linenum">0537:</SPAN>         D3DXVECTOR3 vLookatPt, vUpVec;
+<SPAN CLASS="linenum">0538:</SPAN> 
+<SPAN CLASS="linenum">0539:</SPAN>         <SPAN CLASS="keyword">switch</SPAN>( i ){
+<SPAN CLASS="linenum">0540:</SPAN>         <SPAN CLASS="keyword">case</SPAN> D3DCUBEMAP_FACE_POSITIVE_X:
+<SPAN CLASS="linenum">0541:</SPAN>             vLookatPt = D3DXVECTOR3( 1.0f, 0.0f, 0.0f )+vEnvEyePt;
+<SPAN CLASS="linenum">0542:</SPAN>             vUpVec    = D3DXVECTOR3( 0.0f, 1.0f, 0.0f );
+<SPAN CLASS="linenum">0543:</SPAN>             <SPAN CLASS="keyword">break</SPAN>;
+<SPAN CLASS="linenum">0544:</SPAN>         <SPAN CLASS="keyword">case</SPAN> D3DCUBEMAP_FACE_NEGATIVE_X:
+<SPAN CLASS="linenum">0545:</SPAN>             vLookatPt = D3DXVECTOR3(-1.0f, 0.0f, 0.0f )+vEnvEyePt;
+<SPAN CLASS="linenum">0546:</SPAN>             vUpVec    = D3DXVECTOR3( 0.0f, 1.0f, 0.0f );
+<SPAN CLASS="linenum">0547:</SPAN>             <SPAN CLASS="keyword">break</SPAN>;
+<SPAN CLASS="linenum">0548:</SPAN>         <SPAN CLASS="keyword">case</SPAN> D3DCUBEMAP_FACE_POSITIVE_Y:
+<SPAN CLASS="linenum">0549:</SPAN>             vLookatPt = D3DXVECTOR3( 0.0f, 1.0f, 0.0f )+vEnvEyePt;
+<SPAN CLASS="linenum">0550:</SPAN>             vUpVec    = D3DXVECTOR3( 0.0f, 0.0f,-1.0f );
+<SPAN CLASS="linenum">0551:</SPAN>             <SPAN CLASS="keyword">break</SPAN>;
+<SPAN CLASS="linenum">0552:</SPAN>         <SPAN CLASS="keyword">case</SPAN> D3DCUBEMAP_FACE_NEGATIVE_Y:
+<SPAN CLASS="linenum">0553:</SPAN>             vLookatPt = D3DXVECTOR3( 0.0f,-1.0f, 0.0f )+vEnvEyePt;
+<SPAN CLASS="linenum">0554:</SPAN>             vUpVec    = D3DXVECTOR3( 0.0f, 0.0f, 1.0f );
+<SPAN CLASS="linenum">0555:</SPAN>             <SPAN CLASS="keyword">break</SPAN>;
+<SPAN CLASS="linenum">0556:</SPAN>         <SPAN CLASS="keyword">case</SPAN> D3DCUBEMAP_FACE_POSITIVE_Z:
+<SPAN CLASS="linenum">0557:</SPAN>             vLookatPt = D3DXVECTOR3( 0.0f, 0.0f, 1.0f )+vEnvEyePt;
+<SPAN CLASS="linenum">0558:</SPAN>             vUpVec    = D3DXVECTOR3( 0.0f, 1.0f, 0.0f );
+<SPAN CLASS="linenum">0559:</SPAN>             <SPAN CLASS="keyword">break</SPAN>;
+<SPAN CLASS="linenum">0560:</SPAN>         <SPAN CLASS="keyword">case</SPAN> D3DCUBEMAP_FACE_NEGATIVE_Z:
+<SPAN CLASS="linenum">0561:</SPAN>             vLookatPt = D3DXVECTOR3( 0.0f, 0.0f,-1.0f )+vEnvEyePt;
+<SPAN CLASS="linenum">0562:</SPAN>             vUpVec    = D3DXVECTOR3( 0.0f, 1.0f, 0.0f );
+<SPAN CLASS="linenum">0563:</SPAN>             <SPAN CLASS="keyword">break</SPAN>;
+<SPAN CLASS="linenum">0564:</SPAN>         }
+<SPAN CLASS="linenum">0565:</SPAN> 
+<SPAN CLASS="linenum">0566:</SPAN>         D3DXMATRIX matView;
+<SPAN CLASS="linenum">0567:</SPAN>         D3DXMatrixLookAtLH( &amp;matView, &amp;vEnvEyePt, &amp;vLookatPt, &amp;vUpVec );
+<SPAN CLASS="linenum">0568:</SPAN>         lpD3DDev-&gt;SetTransform( D3DTS_VIEW, &amp;matView );
+<SPAN CLASS="linenum">0569:</SPAN> 
+<SPAN CLASS="linenum">0570:</SPAN>         D3DXMATRIX m = matView * matProj;
+<SPAN CLASS="linenum">0571:</SPAN>         D3DXMatrixInverse( &amp;m,  NULL, &amp;m);
+<SPAN CLASS="linenum">0572:</SPAN>         lpD3DDev-&gt;SetVertexShaderConstant( 8, D3DXMatrixTranspose(&amp;m,&amp;m), 4);
+<SPAN CLASS="linenum">0573:</SPAN> 
+<SPAN CLASS="linenum">0574:</SPAN>         <SPAN CLASS="comment">//レンダリングするサーフェスへのポインタを取得する。</SPAN>
+<SPAN CLASS="linenum">0575:</SPAN>         LPDIRECT3DSURFACE8 pFace;
+<SPAN CLASS="linenum">0576:</SPAN>         pDiffuseMap-&gt;GetCubeMapSurface( (D3DCUBEMAP_FACES)i, 0, &amp;pFace );
+<SPAN CLASS="linenum">0577:</SPAN>         lpD3DDev-&gt;SetRenderTarget ( pFace , pZBuffer );
+<SPAN CLASS="linenum">0578:</SPAN>         pFace-&gt;Release();
+<SPAN CLASS="linenum">0579:</SPAN> 
+<SPAN CLASS="linenum">0580:</SPAN>         <SPAN CLASS="keyword">if</SPAN>(1==n){
+<SPAN CLASS="linenum">0581:</SPAN>             lpD3DDev-&gt;Clear(0, NULL, D3DCLEAR_TARGET | D3DCLEAR_ZBUFFER, 0x000000, 1.0f, 0L);
+<SPAN CLASS="linenum">0582:</SPAN>         }
+<SPAN CLASS="linenum">0583:</SPAN>         lpD3DDev-&gt;BeginScene();
+<SPAN CLASS="linenum">0584:</SPAN>         
+<SPAN CLASS="linenum">0585:</SPAN>         <SPAN CLASS="comment">// 等方的サンプリング (Thanks Bee さん)</SPAN>
+<SPAN CLASS="linenum">0586:</SPAN>         D3DXVECTOR4 l[4];
+<SPAN CLASS="linenum">0587:</SPAN>         <SPAN CLASS="keyword">for</SPAN>(<SPAN CLASS="keyword">int</SPAN> k=0;k&lt;4;k++){
+<SPAN CLASS="linenum">0588:</SPAN>             <SPAN CLASS="keyword">float</SPAN> d;
+<SPAN CLASS="linenum">0589:</SPAN>             l[k].w = 0;
+<SPAN CLASS="linenum">0590:</SPAN>             <SPAN CLASS="keyword">do</SPAN>{
+<SPAN CLASS="linenum">0591:</SPAN>                 l[k].x = 2.0f*frand()-1.0f; 
+<SPAN CLASS="linenum">0592:</SPAN>                 l[k].y = 2.0f*frand()-1.0f; 
+<SPAN CLASS="linenum">0593:</SPAN>                 l[k].z = 2.0f*frand()-1.0f;
+<SPAN CLASS="linenum">0594:</SPAN>                 d = D3DXVec4LengthSq(&amp;l[k]);
+<SPAN CLASS="linenum">0595:</SPAN>             }<SPAN CLASS="keyword">while</SPAN>(1.0f&lt;d);
+<SPAN CLASS="linenum">0596:</SPAN>         }
+<SPAN CLASS="linenum">0597:</SPAN>         D3DXVec4Normalize(&amp;l[0], &amp;l[0]);
+<SPAN CLASS="linenum">0598:</SPAN>         D3DXVec4Normalize(&amp;l[1], &amp;l[1]);
+<SPAN CLASS="linenum">0599:</SPAN>         D3DXVec4Normalize(&amp;l[2], &amp;l[2]);
+<SPAN CLASS="linenum">0600:</SPAN>         D3DXVec4Normalize(&amp;l[3], &amp;l[3]);
+<SPAN CLASS="linenum">0601:</SPAN>         lpD3DDev-&gt;SetVertexShaderConstant(32, l, 4);
+<SPAN CLASS="linenum">0602:</SPAN>         lpD3DDev-&gt;SetPixelShaderConstant(1, &amp;D3DXVECTOR4(0,0,0,1.0f/n), 1);
+<SPAN CLASS="linenum">0603:</SPAN> 
+<SPAN CLASS="linenum">0604:</SPAN>         lpD3DDev-&gt;SetStreamSource( 0, pBlurVB, <SPAN CLASS="keyword">sizeof</SPAN>(D3D_BLUR_VERTEX) );
+<SPAN CLASS="linenum">0605:</SPAN>         lpD3DDev-&gt;SetIndices(pBlurIB,0);
+<SPAN CLASS="linenum">0606:</SPAN>         lpD3DDev-&gt;DrawIndexedPrimitive( D3DPT_TRIANGLELIST, 0,
+<SPAN CLASS="linenum">0607:</SPAN>                             (BLUR_GRID+1)*(BLUR_GRID+1), 0, 2*BLUR_GRID*BLUR_GRID );
+<SPAN CLASS="linenum">0608:</SPAN> 
+<SPAN CLASS="linenum">0609:</SPAN>         lpD3DDev-&gt;EndScene();
+<SPAN CLASS="linenum">0610:</SPAN>     }
+<SPAN CLASS="linenum">0611:</SPAN>     lpD3DDev-&gt;SetTexture( 0, NULL );
+<SPAN CLASS="linenum">0612:</SPAN>     lpD3DDev-&gt;SetTexture( 1, NULL );
+<SPAN CLASS="linenum">0613:</SPAN>     lpD3DDev-&gt;SetTexture( 2, NULL );
+<SPAN CLASS="linenum">0614:</SPAN>     lpD3DDev-&gt;SetTexture( 3, NULL );
+<SPAN CLASS="linenum">0615:</SPAN> 
+<SPAN CLASS="linenum">0616:</SPAN>     <SPAN CLASS="comment">// レンダリング ターゲットをメイン バック バッファに戻す。</SPAN>
+<SPAN CLASS="linenum">0617:</SPAN>     lpD3DDev-&gt;SetRenderTarget( pBackBuffer, pZBuffer );
+<SPAN CLASS="linenum">0618:</SPAN>     pBackBuffer-&gt;Release();
+<SPAN CLASS="linenum">0619:</SPAN>     pZBuffer-&gt;Release();
+<SPAN CLASS="linenum">0620:</SPAN> 
+<SPAN CLASS="linenum">0621:</SPAN>     <SPAN CLASS="comment">// 元のトランスフォーム行列をリストアする。</SPAN>
+<SPAN CLASS="linenum">0622:</SPAN>     lpD3DDev-&gt;SetTransform( D3DTS_VIEW,       &amp;matViewSave );
+<SPAN CLASS="linenum">0623:</SPAN>     lpD3DDev-&gt;SetTransform( D3DTS_PROJECTION, &amp;matProjSave );
+<SPAN CLASS="linenum">0624:</SPAN>     lpD3DDev-&gt;SetRenderState(D3DRS_ALPHABLENDENABLE, FALSE);
+<SPAN CLASS="linenum">0625:</SPAN> }
+<SPAN CLASS="linenum">0626:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0627:</SPAN> <SPAN CLASS="comment">// Name: Render()</SPAN>
+<SPAN CLASS="linenum">0628:</SPAN> <SPAN CLASS="comment">// Desc: Draws the scene</SPAN>
+<SPAN CLASS="linenum">0629:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0630:</SPAN> VOID Render(LPDIRECT3DDEVICE8 lpD3DDev)
+<SPAN CLASS="linenum">0631:</SPAN> {
+<SPAN CLASS="linenum">0632:</SPAN>     <SPAN CLASS="keyword">static</SPAN> <SPAN CLASS="keyword">int</SPAN> init=0;
+<SPAN CLASS="linenum">0633:</SPAN>     <SPAN CLASS="keyword">if</SPAN>(!init){init=1;
+<SPAN CLASS="linenum">0634:</SPAN>         MakeCubeMap(lpD3DDev);
+<SPAN CLASS="linenum">0635:</SPAN>     }
+<SPAN CLASS="linenum">0636:</SPAN>     <SPAN CLASS="comment">// ディフューズマップを半リアルタイムに作成する</SPAN>
+<SPAN CLASS="linenum">0637:</SPAN>     MakeDiffuseMap(lpD3DDev, pDiffuseMap, pCubeMap);
+<SPAN CLASS="linenum">0638:</SPAN>     
+<SPAN CLASS="linenum">0639:</SPAN>     <SPAN CLASS="comment">// シーン開始</SPAN>
+<SPAN CLASS="linenum">0640:</SPAN>     lpD3DDev-&gt;BeginScene();
+<SPAN CLASS="linenum">0641:</SPAN> 
+<SPAN CLASS="linenum">0642:</SPAN>     <SPAN CLASS="comment">// ------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0643:</SPAN>     <SPAN CLASS="comment">// シーンの作成</SPAN>
+<SPAN CLASS="linenum">0644:</SPAN>     <SPAN CLASS="comment">// ------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0645:</SPAN>     lpD3DDev-&gt;Clear(0, NULL, D3DCLEAR_TARGET | D3DCLEAR_ZBUFFER, 0x000000, 1.0f, 0L);
+<SPAN CLASS="linenum">0646:</SPAN> 
+<SPAN CLASS="linenum">0647:</SPAN>     lpD3DDev-&gt;SetTextureStageState(0, D3DTSS_COLORARG1, D3DTA_DIFFUSE );
+<SPAN CLASS="linenum">0648:</SPAN>     lpD3DDev-&gt;SetTextureStageState(0, D3DTSS_COLOROP,   D3DTOP_SELECTARG1);
+<SPAN CLASS="linenum">0649:</SPAN>     lpD3DDev-&gt;SetTextureStageState(1, D3DTSS_COLORARG1, D3DTA_TEXTURE );
+<SPAN CLASS="linenum">0650:</SPAN>     lpD3DDev-&gt;SetTextureStageState(1, D3DTSS_COLOROP,   D3DTOP_SELECTARG1);
+<SPAN CLASS="linenum">0651:</SPAN>     lpD3DDev-&gt;SetTextureStageState(2, D3DTSS_COLORARG1, D3DTA_TEXTURE );
+<SPAN CLASS="linenum">0652:</SPAN>     lpD3DDev-&gt;SetTextureStageState(2, D3DTSS_COLOROP,   D3DTOP_SELECTARG1);
+<SPAN CLASS="linenum">0653:</SPAN>     lpD3DDev-&gt;SetTextureStageState(3, D3DTSS_COLOROP,   D3DTOP_DISABLE);
+<SPAN CLASS="linenum">0654:</SPAN>     lpD3DDev-&gt;SetVertexShader( hVertexShader );
+<SPAN CLASS="linenum">0655:</SPAN>     lpD3DDev-&gt;SetPixelShader (  hPixelShader );
+<SPAN CLASS="linenum">0656:</SPAN>     lpD3DDev-&gt;SetTexture( 0, pDiffuseMap );
+<SPAN CLASS="linenum">0657:</SPAN> <SPAN CLASS="comment">//  lpD3DDev-&gt;SetTexture( 1, pNormalCubeMap );</SPAN>
+<SPAN CLASS="linenum">0658:</SPAN> <SPAN CLASS="comment">//  lpD3DDev-&gt;SetTexture( 2, pNormalCubeMap );</SPAN>
+<SPAN CLASS="linenum">0659:</SPAN> 
+<SPAN CLASS="linenum">0660:</SPAN>     DrawModel(lpD3DDev );
+<SPAN CLASS="linenum">0661:</SPAN>     
+<SPAN CLASS="linenum">0662:</SPAN>     <SPAN CLASS="comment">// 他でレンダリングしても問題が出ない設定にする</SPAN>
+<SPAN CLASS="linenum">0663:</SPAN>     lpD3DDev-&gt;SetTexture( 0, NULL );
+<SPAN CLASS="linenum">0664:</SPAN>     lpD3DDev-&gt;SetTexture( 1, NULL );
+<SPAN CLASS="linenum">0665:</SPAN>     lpD3DDev-&gt;SetTexture( 2, NULL );
+<SPAN CLASS="linenum">0666:</SPAN>     lpD3DDev-&gt;SetPixelShader(0);
+<SPAN CLASS="linenum">0667:</SPAN> <SPAN CLASS="keyword">#if</SPAN> 1
+<SPAN CLASS="linenum">0668:</SPAN>     <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0669:</SPAN>     <SPAN CLASS="comment">// デバッグ用、適当にテクスチャーを表示する</SPAN>
+<SPAN CLASS="linenum">0670:</SPAN>     <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0671:</SPAN>     <SPAN CLASS="keyword">struct</SPAN> TLVERTEX {
+<SPAN CLASS="linenum">0672:</SPAN>         <SPAN CLASS="keyword">float</SPAN> x,y,z,rhw;
+<SPAN CLASS="linenum">0673:</SPAN>         <SPAN CLASS="keyword">float</SPAN> tu,tv,tr;
+<SPAN CLASS="linenum">0674:</SPAN>     };
+<SPAN CLASS="linenum">0675:</SPAN>     <SPAN CLASS="keyword">#define</SPAN> FVF_TLVERTEX (D3DFVF_XYZRHW | D3DFVF_TEX1)
+<SPAN CLASS="linenum">0676:</SPAN> 
+<SPAN CLASS="linenum">0677:</SPAN>     <SPAN CLASS="keyword">float</SPAN> scale = 64.0f;
+<SPAN CLASS="linenum">0678:</SPAN>     TLVERTEX Vertex[6][4] = {
+<SPAN CLASS="linenum">0679:</SPAN>         {
+<SPAN CLASS="linenum">0680:</SPAN>             <SPAN CLASS="comment">//   x     y     z rhw tu tv tr</SPAN>
+<SPAN CLASS="linenum">0681:</SPAN>             {0*scale,1*scale,0, 1, -1, 1,-1,},
+<SPAN CLASS="linenum">0682:</SPAN>             {1*scale,1*scale,0, 1, -1, 1, 1,},
+<SPAN CLASS="linenum">0683:</SPAN>             {1*scale,2*scale,0, 1, -1,-1, 1,},
+<SPAN CLASS="linenum">0684:</SPAN>             {0*scale,2*scale,0, 1, -1,-1,-1,},
+<SPAN CLASS="linenum">0685:</SPAN>         },{
+<SPAN CLASS="linenum">0686:</SPAN>             <SPAN CLASS="comment">//   x     y     z rhw tu tv tr</SPAN>
+<SPAN CLASS="linenum">0687:</SPAN>             {1*scale,1*scale,0, 1, -1, 1, 1,},
+<SPAN CLASS="linenum">0688:</SPAN>             {2*scale,1*scale,0, 1,  1, 1, 1,},
+<SPAN CLASS="linenum">0689:</SPAN>             {2*scale,2*scale,0, 1,  1,-1, 1,},
+<SPAN CLASS="linenum">0690:</SPAN>             {1*scale,2*scale,0, 1, -1,-1, 1,},
+<SPAN CLASS="linenum">0691:</SPAN>         },{
+<SPAN CLASS="linenum">0692:</SPAN>             <SPAN CLASS="comment">//   x     y     z rhw tu tv tr</SPAN>
+<SPAN CLASS="linenum">0693:</SPAN>             {2*scale,1*scale,0, 1,  1, 1, 1,},
+<SPAN CLASS="linenum">0694:</SPAN>             {3*scale,1*scale,0, 1,  1, 1,-1,},
+<SPAN CLASS="linenum">0695:</SPAN>             {3*scale,2*scale,0, 1,  1,-1,-1,},
+<SPAN CLASS="linenum">0696:</SPAN>             {2*scale,2*scale,0, 1,  1,-1, 1,},
+<SPAN CLASS="linenum">0697:</SPAN>         },{
+<SPAN CLASS="linenum">0698:</SPAN>             <SPAN CLASS="comment">//   x     y     z rhw tu tv tr</SPAN>
+<SPAN CLASS="linenum">0699:</SPAN>             {3*scale,1*scale,0, 1,  1, 1,-1,},
+<SPAN CLASS="linenum">0700:</SPAN>             {4*scale,1*scale,0, 1, -1, 1,-1,},
+<SPAN CLASS="linenum">0701:</SPAN>             {4*scale,2*scale,0, 1, -1,-1,-1,},
+<SPAN CLASS="linenum">0702:</SPAN>             {3*scale,2*scale,0, 1,  1,-1,-1,},
+<SPAN CLASS="linenum">0703:</SPAN>         },{
+<SPAN CLASS="linenum">0704:</SPAN>             <SPAN CLASS="comment">//   x     y     z rhw tu tv tr</SPAN>
+<SPAN CLASS="linenum">0705:</SPAN>             {1*scale,0*scale,0, 1, -1, 1,-1,},
+<SPAN CLASS="linenum">0706:</SPAN>             {2*scale,0*scale,0, 1,  1, 1,-1,},
+<SPAN CLASS="linenum">0707:</SPAN>             {2*scale,1*scale,0, 1,  1, 1, 1,},
+<SPAN CLASS="linenum">0708:</SPAN>             {1*scale,1*scale,0, 1, -1, 1, 1,},
+<SPAN CLASS="linenum">0709:</SPAN>         },{
+<SPAN CLASS="linenum">0710:</SPAN>             <SPAN CLASS="comment">//   x     y     z rhw tu tv tr</SPAN>
+<SPAN CLASS="linenum">0711:</SPAN>             {1*scale,2*scale,0, 1, -1,-1, 1,},
+<SPAN CLASS="linenum">0712:</SPAN>             {2*scale,2*scale,0, 1,  1,-1, 1,},
+<SPAN CLASS="linenum">0713:</SPAN>             {2*scale,3*scale,0, 1,  1,-1,-1,},
+<SPAN CLASS="linenum">0714:</SPAN>             {1*scale,3*scale,0, 1, -1,-1,-1,},
+<SPAN CLASS="linenum">0715:</SPAN>         },
+<SPAN CLASS="linenum">0716:</SPAN>     };
+<SPAN CLASS="linenum">0717:</SPAN> 
+<SPAN CLASS="linenum">0718:</SPAN>     lpD3DDev-&gt;SetTextureStageState(0,D3DTSS_COLOROP,    D3DTOP_SELECTARG1);
+<SPAN CLASS="linenum">0719:</SPAN>     lpD3DDev-&gt;SetTextureStageState(0,D3DTSS_COLORARG1,  D3DTA_TEXTURE);
+<SPAN CLASS="linenum">0720:</SPAN>     lpD3DDev-&gt;SetTextureStageState(1,D3DTSS_COLOROP,    D3DTOP_DISABLE);
+<SPAN CLASS="linenum">0721:</SPAN>     lpD3DDev-&gt;SetVertexShader( FVF_TLVERTEX | D3DFVF_TEXCOORDSIZE3(0) );
+<SPAN CLASS="linenum">0722:</SPAN>     lpD3DDev-&gt;SetPixelShader(0);
+<SPAN CLASS="linenum">0723:</SPAN> 
+<SPAN CLASS="linenum">0724:</SPAN>     <SPAN CLASS="keyword">for</SPAN>( <SPAN CLASS="keyword">int</SPAN> n=0 ; n&lt;2 ; n++ ){
+<SPAN CLASS="linenum">0725:</SPAN>         <SPAN CLASS="keyword">if</SPAN>(0==n){
+<SPAN CLASS="linenum">0726:</SPAN>             lpD3DDev-&gt;SetTexture( 0, pCubeMap );
+<SPAN CLASS="linenum">0727:</SPAN>         }<SPAN CLASS="keyword">else</SPAN>{
+<SPAN CLASS="linenum">0728:</SPAN>             lpD3DDev-&gt;SetTexture( 0, pDiffuseMap );
+<SPAN CLASS="linenum">0729:</SPAN>         }
+<SPAN CLASS="linenum">0730:</SPAN>         <SPAN CLASS="keyword">for</SPAN>(<SPAN CLASS="keyword">int</SPAN> i=0;i&lt;6;i++){
+<SPAN CLASS="linenum">0731:</SPAN>             lpD3DDev-&gt;SetTextureStageState(0,D3DTSS_COLORARG1,  D3DTA_DIFFUSE);
+<SPAN CLASS="linenum">0732:</SPAN>             lpD3DDev-&gt;DrawPrimitiveUP( D3DPT_LINELIST, 2, Vertex[i], <SPAN CLASS="keyword">sizeof</SPAN>( TLVERTEX ) );
+<SPAN CLASS="linenum">0733:</SPAN>             lpD3DDev-&gt;SetTextureStageState(0,D3DTSS_COLORARG1,  D3DTA_TEXTURE);
+<SPAN CLASS="linenum">0734:</SPAN>             lpD3DDev-&gt;DrawPrimitiveUP( D3DPT_TRIANGLEFAN, 2, Vertex[i], <SPAN CLASS="keyword">sizeof</SPAN>( TLVERTEX ) );
+<SPAN CLASS="linenum">0735:</SPAN>             
+<SPAN CLASS="linenum">0736:</SPAN>             Vertex[i][0].x += 4*scale;
+<SPAN CLASS="linenum">0737:</SPAN>             Vertex[i][1].x += 4*scale;
+<SPAN CLASS="linenum">0738:</SPAN>             Vertex[i][2].x += 4*scale;
+<SPAN CLASS="linenum">0739:</SPAN>             Vertex[i][3].x += 4*scale;
+<SPAN CLASS="linenum">0740:</SPAN>         }
+<SPAN CLASS="linenum">0741:</SPAN>     }
+<SPAN CLASS="linenum">0742:</SPAN> <SPAN CLASS="keyword">#endif</SPAN>
+<SPAN CLASS="linenum">0743:</SPAN>     <SPAN CLASS="comment">// シーン終了</SPAN>
+<SPAN CLASS="linenum">0744:</SPAN>     lpD3DDev-&gt;EndScene();
+<SPAN CLASS="linenum">0745:</SPAN> }
+<SPAN CLASS="linenum">0746:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0747:</SPAN> <SPAN CLASS="comment">// メッシュオブジェクト削除</SPAN>
+<SPAN CLASS="linenum">0748:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0749:</SPAN> <SPAN CLASS="keyword">void</SPAN> DeleteMeshObject(<SPAN CLASS="keyword">void</SPAN>)
+<SPAN CLASS="linenum">0750:</SPAN> {
+<SPAN CLASS="linenum">0751:</SPAN>     DWORD i;
+<SPAN CLASS="linenum">0752:</SPAN> 
+<SPAN CLASS="linenum">0753:</SPAN>     <SPAN CLASS="keyword">if</SPAN>(pMeshVB == NULL) <SPAN CLASS="keyword">return</SPAN>;
+<SPAN CLASS="linenum">0754:</SPAN> 
+<SPAN CLASS="linenum">0755:</SPAN>     <SPAN CLASS="keyword">for</SPAN>(i=0; i&lt;dwNumMaterials; i++){
+<SPAN CLASS="linenum">0756:</SPAN>         RELEASE(pMeshTextures[i]);
+<SPAN CLASS="linenum">0757:</SPAN>     }
+<SPAN CLASS="linenum">0758:</SPAN>     <SPAN CLASS="keyword">delete</SPAN>[] pMeshTextures;
+<SPAN CLASS="linenum">0759:</SPAN>     <SPAN CLASS="keyword">delete</SPAN>[] pMeshMaterials;
+<SPAN CLASS="linenum">0760:</SPAN>     <SPAN CLASS="keyword">delete</SPAN>[] pSubsetTable;
+<SPAN CLASS="linenum">0761:</SPAN> 
+<SPAN CLASS="linenum">0762:</SPAN>     RELEASE(pMeshVB);
+<SPAN CLASS="linenum">0763:</SPAN>     RELEASE(pMeshIndex);
+<SPAN CLASS="linenum">0764:</SPAN> }
+<SPAN CLASS="linenum">0765:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0766:</SPAN> <SPAN CLASS="comment">// Name: CleanRender()</SPAN>
+<SPAN CLASS="linenum">0767:</SPAN> <SPAN CLASS="comment">// Desc: 後始末</SPAN>
+<SPAN CLASS="linenum">0768:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0769:</SPAN> <SPAN CLASS="keyword">void</SPAN> CleanRender(LPDIRECT3DDEVICE8 lpD3DDev)
+<SPAN CLASS="linenum">0770:</SPAN> {
+<SPAN CLASS="linenum">0771:</SPAN>     CleanBg(lpD3DDev);
+<SPAN CLASS="linenum">0772:</SPAN>     
+<SPAN CLASS="linenum">0773:</SPAN>     CPixelShaderMgr::Release(lpD3DDev, &amp;hDiffusePixelShader);
+<SPAN CLASS="linenum">0774:</SPAN>     CVertexShaderMgr::Release(lpD3DDev, &amp;hDiffuseVertexShader);
+<SPAN CLASS="linenum">0775:</SPAN>     CPixelShaderMgr::Release(lpD3DDev, &amp;hPixelShader);
+<SPAN CLASS="linenum">0776:</SPAN>     CVertexShaderMgr::Release(lpD3DDev, &amp;hVertexShader);
+<SPAN CLASS="linenum">0777:</SPAN> 
+<SPAN CLASS="linenum">0778:</SPAN>     RELEASE(pDiffuseMap);
+<SPAN CLASS="linenum">0779:</SPAN>     RELEASE(pCubeMap);
+<SPAN CLASS="linenum">0780:</SPAN>     RELEASE(pNormalCubeMap);
+<SPAN CLASS="linenum">0781:</SPAN> 
+<SPAN CLASS="linenum">0782:</SPAN>     
+<SPAN CLASS="linenum">0783:</SPAN>     RELEASE(pBlurIB);
+<SPAN CLASS="linenum">0784:</SPAN>     RELEASE(pBlurVB);
+<SPAN CLASS="linenum">0785:</SPAN> 
+<SPAN CLASS="linenum">0786:</SPAN>     DeleteMeshObject();
+<SPAN CLASS="linenum">0787:</SPAN> }
+<SPAN CLASS="linenum">0788:</SPAN> </PRE>
+</BODY>
+</HTML>

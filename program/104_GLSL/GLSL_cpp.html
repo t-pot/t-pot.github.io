@@ -1,0 +1,321 @@
+<HTML>
+<HEAD>
+<TITLE>GLSL.cpp</TITLE>
+<meta name="GENERATOR" content="cpp2html 2.1 by Niisaka">
+<meta http-equiv="Content-Type" content="text/html">
+<meta http-equiv="Content-Style-Type" content="text/css">
+<STYLE TYPE="text/css">
+<!--
+SPAN.comment { color:#008000; font-weight:normal; font-style:normal;}
+SPAN.keyword { color:#0000FF; font-weight:normal; font-style:normal;}
+SPAN.string { color:#600000; font-weight:normal; font-style:normal;}
+SPAN.linenum { color:#A0A0A0; font-weight:normal; font-style:normal;}
+-->
+</STYLE>
+</HEAD>
+<BODY TEXT="#000000" BGCOLOR="#FFFFFF">
+<PRE><SPAN CLASS="linenum">0001:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0002:</SPAN> <SPAN CLASS="comment">// File: GLSL.cpp</SPAN>
+<SPAN CLASS="linenum">0003:</SPAN> <SPAN CLASS="comment">//</SPAN>
+<SPAN CLASS="linenum">0004:</SPAN> <SPAN CLASS="comment">// Desc: Application class for the imagire's OprnGL samples framework library.</SPAN>
+<SPAN CLASS="linenum">0005:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0006:</SPAN> <SPAN CLASS="keyword">#define</SPAN> STRICT
+<SPAN CLASS="linenum">0007:</SPAN> <SPAN CLASS="keyword">#include</SPAN> &lt;windows.h&gt;
+<SPAN CLASS="linenum">0008:</SPAN> <SPAN CLASS="keyword">#include</SPAN> &lt;tchar.h&gt;
+<SPAN CLASS="linenum">0009:</SPAN> <SPAN CLASS="keyword">#include</SPAN> &lt;mmsystem.h&gt;
+<SPAN CLASS="linenum">0010:</SPAN> <SPAN CLASS="keyword">#include</SPAN> &lt;stdio.h&gt;
+<SPAN CLASS="linenum">0011:</SPAN> <SPAN CLASS="keyword">#include</SPAN> &lt;io.h&gt;
+<SPAN CLASS="linenum">0012:</SPAN> <SPAN CLASS="keyword">#include</SPAN> &lt;fcntl.h&gt;
+<SPAN CLASS="linenum">0013:</SPAN> 
+<SPAN CLASS="linenum">0014:</SPAN> <SPAN CLASS="keyword">#include</SPAN> "<SPAN CLASS="string">GLSL.h</SPAN>"
+<SPAN CLASS="linenum">0015:</SPAN> 
+<SPAN CLASS="linenum">0016:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0017:</SPAN> <SPAN CLASS="comment">//</SPAN>
+<SPAN CLASS="linenum">0018:</SPAN> <SPAN CLASS="comment">// OpenGL Shading Language 関数</SPAN>
+<SPAN CLASS="linenum">0019:</SPAN> <SPAN CLASS="comment">//</SPAN>
+<SPAN CLASS="linenum">0020:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0021:</SPAN> PFNGLCREATEPROGRAMOBJECTARBPROC glCreateProgramObjectARB;
+<SPAN CLASS="linenum">0022:</SPAN> PFNGLCREATESHADEROBJECTARBPROC glCreateShaderObjectARB;
+<SPAN CLASS="linenum">0023:</SPAN> PFNGLDELETEOBJECTARBPROC glDeleteObjectARB;
+<SPAN CLASS="linenum">0024:</SPAN> PFNGLDETACHOBJECTARBPROC glDetachObjectARB;
+<SPAN CLASS="linenum">0025:</SPAN> PFNGLATTACHOBJECTARBPROC glAttachObjectARB;
+<SPAN CLASS="linenum">0026:</SPAN> 
+<SPAN CLASS="linenum">0027:</SPAN> PFNGLSHADERSOURCEARBPROC glShaderSourceARB;
+<SPAN CLASS="linenum">0028:</SPAN> PFNGLCOMPILESHADERARBPROC glCompileShaderARB;
+<SPAN CLASS="linenum">0029:</SPAN> PFNGLLINKPROGRAMARBPROC glLinkProgramARB;
+<SPAN CLASS="linenum">0030:</SPAN> PFNGLGETINFOLOGARBPROC glGetInfoLogARB;
+<SPAN CLASS="linenum">0031:</SPAN> PFNGLUSEPROGRAMOBJECTARBPROC glUseProgramObjectARB;
+<SPAN CLASS="linenum">0032:</SPAN> 
+<SPAN CLASS="linenum">0033:</SPAN> PFNGLGETOBJECTPARAMETERIVARBPROC glGetObjectParameterivARB;
+<SPAN CLASS="linenum">0034:</SPAN> PFNGLGETOBJECTPARAMETERFVARBPROC glGetObjectParameterfvARB;
+<SPAN CLASS="linenum">0035:</SPAN> PFNGLGETUNIFORMLOCATIONARBPROC glGetUniformLocationARB;
+<SPAN CLASS="linenum">0036:</SPAN> 
+<SPAN CLASS="linenum">0037:</SPAN> PFNGLUNIFORM1FARBPROC glUniform1fARB;
+<SPAN CLASS="linenum">0038:</SPAN> PFNGLUNIFORM2FARBPROC glUniform2fARB;
+<SPAN CLASS="linenum">0039:</SPAN> PFNGLUNIFORM3FARBPROC glUniform3fARB;
+<SPAN CLASS="linenum">0040:</SPAN> PFNGLUNIFORM4FARBPROC glUniform4fARB;
+<SPAN CLASS="linenum">0041:</SPAN> 
+<SPAN CLASS="linenum">0042:</SPAN> PFNGLUNIFORM1IARBPROC glUniform1iARB;
+<SPAN CLASS="linenum">0043:</SPAN> PFNGLUNIFORM2IARBPROC glUniform2iARB;
+<SPAN CLASS="linenum">0044:</SPAN> PFNGLUNIFORM3IARBPROC glUniform3iARB;
+<SPAN CLASS="linenum">0045:</SPAN> PFNGLUNIFORM4IARBPROC glUniform4iARB;
+<SPAN CLASS="linenum">0046:</SPAN> 
+<SPAN CLASS="linenum">0047:</SPAN> PFNGLUNIFORM1FVARBPROC glUniform1fvARB;
+<SPAN CLASS="linenum">0048:</SPAN> PFNGLUNIFORM2FVARBPROC glUniform2fvARB;
+<SPAN CLASS="linenum">0049:</SPAN> PFNGLUNIFORM3FVARBPROC glUniform3fvARB;
+<SPAN CLASS="linenum">0050:</SPAN> PFNGLUNIFORM4FVARBPROC glUniform4fvARB;
+<SPAN CLASS="linenum">0051:</SPAN> 
+<SPAN CLASS="linenum">0052:</SPAN> PFNGLUNIFORM1IVARBPROC glUniform1ivARB;
+<SPAN CLASS="linenum">0053:</SPAN> PFNGLUNIFORM2IVARBPROC glUniform2ivARB;
+<SPAN CLASS="linenum">0054:</SPAN> PFNGLUNIFORM3IVARBPROC glUniform3ivARB;
+<SPAN CLASS="linenum">0055:</SPAN> PFNGLUNIFORM4IVARBPROC glUniform4ivARB;
+<SPAN CLASS="linenum">0056:</SPAN> 
+<SPAN CLASS="linenum">0057:</SPAN> 
+<SPAN CLASS="linenum">0058:</SPAN> 
+<SPAN CLASS="linenum">0059:</SPAN> 
+<SPAN CLASS="linenum">0060:</SPAN> 
+<SPAN CLASS="linenum">0061:</SPAN> <SPAN CLASS="keyword">#define</SPAN> PADDR(functype,funcname) \
+<SPAN CLASS="linenum">0062:</SPAN>     ((funcname = (functype) wglGetProcAddress( #funcname )) == NULL)
+<SPAN CLASS="linenum">0063:</SPAN> 
+<SPAN CLASS="linenum">0064:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0065:</SPAN> <SPAN CLASS="comment">// Name: InitGLSL()</SPAN>
+<SPAN CLASS="linenum">0066:</SPAN> <SPAN CLASS="comment">// Desc: GLSL の初期化</SPAN>
+<SPAN CLASS="linenum">0067:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0068:</SPAN> HRESULT GLSL::Init( )
+<SPAN CLASS="linenum">0069:</SPAN> {
+<SPAN CLASS="linenum">0070:</SPAN>     <SPAN CLASS="keyword">int</SPAN> error;
+<SPAN CLASS="linenum">0071:</SPAN> 
+<SPAN CLASS="linenum">0072:</SPAN>     error |= PADDR(PFNGLCREATEPROGRAMOBJECTARBPROC, glCreateProgramObjectARB);
+<SPAN CLASS="linenum">0073:</SPAN>     error |= PADDR(PFNGLCREATESHADEROBJECTARBPROC, glCreateShaderObjectARB);
+<SPAN CLASS="linenum">0074:</SPAN>     error |= PADDR(PFNGLDELETEOBJECTARBPROC, glDeleteObjectARB);
+<SPAN CLASS="linenum">0075:</SPAN>     error |= PADDR(PFNGLDETACHOBJECTARBPROC, glDetachObjectARB);
+<SPAN CLASS="linenum">0076:</SPAN>     error |= PADDR(PFNGLATTACHOBJECTARBPROC, glAttachObjectARB);
+<SPAN CLASS="linenum">0077:</SPAN>     error |= PADDR(PFNGLSHADERSOURCEARBPROC, glShaderSourceARB);
+<SPAN CLASS="linenum">0078:</SPAN>     error |= PADDR(PFNGLCOMPILESHADERARBPROC, glCompileShaderARB);
+<SPAN CLASS="linenum">0079:</SPAN>     error |= PADDR(PFNGLLINKPROGRAMARBPROC, glLinkProgramARB);
+<SPAN CLASS="linenum">0080:</SPAN>     error |= PADDR(PFNGLGETINFOLOGARBPROC, glGetInfoLogARB);
+<SPAN CLASS="linenum">0081:</SPAN>     error |= PADDR(PFNGLUSEPROGRAMOBJECTARBPROC, glUseProgramObjectARB);
+<SPAN CLASS="linenum">0082:</SPAN>     error |= PADDR(PFNGLGETOBJECTPARAMETERIVARBPROC, glGetObjectParameterivARB);
+<SPAN CLASS="linenum">0083:</SPAN>     error |= PADDR(PFNGLGETOBJECTPARAMETERFVARBPROC, glGetObjectParameterfvARB);
+<SPAN CLASS="linenum">0084:</SPAN>     error |= PADDR(PFNGLGETUNIFORMLOCATIONARBPROC, glGetUniformLocationARB);
+<SPAN CLASS="linenum">0085:</SPAN>     error |= PADDR(PFNGLUNIFORM1FARBPROC, glUniform1fARB);
+<SPAN CLASS="linenum">0086:</SPAN>     error |= PADDR(PFNGLUNIFORM2FARBPROC, glUniform2fARB);
+<SPAN CLASS="linenum">0087:</SPAN>     error |= PADDR(PFNGLUNIFORM3FARBPROC, glUniform3fARB);
+<SPAN CLASS="linenum">0088:</SPAN>     error |= PADDR(PFNGLUNIFORM4FARBPROC, glUniform4fARB);
+<SPAN CLASS="linenum">0089:</SPAN>     error |= PADDR(PFNGLUNIFORM1IARBPROC, glUniform1iARB);
+<SPAN CLASS="linenum">0090:</SPAN>     error |= PADDR(PFNGLUNIFORM2IARBPROC, glUniform2iARB);
+<SPAN CLASS="linenum">0091:</SPAN>     error |= PADDR(PFNGLUNIFORM3IARBPROC, glUniform3iARB);
+<SPAN CLASS="linenum">0092:</SPAN>     error |= PADDR(PFNGLUNIFORM4IARBPROC, glUniform4iARB);
+<SPAN CLASS="linenum">0093:</SPAN>     error |= PADDR(PFNGLUNIFORM1FVARBPROC, glUniform1fvARB);
+<SPAN CLASS="linenum">0094:</SPAN>     error |= PADDR(PFNGLUNIFORM2FVARBPROC, glUniform2fvARB);
+<SPAN CLASS="linenum">0095:</SPAN>     error |= PADDR(PFNGLUNIFORM3FVARBPROC, glUniform3fvARB);
+<SPAN CLASS="linenum">0096:</SPAN>     error |= PADDR(PFNGLUNIFORM4FVARBPROC, glUniform4fvARB);
+<SPAN CLASS="linenum">0097:</SPAN>     error |= PADDR(PFNGLUNIFORM1IVARBPROC, glUniform1ivARB);
+<SPAN CLASS="linenum">0098:</SPAN>     error |= PADDR(PFNGLUNIFORM2IVARBPROC, glUniform2ivARB);
+<SPAN CLASS="linenum">0099:</SPAN>     error |= PADDR(PFNGLUNIFORM3IVARBPROC, glUniform3ivARB);
+<SPAN CLASS="linenum">0100:</SPAN>     error |= PADDR(PFNGLUNIFORM4IVARBPROC, glUniform4ivARB);
+<SPAN CLASS="linenum">0101:</SPAN>     <SPAN CLASS="keyword">if</SPAN> (error) {
+<SPAN CLASS="linenum">0102:</SPAN>         <SPAN CLASS="keyword">return</SPAN> FALSE;
+<SPAN CLASS="linenum">0103:</SPAN>     }
+<SPAN CLASS="linenum">0104:</SPAN> 
+<SPAN CLASS="linenum">0105:</SPAN>     <SPAN CLASS="keyword">return</SPAN> S_OK;
+<SPAN CLASS="linenum">0106:</SPAN> }
+<SPAN CLASS="linenum">0107:</SPAN> 
+<SPAN CLASS="linenum">0108:</SPAN> 
+<SPAN CLASS="linenum">0109:</SPAN> <SPAN CLASS="comment">//-------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0110:</SPAN> <SPAN CLASS="comment">// Name: GetShaderSize</SPAN>
+<SPAN CLASS="linenum">0111:</SPAN> <SPAN CLASS="comment">// Desc: ファイルのサイズを調べる</SPAN>
+<SPAN CLASS="linenum">0112:</SPAN> <SPAN CLASS="comment">//-------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0113:</SPAN> <SPAN CLASS="keyword">int</SPAN> GLSL::GetShaderSize(<SPAN CLASS="keyword">char</SPAN> *fileName)
+<SPAN CLASS="linenum">0114:</SPAN> {
+<SPAN CLASS="linenum">0115:</SPAN>     <SPAN CLASS="keyword">int</SPAN> fp;
+<SPAN CLASS="linenum">0116:</SPAN>     <SPAN CLASS="keyword">int</SPAN> count;
+<SPAN CLASS="linenum">0117:</SPAN> 
+<SPAN CLASS="linenum">0118:</SPAN>     <SPAN CLASS="comment">// ファイルを開く</SPAN>
+<SPAN CLASS="linenum">0119:</SPAN>     fp = _open(fileName, _O_RDONLY);
+<SPAN CLASS="linenum">0120:</SPAN>     <SPAN CLASS="keyword">if</SPAN> (fp == -1) <SPAN CLASS="keyword">return</SPAN> -1;<SPAN CLASS="comment">// Open 失敗</SPAN>
+<SPAN CLASS="linenum">0121:</SPAN> 
+<SPAN CLASS="linenum">0122:</SPAN>     <SPAN CLASS="comment">// 最後の位置を調べて、サイズを得る</SPAN>
+<SPAN CLASS="linenum">0123:</SPAN>     count = _lseek(fp, 0, SEEK_END);
+<SPAN CLASS="linenum">0124:</SPAN> 
+<SPAN CLASS="linenum">0125:</SPAN>     <SPAN CLASS="comment">// ファイルを閉じる</SPAN>
+<SPAN CLASS="linenum">0126:</SPAN>     _close(fp);
+<SPAN CLASS="linenum">0127:</SPAN> 
+<SPAN CLASS="linenum">0128:</SPAN>     <SPAN CLASS="keyword">return</SPAN> count;
+<SPAN CLASS="linenum">0129:</SPAN> }
+<SPAN CLASS="linenum">0130:</SPAN> 
+<SPAN CLASS="linenum">0131:</SPAN> 
+<SPAN CLASS="linenum">0132:</SPAN> <SPAN CLASS="comment">//-------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0133:</SPAN> <SPAN CLASS="comment">// Name: ReadShader</SPAN>
+<SPAN CLASS="linenum">0134:</SPAN> <SPAN CLASS="comment">// Desc: ファイルを読み込んで、shaderTextに格納する</SPAN>
+<SPAN CLASS="linenum">0135:</SPAN> <SPAN CLASS="comment">//-------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0136:</SPAN> HRESULT GLSL::ReadShader(<SPAN CLASS="keyword">char</SPAN> *fileName, GLubyte *shaderText, <SPAN CLASS="keyword">int</SPAN> size)
+<SPAN CLASS="linenum">0137:</SPAN> {
+<SPAN CLASS="linenum">0138:</SPAN>     FILE *fp;
+<SPAN CLASS="linenum">0139:</SPAN>     <SPAN CLASS="keyword">int</SPAN> count;
+<SPAN CLASS="linenum">0140:</SPAN> 
+<SPAN CLASS="linenum">0141:</SPAN>     <SPAN CLASS="comment">// ファイルを開く</SPAN>
+<SPAN CLASS="linenum">0142:</SPAN>     fp = fopen(fileName, "<SPAN CLASS="string">r</SPAN>");
+<SPAN CLASS="linenum">0143:</SPAN>     <SPAN CLASS="keyword">if</SPAN> (!fp) <SPAN CLASS="keyword">return</SPAN> FALSE;
+<SPAN CLASS="linenum">0144:</SPAN> 
+<SPAN CLASS="linenum">0145:</SPAN>     <SPAN CLASS="comment">// ファイルを読み込む</SPAN>
+<SPAN CLASS="linenum">0146:</SPAN>     fseek(fp, 0, SEEK_SET);
+<SPAN CLASS="linenum">0147:</SPAN>     count = fread(shaderText, 1, size, fp);
+<SPAN CLASS="linenum">0148:</SPAN>     shaderText[count] = '<SPAN CLASS="string">\0</SPAN>';
+<SPAN CLASS="linenum">0149:</SPAN> 
+<SPAN CLASS="linenum">0150:</SPAN>     <SPAN CLASS="keyword">if</SPAN> (ferror(fp)) <SPAN CLASS="keyword">return</SPAN> FALSE;
+<SPAN CLASS="linenum">0151:</SPAN> 
+<SPAN CLASS="linenum">0152:</SPAN>     <SPAN CLASS="comment">// ファイルを閉じる</SPAN>
+<SPAN CLASS="linenum">0153:</SPAN>     fclose(fp);
+<SPAN CLASS="linenum">0154:</SPAN> 
+<SPAN CLASS="linenum">0155:</SPAN>     <SPAN CLASS="keyword">return</SPAN> count;
+<SPAN CLASS="linenum">0156:</SPAN> }
+<SPAN CLASS="linenum">0157:</SPAN> 
+<SPAN CLASS="linenum">0158:</SPAN> <SPAN CLASS="comment">//-------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0159:</SPAN> <SPAN CLASS="comment">// Name: readShaderSource</SPAN>
+<SPAN CLASS="linenum">0160:</SPAN> <SPAN CLASS="comment">// Desc: シェーダプログラムを読み込む</SPAN>
+<SPAN CLASS="linenum">0161:</SPAN> <SPAN CLASS="comment">//-------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0162:</SPAN> HRESULT GLSL::readShaderSource(<SPAN CLASS="keyword">char</SPAN> *fileName, GLubyte **vertShader, GLubyte **fragShader)
+<SPAN CLASS="linenum">0163:</SPAN> {
+<SPAN CLASS="linenum">0164:</SPAN>     <SPAN CLASS="comment">// -------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0165:</SPAN>     <SPAN CLASS="comment">// ファイル名を決める</SPAN>
+<SPAN CLASS="linenum">0166:</SPAN>     <SPAN CLASS="comment">// -------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0167:</SPAN>     <SPAN CLASS="keyword">char</SPAN> vert_fileName[256];<SPAN CLASS="comment">// 頂点プログラムのファイル名</SPAN>
+<SPAN CLASS="linenum">0168:</SPAN>     <SPAN CLASS="keyword">char</SPAN> frag_fileName[256];<SPAN CLASS="comment">// フラグメントプログラムのファイル名</SPAN>
+<SPAN CLASS="linenum">0169:</SPAN> 
+<SPAN CLASS="linenum">0170:</SPAN>     strcpy(vert_fileName, fileName); strcat(vert_fileName, "<SPAN CLASS="string">.vert</SPAN>");
+<SPAN CLASS="linenum">0171:</SPAN>     strcpy(frag_fileName, fileName); strcat(frag_fileName, "<SPAN CLASS="string">.frag</SPAN>");
+<SPAN CLASS="linenum">0172:</SPAN> 
+<SPAN CLASS="linenum">0173:</SPAN>     <SPAN CLASS="comment">// -------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0174:</SPAN>     <SPAN CLASS="comment">// シェーダのためのメモリの確保</SPAN>
+<SPAN CLASS="linenum">0175:</SPAN>     <SPAN CLASS="comment">// -------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0176:</SPAN>     <SPAN CLASS="keyword">int</SPAN> vertSize = GetShaderSize(vert_fileName);
+<SPAN CLASS="linenum">0177:</SPAN>     <SPAN CLASS="keyword">int</SPAN> fragSize = GetShaderSize(frag_fileName);
+<SPAN CLASS="linenum">0178:</SPAN> 
+<SPAN CLASS="linenum">0179:</SPAN>     <SPAN CLASS="keyword">if</SPAN> ((vertSize == -1) || (fragSize == -1)) {
+<SPAN CLASS="linenum">0180:</SPAN>         <SPAN CLASS="keyword">return</SPAN> FALSE;<SPAN CLASS="comment">// シェーダのサイズが決まらなかった</SPAN>
+<SPAN CLASS="linenum">0181:</SPAN>     }
+<SPAN CLASS="linenum">0182:</SPAN> 
+<SPAN CLASS="linenum">0183:</SPAN>     *vertShader = (GLubyte *) malloc(vertSize);
+<SPAN CLASS="linenum">0184:</SPAN>     *fragShader = (GLubyte *) malloc(fragSize);
+<SPAN CLASS="linenum">0185:</SPAN> 
+<SPAN CLASS="linenum">0186:</SPAN>     <SPAN CLASS="comment">// -------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0187:</SPAN>     <SPAN CLASS="comment">// シェーダのソースプログラムを読み込む</SPAN>
+<SPAN CLASS="linenum">0188:</SPAN>     <SPAN CLASS="comment">// -------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0189:</SPAN>     <SPAN CLASS="keyword">if</SPAN> (FAILED(ReadShader(vert_fileName, *vertShader, vertSize)))
+<SPAN CLASS="linenum">0190:</SPAN>         <SPAN CLASS="keyword">return</SPAN> FALSE;<SPAN CLASS="comment">// ファイルを読めなかった</SPAN>
+<SPAN CLASS="linenum">0191:</SPAN> 
+<SPAN CLASS="linenum">0192:</SPAN>     <SPAN CLASS="keyword">if</SPAN> (FAILED(ReadShader(frag_fileName, *fragShader, fragSize)))
+<SPAN CLASS="linenum">0193:</SPAN>         <SPAN CLASS="keyword">return</SPAN> FALSE;<SPAN CLASS="comment">// ファイルを読めなかった</SPAN>
+<SPAN CLASS="linenum">0194:</SPAN> 
+<SPAN CLASS="linenum">0195:</SPAN>     <SPAN CLASS="keyword">return</SPAN> S_OK;
+<SPAN CLASS="linenum">0196:</SPAN> }
+<SPAN CLASS="linenum">0197:</SPAN> 
+<SPAN CLASS="linenum">0198:</SPAN> 
+<SPAN CLASS="linenum">0199:</SPAN> <SPAN CLASS="comment">//-------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0200:</SPAN> <SPAN CLASS="comment">// Name: handShadersToOpenGL</SPAN>
+<SPAN CLASS="linenum">0201:</SPAN> <SPAN CLASS="comment">// Desc: シェーダを OpenGL へセットアップする</SPAN>
+<SPAN CLASS="linenum">0202:</SPAN> <SPAN CLASS="comment">//-------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0203:</SPAN> HRESULT GLSL::handShadersToOpenGL( GLhandleARB Program, GLubyte *vertShader,  GLubyte *fragShader )
+<SPAN CLASS="linenum">0204:</SPAN> {
+<SPAN CLASS="linenum">0205:</SPAN>     <SPAN CLASS="comment">// -------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0206:</SPAN>     <SPAN CLASS="comment">// シェーダに関するオブジェクトの生成</SPAN>
+<SPAN CLASS="linenum">0207:</SPAN>     <SPAN CLASS="comment">// -------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0208:</SPAN>     GLhandleARB hVertShaderObject = glCreateShaderObjectARB(GL_VERTEX_SHADER_ARB);
+<SPAN CLASS="linenum">0209:</SPAN>     GLhandleARB hFragShaderObject = glCreateShaderObjectARB(GL_FRAGMENT_SHADER_ARB);
+<SPAN CLASS="linenum">0210:</SPAN> 
+<SPAN CLASS="linenum">0211:</SPAN>     <SPAN CLASS="comment">// -------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0212:</SPAN>     <SPAN CLASS="comment">// OpenGL システムにプログラム文字列を引き渡す</SPAN>
+<SPAN CLASS="linenum">0213:</SPAN>     <SPAN CLASS="comment">// -------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0214:</SPAN>     <SPAN CLASS="keyword">int</SPAN> vert_compiled = 0;
+<SPAN CLASS="linenum">0215:</SPAN>     <SPAN CLASS="keyword">int</SPAN> frag_compiled = 0;
+<SPAN CLASS="linenum">0216:</SPAN>     <SPAN CLASS="keyword">int</SPAN> linked = 0;
+<SPAN CLASS="linenum">0217:</SPAN>     GLint     length;
+<SPAN CLASS="linenum">0218:</SPAN> 
+<SPAN CLASS="linenum">0219:</SPAN>     length = strlen((<SPAN CLASS="keyword">char</SPAN>*)vertShader);
+<SPAN CLASS="linenum">0220:</SPAN>     glShaderSourceARB(hVertShaderObject, 1, (<SPAN CLASS="keyword">const</SPAN> GLcharARB**)&amp;vertShader, &amp;length);
+<SPAN CLASS="linenum">0221:</SPAN> 
+<SPAN CLASS="linenum">0222:</SPAN>     length = strlen((<SPAN CLASS="keyword">char</SPAN>*)fragShader);
+<SPAN CLASS="linenum">0223:</SPAN>     glShaderSourceARB(hFragShaderObject, 1, (<SPAN CLASS="keyword">const</SPAN> GLcharARB**)&amp;fragShader, &amp;length);
+<SPAN CLASS="linenum">0224:</SPAN> 
+<SPAN CLASS="linenum">0225:</SPAN>     <SPAN CLASS="comment">// -------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0226:</SPAN>     <SPAN CLASS="comment">// 不必要になったメモリを開放する</SPAN>
+<SPAN CLASS="linenum">0227:</SPAN>     <SPAN CLASS="comment">// -------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0228:</SPAN>     free(vertShader);
+<SPAN CLASS="linenum">0229:</SPAN>     free(fragShader);
+<SPAN CLASS="linenum">0230:</SPAN> 
+<SPAN CLASS="linenum">0231:</SPAN>     <SPAN CLASS="comment">// -------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0232:</SPAN>     <SPAN CLASS="comment">// シェーダプログラムをコンパイルする</SPAN>
+<SPAN CLASS="linenum">0233:</SPAN>     <SPAN CLASS="comment">// -------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0234:</SPAN>     glCompileShaderARB(hVertShaderObject);
+<SPAN CLASS="linenum">0235:</SPAN>     glGetObjectParameterivARB(hVertShaderObject,
+<SPAN CLASS="linenum">0236:</SPAN>             GL_OBJECT_COMPILE_STATUS_ARB, &amp;vert_compiled);
+<SPAN CLASS="linenum">0237:</SPAN> 
+<SPAN CLASS="linenum">0238:</SPAN> 
+<SPAN CLASS="linenum">0239:</SPAN>     glCompileShaderARB(hFragShaderObject);
+<SPAN CLASS="linenum">0240:</SPAN>     glGetObjectParameterivARB(hFragShaderObject,
+<SPAN CLASS="linenum">0241:</SPAN>             GL_OBJECT_COMPILE_STATUS_ARB, &amp;frag_compiled);
+<SPAN CLASS="linenum">0242:</SPAN> 
+<SPAN CLASS="linenum">0243:</SPAN>     <SPAN CLASS="keyword">if</SPAN> (!vert_compiled || !frag_compiled) <SPAN CLASS="keyword">return</SPAN> FALSE;
+<SPAN CLASS="linenum">0244:</SPAN> 
+<SPAN CLASS="linenum">0245:</SPAN>     <SPAN CLASS="comment">// -------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0246:</SPAN>     <SPAN CLASS="comment">// Program のオブジェクトにそれぞれのシェーダを関連付ける</SPAN>
+<SPAN CLASS="linenum">0247:</SPAN>     <SPAN CLASS="comment">// -------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0248:</SPAN>     glAttachObjectARB(Program, hVertShaderObject);
+<SPAN CLASS="linenum">0249:</SPAN>     glAttachObjectARB(Program, hFragShaderObject);
+<SPAN CLASS="linenum">0250:</SPAN> 
+<SPAN CLASS="linenum">0251:</SPAN>     <SPAN CLASS="comment">// -------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0252:</SPAN>     <SPAN CLASS="comment">// 不必要になったオブジェクトを削除する</SPAN>
+<SPAN CLASS="linenum">0253:</SPAN>     <SPAN CLASS="comment">// -------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0254:</SPAN>     glDeleteObjectARB(hVertShaderObject);
+<SPAN CLASS="linenum">0255:</SPAN>     glDeleteObjectARB(hFragShaderObject);
+<SPAN CLASS="linenum">0256:</SPAN> 
+<SPAN CLASS="linenum">0257:</SPAN>     <SPAN CLASS="comment">// -------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0258:</SPAN>     <SPAN CLASS="comment">// 全てをリンクする</SPAN>
+<SPAN CLASS="linenum">0259:</SPAN>     <SPAN CLASS="comment">// -------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0260:</SPAN>     glLinkProgramARB(Program);
+<SPAN CLASS="linenum">0261:</SPAN>     glGetObjectParameterivARB(Program, GL_OBJECT_LINK_STATUS_ARB, &amp;linked);
+<SPAN CLASS="linenum">0262:</SPAN> 
+<SPAN CLASS="linenum">0263:</SPAN>     <SPAN CLASS="keyword">if</SPAN> (!vert_compiled || !frag_compiled || !linked) <SPAN CLASS="keyword">return</SPAN> FALSE;
+<SPAN CLASS="linenum">0264:</SPAN> 
+<SPAN CLASS="linenum">0265:</SPAN>     <SPAN CLASS="keyword">return</SPAN> S_OK;
+<SPAN CLASS="linenum">0266:</SPAN> }
+<SPAN CLASS="linenum">0267:</SPAN> 
+<SPAN CLASS="linenum">0268:</SPAN> 
+<SPAN CLASS="linenum">0269:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0270:</SPAN> <SPAN CLASS="comment">// Name: InitGLSL()</SPAN>
+<SPAN CLASS="linenum">0271:</SPAN> <SPAN CLASS="comment">// Desc: GLSL の初期化</SPAN>
+<SPAN CLASS="linenum">0272:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0273:</SPAN> 
+<SPAN CLASS="linenum">0274:</SPAN> HRESULT GLSL::CreateShaderFromFile(<SPAN CLASS="keyword">char</SPAN> *fileName, GLhandleARB *pProgram)
+<SPAN CLASS="linenum">0275:</SPAN> {
+<SPAN CLASS="linenum">0276:</SPAN>     GLubyte *vertexShader;
+<SPAN CLASS="linenum">0277:</SPAN>     GLubyte *fragmentShader;
+<SPAN CLASS="linenum">0278:</SPAN>     GLhandleARB prog;
+<SPAN CLASS="linenum">0279:</SPAN> 
+<SPAN CLASS="linenum">0280:</SPAN>     <SPAN CLASS="comment">// 失敗したときのために初期化</SPAN>
+<SPAN CLASS="linenum">0281:</SPAN>     *pProgram = 0;
+<SPAN CLASS="linenum">0282:</SPAN> 
+<SPAN CLASS="linenum">0283:</SPAN>     <SPAN CLASS="comment">// ファイルを読み込む</SPAN>
+<SPAN CLASS="linenum">0284:</SPAN>     <SPAN CLASS="keyword">if</SPAN> (FAILED(readShaderSource(fileName, &amp;vertexShader, &amp;fragmentShader))) <SPAN CLASS="keyword">return</SPAN> FALSE;
+<SPAN CLASS="linenum">0285:</SPAN> 
+<SPAN CLASS="linenum">0286:</SPAN>     <SPAN CLASS="comment">// シェーダを生成する</SPAN>
+<SPAN CLASS="linenum">0287:</SPAN>     prog = glCreateProgramObjectARB();
+<SPAN CLASS="linenum">0288:</SPAN> 
+<SPAN CLASS="linenum">0289:</SPAN>     <SPAN CLASS="comment">// シェーダを OpenGL へセットアップする</SPAN>
+<SPAN CLASS="linenum">0290:</SPAN>     <SPAN CLASS="keyword">if</SPAN> (FAILED(handShadersToOpenGL( prog, vertexShader, fragmentShader))) <SPAN CLASS="keyword">return</SPAN> FALSE;
+<SPAN CLASS="linenum">0291:</SPAN> 
+<SPAN CLASS="linenum">0292:</SPAN>     *pProgram = prog;
+<SPAN CLASS="linenum">0293:</SPAN> 
+<SPAN CLASS="linenum">0294:</SPAN>     <SPAN CLASS="keyword">return</SPAN> S_OK;
+<SPAN CLASS="linenum">0295:</SPAN> }
+<SPAN CLASS="linenum">0296:</SPAN> 
+<SPAN CLASS="linenum">0297:</SPAN> 
+<SPAN CLASS="linenum">0298:</SPAN> 
+<SPAN CLASS="linenum">0299:</SPAN> 
+<SPAN CLASS="linenum">0300:</SPAN> 
+<SPAN CLASS="linenum">0301:</SPAN> 
+<SPAN CLASS="linenum">0302:</SPAN> 
+<SPAN CLASS="linenum">0303:</SPAN> </PRE>
+</BODY>
+</HTML>

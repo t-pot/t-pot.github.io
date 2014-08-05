@@ -1,0 +1,680 @@
+<HTML>
+<HEAD>
+<TITLE>render.cpp</TITLE>
+<meta name="GENERATOR" content="cpp2html 2.1 by Niisaka">
+<meta http-equiv="Content-Type" content="text/html">
+<meta http-equiv="Content-Style-Type" content="text/css">
+<STYLE TYPE="text/css">
+<!--
+SPAN.comment { color:#008000; font-weight:normal; font-style:normal;}
+SPAN.keyword { color:#0000FF; font-weight:normal; font-style:normal;}
+SPAN.string { color:#600000; font-weight:normal; font-style:normal;}
+SPAN.linenum { color:#A0A0A0; font-weight:normal; font-style:normal;}
+-->
+</STYLE>
+</HEAD>
+<BODY TEXT="#000000" BGCOLOR="#FFFFFF">
+<PRE><SPAN CLASS="linenum">0001:</SPAN> <SPAN CLASS="keyword">#include</SPAN> "<SPAN CLASS="string">stdafx.h</SPAN>"
+<SPAN CLASS="linenum">0002:</SPAN> <SPAN CLASS="keyword">#include</SPAN> "<SPAN CLASS="string">common\my_include.h</SPAN>"
+<SPAN CLASS="linenum">0003:</SPAN> <SPAN CLASS="keyword">#include</SPAN> "<SPAN CLASS="string">prim.h</SPAN>"
+<SPAN CLASS="linenum">0004:</SPAN> <SPAN CLASS="keyword">#include</SPAN> "<SPAN CLASS="string">render.h</SPAN>"
+<SPAN CLASS="linenum">0005:</SPAN> 
+<SPAN CLASS="linenum">0006:</SPAN> <SPAN CLASS="comment">//void ToneMapping( CColor *pDest, CColor *pSrc, u32 nPixels );</SPAN>
+<SPAN CLASS="linenum">0007:</SPAN> 
+<SPAN CLASS="linenum">0008:</SPAN> <SPAN CLASS="keyword">namespace</SPAN> Render {
+<SPAN CLASS="linenum">0009:</SPAN> 
+<SPAN CLASS="linenum">0010:</SPAN> D3DXVECTOR3 BG_COLOR = D3DXVECTOR3(0.25f, 0.4f, 0.5f);
+<SPAN CLASS="linenum">0011:</SPAN> 
+<SPAN CLASS="linenum">0012:</SPAN> <SPAN CLASS="keyword">extern</SPAN> OBJ_DATA sphere_data[];
+<SPAN CLASS="linenum">0013:</SPAN> <SPAN CLASS="keyword">extern</SPAN> OBJ_DATA room_data[];
+<SPAN CLASS="linenum">0014:</SPAN> <SPAN CLASS="keyword">extern</SPAN> OBJ_DATA Short_block[];
+<SPAN CLASS="linenum">0015:</SPAN> <SPAN CLASS="keyword">extern</SPAN> OBJ_DATA Tall_block[];
+<SPAN CLASS="linenum">0016:</SPAN> 
+<SPAN CLASS="linenum">0017:</SPAN> OBJ_DATA *pLightPolygone[2];
+<SPAN CLASS="linenum">0018:</SPAN> 
+<SPAN CLASS="linenum">0019:</SPAN> <SPAN CLASS="keyword">typedef</SPAN> <SPAN CLASS="keyword">struct</SPAN>
+<SPAN CLASS="linenum">0020:</SPAN> {
+<SPAN CLASS="linenum">0021:</SPAN>     OBJ_DATA    *pObjData; <SPAN CLASS="comment">// 頂点データ</SPAN>
+<SPAN CLASS="linenum">0022:</SPAN>     D3DXVECTOR3  normal;   <SPAN CLASS="comment">// 法線</SPAN>
+<SPAN CLASS="linenum">0023:</SPAN>     <SPAN CLASS="keyword">float</SPAN>        area;     <SPAN CLASS="comment">// 面積</SPAN>
+<SPAN CLASS="linenum">0024:</SPAN> }LIGHT_DATA;
+<SPAN CLASS="linenum">0025:</SPAN> 
+<SPAN CLASS="linenum">0026:</SPAN> <SPAN CLASS="keyword">class</SPAN> CCamera
+<SPAN CLASS="linenum">0027:</SPAN> {
+<SPAN CLASS="linenum">0028:</SPAN> <SPAN CLASS="keyword">private</SPAN>:
+<SPAN CLASS="linenum">0029:</SPAN>     D3DXVECTOR3 m_vFrom;
+<SPAN CLASS="linenum">0030:</SPAN>     D3DXVECTOR3 m_vLookat;
+<SPAN CLASS="linenum">0031:</SPAN>     D3DXVECTOR3 m_vUp;
+<SPAN CLASS="linenum">0032:</SPAN> 
+<SPAN CLASS="linenum">0033:</SPAN>     <SPAN CLASS="keyword">float</SPAN>   m_fFilmSize[2];  <SPAN CLASS="comment">// フィルムの実寸0.036*0.024[m*m]0.025*0.025(Cornell Box)</SPAN>
+<SPAN CLASS="linenum">0034:</SPAN>     <SPAN CLASS="keyword">float</SPAN>   m_fFocalLength;  <SPAN CLASS="comment">// 焦点距離 0.035(Cornell Box )</SPAN>
+<SPAN CLASS="linenum">0035:</SPAN>     <SPAN CLASS="keyword">float</SPAN>   m_fFNumber;      <SPAN CLASS="comment">// F値</SPAN>
+<SPAN CLASS="linenum">0036:</SPAN>     <SPAN CLASS="keyword">float</SPAN>   m_fFocusDistance;<SPAN CLASS="comment">// ピントが合う位置までの距離</SPAN>
+<SPAN CLASS="linenum">0037:</SPAN> 
+<SPAN CLASS="linenum">0038:</SPAN>     <SPAN CLASS="keyword">float</SPAN>   m_fLensRadius;   <SPAN CLASS="comment">// レンズの半径(f/2F)</SPAN>
+<SPAN CLASS="linenum">0039:</SPAN>     <SPAN CLASS="keyword">float</SPAN>   m_fFilmDistance; <SPAN CLASS="comment">// フィルムまでの距離 Lf/(L-f)</SPAN>
+<SPAN CLASS="linenum">0040:</SPAN> 
+<SPAN CLASS="linenum">0041:</SPAN>     D3DXVECTOR3 u, v, w;
+<SPAN CLASS="linenum">0042:</SPAN> 
+<SPAN CLASS="linenum">0043:</SPAN> <SPAN CLASS="keyword">public</SPAN>:
+<SPAN CLASS="linenum">0044:</SPAN> 
+<SPAN CLASS="linenum">0045:</SPAN>     <SPAN CLASS="keyword">void</SPAN> Update();
+<SPAN CLASS="linenum">0046:</SPAN>     <SPAN CLASS="keyword">void</SPAN> SetFrom  (<SPAN CLASS="keyword">const</SPAN> D3DXVECTOR3 *p){m_vFrom  =*p;}
+<SPAN CLASS="linenum">0047:</SPAN>     <SPAN CLASS="keyword">void</SPAN> SetLookAt(<SPAN CLASS="keyword">const</SPAN> D3DXVECTOR3 *p){m_vLookat=*p;}
+<SPAN CLASS="linenum">0048:</SPAN>     <SPAN CLASS="keyword">void</SPAN> SetUp    (<SPAN CLASS="keyword">const</SPAN> D3DXVECTOR3 *p){m_vUp    =*p;}
+<SPAN CLASS="linenum">0049:</SPAN>     <SPAN CLASS="keyword">void</SPAN> SetFilmSize      (<SPAN CLASS="keyword">float</SPAN> w, <SPAN CLASS="keyword">float</SPAN> h){m_fFilmSize[0] = w; m_fFilmSize[1] = h;}
+<SPAN CLASS="linenum">0050:</SPAN>     <SPAN CLASS="keyword">void</SPAN> SetFocalLength   (<SPAN CLASS="keyword">float</SPAN> v){m_fFocalLength   = v;}
+<SPAN CLASS="linenum">0051:</SPAN>     <SPAN CLASS="keyword">void</SPAN> SetFNumber       (<SPAN CLASS="keyword">float</SPAN> v){m_fFNumber       = v;}
+<SPAN CLASS="linenum">0052:</SPAN>     <SPAN CLASS="keyword">void</SPAN> SetFocusDistance (<SPAN CLASS="keyword">float</SPAN> v){m_fFocusDistance = v;}
+<SPAN CLASS="linenum">0053:</SPAN>     
+<SPAN CLASS="linenum">0054:</SPAN>     <SPAN CLASS="keyword">void</SPAN> GetRay( D3DXVECTOR3 *o, D3DXVECTOR3 *v, <SPAN CLASS="keyword">float</SPAN> x, <SPAN CLASS="keyword">float</SPAN> y);
+<SPAN CLASS="linenum">0055:</SPAN> };
+<SPAN CLASS="linenum">0056:</SPAN> 
+<SPAN CLASS="linenum">0057:</SPAN> <SPAN CLASS="comment">// ---------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0058:</SPAN> <SPAN CLASS="comment">// オブジェクト</SPAN>
+<SPAN CLASS="linenum">0059:</SPAN> <SPAN CLASS="comment">// ---------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0060:</SPAN> <SPAN CLASS="keyword">char</SPAN>   s_data [4*RENDER_WIDTH*RENDER_HEIGHT];<SPAN CLASS="comment">// 仮想フレームバッファ</SPAN>
+<SPAN CLASS="linenum">0061:</SPAN> <SPAN CLASS="keyword">float</SPAN>  s_total[4*RENDER_WIDTH*RENDER_HEIGHT];<SPAN CLASS="comment">// 累積フレームバッファ</SPAN>
+<SPAN CLASS="linenum">0062:</SPAN> CColor s_tmp  [  RENDER_WIDTH*RENDER_HEIGHT];<SPAN CLASS="comment">// 一時フレームバッファ</SPAN>
+<SPAN CLASS="linenum">0063:</SPAN> 
+<SPAN CLASS="linenum">0064:</SPAN> CCamera camera;
+<SPAN CLASS="linenum">0065:</SPAN> 
+<SPAN CLASS="linenum">0066:</SPAN> CRand   *g_pRand = NULL;
+<SPAN CLASS="linenum">0067:</SPAN> <SPAN CLASS="keyword">#define</SPAN> frand() ((<SPAN CLASS="keyword">float</SPAN>)g_pRand-&gt;GetF32())
+<SPAN CLASS="linenum">0068:</SPAN> 
+<SPAN CLASS="linenum">0069:</SPAN> CMesh *pRoom       = NULL;
+<SPAN CLASS="linenum">0070:</SPAN> CMesh *pBlockSmall = NULL;
+<SPAN CLASS="linenum">0071:</SPAN> CMesh *pBlockTall  = NULL;
+<SPAN CLASS="linenum">0072:</SPAN> CMesh *pShpereS    = NULL;
+<SPAN CLASS="linenum">0073:</SPAN> CMesh *pShpereT    = NULL;
+<SPAN CLASS="linenum">0074:</SPAN> <SPAN CLASS="keyword">#define</SPAN> LIGHT_DATA_MAX 2
+<SPAN CLASS="linenum">0075:</SPAN> LIGHT_DATA g_LightData[LIGHT_DATA_MAX];
+<SPAN CLASS="linenum">0076:</SPAN> <SPAN CLASS="keyword">float</SPAN>      g_fTotalArea;
+<SPAN CLASS="linenum">0077:</SPAN> 
+<SPAN CLASS="linenum">0078:</SPAN> <SPAN CLASS="keyword">static</SPAN> <SPAN CLASS="keyword">int</SPAN> s_x = 0;         <SPAN CLASS="comment">// レンダリングピクセルのｘ座標</SPAN>
+<SPAN CLASS="linenum">0079:</SPAN> <SPAN CLASS="keyword">static</SPAN> <SPAN CLASS="keyword">int</SPAN> s_y = 0;         <SPAN CLASS="comment">// レンダリングピクセルのｙ座標</SPAN>
+<SPAN CLASS="linenum">0080:</SPAN> <SPAN CLASS="keyword">static</SPAN> <SPAN CLASS="keyword">float</SPAN> render_cnt = 0;<SPAN CLASS="comment">// 描画回数</SPAN>
+<SPAN CLASS="linenum">0081:</SPAN> <SPAN CLASS="keyword">enum</SPAN>{
+<SPAN CLASS="linenum">0082:</SPAN>     STATE_IDLE=0,           <SPAN CLASS="comment">// 処理待ち</SPAN>
+<SPAN CLASS="linenum">0083:</SPAN>     STATE_RENDER_BEGIN,     <SPAN CLASS="comment">// 初期化</SPAN>
+<SPAN CLASS="linenum">0084:</SPAN>     STATE_RENDER,           <SPAN CLASS="comment">// 描画</SPAN>
+<SPAN CLASS="linenum">0085:</SPAN>     STATE_RENDER_END,       <SPAN CLASS="comment">// 後片付け</SPAN>
+<SPAN CLASS="linenum">0086:</SPAN> };
+<SPAN CLASS="linenum">0087:</SPAN> 
+<SPAN CLASS="linenum">0088:</SPAN> <SPAN CLASS="comment">// ---------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0089:</SPAN> <SPAN CLASS="comment">// 関数宣言</SPAN>
+<SPAN CLASS="linenum">0090:</SPAN> <SPAN CLASS="comment">// ---------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0091:</SPAN> D3DXVECTOR3 *GetColor(D3DXVECTOR3 *dest, <SPAN CLASS="keyword">float</SPAN> x, <SPAN CLASS="keyword">float</SPAN> y);
+<SPAN CLASS="linenum">0092:</SPAN> 
+<SPAN CLASS="linenum">0093:</SPAN> <SPAN CLASS="comment">// ---------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0094:</SPAN> <SPAN CLASS="comment">// 光源管理</SPAN>
+<SPAN CLASS="linenum">0095:</SPAN> <SPAN CLASS="comment">// ---------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0096:</SPAN> <SPAN CLASS="comment">// 光源の１点を選択する</SPAN>
+<SPAN CLASS="linenum">0097:</SPAN> LIGHT_DATA *choiceEmmisivePoint( D3DXVECTOR4 *pos, D3DXVECTOR3 *dir )
+<SPAN CLASS="linenum">0098:</SPAN> {
+<SPAN CLASS="linenum">0099:</SPAN>     LIGHT_DATA *pData;
+<SPAN CLASS="linenum">0100:</SPAN>     <SPAN CLASS="keyword">float</SPAN> a = g_fTotalArea * g_pRand-&gt;GetF32();
+<SPAN CLASS="linenum">0101:</SPAN> 
+<SPAN CLASS="linenum">0102:</SPAN>     pData = &amp;g_LightData[0];
+<SPAN CLASS="linenum">0103:</SPAN>     <SPAN CLASS="keyword">for</SPAN>( <SPAN CLASS="keyword">int</SPAN> i = 0; i &lt; LIGHT_DATA_MAX; i++ )
+<SPAN CLASS="linenum">0104:</SPAN>     {
+<SPAN CLASS="linenum">0105:</SPAN>         <SPAN CLASS="keyword">if</SPAN>( a &lt; pData-&gt;area )
+<SPAN CLASS="linenum">0106:</SPAN>         {
+<SPAN CLASS="linenum">0107:</SPAN>             <SPAN CLASS="comment">// 3角形の内部の１点を選択する</SPAN>
+<SPAN CLASS="linenum">0108:</SPAN>             <SPAN CLASS="keyword">float</SPAN> s = g_pRand-&gt;GetF32();
+<SPAN CLASS="linenum">0109:</SPAN>             <SPAN CLASS="keyword">float</SPAN> t = g_pRand-&gt;GetF32();
+<SPAN CLASS="linenum">0110:</SPAN>             <SPAN CLASS="keyword">if</SPAN>(1 &lt; s + t) {s=1-s;t=1-t;}
+<SPAN CLASS="linenum">0111:</SPAN> 
+<SPAN CLASS="linenum">0112:</SPAN>             <SPAN CLASS="keyword">float</SPAN> *x0 = pData-&gt;pObjData-&gt;triangle.x0;
+<SPAN CLASS="linenum">0113:</SPAN>             <SPAN CLASS="keyword">float</SPAN> *x1 = pData-&gt;pObjData-&gt;triangle.x1;
+<SPAN CLASS="linenum">0114:</SPAN>             <SPAN CLASS="keyword">float</SPAN> *x2 = pData-&gt;pObjData-&gt;triangle.x2;
+<SPAN CLASS="linenum">0115:</SPAN>             pos-&gt;x = (1.0f-s-t)*x0[0] + s * x1[0] + t * x2[0];
+<SPAN CLASS="linenum">0116:</SPAN>             pos-&gt;y = (1.0f-s-t)*x0[1] + s * x1[1] + t * x2[1];
+<SPAN CLASS="linenum">0117:</SPAN>             pos-&gt;z = (1.0f-s-t)*x0[2] + s * x1[2] + t * x2[2];
+<SPAN CLASS="linenum">0118:</SPAN>             pos-&gt;w = 1.0f;
+<SPAN CLASS="linenum">0119:</SPAN> 
+<SPAN CLASS="linenum">0120:</SPAN>             *dir = pData-&gt;normal;
+<SPAN CLASS="linenum">0121:</SPAN>             <SPAN CLASS="keyword">return</SPAN> pData;
+<SPAN CLASS="linenum">0122:</SPAN>         }
+<SPAN CLASS="linenum">0123:</SPAN>         a -= pData-&gt;area;
+<SPAN CLASS="linenum">0124:</SPAN>         pData++;
+<SPAN CLASS="linenum">0125:</SPAN>     }
+<SPAN CLASS="linenum">0126:</SPAN>     <SPAN CLASS="keyword">return</SPAN> NULL;
+<SPAN CLASS="linenum">0127:</SPAN> }
+<SPAN CLASS="linenum">0128:</SPAN> 
+<SPAN CLASS="linenum">0129:</SPAN> <SPAN CLASS="comment">// ---------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0130:</SPAN> <SPAN CLASS="comment">// カメラクラス</SPAN>
+<SPAN CLASS="linenum">0131:</SPAN> <SPAN CLASS="comment">// ---------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0132:</SPAN> <SPAN CLASS="keyword">void</SPAN> CCamera::Update()
+<SPAN CLASS="linenum">0133:</SPAN> {
+<SPAN CLASS="linenum">0134:</SPAN>     <SPAN CLASS="comment">// 正規直行基底の計算</SPAN>
+<SPAN CLASS="linenum">0135:</SPAN>     D3DXVec3Subtract( &amp;w, &amp;m_vLookat, &amp;m_vFrom );
+<SPAN CLASS="linenum">0136:</SPAN>     D3DXVec3Cross( &amp;v, &amp;w, &amp;m_vUp );
+<SPAN CLASS="linenum">0137:</SPAN>     D3DXVec3Cross( &amp;u, &amp;v, &amp;w );
+<SPAN CLASS="linenum">0138:</SPAN>     D3DXVec3Normalize( &amp;u, &amp;u );
+<SPAN CLASS="linenum">0139:</SPAN>     D3DXVec3Normalize( &amp;v, &amp;v );
+<SPAN CLASS="linenum">0140:</SPAN>     D3DXVec3Normalize( &amp;w, &amp;w );
+<SPAN CLASS="linenum">0141:</SPAN> 
+<SPAN CLASS="linenum">0142:</SPAN>     <SPAN CLASS="comment">// レンズの半径(f/2F)</SPAN>
+<SPAN CLASS="linenum">0143:</SPAN>     m_fLensRadius = 0.5f * m_fFocalLength / m_fFNumber;
+<SPAN CLASS="linenum">0144:</SPAN>     <SPAN CLASS="comment">// フィルムまでの距離 Lf/(L-f)</SPAN>
+<SPAN CLASS="linenum">0145:</SPAN>     m_fFilmDistance = m_fFocusDistance*m_fFocalLength/(m_fFocusDistance-m_fFocalLength);
+<SPAN CLASS="linenum">0146:</SPAN> }
+<SPAN CLASS="linenum">0147:</SPAN> <SPAN CLASS="comment">// ---------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0148:</SPAN> <SPAN CLASS="keyword">void</SPAN> CCamera::GetRay( D3DXVECTOR3 *o, D3DXVECTOR3 *dir, <SPAN CLASS="keyword">float</SPAN> x, <SPAN CLASS="keyword">float</SPAN> y)
+<SPAN CLASS="linenum">0149:</SPAN> {
+<SPAN CLASS="linenum">0150:</SPAN>     D3DXVECTOR3 ds, e;
+<SPAN CLASS="linenum">0151:</SPAN>     D3DXVECTOR3 tmp, tmp1;
+<SPAN CLASS="linenum">0152:</SPAN>     <SPAN CLASS="keyword">float</SPAN> z1 = frand();
+<SPAN CLASS="linenum">0153:</SPAN>     <SPAN CLASS="keyword">float</SPAN> z2 = frand();
+<SPAN CLASS="linenum">0154:</SPAN> 
+<SPAN CLASS="linenum">0155:</SPAN>     <SPAN CLASS="keyword">float</SPAN> r = m_fLensRadius * sqrtf(z1);
+<SPAN CLASS="linenum">0156:</SPAN>     <SPAN CLASS="keyword">float</SPAN> theta = 2.0f * D3DX_PI * z2;
+<SPAN CLASS="linenum">0157:</SPAN>     
+<SPAN CLASS="linenum">0158:</SPAN>     <SPAN CLASS="comment">// レイを飛ばす位置</SPAN>
+<SPAN CLASS="linenum">0159:</SPAN>     D3DXVec3Scale( &amp;tmp, &amp;v, cosf(theta) );
+<SPAN CLASS="linenum">0160:</SPAN>     D3DXVec3Scale( &amp;ds,  &amp;u, cosf(theta) );
+<SPAN CLASS="linenum">0161:</SPAN>     D3DXVec3Add( &amp;ds, &amp;ds, &amp;tmp );
+<SPAN CLASS="linenum">0162:</SPAN>     D3DXVec3Scale( &amp;ds, &amp;ds, r );
+<SPAN CLASS="linenum">0163:</SPAN>     D3DXVec3Add( o, &amp;ds, &amp;m_vFrom );
+<SPAN CLASS="linenum">0164:</SPAN> 
+<SPAN CLASS="linenum">0165:</SPAN>     <SPAN CLASS="comment">// レンズの中心からピントの当たる位置へのベクトル</SPAN>
+<SPAN CLASS="linenum">0166:</SPAN>     D3DXVec3Scale( &amp;e,    &amp;w,   m_fFilmDistance );
+<SPAN CLASS="linenum">0167:</SPAN>     D3DXVec3Scale( &amp;tmp,  &amp;v,   m_fFilmSize[0] * (x-0.5f) );
+<SPAN CLASS="linenum">0168:</SPAN>     D3DXVec3Scale( &amp;tmp1, &amp;u, - m_fFilmSize[1] * (y-0.5f) );
+<SPAN CLASS="linenum">0169:</SPAN>     D3DXVec3Add( &amp;e, &amp;e, &amp;tmp );
+<SPAN CLASS="linenum">0170:</SPAN>     D3DXVec3Add( &amp;e, &amp;e, &amp;tmp1 );
+<SPAN CLASS="linenum">0171:</SPAN>     D3DXVec3Normalize( &amp;e, &amp;e );
+<SPAN CLASS="linenum">0172:</SPAN> 
+<SPAN CLASS="linenum">0173:</SPAN>     D3DXVec3Scale( dir, &amp;e, m_fFocusDistance / D3DXVec3Dot( &amp;e, &amp;w ) );
+<SPAN CLASS="linenum">0174:</SPAN>     D3DXVec3Subtract( dir, dir, &amp;ds );
+<SPAN CLASS="linenum">0175:</SPAN>     D3DXVec3Normalize( dir, dir );
+<SPAN CLASS="linenum">0176:</SPAN> }
+<SPAN CLASS="linenum">0177:</SPAN> 
+<SPAN CLASS="linenum">0178:</SPAN> 
+<SPAN CLASS="linenum">0179:</SPAN> <SPAN CLASS="comment">// ---------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0180:</SPAN> <SPAN CLASS="comment">// スレッド処理</SPAN>
+<SPAN CLASS="linenum">0181:</SPAN> <SPAN CLASS="comment">// ---------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0182:</SPAN> 
+<SPAN CLASS="linenum">0183:</SPAN> MySystem::CThreadMgr *g_pThreadMgr = NULL;
+<SPAN CLASS="linenum">0184:</SPAN> 
+<SPAN CLASS="linenum">0185:</SPAN> <SPAN CLASS="keyword">unsigned</SPAN> <SPAN CLASS="keyword">int</SPAN> WINAPI workthread ( LPVOID pParam )
+<SPAN CLASS="linenum">0186:</SPAN> {
+<SPAN CLASS="linenum">0187:</SPAN>     MySystem::CThreadMgr  *pSender = (MySystem::CThreadMgr *)pParam;
+<SPAN CLASS="linenum">0188:</SPAN>     MySystem::CThreadData *ptr;
+<SPAN CLASS="linenum">0189:</SPAN>     
+<SPAN CLASS="linenum">0190:</SPAN>     <SPAN CLASS="keyword">while</SPAN>( pSender-&gt;IsEnable() )
+<SPAN CLASS="linenum">0191:</SPAN>     {
+<SPAN CLASS="linenum">0192:</SPAN>         <SPAN CLASS="keyword">while</SPAN>( NULL != (ptr = pSender-&gt;GetWork()) )
+<SPAN CLASS="linenum">0193:</SPAN>         {
+<SPAN CLASS="linenum">0194:</SPAN>             <SPAN CLASS="comment">// --- ここからスレッドデータごとの処理</SPAN>
+<SPAN CLASS="linenum">0195:</SPAN> 
+<SPAN CLASS="linenum">0196:</SPAN>             rect *pRect = (rect *)ptr-&gt;GetData();
+<SPAN CLASS="linenum">0197:</SPAN> 
+<SPAN CLASS="linenum">0198:</SPAN>             <SPAN CLASS="keyword">for</SPAN>( s32 y = pRect-&gt;top; y &lt; pRect-&gt;bottom; y++ )
+<SPAN CLASS="linenum">0199:</SPAN>             {
+<SPAN CLASS="linenum">0200:</SPAN>                 <SPAN CLASS="keyword">for</SPAN>( s32 x = pRect-&gt;left; x &lt; pRect-&gt;right; x++ )
+<SPAN CLASS="linenum">0201:</SPAN>                 {
+<SPAN CLASS="linenum">0202:</SPAN>                     D3DXVECTOR3 col;
+<SPAN CLASS="linenum">0203:</SPAN> 
+<SPAN CLASS="linenum">0204:</SPAN>                     GetColor(&amp;col, ((<SPAN CLASS="keyword">float</SPAN>)x+0.5f)/(<SPAN CLASS="keyword">float</SPAN>)RENDER_WIDTH
+<SPAN CLASS="linenum">0205:</SPAN>                                  , ((<SPAN CLASS="keyword">float</SPAN>)y+0.5f)/(<SPAN CLASS="keyword">float</SPAN>)RENDER_HEIGHT);
+<SPAN CLASS="linenum">0206:</SPAN>                     <SPAN CLASS="keyword">int</SPAN> no = 4*(y*RENDER_WIDTH+x);
+<SPAN CLASS="linenum">0207:</SPAN>                     s_total[no+0]+=col.x;<SPAN CLASS="comment">// R</SPAN>
+<SPAN CLASS="linenum">0208:</SPAN>                     s_total[no+1]+=col.y;<SPAN CLASS="comment">// G</SPAN>
+<SPAN CLASS="linenum">0209:</SPAN>                     s_total[no+2]+=col.z;<SPAN CLASS="comment">// B</SPAN>
+<SPAN CLASS="linenum">0210:</SPAN>                 }
+<SPAN CLASS="linenum">0211:</SPAN>             }
+<SPAN CLASS="linenum">0212:</SPAN> 
+<SPAN CLASS="linenum">0213:</SPAN>             <SPAN CLASS="comment">// --- ここまでスレッドデータごとの処理</SPAN>
+<SPAN CLASS="linenum">0214:</SPAN> 
+<SPAN CLASS="linenum">0215:</SPAN>             <SPAN CLASS="comment">// 終わったら、そのスレッドデータを殺す</SPAN>
+<SPAN CLASS="linenum">0216:</SPAN>             ptr-&gt;Finish( );
+<SPAN CLASS="linenum">0217:</SPAN>         }
+<SPAN CLASS="linenum">0218:</SPAN>         Sleep(10);
+<SPAN CLASS="linenum">0219:</SPAN>     }
+<SPAN CLASS="linenum">0220:</SPAN> 
+<SPAN CLASS="linenum">0221:</SPAN>     <SPAN CLASS="keyword">return</SPAN> 0;
+<SPAN CLASS="linenum">0222:</SPAN> }
+<SPAN CLASS="linenum">0223:</SPAN> 
+<SPAN CLASS="linenum">0224:</SPAN> 
+<SPAN CLASS="linenum">0225:</SPAN> <SPAN CLASS="comment">// ---------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0226:</SPAN> <SPAN CLASS="keyword">char</SPAN> *GetDataPointer()
+<SPAN CLASS="linenum">0227:</SPAN> {
+<SPAN CLASS="linenum">0228:</SPAN>     <SPAN CLASS="keyword">return</SPAN> s_data;
+<SPAN CLASS="linenum">0229:</SPAN> }
+<SPAN CLASS="linenum">0230:</SPAN> <SPAN CLASS="comment">// ---------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0231:</SPAN> <SPAN CLASS="keyword">int</SPAN> GetRenderCount()
+<SPAN CLASS="linenum">0232:</SPAN> {
+<SPAN CLASS="linenum">0233:</SPAN>     <SPAN CLASS="keyword">return</SPAN> (<SPAN CLASS="keyword">int</SPAN>)(render_cnt+0.5f);
+<SPAN CLASS="linenum">0234:</SPAN> }
+<SPAN CLASS="linenum">0235:</SPAN> <SPAN CLASS="comment">// ---------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0236:</SPAN> <SPAN CLASS="keyword">void</SPAN> Init()
+<SPAN CLASS="linenum">0237:</SPAN> {
+<SPAN CLASS="linenum">0238:</SPAN>     <SPAN CLASS="keyword">int</SPAN> i, j;
+<SPAN CLASS="linenum">0239:</SPAN> 
+<SPAN CLASS="linenum">0240:</SPAN>     camera.SetFrom  (&amp;D3DXVECTOR3(278,273,-800));
+<SPAN CLASS="linenum">0241:</SPAN>     camera.SetLookAt(&amp;D3DXVECTOR3(278,273,0));
+<SPAN CLASS="linenum">0242:</SPAN>     camera.SetUp    (&amp;D3DXVECTOR3(0,1,0));
+<SPAN CLASS="linenum">0243:</SPAN>     camera.SetFilmSize      ( ASPECT*25, 25 );
+<SPAN CLASS="linenum">0244:</SPAN>     camera.SetFocalLength   ( 35 );
+<SPAN CLASS="linenum">0245:</SPAN>     camera.SetFNumber       ( 0.3f  );
+<SPAN CLASS="linenum">0246:</SPAN>     camera.SetFocusDistance ( 1100.0 );
+<SPAN CLASS="linenum">0247:</SPAN>     camera.Update();
+<SPAN CLASS="linenum">0248:</SPAN>     
+<SPAN CLASS="linenum">0249:</SPAN>     g_pRand = <SPAN CLASS="keyword">new</SPAN> CRand();
+<SPAN CLASS="linenum">0250:</SPAN> 
+<SPAN CLASS="linenum">0251:</SPAN>     pRoom = <SPAN CLASS="keyword">new</SPAN> CMesh();
+<SPAN CLASS="linenum">0252:</SPAN>     pRoom-&gt;Init( room_data, 14 );
+<SPAN CLASS="linenum">0253:</SPAN>     
+<SPAN CLASS="linenum">0254:</SPAN>     pBlockSmall = <SPAN CLASS="keyword">new</SPAN> CMesh();
+<SPAN CLASS="linenum">0255:</SPAN>     pBlockSmall-&gt;Init( Short_block, 10);
+<SPAN CLASS="linenum">0256:</SPAN> 
+<SPAN CLASS="linenum">0257:</SPAN>     pBlockTall = <SPAN CLASS="keyword">new</SPAN> CMesh();
+<SPAN CLASS="linenum">0258:</SPAN>     pBlockTall-&gt;Init( Tall_block, 10);
+<SPAN CLASS="linenum">0259:</SPAN>     
+<SPAN CLASS="linenum">0260:</SPAN>     pShpereS = <SPAN CLASS="keyword">new</SPAN> CMesh();
+<SPAN CLASS="linenum">0261:</SPAN>     pShpereS-&gt;Init( sphere_data, 1);
+<SPAN CLASS="linenum">0262:</SPAN>     
+<SPAN CLASS="linenum">0263:</SPAN>     pShpereT = <SPAN CLASS="keyword">new</SPAN> CMesh();
+<SPAN CLASS="linenum">0264:</SPAN>     pShpereT-&gt;Init( sphere_data+1,1);
+<SPAN CLASS="linenum">0265:</SPAN> 
+<SPAN CLASS="linenum">0266:</SPAN>     <SPAN CLASS="comment">// ライト情報</SPAN>
+<SPAN CLASS="linenum">0267:</SPAN>     g_LightData[0].pObjData = &amp;room_data[0];
+<SPAN CLASS="linenum">0268:</SPAN>     g_LightData[1].pObjData = &amp;room_data[1];
+<SPAN CLASS="linenum">0269:</SPAN>     g_fTotalArea = 0.0f;
+<SPAN CLASS="linenum">0270:</SPAN>     <SPAN CLASS="keyword">for</SPAN>( i = 0; i &lt; LIGHT_DATA_MAX; i++ )
+<SPAN CLASS="linenum">0271:</SPAN>     {
+<SPAN CLASS="linenum">0272:</SPAN>         <SPAN CLASS="keyword">float</SPAN> *x0, *x1, *x2;
+<SPAN CLASS="linenum">0273:</SPAN>         g_LightData[i].normal   = D3DXVECTOR3(0,-1,0);<SPAN CLASS="comment">// 下向きライト限定</SPAN>
+<SPAN CLASS="linenum">0274:</SPAN>         x0 = g_LightData[i].pObjData-&gt;triangle.x0;
+<SPAN CLASS="linenum">0275:</SPAN>         x1 = g_LightData[i].pObjData-&gt;triangle.x1;
+<SPAN CLASS="linenum">0276:</SPAN>         x2 = g_LightData[i].pObjData-&gt;triangle.x2;
+<SPAN CLASS="linenum">0277:</SPAN>         g_LightData[i].area = 0.5f * fabs((x1[0]-x0[0])*(x2[2]-x0[2])-(x2[0]-x0[0])*(x1[2]-x0[2]));
+<SPAN CLASS="linenum">0278:</SPAN>         g_fTotalArea += g_LightData[i].area;
+<SPAN CLASS="linenum">0279:</SPAN>     }
+<SPAN CLASS="linenum">0280:</SPAN> 
+<SPAN CLASS="linenum">0281:</SPAN>     <SPAN CLASS="comment">// フレームバッファの初期化</SPAN>
+<SPAN CLASS="linenum">0282:</SPAN>     render_cnt = 0; <SPAN CLASS="comment">// レンダリング回数</SPAN>
+<SPAN CLASS="linenum">0283:</SPAN>     <SPAN CLASS="keyword">for</SPAN>(j=0; j&lt;RENDER_HEIGHT; j++){
+<SPAN CLASS="linenum">0284:</SPAN>     <SPAN CLASS="keyword">for</SPAN>(i=0; i&lt;RENDER_WIDTH ; i++){
+<SPAN CLASS="linenum">0285:</SPAN>         s_data [4*(j*RENDER_WIDTH+i)+0]=(<SPAN CLASS="keyword">char</SPAN>)255;<SPAN CLASS="comment">// R</SPAN>
+<SPAN CLASS="linenum">0286:</SPAN>         s_data [4*(j*RENDER_WIDTH+i)+1]=(<SPAN CLASS="keyword">char</SPAN>)(i*256/RENDER_WIDTH );<SPAN CLASS="comment">// G</SPAN>
+<SPAN CLASS="linenum">0287:</SPAN>         s_data [4*(j*RENDER_WIDTH+i)+2]=(<SPAN CLASS="keyword">char</SPAN>)(j*256/RENDER_HEIGHT);<SPAN CLASS="comment">// B</SPAN>
+<SPAN CLASS="linenum">0288:</SPAN>         s_total[4*(j*RENDER_WIDTH+i)+0]=0;<SPAN CLASS="comment">// R</SPAN>
+<SPAN CLASS="linenum">0289:</SPAN>         s_total[4*(j*RENDER_WIDTH+i)+1]=0;<SPAN CLASS="comment">// G</SPAN>
+<SPAN CLASS="linenum">0290:</SPAN>         s_total[4*(j*RENDER_WIDTH+i)+2]=0;<SPAN CLASS="comment">// B</SPAN>
+<SPAN CLASS="linenum">0291:</SPAN>     }
+<SPAN CLASS="linenum">0292:</SPAN>     }
+<SPAN CLASS="linenum">0293:</SPAN> 
+<SPAN CLASS="linenum">0294:</SPAN>     <SPAN CLASS="comment">// スレッドを動かす</SPAN>
+<SPAN CLASS="linenum">0295:</SPAN>     g_pThreadMgr = <SPAN CLASS="keyword">new</SPAN> MySystem::CThreadMgr( workthread
+<SPAN CLASS="linenum">0296:</SPAN>                                             , 2  <SPAN CLASS="comment">// 最大スレッド数（CPUの数と同じ程度）</SPAN>
+<SPAN CLASS="linenum">0297:</SPAN>                                             , 16 <SPAN CLASS="comment">// スレッドに流し込める仕事の数</SPAN>
+<SPAN CLASS="linenum">0298:</SPAN>                                             );
+<SPAN CLASS="linenum">0299:</SPAN> }
+<SPAN CLASS="linenum">0300:</SPAN> 
+<SPAN CLASS="linenum">0301:</SPAN> <SPAN CLASS="comment">// ---------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0302:</SPAN> <SPAN CLASS="keyword">void</SPAN> Delete()
+<SPAN CLASS="linenum">0303:</SPAN> {
+<SPAN CLASS="linenum">0304:</SPAN>     <SPAN CLASS="comment">// スレッドを終了する</SPAN>
+<SPAN CLASS="linenum">0305:</SPAN>     <SPAN CLASS="keyword">if</SPAN>(g_pThreadMgr) <SPAN CLASS="keyword">delete</SPAN> g_pThreadMgr;g_pThreadMgr=NULL;
+<SPAN CLASS="linenum">0306:</SPAN> 
+<SPAN CLASS="linenum">0307:</SPAN>     <SPAN CLASS="keyword">if</SPAN>(pShpereT){<SPAN CLASS="keyword">delete</SPAN> pShpereT;pShpereT=NULL;}
+<SPAN CLASS="linenum">0308:</SPAN>     <SPAN CLASS="keyword">if</SPAN>(pShpereS){<SPAN CLASS="keyword">delete</SPAN> pShpereS;pShpereS=NULL;}
+<SPAN CLASS="linenum">0309:</SPAN>     <SPAN CLASS="keyword">if</SPAN>(pBlockTall){<SPAN CLASS="keyword">delete</SPAN> pBlockTall;pBlockTall=NULL;}
+<SPAN CLASS="linenum">0310:</SPAN>     <SPAN CLASS="keyword">if</SPAN>(pBlockSmall){<SPAN CLASS="keyword">delete</SPAN> pBlockSmall;pBlockSmall=NULL;}
+<SPAN CLASS="linenum">0311:</SPAN>     <SPAN CLASS="keyword">if</SPAN>(pRoom){<SPAN CLASS="keyword">delete</SPAN> pRoom; pRoom=NULL;}
+<SPAN CLASS="linenum">0312:</SPAN>     <SPAN CLASS="keyword">if</SPAN>(g_pRand){<SPAN CLASS="keyword">delete</SPAN> g_pRand; g_pRand=NULL;}
+<SPAN CLASS="linenum">0313:</SPAN> }
+<SPAN CLASS="linenum">0314:</SPAN> <SPAN CLASS="comment">// ---------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0315:</SPAN> 
+<SPAN CLASS="linenum">0316:</SPAN> <SPAN CLASS="keyword">#define</SPAN> BLOCK_X 2
+<SPAN CLASS="linenum">0317:</SPAN> <SPAN CLASS="keyword">#define</SPAN> BLOCK_Y 2
+<SPAN CLASS="linenum">0318:</SPAN> <SPAN CLASS="keyword">#define</SPAN> RENDERING_COUNT 1
+<SPAN CLASS="linenum">0319:</SPAN> 
+<SPAN CLASS="linenum">0320:</SPAN> 
+<SPAN CLASS="linenum">0321:</SPAN> <SPAN CLASS="comment">// ---------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0322:</SPAN> <SPAN CLASS="keyword">int</SPAN> Render()
+<SPAN CLASS="linenum">0323:</SPAN> {
+<SPAN CLASS="linenum">0324:</SPAN>     <SPAN CLASS="keyword">int</SPAN> k,no;
+<SPAN CLASS="linenum">0325:</SPAN>     <SPAN CLASS="keyword">static</SPAN> <SPAN CLASS="keyword">unsigned</SPAN> <SPAN CLASS="keyword">int</SPAN> save_bit = 0;
+<SPAN CLASS="linenum">0326:</SPAN> 
+<SPAN CLASS="linenum">0327:</SPAN>     render_cnt+=RENDERING_COUNT;
+<SPAN CLASS="linenum">0328:</SPAN> 
+<SPAN CLASS="linenum">0329:</SPAN> <SPAN CLASS="keyword">#if</SPAN> 0
+<SPAN CLASS="linenum">0330:</SPAN>     <SPAN CLASS="keyword">for</SPAN>(<SPAN CLASS="keyword">int</SPAN> i=0;i&lt;RENDERING_COUNT;i++)
+<SPAN CLASS="linenum">0331:</SPAN>     {
+<SPAN CLASS="linenum">0332:</SPAN>         <SPAN CLASS="keyword">for</SPAN>( s32 y = 0; y &lt; RENDER_HEIGHT; y++ )
+<SPAN CLASS="linenum">0333:</SPAN>         {
+<SPAN CLASS="linenum">0334:</SPAN>             <SPAN CLASS="keyword">for</SPAN>( s32 x = 0; x &lt; RENDER_WIDTH; x++ )
+<SPAN CLASS="linenum">0335:</SPAN>             {
+<SPAN CLASS="linenum">0336:</SPAN>                 <SPAN CLASS="keyword">auto</SPAN> D3DXVECTOR3 col;
+<SPAN CLASS="linenum">0337:</SPAN> 
+<SPAN CLASS="linenum">0338:</SPAN>                 GetColor(&amp;col, ((<SPAN CLASS="keyword">float</SPAN>)x+0.5f)/(<SPAN CLASS="keyword">float</SPAN>)RENDER_WIDTH
+<SPAN CLASS="linenum">0339:</SPAN>                              , ((<SPAN CLASS="keyword">float</SPAN>)y+0.5f)/(<SPAN CLASS="keyword">float</SPAN>)RENDER_HEIGHT);
+<SPAN CLASS="linenum">0340:</SPAN>                 <SPAN CLASS="keyword">int</SPAN> no = 4*(y*RENDER_WIDTH+x);
+<SPAN CLASS="linenum">0341:</SPAN>                 s_total[no+0]+=col.x;<SPAN CLASS="comment">// R</SPAN>
+<SPAN CLASS="linenum">0342:</SPAN>                 s_total[no+1]+=col.y;<SPAN CLASS="comment">// G</SPAN>
+<SPAN CLASS="linenum">0343:</SPAN>                 s_total[no+2]+=col.z;<SPAN CLASS="comment">// B</SPAN>
+<SPAN CLASS="linenum">0344:</SPAN>             }
+<SPAN CLASS="linenum">0345:</SPAN>         }
+<SPAN CLASS="linenum">0346:</SPAN>     }
+<SPAN CLASS="linenum">0347:</SPAN> <SPAN CLASS="keyword">#else</SPAN>
+<SPAN CLASS="linenum">0348:</SPAN>     <SPAN CLASS="keyword">static</SPAN> rect r[BLOCK_Y][BLOCK_X];
+<SPAN CLASS="linenum">0349:</SPAN>     
+<SPAN CLASS="linenum">0350:</SPAN>     <SPAN CLASS="keyword">for</SPAN>( s32 i = 0; i &lt; BLOCK_Y; i++ )
+<SPAN CLASS="linenum">0351:</SPAN>     {
+<SPAN CLASS="linenum">0352:</SPAN>         <SPAN CLASS="keyword">for</SPAN>( s32 j = 0; j &lt; BLOCK_X; j++ )
+<SPAN CLASS="linenum">0353:</SPAN>         {
+<SPAN CLASS="linenum">0354:</SPAN>             r[i][j].left   = (j+0)*RENDER_WIDTH /BLOCK_X;
+<SPAN CLASS="linenum">0355:</SPAN>             r[i][j].right  = (j+1)*RENDER_WIDTH /BLOCK_X;
+<SPAN CLASS="linenum">0356:</SPAN>             r[i][j].top    = (i+0)*RENDER_HEIGHT/BLOCK_Y;
+<SPAN CLASS="linenum">0357:</SPAN>             r[i][j].bottom = (i+1)*RENDER_HEIGHT/BLOCK_Y;
+<SPAN CLASS="linenum">0358:</SPAN>         }
+<SPAN CLASS="linenum">0359:</SPAN>     }
+<SPAN CLASS="linenum">0360:</SPAN>     
+<SPAN CLASS="linenum">0361:</SPAN>     <SPAN CLASS="comment">// 描画をする</SPAN>
+<SPAN CLASS="linenum">0362:</SPAN>     <SPAN CLASS="keyword">for</SPAN>( <SPAN CLASS="keyword">int</SPAN> n = 0; n &lt; RENDERING_COUNT; n++)
+<SPAN CLASS="linenum">0363:</SPAN>     {
+<SPAN CLASS="linenum">0364:</SPAN>         <SPAN CLASS="keyword">for</SPAN>( s32 i = 0; i &lt; BLOCK_Y; i++ )
+<SPAN CLASS="linenum">0365:</SPAN>         {
+<SPAN CLASS="linenum">0366:</SPAN>             <SPAN CLASS="keyword">for</SPAN>( s32 j = 0; j &lt; BLOCK_X; j++ )
+<SPAN CLASS="linenum">0367:</SPAN>             {
+<SPAN CLASS="linenum">0368:</SPAN>                 g_pThreadMgr-&gt;Req( &amp;r[i][j] );
+<SPAN CLASS="linenum">0369:</SPAN>             }
+<SPAN CLASS="linenum">0370:</SPAN>         }
+<SPAN CLASS="linenum">0371:</SPAN>         <SPAN CLASS="keyword">while</SPAN>( 0 != g_pThreadMgr-&gt;GetLeftWork() )Sleep(10);
+<SPAN CLASS="linenum">0372:</SPAN>     }
+<SPAN CLASS="linenum">0373:</SPAN>     
+<SPAN CLASS="linenum">0374:</SPAN> <SPAN CLASS="keyword">#endif</SPAN>
+<SPAN CLASS="linenum">0375:</SPAN> 
+<SPAN CLASS="linenum">0376:</SPAN>     
+<SPAN CLASS="linenum">0377:</SPAN>     <SPAN CLASS="comment">// トーンマッピング</SPAN>
+<SPAN CLASS="linenum">0378:</SPAN>     no = 0;
+<SPAN CLASS="linenum">0379:</SPAN>     <SPAN CLASS="keyword">for</SPAN>(s32 j=0; j&lt;RENDER_HEIGHT; j++){
+<SPAN CLASS="linenum">0380:</SPAN>     <SPAN CLASS="keyword">for</SPAN>(s32 i=0; i&lt;RENDER_WIDTH ; i++){
+<SPAN CLASS="linenum">0381:</SPAN>         s_tmp[no].r = max(0,s_total[4*no+0]/render_cnt);
+<SPAN CLASS="linenum">0382:</SPAN>         s_tmp[no].g = max(0,s_total[4*no+1]/render_cnt);
+<SPAN CLASS="linenum">0383:</SPAN>         s_tmp[no].b = max(0,s_total[4*no+2]/render_cnt);
+<SPAN CLASS="linenum">0384:</SPAN>         no++;
+<SPAN CLASS="linenum">0385:</SPAN>     }
+<SPAN CLASS="linenum">0386:</SPAN>     }
+<SPAN CLASS="linenum">0387:</SPAN> 
+<SPAN CLASS="linenum">0388:</SPAN> <SPAN CLASS="comment">//  ToneMapping( s_tmp, s_tmp, RENDER_WIDTH*RENDER_HEIGHT );</SPAN>
+<SPAN CLASS="linenum">0389:</SPAN> 
+<SPAN CLASS="linenum">0390:</SPAN>     <SPAN CLASS="comment">// 画面の反映</SPAN>
+<SPAN CLASS="linenum">0391:</SPAN>     no = 0;
+<SPAN CLASS="linenum">0392:</SPAN>     <SPAN CLASS="keyword">for</SPAN>(s32 j=0; j&lt;RENDER_HEIGHT; j++){
+<SPAN CLASS="linenum">0393:</SPAN>     <SPAN CLASS="keyword">for</SPAN>(s32 i=0; i&lt;RENDER_WIDTH ; i++){
+<SPAN CLASS="linenum">0394:</SPAN>         <SPAN CLASS="keyword">auto</SPAN> CColor &amp;c = s_tmp[no&gt;&gt;2];
+<SPAN CLASS="linenum">0395:</SPAN>         s_data [no+0]=(<SPAN CLASS="keyword">unsigned</SPAN> <SPAN CLASS="keyword">char</SPAN>)(255.9*max(0,min(1,c.r)));<SPAN CLASS="comment">// R</SPAN>
+<SPAN CLASS="linenum">0396:</SPAN>         s_data [no+1]=(<SPAN CLASS="keyword">unsigned</SPAN> <SPAN CLASS="keyword">char</SPAN>)(255.9*max(0,min(1,c.g)));<SPAN CLASS="comment">// G</SPAN>
+<SPAN CLASS="linenum">0397:</SPAN>         s_data [no+2]=(<SPAN CLASS="keyword">unsigned</SPAN> <SPAN CLASS="keyword">char</SPAN>)(255.9*max(0,min(1,c.b)));<SPAN CLASS="comment">// B</SPAN>
+<SPAN CLASS="linenum">0398:</SPAN>         no += 4;
+<SPAN CLASS="linenum">0399:</SPAN>     }
+<SPAN CLASS="linenum">0400:</SPAN>     }
+<SPAN CLASS="linenum">0401:</SPAN> 
+<SPAN CLASS="linenum">0402:</SPAN>     <SPAN CLASS="comment">// 適当なときに画像を保存する</SPAN>
+<SPAN CLASS="linenum">0403:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( (1&lt;&lt;save_bit) &lt;= GetRenderCount() )
+<SPAN CLASS="linenum">0404:</SPAN>     {
+<SPAN CLASS="linenum">0405:</SPAN>         <SPAN CLASS="comment">// ファイル名を決める</SPAN>
+<SPAN CLASS="linenum">0406:</SPAN>         _TCHAR buf[256];
+<SPAN CLASS="linenum">0407:</SPAN>         _stprintf( buf, _T("<SPAN CLASS="string">%d.bmp</SPAN>"), GetRenderCount());
+<SPAN CLASS="linenum">0408:</SPAN>         
+<SPAN CLASS="linenum">0409:</SPAN>         <SPAN CLASS="comment">// ビットマップイメージを作る</SPAN>
+<SPAN CLASS="linenum">0410:</SPAN>         BYTE *pImage = <SPAN CLASS="keyword">new</SPAN> BYTE[3 * RENDER_WIDTH * RENDER_HEIGHT];
+<SPAN CLASS="linenum">0411:</SPAN>         k = 0;
+<SPAN CLASS="linenum">0412:</SPAN>         <SPAN CLASS="keyword">for</SPAN>(s32 j=0; j&lt;RENDER_HEIGHT; j++)
+<SPAN CLASS="linenum">0413:</SPAN>         {
+<SPAN CLASS="linenum">0414:</SPAN>             no = 4*RENDER_WIDTH*(RENDER_HEIGHT-j-1);
+<SPAN CLASS="linenum">0415:</SPAN>             <SPAN CLASS="keyword">for</SPAN>(s32 i=0; i&lt;RENDER_WIDTH ; i++)
+<SPAN CLASS="linenum">0416:</SPAN>             {
+<SPAN CLASS="linenum">0417:</SPAN>                 pImage[k+0] = s_data [no+2];
+<SPAN CLASS="linenum">0418:</SPAN>                 pImage[k+1] = s_data [no+1];
+<SPAN CLASS="linenum">0419:</SPAN>                 pImage[k+2] = s_data [no+0];
+<SPAN CLASS="linenum">0420:</SPAN>                 no += 4;
+<SPAN CLASS="linenum">0421:</SPAN>                 k += 3;
+<SPAN CLASS="linenum">0422:</SPAN>             }
+<SPAN CLASS="linenum">0423:</SPAN>         }
+<SPAN CLASS="linenum">0424:</SPAN> 
+<SPAN CLASS="linenum">0425:</SPAN>         <SPAN CLASS="comment">// ビットマップに必要な情報を格納する</SPAN>
+<SPAN CLASS="linenum">0426:</SPAN>         SAVE_BITMAP tBitmap_Info;
+<SPAN CLASS="linenum">0427:</SPAN>         tBitmap_Info.pFileName = buf;
+<SPAN CLASS="linenum">0428:</SPAN>         tBitmap_Info.iWidth  = RENDER_WIDTH;
+<SPAN CLASS="linenum">0429:</SPAN>         tBitmap_Info.iHeight = RENDER_HEIGHT;
+<SPAN CLASS="linenum">0430:</SPAN>         tBitmap_Info.iBitCount = 24;
+<SPAN CLASS="linenum">0431:</SPAN>         tBitmap_Info.pData = (BYTE*)pImage;
+<SPAN CLASS="linenum">0432:</SPAN> 
+<SPAN CLASS="linenum">0433:</SPAN>         SaveBitMap( tBitmap_Info );
+<SPAN CLASS="linenum">0434:</SPAN> 
+<SPAN CLASS="linenum">0435:</SPAN>         <SPAN CLASS="keyword">delete</SPAN>[] pImage;
+<SPAN CLASS="linenum">0436:</SPAN> 
+<SPAN CLASS="linenum">0437:</SPAN>         save_bit++;
+<SPAN CLASS="linenum">0438:</SPAN>     }
+<SPAN CLASS="linenum">0439:</SPAN> 
+<SPAN CLASS="linenum">0440:</SPAN>     <SPAN CLASS="keyword">return</SPAN> 0;
+<SPAN CLASS="linenum">0441:</SPAN> }
+<SPAN CLASS="linenum">0442:</SPAN> 
+<SPAN CLASS="linenum">0443:</SPAN> <SPAN CLASS="comment">// ---------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0444:</SPAN> <SPAN CLASS="keyword">#define</SPAN> GETCOLOR_FLAG_DISABLE_EMMISIVE (1&lt;&lt;0)
+<SPAN CLASS="linenum">0445:</SPAN> 
+<SPAN CLASS="linenum">0446:</SPAN> <SPAN CLASS="keyword">bool</SPAN> GetColor( D3DXVECTOR3 *dest, <SPAN CLASS="keyword">const</SPAN> D3DXVECTOR4 *x, <SPAN CLASS="keyword">const</SPAN> D3DXVECTOR4 *v, <SPAN CLASS="keyword">int</SPAN> depth, u32 flag )
+<SPAN CLASS="linenum">0447:</SPAN> {
+<SPAN CLASS="linenum">0448:</SPAN>     D3DXVECTOR3 diffuse_color=D3DXVECTOR3(0,0,0);
+<SPAN CLASS="linenum">0449:</SPAN> 
+<SPAN CLASS="linenum">0450:</SPAN>     <SPAN CLASS="comment">// -----------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0451:</SPAN>     <SPAN CLASS="comment">// 初期化：光が屈折、反射しかしないで延々と跳ね返ったときは、光が届かない黒色</SPAN>
+<SPAN CLASS="linenum">0452:</SPAN>     <SPAN CLASS="comment">// -----------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0453:</SPAN>     <SPAN CLASS="keyword">if</SPAN>(0==depth) *dest = D3DXVECTOR3(0,0,0);
+<SPAN CLASS="linenum">0454:</SPAN> 
+<SPAN CLASS="linenum">0455:</SPAN>     <SPAN CLASS="comment">// -----------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0456:</SPAN>     <SPAN CLASS="comment">// 再帰しすぎた場合は光が届いていないものと考える</SPAN>
+<SPAN CLASS="linenum">0457:</SPAN>     <SPAN CLASS="comment">// -----------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0458:</SPAN>     <SPAN CLASS="keyword">const</SPAN> <SPAN CLASS="keyword">int</SPAN> DEPTH_MAX = 3;
+<SPAN CLASS="linenum">0459:</SPAN>     <SPAN CLASS="keyword">if</SPAN>(DEPTH_MAX &lt;= depth) { *dest=D3DXVECTOR3(0,0,0); <SPAN CLASS="keyword">return</SPAN> FALSE;}
+<SPAN CLASS="linenum">0460:</SPAN> 
+<SPAN CLASS="linenum">0461:</SPAN>     <SPAN CLASS="comment">// -----------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0462:</SPAN>     <SPAN CLASS="comment">// 視線から交点を求める</SPAN>
+<SPAN CLASS="linenum">0463:</SPAN>     <SPAN CLASS="comment">// -----------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0464:</SPAN>     <SPAN CLASS="keyword">float</SPAN> t = CPrimitive::INFINTY_DIST;
+<SPAN CLASS="linenum">0465:</SPAN>     CPrimitive *pObj = NULL;
+<SPAN CLASS="linenum">0466:</SPAN>     D3DXVECTOR4 p, n;<SPAN CLASS="comment">// 交点の位置と法線</SPAN>
+<SPAN CLASS="linenum">0467:</SPAN> 
+<SPAN CLASS="linenum">0468:</SPAN>     t = pShpereS   -&gt;IsAcross(t, &amp;n, &amp;p, &amp;pObj, x, v);
+<SPAN CLASS="linenum">0469:</SPAN>     t = pShpereT   -&gt;IsAcross(t, &amp;n, &amp;p, &amp;pObj, x, v);
+<SPAN CLASS="linenum">0470:</SPAN>     t = pRoom      -&gt;IsAcross(t, &amp;n, &amp;p, &amp;pObj, x, v);
+<SPAN CLASS="linenum">0471:</SPAN> <SPAN CLASS="comment">//  t = pBlockSmall-&gt;IsAcross(t, &amp;n, &amp;p, &amp;pObj, x, v);</SPAN>
+<SPAN CLASS="linenum">0472:</SPAN>     t = pBlockTall -&gt;IsAcross(t, &amp;n, &amp;p, &amp;pObj, x, v);
+<SPAN CLASS="linenum">0473:</SPAN> 
+<SPAN CLASS="linenum">0474:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( NULL == pObj ){
+<SPAN CLASS="linenum">0475:</SPAN>         <SPAN CLASS="comment">// 視線はオブジェクトから外れた！</SPAN>
+<SPAN CLASS="linenum">0476:</SPAN>         *dest = BG_COLOR;
+<SPAN CLASS="linenum">0477:</SPAN>         <SPAN CLASS="keyword">return</SPAN> TRUE;
+<SPAN CLASS="linenum">0478:</SPAN>     }
+<SPAN CLASS="linenum">0479:</SPAN> 
+<SPAN CLASS="linenum">0480:</SPAN>     <SPAN CLASS="comment">// -----------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0481:</SPAN>     <SPAN CLASS="comment">// 反射方向をロシアンルーレットで決める</SPAN>
+<SPAN CLASS="linenum">0482:</SPAN>     <SPAN CLASS="comment">// -----------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0483:</SPAN>     <SPAN CLASS="keyword">float</SPAN> cd = pObj-&gt;m_material.diffuse;    <SPAN CLASS="comment">// 拡散率</SPAN>
+<SPAN CLASS="linenum">0484:</SPAN>     <SPAN CLASS="keyword">float</SPAN> cr = pObj-&gt;m_material.reflection; <SPAN CLASS="comment">// 反射率</SPAN>
+<SPAN CLASS="linenum">0485:</SPAN>     <SPAN CLASS="keyword">float</SPAN> cn = pObj-&gt;m_material.refraction; <SPAN CLASS="comment">// 屈折率</SPAN>
+<SPAN CLASS="linenum">0486:</SPAN>     <SPAN CLASS="keyword">float</SPAN> ce = pObj-&gt;m_material.emmisive;   <SPAN CLASS="comment">// 放射率</SPAN>
+<SPAN CLASS="linenum">0487:</SPAN>     <SPAN CLASS="keyword">float</SPAN> total = cd+cr+cn+ce;
+<SPAN CLASS="linenum">0488:</SPAN>     <SPAN CLASS="keyword">float</SPAN> prob = total * (<SPAN CLASS="keyword">float</SPAN>)frand();
+<SPAN CLASS="linenum">0489:</SPAN> 
+<SPAN CLASS="linenum">0490:</SPAN>     <SPAN CLASS="keyword">int</SPAN> type = 0;<SPAN CLASS="comment">// 拡散</SPAN>
+<SPAN CLASS="linenum">0491:</SPAN>     <SPAN CLASS="keyword">if</SPAN>(prob &lt; cr      ) type = 1; <SPAN CLASS="keyword">else</SPAN><SPAN CLASS="comment">// 反射</SPAN>
+<SPAN CLASS="linenum">0492:</SPAN>     <SPAN CLASS="keyword">if</SPAN>(prob &lt; cr+cn   ) type = 2; <SPAN CLASS="keyword">else</SPAN><SPAN CLASS="comment">// 屈折</SPAN>
+<SPAN CLASS="linenum">0493:</SPAN>     <SPAN CLASS="keyword">if</SPAN>(prob &lt; cr+cn+ce) type = 3;     <SPAN CLASS="comment">// 放射</SPAN>
+<SPAN CLASS="linenum">0494:</SPAN> 
+<SPAN CLASS="linenum">0495:</SPAN>     <SPAN CLASS="comment">// -----------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0496:</SPAN>     <SPAN CLASS="comment">// 交点が、影に隠れているかどうか調べて、拡散光を算出する</SPAN>
+<SPAN CLASS="linenum">0497:</SPAN>     <SPAN CLASS="comment">// -----------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0498:</SPAN>     <SPAN CLASS="keyword">if</SPAN>(0==type)
+<SPAN CLASS="linenum">0499:</SPAN>     {
+<SPAN CLASS="linenum">0500:</SPAN>         <SPAN CLASS="keyword">if</SPAN>(++depth&lt;DEPTH_MAX)
+<SPAN CLASS="linenum">0501:</SPAN>         {
+<SPAN CLASS="linenum">0502:</SPAN>             D3DXVECTOR4 dir, pos;
+<SPAN CLASS="linenum">0503:</SPAN> 
+<SPAN CLASS="linenum">0504:</SPAN>             <SPAN CLASS="comment">// --- 光源の影響を考慮に入れる</SPAN>
+<SPAN CLASS="linenum">0505:</SPAN>             D3DXVECTOR4 lp;
+<SPAN CLASS="linenum">0506:</SPAN>             D3DXVECTOR3 ln;
+<SPAN CLASS="linenum">0507:</SPAN>             <SPAN CLASS="comment">// 光源から１点を選ぶ</SPAN>
+<SPAN CLASS="linenum">0508:</SPAN>             LIGHT_DATA *pData = choiceEmmisivePoint( &amp;lp, &amp;ln );
+<SPAN CLASS="linenum">0509:</SPAN>             D3DXVECTOR4 vr = lp-p; vr.w = 0;
+<SPAN CLASS="linenum">0510:</SPAN>             <SPAN CLASS="keyword">float</SPAN> d2 = D3DXVec3Dot((D3DXVECTOR3 *)&amp;vr,(D3DXVECTOR3 *)&amp;vr); <SPAN CLASS="comment">// 反射点から光源までの距離の２乗</SPAN>
+<SPAN CLASS="linenum">0511:</SPAN>             D3DXVec4Normalize(&amp;vr, &amp;vr);     <SPAN CLASS="comment">// 反射点から光源を見る方向</SPAN>
+<SPAN CLASS="linenum">0512:</SPAN> 
+<SPAN CLASS="linenum">0513:</SPAN>             <SPAN CLASS="comment">// その点が見えるかどうか調べる</SPAN>
+<SPAN CLASS="linenum">0514:</SPAN>             CPrimitive *pTObj = NULL;
+<SPAN CLASS="linenum">0515:</SPAN>             D3DXVECTOR4 tp, tn;<SPAN CLASS="comment">// 交点の位置と法線</SPAN>
+<SPAN CLASS="linenum">0516:</SPAN>             <SPAN CLASS="keyword">float</SPAN> tt = CPrimitive::INFINTY_DIST;
+<SPAN CLASS="linenum">0517:</SPAN>             pos = p + 0.01f*(vr);
+<SPAN CLASS="linenum">0518:</SPAN>             tt = pShpereS   -&gt;IsAcross( tt, &amp;tn, &amp;tp, &amp;pTObj, &amp;pos, &amp;vr );
+<SPAN CLASS="linenum">0519:</SPAN>             tt = pShpereT   -&gt;IsAcross( tt, &amp;tn, &amp;tp, &amp;pTObj, &amp;pos, &amp;vr );
+<SPAN CLASS="linenum">0520:</SPAN>             tt = pRoom      -&gt;IsAcross( tt, &amp;tn, &amp;tp, &amp;pTObj, &amp;pos, &amp;vr );
+<SPAN CLASS="linenum">0521:</SPAN> <SPAN CLASS="comment">//          tt = pBlockSmall-&gt;IsAcross( tt, &amp;tn, &amp;tp, &amp;pTObj, &amp;pos, &amp;vr );</SPAN>
+<SPAN CLASS="linenum">0522:</SPAN>             tt = pBlockTall -&gt;IsAcross( tt, &amp;tn, &amp;tp, &amp;pTObj, &amp;pos, &amp;vr );
+<SPAN CLASS="linenum">0523:</SPAN>             
+<SPAN CLASS="linenum">0524:</SPAN>             <SPAN CLASS="keyword">if</SPAN>( pTObj &amp;&amp; 1.0f == pTObj-&gt;m_material.emmisive )
+<SPAN CLASS="linenum">0525:</SPAN>             {
+<SPAN CLASS="linenum">0526:</SPAN>                 <SPAN CLASS="comment">// 直接光と間接光の強さの割合を見える面積で求める</SPAN>
+<SPAN CLASS="linenum">0527:</SPAN>                 <SPAN CLASS="keyword">float</SPAN> prob;
+<SPAN CLASS="linenum">0528:</SPAN>                 prob = -g_fTotalArea * D3DXVec3Dot((D3DXVECTOR3 *)&amp;vr, (D3DXVECTOR3 *)&amp;ln)/d2;
+<SPAN CLASS="linenum">0529:</SPAN>                 prob /= 2.0f*D3DX_PI;<SPAN CLASS="comment">// 光源が半球を囲んだときの立体角は2πsr</SPAN>
+<SPAN CLASS="linenum">0530:</SPAN>                 <SPAN CLASS="keyword">if</SPAN>(prob&lt;0)prob=0;
+<SPAN CLASS="linenum">0531:</SPAN>                 <SPAN CLASS="keyword">if</SPAN>(1&lt;prob)prob=1;
+<SPAN CLASS="linenum">0532:</SPAN> 
+<SPAN CLASS="linenum">0533:</SPAN>                 <SPAN CLASS="keyword">float</SPAN> rn = D3DXVec3Dot((D3DXVECTOR3 *)&amp;vr, (D3DXVECTOR3 *)&amp;n);
+<SPAN CLASS="linenum">0534:</SPAN>                 rn = max( 0, rn );
+<SPAN CLASS="linenum">0535:</SPAN>                 diffuse_color.x = prob * pTObj-&gt;m_material.COLOR_DIF[0] * rn;
+<SPAN CLASS="linenum">0536:</SPAN>                 diffuse_color.y = prob * pTObj-&gt;m_material.COLOR_DIF[1] * rn;
+<SPAN CLASS="linenum">0537:</SPAN>                 diffuse_color.z = prob * pTObj-&gt;m_material.COLOR_DIF[2] * rn;
+<SPAN CLASS="linenum">0538:</SPAN>             }
+<SPAN CLASS="linenum">0539:</SPAN>             
+<SPAN CLASS="linenum">0540:</SPAN>             <SPAN CLASS="comment">// --- ロシアンルーレットで別のレイも飛ばす</SPAN>
+<SPAN CLASS="linenum">0541:</SPAN>             
+<SPAN CLASS="linenum">0542:</SPAN>             <SPAN CLASS="comment">// 等方的にレイを飛ばす</SPAN>
+<SPAN CLASS="linenum">0543:</SPAN>             <SPAN CLASS="keyword">float</SPAN> theta =      D3DX_PI * (<SPAN CLASS="keyword">float</SPAN>)frand();
+<SPAN CLASS="linenum">0544:</SPAN>             <SPAN CLASS="keyword">float</SPAN> phi   = 2.0f*D3DX_PI * (<SPAN CLASS="keyword">float</SPAN>)frand();
+<SPAN CLASS="linenum">0545:</SPAN>             dir.x = sinf(theta) * cosf(phi);
+<SPAN CLASS="linenum">0546:</SPAN>             dir.y = sinf(theta) * sinf(phi);
+<SPAN CLASS="linenum">0547:</SPAN>             dir.z = cosf(theta);
+<SPAN CLASS="linenum">0548:</SPAN>             <SPAN CLASS="keyword">float</SPAN> dn = D3DXVec3Dot((D3DXVECTOR3 *)&amp;dir, (D3DXVECTOR3 *)&amp;n);
+<SPAN CLASS="linenum">0549:</SPAN>             <SPAN CLASS="keyword">if</SPAN>(dn&lt;0){
+<SPAN CLASS="linenum">0550:</SPAN>                 <SPAN CLASS="comment">// 法線と反対向きに飛ぶつもりなら、方向を反対にする</SPAN>
+<SPAN CLASS="linenum">0551:</SPAN>                 dn = -dn;
+<SPAN CLASS="linenum">0552:</SPAN>                 dir.x *= -1;
+<SPAN CLASS="linenum">0553:</SPAN>                 dir.y *= -1;
+<SPAN CLASS="linenum">0554:</SPAN>                 dir.z *= -1;
+<SPAN CLASS="linenum">0555:</SPAN>             }
+<SPAN CLASS="linenum">0556:</SPAN> 
+<SPAN CLASS="linenum">0557:</SPAN>             D3DXVECTOR3 c;
+<SPAN CLASS="linenum">0558:</SPAN>             pos = p + 0.01f*(dir);
+<SPAN CLASS="linenum">0559:</SPAN>             GetColor( &amp;c, &amp;pos, &amp;dir, depth, GETCOLOR_FLAG_DISABLE_EMMISIVE );
+<SPAN CLASS="linenum">0560:</SPAN>             <SPAN CLASS="comment">// プリミティブの色や拡散光の余弦側を適用</SPAN>
+<SPAN CLASS="linenum">0561:</SPAN>             diffuse_color.x += c.x * dn;
+<SPAN CLASS="linenum">0562:</SPAN>             diffuse_color.y += c.y * dn;
+<SPAN CLASS="linenum">0563:</SPAN>             diffuse_color.z += c.z * dn;
+<SPAN CLASS="linenum">0564:</SPAN> 
+<SPAN CLASS="linenum">0565:</SPAN>             diffuse_color.x *= pObj-&gt;m_material.COLOR_DIF[0] * 0.5f*D3DX_PI;
+<SPAN CLASS="linenum">0566:</SPAN>             diffuse_color.y *= pObj-&gt;m_material.COLOR_DIF[1] * 0.5f*D3DX_PI;
+<SPAN CLASS="linenum">0567:</SPAN>             diffuse_color.z *= pObj-&gt;m_material.COLOR_DIF[2] * 0.5f*D3DX_PI;
+<SPAN CLASS="linenum">0568:</SPAN>         }
+<SPAN CLASS="linenum">0569:</SPAN>     }
+<SPAN CLASS="linenum">0570:</SPAN> 
+<SPAN CLASS="linenum">0571:</SPAN>     <SPAN CLASS="comment">// -----------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0572:</SPAN>     <SPAN CLASS="comment">// 再帰的に光線を飛ばして、より高次の反射を考慮に入れる</SPAN>
+<SPAN CLASS="linenum">0573:</SPAN>     <SPAN CLASS="comment">// -----------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0574:</SPAN>     <SPAN CLASS="comment">// 反射</SPAN>
+<SPAN CLASS="linenum">0575:</SPAN>     D3DXVECTOR3 reflect_color=D3DXVECTOR3(0,0,0);
+<SPAN CLASS="linenum">0576:</SPAN>     <SPAN CLASS="keyword">if</SPAN>(1==type){
+<SPAN CLASS="linenum">0577:</SPAN>         <SPAN CLASS="comment">// 反射ベクトル</SPAN>
+<SPAN CLASS="linenum">0578:</SPAN>         D3DXVECTOR4 r = *v - 2.0f*D3DXVec3Dot((D3DXVECTOR3 *)&amp;n, (D3DXVECTOR3 *)v) * n;
+<SPAN CLASS="linenum">0579:</SPAN>         D3DXVECTOR4 pos = p + 0.01f*n;<SPAN CLASS="comment">// ちょっと浮かす</SPAN>
+<SPAN CLASS="linenum">0580:</SPAN>         <SPAN CLASS="keyword">if</SPAN>(!GetColor( &amp;reflect_color, &amp;pos, &amp;r, depth,0)){
+<SPAN CLASS="linenum">0581:</SPAN>             cr = 0;<SPAN CLASS="comment">// 結局、光が届かなかった</SPAN>
+<SPAN CLASS="linenum">0582:</SPAN>         }
+<SPAN CLASS="linenum">0583:</SPAN>     }
+<SPAN CLASS="linenum">0584:</SPAN> 
+<SPAN CLASS="linenum">0585:</SPAN>     <SPAN CLASS="comment">// -----------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0586:</SPAN>     <SPAN CLASS="comment">// 屈折</SPAN>
+<SPAN CLASS="linenum">0587:</SPAN>     <SPAN CLASS="comment">// -----------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0588:</SPAN>     D3DXVECTOR3 refract_color=D3DXVECTOR3(0,0,0);
+<SPAN CLASS="linenum">0589:</SPAN>     <SPAN CLASS="keyword">if</SPAN>(2==type){
+<SPAN CLASS="linenum">0590:</SPAN>         <SPAN CLASS="comment">// 屈折ベクトル</SPAN>
+<SPAN CLASS="linenum">0591:</SPAN>         D3DXVECTOR4 t, pos;
+<SPAN CLASS="linenum">0592:</SPAN>         <SPAN CLASS="keyword">float</SPAN> VN = D3DXVec3Dot((D3DXVECTOR3 *)v, (D3DXVECTOR3 *)&amp;n);
+<SPAN CLASS="linenum">0593:</SPAN>         <SPAN CLASS="keyword">float</SPAN> eta = 1.5f;
+<SPAN CLASS="linenum">0594:</SPAN>         <SPAN CLASS="keyword">if</SPAN>(VN&lt;0){
+<SPAN CLASS="linenum">0595:</SPAN>             <SPAN CLASS="comment">// 入射</SPAN>
+<SPAN CLASS="linenum">0596:</SPAN>             <SPAN CLASS="keyword">float</SPAN> D = 1-(1+VN)*(1+VN)/(eta*eta);
+<SPAN CLASS="linenum">0597:</SPAN>             <SPAN CLASS="keyword">if</SPAN>(D&lt;0){cn=0;<SPAN CLASS="keyword">goto</SPAN> no_refract;}<SPAN CLASS="comment">// 全反射</SPAN>
+<SPAN CLASS="linenum">0598:</SPAN>             t = (-VN/eta-sqrtf(D))*n+(1/eta)*(*v);
+<SPAN CLASS="linenum">0599:</SPAN>             pos = p - 0.01f*n;<SPAN CLASS="comment">// ちょっと浮かす</SPAN>
+<SPAN CLASS="linenum">0600:</SPAN>         }<SPAN CLASS="keyword">else</SPAN>{
+<SPAN CLASS="linenum">0601:</SPAN>             <SPAN CLASS="comment">// 出て行く</SPAN>
+<SPAN CLASS="linenum">0602:</SPAN>             <SPAN CLASS="keyword">float</SPAN> D = 1-(1-VN)*(1-VN)*(eta*eta);
+<SPAN CLASS="linenum">0603:</SPAN>             <SPAN CLASS="keyword">if</SPAN>(D&lt;0){cn=0;<SPAN CLASS="keyword">goto</SPAN> no_refract;}<SPAN CLASS="comment">// 全反射</SPAN>
+<SPAN CLASS="linenum">0604:</SPAN>             t = -(VN*eta-sqrtf(D))*n+eta*(*v);
+<SPAN CLASS="linenum">0605:</SPAN>             pos = p + 0.01f*n;<SPAN CLASS="comment">// ちょっと浮かす</SPAN>
+<SPAN CLASS="linenum">0606:</SPAN>         }
+<SPAN CLASS="linenum">0607:</SPAN>         D3DXVec3Normalize( (D3DXVECTOR3 *)&amp;t, (D3DXVECTOR3 *)&amp;t );
+<SPAN CLASS="linenum">0608:</SPAN>         <SPAN CLASS="keyword">if</SPAN>(!GetColor( &amp;refract_color, &amp;pos, &amp;t, depth,0)){
+<SPAN CLASS="linenum">0609:</SPAN>             cn = 0;<SPAN CLASS="comment">// 結局、光が届かなかった</SPAN>
+<SPAN CLASS="linenum">0610:</SPAN>         }
+<SPAN CLASS="linenum">0611:</SPAN>     }
+<SPAN CLASS="linenum">0612:</SPAN> no_refract:
+<SPAN CLASS="linenum">0613:</SPAN> 
+<SPAN CLASS="linenum">0614:</SPAN>     <SPAN CLASS="comment">// -----------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0615:</SPAN>     <SPAN CLASS="comment">// 放射</SPAN>
+<SPAN CLASS="linenum">0616:</SPAN>     <SPAN CLASS="comment">// -----------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0617:</SPAN>     D3DXVECTOR3 emmisive_color;
+<SPAN CLASS="linenum">0618:</SPAN>     <SPAN CLASS="keyword">if</SPAN>(flag &amp; GETCOLOR_FLAG_DISABLE_EMMISIVE)
+<SPAN CLASS="linenum">0619:</SPAN>     {
+<SPAN CLASS="linenum">0620:</SPAN>         emmisive_color = D3DXVECTOR3(0,0,0);
+<SPAN CLASS="linenum">0621:</SPAN>     }<SPAN CLASS="keyword">else</SPAN>{
+<SPAN CLASS="linenum">0622:</SPAN>         emmisive_color = *(D3DXVECTOR3*)&amp;pObj-&gt;m_material.COLOR_DIF;
+<SPAN CLASS="linenum">0623:</SPAN>     }
+<SPAN CLASS="linenum">0624:</SPAN> 
+<SPAN CLASS="linenum">0625:</SPAN>     <SPAN CLASS="comment">// -----------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0626:</SPAN>     <SPAN CLASS="comment">// 色を出力する</SPAN>
+<SPAN CLASS="linenum">0627:</SPAN>     <SPAN CLASS="comment">// -----------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0628:</SPAN>     <SPAN CLASS="keyword">switch</SPAN>(type){
+<SPAN CLASS="linenum">0629:</SPAN>     <SPAN CLASS="keyword">case</SPAN> 0:<SPAN CLASS="comment">// 拡散</SPAN>
+<SPAN CLASS="linenum">0630:</SPAN>         *dest = (cd+cr+cn) * diffuse_color;
+<SPAN CLASS="linenum">0631:</SPAN>         <SPAN CLASS="keyword">break</SPAN>;
+<SPAN CLASS="linenum">0632:</SPAN>     <SPAN CLASS="keyword">case</SPAN> 1:<SPAN CLASS="comment">// 反射</SPAN>
+<SPAN CLASS="linenum">0633:</SPAN>         *dest = (cd+cr+cn) * reflect_color;     
+<SPAN CLASS="linenum">0634:</SPAN>         <SPAN CLASS="keyword">break</SPAN>;
+<SPAN CLASS="linenum">0635:</SPAN>     <SPAN CLASS="keyword">case</SPAN> 2:<SPAN CLASS="comment">// 屈折</SPAN>
+<SPAN CLASS="linenum">0636:</SPAN>         *dest = (cd+cr+cn) * refract_color;
+<SPAN CLASS="linenum">0637:</SPAN>         <SPAN CLASS="keyword">break</SPAN>;
+<SPAN CLASS="linenum">0638:</SPAN>     <SPAN CLASS="keyword">case</SPAN> 3:<SPAN CLASS="comment">// 放射</SPAN>
+<SPAN CLASS="linenum">0639:</SPAN>         *dest = ce * emmisive_color;
+<SPAN CLASS="linenum">0640:</SPAN>         <SPAN CLASS="keyword">break</SPAN>;
+<SPAN CLASS="linenum">0641:</SPAN>     }
+<SPAN CLASS="linenum">0642:</SPAN> 
+<SPAN CLASS="linenum">0643:</SPAN>     <SPAN CLASS="keyword">return</SPAN> TRUE;
+<SPAN CLASS="linenum">0644:</SPAN> }
+<SPAN CLASS="linenum">0645:</SPAN> <SPAN CLASS="comment">// ---------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0646:</SPAN> D3DXVECTOR3 *GetColor(D3DXVECTOR3 *dest, <SPAN CLASS="keyword">float</SPAN> x, <SPAN CLASS="keyword">float</SPAN> y)
+<SPAN CLASS="linenum">0647:</SPAN> {
+<SPAN CLASS="linenum">0648:</SPAN>     D3DXVECTOR4 ray_start;
+<SPAN CLASS="linenum">0649:</SPAN>     D3DXVECTOR4 ray_dir;
+<SPAN CLASS="linenum">0650:</SPAN>     
+<SPAN CLASS="linenum">0651:</SPAN>     ray_start.w = 1.0f;
+<SPAN CLASS="linenum">0652:</SPAN>     ray_dir.w   = 0.0f;
+<SPAN CLASS="linenum">0653:</SPAN> 
+<SPAN CLASS="linenum">0654:</SPAN>     camera.GetRay( (D3DXVECTOR3*)&amp;ray_start, (D3DXVECTOR3*)&amp;ray_dir, x, y);
+<SPAN CLASS="linenum">0655:</SPAN>     
+<SPAN CLASS="linenum">0656:</SPAN>     GetColor(dest, &amp;ray_start, &amp;ray_dir, 0,0);
+<SPAN CLASS="linenum">0657:</SPAN> 
+<SPAN CLASS="linenum">0658:</SPAN>     <SPAN CLASS="keyword">return</SPAN> dest;
+<SPAN CLASS="linenum">0659:</SPAN> }
+<SPAN CLASS="linenum">0660:</SPAN> 
+<SPAN CLASS="linenum">0661:</SPAN> };<SPAN CLASS="comment">// namespace Render</SPAN>
+<SPAN CLASS="linenum">0662:</SPAN> </PRE>
+</BODY>
+</HTML>

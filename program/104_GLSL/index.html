@@ -1,0 +1,654 @@
+<head>
+	<title>t-pot『OpenGL Shading Language』</title>
+	<link rel="stylesheet" type="text/css" href="../if.css">
+</head>
+<meta http-equiv=Content-Type content="text/html; charset=shift_jis">
+<body>
+
+
+<div class="contents">
+<center>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<h1>OpenGL Shading Language</h1><br>
+<h3>～ GLSL, slang ～</h3>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<image src = "title.png">
+<br>
+<hr>
+</center>
+<div>
+
+
+<h2>■はじめに</h2>
+
+
+<p>
+2003年12月9日付けで、3Dlabs 社が「<a href="http://www.3dlabs.com/support/developer/ogl2/downloads/index.htm">OpenGL Shading Language Software Development Kit Release: 6</a>」をリリースしました。また、ATI社のドライバも2003年11月20日のドライバから、OpenGL Shading Language に対応してきました。<br>
+遅ればせながら、OpenGL にもプログラマブルシェーダの時代が到来したと言ってよいでしょう（けっ、アセンブラなんか見たくないよ！）。<br>
+ちょっと触ってみました。
+</p>
+<p>
+で、いつものようにプログラムです。<br>
+GLSLを使って、Phongシェーディングをしてみました。
+</p>
+<ul style = "LIST-STYLE-TYPE:none">
+<li><a href="src.zip">src.zip (GLSL:OpenGL)</a>
+</ul>
+<p>
+
+</p>
+コンパイルするには、「<a href="http://www.3dlabs.com/support/developer/ogl2/downloads/index.htm">OpenGL Shading Language Software Development Kit Release: 6</a>」を解答して、gl3dlabs.hを適当なフォルダにおいてください。<br>
+実行には、ドライバがGLSLに対応している必要があります。
+<p>
+ソースには、いつものように適当にファイルが入っています。<br>
+今回はコンソールが表示されるGLUTなんか使わないで(2003 Dec. 14追加:nakagawaさんから、<a href="http://www.opengl.org/developers/documentation/glut/glut_faq.html#Q36">http://www.opengl.org/developers/documentation/glut/glut_faq.html#Q36</a>にコンソールを表示しなくする方法があると教えていただきました。)実装しています。
+また、DirectXのアプリケーションウィザードのように（をぱくって）、アプリケーションクラスを作って、DirectX と同じ感覚で開発ができるようにしました(まだまだ未完成です)。
+</p>
+<table>
+<tr><td><a href="main_h.html">main.h</a></td><td>アプリケーションのヘッダ</td></tr>
+<tr><td><a href="main_cpp.html">main.cpp</a></td><td>アプリケーションのソース</td></tr>
+<tr><td><a href="GLSL_vert.html">GLSL.vert</a></td><td>頂点プログラム</td></tr>
+<tr><td><a href="GLSL_frag.html">GLSL.frag</a></td><td>フラグメントプログラム</td></tr>
+<tr><td><a href="gl3dlabs_h.html">gl3dlabs.h</a></td><td>3Dlabs謹製OpenGL拡張プログラム用ヘッダ</td></tr>
+<tr><td><a href="GLApp_h.html">GLApp.h</a></td><td>基底アプリケーションクラス</td></tr>
+<tr><td><a href="GLApp_cpp.html">GLApp.cpp</a></td><td>基底アプリケーションクラス</td></tr>
+<tr><td><a href="GLSL_h.html">GLSL.h</a></td><td>GLSLのラッパー</td></tr>
+<tr><td><a href="GLSL_cpp.html">GLSL.cpp</a></td><td>GLSLのラッパー</td></tr>
+</table>
+
+
+<h2>■シェーダ言語</h2>
+
+
+<p>
+GLSL は、HLSL と似た言語です。C言語ライクな構文でシェーダプログラムを作成します。<br>
+シェーダプログラム内で用いる外部定数は、「uniform」変数として扱え、頂点プログラムからフラグメントプログラムへ渡すデータは、「varying」として取り扱います。<br>
+今回のプログラムでは、次のような感じです。
+</p>
+
+<pre class="CodeBlock">
+GLSL.vert
+<font color="deepskyblue">0007:</font> <font color="cyan">// -------------------------------------------------------------</font>
+<font color="deepskyblue">0008:</font> <font color="cyan">// グローバル変数</font>
+<font color="deepskyblue">0009:</font> <font color="cyan">// -------------------------------------------------------------</font>
+<font color="deepskyblue">0010:</font> uniform vec3 LightPos;
+<font color="deepskyblue">0011:</font> 
+<font color="deepskyblue">0012:</font> <font color="cyan">// -------------------------------------------------------------</font>
+<font color="deepskyblue">0013:</font> <font color="cyan">// 頂点プログラムからフラグメントプログラムに渡すデータ</font>
+<font color="deepskyblue">0014:</font> <font color="cyan">// -------------------------------------------------------------</font>
+<font color="deepskyblue">0015:</font> varying vec3 VERTEX_COLOR;  <font color="cyan">// 頂点色</font>
+<font color="deepskyblue">0016:</font> varying vec3 VERTEX_EYE;    <font color="cyan">// 視線ベクトル</font>
+<font color="deepskyblue">0017:</font> varying vec3 VERTEX_NORMAL; <font color="cyan">// 法線ベクトル</font>
+<font color="deepskyblue">0018:</font> varying vec3 VERTEX_LIGHT;  <font color="cyan">// ライトベクトル</font>
+</pre>
+<p>
+vec3 は、３次元のfloat型のベクトルです（float3の方が種類も判別できるからよかったのに、どうしてこんなものに…vec はvectorだろうけど、それは、その後に続く「3」とダブっているだろ）。
+</p>
+<p>
+なお、頂点データは「gl_Vertex」や「gl_Normal」のように、特別な名前がついた変数として扱います（これもグローバル変数みたいで気に入らないなぁ）。
+</p>
+<p>
+プログラムは、次のようになります。<br>
+gl_Positionへ頂点座標を出力すると共に、正規化されていない法線ベクトル、視線ベクトル、ライトベクトルと、頂点色をプラグメントプログラムに引き渡します。<br>
+HLSLと違って、明示的な型変換が必要らしく、そこらじゅうで「vec3」がでてきますが、これも「いい感じ」に処理してほしかったです。
+</p>
+
+<pre class="CodeBlock">
+GLSL.vert
+<font color="deepskyblue">0020:</font> <font color="cyan">// ------------------------------------------------------------</font>
+<font color="deepskyblue">0021:</font> <font color="cyan">// 頂点シェーダプログラム</font>
+<font color="deepskyblue">0022:</font> <font color="cyan">// ------------------------------------------------------------</font>
+<font color="deepskyblue">0023:</font> <font color="blue">void</font> main(<font color="blue">void</font>)
+<font color="deepskyblue">0024:</font> {
+<font color="deepskyblue">0025:</font>     <font color="cyan">// 座標変換</font>
+<font color="deepskyblue">0026:</font>     gl_Position = gl_ModelViewProjectionMatrix * gl_Vertex;
+<font color="deepskyblue">0027:</font>     
+<font color="deepskyblue">0028:</font>     <font color="cyan">// 色のための計算</font>
+<font color="deepskyblue">0029:</font>     vec4 pos    = gl_ModelViewMatrix * gl_Vertex;
+<font color="deepskyblue">0030:</font>     vec3 L      = LightPos - vec3(pos);
+<font color="deepskyblue">0031:</font>     vec3 N      = gl_NormalMatrix * gl_Normal;
+<font color="deepskyblue">0032:</font> 
+<font color="deepskyblue">0033:</font>     VERTEX_COLOR = vec3(gl_Color);
+<font color="deepskyblue">0034:</font>     VERTEX_NORMAL = N;
+<font color="deepskyblue">0035:</font>     VERTEX_LIGHT  = L;
+<font color="deepskyblue">0036:</font>     VERTEX_EYE    = vec3(pos);
+<font color="deepskyblue">0037:</font> }
+<font color="deepskyblue">0038:</font>
+</pre>
+
+<p>
+フラグメントプログラムでは、頂点プログラムから渡されたデータを正規化して、Phong鏡面反射係数を清算すると共に、ランバート拡散光の係数も計算して色出力「gl_FragColor」へします。<br>
+この辺は、HLSLと違和感は感じませんかねぇ。
+</p>
+<pre class="CodeBlock">
+GLSL.frag
+<font color="deepskyblue">0007:</font> <font color="cyan">// -------------------------------------------------------------</font>
+<font color="deepskyblue">0008:</font> <font color="cyan">// 頂点プログラムからフラグメントプログラムに渡すデータ</font>
+<font color="deepskyblue">0009:</font> <font color="cyan">// -------------------------------------------------------------</font>
+<font color="deepskyblue">0010:</font> varying vec3 VERTEX_COLOR;
+<font color="deepskyblue">0011:</font> varying vec3 VERTEX_EYE;
+<font color="deepskyblue">0012:</font> varying vec3 VERTEX_NORMAL;
+<font color="deepskyblue">0013:</font> varying vec3 VERTEX_LIGHT;
+<font color="deepskyblue">0014:</font> 
+<font color="deepskyblue">0015:</font> <font color="cyan">// ------------------------------------------------------------</font>
+<font color="deepskyblue">0016:</font> <font color="cyan">// フラグメントシェーダプログラム</font>
+<font color="deepskyblue">0017:</font> <font color="cyan">// ------------------------------------------------------------</font>
+<font color="deepskyblue">0018:</font> <font color="blue">void</font> main (<font color="blue">void</font>)
+<font color="deepskyblue">0019:</font> {
+<font color="deepskyblue">0020:</font>     vec3 N = normalize(VERTEX_NORMAL);  <font color="cyan">// 法線ベクトル</font>
+<font color="deepskyblue">0021:</font>     vec3 L = normalize(VERTEX_LIGHT);   <font color="cyan">// ライトベクトル</font>
+<font color="deepskyblue">0022:</font>     vec3 E = normalize(VERTEX_EYE);     <font color="cyan">// 視線ベクトル</font>
+<font color="deepskyblue">0023:</font>     vec3 R = reflect(L, N);             <font color="cyan">// 反射ベクトル</font>
+<font color="deepskyblue">0024:</font>     
+<font color="deepskyblue">0025:</font>     <font color="cyan">// Phong speqular</font>
+<font color="deepskyblue">0026:</font>     <font color="blue">float</font> spec = pow(max(dot(R, E), 0.0), 50.0);
+<font color="deepskyblue">0027:</font>     
+<font color="deepskyblue">0028:</font>     gl_FragColor = vec4 (VERTEX_COLOR, 1.0)         <font color="cyan">// 頂点色</font>
+<font color="deepskyblue">0029:</font>                          * vec4(max(dot(N,L), 0.0)) <font color="cyan">// Lambert 拡散強度</font>
+<font color="deepskyblue">0030:</font>                  + vec4 (0.8) * vec4 (spec);        <font color="cyan">// 鏡面反射色</font>
+<font color="deepskyblue">0031:</font> }
+<font color="deepskyblue">0032:</font>
+</PRE>
+
+
+<h2>■構成</h2>
+
+
+<p>
+GLSL を使うときの基本的な構成は、他のプログラムと同じです。初期化があり、いい感じに設定して描画して、最後に開放などの後片付けをします。
+</p>
+<pre class="CodeBlock">
+初期化
+　↓
+読み込み
+　↓
+シェーダの切り替え
+　↓
+定数の設定
+　↓
+描画
+　↓
+後片付け
+</pre>
+
+
+<h2>■初期化</h2>
+
+
+<p>
+今回は、初期化のためにラッパーのクラスを作り間した。<br>
+したがって、最初に使うときにこの関数を呼び出します。
+</p>
+<pre class="CodeBlock">
+main.cpp
+<font color="deepskyblue">0112:</font>     <font color="cyan">// GLSL の初期化</font>
+<font color="deepskyblue">0113:</font>     hr = GLSL::Init();
+<font color="deepskyblue">0114:</font>     <font color="blue">if</font> (FAILED(hr)) {
+<font color="deepskyblue">0115:</font>         MessageBox( NULL, "<font color="blue">Faild to initialize the shader system.</font>", "<font color="blue">ERROR</font>", MB_OK);
+<font color="deepskyblue">0116:</font>         <font color="blue">return</font> FALSE;
+<font color="deepskyblue">0117:</font>     }
+</pre>
+
+<p>
+初期化の段階では、「wglGetProcAddress」関数を使って、使用する関数を宣言します。<br>
+そのためのマクロを作りました（GLSLのサンプルにあったものですが…）。
+</p>
+<pre class="CodeBlock">
+glsl.cpp
+<font color="deepskyblue">0061:</font> <font color="blue">#define</font> PADDR(functype,funcname) \
+<font color="deepskyblue">0062:</font>     ((funcname = (functype) wglGetProcAddress( #funcname )) == NULL)
+</pre>
+<p>
+このマクロによって、funcname という名前の関数が使えるのか調べて、使えるのならその関数へのポインタを調べて、定義した関数のポインタへ関数のポインタを保存します（つまり、このマクロは、使えるのか調べる関数ではなくて、関数のポインタを所得する関数です）。
+</p>
+<p>
+今回用意する関数は、次のものです（使う使わないにかかわらず、使いそうなものをリストアップしています）。
+</p>
+
+<pre class="CodeBlock">
+glsl.cpp
+<font color="deepskyblue">0016:</font> <font color="cyan">//-----------------------------------------------------------------------------</font>
+<font color="deepskyblue">0017:</font> <font color="cyan">//</font>
+<font color="deepskyblue">0018:</font> <font color="cyan">// OpenGL Shading Language 関数</font>
+<font color="deepskyblue">0019:</font> <font color="cyan">//</font>
+<font color="deepskyblue">0020:</font> <font color="cyan">//-----------------------------------------------------------------------------</font>
+<font color="deepskyblue">0021:</font> PFNGLCREATEPROGRAMOBJECTARBPROC glCreateProgramObjectARB;
+<font color="deepskyblue">0022:</font> PFNGLCREATESHADEROBJECTARBPROC glCreateShaderObjectARB;
+<font color="deepskyblue">0023:</font> PFNGLDELETEOBJECTARBPROC glDeleteObjectARB;
+<font color="deepskyblue">0024:</font> PFNGLDETACHOBJECTARBPROC glDetachObjectARB;
+<font color="deepskyblue">0025:</font> PFNGLATTACHOBJECTARBPROC glAttachObjectARB;
+<font color="deepskyblue">0026:</font> 
+<font color="deepskyblue">0027:</font> PFNGLSHADERSOURCEARBPROC glShaderSourceARB;
+<font color="deepskyblue">0028:</font> PFNGLCOMPILESHADERARBPROC glCompileShaderARB;
+<font color="deepskyblue">0029:</font> PFNGLLINKPROGRAMARBPROC glLinkProgramARB;
+<font color="deepskyblue">0030:</font> PFNGLGETINFOLOGARBPROC glGetInfoLogARB;
+<font color="deepskyblue">0031:</font> PFNGLUSEPROGRAMOBJECTARBPROC glUseProgramObjectARB;
+<font color="deepskyblue">0032:</font> 
+<font color="deepskyblue">0033:</font> PFNGLGETOBJECTPARAMETERIVARBPROC glGetObjectParameterivARB;
+<font color="deepskyblue">0034:</font> PFNGLGETOBJECTPARAMETERFVARBPROC glGetObjectParameterfvARB;
+<font color="deepskyblue">0035:</font> PFNGLGETUNIFORMLOCATIONARBPROC glGetUniformLocationARB;
+<font color="deepskyblue">0036:</font> 
+<font color="deepskyblue">0037:</font> PFNGLUNIFORM1FARBPROC glUniform1fARB;
+<font color="deepskyblue">0038:</font> PFNGLUNIFORM2FARBPROC glUniform2fARB;
+<font color="deepskyblue">0039:</font> PFNGLUNIFORM3FARBPROC glUniform3fARB;
+<font color="deepskyblue">0040:</font> PFNGLUNIFORM4FARBPROC glUniform4fARB;
+<font color="deepskyblue">0041:</font> 
+<font color="deepskyblue">0042:</font> PFNGLUNIFORM1IARBPROC glUniform1iARB;
+<font color="deepskyblue">0043:</font> PFNGLUNIFORM2IARBPROC glUniform2iARB;
+<font color="deepskyblue">0044:</font> PFNGLUNIFORM3IARBPROC glUniform3iARB;
+<font color="deepskyblue">0045:</font> PFNGLUNIFORM4IARBPROC glUniform4iARB;
+<font color="deepskyblue">0046:</font> 
+<font color="deepskyblue">0047:</font> PFNGLUNIFORM1FVARBPROC glUniform1fvARB;
+<font color="deepskyblue">0048:</font> PFNGLUNIFORM2FVARBPROC glUniform2fvARB;
+<font color="deepskyblue">0049:</font> PFNGLUNIFORM3FVARBPROC glUniform3fvARB;
+<font color="deepskyblue">0050:</font> PFNGLUNIFORM4FVARBPROC glUniform4fvARB;
+<font color="deepskyblue">0051:</font> 
+<font color="deepskyblue">0052:</font> PFNGLUNIFORM1IVARBPROC glUniform1ivARB;
+<font color="deepskyblue">0053:</font> PFNGLUNIFORM2IVARBPROC glUniform2ivARB;
+<font color="deepskyblue">0054:</font> PFNGLUNIFORM3IVARBPROC glUniform3ivARB;
+<font color="deepskyblue">0055:</font> PFNGLUNIFORM4IVARBPROC glUniform4ivARB;
+</pre>
+<p>
+初期化関数では、これらのマクロと変数を次のように扱います。
+</p>
+<pre class="CodeBlock">
+glsl.cpp
+<font color="deepskyblue">0068:</font> HRESULT GLSL::Init( )
+<font color="deepskyblue">0069:</font> {
+<font color="deepskyblue">0070:</font>     <font color="blue">int</font> error;
+<font color="deepskyblue">0071:</font> 
+<font color="deepskyblue">0072:</font>     error |= PADDR(PFNGLCREATEPROGRAMOBJECTARBPROC, glCreateProgramObjectARB);
+<font color="deepskyblue">0073:</font>     error |= PADDR(PFNGLCREATESHADEROBJECTARBPROC, glCreateShaderObjectARB);
+<font color="deepskyblue">0074:</font>     error |= PADDR(PFNGLDELETEOBJECTARBPROC, glDeleteObjectARB);
+<font color="deepskyblue">0075:</font>     error |= PADDR(PFNGLDETACHOBJECTARBPROC, glDetachObjectARB);
+<font color="deepskyblue">0076:</font>     error |= PADDR(PFNGLATTACHOBJECTARBPROC, glAttachObjectARB);
+<font color="deepskyblue">0077:</font>     error |= PADDR(PFNGLSHADERSOURCEARBPROC, glShaderSourceARB);
+<font color="deepskyblue">0078:</font>     error |= PADDR(PFNGLCOMPILESHADERARBPROC, glCompileShaderARB);
+<font color="deepskyblue">0079:</font>     error |= PADDR(PFNGLLINKPROGRAMARBPROC, glLinkProgramARB);
+<font color="deepskyblue">0080:</font>     error |= PADDR(PFNGLGETINFOLOGARBPROC, glGetInfoLogARB);
+<font color="deepskyblue">0081:</font>     error |= PADDR(PFNGLUSEPROGRAMOBJECTARBPROC, glUseProgramObjectARB);
+<font color="deepskyblue">0082:</font>     error |= PADDR(PFNGLGETOBJECTPARAMETERIVARBPROC, glGetObjectParameterivARB);
+<font color="deepskyblue">0083:</font>     error |= PADDR(PFNGLGETOBJECTPARAMETERFVARBPROC, glGetObjectParameterfvARB);
+<font color="deepskyblue">0084:</font>     error |= PADDR(PFNGLGETUNIFORMLOCATIONARBPROC, glGetUniformLocationARB);
+<font color="deepskyblue">0085:</font>     error |= PADDR(PFNGLUNIFORM1FARBPROC, glUniform1fARB);
+<font color="deepskyblue">0086:</font>     error |= PADDR(PFNGLUNIFORM2FARBPROC, glUniform2fARB);
+<font color="deepskyblue">0087:</font>     error |= PADDR(PFNGLUNIFORM3FARBPROC, glUniform3fARB);
+<font color="deepskyblue">0088:</font>     error |= PADDR(PFNGLUNIFORM4FARBPROC, glUniform4fARB);
+<font color="deepskyblue">0089:</font>     error |= PADDR(PFNGLUNIFORM1IARBPROC, glUniform1iARB);
+<font color="deepskyblue">0090:</font>     error |= PADDR(PFNGLUNIFORM2IARBPROC, glUniform2iARB);
+<font color="deepskyblue">0091:</font>     error |= PADDR(PFNGLUNIFORM3IARBPROC, glUniform3iARB);
+<font color="deepskyblue">0092:</font>     error |= PADDR(PFNGLUNIFORM4IARBPROC, glUniform4iARB);
+<font color="deepskyblue">0093:</font>     error |= PADDR(PFNGLUNIFORM1FVARBPROC, glUniform1fvARB);
+<font color="deepskyblue">0094:</font>     error |= PADDR(PFNGLUNIFORM2FVARBPROC, glUniform2fvARB);
+<font color="deepskyblue">0095:</font>     error |= PADDR(PFNGLUNIFORM3FVARBPROC, glUniform3fvARB);
+<font color="deepskyblue">0096:</font>     error |= PADDR(PFNGLUNIFORM4FVARBPROC, glUniform4fvARB);
+<font color="deepskyblue">0097:</font>     error |= PADDR(PFNGLUNIFORM1IVARBPROC, glUniform1ivARB);
+<font color="deepskyblue">0098:</font>     error |= PADDR(PFNGLUNIFORM2IVARBPROC, glUniform2ivARB);
+<font color="deepskyblue">0099:</font>     error |= PADDR(PFNGLUNIFORM3IVARBPROC, glUniform3ivARB);
+<font color="deepskyblue">0100:</font>     error |= PADDR(PFNGLUNIFORM4IVARBPROC, glUniform4ivARB);
+<font color="deepskyblue">0101:</font>     <font color="blue">if</font> (error) {
+<font color="deepskyblue">0102:</font>         <font color="blue">return</font> FALSE;
+<font color="deepskyblue">0103:</font>     }
+<font color="deepskyblue">0104:</font> 
+<font color="deepskyblue">0105:</font>     <font color="blue">return</font> S_OK;
+<font color="deepskyblue">0106:</font> }
+</pre>
+
+
+<h2>■読み込み</h2>
+
+
+<p>
+シェーダを読み込む関数では、シェーダが描かれたファイルを読み込んで、オブジェクトを確保すします。<br>
+また、変数へのアクセスインターフェイスとして、変数への「ロケーション」を所得します(これは、HLSLの変数へのハンドルのようなものですね)。
+</p>
+<pre class="CodeBlock">
+main.cpp
+<font color="deepskyblue">0119:</font>     <font color="cyan">// シェーダの読み込み</font>
+<font color="deepskyblue">0120:</font>     hr = GLSL::CreateShaderFromFile("<font color="blue">GLSL</font>", &amp;m_hProgramObject);
+<font color="deepskyblue">0121:</font>     <font color="blue">if</font> (FAILED(hr)) {
+<font color="deepskyblue">0122:</font>         MessageBox( NULL, "<font color="blue">Cannot install shader</font>", "<font color="blue">ERROR</font>", MB_OK);
+<font color="deepskyblue">0123:</font>         <font color="blue">return</font> FALSE;
+<font color="deepskyblue">0124:</font>     }
+<font color="deepskyblue">0125:</font>     
+<font color="deepskyblue">0126:</font>     <font color="cyan">// オブジェクトのロケーションの所得</font>
+<font color="deepskyblue">0127:</font>     m_locLightPos = glGetUniformLocationARB(m_hProgramObject, "<font color="blue">LightPos</font>");
+</pre>
+
+
+<p>
+もちろん、肝はファイルを読み込む関数「CreateShaderFromFile」です。<br>
+CreateShaderFromFile では、シェーダのファイルを読み込んでから、プログラムに関するオブジェクト（HLSLではエフェクトのオブジェクト）を作成し、シェーダプログラムをコンパイルして、使えるようにします。
+</p>
+
+<pre class="CodeBlock">
+GLSL.cpp
+<font color="deepskyblue">0274:</font> HRESULT GLSL::CreateShaderFromFile(<font color="blue">char</font> *fileName, GLhandleARB *pProgram)
+<font color="deepskyblue">0275:</font> {
+<font color="deepskyblue">0276:</font>     GLubyte *vertexShader;
+<font color="deepskyblue">0277:</font>     GLubyte *fragmentShader;
+<font color="deepskyblue">0278:</font>     GLhandleARB prog;
+<font color="deepskyblue">0279:</font> 
+<font color="deepskyblue">0280:</font>     <font color="cyan">// 失敗したときのために初期化</font>
+<font color="deepskyblue">0281:</font>     *pProgram = 0;
+<font color="deepskyblue">0282:</font> 
+<font color="deepskyblue">0283:</font>     <font color="cyan">// ファイルを読み込む</font>
+<font color="deepskyblue">0284:</font>     <font color="blue">if</font> (FAILED(readShaderSource(fileName, &amp;vertexShader, &amp;fragmentShader))) <font color="blue">return</font> FALSE;
+<font color="deepskyblue">0285:</font> 
+<font color="deepskyblue">0286:</font>     <font color="cyan">// シェーダを生成する</font>
+<font color="deepskyblue">0287:</font>     prog = glCreateProgramObjectARB();
+<font color="deepskyblue">0288:</font> 
+<font color="deepskyblue">0289:</font>     <font color="cyan">// シェーダを OpenGL へセットアップする</font>
+<font color="deepskyblue">0290:</font>     <font color="blue">if</font> (FAILED(handShadersToOpenGL( prog, vertexShader, fragmentShader))) <font color="blue">return</font> FALSE;
+<font color="deepskyblue">0291:</font> 
+<font color="deepskyblue">0292:</font>     *pProgram = prog;
+<font color="deepskyblue">0293:</font> 
+<font color="deepskyblue">0294:</font>     <font color="blue">return</font> S_OK;
+<font color="deepskyblue">0295:</font> }
+</pre>
+<p>
+読み込むプログラムは、頂点プログラムとフラグメントプログラムをほぼ並列で行います。<br>
+今回は、それぞれのシェーダに関して、「vert」と「frag」の拡張子を変えた２つのプログラムを読み込んで、シェーダプログラムを作成します（したがって、頂点プログラムのみのケースはサポートしていないので、自己責任で書き換えてください）。<br>
+込みこむ関数、readShaderSourceでは、最初にそれぞれのファイル名を補完してから、ファイルのサイズをしらべます。さらに、そのサイズのメモリを確保してから、作成したメモリにファイルを読み込みます。
+</p>
+<pre class="CodeBlock">
+GLSL.cpp
+<font color="deepskyblue">0158:</font> <font color="cyan">//-------------------------------------------------------------</font>
+<font color="deepskyblue">0159:</font> <font color="cyan">// Name: readShaderSource</font>
+<font color="deepskyblue">0160:</font> <font color="cyan">// Desc: シェーダプログラムを読み込む</font>
+<font color="deepskyblue">0161:</font> <font color="cyan">//-------------------------------------------------------------</font>
+<font color="deepskyblue">0162:</font> HRESULT GLSL::readShaderSource(<font color="blue">char</font> *fileName, GLubyte **vertShader, GLubyte **fragShader)
+<font color="deepskyblue">0163:</font> {
+<font color="deepskyblue">0164:</font>     <font color="cyan">// -------------------------------------------------------</font>
+<font color="deepskyblue">0165:</font>     <font color="cyan">// ファイル名を決める</font>
+<font color="deepskyblue">0166:</font>     <font color="cyan">// -------------------------------------------------------</font>
+<font color="deepskyblue">0167:</font>     <font color="blue">char</font> vert_fileName[256];<font color="cyan">// 頂点プログラムのファイル名</font>
+<font color="deepskyblue">0168:</font>     <font color="blue">char</font> frag_fileName[256];<font color="cyan">// フラグメントプログラムのファイル名</font>
+<font color="deepskyblue">0169:</font> 
+<font color="deepskyblue">0170:</font>     strcpy(vert_fileName, fileName); strcat(vert_fileName, "<font color="blue">.vert</font>");
+<font color="deepskyblue">0171:</font>     strcpy(frag_fileName, fileName); strcat(frag_fileName, "<font color="blue">.frag</font>");
+<font color="deepskyblue">0172:</font> 
+<font color="deepskyblue">0173:</font>     <font color="cyan">// -------------------------------------------------------</font>
+<font color="deepskyblue">0174:</font>     <font color="cyan">// シェーダのためのメモリの確保</font>
+<font color="deepskyblue">0175:</font>     <font color="cyan">// -------------------------------------------------------</font>
+<font color="deepskyblue">0176:</font>     <font color="blue">int</font> vertSize = GetShaderSize(vert_fileName);
+<font color="deepskyblue">0177:</font>     <font color="blue">int</font> fragSize = GetShaderSize(frag_fileName);
+<font color="deepskyblue">0178:</font> 
+<font color="deepskyblue">0179:</font>     <font color="blue">if</font> ((vertSize == -1) || (fragSize == -1)) {
+<font color="deepskyblue">0180:</font>         <font color="blue">return</font> FALSE;<font color="cyan">// シェーダのサイズが決まらなかった</font>
+<font color="deepskyblue">0181:</font>     }
+<font color="deepskyblue">0182:</font> 
+<font color="deepskyblue">0183:</font>     *vertShader = (GLubyte *) malloc(vertSize);
+<font color="deepskyblue">0184:</font>     *fragShader = (GLubyte *) malloc(fragSize);
+<font color="deepskyblue">0185:</font> 
+<font color="deepskyblue">0186:</font>     <font color="cyan">// -------------------------------------------------------</font>
+<font color="deepskyblue">0187:</font>     <font color="cyan">// シェーダのソースプログラムを読み込む</font>
+<font color="deepskyblue">0188:</font>     <font color="cyan">// -------------------------------------------------------</font>
+<font color="deepskyblue">0189:</font>     <font color="blue">if</font> (FAILED(ReadShader(vert_fileName, *vertShader, vertSize)))
+<font color="deepskyblue">0190:</font>         <font color="blue">return</font> FALSE;<font color="cyan">// ファイルを読めなかった</font>
+<font color="deepskyblue">0191:</font> 
+<font color="deepskyblue">0192:</font>     <font color="blue">if</font> (FAILED(ReadShader(frag_fileName, *fragShader, fragSize)))
+<font color="deepskyblue">0193:</font>         <font color="blue">return</font> FALSE;<font color="cyan">// ファイルを読めなかった</font>
+<font color="deepskyblue">0194:</font> 
+<font color="deepskyblue">0195:</font>     <font color="blue">return</font> S_OK;
+<font color="deepskyblue">0196:</font> }
+</pre>
+<p>
+ファイルのサイズを求める関数「GetShaderSize」や、実際に読み込む関数「ReadShader」は、べたに実装しています。たとえば、「ReadShader」は次のようになっています。
+</p>
+
+<pre class="CodeBlock">
+GLSL.cpp
+<font color="deepskyblue">0132:</font> <font color="cyan">//-------------------------------------------------------------</font>
+<font color="deepskyblue">0133:</font> <font color="cyan">// Name: ReadShader</font>
+<font color="deepskyblue">0134:</font> <font color="cyan">// Desc: ファイルを読み込んで、shaderTextに格納する</font>
+<font color="deepskyblue">0135:</font> <font color="cyan">//-------------------------------------------------------------</font>
+<font color="deepskyblue">0136:</font> HRESULT GLSL::ReadShader(<font color="blue">char</font> *fileName, GLubyte *shaderText, <font color="blue">int</font> size)
+<font color="deepskyblue">0137:</font> {
+<font color="deepskyblue">0138:</font>     FILE *fp;
+<font color="deepskyblue">0139:</font>     <font color="blue">int</font> count;
+<font color="deepskyblue">0140:</font> 
+<font color="deepskyblue">0141:</font>     <font color="cyan">// ファイルを開く</font>
+<font color="deepskyblue">0142:</font>     fp = fopen(fileName, "<font color="blue">r</font>");
+<font color="deepskyblue">0143:</font>     <font color="blue">if</font> (!fp) <font color="blue">return</font> FALSE;
+<font color="deepskyblue">0144:</font> 
+<font color="deepskyblue">0145:</font>     <font color="cyan">// ファイルを読み込む</font>
+<font color="deepskyblue">0146:</font>     fseek(fp, 0, SEEK_SET);
+<font color="deepskyblue">0147:</font>     count = fread(shaderText, 1, size, fp);
+<font color="deepskyblue">0148:</font>     shaderText[count] = '<font color="blue">\0</font>';
+<font color="deepskyblue">0149:</font> 
+<font color="deepskyblue">0150:</font>     <font color="blue">if</font> (ferror(fp)) <font color="blue">return</font> FALSE;
+<font color="deepskyblue">0151:</font> 
+<font color="deepskyblue">0152:</font>     <font color="cyan">// ファイルを閉じる</font>
+<font color="deepskyblue">0153:</font>     fclose(fp);
+<font color="deepskyblue">0154:</font> 
+<font color="deepskyblue">0155:</font>     <font color="blue">return</font> count;
+<font color="deepskyblue">0156:</font> }
+</pre>
+
+<p>
+さて、ファイルをよみこんだら、それをVPUで扱いやすいようにコンパイルして、プログラムのオブジェクトに登録します。<br>
+登録する関数「handShadersToOpenGL」を詳しく見てきましょう。<br>
+最初に、「glCreateShaderObjectARB」を使って、シェーダのオブジェクトを作成します。<br>
+</p>
+
+<pre class="CodeBlock">
+GLSL.cpp
+<font color="deepskyblue">0199:</font> <font color="cyan">//-------------------------------------------------------------</font>
+<font color="deepskyblue">0200:</font> <font color="cyan">// Name: handShadersToOpenGL</font>
+<font color="deepskyblue">0201:</font> <font color="cyan">// Desc: シェーダを OpenGL へセットアップする</font>
+<font color="deepskyblue">0202:</font> <font color="cyan">//-------------------------------------------------------------</font>
+<font color="deepskyblue">0203:</font> HRESULT GLSL::handShadersToOpenGL( GLhandleARB Program, GLubyte *vertShader,  GLubyte *fragShader )
+<font color="deepskyblue">0204:</font> {
+<font color="deepskyblue">0205:</font>     <font color="cyan">// -------------------------------------------------------</font>
+<font color="deepskyblue">0206:</font>     <font color="cyan">// シェーダに関するオブジェクトの生成</font>
+<font color="deepskyblue">0207:</font>     <font color="cyan">// -------------------------------------------------------</font>
+<font color="deepskyblue">0208:</font>     GLhandleARB hVertShaderObject = glCreateShaderObjectARB(GL_VERTEX_SHADER_ARB);
+<font color="deepskyblue">0209:</font>     GLhandleARB hFragShaderObject = glCreateShaderObjectARB(GL_FRAGMENT_SHADER_ARB);
+</pre>
+<p>
+また、読み込んだしぇーだプログラムをOpenGL が認識できるように登録します。
+</p>
+<pre class="CodeBlock">
+GLSL.cpp
+<font color="deepskyblue">0211:</font>     <font color="cyan">// -------------------------------------------------------</font>
+<font color="deepskyblue">0212:</font>     <font color="cyan">// OpenGL システムにプログラム文字列を引き渡す</font>
+<font color="deepskyblue">0213:</font>     <font color="cyan">// -------------------------------------------------------</font>
+<font color="deepskyblue">0214:</font>     <font color="blue">int</font> vert_compiled = 0;
+<font color="deepskyblue">0215:</font>     <font color="blue">int</font> frag_compiled = 0;
+<font color="deepskyblue">0216:</font>     <font color="blue">int</font> linked = 0;
+<font color="deepskyblue">0217:</font>     GLint     length;
+<font color="deepskyblue">0218:</font> 
+<font color="deepskyblue">0219:</font>     length = strlen((<font color="blue">char</font>*)vertShader);
+<font color="deepskyblue">0220:</font>     glShaderSourceARB(hVertShaderObject, 1, (<font color="blue">const</font> GLcharARB**)&amp;vertShader, &amp;length);
+<font color="deepskyblue">0221:</font> 
+<font color="deepskyblue">0222:</font>     length = strlen((<font color="blue">char</font>*)fragShader);
+<font color="deepskyblue">0223:</font>     glShaderSourceARB(hFragShaderObject, 1, (<font color="blue">const</font> GLcharARB**)&amp;fragShader, &amp;length);
+<font color="deepskyblue">0224:</font> 
+<font color="deepskyblue">0225:</font>     <font color="cyan">// -------------------------------------------------------</font>
+<font color="deepskyblue">0226:</font>     <font color="cyan">// 不必要になったメモリを開放する</font>
+<font color="deepskyblue">0227:</font>     <font color="cyan">// -------------------------------------------------------</font>
+<font color="deepskyblue">0228:</font>     free(vertShader);
+<font color="deepskyblue">0229:</font>     free(fragShader);
+</pre>
+<p>
+次に、glShaderSourceARB を使って、VPUにシェーダプログラムの文字列を渡してからglCompileShaderARBでコンパイルします。<br>
+GLSLでは、HLSLと違って、コンパイラがアセンブラにコンパイルしてからＶＰＵ用のオブジェクトを作成する必然は無く、ＶＰＵが好きなように変換することが許されるので、シェーダの文字列を渡したら、後はドライバにお任せして、オブジェクトを作成してもらいます。
+</p>
+<pre class="CodeBlock">
+GLSL.cpp
+<font color="deepskyblue">0231:</font>     <font color="cyan">// -------------------------------------------------------</font>
+<font color="deepskyblue">0232:</font>     <font color="cyan">// シェーダプログラムをコンパイルする</font>
+<font color="deepskyblue">0233:</font>     <font color="cyan">// -------------------------------------------------------</font>
+<font color="deepskyblue">0234:</font>     glCompileShaderARB(hVertShaderObject);
+<font color="deepskyblue">0235:</font>     glGetObjectParameterivARB(hVertShaderObject,
+<font color="deepskyblue">0236:</font>             GL_OBJECT_COMPILE_STATUS_ARB, &amp;vert_compiled);
+<font color="deepskyblue">0237:</font> 
+<font color="deepskyblue">0238:</font> 
+<font color="deepskyblue">0239:</font>     glCompileShaderARB(hFragShaderObject);
+<font color="deepskyblue">0240:</font>     glGetObjectParameterivARB(hFragShaderObject,
+<font color="deepskyblue">0241:</font>             GL_OBJECT_COMPILE_STATUS_ARB, &amp;frag_compiled);
+<font color="deepskyblue">0242:</font> 
+<font color="deepskyblue">0243:</font>     <font color="blue">if</font> (!vert_compiled || !frag_compiled) <font color="blue">return</font> FALSE;
+</pre>
+<p>
+それが成功したら、glAttachObjectARB で、プログラムのオブジェクトにシェーダのオブジェクトを登録します。
+</p>
+<pre class="CodeBlock">
+GLSL.cpp
+<font color="deepskyblue">0245:</font>     <font color="cyan">// -------------------------------------------------------</font>
+<font color="deepskyblue">0246:</font>     <font color="cyan">// Program のオブジェクトにそれぞれのシェーダを関連付ける</font>
+<font color="deepskyblue">0247:</font>     <font color="cyan">// -------------------------------------------------------</font>
+<font color="deepskyblue">0248:</font>     glAttachObjectARB(Program, hVertShaderObject);
+<font color="deepskyblue">0249:</font>     glAttachObjectARB(Program, hFragShaderObject);
+<font color="deepskyblue">0250:</font> 
+<font color="deepskyblue">0251:</font>     <font color="cyan">// -------------------------------------------------------</font>
+<font color="deepskyblue">0252:</font>     <font color="cyan">// 不必要になったオブジェクトを削除する</font>
+<font color="deepskyblue">0253:</font>     <font color="cyan">// -------------------------------------------------------</font>
+<font color="deepskyblue">0254:</font>     glDeleteObjectARB(hVertShaderObject);
+<font color="deepskyblue">0255:</font>     glDeleteObjectARB(hFragShaderObject);
+</pre>
+<p>
+最後に、「glLinkProgramARB」これらのシェーダをリンクして、１つの描画パイプラインとしてまとめます。
+</p>
+<pre class="CodeBlock">
+GLSL.cpp
+<font color="deepskyblue">0257:</font>     <font color="cyan">// -------------------------------------------------------</font>
+<font color="deepskyblue">0258:</font>     <font color="cyan">// 全てをリンクする</font>
+<font color="deepskyblue">0259:</font>     <font color="cyan">// -------------------------------------------------------</font>
+<font color="deepskyblue">0260:</font>     glLinkProgramARB(Program);
+<font color="deepskyblue">0261:</font>     glGetObjectParameterivARB(Program, GL_OBJECT_LINK_STATUS_ARB, &amp;linked);
+<font color="deepskyblue">0262:</font> 
+<font color="deepskyblue">0263:</font>     <font color="blue">if</font> (!vert_compiled || !frag_compiled || !linked) <font color="blue">return</font> FALSE;
+<font color="deepskyblue">0264:</font> 
+<font color="deepskyblue">0265:</font>     <font color="blue">return</font> S_OK;
+<font color="deepskyblue">0266:</font> }
+</pre>
+
+
+<h2>■描画</h2>
+
+
+<p>
+作成したシェーダを使うには、描画前に「glUseProgramObjectARB」を呼び出します。<br>
+また、「glUniform3fvARB」等を使って、定数変数を設定します。<br>
+あとは、いつもと同じように描画します。
+</p>
+
+<pre class="CodeBlock">
+main.cpp
+<font color="deepskyblue">0237:</font> <font color="cyan">//-------------------------------------------------------------</font>
+<font color="deepskyblue">0238:</font> <font color="cyan">// Name: Render()</font>
+<font color="deepskyblue">0239:</font> <font color="cyan">// Desc: 画面を描画する.</font>
+<font color="deepskyblue">0240:</font> <font color="cyan">//-------------------------------------------------------------</font>
+<font color="deepskyblue">0241:</font> HRESULT CMyD3DApplication::Render(<font color="blue">void</font>)
+<font color="deepskyblue">0242:</font> {
+<font color="deepskyblue">0243:</font>     <font color="blue">static</font> <font color="blue">int</font> init=0;
+<font color="deepskyblue">0244:</font>     <font color="blue">if</font>(!init){init=1;
+<font color="deepskyblue">0245:</font>         <font color="cyan">// 箱の初期化</font>
+<font color="deepskyblue">0246:</font>         InitializeCube(CubeVertices);
+<font color="deepskyblue">0247:</font>     }
+<font color="deepskyblue">0248:</font> 
+<font color="deepskyblue">0249:</font>     <font color="cyan">//ウィンドウを塗りつぶす</font>
+<font color="deepskyblue">0250:</font>     glClearColor(0,0,0,0);
+<font color="deepskyblue">0251:</font>     glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
+<font color="deepskyblue">0252:</font> 
+<font color="deepskyblue">0253:</font>     <font color="cyan">//視点の変換行列の初期化</font>
+<font color="deepskyblue">0254:</font>     glLoadIdentity();
+<font color="deepskyblue">0255:</font>     <font color="cyan">//視点の決定</font>
+<font color="deepskyblue">0256:</font>     gluLookAt(  0.0, 3.0, 5.0,      <font color="cyan">// 視点</font>
+<font color="deepskyblue">0257:</font>                 0.0, 0.0, 0.0,      <font color="cyan">// 注目点</font>
+<font color="deepskyblue">0258:</font>                 0.0, 1.0, 0.0);     <font color="cyan">// 上方向</font>
+<font color="deepskyblue">0259:</font> 
+<font color="deepskyblue">0260:</font>     <font color="cyan">// シェーダの切り替え</font>
+<font color="deepskyblue">0261:</font>     <font color="yellow">glUseProgramObjectARB(m_hProgramObject);</font>
+<font color="deepskyblue">0262:</font> 
+<font color="deepskyblue">0263:</font>     <font color="cyan">// ライト位置の設定</font>
+<font color="deepskyblue">0264:</font>     <font color="blue">float</font> lightPosition[3] = {2.0f, 8.0f, -10.0f };
+<font color="deepskyblue">0265:</font>     <font color="yellow">glUniform3fvARB(m_locLightPos, 1, &amp;lightPosition[0]);</font>
+<font color="deepskyblue">0266:</font> 
+<font color="deepskyblue">0267:</font>     <font color="cyan">// 箱の描画</font>
+<font color="deepskyblue">0268:</font>     glPushMatrix();
+<font color="deepskyblue">0269:</font>         glRotated(100*rot, 0.0, 1.0, 0.0);
+<font color="deepskyblue">0270:</font> 
+<font color="deepskyblue">0271:</font>     <font color="blue">for</font>(<font color="blue">int</font> i = 0; i &lt; 6; i++) {
+<font color="deepskyblue">0272:</font>         glBegin(GL_QUADS);  <font color="cyan">// 四角形の描画</font>
+<font color="deepskyblue">0273:</font> 
+<font color="deepskyblue">0274:</font>         glNormal3fv(&amp;CubeNormals[i][0]);                            <font color="cyan">// 法線</font>
+<font color="deepskyblue">0275:</font>         glColor3d(CubeVertices[CubeFaces[i][0]][0]*0.5+0.5
+<font color="deepskyblue">0276:</font>                 , CubeVertices[CubeFaces[i][0]][1]*0.5+0.5
+<font color="deepskyblue">0277:</font>                 , CubeVertices[CubeFaces[i][0]][2]*0.5+0.5);        <font color="cyan">// 頂点色</font>
+<font color="deepskyblue">0278:</font>         glVertex3fv(&amp;CubeVertices[CubeFaces[i][0]][0]);             <font color="cyan">// 座標</font>
+<font color="deepskyblue">0279:</font>         glColor3d(CubeVertices[CubeFaces[i][1]][0]*0.5+0.5
+<font color="deepskyblue">0280:</font>                 , CubeVertices[CubeFaces[i][1]][1]*0.5+0.5
+<font color="deepskyblue">0281:</font>                 , CubeVertices[CubeFaces[i][1]][2]*0.5+0.5);        <font color="cyan">// 頂点色</font>
+<font color="deepskyblue">0282:</font>         glVertex3fv(&amp;CubeVertices[CubeFaces[i][1]][0]);
+<font color="deepskyblue">0283:</font>         glColor3d(CubeVertices[CubeFaces[i][2]][0]*0.5+0.5
+<font color="deepskyblue">0284:</font>                 , CubeVertices[CubeFaces[i][2]][1]*0.5+0.5
+<font color="deepskyblue">0285:</font>                 , CubeVertices[CubeFaces[i][2]][2]*0.5+0.5);        <font color="cyan">// 頂点色</font>
+<font color="deepskyblue">0286:</font>         glVertex3fv(&amp;CubeVertices[CubeFaces[i][2]][0]);
+<font color="deepskyblue">0287:</font>         glColor3d(CubeVertices[CubeFaces[i][3]][0]*0.5+0.5
+<font color="deepskyblue">0288:</font>                 , CubeVertices[CubeFaces[i][3]][1]*0.5+0.5
+<font color="deepskyblue">0289:</font>                 , CubeVertices[CubeFaces[i][3]][2]*0.5+0.5);        <font color="cyan">// 頂点色</font>
+<font color="deepskyblue">0290:</font>         glVertex3fv(&amp;CubeVertices[CubeFaces[i][3]][0]);
+<font color="deepskyblue">0291:</font>     
+<font color="deepskyblue">0292:</font>         glEnd();    <font color="cyan">// 四角形終わり</font>
+<font color="deepskyblue">0293:</font>     }
+<font color="deepskyblue">0294:</font>     
+<font color="deepskyblue">0295:</font>     glPopMatrix();
+<font color="deepskyblue">0296:</font> 
+<font color="deepskyblue">0297:</font>     <font color="blue">return</font> S_OK;
+<font color="deepskyblue">0298:</font> }
+</pre>
+
+<h2>■後片付け</h2>
+
+
+<p>
+開放は簡単です。<br>
+作成したプログラムをglDeleteObjectARBで開放します。<br>
+</p>
+<pre class="CodeBlock">
+main.cpp
+<font color="deepskyblue">0136:</font> <font color="cyan">//-------------------------------------------------------------</font>
+<font color="deepskyblue">0137:</font> <font color="cyan">// Name: DeleteDeviceObjects()</font>
+<font color="deepskyblue">0138:</font> <font color="cyan">// Desc: InitDeviceObjects() で作成したオブジェクトを開放する</font>
+<font color="deepskyblue">0139:</font> <font color="cyan">//-------------------------------------------------------------</font>
+<font color="deepskyblue">0140:</font> HRESULT CMyD3DApplication::DeleteDeviceObjects()
+<font color="deepskyblue">0141:</font> {
+<font color="deepskyblue">0142:</font>     <font color="blue">if</font> (m_hProgramObject){glDeleteObjectARB(m_hProgramObject);m_hProgramObject=NULL;}
+<font color="deepskyblue">0143:</font> 
+<font color="deepskyblue">0144:</font>     <font color="blue">return</font> S_OK;
+<font color="deepskyblue">0145:</font> }
+</pre>
+<p>
+お好きな人は、「SAFE_***」のマクロを作ってもよいでしょう。
+</p>
+
+<h2>■最後に</h2>
+
+
+<p>
+まぁ、こんなもんでしょ。<br>
+主流になるかなぁ？<br>
+オーサリングツールへの対応はどうかなぁ？
+</p>
+
+
+
+
+</div>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<center>
+<hr>
+<p><a href="../index.html">もどる</a></p>
+<p><a href="mailto:imagire@gmail.com">imagire@gmail.com</a></p>
+</center>
+
+</body>
+</html>

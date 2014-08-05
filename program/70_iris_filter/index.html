@@ -1,0 +1,267 @@
+<head>
+	<title>t-pot『絞り羽根フィルタ』</title>
+	<link rel="stylesheet" type="text/css" href="../if.css">
+</head>
+<meta http-equiv=Content-Type content="text/html; charset=shift_jis">
+<body>
+
+
+<div class="contents">
+<center>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<h1>絞り羽根フィルタ</h1><br>
+<h3>～ Iris filter ～</h3>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<image src = "title.jpg">
+<br>
+<hr>
+</center>
+<div>
+
+
+<h2>■はじめに</h2>
+
+
+<p>
+今回は、カメラの絞りの形がついたフィルターを表現します。<br>
+右がフィルタリングした画像ですが、六角形の形をしているのがうっすらとわかると思います。<br>
+
+とりあえず、GeForceFX 月間？なので、GeForceFX ならではの強引な力技で勝負します（これがリアルタイムかは知りません）。
+</p>
+<p>
+下のファイルがソースと実行ファイルです。
+</p>
+<ul style = "LIST-STYLE-TYPE:none">
+<li><a href="src.lzh">src.lzh (絞り羽根フィルタのサンプル:OpenGL & Cg言語)</a>
+</ul>
+
+<p>
+まぁ、いつものように適当にファイルが入っています。<br>
+今回は、中央値フィルタのシェーダを差し替えただけです。
+</p>
+<table>
+<tr><td><a href="fp_cg.html">fp.cg</a></td><td>フラグメントプログラム。</td></tr>
+<tr><td><a href="main_cpp.html">main.cpp</a></td><td>メインループ。</td></tr>
+<tr><td><a href="CBitmap_h.html">CBitmap.h</a></td><td>ビットマップファイルの読み込み。</td></tr>
+<tr><td><a href="CBitmap_cpp.html">CBitmap.cpp</a></td><td>ビットマップファイルの読み込み。</td></tr>
+</table>
+<image src = "hinode_bmp.jpg" width="64" height="64">hinode.bmp
+<p>
+あと、実行ファイル及び、プロジェクトファイルが入っています。
+</p>
+
+
+<h2>■絞り羽根フィルタとは</h2>
+
+
+<table>
+<tr>
+<td>
+そもそも、カメラの絞り羽根とは、眼の虹彩(iris)を模したものです。
+虹彩とは、角膜と水晶体の間にある膜で、目の色の付いた部分です。虹彩は暗いところでは広がり、明るいと所では縮まります。人間は、虹彩の伸び縮みによって入ってくる光の量を調節します。<br>
+また、虹彩の模様は、一人一人違うので、個人認証にも使われます。
+</td>
+<td>
+<image src = "iris.gif">
+</td>
+</tr>
+</table>
+<table>
+<tr>
+<td>
+<image src = "sibori.gif" width = "128" height = "128">
+</td>
+<td>
+カメラの絞り羽根は、虹彩と同じようにレンズの内径を調節する働きをします。写真を撮る時は、絞りを作る複数の薄い金属板の羽根が組み合わされた「絞り羽根」の絞り具合を光の量に応じて変えることで、フィルムに届く光量を調整します。<br>
+絞りの役割は、光量調節だけではなく、「ピントの深さ」にも関係しています。
+絞りを開けることによって被写界深度は浅く、また、絞り込むことによって深くなります。例えば、背景をぼかして、対象物だけを浮き出させた写真は、絞りを大きく開くことによって撮影され、近景から遠景まですべてにピントが合っているものは絞りをきつくして撮影することによって得られます。<br>
+ということで、絞りの形は、カメラで撮影したときだけについて、人の目で見たときには現れません。ゲーム等で使用するときには、その点について納得してから導入しましょう。
+</td>
+</tr>
+</table>
+
+
+<p>
+さて、絞りの数学に関しては、<a href="http://www.hirax.net/dekirukana5/bokeboke1/index.html">「ボケ」た背景で包み込め@hirax.net</a>が詳しいので、そちらを見ていただくことがお勧めですが、ここでも少し紹介しましょう。
+</p>
+<p>
+ピンぼけとはどうしておきるのでしょうか。<br>
+それは、フィルムの１点に光が集まらないからです。
+レンズで絞りきれなくてフィルムの周りの部分を感光してしまったのがピンぼけになります。<br>
+さて、カメラの場合は、絞り羽根を通ってレンズに光が入射するので、絞り羽根の形で光が入ってきます。<br>
+すなわち、光がぼけたときにはその形のままフィルムに感光されます。これが絞り羽根フィルタとして写される形の正体です。<br>
+したがって、各ピクセルの値を絞り羽根の形状でぼけた大きさで引き伸ばせは、絞り羽根フィルタの完成です。
+</p>
+<table>
+<tr><td>
+但し、気をつける点が１つあります。それは、光のエネルギーと写真に写る色が違うということです。<br>
+２倍の明るさを再現するためには、光のエネルギー（CG業界で俗に考えられる「フォトン」の数）は２乗の個数が必要になります。つまり、エネルギーと色は指数の関係で結ばれています。<br>
+この事実はよく知られていて、各フィルムに対して、露光量とフィルムの濃度（光を受ければ受けるほど薄くなる。この薄さは直接写真の濃さになる）を片対数対数グラフでプロットすると、(写真としてよく使われる部分では)グラフは直線的になります。すなわち、それぞれの関係は指数的に結ばれています。<br>
+実は、指数変換すると、明るい部分がより強調されるので、絞り羽根の形状がよりくっきり出るというメリットがあります。<br>
+この方法は、SIGGRAPH 97におけるPaul Debevecの論文<a href="http://www.debevec.org/Research/HDR/">Recovering High Dynamic Range Radiance Maps from Photographs</a>によって、ＣＧ業界にも広く知られることとなりました。
+</td><td>
+<image src = "provia.jpg">
+</td></tr>
+</table>
+
+
+<h2>■フラグメントプログラム</h2>
+
+
+<p>
+シェーダプログラムですが、今回は、力技です。<br>
+下の図のように、中心の点から５３個の近傍のテクセルを畳み込み積分としてサンプリングしました。
+これらは、画像処理の方法として古くから行われている方法です。
+</p>
+<pre class="CodeBlock">
+　　　■
+　　■■■
+　■■■■■
+■■■■■■■
+■■■■■■■
+■■■○■■■
+■■■■■■■
+■■■■■■■
+　■■■■■
+　　■■■
+　　　■
+</pre>
+<p>
+やっている方法は本当に簡単です。<br>
+ずらしたテクスチャ座標を定数として持っておいて、
+テクスチャ座標を動かしつつサンプリングし、
+「exp」命令を使って、指数変換した後に足しこみます。<br>
+これを５３回やって、最後に色の強さを調整するためにサンプリング数の５３で割った後に、
+「log」命令で対数変換をして、色情報に戻します。
+</p>
+<pre class="CodeBlock">
+fp.cg
+<font color="deepskyblue">0012:</font> fragout main(vert2frag I
+<font color="deepskyblue">0013:</font>             , uniform texobj2D SrcMap : texunit0
+<font color="deepskyblue">0014:</font>     )
+<font color="deepskyblue">0015:</font> {
+<font color="deepskyblue">0016:</font>     <font color="blue">fragout</font> O;
+<font color="deepskyblue">0017:</font>     
+<font color="deepskyblue">0018:</font>     <font color="blue">float3</font> col = {0,0,0};
+<font color="deepskyblue">0019:</font>     
+<font color="deepskyblue">0020:</font>     <font color="blue">float2</font> shift00 = { ( 0.0f+0.5f)/256.0f, ( 0.0f+0.5f)/256.0f};
+<font color="deepskyblue">0021:</font>     <font color="blue">float2</font> shift01 = { ( 1.0f+0.5f)/256.0f, ( 0.0f+0.5f)/256.0f};
+<font color="deepskyblue">0022:</font>     <font color="blue">float2</font> shift02 = { ( 0.0f+0.5f)/256.0f, ( 1.0f+0.5f)/256.0f};
+<font color="deepskyblue">0023:</font>     <font color="blue">float2</font> shift03 = { (-1.0f+0.5f)/256.0f, ( 0.0f+0.5f)/256.0f};
+<font color="deepskyblue">0024:</font>     <font color="blue">float2</font> shift04 = { ( 0.0f+0.5f)/256.0f, (-1.0f+0.5f)/256.0f};
+<font color="deepskyblue">0025:</font>     <font color="blue">float2</font> shift05 = { ( 1.0f+0.5f)/256.0f, ( 1.0f+0.5f)/256.0f};
+<font color="deepskyblue">0026:</font>     <font color="blue">float2</font> shift06 = { (-1.0f+0.5f)/256.0f, ( 1.0f+0.5f)/256.0f};
+<font color="deepskyblue">0027:</font>     <font color="blue">float2</font> shift07 = { ( 1.0f+0.5f)/256.0f, (-1.0f+0.5f)/256.0f};
+<font color="deepskyblue">0028:</font>     <font color="blue">float2</font> shift08 = { (-1.0f+0.5f)/256.0f, (-1.0f+0.5f)/256.0f};
+<font color="deepskyblue">0029:</font>     <font color="blue">float2</font> shift09 = { ( 0.0f+0.5f)/256.0f, ( 2.0f+0.5f)/256.0f};
+<font color="deepskyblue">0030:</font>     <font color="blue">float2</font> shift10 = { ( 0.0f+0.5f)/256.0f, (-2.0f+0.5f)/256.0f};
+<font color="deepskyblue">0031:</font>     <font color="blue">float2</font> shift11 = { ( 0.0f+0.5f)/256.0f, ( 3.0f+0.5f)/256.0f};
+<font color="deepskyblue">0032:</font>     <font color="blue">float2</font> shift12 = { ( 0.0f+0.5f)/256.0f, (-3.0f+0.5f)/256.0f};
+<font color="deepskyblue">0033:</font>     <font color="blue">float2</font> shift13 = { ( 1.0f+0.5f)/256.0f, ( 2.0f+0.5f)/256.0f};
+<font color="deepskyblue">0034:</font>     <font color="blue">float2</font> shift14 = { ( 1.0f+0.5f)/256.0f, (-2.0f+0.5f)/256.0f};
+<font color="deepskyblue">0035:</font>     <font color="blue">float2</font> shift15 = { (-1.0f+0.5f)/256.0f, ( 2.0f+0.5f)/256.0f};
+<font color="deepskyblue">0036:</font>     <font color="blue">float2</font> shift16 = { (-1.0f+0.5f)/256.0f, (-2.0f+0.5f)/256.0f};
+<font color="deepskyblue">0037:</font>     <font color="blue">float2</font> shift17 = { ( 2.0f+0.5f)/256.0f, (-2.0f+0.5f)/256.0f};
+<font color="deepskyblue">0038:</font>     <font color="blue">float2</font> shift18 = { ( 2.0f+0.5f)/256.0f, (-1.0f+0.5f)/256.0f};
+<font color="deepskyblue">0039:</font>     <font color="blue">float2</font> shift19 = { ( 2.0f+0.5f)/256.0f, ( 0.0f+0.5f)/256.0f};
+<font color="deepskyblue">0040:</font>     <font color="blue">float2</font> shift20 = { ( 2.0f+0.5f)/256.0f, ( 1.0f+0.5f)/256.0f};
+<font color="deepskyblue">0041:</font>     <font color="blue">float2</font> shift21 = { ( 2.0f+0.5f)/256.0f, ( 2.0f+0.5f)/256.0f};
+<font color="deepskyblue">0042:</font>     <font color="blue">float2</font> shift22 = { (-2.0f+0.5f)/256.0f, (-2.0f+0.5f)/256.0f};
+<font color="deepskyblue">0043:</font>     <font color="blue">float2</font> shift23 = { (-2.0f+0.5f)/256.0f, (-1.0f+0.5f)/256.0f};
+<font color="deepskyblue">0044:</font>     <font color="blue">float2</font> shift24 = { (-2.0f+0.5f)/256.0f, ( 0.0f+0.5f)/256.0f};
+<font color="deepskyblue">0045:</font>     <font color="blue">float2</font> shift25 = { (-2.0f+0.5f)/256.0f, ( 1.0f+0.5f)/256.0f};
+<font color="deepskyblue">0046:</font>     <font color="blue">float2</font> shift26 = { (-2.0f+0.5f)/256.0f, ( 2.0f+0.5f)/256.0f};
+<font color="deepskyblue">0047:</font>     <font color="blue">float2</font> shift27 = { ( 0.0f+0.5f)/256.0f, ( 4.0f+0.5f)/256.0f};
+<font color="deepskyblue">0048:</font>     <font color="blue">float2</font> shift28 = { ( 0.0f+0.5f)/256.0f, (-4.0f+0.5f)/256.0f};
+<font color="deepskyblue">0049:</font>     <font color="blue">float2</font> shift29 = { ( 1.0f+0.5f)/256.0f, ( 3.0f+0.5f)/256.0f};
+<font color="deepskyblue">0050:</font>     <font color="blue">float2</font> shift30 = { ( 1.0f+0.5f)/256.0f, (-3.0f+0.5f)/256.0f};
+<font color="deepskyblue">0051:</font>     <font color="blue">float2</font> shift31 = { (-1.0f+0.5f)/256.0f, ( 3.0f+0.5f)/256.0f};
+<font color="deepskyblue">0052:</font>     <font color="blue">float2</font> shift32 = { (-1.0f+0.5f)/256.0f, (-3.0f+0.5f)/256.0f};
+<font color="deepskyblue">0053:</font>     <font color="blue">float2</font> shift33 = { ( 3.0f+0.5f)/256.0f, (-2.0f+0.5f)/256.0f};
+<font color="deepskyblue">0054:</font>     <font color="blue">float2</font> shift34 = { ( 3.0f+0.5f)/256.0f, (-1.0f+0.5f)/256.0f};
+<font color="deepskyblue">0055:</font>     <font color="blue">float2</font> shift35 = { ( 3.0f+0.5f)/256.0f, ( 0.0f+0.5f)/256.0f};
+<font color="deepskyblue">0056:</font>     <font color="blue">float2</font> shift36 = { ( 3.0f+0.5f)/256.0f, ( 1.0f+0.5f)/256.0f};
+<font color="deepskyblue">0057:</font>     <font color="blue">float2</font> shift37 = { ( 3.0f+0.5f)/256.0f, ( 2.0f+0.5f)/256.0f};
+<font color="deepskyblue">0058:</font>     <font color="blue">float2</font> shift38 = { (-3.0f+0.5f)/256.0f, (-2.0f+0.5f)/256.0f};
+<font color="deepskyblue">0059:</font>     <font color="blue">float2</font> shift39 = { (-3.0f+0.5f)/256.0f, (-1.0f+0.5f)/256.0f};
+<font color="deepskyblue">0060:</font>     <font color="blue">float2</font> shift40 = { (-3.0f+0.5f)/256.0f, ( 0.0f+0.5f)/256.0f};
+<font color="deepskyblue">0061:</font>     <font color="blue">float2</font> shift41 = { (-3.0f+0.5f)/256.0f, ( 1.0f+0.5f)/256.0f};
+<font color="deepskyblue">0062:</font>     <font color="blue">float2</font> shift42 = { (-3.0f+0.5f)/256.0f, ( 2.0f+0.5f)/256.0f};
+<font color="deepskyblue">0063:</font>     <font color="blue">float2</font> shift43 = { ( 2.0f+0.5f)/256.0f, ( 3.0f+0.5f)/256.0f};
+<font color="deepskyblue">0064:</font>     <font color="blue">float2</font> shift44 = { ( 1.0f+0.5f)/256.0f, ( 4.0f+0.5f)/256.0f};
+<font color="deepskyblue">0065:</font>     <font color="blue">float2</font> shift45 = { ( 0.0f+0.5f)/256.0f, ( 5.0f+0.5f)/256.0f};
+<font color="deepskyblue">0066:</font>     <font color="blue">float2</font> shift46 = { (-1.0f+0.5f)/256.0f, ( 4.0f+0.5f)/256.0f};
+<font color="deepskyblue">0067:</font>     <font color="blue">float2</font> shift47 = { (-2.0f+0.5f)/256.0f, ( 3.0f+0.5f)/256.0f};
+<font color="deepskyblue">0068:</font>     <font color="blue">float2</font> shift48 = { ( 2.0f+0.5f)/256.0f, (-3.0f+0.5f)/256.0f};
+<font color="deepskyblue">0069:</font>     <font color="blue">float2</font> shift49 = { ( 1.0f+0.5f)/256.0f, (-4.0f+0.5f)/256.0f};
+<font color="deepskyblue">0070:</font>     <font color="blue">float2</font> shift50 = { ( 0.0f+0.5f)/256.0f, (-5.0f+0.5f)/256.0f};
+<font color="deepskyblue">0071:</font>     <font color="blue">float2</font> shift51 = { (-1.0f+0.5f)/256.0f, (-4.0f+0.5f)/256.0f};
+<font color="deepskyblue">0072:</font>     <font color="blue">float2</font> shift52 = { (-2.0f+0.5f)/256.0f, (-3.0f+0.5f)/256.0f};
+<font color="deepskyblue">0073:</font> 
+<font color="deepskyblue">0074:</font>     <font color="blue">float3</font> tex00 = f3tex2D( SrcMap, I.tcoords.xy+shift00 );
+<font color="deepskyblue">0075:</font>     col.x += exp(tex00.x);
+<font color="deepskyblue">0076:</font>     col.y += exp(tex00.y);
+<font color="deepskyblue">0077:</font>     col.z += exp(tex00.z);
+<font color="deepskyblue">0078:</font>     
+<font color="deepskyblue">0079:</font>     <font color="blue">float3</font> tex01 = f3tex2D( SrcMap, I.tcoords.xy+shift01 );
+<font color="deepskyblue">0080:</font>     col.x += exp(tex01.x);
+<font color="deepskyblue">0081:</font>     col.y += exp(tex01.y);
+<font color="deepskyblue">0082:</font>     col.z += exp(tex01.z);
+<font color="deepskyblue">0083:</font>     
+<font color="deepskyblue">0084:</font>     <font color="blue">float3</font> tex02 = f3tex2D( SrcMap, I.tcoords.xy+shift02 );
+<font color="deepskyblue">0085:</font>     col.x += exp(tex02.x);
+<font color="deepskyblue">0086:</font>     col.y += exp(tex02.y);
+<font color="deepskyblue">0087:</font>     col.z += exp(tex02.z);
+<font color="deepskyblue">0088:</font>     
+
+中略
+
+<font color="deepskyblue">0329:</font>     <font color="blue">float3</font> tex51 = f3tex2D( SrcMap, I.tcoords.xy+shift51 );
+<font color="deepskyblue">0330:</font>     col.x += exp(tex51.x);
+<font color="deepskyblue">0331:</font>     col.y += exp(tex51.y);
+<font color="deepskyblue">0332:</font>     col.z += exp(tex51.z);
+<font color="deepskyblue">0333:</font>     
+<font color="deepskyblue">0334:</font>     <font color="blue">float3</font> tex52 = f3tex2D( SrcMap, I.tcoords.xy+shift52 );
+<font color="deepskyblue">0335:</font>     col.x += exp(tex52.x);
+<font color="deepskyblue">0336:</font>     col.y += exp(tex52.y);
+<font color="deepskyblue">0337:</font>     col.z += exp(tex52.z);
+<font color="deepskyblue">0338:</font>     
+<font color="deepskyblue">0339:</font>     O.col.x = log(col.x/53.0f);
+<font color="deepskyblue">0340:</font>     O.col.y = log(col.y/53.0f);
+<font color="deepskyblue">0341:</font>     O.col.z = log(col.z/53.0f);
+<font color="deepskyblue">0342:</font>     
+<font color="deepskyblue">0343:</font>     <font color="blue">return</font> O;
+<font color="deepskyblue">0344:</font> } 
+</pre>
+<p>
+ピクセルシェーダのレジスタの値の範囲が-2～2かと思い込んでいたのですが、
+（少なくともエミュレータでは）きちんと動いたので、floatはまともな演算が使えるようです(halfを使うとだめかも)。
+</p>
+
+<h2>■最後に</h2>
+
+
+<p>
+やっぱり、この程度のぼけの大きさでは目立ちませんね。<br>
+といってもぼけの半径の２乗でサンプリング数は多くなっていくので、考え物です。<br>しかもそんなに綺麗に出ていないので、まだまだ改良が必要ですね。
+</p>
+<p>
+次は、被写界深度への対応か･･･<br>
+ちょっと大変そう。
+</p>
+
+</div>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<center>
+<hr>
+<p><a href="../index.html">もどる</a></p>
+<p><a href="mailto:imagire@gmail.com">imagire@gmail.com</a></p>
+</center>
+
+</body>
+</html>

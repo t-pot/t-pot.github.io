@@ -1,0 +1,501 @@
+<head>
+	<title>t-pot 『水族館を作ろう:BOIDの基本』</title>
+	<link rel="stylesheet" type="text/css" href="../if.css">
+</head>
+<meta http-equiv=Content-Type content="text/html; charset=shift_jis">
+<body>
+<div class="contents">
+<center>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<h1>水族館を作ろう:BOIDの基本</h1><br>
+<h3>～群れをつくって泳ぎます～</h3>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+</center>
+<h2>■はじめに</h2>
+
+<p>
+前回は、とりあえず魚を泳がせました。<br>
+今回は、BOIDの基本的な部分を組み込んで、群れをなして泳がせてみます。
+</p>
+<right><image src = "boid1.gif"></right>
+<p>
+今回のソースは、次のものです。<br>
+</p>
+<ul style = "LIST-STYLE-TYPE:none">
+<li><a href="boid1.lzh">boid1.lzh (基本的なBOID)</a>
+</ul>
+<p>
+今回のメインは boid.cpp です。<br>
+Game Programming Gems を参考にしました（それのシンプルバージョンとも言う）。<br>
+関数名なども、なるべくあわせるようにしています。
+</p>
+
+<h2>■基本原理</h2>
+
+<p>
+<a href="http://www.red3d.com/cwr/boids/">Craig Raynolds</a> は、1987 年の SIGGRAPH で、
+「Flocks, Herds, and Schools : A Distributed Behavioral Model」を発表しました。<br>
+この論文は、３つの理解しやすいルールを規定するだけで、動物の群れをシミュレーションできるというものです。<br>
+そのルールとは、
+</p>
+<table>
+<tr><td>Separation</td><td>(引き離し)</td><td>：</td><td>一定距離より近くに間を取らない</td></tr>
+<tr><td>Alignment</td><td>(整列)</td><td>：</td><td>仲間とスピードと方向を合わせる。</td></tr>
+<tr><td>Cohesion</td><td>(結合)</td><td>：</td><td>グループの中心へ向かおうとする。</td></tr>
+</table>
+<p>
+です。<br>
+ここで出てくる BOID という単語は、(鳥)バードとアンドロイドを組み合わせた造語で、鳥だけでなく、魚や馬の群れにも
+この単語は使われています。<br>
+今回のプログラムでは、魚の一匹一匹を表現するクラスを CBoid クラスとします。<br>
+</p>
+
+<h2>■引き離し(Separation)</h2>
+
+<p>
+われわれは、歩くときや会話するときなど、自然といい感じの距離を取って生活します。
+</p>
+<right><image src = "boid1_separation.gif"></right>
+<p>
+これが『引き離し』です。
+</p>
+<p>
+プログラムでは、次のように実装します。<br>
+関数の返り値が、『引き離し』による速度変化量（力）になります。
+</p>
+
+<pre class="CodeBlock">
+<Font color = cyan>// ----------------------------------------------------------------------------
+// Rule #1 (Separation) 仲間との距離をある大きさに維持することによって、ぶつかるのを避ける。
+//-----------------------------------------------------------------------------</Font>
+D3DXVECTOR3 CBoid::KeepDistance (void)
+{
+    <Font color = cyan>// 距離によって速さを調整する</Font>
+    float ratio = m_dist_to_nearest_flockmate / SEPARATION_DIST;
+    if (ratio < MIN_URGENCY) ratio = MIN_URGENCY;
+    if (ratio > MAX_URGENCY) ratio = MAX_URGENCY;
+
+    <Font color = cyan>// もっとも近い仲間の方向を求める（その軸に向かう）</Font>
+    D3DXVECTOR3 change = m_nearest_flockmate->m_pos - m_pos;   
+    D3DXVec3Normalize(&change, &change);
+
+    if (m_dist_to_nearest_flockmate < SEPARATION_DIST) {
+        change *= -ratio;        <Font color = cyan>// 非常に(SEPARATION_DISTより)近かったら、遠くへ話す</Font>
+    } else if (m_dist_to_nearest_flockmate > SEPARATION_DIST) {
+        change *= ratio;         <Font color = cyan>// 非常に(SEPARATION_DISTより)遠かったら、近寄る</Font>
+    } else {
+        change *= 0.0f;          <Font color = cyan>// いい感じの位置だったら、調整をしない</Font>
+    }
+
+    return (change);
+}
+</pre>
+
+<p>
+m_pos が、各 BOID の位置です。<br>
+m_nearest_flockmate が、一番近い位置にいる仲間（のCBoidクラス）です。<br>
+基本的には、一番近い仲間への方向(change)を求め、適切な距離(SEPARATION_DIST)よりも近いか遠いかで、
+その方向に近づいたり、遠ざかります。<br>
+遠くにいればいるほど、群れに戻ろうと必死になるので、一番近い仲間との距離(m_dist_to_nearest_flockmate)
+に応じて、速さ(ratio)を変えます。
+但し、泳ぐ速さには、限界がありますし、ひとかきで進む大きさがあるので、
+力の上限と下限を設けます。
+</p>
+
+<h2>■整列(Alignment)</h2>
+
+<p>
+さて、次は、『整列』です。
+</p>
+<right><image src = "boid1_alignment.gif"></right>
+<p>
+とりあえず、一番近い仲間の速度を見て、その速度にだんだんあわせるようにします。
+</p>
+
+<pre class="CodeBlock">
+<Font color = cyan>// ----------------------------------------------------------------------------
+// Rule #2 (Alignment) 仲間とスピードと方向を合わせる。
+//-----------------------------------------------------------------------------</Font>
+D3DXVECTOR3 CBoid::MatchHeading (void)
+{
+    <Font color = cyan>// 一番近い仲間の速さの向きを調べる</Font>
+    D3DXVECTOR3 change = m_nearest_flockmate->m_vel;
+    D3DXVec3Normalize(&change, &change);
+
+    <Font color = cyan>// だんだん速度をあわせるように調整する</Font>
+    change *= MIN_URGENCY;
+
+    return (change);
+}
+</pre>
+
+
+<h2>■結合(Cohesion)</h2>
+
+<p>
+最後に、『結合』です。
+</p>
+<right><image src = "boid1_cohesion.gif"></right>
+<p>
+仲間の中心位置を求めて、そちらに動かします。。
+</p>
+
+<pre class="CodeBlock">
+<Font color = cyan>// ----------------------------------------------------------------------------
+// Rule #3 (Cohesion) 自分のまわりの群れのグループの中心へ向かおうとする。
+//-----------------------------------------------------------------------------</Font>
+D3DXVECTOR3 CBoid::SteerToCenter (void)
+{
+    D3DXVECTOR3 change;
+
+    <Font color = cyan>// 見える仲間の中心位置を求める</Font>
+    D3DXVECTOR3 center = D3DXVECTOR3(0,0,0);
+    for (int i = 0; i < m_num_flockmates_seen; i++) {
+        if (VisibleFriendsList[i] != NULL){
+            center += VisibleFriendsList[i]->m_pos;
+        }
+    }
+    center /= m_num_flockmates_seen;<Font color = cyan>// 位置の合計を見える仲間の数で割って、中心を求める</Font>
+
+    <Font color = cyan>// 中心への向きを求めて、だんだんそちらによるように動かす</Font>
+    change = center - m_pos;
+    D3DXVec3Normalize(&change, &change);
+    change *= MIN_URGENCY;
+    
+    return (change);
+}
+</pre>
+
+<p>
+m_num_flockmates_seen に、見える仲間の数が入っています。<br>
+VisibleFriendsList[] は、線形リストで、見える仲間が納められています。
+</p>
+
+<h2>■仲間の見つけ方</h2>
+
+<p>
+以上の話は、既に見える範囲の仲間を見つけた後のお話です。<br>
+見える範囲の仲間及び、一番近い場所にいる仲間を見つける方法を説明します。
+</p>
+
+<p>
+先ずは、仲間を見つける方法です。<br>
+下の関数が見つける関数です。
+</p>
+
+<pre class="CodeBlock">
+<Font color = cyan>// ----------------------------------------------------------------------------
+// 仲間 (ptr) が見えるか？
+//-----------------------------------------------------------------------------</Font>
+float CBoid::CanISee (CBoid *ptr)
+{
+   if (this == ptr) return (INFINITY);        <Font color = cyan>// 自分は見えない（はるかかなたにいる）</Font>
+
+    <Font color = cyan>// 距離の計算</Font>
+    D3DXVECTOR3    d = m_pos - ptr->m_pos;
+    float dist = D3DXVec3Length(&d);
+	
+    <Font color = cyan>// 視野の範囲にいたら、その距離を返す</Font>
+    if (m_perception > dist) return (dist);
+
+   <Font color = cyan>// 見えなかった</Font>
+   return (INFINITY);
+}
+</pre>
+
+<p>
+仲間(ptr)に対して、距離(dist)を計算します。<br>
+目の届く範囲(m_perception)よりも近くにいたら、その距離を返します。<br>
+位置が遠くて、見つからなかった場合には、見つからなかったとして、INFINITY を返します。
+</p>
+
+<p>
+今回は、視野角による効果（目は前についているので、後ろは見えない）を入れていません。<br>
+視野角を入れると、玉突き事故がおきやすくなります。
+おそらく、そちらのほうがリアルです。
+</p>
+
+<p>
+今のが、一つ一つの可視判定でした。
+1つのBOIDに関する可視判定は、全ての BOID に対して、以上の判定を行います。<br>
+また、それぞれの判定で、距離が返ってきますので、返ってきた値を調べて、
+一番近かったら、一番近いBOIDに設定します。
+</p>
+
+
+<pre class="CodeBlock">
+<Font color = cyan>// ----------------------------------------------------------------------------
+// 仲間を探す
+//-----------------------------------------------------------------------------</Font>
+int CBoid::SeeFriends (CBoid *first_boid)
+{
+    <Font color = cyan>// 可視リストを初期化する</Font>
+    ClearVisibleList();
+
+    for (CBoid *flockmate = first_boid; flockmate != NULL; flockmate = flockmate->GetNext()) {
+	   float dist;
+
+      <Font color = cyan>// 可視判定</Font>
+      if ((dist = CanISee(flockmate)) != INFINITY) {
+         
+         AddToVisibleList(flockmate);<Font color = cyan>// 見えたら可視リストに追加</Font>
+
+         <Font color = cyan>// 一番近いのか判定</Font>
+         if (dist < m_dist_to_nearest_flockmate) {
+            m_nearest_flockmate = flockmate;       <Font color = cyan>一番近い仲間のポインタを保存</Font>
+            m_dist_to_nearest_flockmate = dist;    <Font color = cyan>距離を代入</Font>
+         }
+      }
+   }
+
+   return (m_num_flockmates_seen);
+}
+</pre>
+
+<p>
+それぞれのBOIDは、線形リストで下のように繋がれています。
+</p>
+<right><image src = "boid1_list.gif"></right>
+<p>
+GetNext()で、次のBOIDを持ってきて、無ければ (NULLならば) 終了です。
+</p>
+
+<p>
+ちなみに、以上の関数の初期化や追加は、次のようになっています。
+</p>
+
+
+<pre class="CodeBlock">
+<Font color = cyan>// ----------------------------------------------------------------------------
+// 仲間の可視リスト構造（初期化）
+//-----------------------------------------------------------------------------</Font>
+void CBoid::ClearVisibleList (void)
+{
+   <Font color = cyan>// それぞれのリストを初期化</Font>
+   for (int i = 0; i < MAX_FRIENDS_VISIBLE; i++) {
+      VisibleFriendsList[i] = NULL;
+   }
+
+   <Font color = cyan>// 他の変数の初期化</Font>
+   m_num_flockmates_seen       = 0;
+   m_nearest_flockmate         = NULL;
+   m_dist_to_nearest_flockmate = INFINITY;
+
+}
+</pre>
+<pre class="CodeBlock">
+<Font color = cyan>// ----------------------------------------------------------------------------
+// 可視リストへ追加
+//-----------------------------------------------------------------------------</Font>
+void CBoid::AddToVisibleList (CBoid *ptr)
+{
+   if (MAX_FRIENDS_VISIBLE <= m_num_flockmates_seen) return;<Font color = cyan>// バッファがいっぱいで追加できない</Font>
+
+    VisibleFriendsList[m_num_flockmates_seen++] = ptr;    <Font color = cyan>// リストの最後に追加</Font>
+}
+</pre>
+
+<h2>■BOID の一回の移動</h2>
+
+<p>
+では、以上を組み合わせて、一フレームでの BOID の動きにまとめます。<br>
+先ほど解説した、SeeFriends で、視界に入る仲間を見つけます。<br>
+仲間が入れば、Raynolds のルールに従って、移動をします。<br>
+移動量から、向きや速度を決定して、最後に世界から飛び出たら、修正します。
+</p>
+
+<pre class="CodeBlock">
+<Font color = cyan>// ----------------------------------------------------------------------------
+// フレームごとのアップデート
+//-----------------------------------------------------------------------------</Font>
+void CBoid::FlockIt (int flock_id, CBoid *first_boid)
+{
+    <Font color = cyan>// Step 1:  前の時間に決定した速度を使って位置の更新</Font>
+    m_oldpos = m_pos;    <Font color = cyan>// 前の座標を保存しておく</Font>
+    m_pos += m_vel;        <Font color = cyan>// 移動</Font>
+
+    <Font color = cyan>// Step 2:  仲間を探す</Font>
+    this->SeeFriends (first_boid);
+
+    D3DXVECTOR3 acc = D3DXVECTOR3(0,0,0);
+
+    <Font color = cyan>// Step 3:  群れの動作</Font>
+    if (m_num_flockmates_seen) {
+        <Font color = cyan>// Step 4:  Rule #1 (Separation)
+        // 仲間との距離をある大きさに維持することによって、ぶつかるのを避ける。</Font>
+        acc += KeepDistance();
+
+        <Font color = cyan>// Step 5:  Rule #2 (Alignment)
+        // 仲間とスピードと方向を合わせる。</Font>
+        acc += MatchHeading();
+
+        <Font color = cyan>// Step 6:  Rule #3 (Cohesion) 
+        // 自分のまわりの群れのグループの中心へ向かおうとする。</Font>
+        acc += SteerToCenter();
+    }
+
+    <Font color = cyan>// Step 7:  巡航</Font>
+    acc += Cruising();
+
+    <Font color = cyan>// Step 8:  加速の制限 (MAX_CHANGEより強い力は出せません)</Font>
+    if (D3DXVec3Length(&acc) > MAX_CHANGE) {
+        D3DXVec3Normalize(&acc, &acc);
+        acc *= MAX_CHANGE;
+    }
+
+    <Font color = cyan>// Step 9:  速度変化</Font>
+    m_oldvel = m_vel;    <Font color = cyan>// 前の速さを取っておく</Font>
+    m_vel += acc;        <Font color = cyan>// 加速</Font>
+
+    <Font color = cyan>// Step 11:  速すぎたときに、速度を制限する(MAX_SPEEDより速く泳げません)</Font>
+    if ((m_speed = D3DXVec3Length(&m_vel)) > MAX_SPEED) {
+        D3DXVec3Normalize(&m_vel, &m_vel);
+        m_vel *= MAX_SPEED;
+        m_speed = MAX_SPEED;
+    }
+
+    this->ComputeRPY();        <Font color = cyan>// Step 12:  回転の計算</Font>
+
+    this->WorldBound();        <Font color = cyan>// Step 13:  世界の境界の処理</Font>
+}
+</pre>
+
+<p>
+最終的に速度変化を求めた後に、MAX_CHANGE や、MAX_SPEED を使って、速度変化や、速度に制限をつけています。<br>
+筋力の限界や、水の抵抗があるので、何らかの方法で限界を入れなければなりません。<br>
+おそらく、この方法が簡単でしょう。
+</p>
+<p>
+Cruising という、紹介していない速度変化があります。<br>
+これは、一人で泳いでいるときの魚の運動です。<br>
+ここでは、一定の速度(巡航速度：DESIRED_SPEED)で泳ぐようにします。<br>
+また、以上の動きではつまらないので、首振りを入れます。<br>
+これは、巡航速度に近づけるときに、ランダムに少し行き過ぎさせ、不安定にすることによって、ユラユラとした動きを作ります。
+</p>
+<pre class="CodeBlock">
+<Font color = cyan>// ----------------------------------------------------------------------------
+// 通常巡航
+//-----------------------------------------------------------------------------</Font>
+D3DXVECTOR3 CBoid::Cruising (void)
+{
+
+    <Font color = cyan>// 巡航速度(DESIRED_SPEED)にちかづける</Font>
+    float  diff = (m_speed - DESIRED_SPEED)/ MAX_SPEED;
+    float  urgency = (float) fabs(diff);
+    if (urgency < MIN_URGENCY) urgency = MIN_URGENCY;
+    if (urgency > MAX_URGENCY) urgency = MAX_URGENCY;
+
+    <Font color = cyan>// ランダム性を入れて、首振り運動をさせる.</Font>
+    float jitter = RAND();
+    if (jitter < 0.45f) {
+        change.x += MIN_URGENCY * SIGN(diff);
+    } else if (jitter < 0.90f) {
+        change.z += MIN_URGENCY * SIGN(diff);
+    } else {
+        change.y += MIN_URGENCY * SIGN(diff);<Font color = cyan>// あまり縦にはゆれない</Font>
+    }
+
+
+    <Font color = cyan>// 速度変化を力に追加する</Font>
+    D3DXVECTOR3  change = m_vel;
+    D3DXVec3Normalize(&change, &change);
+    change *= (urgency * SIGN(-diff));
+
+   return (change);
+}
+</pre>
+
+<p>
+最後に向きの変更です。<br>
+pitch と yaw は、速度の経度及び緯度として求められます。<br>
+roll は、速度変化の速度に直行する部分の大きさを見て、横に大きく動くようなら、大きく傾くようにしました。
+</p>
+
+<pre class="CodeBlock">
+<Font color = cyan>// ----------------------------------------------------------------------------
+// Roll Pitch Yaw の回転の計算
+//-----------------------------------------------------------------------------</Font>
+void CBoid::ComputeRPY (void)
+{
+    float  roll, pitch, yaw;
+
+    <Font color = cyan>// 受けた力を計算する</Font>
+    D3DXVECTOR3    d = m_vel - m_oldvel;
+    D3DXVECTOR3 lateralDir;
+    D3DXVec3Cross(&lateralDir, &m_vel, &d);
+    D3DXVec3Cross(&lateralDir, &lateralDir, &m_vel);<Font color = cyan>// 受けた力の速度に直交する成分（回転成分）</Font>
+    D3DXVec3Normalize(&lateralDir, &lateralDir);
+
+    <Font color = cyan>// トルク計算</Font>
+    float lateralMag = D3DXVec3Dot(&d, &lateralDir);
+  
+    <Font color = cyan>// roll</Font>
+    if (lateralMag == 0) {
+        roll = 0.0f;  
+    } else {
+        roll = (float) -atan2(GRAVITY, lateralMag) + PI/2.0f;
+    }
+
+    <Font color = cyan>// pitch</Font>
+    pitch = (float) -atan(-m_vel.y / sqrt((m_vel.z*m_vel.z) + (m_vel.x*m_vel.x)));
+
+    <Font color = cyan>// yaw</Font>
+    yaw = (float) atan2(-m_vel.x, -m_vel.z);
+
+    <Font color = cyan>// 出力</Font>
+    m_ang.x = pitch;
+    m_ang.y = yaw;
+    m_ang.z = roll;
+}
+</pre>
+
+<p>
+あと、今回は、水槽に関して、周期的な境界条件を使っています。<br>
+理由は、そうしないとぶつかるからで、次の回でちゃんと水槽の中を泳がせます。
+</p>
+
+<h2>■取りこぼし</h2>
+
+<p>
+あと、CBoid の線形リストの説明をしていないですが、これは、基本的なアルゴリズムの本を読んでください。<br>
+また、初期化の説明もしていませんが、位置や速度を適当に設定しているだけです。<br>
+あと、毎フレーム、各 CBoid に関して、FlockIt をしているということでしょうか。
+</p>
+<p>
+表示されている魚は CFish クラスとして表現されています。<br>
+前回説明したモデル表示の CMyModel クラスと、今回の CBoid の多重継承になっています。
+</p>
+<right><image src = "boid1_class.gif"></right>
+<p>
+CBoid クラスで、決定した座標を、CMyModel クラスの座標にコピーして、表示します。<br>
+そのまま、CBoid クラスの位置を採用しても良いのですが、ゲームなどで用いるときは、
+登場シーンやパワーアップシーンなどの、さまざまな演出が入りますので、
+分離しておくほうが良いのではないでしょうか？
+</p>
+
+<h2>■最後に</h2>
+
+<p>
+とりあえず、群れをなして動くものを作れました。<br>
+後は、障害物を避けさせたり、『敵』を導入したいと思います。<br>
+今回気がついたのですが、BOID一個一個がモデルを読みにいくので、非常な無駄が発生しています。
+これを回避する、リソース管理もしたいです。<br>
+魚にアニメも入れたいですし、fps に依存したい動きもさせたいです。
+</p>
+<p>
+あと、足りないの在ったら、いってください。
+</p>
+
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<center>
+<hr>
+<p><a href="../index.html">もどる</a></p>
+<p><a href="mailto:imagire@gmail.com">imagire@gmail.com</a></p>
+</center>
+</body>
+</html>

@@ -1,0 +1,264 @@
+<head>
+	<title>t-pot『魚眼レンズ』</title>
+	<link rel="stylesheet" type="text/css" href="../if.css">
+</head>
+<meta http-equiv=Content-Type content="text/html; charset=shift_jis">
+<body>
+
+
+<div class="contents">
+<center>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<h1>魚眼レンズ</h1><br>
+<h3>～お魚の気持ちになって…～</h3>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<image src = "title.png">
+</center>
+
+
+<h2>■はじめに</h2>
+
+
+<p>
+今回は、一息ついて魚眼レンズです。
+単純な頂点シェーダープログラムなので、すぐにおわかりになられるでしょう。
+</p>
+<p>
+<ul style = "LIST-STYLE-TYPE:none">
+<li><a href="src.lzh">src.lzh (魚眼レンズのサンプル:DirectX8.1)</a>
+</ul>
+
+<p>
+まぁ、いつものように適当にファイルが入っています。<br>
+</p>
+<table>
+<tr><td><a href="vs_vsh.html">vs.vsh</a></td><td>頂点シェーダー。</td></tr>
+<tr><td><a href="ps_psh.html">ps.psh</a></td><td>ピクセルシェーダー。</td></tr>
+<tr><td><a href="draw_cpp.html">draw.cpp</a></td><td>メインの描画部分。</td></tr>
+<tr><td><a href="draw_h.html">draw.h</a></td><td>描画の各関数の定義。</td></tr>
+<tr><td><a href="bg_cpp.html">bg.cpp</a></td><td>背景の描画。</td></tr>
+<tr><td><a href="main_h.html">main.h</a></td><td>基本的な定数など。</td></tr>
+<tr><td><a href="main_cpp.html">main.cpp</a></td><td>描画に関係しないシステム的な部分。</td></tr>
+<tr><td><a href="load_cpp.html">load.cpp</a></td><td>ロード。</td></tr>
+<tr><td><a href="load_h.html">load.h</a></td><td>ロードのインターフェイス。</td></tr>
+</table>
+<image src = "tile_bmp.jpg" width = 64 height=64>tile.bmp (床デカール)<br>
+<image src = "sky_bmp.jpg" width = 64 height=64>sky.bmp (空デカール)<br>
+<p>
+あと、モデルのファイル、実行ファイル及び、プロジェクトファイルが入っています。
+</p>
+
+
+<h2>■やってること</h2>
+
+<p>
+魚の目は、横に付いています。<br>
+従って、見える角度が非常に広くなっています。<br>
+魚のに見える景色を一枚の写真に焼き付けようとしたレンズが魚眼レンズです。<br>
+一番上に出ている画像を普通に（視野角６０度で）レンダリングした場合には、次のようになります。
+</p>
+<image src = "normal.png">
+</p>
+魚眼レンズ的なゆがませ方は色々あるのですが、今回は、次の絵にあるような射影をします。
+</p>
+<image src = "func.png">
+</p>
+原点と頂点を結ぶ直線と、２次曲線の交わる交点を垂直に落とした場所を射影空間の位置Ｐｒにします。<br>
+その射影空間で上での距離Prを、ｘｙ平面でのそれぞれの方向に射影します。<br>
+さて、問題なのは、射影空間の距離Ｐｒです。<br>
+Ｐｒを求めましょう。
+</p>
+<p>
+Pr は、次の式を連立させて求めることが出来ます。
+</p>
+<pre class="CodeBlock">
+Pr = Pz tanθ
+
+    1
+Pz = - (1-Pr<sup>2</sup>)
+     2
+</pre>
+<p>
+(X,Y,Z) が、頂点の位置です。<br>
+Pz を消すように連立すれば、Pr は、
+</p>
+<pre class="CodeBlock">
+     1
+Pr = - (1-Pr<sup>2</sup>) tanθ
+    2
+                     <font color="yellow">↓Prの冪乗でまとめて</font>
+tanθ Pr<sup>2</sup> + 2Pr - tanθ =0
+                     <font color="yellow">↓２次方程式を解く</font>
+      -1+sqrt(1+tan<sup>2</sup>θ)
+Pr = ――――――
+         tanθ
+    -cosθ + 1
+   = ――――――
+      tanθ cosθ
+      1 - cosθ
+   = ――――――
+        sinθ
+</pre>
+<p>
+に、なります。<br>
+この式を代入すると、
+</p>
+<pre class="CodeBlock">
+           1 - cosθ
+X<sub>射影空間</sub> = ――――― cosφ
+          sinθ 
+ 
+         1 - cosθ
+Y<sub>射影空間</sub> = ――――― sinφ
+          sinθ
+</pre>
+<p>
+に成ります。さて、それぞれの角度は、頂点座標で、
+</p>
+<pre class="CodeBlock">
+        x           y
+cosφ = ―, sinφ = ―
+        P<sub>xy</sub>         P<sub>xy</sub>
+
+        z          P<sub>xy</sub>
+cosθ = ―, sinθ = ―
+        d          d
+
+P<sub>xy</sub><sup>2</sup> = x<sup>2</sup> + y<sup>2</sup>,
+d<sup>2</sup> = x<sup>2</sup> + y<sup>2</sup> + z<sup>2</sup>,
+</pre>
+<p>
+と書けます。射影空間の位置に関して、これらの値を代入すると、
+</p>
+<pre class="CodeBlock">
+           1 - (z / d)  x
+X<sub>射影空間</sub> = ―――――― ―
+           (P<sub>xy</sub> / d)    P<sub>xy</sub>
+ 
+           (d - z)  x
+        = ―――― ―
+             P<sub>xy</sub>    P<sub>xy</sub>
+
+            x
+        = ―― (d - z),
+           P<sub>xy</sub><sup>2</sup>
+
+            y
+Y<sub>射影空間</sub> = ―― (d - z),
+           P<sub>xy</sub><sup>2</sup>
+</pre>
+<p>
+になります。これが欲しかった量です。<br>
+一つ忘れてはいけないことは、これはカメラから見た位置です。<br>
+座標はビュー座標系で処理する必要があります。
+</p>
+
+<h2>■頂点シェーダ</h2>
+
+
+<p>
+今回、特別なプログラムは、頂点シェーダの座標変換しかありません。
+</p>
+<pre class="CodeBlock">
+vs.vsh
+<font color="deepskyblue">0001:</font> <font color="cyan">; c0-3   -- world + ビュー 行列</font>
+<font color="deepskyblue">0002:</font> <font color="cyan">; c12    -- {0.0, 0.5, 1.0, 2.0}</font>
+<font color="deepskyblue">0003:</font> <font color="cyan">; c13    -- ライトのベクトル (w成分は環境光の強さ)</font>
+<font color="deepskyblue">0004:</font> <font color="cyan">; c14    -- モデルの色</font>
+<font color="deepskyblue">0005:</font> <font color="cyan">; c15    -- 深度調整</font>
+<font color="deepskyblue">0006:</font> <font color="cyan">;</font>
+<font color="deepskyblue">0007:</font> <font color="cyan">; v0    頂点の座標値</font>
+<font color="deepskyblue">0008:</font> <font color="cyan">; v7    テクスチャ座標</font>
+<font color="deepskyblue">0009:</font> 
+<font color="deepskyblue">0010:</font> vs.1.0
+<font color="deepskyblue">0011:</font> 
+<font color="deepskyblue">0012:</font> <font color="cyan">;座標変換</font>
+<font color="deepskyblue">0013:</font> m4x4 r0,  v0,   c0
+<font color="deepskyblue">0014:</font> 
+<font color="deepskyblue">0015:</font> <font color="orange">dp3 r0.w, r0, r0</font>
+<font color="deepskyblue">0016:</font> <font color="orange">rsq r1.w, r0.w</font>
+<font color="deepskyblue">0017:</font> <font color="orange">mul r0.w, r0.w, r1.w</font>
+<font color="deepskyblue">0018:</font> <font color="orange">mov oPos.w, r0.w</font>                <font color="cyan">; oPos.w = r0.w = d</font>
+<font color="deepskyblue">0019:</font> 
+<font color="deepskyblue">0020:</font> <font color="red">mad oPos.z,  c15.x, r0.w, c15.y</font> <font color="cyan">; oPos.z = z_max*(d-z_min)/(z_max-z_min)</font>
+<font color="deepskyblue">0021:</font> 
+<font color="deepskyblue">0022:</font> <font color="yellow">add r1.w, r0.w, -r0.z</font>
+<font color="deepskyblue">0023:</font> <font color="yellow">dp4 r1.z, r0.xxyy, r0.xxyy</font>
+<font color="deepskyblue">0024:</font> <font color="yellow">rcp r1.z, r1.z</font>
+<font color="deepskyblue">0025:</font> <font color="yellow">mul r0, r0, r0.w</font>
+<font color="deepskyblue">0026:</font> <font color="yellow">mul r0, r0, r1.w</font>
+<font color="deepskyblue">0027:</font> <font color="yellow">mul r0, r0, c12.w</font>
+<font color="deepskyblue">0028:</font> <font color="yellow">mul oPos.xy, r0, r1.z</font>           <font color="cyan">; oPos.xy = r0.xy*d*(d-r0.z)/(v0.x^2+v0.y^2)</font>
+<font color="deepskyblue">0029:</font> 
+<font color="deepskyblue">0034:</font> <font color="cyan">; ((L･N) + L.w)*c14 (平行光源のライティング)</font>
+<font color="deepskyblue">0035:</font> dp4 r0.w,   v3,   c13
+<font color="deepskyblue">0036:</font> mul oD0,    r0.w, c14
+<font color="deepskyblue">0037:</font> 
+<font color="deepskyblue">0038:</font> <font color="cyan">; テクスチャーを張る</font>
+<font color="deepskyblue">0039:</font> mov oT0,    v7
+</pre>
+
+<p>
+最初にビュー空間に座標変換します。<br>
+この変換によって、カメラを原点に置いた座標系に移動します。<br>
+射影空間に出力する座標は、次の通りです。
+</p>
+</p>
+ｗ成分として出力するビュー空間での深度は、カメラからの距離dを出力します。<br>
+ｚ成分は、カメラからの距離に関する０～１に補正される深度、
+</p>
+<pre class="CodeBlock">
+ <sub>　　　　</sub>    z<sub>max</sub>  d - z<sub>min</sub>
+Z<sub>射影空間</sub> =  ―  ――――
+ <sub>　　　　</sub>     1  z<sub>max</sub>- z<sub>min</sub>
+</pre>
+<p>
+を使います。ただし、０～１に補正されるのは、ｗ成分で割った値です。
+</p>
+<p>
+ｘ、ｙ成分に関しては、先ほど説明した座標を、ｗ成分で割られるときを考え、ｗ成分の値を掛けた座標、
+</p>
+<pre class="CodeBlock">
+    <sub>　　　　</sub>   x
+X<sub>射影空間</sub> =  d ―  (d - z)
+    <sub>　　　　</sub>   P<sub>xy</sub><sup>2</sup>
+
+    <sub>　　　　</sub>   y
+Y<sub>射影空間</sub> =  d ―  (d - z)
+    <sub>　　　　</sub>   P<sub>xy</sub><sup>2</sup>
+</pre>
+<p>
+を、出力します。<br>
+特別な方法といえば、ｘｙ平面での距離を計算するのに、内積計算で求めている
+</p>
+<pre class="CodeBlock">
+<font color="deepskyblue">0023:</font> <font color="yellow">dp4 r1.z, r0.xxyy, r0.xxyy</font>
+r1.z = r0.x*r0.x + r0.x*r0.x + r0.y*r0.y + r0.y*r0.y
+     = 2 (r0.x<sup>2</sup> + r0.y<sup>2</sup>)
+</pre>
+<p>
+ぐらいでしょうか。<br>
+あまり、最適化は考えていないので、もっと高速化は出来ると思います。
+</p>
+
+<h2>■最後に</h2>
+
+
+<p>
+いや、勿論あれへの前振りですよ。<br>
+といっても、まだ作っていないので、出来るかは不明ですが。<br>
+次回のネタが違ったら、間に合わなかったんだと思ってください。
+</p>
+
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<center>
+<p><a href="../index.html">もどる</a></p>
+<p><a href="mailto:imagire@gmail.com">imagire@gmail.com</a></p>
+</center>
+</body>
+</html>

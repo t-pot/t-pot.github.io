@@ -1,0 +1,903 @@
+<HTML>
+<HEAD>
+<TITLE>mipmap_main.cpp</TITLE>
+<meta name="GENERATOR" content="cpp2html 2.1 by Niisaka">
+<meta http-equiv="Content-Type" content="text/html">
+<meta http-equiv="Content-Style-Type" content="text/css">
+<STYLE TYPE="text/css">
+<!--
+SPAN.comment { color:#008000; font-weight:normal; font-style:normal;}
+SPAN.keyword { color:#0000FF; font-weight:normal; font-style:normal;}
+SPAN.string { color:#600000; font-weight:normal; font-style:normal;}
+SPAN.linenum { color:#A0A0A0; font-weight:normal; font-style:normal;}
+-->
+</STYLE>
+</HEAD>
+<BODY TEXT="#000000" BGCOLOR="#FFFFFF">
+<PRE><SPAN CLASS="linenum">0001:</SPAN> <SPAN CLASS="comment">//--------------------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0002:</SPAN> <SPAN CLASS="comment">// File: main.cpp</SPAN>
+<SPAN CLASS="linenum">0003:</SPAN> <SPAN CLASS="comment">//</SPAN>
+<SPAN CLASS="linenum">0004:</SPAN> <SPAN CLASS="comment">// Starting point for new Direct3D applications</SPAN>
+<SPAN CLASS="linenum">0005:</SPAN> <SPAN CLASS="comment">// 新しいDirect3Dアプリケーションのための開始点</SPAN>
+<SPAN CLASS="linenum">0006:</SPAN> <SPAN CLASS="comment">//</SPAN>
+<SPAN CLASS="linenum">0007:</SPAN> <SPAN CLASS="comment">// Copyright (c) Microsoft Corporation. All rights reserved.</SPAN>
+<SPAN CLASS="linenum">0008:</SPAN> <SPAN CLASS="comment">//--------------------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0009:</SPAN> <SPAN CLASS="keyword">#include</SPAN> "<SPAN CLASS="string">dxstdafx.h</SPAN>"
+<SPAN CLASS="linenum">0010:</SPAN> <SPAN CLASS="keyword">#include</SPAN> "<SPAN CLASS="string">resource.h</SPAN>"
+<SPAN CLASS="linenum">0011:</SPAN> <SPAN CLASS="keyword">#include</SPAN> "<SPAN CLASS="string">main_fx.h</SPAN>"
+<SPAN CLASS="linenum">0012:</SPAN> 
+<SPAN CLASS="linenum">0013:</SPAN> <SPAN CLASS="comment">//#define DEBUG_VS   // Uncomment this line to debug vertex shaders </SPAN>
+<SPAN CLASS="linenum">0014:</SPAN>                      <SPAN CLASS="comment">// 頂点シェーダをデバッグするにはこの行のコメントをはずせ</SPAN>
+<SPAN CLASS="linenum">0015:</SPAN> <SPAN CLASS="comment">//#define DEBUG_PS   // Uncomment this line to debug pixel shaders </SPAN>
+<SPAN CLASS="linenum">0016:</SPAN>                      <SPAN CLASS="comment">// ピクセルシェーダをデバッグするにはこの行のコメントをはずせ</SPAN>
+<SPAN CLASS="linenum">0017:</SPAN> 
+<SPAN CLASS="linenum">0018:</SPAN> 
+<SPAN CLASS="linenum">0019:</SPAN> <SPAN CLASS="comment">//--------------------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0020:</SPAN> <SPAN CLASS="comment">// Vertex format</SPAN>
+<SPAN CLASS="linenum">0021:</SPAN> <SPAN CLASS="comment">//--------------------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0022:</SPAN> <SPAN CLASS="keyword">struct</SPAN> VERTEX 
+<SPAN CLASS="linenum">0023:</SPAN> {
+<SPAN CLASS="linenum">0024:</SPAN>     D3DXVECTOR3 pos;
+<SPAN CLASS="linenum">0025:</SPAN>     D3DXVECTOR2 tex;
+<SPAN CLASS="linenum">0026:</SPAN> 
+<SPAN CLASS="linenum">0027:</SPAN>     <SPAN CLASS="keyword">static</SPAN> <SPAN CLASS="keyword">const</SPAN> DWORD FVF;
+<SPAN CLASS="linenum">0028:</SPAN> };
+<SPAN CLASS="linenum">0029:</SPAN> <SPAN CLASS="keyword">const</SPAN> DWORD VERTEX::FVF = D3DFVF_XYZ | D3DFVF_TEX1;
+<SPAN CLASS="linenum">0030:</SPAN> 
+<SPAN CLASS="linenum">0031:</SPAN> <SPAN CLASS="comment">//--------------------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0032:</SPAN> <SPAN CLASS="comment">// Global variables</SPAN>
+<SPAN CLASS="linenum">0033:</SPAN> <SPAN CLASS="comment">// グローバル変数</SPAN>
+<SPAN CLASS="linenum">0034:</SPAN> <SPAN CLASS="comment">//--------------------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0035:</SPAN> IDirect3DDevice9*       g_pd3dDevice = NULL;
+<SPAN CLASS="linenum">0036:</SPAN> ID3DXFont*              g_pFont = NULL;         <SPAN CLASS="comment">// Font for drawing text</SPAN>
+<SPAN CLASS="linenum">0037:</SPAN>                                                 <SPAN CLASS="comment">// テキストを描画するためのテキスト</SPAN>
+<SPAN CLASS="linenum">0038:</SPAN> ID3DXSprite*            g_pTextSprite = NULL;   <SPAN CLASS="comment">// Sprite for batching draw text calls</SPAN>
+<SPAN CLASS="linenum">0039:</SPAN>                                                 <SPAN CLASS="comment">// </SPAN>
+<SPAN CLASS="linenum">0040:</SPAN> ID3DXEffect*            g_pEffect = NULL;       <SPAN CLASS="comment">// D3DX effect interface</SPAN>
+<SPAN CLASS="linenum">0041:</SPAN>                                                 <SPAN CLASS="comment">// D3DX エフェクトのインターフェイス</SPAN>
+<SPAN CLASS="linenum">0042:</SPAN> CModelViewerCamera      g_Camera;               <SPAN CLASS="comment">// A model viewing camera</SPAN>
+<SPAN CLASS="linenum">0043:</SPAN>                                                 <SPAN CLASS="comment">// モデルを見ているカメラ</SPAN>
+<SPAN CLASS="linenum">0044:</SPAN> <SPAN CLASS="keyword">bool</SPAN>                    g_bShowHelp = <SPAN CLASS="keyword">true</SPAN>;     <SPAN CLASS="comment">// If true, it renders the UI control text</SPAN>
+<SPAN CLASS="linenum">0045:</SPAN>                                                 <SPAN CLASS="comment">// 真の時にはUI制御のテキストを描画する</SPAN>
+<SPAN CLASS="linenum">0046:</SPAN> CDXUTDialog             g_HUD;                  <SPAN CLASS="comment">// dialog for standard controls</SPAN>
+<SPAN CLASS="linenum">0047:</SPAN>                                                 <SPAN CLASS="comment">// 標準制御のダイアログ</SPAN>
+<SPAN CLASS="linenum">0048:</SPAN> CDXUTDialog             g_SampleUI;             <SPAN CLASS="comment">// dialog for sample specific controls</SPAN>
+<SPAN CLASS="linenum">0049:</SPAN>                                                 <SPAN CLASS="comment">// サンプル特有のコントロールのダイアログ</SPAN>
+<SPAN CLASS="linenum">0050:</SPAN> 
+<SPAN CLASS="linenum">0051:</SPAN> D3DVIEWPORT9            g_ViewportFB;
+<SPAN CLASS="linenum">0052:</SPAN> 
+<SPAN CLASS="linenum">0053:</SPAN> VERTEX                  g_Vertex[4];
+<SPAN CLASS="linenum">0054:</SPAN> LPDIRECT3DTEXTURE9      g_pWangTexture = NULL;
+<SPAN CLASS="linenum">0055:</SPAN> 
+<SPAN CLASS="linenum">0056:</SPAN> DWORD                   g_MapSize = 32;
+<SPAN CLASS="linenum">0057:</SPAN> LPDIRECT3DTEXTURE9      g_pRandTexture = NULL;
+<SPAN CLASS="linenum">0058:</SPAN> 
+<SPAN CLASS="linenum">0059:</SPAN> <SPAN CLASS="keyword">#if</SPAN> 1 <SPAN CLASS="comment">// @@@</SPAN>
+<SPAN CLASS="linenum">0060:</SPAN> LPDIRECT3DTEXTURE9      g_pLODLookupTexture = NULL;
+<SPAN CLASS="linenum">0061:</SPAN> LPDIRECT3DTEXTURE9      g_pSpreadWangTexture = NULL;
+<SPAN CLASS="linenum">0062:</SPAN> DWORD                   g_WangTextureSize;
+<SPAN CLASS="linenum">0063:</SPAN> DWORD                   g_WangLODCount;
+<SPAN CLASS="linenum">0064:</SPAN> <SPAN CLASS="keyword">#endif</SPAN>
+<SPAN CLASS="linenum">0065:</SPAN> 
+<SPAN CLASS="linenum">0066:</SPAN> <SPAN CLASS="comment">//--------------------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0067:</SPAN> <SPAN CLASS="comment">// UI control IDs</SPAN>
+<SPAN CLASS="linenum">0068:</SPAN> <SPAN CLASS="comment">// UI を制御するためのID群</SPAN>
+<SPAN CLASS="linenum">0069:</SPAN> <SPAN CLASS="comment">//--------------------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0070:</SPAN> <SPAN CLASS="keyword">#define</SPAN> IDC_TOGGLEFULLSCREEN    1
+<SPAN CLASS="linenum">0071:</SPAN> <SPAN CLASS="keyword">#define</SPAN> IDC_TOGGLEREF           2
+<SPAN CLASS="linenum">0072:</SPAN> <SPAN CLASS="keyword">#define</SPAN> IDC_CHANGEDEVICE        3
+<SPAN CLASS="linenum">0073:</SPAN> <SPAN CLASS="keyword">#define</SPAN> IDC_CHANGE_LEVEL_STATIC 4
+<SPAN CLASS="linenum">0074:</SPAN> <SPAN CLASS="keyword">#define</SPAN> IDC_CHANGE_LEVEL        5
+<SPAN CLASS="linenum">0075:</SPAN> 
+<SPAN CLASS="linenum">0076:</SPAN> 
+<SPAN CLASS="linenum">0077:</SPAN> 
+<SPAN CLASS="linenum">0078:</SPAN> <SPAN CLASS="comment">//--------------------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0079:</SPAN> <SPAN CLASS="comment">// Forward declarations </SPAN>
+<SPAN CLASS="linenum">0080:</SPAN> <SPAN CLASS="comment">// 前宣言</SPAN>
+<SPAN CLASS="linenum">0081:</SPAN> <SPAN CLASS="comment">//--------------------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0082:</SPAN> <SPAN CLASS="keyword">bool</SPAN>    CALLBACK IsDeviceAcceptable( D3DCAPS9* pCaps, D3DFORMAT AdapterFormat, D3DFORMAT BackBufferFormat, <SPAN CLASS="keyword">bool</SPAN> bWindowed );
+<SPAN CLASS="linenum">0083:</SPAN> <SPAN CLASS="keyword">void</SPAN>    CALLBACK ModifyDeviceSettings( DXUTDeviceSettings* pDeviceSettings, <SPAN CLASS="keyword">const</SPAN> D3DCAPS9* pCaps );
+<SPAN CLASS="linenum">0084:</SPAN> HRESULT CALLBACK OnCreateDevice( IDirect3DDevice9* pd3dDevice, <SPAN CLASS="keyword">const</SPAN> D3DSURFACE_DESC* pBackBufferSurfaceDesc );
+<SPAN CLASS="linenum">0085:</SPAN> HRESULT CALLBACK OnResetDevice( IDirect3DDevice9* pd3dDevice, <SPAN CLASS="keyword">const</SPAN> D3DSURFACE_DESC* pBackBufferSurfaceDesc );
+<SPAN CLASS="linenum">0086:</SPAN> <SPAN CLASS="keyword">void</SPAN>    CALLBACK OnFrameMove( IDirect3DDevice9* pd3dDevice, <SPAN CLASS="keyword">double</SPAN> fTime, <SPAN CLASS="keyword">float</SPAN> fElapsedTime );
+<SPAN CLASS="linenum">0087:</SPAN> <SPAN CLASS="keyword">void</SPAN>    CALLBACK OnFrameRender( IDirect3DDevice9* pd3dDevice, <SPAN CLASS="keyword">double</SPAN> fTime, <SPAN CLASS="keyword">float</SPAN> fElapsedTime );
+<SPAN CLASS="linenum">0088:</SPAN> LRESULT CALLBACK MsgProc( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam, <SPAN CLASS="keyword">bool</SPAN>* pbNoFurtherProcessing );
+<SPAN CLASS="linenum">0089:</SPAN> <SPAN CLASS="keyword">void</SPAN>    CALLBACK KeyboardProc( UINT nChar, <SPAN CLASS="keyword">bool</SPAN> bKeyDown, <SPAN CLASS="keyword">bool</SPAN> bAltDown  );
+<SPAN CLASS="linenum">0090:</SPAN> <SPAN CLASS="keyword">void</SPAN>    CALLBACK OnGUIEvent( UINT nEvent, <SPAN CLASS="keyword">int</SPAN> nControlID, CDXUTControl* pControl );
+<SPAN CLASS="linenum">0091:</SPAN> <SPAN CLASS="keyword">void</SPAN>    CALLBACK OnLostDevice();
+<SPAN CLASS="linenum">0092:</SPAN> <SPAN CLASS="keyword">void</SPAN>    CALLBACK OnDestroyDevice();
+<SPAN CLASS="linenum">0093:</SPAN> 
+<SPAN CLASS="linenum">0094:</SPAN> <SPAN CLASS="keyword">void</SPAN>    InitApp();
+<SPAN CLASS="linenum">0095:</SPAN> HRESULT LoadMesh( IDirect3DDevice9* pd3dDevice, WCHAR* strFileName, ID3DXMesh** ppMesh );
+<SPAN CLASS="linenum">0096:</SPAN> <SPAN CLASS="keyword">void</SPAN>    RenderText();
+<SPAN CLASS="linenum">0097:</SPAN> 
+<SPAN CLASS="linenum">0098:</SPAN> 
+<SPAN CLASS="linenum">0099:</SPAN> <SPAN CLASS="comment">//--------------------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0100:</SPAN> <SPAN CLASS="comment">// Entry point to the program. Initializes everything and goes into a message processing </SPAN>
+<SPAN CLASS="linenum">0101:</SPAN> <SPAN CLASS="comment">// loop. Idle time is used to render the scene.</SPAN>
+<SPAN CLASS="linenum">0102:</SPAN> <SPAN CLASS="comment">// プログラムの開始点。全てを初期化してメッセージ処理ループに入る。待機時間はシーンの描画</SPAN>
+<SPAN CLASS="linenum">0103:</SPAN> <SPAN CLASS="comment">// に使われる</SPAN>
+<SPAN CLASS="linenum">0104:</SPAN> <SPAN CLASS="comment">//--------------------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0105:</SPAN> INT WINAPI WinMain( HINSTANCE, HINSTANCE, LPSTR, <SPAN CLASS="keyword">int</SPAN> )
+<SPAN CLASS="linenum">0106:</SPAN> {
+<SPAN CLASS="linenum">0107:</SPAN>     <SPAN CLASS="comment">// Set the callback functions. These functions allow the sample framework to notify</SPAN>
+<SPAN CLASS="linenum">0108:</SPAN>     <SPAN CLASS="comment">// the application about device changes, user input, and windows messages.  The </SPAN>
+<SPAN CLASS="linenum">0109:</SPAN>     <SPAN CLASS="comment">// callbacks are optional so you need only set callbacks for events you're interested </SPAN>
+<SPAN CLASS="linenum">0110:</SPAN>     <SPAN CLASS="comment">// in. However, if you don't handle the device reset/lost callbacks then the sample </SPAN>
+<SPAN CLASS="linenum">0111:</SPAN>     <SPAN CLASS="comment">// framework won't be able to reset your device since the application must first </SPAN>
+<SPAN CLASS="linenum">0112:</SPAN>     <SPAN CLASS="comment">// release all device resources before resetting.  Likewise, if you don't handle the </SPAN>
+<SPAN CLASS="linenum">0113:</SPAN>     <SPAN CLASS="comment">// device created/destroyed callbacks then the sample framework won't be able to </SPAN>
+<SPAN CLASS="linenum">0114:</SPAN>     <SPAN CLASS="comment">// recreate your device resources.</SPAN>
+<SPAN CLASS="linenum">0115:</SPAN>     DXUTSetCallbackDeviceCreated( OnCreateDevice );
+<SPAN CLASS="linenum">0116:</SPAN>     DXUTSetCallbackDeviceReset( OnResetDevice );
+<SPAN CLASS="linenum">0117:</SPAN>     DXUTSetCallbackDeviceLost( OnLostDevice );
+<SPAN CLASS="linenum">0118:</SPAN>     DXUTSetCallbackDeviceDestroyed( OnDestroyDevice );
+<SPAN CLASS="linenum">0119:</SPAN>     DXUTSetCallbackMsgProc( MsgProc );
+<SPAN CLASS="linenum">0120:</SPAN>     DXUTSetCallbackKeyboard( KeyboardProc );
+<SPAN CLASS="linenum">0121:</SPAN>     DXUTSetCallbackFrameRender( OnFrameRender );
+<SPAN CLASS="linenum">0122:</SPAN>     DXUTSetCallbackFrameMove( OnFrameMove );
+<SPAN CLASS="linenum">0123:</SPAN> 
+<SPAN CLASS="linenum">0124:</SPAN>     <SPAN CLASS="comment">// Show the cursor and clip it when in full screen</SPAN>
+<SPAN CLASS="linenum">0125:</SPAN>     DXUTSetCursorSettings( <SPAN CLASS="keyword">true</SPAN>, <SPAN CLASS="keyword">true</SPAN> );
+<SPAN CLASS="linenum">0126:</SPAN> 
+<SPAN CLASS="linenum">0127:</SPAN>     InitApp();
+<SPAN CLASS="linenum">0128:</SPAN> 
+<SPAN CLASS="linenum">0129:</SPAN>     <SPAN CLASS="comment">// Initialize the sample framework and create the desired Win32 window and Direct3D </SPAN>
+<SPAN CLASS="linenum">0130:</SPAN>     <SPAN CLASS="comment">// device for the application. Calling each of these functions is optional, but they</SPAN>
+<SPAN CLASS="linenum">0131:</SPAN>     <SPAN CLASS="comment">// allow you to set several options which control the behavior of the framework.</SPAN>
+<SPAN CLASS="linenum">0132:</SPAN>     DXUTInit( <SPAN CLASS="keyword">true</SPAN>, <SPAN CLASS="keyword">true</SPAN>, <SPAN CLASS="keyword">true</SPAN> ); <SPAN CLASS="comment">// Parse the command line, handle the default hotkeys, and show msgboxes</SPAN>
+<SPAN CLASS="linenum">0133:</SPAN>     DXUTCreateWindow( L"<SPAN CLASS="string">main</SPAN>" );
+<SPAN CLASS="linenum">0134:</SPAN>     DXUTCreateDevice( D3DADAPTER_DEFAULT, <SPAN CLASS="keyword">true</SPAN>, 640, 480, IsDeviceAcceptable, ModifyDeviceSettings );
+<SPAN CLASS="linenum">0135:</SPAN> 
+<SPAN CLASS="linenum">0136:</SPAN>     <SPAN CLASS="comment">// Pass control to the sample framework for handling the message pump and </SPAN>
+<SPAN CLASS="linenum">0137:</SPAN>     <SPAN CLASS="comment">// dispatching render calls. The sample framework will call your FrameMove </SPAN>
+<SPAN CLASS="linenum">0138:</SPAN>     <SPAN CLASS="comment">// and FrameRender callback when there is idle time between handling window messages.</SPAN>
+<SPAN CLASS="linenum">0139:</SPAN>     DXUTMainLoop();
+<SPAN CLASS="linenum">0140:</SPAN> 
+<SPAN CLASS="linenum">0141:</SPAN>     <SPAN CLASS="comment">// Perform any application-level cleanup here. Direct3D device resources are released within the</SPAN>
+<SPAN CLASS="linenum">0142:</SPAN>     <SPAN CLASS="comment">// appropriate callback functions and therefore don't require any cleanup code here.</SPAN>
+<SPAN CLASS="linenum">0143:</SPAN> 
+<SPAN CLASS="linenum">0144:</SPAN>     <SPAN CLASS="keyword">return</SPAN> DXUTGetExitCode();
+<SPAN CLASS="linenum">0145:</SPAN> }
+<SPAN CLASS="linenum">0146:</SPAN> 
+<SPAN CLASS="linenum">0147:</SPAN> 
+<SPAN CLASS="linenum">0148:</SPAN> <SPAN CLASS="comment">//--------------------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0149:</SPAN> <SPAN CLASS="comment">// Initialize the app </SPAN>
+<SPAN CLASS="linenum">0150:</SPAN> <SPAN CLASS="comment">// アプリケーションの初期化</SPAN>
+<SPAN CLASS="linenum">0151:</SPAN> <SPAN CLASS="comment">//--------------------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0152:</SPAN> <SPAN CLASS="keyword">void</SPAN> InitApp()
+<SPAN CLASS="linenum">0153:</SPAN> {
+<SPAN CLASS="linenum">0154:</SPAN>     g_pEffect = NULL;
+<SPAN CLASS="linenum">0155:</SPAN> 
+<SPAN CLASS="linenum">0156:</SPAN>     g_Vertex[0].pos = D3DXVECTOR3(+1,0,-1);
+<SPAN CLASS="linenum">0157:</SPAN>     g_Vertex[1].pos = D3DXVECTOR3(-1,0,-1);
+<SPAN CLASS="linenum">0158:</SPAN>     g_Vertex[2].pos = D3DXVECTOR3(+1,0,+1);
+<SPAN CLASS="linenum">0159:</SPAN>     g_Vertex[3].pos = D3DXVECTOR3(-1,0,+1);
+<SPAN CLASS="linenum">0160:</SPAN>     g_Vertex[0].tex = D3DXVECTOR2(1,1);
+<SPAN CLASS="linenum">0161:</SPAN>     g_Vertex[1].tex = D3DXVECTOR2(0,1);
+<SPAN CLASS="linenum">0162:</SPAN>     g_Vertex[2].tex = D3DXVECTOR2(1,0);
+<SPAN CLASS="linenum">0163:</SPAN>     g_Vertex[3].tex = D3DXVECTOR2(0,0);
+<SPAN CLASS="linenum">0164:</SPAN> 
+<SPAN CLASS="linenum">0165:</SPAN>     <SPAN CLASS="comment">// Initialize dialogs</SPAN>
+<SPAN CLASS="linenum">0166:</SPAN>     <SPAN CLASS="comment">// ダイアログの初期化</SPAN>
+<SPAN CLASS="linenum">0167:</SPAN>     g_HUD.SetCallback( OnGUIEvent ); <SPAN CLASS="keyword">int</SPAN> iY = 10; 
+<SPAN CLASS="linenum">0168:</SPAN>     g_HUD.AddButton( IDC_TOGGLEFULLSCREEN, L"<SPAN CLASS="string">Toggle full screen</SPAN>", 35, iY, 125, 22 );
+<SPAN CLASS="linenum">0169:</SPAN>     g_HUD.AddButton( IDC_TOGGLEREF, L"<SPAN CLASS="string">Toggle REF (F3)</SPAN>", 35, iY += 24, 125, 22 );
+<SPAN CLASS="linenum">0170:</SPAN>     g_HUD.AddButton( IDC_CHANGEDEVICE, L"<SPAN CLASS="string">Change device (F2)</SPAN>", 35, iY += 24, 125, 22 );
+<SPAN CLASS="linenum">0171:</SPAN> 
+<SPAN CLASS="linenum">0172:</SPAN>     g_SampleUI.SetCallback( OnGUIEvent ); iY = 10; 
+<SPAN CLASS="linenum">0173:</SPAN> <SPAN CLASS="comment">//    g_SampleUI.AddComboBox( 19, 35, iY += 24, 125, 22 );</SPAN>
+<SPAN CLASS="linenum">0174:</SPAN> <SPAN CLASS="comment">//    g_SampleUI.GetComboBox( 19 )-&gt;AddItem( L"Text1", NULL );</SPAN>
+<SPAN CLASS="linenum">0175:</SPAN> <SPAN CLASS="comment">//    g_SampleUI.GetComboBox( 19 )-&gt;AddItem( L"Text2", NULL );</SPAN>
+<SPAN CLASS="linenum">0176:</SPAN> <SPAN CLASS="comment">//    g_SampleUI.GetComboBox( 19 )-&gt;AddItem( L"Text3", NULL );</SPAN>
+<SPAN CLASS="linenum">0177:</SPAN> <SPAN CLASS="comment">//    g_SampleUI.GetComboBox( 19 )-&gt;AddItem( L"Text4", NULL );</SPAN>
+<SPAN CLASS="linenum">0178:</SPAN> <SPAN CLASS="comment">//    g_SampleUI.AddCheckBox( 21, L"Checkbox1", 35, iY += 24, 125, 22 );</SPAN>
+<SPAN CLASS="linenum">0179:</SPAN> <SPAN CLASS="comment">//    g_SampleUI.AddCheckBox( 11, L"Checkbox2", 35, iY += 24, 125, 22 );</SPAN>
+<SPAN CLASS="linenum">0180:</SPAN> <SPAN CLASS="comment">//    g_SampleUI.AddRadioButton( 12, 1, L"Radio1G1", 35, iY += 24, 125, 22 );</SPAN>
+<SPAN CLASS="linenum">0181:</SPAN> <SPAN CLASS="comment">//    g_SampleUI.AddRadioButton( 13, 1, L"Radio2G1", 35, iY += 24, 125, 22 );</SPAN>
+<SPAN CLASS="linenum">0182:</SPAN> <SPAN CLASS="comment">//    g_SampleUI.AddRadioButton( 14, 1, L"Radio3G1", 35, iY += 24, 125, 22 );</SPAN>
+<SPAN CLASS="linenum">0183:</SPAN> <SPAN CLASS="comment">//    g_SampleUI.GetRadioButton( 14 )-&gt;SetChecked( true ); </SPAN>
+<SPAN CLASS="linenum">0184:</SPAN> <SPAN CLASS="comment">//    g_SampleUI.AddButton( 17, L"Button1", 35, iY += 24, 125, 22 );</SPAN>
+<SPAN CLASS="linenum">0185:</SPAN> <SPAN CLASS="comment">//    g_SampleUI.AddButton( 18, L"Button2", 35, iY += 24, 125, 22 );</SPAN>
+<SPAN CLASS="linenum">0186:</SPAN> <SPAN CLASS="comment">//    g_SampleUI.AddRadioButton( 15, 2, L"Radio1G2", 35, iY += 24, 125, 22 );</SPAN>
+<SPAN CLASS="linenum">0187:</SPAN> <SPAN CLASS="comment">//    g_SampleUI.AddRadioButton( 16, 2, L"Radio2G3", 35, iY += 24, 125, 22 );</SPAN>
+<SPAN CLASS="linenum">0188:</SPAN> <SPAN CLASS="comment">//    g_SampleUI.GetRadioButton( 16 )-&gt;SetChecked( true );</SPAN>
+<SPAN CLASS="linenum">0189:</SPAN> <SPAN CLASS="comment">//    g_SampleUI.AddSlider( 20, 50, iY += 24, 100, 22 );</SPAN>
+<SPAN CLASS="linenum">0190:</SPAN> <SPAN CLASS="comment">//    g_SampleUI.GetSlider( 20 )-&gt;SetRange( 0, 100 );</SPAN>
+<SPAN CLASS="linenum">0191:</SPAN> <SPAN CLASS="comment">//    g_SampleUI.GetSlider( 20 )-&gt;SetValue( 50 );</SPAN>
+<SPAN CLASS="linenum">0192:</SPAN> <SPAN CLASS="comment">//    g_SampleUI.AddEditBox( 20, L"Test", 35, iY += 24, 125, 22 );</SPAN>
+<SPAN CLASS="linenum">0193:</SPAN> 
+<SPAN CLASS="linenum">0194:</SPAN>     WCHAR sz[100];
+<SPAN CLASS="linenum">0195:</SPAN>     iY += 256;
+<SPAN CLASS="linenum">0196:</SPAN>     _snwprintf( sz, 100, L"<SPAN CLASS="string">SIZE: %3d</SPAN>", g_MapSize ); sz[99] = 0;
+<SPAN CLASS="linenum">0197:</SPAN>     g_SampleUI.AddStatic( IDC_CHANGE_LEVEL_STATIC, sz, 35, iY += 24, 125, 22 );
+<SPAN CLASS="linenum">0198:</SPAN>     g_SampleUI.AddSlider( IDC_CHANGE_LEVEL, -150, iY += 24, 300, 22, 1, 256, (<SPAN CLASS="keyword">int</SPAN>)g_MapSize );
+<SPAN CLASS="linenum">0199:</SPAN> }
+<SPAN CLASS="linenum">0200:</SPAN> 
+<SPAN CLASS="linenum">0201:</SPAN> <SPAN CLASS="comment">//--------------------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0202:</SPAN> <SPAN CLASS="comment">// Called during device initialization, this code checks the device for some </SPAN>
+<SPAN CLASS="linenum">0203:</SPAN> <SPAN CLASS="comment">// minimum set of capabilities, and rejects those that don't pass by returning false.</SPAN>
+<SPAN CLASS="linenum">0204:</SPAN> <SPAN CLASS="comment">//--------------------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0205:</SPAN> <SPAN CLASS="keyword">bool</SPAN> CALLBACK IsDeviceAcceptable( D3DCAPS9* pCaps, D3DFORMAT AdapterFormat, 
+<SPAN CLASS="linenum">0206:</SPAN>                                   D3DFORMAT BackBufferFormat, <SPAN CLASS="keyword">bool</SPAN> bWindowed )
+<SPAN CLASS="linenum">0207:</SPAN> {
+<SPAN CLASS="linenum">0208:</SPAN>     <SPAN CLASS="comment">// Skip backbuffer formats that don't support alpha blending</SPAN>
+<SPAN CLASS="linenum">0209:</SPAN>     <SPAN CLASS="comment">// アルファブレンディングをサポートしていないバックバッファフォーマットはスキップする</SPAN>
+<SPAN CLASS="linenum">0210:</SPAN>     IDirect3D9* pD3D = DXUTGetD3DObject(); 
+<SPAN CLASS="linenum">0211:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( FAILED( pD3D-&gt;CheckDeviceFormat( pCaps-&gt;AdapterOrdinal, pCaps-&gt;DeviceType,
+<SPAN CLASS="linenum">0212:</SPAN>                     AdapterFormat, D3DUSAGE_QUERY_POSTPIXELSHADER_BLENDING, 
+<SPAN CLASS="linenum">0213:</SPAN>                     D3DRTYPE_TEXTURE, BackBufferFormat ) ) )
+<SPAN CLASS="linenum">0214:</SPAN>         <SPAN CLASS="keyword">return</SPAN> <SPAN CLASS="keyword">false</SPAN>;
+<SPAN CLASS="linenum">0215:</SPAN> 
+<SPAN CLASS="linenum">0216:</SPAN>     <SPAN CLASS="comment">// Must support vertex shader 1.1</SPAN>
+<SPAN CLASS="linenum">0217:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( pCaps-&gt;VertexShaderVersion &lt; D3DVS_VERSION( 1, 1 ) )
+<SPAN CLASS="linenum">0218:</SPAN>         <SPAN CLASS="keyword">return</SPAN> <SPAN CLASS="keyword">false</SPAN>;
+<SPAN CLASS="linenum">0219:</SPAN> 
+<SPAN CLASS="linenum">0220:</SPAN>     <SPAN CLASS="comment">// Must support pixel shader 2.0</SPAN>
+<SPAN CLASS="linenum">0221:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( pCaps-&gt;PixelShaderVersion &lt; D3DPS_VERSION( 2, 0 ) )
+<SPAN CLASS="linenum">0222:</SPAN>         <SPAN CLASS="keyword">return</SPAN> <SPAN CLASS="keyword">false</SPAN>;
+<SPAN CLASS="linenum">0223:</SPAN> 
+<SPAN CLASS="linenum">0224:</SPAN>     <SPAN CLASS="keyword">return</SPAN> <SPAN CLASS="keyword">true</SPAN>;
+<SPAN CLASS="linenum">0225:</SPAN> }
+<SPAN CLASS="linenum">0226:</SPAN> 
+<SPAN CLASS="linenum">0227:</SPAN> 
+<SPAN CLASS="linenum">0228:</SPAN> <SPAN CLASS="comment">//--------------------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0229:</SPAN> <SPAN CLASS="comment">// This callback function is called immediately before a device is created to allow the </SPAN>
+<SPAN CLASS="linenum">0230:</SPAN> <SPAN CLASS="comment">// application to modify the device settings. The supplied pDeviceSettings parameter </SPAN>
+<SPAN CLASS="linenum">0231:</SPAN> <SPAN CLASS="comment">// contains the settings that the framework has selected for the new device, and the </SPAN>
+<SPAN CLASS="linenum">0232:</SPAN> <SPAN CLASS="comment">// application can make any desired changes directly to this structure.  Note however that </SPAN>
+<SPAN CLASS="linenum">0233:</SPAN> <SPAN CLASS="comment">// the sample framework will not correct invalid device settings so care must be taken </SPAN>
+<SPAN CLASS="linenum">0234:</SPAN> <SPAN CLASS="comment">// to return valid device settings, otherwise IDirect3D9::CreateDevice() will fail.  </SPAN>
+<SPAN CLASS="linenum">0235:</SPAN> <SPAN CLASS="comment">//--------------------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0236:</SPAN> <SPAN CLASS="keyword">void</SPAN> CALLBACK ModifyDeviceSettings( DXUTDeviceSettings* pDeviceSettings, <SPAN CLASS="keyword">const</SPAN> D3DCAPS9* pCaps )
+<SPAN CLASS="linenum">0237:</SPAN> {
+<SPAN CLASS="linenum">0238:</SPAN>     <SPAN CLASS="comment">// If device doesn't support HW T&amp;L or doesn't support 1.1 vertex shaders in HW </SPAN>
+<SPAN CLASS="linenum">0239:</SPAN>     <SPAN CLASS="comment">// then switch to SWVP.</SPAN>
+<SPAN CLASS="linenum">0240:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( (pCaps-&gt;DevCaps &amp; D3DDEVCAPS_HWTRANSFORMANDLIGHT) == 0 ||
+<SPAN CLASS="linenum">0241:</SPAN>          pCaps-&gt;VertexShaderVersion &lt; D3DVS_VERSION(1,1) )
+<SPAN CLASS="linenum">0242:</SPAN>     {
+<SPAN CLASS="linenum">0243:</SPAN>         pDeviceSettings-&gt;BehaviorFlags = D3DCREATE_SOFTWARE_VERTEXPROCESSING;
+<SPAN CLASS="linenum">0244:</SPAN>     }
+<SPAN CLASS="linenum">0245:</SPAN>     <SPAN CLASS="keyword">else</SPAN>
+<SPAN CLASS="linenum">0246:</SPAN>     {
+<SPAN CLASS="linenum">0247:</SPAN>         pDeviceSettings-&gt;BehaviorFlags = D3DCREATE_HARDWARE_VERTEXPROCESSING;
+<SPAN CLASS="linenum">0248:</SPAN>     }
+<SPAN CLASS="linenum">0249:</SPAN> 
+<SPAN CLASS="linenum">0250:</SPAN>     <SPAN CLASS="comment">// This application is designed to work on a pure device by not using </SPAN>
+<SPAN CLASS="linenum">0251:</SPAN>     <SPAN CLASS="comment">// IDirect3D9::Get*() methods, so create a pure device if supported and using HWVP.</SPAN>
+<SPAN CLASS="linenum">0252:</SPAN>     <SPAN CLASS="keyword">if</SPAN> ((pCaps-&gt;DevCaps &amp; D3DDEVCAPS_PUREDEVICE) != 0 &amp;&amp; 
+<SPAN CLASS="linenum">0253:</SPAN>         (pDeviceSettings-&gt;BehaviorFlags &amp; D3DCREATE_HARDWARE_VERTEXPROCESSING) != 0 )
+<SPAN CLASS="linenum">0254:</SPAN>         pDeviceSettings-&gt;BehaviorFlags |= D3DCREATE_PUREDEVICE;
+<SPAN CLASS="linenum">0255:</SPAN> 
+<SPAN CLASS="linenum">0256:</SPAN>     <SPAN CLASS="comment">// Debugging vertex shaders requires either REF or software vertex processing </SPAN>
+<SPAN CLASS="linenum">0257:</SPAN>     <SPAN CLASS="comment">// and debugging pixel shaders requires REF.  </SPAN>
+<SPAN CLASS="linenum">0258:</SPAN> <SPAN CLASS="keyword">#ifdef</SPAN> DEBUG_VS
+<SPAN CLASS="linenum">0259:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( pDeviceSettings-&gt;DeviceType != D3DDEVTYPE_REF )
+<SPAN CLASS="linenum">0260:</SPAN>     {
+<SPAN CLASS="linenum">0261:</SPAN>         pDeviceSettings-&gt;BehaviorFlags &amp;= ~D3DCREATE_HARDWARE_VERTEXPROCESSING;
+<SPAN CLASS="linenum">0262:</SPAN>         pDeviceSettings-&gt;BehaviorFlags &amp;= ~D3DCREATE_PUREDEVICE;
+<SPAN CLASS="linenum">0263:</SPAN>         pDeviceSettings-&gt;BehaviorFlags |= D3DCREATE_SOFTWARE_VERTEXPROCESSING;
+<SPAN CLASS="linenum">0264:</SPAN>     }
+<SPAN CLASS="linenum">0265:</SPAN> <SPAN CLASS="keyword">#endif</SPAN>
+<SPAN CLASS="linenum">0266:</SPAN> <SPAN CLASS="keyword">#ifdef</SPAN> DEBUG_PS
+<SPAN CLASS="linenum">0267:</SPAN>     pDeviceSettings-&gt;DeviceType = D3DDEVTYPE_REF;
+<SPAN CLASS="linenum">0268:</SPAN> <SPAN CLASS="keyword">#endif</SPAN>
+<SPAN CLASS="linenum">0269:</SPAN> }
+<SPAN CLASS="linenum">0270:</SPAN> 
+<SPAN CLASS="linenum">0271:</SPAN> <SPAN CLASS="comment">//-------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0272:</SPAN> <SPAN CLASS="comment">// マップの乱数生成</SPAN>
+<SPAN CLASS="linenum">0273:</SPAN> <SPAN CLASS="comment">//-------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0274:</SPAN> <SPAN CLASS="keyword">#define</SPAN> frand() ((FLOAT)rand()/(FLOAT)RAND_MAX)
+<SPAN CLASS="linenum">0275:</SPAN> 
+<SPAN CLASS="linenum">0276:</SPAN> <SPAN CLASS="keyword">#if</SPAN> 1 <SPAN CLASS="comment">// @@@</SPAN>
+<SPAN CLASS="linenum">0277:</SPAN> BYTE g_id[ 256 ][ 256 ];
+<SPAN CLASS="linenum">0278:</SPAN> 
+<SPAN CLASS="linenum">0279:</SPAN> VOID InitFillRand()
+<SPAN CLASS="linenum">0280:</SPAN> {
+<SPAN CLASS="linenum">0281:</SPAN>     DWORD x,y;
+<SPAN CLASS="linenum">0282:</SPAN>     <SPAN CLASS="keyword">for</SPAN>( y = 0; y &lt; g_MapSize; y++ )
+<SPAN CLASS="linenum">0283:</SPAN>     {
+<SPAN CLASS="linenum">0284:</SPAN>         <SPAN CLASS="keyword">for</SPAN>( x = 0; x &lt; g_MapSize; x++ )
+<SPAN CLASS="linenum">0285:</SPAN>         {
+<SPAN CLASS="linenum">0286:</SPAN>             g_id[y][x] = rand() % 4;
+<SPAN CLASS="linenum">0287:</SPAN>         }
+<SPAN CLASS="linenum">0288:</SPAN>     }
+<SPAN CLASS="linenum">0289:</SPAN> }
+<SPAN CLASS="linenum">0290:</SPAN> 
+<SPAN CLASS="linenum">0291:</SPAN> VOID WINAPI FillRand (D3DXVECTOR4* pOut, CONST D3DXVECTOR2* pTexCoord, 
+<SPAN CLASS="linenum">0292:</SPAN> CONST D3DXVECTOR2* pTexelSize, LPVOID pData)
+<SPAN CLASS="linenum">0293:</SPAN> {
+<SPAN CLASS="linenum">0294:</SPAN>     UNREFERENCED_PARAMETER( pTexCoord );
+<SPAN CLASS="linenum">0295:</SPAN>     UNREFERENCED_PARAMETER( pTexelSize );
+<SPAN CLASS="linenum">0296:</SPAN>     UNREFERENCED_PARAMETER( pData );
+<SPAN CLASS="linenum">0297:</SPAN> 
+<SPAN CLASS="linenum">0298:</SPAN>     DWORD x = (DWORD)(g_MapSize * pTexCoord-&gt;x);
+<SPAN CLASS="linenum">0299:</SPAN>     DWORD y = (DWORD)(g_MapSize * pTexCoord-&gt;y);
+<SPAN CLASS="linenum">0300:</SPAN> 
+<SPAN CLASS="linenum">0301:</SPAN>     <SPAN CLASS="keyword">bool</SPAN> left  = ( g_id[ y    % g_MapSize ][ x    % g_MapSize ] &amp; 1 ) ? <SPAN CLASS="keyword">true</SPAN> : <SPAN CLASS="keyword">false</SPAN>; 
+<SPAN CLASS="linenum">0302:</SPAN>     <SPAN CLASS="keyword">bool</SPAN> up    = ( g_id[ y    % g_MapSize ][ x    % g_MapSize ] &amp; 2 ) ? <SPAN CLASS="keyword">true</SPAN> : <SPAN CLASS="keyword">false</SPAN>; 
+<SPAN CLASS="linenum">0303:</SPAN>     <SPAN CLASS="keyword">bool</SPAN> right = ( g_id[ y    % g_MapSize ][(x+1) % g_MapSize ] &amp; 1 ) ? <SPAN CLASS="keyword">true</SPAN> : <SPAN CLASS="keyword">false</SPAN>; 
+<SPAN CLASS="linenum">0304:</SPAN>     <SPAN CLASS="keyword">bool</SPAN> down  = ( g_id[(y+1) % g_MapSize ][ x    % g_MapSize ] &amp; 2 ) ? <SPAN CLASS="keyword">true</SPAN> : <SPAN CLASS="keyword">false</SPAN>; 
+<SPAN CLASS="linenum">0305:</SPAN> 
+<SPAN CLASS="linenum">0306:</SPAN>     <SPAN CLASS="keyword">float</SPAN> tx, ty;
+<SPAN CLASS="linenum">0307:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( !left )
+<SPAN CLASS="linenum">0308:</SPAN>     {
+<SPAN CLASS="linenum">0309:</SPAN>         <SPAN CLASS="keyword">if</SPAN>( !right )
+<SPAN CLASS="linenum">0310:</SPAN>         {
+<SPAN CLASS="linenum">0311:</SPAN> <SPAN CLASS="comment">//          tx = 0.0;</SPAN>
+<SPAN CLASS="linenum">0312:</SPAN>         }<SPAN CLASS="keyword">else</SPAN>{
+<SPAN CLASS="linenum">0313:</SPAN>             tx = 0.25;
+<SPAN CLASS="linenum">0314:</SPAN>         }
+<SPAN CLASS="linenum">0315:</SPAN>     }<SPAN CLASS="keyword">else</SPAN>{
+<SPAN CLASS="linenum">0316:</SPAN>         <SPAN CLASS="keyword">if</SPAN>( !right )
+<SPAN CLASS="linenum">0317:</SPAN>         {
+<SPAN CLASS="linenum">0318:</SPAN>             tx = 0.75;
+<SPAN CLASS="linenum">0319:</SPAN>         }<SPAN CLASS="keyword">else</SPAN>{
+<SPAN CLASS="linenum">0320:</SPAN>             tx = 0.50;
+<SPAN CLASS="linenum">0321:</SPAN>         }
+<SPAN CLASS="linenum">0322:</SPAN>     }
+<SPAN CLASS="linenum">0323:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( !down )
+<SPAN CLASS="linenum">0324:</SPAN>     {
+<SPAN CLASS="linenum">0325:</SPAN>         <SPAN CLASS="keyword">if</SPAN>( !up )
+<SPAN CLASS="linenum">0326:</SPAN>         {
+<SPAN CLASS="linenum">0327:</SPAN>             ty = 0.75;
+<SPAN CLASS="linenum">0328:</SPAN>         }<SPAN CLASS="keyword">else</SPAN>{
+<SPAN CLASS="linenum">0329:</SPAN>             ty = 0.50;
+<SPAN CLASS="linenum">0330:</SPAN>         }
+<SPAN CLASS="linenum">0331:</SPAN>     }<SPAN CLASS="keyword">else</SPAN>{
+<SPAN CLASS="linenum">0332:</SPAN>         <SPAN CLASS="keyword">if</SPAN>( !up )
+<SPAN CLASS="linenum">0333:</SPAN>         {
+<SPAN CLASS="linenum">0334:</SPAN> <SPAN CLASS="comment">//          ty = 0.0;</SPAN>
+<SPAN CLASS="linenum">0335:</SPAN>         }<SPAN CLASS="keyword">else</SPAN>{
+<SPAN CLASS="linenum">0336:</SPAN>             ty = 0.25;
+<SPAN CLASS="linenum">0337:</SPAN>         }
+<SPAN CLASS="linenum">0338:</SPAN>     }
+<SPAN CLASS="linenum">0339:</SPAN> 
+<SPAN CLASS="linenum">0340:</SPAN>     pOut-&gt;x = tx;
+<SPAN CLASS="linenum">0341:</SPAN>     pOut-&gt;y = ty;
+<SPAN CLASS="linenum">0342:</SPAN>     pOut-&gt;z =
+<SPAN CLASS="linenum">0343:</SPAN>     pOut-&gt;w = 0;
+<SPAN CLASS="linenum">0344:</SPAN> }
+<SPAN CLASS="linenum">0345:</SPAN> 
+<SPAN CLASS="linenum">0346:</SPAN> DWORD* GetTexelPtr( D3DLOCKED_RECT* rect, <SPAN CLASS="keyword">int</SPAN> x, <SPAN CLASS="keyword">int</SPAN> y )
+<SPAN CLASS="linenum">0347:</SPAN> {
+<SPAN CLASS="linenum">0348:</SPAN>     <SPAN CLASS="keyword">return</SPAN> (DWORD*)((BYTE*)rect-&gt;pBits + rect-&gt;Pitch * y) + x;
+<SPAN CLASS="linenum">0349:</SPAN> }
+<SPAN CLASS="linenum">0350:</SPAN> 
+<SPAN CLASS="linenum">0351:</SPAN> <SPAN CLASS="keyword">#else</SPAN>
+<SPAN CLASS="linenum">0352:</SPAN> 
+<SPAN CLASS="linenum">0353:</SPAN> VOID WINAPI FillRand (D3DXVECTOR4* pOut, CONST D3DXVECTOR2* pTexCoord, 
+<SPAN CLASS="linenum">0354:</SPAN> CONST D3DXVECTOR2* pTexelSize, LPVOID pData)
+<SPAN CLASS="linenum">0355:</SPAN> {
+<SPAN CLASS="linenum">0356:</SPAN>     UNREFERENCED_PARAMETER( pTexCoord );
+<SPAN CLASS="linenum">0357:</SPAN>     UNREFERENCED_PARAMETER( pTexelSize );
+<SPAN CLASS="linenum">0358:</SPAN>     UNREFERENCED_PARAMETER( pData );
+<SPAN CLASS="linenum">0359:</SPAN> 
+<SPAN CLASS="linenum">0360:</SPAN>     pOut-&gt;x = frand();
+<SPAN CLASS="linenum">0361:</SPAN>     pOut-&gt;y = frand();
+<SPAN CLASS="linenum">0362:</SPAN>     pOut-&gt;z = pOut-&gt;w = 0.0f;
+<SPAN CLASS="linenum">0363:</SPAN> }
+<SPAN CLASS="linenum">0364:</SPAN> <SPAN CLASS="keyword">#endif</SPAN>
+<SPAN CLASS="linenum">0365:</SPAN> 
+<SPAN CLASS="linenum">0366:</SPAN> 
+<SPAN CLASS="linenum">0367:</SPAN> <SPAN CLASS="comment">//--------------------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0368:</SPAN> <SPAN CLASS="comment">// This callback function will be called immediately after the Direct3D device has been </SPAN>
+<SPAN CLASS="linenum">0369:</SPAN> <SPAN CLASS="comment">// created, which will happen during application initialization and windowed/full screen </SPAN>
+<SPAN CLASS="linenum">0370:</SPAN> <SPAN CLASS="comment">// toggles. This is the best location to create D3DPOOL_MANAGED resources since these </SPAN>
+<SPAN CLASS="linenum">0371:</SPAN> <SPAN CLASS="comment">// resources need to be reloaded whenever the device is destroyed. Resources created  </SPAN>
+<SPAN CLASS="linenum">0372:</SPAN> <SPAN CLASS="comment">// here should be released in the OnDestroyDevice callback. </SPAN>
+<SPAN CLASS="linenum">0373:</SPAN> <SPAN CLASS="comment">//--------------------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0374:</SPAN> 
+<SPAN CLASS="linenum">0375:</SPAN> HRESULT CALLBACK OnCreateDevice( IDirect3DDevice9* pd3dDevice, <SPAN CLASS="keyword">const</SPAN> D3DSURFACE_DESC* pBackBufferSurfaceDesc )
+<SPAN CLASS="linenum">0376:</SPAN> {
+<SPAN CLASS="linenum">0377:</SPAN>     HRESULT hr;
+<SPAN CLASS="linenum">0378:</SPAN>     WCHAR str[MAX_PATH];
+<SPAN CLASS="linenum">0379:</SPAN> 
+<SPAN CLASS="linenum">0380:</SPAN>     g_pd3dDevice = pd3dDevice;
+<SPAN CLASS="linenum">0381:</SPAN> 
+<SPAN CLASS="linenum">0382:</SPAN>     <SPAN CLASS="comment">// Initialize the font</SPAN>
+<SPAN CLASS="linenum">0383:</SPAN>     V_RETURN( D3DXCreateFont( pd3dDevice, 15, 0, FW_BOLD, 1, FALSE, DEFAULT_CHARSET, 
+<SPAN CLASS="linenum">0384:</SPAN>                          OUT_DEFAULT_PRECIS, DEFAULT_QUALITY, DEFAULT_PITCH | FF_DONTCARE, 
+<SPAN CLASS="linenum">0385:</SPAN>                          L"<SPAN CLASS="string">Arial</SPAN>", &amp;g_pFont ) );
+<SPAN CLASS="linenum">0386:</SPAN> 
+<SPAN CLASS="linenum">0387:</SPAN>     <SPAN CLASS="comment">// Load the textures</SPAN>
+<SPAN CLASS="linenum">0388:</SPAN> <SPAN CLASS="keyword">#if</SPAN> 1 <SPAN CLASS="comment">// @@@</SPAN>
+<SPAN CLASS="linenum">0389:</SPAN>     V_RETURN( DXUTFindDXSDKMediaFileCch( str, MAX_PATH, L"<SPAN CLASS="string">stone.bmp</SPAN>" ) );
+<SPAN CLASS="linenum">0390:</SPAN> <SPAN CLASS="keyword">#else</SPAN>
+<SPAN CLASS="linenum">0391:</SPAN>     V_RETURN( DXUTFindDXSDKMediaFileCch( str, MAX_PATH, L"<SPAN CLASS="string">wang.bmp</SPAN>" ) );
+<SPAN CLASS="linenum">0392:</SPAN> <SPAN CLASS="keyword">#endif</SPAN>
+<SPAN CLASS="linenum">0393:</SPAN>     V_RETURN( D3DXCreateTextureFromFile( pd3dDevice, str, &amp;g_pWangTexture) );
+<SPAN CLASS="linenum">0394:</SPAN> 
+<SPAN CLASS="linenum">0395:</SPAN> <SPAN CLASS="keyword">#if</SPAN> 1 <SPAN CLASS="comment">// @@@ WangTextureの各LODを格納するテクスチャを生成する</SPAN>
+<SPAN CLASS="linenum">0396:</SPAN> {
+<SPAN CLASS="linenum">0397:</SPAN>     D3DSURFACE_DESC srcDesc;
+<SPAN CLASS="linenum">0398:</SPAN>     g_pWangTexture-&gt;GetLevelDesc( 0, &amp;srcDesc );
+<SPAN CLASS="linenum">0399:</SPAN>     g_WangTextureSize = srcDesc.Height;
+<SPAN CLASS="linenum">0400:</SPAN>     g_WangLODCount    = g_pWangTexture-&gt;GetLevelCount() + 1;
+<SPAN CLASS="linenum">0401:</SPAN>     
+<SPAN CLASS="linenum">0402:</SPAN>     V_RETURN( pd3dDevice-&gt;CreateTexture( srcDesc.Width, g_WangTextureSize*2 + 2*g_WangLODCount,
+<SPAN CLASS="linenum">0403:</SPAN>         1,
+<SPAN CLASS="linenum">0404:</SPAN>         0,
+<SPAN CLASS="linenum">0405:</SPAN>         D3DFMT_A8R8G8B8, D3DPOOL_MANAGED, &amp;g_pSpreadWangTexture, NULL));
+<SPAN CLASS="linenum">0406:</SPAN> 
+<SPAN CLASS="linenum">0407:</SPAN>     D3DLOCKED_RECT dstRect;
+<SPAN CLASS="linenum">0408:</SPAN>     g_pSpreadWangTexture-&gt;LockRect( 0, &amp;dstRect, 0, 0 );
+<SPAN CLASS="linenum">0409:</SPAN> 
+<SPAN CLASS="linenum">0410:</SPAN>     DWORD x, y;
+<SPAN CLASS="linenum">0411:</SPAN>     DWORD* pDst;
+<SPAN CLASS="linenum">0412:</SPAN> 
+<SPAN CLASS="linenum">0413:</SPAN>     <SPAN CLASS="keyword">for</SPAN>( y = 0; y &lt; g_WangTextureSize*2 + 2*g_WangLODCount; y++ )
+<SPAN CLASS="linenum">0414:</SPAN>     {
+<SPAN CLASS="linenum">0415:</SPAN>         <SPAN CLASS="keyword">for</SPAN>( x = 0; x &lt; srcDesc.Width; x++ )
+<SPAN CLASS="linenum">0416:</SPAN>         {
+<SPAN CLASS="linenum">0417:</SPAN>             pDst = GetTexelPtr( &amp;dstRect, x, y );
+<SPAN CLASS="linenum">0418:</SPAN>             *pDst++ = 0x00000000;
+<SPAN CLASS="linenum">0419:</SPAN>         }
+<SPAN CLASS="linenum">0420:</SPAN>     }
+<SPAN CLASS="linenum">0421:</SPAN> 
+<SPAN CLASS="linenum">0422:</SPAN>     DWORD level;
+<SPAN CLASS="linenum">0423:</SPAN>     <SPAN CLASS="keyword">for</SPAN>( level = 0; level &lt; g_WangLODCount; level++ )
+<SPAN CLASS="linenum">0424:</SPAN>     {
+<SPAN CLASS="linenum">0425:</SPAN>         g_pWangTexture-&gt;GetLevelDesc( level, &amp;srcDesc );
+<SPAN CLASS="linenum">0426:</SPAN>         <SPAN CLASS="keyword">int</SPAN> dstHeightBase = srcDesc.Height + 2 * (g_WangLODCount-1-level);
+<SPAN CLASS="linenum">0427:</SPAN> 
+<SPAN CLASS="linenum">0428:</SPAN>         D3DLOCKED_RECT srcRect;
+<SPAN CLASS="linenum">0429:</SPAN>         g_pWangTexture-&gt;LockRect( level, &amp;srcRect, 0, 0 );
+<SPAN CLASS="linenum">0430:</SPAN>     
+<SPAN CLASS="linenum">0431:</SPAN>         <SPAN CLASS="keyword">for</SPAN>( y = 0; y &lt; srcDesc.Height + 2; y++ )
+<SPAN CLASS="linenum">0432:</SPAN>         {
+<SPAN CLASS="linenum">0433:</SPAN>             <SPAN CLASS="keyword">for</SPAN>( x = 0; x &lt; srcDesc.Width; x++ )
+<SPAN CLASS="linenum">0434:</SPAN>             {
+<SPAN CLASS="linenum">0435:</SPAN>                 <SPAN CLASS="keyword">int</SPAN> rx = x;
+<SPAN CLASS="linenum">0436:</SPAN>                 <SPAN CLASS="keyword">int</SPAN> ry = (y - 1 + srcDesc.Height) % srcDesc.Height;
+<SPAN CLASS="linenum">0437:</SPAN> 
+<SPAN CLASS="linenum">0438:</SPAN>                 <SPAN CLASS="keyword">int</SPAN> i;
+<SPAN CLASS="linenum">0439:</SPAN>                 <SPAN CLASS="keyword">int</SPAN> max = (<SPAN CLASS="keyword">int</SPAN>)pow( 2, level );
+<SPAN CLASS="linenum">0440:</SPAN>                 <SPAN CLASS="keyword">for</SPAN>( i = 0; i &lt; max; i++ )
+<SPAN CLASS="linenum">0441:</SPAN>                 {
+<SPAN CLASS="linenum">0442:</SPAN>                     pDst = GetTexelPtr( &amp;dstRect, x + i * srcDesc.Width, dstHeightBase + y );
+<SPAN CLASS="linenum">0443:</SPAN>                     *pDst = *GetTexelPtr( &amp;srcRect, rx, ry );
+<SPAN CLASS="linenum">0444:</SPAN>                 }
+<SPAN CLASS="linenum">0445:</SPAN>             }
+<SPAN CLASS="linenum">0446:</SPAN>         }
+<SPAN CLASS="linenum">0447:</SPAN>         g_pWangTexture-&gt;UnlockRect( level );
+<SPAN CLASS="linenum">0448:</SPAN>     }
+<SPAN CLASS="linenum">0449:</SPAN> 
+<SPAN CLASS="linenum">0450:</SPAN>     g_pSpreadWangTexture-&gt;UnlockRect( 0 );
+<SPAN CLASS="linenum">0451:</SPAN> }
+<SPAN CLASS="linenum">0452:</SPAN> <SPAN CLASS="keyword">#endif</SPAN>
+<SPAN CLASS="linenum">0453:</SPAN> 
+<SPAN CLASS="linenum">0454:</SPAN>     V_RETURN( pd3dDevice-&gt;CreateTexture( g_MapSize, g_MapSize, 1
+<SPAN CLASS="linenum">0455:</SPAN>                         , 0, D3DFMT_A8R8G8B8, D3DPOOL_MANAGED, &amp;g_pRandTexture, NULL));
+<SPAN CLASS="linenum">0456:</SPAN>     InitFillRand(); <SPAN CLASS="comment">// @@@</SPAN>
+<SPAN CLASS="linenum">0457:</SPAN>     V_RETURN( D3DXFillTexture( g_pRandTexture, FillRand, NULL ));
+<SPAN CLASS="linenum">0458:</SPAN> 
+<SPAN CLASS="linenum">0459:</SPAN> <SPAN CLASS="keyword">#if</SPAN> 1   <SPAN CLASS="comment">// @@@ LOD番号を参照するためのテクスチャを生成する</SPAN>
+<SPAN CLASS="linenum">0460:</SPAN> {
+<SPAN CLASS="linenum">0461:</SPAN>     D3DSURFACE_DESC desc;
+<SPAN CLASS="linenum">0462:</SPAN>     g_pWangTexture-&gt;GetLevelDesc( 0, &amp;desc );
+<SPAN CLASS="linenum">0463:</SPAN>     
+<SPAN CLASS="linenum">0464:</SPAN>     <SPAN CLASS="comment">// 1タイル分のテクスチャを生成する</SPAN>
+<SPAN CLASS="linenum">0465:</SPAN>     V_RETURN( pd3dDevice-&gt;CreateTexture( desc.Width/4, desc.Height/4, 0
+<SPAN CLASS="linenum">0466:</SPAN>         , 0, D3DFMT_A8R8G8B8, D3DPOOL_MANAGED, &amp;g_pLODLookupTexture, NULL));
+<SPAN CLASS="linenum">0467:</SPAN> 
+<SPAN CLASS="linenum">0468:</SPAN>     <SPAN CLASS="comment">// 各LODにLOD番号を書き込む</SPAN>
+<SPAN CLASS="linenum">0469:</SPAN>     <SPAN CLASS="keyword">int</SPAN> level;
+<SPAN CLASS="linenum">0470:</SPAN>     <SPAN CLASS="keyword">int</SPAN> maxLevel = g_pLODLookupTexture-&gt;GetLevelCount();
+<SPAN CLASS="linenum">0471:</SPAN>     <SPAN CLASS="keyword">for</SPAN>( level = 0; level &lt;= maxLevel; level++ )
+<SPAN CLASS="linenum">0472:</SPAN>     {
+<SPAN CLASS="linenum">0473:</SPAN>         g_pLODLookupTexture-&gt;GetLevelDesc( level, &amp;desc );
+<SPAN CLASS="linenum">0474:</SPAN> 
+<SPAN CLASS="linenum">0475:</SPAN>         D3DLOCKED_RECT d3dlr;
+<SPAN CLASS="linenum">0476:</SPAN>         g_pLODLookupTexture-&gt;LockRect( level, &amp;d3dlr, 0, 0 );
+<SPAN CLASS="linenum">0477:</SPAN>         DWORD* pDst;
+<SPAN CLASS="linenum">0478:</SPAN>         DWORD x, y;
+<SPAN CLASS="linenum">0479:</SPAN>     
+<SPAN CLASS="linenum">0480:</SPAN>         <SPAN CLASS="keyword">for</SPAN>( y = 0; y &lt; desc.Height; y++ )
+<SPAN CLASS="linenum">0481:</SPAN>         {
+<SPAN CLASS="linenum">0482:</SPAN>             <SPAN CLASS="keyword">for</SPAN>( x = 0; x &lt; desc.Width; x++ )
+<SPAN CLASS="linenum">0483:</SPAN>             {
+<SPAN CLASS="linenum">0484:</SPAN>                 pDst = GetTexelPtr( &amp;d3dlr, x, y );
+<SPAN CLASS="linenum">0485:</SPAN>                 *pDst = (level &lt;&lt; 24)|
+<SPAN CLASS="linenum">0486:</SPAN>                         (level &lt;&lt; 16)|
+<SPAN CLASS="linenum">0487:</SPAN>                         (level &lt;&lt;  8)|
+<SPAN CLASS="linenum">0488:</SPAN>                         (level &lt;&lt;  0);
+<SPAN CLASS="linenum">0489:</SPAN>             }
+<SPAN CLASS="linenum">0490:</SPAN>         }
+<SPAN CLASS="linenum">0491:</SPAN>         g_pLODLookupTexture-&gt;UnlockRect( level );
+<SPAN CLASS="linenum">0492:</SPAN>     }
+<SPAN CLASS="linenum">0493:</SPAN> }
+<SPAN CLASS="linenum">0494:</SPAN> <SPAN CLASS="keyword">#endif</SPAN>
+<SPAN CLASS="linenum">0495:</SPAN> 
+<SPAN CLASS="linenum">0496:</SPAN>     <SPAN CLASS="comment">// Define DEBUG_VS and/or DEBUG_PS to debug vertex and/or pixel shaders with the </SPAN>
+<SPAN CLASS="linenum">0497:</SPAN>     <SPAN CLASS="comment">// shader debugger. Debugging vertex shaders requires either REF or software vertex </SPAN>
+<SPAN CLASS="linenum">0498:</SPAN>     <SPAN CLASS="comment">// processing, and debugging pixel shaders requires REF.  The </SPAN>
+<SPAN CLASS="linenum">0499:</SPAN>     <SPAN CLASS="comment">// D3DXSHADER_FORCE_*_SOFTWARE_NOOPT flag improves the debug experience in the </SPAN>
+<SPAN CLASS="linenum">0500:</SPAN>     <SPAN CLASS="comment">// shader debugger.  It enables source level debugging, prevents instruction </SPAN>
+<SPAN CLASS="linenum">0501:</SPAN>     <SPAN CLASS="comment">// reordering, prevents dead code elimination, and forces the compiler to compile </SPAN>
+<SPAN CLASS="linenum">0502:</SPAN>     <SPAN CLASS="comment">// against the next higher available software target, which ensures that the </SPAN>
+<SPAN CLASS="linenum">0503:</SPAN>     <SPAN CLASS="comment">// unoptimized shaders do not exceed the shader model limitations.  Setting these </SPAN>
+<SPAN CLASS="linenum">0504:</SPAN>     <SPAN CLASS="comment">// flags will cause slower rendering since the shaders will be unoptimized and </SPAN>
+<SPAN CLASS="linenum">0505:</SPAN>     <SPAN CLASS="comment">// forced into software.  See the DirectX documentation for more information about </SPAN>
+<SPAN CLASS="linenum">0506:</SPAN>     <SPAN CLASS="comment">// using the shader debugger.</SPAN>
+<SPAN CLASS="linenum">0507:</SPAN>     DWORD dwShaderFlags = 0;
+<SPAN CLASS="linenum">0508:</SPAN>     <SPAN CLASS="keyword">#ifdef</SPAN> DEBUG_VS
+<SPAN CLASS="linenum">0509:</SPAN>         dwShaderFlags |= D3DXSHADER_FORCE_VS_SOFTWARE_NOOPT;
+<SPAN CLASS="linenum">0510:</SPAN>     <SPAN CLASS="keyword">#endif</SPAN>
+<SPAN CLASS="linenum">0511:</SPAN>     <SPAN CLASS="keyword">#ifdef</SPAN> DEBUG_PS
+<SPAN CLASS="linenum">0512:</SPAN>         dwShaderFlags |= D3DXSHADER_FORCE_PS_SOFTWARE_NOOPT;
+<SPAN CLASS="linenum">0513:</SPAN>     <SPAN CLASS="keyword">#endif</SPAN>
+<SPAN CLASS="linenum">0514:</SPAN> 
+<SPAN CLASS="linenum">0515:</SPAN> 
+<SPAN CLASS="linenum">0516:</SPAN>     <SPAN CLASS="comment">// Create the D3DX effect file</SPAN>
+<SPAN CLASS="linenum">0517:</SPAN>     V_RETURN( D3DXCreateEffect( pd3dDevice, g_effect, <SPAN CLASS="keyword">sizeof</SPAN>(g_effect),
+<SPAN CLASS="linenum">0518:</SPAN>         NULL, NULL, dwShaderFlags, NULL, &amp;g_pEffect, NULL ) );
+<SPAN CLASS="linenum">0519:</SPAN> 
+<SPAN CLASS="linenum">0520:</SPAN> 
+<SPAN CLASS="linenum">0521:</SPAN>     <SPAN CLASS="comment">// Setup the camera's view parameters</SPAN>
+<SPAN CLASS="linenum">0522:</SPAN>     D3DXVECTOR3 vecEye(0.0f, 3.0f, -3.0f);
+<SPAN CLASS="linenum">0523:</SPAN>     D3DXVECTOR3 vecAt (0.0f, 0.0f, -0.0f);
+<SPAN CLASS="linenum">0524:</SPAN>     g_Camera.SetViewParams( &amp;vecEye, &amp;vecAt );
+<SPAN CLASS="linenum">0525:</SPAN> 
+<SPAN CLASS="linenum">0526:</SPAN>     <SPAN CLASS="keyword">return</SPAN> S_OK;
+<SPAN CLASS="linenum">0527:</SPAN> }
+<SPAN CLASS="linenum">0528:</SPAN> 
+<SPAN CLASS="linenum">0529:</SPAN> 
+<SPAN CLASS="linenum">0530:</SPAN> <SPAN CLASS="comment">//--------------------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0531:</SPAN> <SPAN CLASS="comment">// This function loads the mesh and ensures the mesh has normals; it also optimizes the </SPAN>
+<SPAN CLASS="linenum">0532:</SPAN> <SPAN CLASS="comment">// mesh for the graphics card's vertex cache, which improves performance by organizing </SPAN>
+<SPAN CLASS="linenum">0533:</SPAN> <SPAN CLASS="comment">// the internal triangle list for less cache misses.</SPAN>
+<SPAN CLASS="linenum">0534:</SPAN> <SPAN CLASS="comment">//--------------------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0535:</SPAN> HRESULT LoadMesh( IDirect3DDevice9* pd3dDevice, WCHAR* strFileName, ID3DXMesh** ppMesh )
+<SPAN CLASS="linenum">0536:</SPAN> {
+<SPAN CLASS="linenum">0537:</SPAN>     ID3DXMesh* pMesh = NULL;
+<SPAN CLASS="linenum">0538:</SPAN>     WCHAR str[MAX_PATH];
+<SPAN CLASS="linenum">0539:</SPAN>     HRESULT hr;
+<SPAN CLASS="linenum">0540:</SPAN> 
+<SPAN CLASS="linenum">0541:</SPAN>     <SPAN CLASS="comment">// Load the mesh with D3DX and get back a ID3DXMesh*.  For this</SPAN>
+<SPAN CLASS="linenum">0542:</SPAN>     <SPAN CLASS="comment">// sample we'll ignore the X file's embedded materials since we know </SPAN>
+<SPAN CLASS="linenum">0543:</SPAN>     <SPAN CLASS="comment">// exactly the model we're loading.  See the mesh samples such as</SPAN>
+<SPAN CLASS="linenum">0544:</SPAN>     <SPAN CLASS="comment">// "OptimizedMesh" for a more generic mesh loading example.</SPAN>
+<SPAN CLASS="linenum">0545:</SPAN>     V_RETURN( DXUTFindDXSDKMediaFileCch( str, MAX_PATH, strFileName ) );
+<SPAN CLASS="linenum">0546:</SPAN> 
+<SPAN CLASS="linenum">0547:</SPAN>     V_RETURN( D3DXLoadMeshFromX(str, D3DXMESH_MANAGED, pd3dDevice, NULL, NULL, NULL, NULL, &amp;pMesh) );
+<SPAN CLASS="linenum">0548:</SPAN> 
+<SPAN CLASS="linenum">0549:</SPAN>     DWORD *rgdwAdjacency = NULL;
+<SPAN CLASS="linenum">0550:</SPAN> 
+<SPAN CLASS="linenum">0551:</SPAN>     <SPAN CLASS="comment">// Make sure there are normals which are required for lighting</SPAN>
+<SPAN CLASS="linenum">0552:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( !(pMesh-&gt;GetFVF() &amp; D3DFVF_NORMAL) )
+<SPAN CLASS="linenum">0553:</SPAN>     {
+<SPAN CLASS="linenum">0554:</SPAN>         ID3DXMesh* pTempMesh;
+<SPAN CLASS="linenum">0555:</SPAN>         V( pMesh-&gt;CloneMeshFVF( pMesh-&gt;GetOptions(), 
+<SPAN CLASS="linenum">0556:</SPAN>                                   pMesh-&gt;GetFVF() | D3DFVF_NORMAL, 
+<SPAN CLASS="linenum">0557:</SPAN>                                   pd3dDevice, &amp;pTempMesh ) );
+<SPAN CLASS="linenum">0558:</SPAN>         V( D3DXComputeNormals( pTempMesh, NULL ) );
+<SPAN CLASS="linenum">0559:</SPAN> 
+<SPAN CLASS="linenum">0560:</SPAN>         SAFE_RELEASE( pMesh );
+<SPAN CLASS="linenum">0561:</SPAN>         pMesh = pTempMesh;
+<SPAN CLASS="linenum">0562:</SPAN>     }
+<SPAN CLASS="linenum">0563:</SPAN> 
+<SPAN CLASS="linenum">0564:</SPAN>     <SPAN CLASS="comment">// Optimize the mesh for this graphics card's vertex cache </SPAN>
+<SPAN CLASS="linenum">0565:</SPAN>     <SPAN CLASS="comment">// so when rendering the mesh's triangle list the vertices will </SPAN>
+<SPAN CLASS="linenum">0566:</SPAN>     <SPAN CLASS="comment">// cache hit more often so it won't have to re-execute the vertex shader </SPAN>
+<SPAN CLASS="linenum">0567:</SPAN>     <SPAN CLASS="comment">// on those vertices so it will improve perf.     </SPAN>
+<SPAN CLASS="linenum">0568:</SPAN>     rgdwAdjacency = <SPAN CLASS="keyword">new</SPAN> DWORD[pMesh-&gt;GetNumFaces() * 3];
+<SPAN CLASS="linenum">0569:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( rgdwAdjacency == NULL )
+<SPAN CLASS="linenum">0570:</SPAN>         <SPAN CLASS="keyword">return</SPAN> E_OUTOFMEMORY;
+<SPAN CLASS="linenum">0571:</SPAN>     V( pMesh-&gt;ConvertPointRepsToAdjacency(NULL, rgdwAdjacency) );
+<SPAN CLASS="linenum">0572:</SPAN>     V( pMesh-&gt;OptimizeInplace(D3DXMESHOPT_VERTEXCACHE, rgdwAdjacency, NULL, NULL, NULL) );
+<SPAN CLASS="linenum">0573:</SPAN>     <SPAN CLASS="keyword">delete</SPAN> []rgdwAdjacency;
+<SPAN CLASS="linenum">0574:</SPAN> 
+<SPAN CLASS="linenum">0575:</SPAN>     *ppMesh = pMesh;
+<SPAN CLASS="linenum">0576:</SPAN> 
+<SPAN CLASS="linenum">0577:</SPAN>     <SPAN CLASS="keyword">return</SPAN> S_OK;
+<SPAN CLASS="linenum">0578:</SPAN> }
+<SPAN CLASS="linenum">0579:</SPAN> 
+<SPAN CLASS="linenum">0580:</SPAN> 
+<SPAN CLASS="linenum">0581:</SPAN> <SPAN CLASS="comment">//--------------------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0582:</SPAN> <SPAN CLASS="comment">// This callback function will be called immediately after the Direct3D device has been </SPAN>
+<SPAN CLASS="linenum">0583:</SPAN> <SPAN CLASS="comment">// reset, which will happen after a lost device scenario. This is the best location to </SPAN>
+<SPAN CLASS="linenum">0584:</SPAN> <SPAN CLASS="comment">// create D3DPOOL_DEFAULT resources since these resources need to be reloaded whenever </SPAN>
+<SPAN CLASS="linenum">0585:</SPAN> <SPAN CLASS="comment">// the device is lost. Resources created here should be released in the OnLostDevice </SPAN>
+<SPAN CLASS="linenum">0586:</SPAN> <SPAN CLASS="comment">// callback. </SPAN>
+<SPAN CLASS="linenum">0587:</SPAN> <SPAN CLASS="comment">//--------------------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0588:</SPAN> HRESULT CALLBACK OnResetDevice( IDirect3DDevice9* pd3dDevice, 
+<SPAN CLASS="linenum">0589:</SPAN>                                 <SPAN CLASS="keyword">const</SPAN> D3DSURFACE_DESC* pBackBufferSurfaceDesc )
+<SPAN CLASS="linenum">0590:</SPAN> {
+<SPAN CLASS="linenum">0591:</SPAN>     HRESULT hr;
+<SPAN CLASS="linenum">0592:</SPAN> 
+<SPAN CLASS="linenum">0593:</SPAN>     pd3dDevice-&gt;GetViewport(&amp;g_ViewportFB);
+<SPAN CLASS="linenum">0594:</SPAN> 
+<SPAN CLASS="linenum">0595:</SPAN> 
+<SPAN CLASS="linenum">0596:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( g_pFont )
+<SPAN CLASS="linenum">0597:</SPAN>         V_RETURN( g_pFont-&gt;OnResetDevice() );
+<SPAN CLASS="linenum">0598:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( g_pEffect )
+<SPAN CLASS="linenum">0599:</SPAN>         V_RETURN( g_pEffect-&gt;OnResetDevice() );
+<SPAN CLASS="linenum">0600:</SPAN> 
+<SPAN CLASS="linenum">0601:</SPAN>     <SPAN CLASS="comment">// Create a sprite to help batch calls when drawing many lines of text</SPAN>
+<SPAN CLASS="linenum">0602:</SPAN>     V_RETURN( D3DXCreateSprite( pd3dDevice, &amp;g_pTextSprite ) );
+<SPAN CLASS="linenum">0603:</SPAN> 
+<SPAN CLASS="linenum">0604:</SPAN>     <SPAN CLASS="comment">// Setup the camera's projection parameters</SPAN>
+<SPAN CLASS="linenum">0605:</SPAN>     <SPAN CLASS="keyword">float</SPAN> fAspectRatio = pBackBufferSurfaceDesc-&gt;Width / (FLOAT)pBackBufferSurfaceDesc-&gt;Height;
+<SPAN CLASS="linenum">0606:</SPAN>     g_Camera.SetProjParams( D3DX_PI/4, fAspectRatio, 0.1f, 1000.0f );
+<SPAN CLASS="linenum">0607:</SPAN>     g_Camera.SetWindow( pBackBufferSurfaceDesc-&gt;Width, pBackBufferSurfaceDesc-&gt;Height );
+<SPAN CLASS="linenum">0608:</SPAN> 
+<SPAN CLASS="linenum">0609:</SPAN>     g_HUD.SetLocation( pBackBufferSurfaceDesc-&gt;Width-170, 0 );
+<SPAN CLASS="linenum">0610:</SPAN>     g_HUD.SetSize( 170, 170 );
+<SPAN CLASS="linenum">0611:</SPAN>     g_SampleUI.SetLocation( pBackBufferSurfaceDesc-&gt;Width-170, pBackBufferSurfaceDesc-&gt;Height-350 );
+<SPAN CLASS="linenum">0612:</SPAN>     g_SampleUI.SetSize( 170, 300 );
+<SPAN CLASS="linenum">0613:</SPAN> 
+<SPAN CLASS="linenum">0614:</SPAN>     <SPAN CLASS="keyword">return</SPAN> S_OK;
+<SPAN CLASS="linenum">0615:</SPAN> }
+<SPAN CLASS="linenum">0616:</SPAN> 
+<SPAN CLASS="linenum">0617:</SPAN> 
+<SPAN CLASS="linenum">0618:</SPAN> <SPAN CLASS="comment">//--------------------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0619:</SPAN> <SPAN CLASS="comment">// This callback function will be called once at the beginning of every frame. This is the</SPAN>
+<SPAN CLASS="linenum">0620:</SPAN> <SPAN CLASS="comment">// best location for your application to handle updates to the scene, but is not </SPAN>
+<SPAN CLASS="linenum">0621:</SPAN> <SPAN CLASS="comment">// intended to contain actual rendering calls, which should instead be placed in the </SPAN>
+<SPAN CLASS="linenum">0622:</SPAN> <SPAN CLASS="comment">// OnFrameRender callback.  </SPAN>
+<SPAN CLASS="linenum">0623:</SPAN> <SPAN CLASS="comment">//--------------------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0624:</SPAN> <SPAN CLASS="keyword">void</SPAN> CALLBACK OnFrameMove( IDirect3DDevice9* pd3dDevice, <SPAN CLASS="keyword">double</SPAN> fTime, <SPAN CLASS="keyword">float</SPAN> fElapsedTime )
+<SPAN CLASS="linenum">0625:</SPAN> {
+<SPAN CLASS="linenum">0626:</SPAN>     <SPAN CLASS="comment">// Update the camera's position based on user input </SPAN>
+<SPAN CLASS="linenum">0627:</SPAN>     g_Camera.FrameMove( fElapsedTime );
+<SPAN CLASS="linenum">0628:</SPAN> }
+<SPAN CLASS="linenum">0629:</SPAN> 
+<SPAN CLASS="linenum">0630:</SPAN> 
+<SPAN CLASS="linenum">0631:</SPAN> 
+<SPAN CLASS="linenum">0632:</SPAN> <SPAN CLASS="comment">//--------------------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0633:</SPAN> <SPAN CLASS="comment">// This callback function will be called at the end of every frame to perform all the </SPAN>
+<SPAN CLASS="linenum">0634:</SPAN> <SPAN CLASS="comment">// rendering calls for the scene, and it will also be called if the window needs to be </SPAN>
+<SPAN CLASS="linenum">0635:</SPAN> <SPAN CLASS="comment">// repainted. After this function has returned, the sample framework will call </SPAN>
+<SPAN CLASS="linenum">0636:</SPAN> <SPAN CLASS="comment">// IDirect3DDevice9::Present to display the contents of the next buffer in the swap chain</SPAN>
+<SPAN CLASS="linenum">0637:</SPAN> <SPAN CLASS="comment">//--------------------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0638:</SPAN> <SPAN CLASS="keyword">void</SPAN> CALLBACK OnFrameRender( IDirect3DDevice9* pd3dDevice, <SPAN CLASS="keyword">double</SPAN> fTime, <SPAN CLASS="keyword">float</SPAN> fElapsedTime )
+<SPAN CLASS="linenum">0639:</SPAN> {
+<SPAN CLASS="linenum">0640:</SPAN>     HRESULT hr;
+<SPAN CLASS="linenum">0641:</SPAN>     UINT iPass, cPasses;
+<SPAN CLASS="linenum">0642:</SPAN>     D3DXMATRIXA16 mWorld;
+<SPAN CLASS="linenum">0643:</SPAN>     D3DXMATRIXA16 mCamera;
+<SPAN CLASS="linenum">0644:</SPAN>     D3DXMATRIXA16 mView;
+<SPAN CLASS="linenum">0645:</SPAN>     D3DXMATRIXA16 mProj;
+<SPAN CLASS="linenum">0646:</SPAN>     D3DXMATRIXA16 mWorldViewProjection;
+<SPAN CLASS="linenum">0647:</SPAN>     
+<SPAN CLASS="linenum">0648:</SPAN>     <SPAN CLASS="comment">// Clear the render target and the zbuffer </SPAN>
+<SPAN CLASS="linenum">0649:</SPAN>     V( pd3dDevice-&gt;Clear(0, NULL, D3DCLEAR_TARGET | D3DCLEAR_ZBUFFER, D3DCOLOR_ARGB(0, 45, 50, 170), 1.0f, 0) );
+<SPAN CLASS="linenum">0650:</SPAN> 
+<SPAN CLASS="linenum">0651:</SPAN>     <SPAN CLASS="comment">// Render the scene</SPAN>
+<SPAN CLASS="linenum">0652:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( SUCCEEDED( pd3dDevice-&gt;BeginScene() ) )
+<SPAN CLASS="linenum">0653:</SPAN>     {
+<SPAN CLASS="linenum">0654:</SPAN>         <SPAN CLASS="comment">// Get the projection &amp; view matrix from the camera class</SPAN>
+<SPAN CLASS="linenum">0655:</SPAN>         mCamera = *g_Camera.GetWorldMatrix();
+<SPAN CLASS="linenum">0656:</SPAN>         mView = *g_Camera.GetViewMatrix();
+<SPAN CLASS="linenum">0657:</SPAN>         mProj = *g_Camera.GetProjMatrix();
+<SPAN CLASS="linenum">0658:</SPAN> 
+<SPAN CLASS="linenum">0659:</SPAN>         mWorldViewProjection = mCamera * mView * mProj;
+<SPAN CLASS="linenum">0660:</SPAN> 
+<SPAN CLASS="linenum">0661:</SPAN>         <SPAN CLASS="comment">// Set world render technique</SPAN>
+<SPAN CLASS="linenum">0662:</SPAN>         V( g_pEffect-&gt;SetTechnique( "<SPAN CLASS="string">WangTechnique</SPAN>" ) );
+<SPAN CLASS="linenum">0663:</SPAN> 
+<SPAN CLASS="linenum">0664:</SPAN>         <SPAN CLASS="comment">// Update the effect's variables.  Instead of using strings, it would </SPAN>
+<SPAN CLASS="linenum">0665:</SPAN>         <SPAN CLASS="comment">// be more efficient to cache a handle to the parameter by calling </SPAN>
+<SPAN CLASS="linenum">0666:</SPAN>         <SPAN CLASS="comment">// ID3DXEffect::GetParameterByName</SPAN>
+<SPAN CLASS="linenum">0667:</SPAN>         V( g_pEffect-&gt;SetMatrix( "<SPAN CLASS="string">g_mWorldViewProjection</SPAN>", &amp;mWorldViewProjection ) );
+<SPAN CLASS="linenum">0668:</SPAN> 
+<SPAN CLASS="linenum">0669:</SPAN>         V( g_pEffect-&gt;SetTexture( "<SPAN CLASS="string">WangTexture</SPAN>", g_pWangTexture ) );
+<SPAN CLASS="linenum">0670:</SPAN>         V( g_pEffect-&gt;SetTexture( "<SPAN CLASS="string">RandTexture</SPAN>", g_pRandTexture ) );
+<SPAN CLASS="linenum">0671:</SPAN>         V( g_pEffect-&gt;SetFloat( "<SPAN CLASS="string">g_fTexSize</SPAN>",         (<SPAN CLASS="keyword">float</SPAN>)g_MapSize ) );
+<SPAN CLASS="linenum">0672:</SPAN>         V( g_pEffect-&gt;SetFloat( "<SPAN CLASS="string">g_fInvTexSize</SPAN>", 1.0f/(<SPAN CLASS="keyword">float</SPAN>)g_MapSize ) );
+<SPAN CLASS="linenum">0673:</SPAN> <SPAN CLASS="keyword">#if</SPAN> 1 <SPAN CLASS="comment">// @@@</SPAN>
+<SPAN CLASS="linenum">0674:</SPAN>         V( g_pEffect-&gt;SetTexture( "<SPAN CLASS="string">LODLookupTexture</SPAN>",  g_pLODLookupTexture ) );
+<SPAN CLASS="linenum">0675:</SPAN>         V( g_pEffect-&gt;SetTexture( "<SPAN CLASS="string">SpreadWangTexture</SPAN>", g_pSpreadWangTexture ) );
+<SPAN CLASS="linenum">0676:</SPAN>         V( g_pEffect-&gt;SetFloat( "<SPAN CLASS="string">g_fWangTextureSize</SPAN>",  (<SPAN CLASS="keyword">float</SPAN>)g_WangTextureSize ) );
+<SPAN CLASS="linenum">0677:</SPAN>         V( g_pEffect-&gt;SetFloat( "<SPAN CLASS="string">g_fWangLODCount</SPAN>",     (<SPAN CLASS="keyword">float</SPAN>)g_WangLODCount ) );
+<SPAN CLASS="linenum">0678:</SPAN> <SPAN CLASS="keyword">#endif</SPAN>
+<SPAN CLASS="linenum">0679:</SPAN>         pd3dDevice-&gt;SetFVF( VERTEX::FVF );
+<SPAN CLASS="linenum">0680:</SPAN> 
+<SPAN CLASS="linenum">0681:</SPAN>         V( g_pEffect-&gt;Begin(&amp;cPasses, 0) );
+<SPAN CLASS="linenum">0682:</SPAN>         <SPAN CLASS="keyword">for</SPAN> (iPass = 0; iPass &lt; cPasses; iPass++)
+<SPAN CLASS="linenum">0683:</SPAN>         {
+<SPAN CLASS="linenum">0684:</SPAN>             V( g_pEffect-&gt;BeginPass(iPass) );
+<SPAN CLASS="linenum">0685:</SPAN>             pd3dDevice-&gt;DrawPrimitiveUP( D3DPT_TRIANGLESTRIP,2, g_Vertex, <SPAN CLASS="keyword">sizeof</SPAN>(VERTEX) );
+<SPAN CLASS="linenum">0686:</SPAN>             V( g_pEffect-&gt;EndPass() );
+<SPAN CLASS="linenum">0687:</SPAN>         }
+<SPAN CLASS="linenum">0688:</SPAN>         V( g_pEffect-&gt;End() );
+<SPAN CLASS="linenum">0689:</SPAN> 
+<SPAN CLASS="linenum">0690:</SPAN> 
+<SPAN CLASS="linenum">0691:</SPAN> 
+<SPAN CLASS="linenum">0692:</SPAN>         DXUT_BeginPerfEvent( DXUT_PERFEVENTCOLOR, L"<SPAN CLASS="string">HUD / Stats</SPAN>" ); <SPAN CLASS="comment">// These events are to help PIX identify what the code is doing</SPAN>
+<SPAN CLASS="linenum">0693:</SPAN>         RenderText();
+<SPAN CLASS="linenum">0694:</SPAN>         V( g_HUD.OnRender( fElapsedTime ) );
+<SPAN CLASS="linenum">0695:</SPAN>         V( g_SampleUI.OnRender( fElapsedTime ) );
+<SPAN CLASS="linenum">0696:</SPAN>         DXUT_EndPerfEvent();
+<SPAN CLASS="linenum">0697:</SPAN> 
+<SPAN CLASS="linenum">0698:</SPAN> <SPAN CLASS="keyword">#ifdef</SPAN> _DEBUG <SPAN CLASS="comment">// Textures are displaying when debugging, (デバッグ用にテクスチャを表示する)</SPAN>
+<SPAN CLASS="linenum">0699:</SPAN>         {
+<SPAN CLASS="linenum">0700:</SPAN>         pd3dDevice-&gt;SetTextureStageState(0,D3DTSS_COLOROP,  D3DTOP_SELECTARG1);
+<SPAN CLASS="linenum">0701:</SPAN>         pd3dDevice-&gt;SetTextureStageState(0,D3DTSS_COLORARG1,    D3DTA_TEXTURE);
+<SPAN CLASS="linenum">0702:</SPAN>         pd3dDevice-&gt;SetTextureStageState(1,D3DTSS_COLOROP,    D3DTOP_DISABLE);
+<SPAN CLASS="linenum">0703:</SPAN>         pd3dDevice-&gt;SetSamplerState( 0, D3DSAMP_MINFILTER, D3DTEXF_LINEAR );
+<SPAN CLASS="linenum">0704:</SPAN>         pd3dDevice-&gt;SetSamplerState( 0, D3DSAMP_MAGFILTER, D3DTEXF_POINT );
+<SPAN CLASS="linenum">0705:</SPAN>         pd3dDevice-&gt;SetFVF( D3DFVF_XYZRHW | D3DFVF_TEX1 );
+<SPAN CLASS="linenum">0706:</SPAN>         <SPAN CLASS="keyword">float</SPAN> scale = 64.0f;
+<SPAN CLASS="linenum">0707:</SPAN>         <SPAN CLASS="keyword">typedef</SPAN> <SPAN CLASS="keyword">struct</SPAN> { FLOAT p[4]; FLOAT tu, tv;} TVERTEX;
+<SPAN CLASS="linenum">0708:</SPAN> 
+<SPAN CLASS="linenum">0709:</SPAN> <SPAN CLASS="comment">//      for(DWORD i=0; i&lt;2; i++){</SPAN>
+<SPAN CLASS="linenum">0710:</SPAN>         <SPAN CLASS="keyword">for</SPAN>(DWORD i=0; i&lt;3; i++){   <SPAN CLASS="comment">// @@@</SPAN>
+<SPAN CLASS="linenum">0711:</SPAN>             TVERTEX Vertex[4] = {
+<SPAN CLASS="linenum">0712:</SPAN>                 <SPAN CLASS="comment">//    x                             y         z rhw tu tv</SPAN>
+<SPAN CLASS="linenum">0713:</SPAN>                 {(i+0)*scale, (FLOAT)g_ViewportFB.Height-scale, 0, 1, 0, 0,},
+<SPAN CLASS="linenum">0714:</SPAN>                 {(i+1)*scale, (FLOAT)g_ViewportFB.Height-scale, 0, 1, 1, 0,},
+<SPAN CLASS="linenum">0715:</SPAN>                 {(i+1)*scale, (FLOAT)g_ViewportFB.Height-    0, 0, 1, 1, 1,},
+<SPAN CLASS="linenum">0716:</SPAN>                 {(i+0)*scale, (FLOAT)g_ViewportFB.Height-    0, 0, 1, 0, 1,},
+<SPAN CLASS="linenum">0717:</SPAN>             };
+<SPAN CLASS="linenum">0718:</SPAN>             <SPAN CLASS="keyword">if</SPAN>(0==i) pd3dDevice-&gt;SetTexture( 0, g_pWangTexture );
+<SPAN CLASS="linenum">0719:</SPAN>             <SPAN CLASS="keyword">if</SPAN>(1==i) pd3dDevice-&gt;SetTexture( 0, g_pRandTexture );
+<SPAN CLASS="linenum">0720:</SPAN>             <SPAN CLASS="keyword">if</SPAN>(2==i) pd3dDevice-&gt;SetTexture( 0, g_pSpreadWangTexture ); <SPAN CLASS="comment">// @@@</SPAN>
+<SPAN CLASS="linenum">0721:</SPAN> 
+<SPAN CLASS="linenum">0722:</SPAN>             pd3dDevice-&gt;DrawPrimitiveUP( D3DPT_TRIANGLEFAN, 2, Vertex, <SPAN CLASS="keyword">sizeof</SPAN>( TVERTEX ) );
+<SPAN CLASS="linenum">0723:</SPAN>         }
+<SPAN CLASS="linenum">0724:</SPAN>         }
+<SPAN CLASS="linenum">0725:</SPAN> <SPAN CLASS="keyword">#endif</SPAN>      
+<SPAN CLASS="linenum">0726:</SPAN> 
+<SPAN CLASS="linenum">0727:</SPAN>         V( pd3dDevice-&gt;EndScene() );
+<SPAN CLASS="linenum">0728:</SPAN>     }
+<SPAN CLASS="linenum">0729:</SPAN> }
+<SPAN CLASS="linenum">0730:</SPAN> 
+<SPAN CLASS="linenum">0731:</SPAN> 
+<SPAN CLASS="linenum">0732:</SPAN> <SPAN CLASS="comment">//--------------------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0733:</SPAN> <SPAN CLASS="comment">// Render the help and statistics text. This function uses the ID3DXFont interface for </SPAN>
+<SPAN CLASS="linenum">0734:</SPAN> <SPAN CLASS="comment">// efficient text rendering.</SPAN>
+<SPAN CLASS="linenum">0735:</SPAN> <SPAN CLASS="comment">//--------------------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0736:</SPAN> <SPAN CLASS="keyword">void</SPAN> RenderText()
+<SPAN CLASS="linenum">0737:</SPAN> {
+<SPAN CLASS="linenum">0738:</SPAN>     <SPAN CLASS="comment">// The helper object simply helps keep track of text position, and color</SPAN>
+<SPAN CLASS="linenum">0739:</SPAN>     <SPAN CLASS="comment">// and then it calls pFont-&gt;DrawText( m_pSprite, strMsg, -1, &amp;rc, DT_NOCLIP, m_clr );</SPAN>
+<SPAN CLASS="linenum">0740:</SPAN>     <SPAN CLASS="comment">// If NULL is passed in as the sprite object, then it will work however the </SPAN>
+<SPAN CLASS="linenum">0741:</SPAN>     <SPAN CLASS="comment">// pFont-&gt;DrawText() will not be batched together.  Batching calls will improves performance.</SPAN>
+<SPAN CLASS="linenum">0742:</SPAN>     <SPAN CLASS="keyword">const</SPAN> D3DSURFACE_DESC* pd3dsdBackBuffer = DXUTGetBackBufferSurfaceDesc();
+<SPAN CLASS="linenum">0743:</SPAN>     CDXUTTextHelper txtHelper( g_pFont, g_pTextSprite, 15 );
+<SPAN CLASS="linenum">0744:</SPAN> 
+<SPAN CLASS="linenum">0745:</SPAN>     <SPAN CLASS="comment">// Output statistics</SPAN>
+<SPAN CLASS="linenum">0746:</SPAN>     txtHelper.Begin();
+<SPAN CLASS="linenum">0747:</SPAN>     txtHelper.SetInsertionPos( 5, 5 );
+<SPAN CLASS="linenum">0748:</SPAN>     txtHelper.SetForegroundColor( D3DXCOLOR( 1.0f, 1.0f, 0.0f, 1.0f ) );
+<SPAN CLASS="linenum">0749:</SPAN>     txtHelper.DrawTextLine( DXUTGetFrameStats() );
+<SPAN CLASS="linenum">0750:</SPAN>     txtHelper.DrawTextLine( DXUTGetDeviceStats() );
+<SPAN CLASS="linenum">0751:</SPAN> 
+<SPAN CLASS="linenum">0752:</SPAN>     txtHelper.SetForegroundColor( D3DXCOLOR( 1.0f, 1.0f, 1.0f, 1.0f ) );
+<SPAN CLASS="linenum">0753:</SPAN>     txtHelper.DrawTextLine( L"<SPAN CLASS="string">Put whatever misc status here</SPAN>" );
+<SPAN CLASS="linenum">0754:</SPAN>     
+<SPAN CLASS="linenum">0755:</SPAN>     <SPAN CLASS="comment">// Draw help</SPAN>
+<SPAN CLASS="linenum">0756:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( g_bShowHelp )
+<SPAN CLASS="linenum">0757:</SPAN>     {
+<SPAN CLASS="linenum">0758:</SPAN>         txtHelper.SetInsertionPos( 10, pd3dsdBackBuffer-&gt;Height-15*3 );
+<SPAN CLASS="linenum">0759:</SPAN>         txtHelper.SetForegroundColor( D3DXCOLOR( 1.0f, 0.75f, 0.0f, 1.0f ) );
+<SPAN CLASS="linenum">0760:</SPAN>         txtHelper.DrawTextLine( L"<SPAN CLASS="string">Controls (F1 to hide):</SPAN>" );
+<SPAN CLASS="linenum">0761:</SPAN> 
+<SPAN CLASS="linenum">0762:</SPAN>         txtHelper.SetInsertionPos( 40, pd3dsdBackBuffer-&gt;Height-15*5 );
+<SPAN CLASS="linenum">0763:</SPAN>         txtHelper.DrawTextLine( L"<SPAN CLASS="string">Quit: ESC</SPAN>" );
+<SPAN CLASS="linenum">0764:</SPAN>     }
+<SPAN CLASS="linenum">0765:</SPAN>     <SPAN CLASS="keyword">else</SPAN>
+<SPAN CLASS="linenum">0766:</SPAN>     {
+<SPAN CLASS="linenum">0767:</SPAN>         txtHelper.SetInsertionPos( 10, pd3dsdBackBuffer-&gt;Height-15*2 );
+<SPAN CLASS="linenum">0768:</SPAN>         txtHelper.SetForegroundColor( D3DXCOLOR( 1.0f, 1.0f, 1.0f, 1.0f ) );
+<SPAN CLASS="linenum">0769:</SPAN>         txtHelper.DrawTextLine( L"<SPAN CLASS="string">Press F1 for help</SPAN>" );
+<SPAN CLASS="linenum">0770:</SPAN>     }
+<SPAN CLASS="linenum">0771:</SPAN>     txtHelper.End();
+<SPAN CLASS="linenum">0772:</SPAN> }
+<SPAN CLASS="linenum">0773:</SPAN> 
+<SPAN CLASS="linenum">0774:</SPAN> 
+<SPAN CLASS="linenum">0775:</SPAN> <SPAN CLASS="comment">//--------------------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0776:</SPAN> <SPAN CLASS="comment">// Before handling window messages, the sample framework passes incoming windows </SPAN>
+<SPAN CLASS="linenum">0777:</SPAN> <SPAN CLASS="comment">// messages to the application through this callback function. If the application sets </SPAN>
+<SPAN CLASS="linenum">0778:</SPAN> <SPAN CLASS="comment">// *pbNoFurtherProcessing to TRUE, then the sample framework will not process this message.</SPAN>
+<SPAN CLASS="linenum">0779:</SPAN> <SPAN CLASS="comment">//--------------------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0780:</SPAN> LRESULT CALLBACK MsgProc( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam, <SPAN CLASS="keyword">bool</SPAN>* pbNoFurtherProcessing )
+<SPAN CLASS="linenum">0781:</SPAN> {
+<SPAN CLASS="linenum">0782:</SPAN>     <SPAN CLASS="comment">// Give the dialogs a chance to handle the message first</SPAN>
+<SPAN CLASS="linenum">0783:</SPAN>     *pbNoFurtherProcessing = g_HUD.MsgProc( hWnd, uMsg, wParam, lParam );
+<SPAN CLASS="linenum">0784:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( *pbNoFurtherProcessing )
+<SPAN CLASS="linenum">0785:</SPAN>         <SPAN CLASS="keyword">return</SPAN> 0;
+<SPAN CLASS="linenum">0786:</SPAN>     *pbNoFurtherProcessing = g_SampleUI.MsgProc( hWnd, uMsg, wParam, lParam );
+<SPAN CLASS="linenum">0787:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( *pbNoFurtherProcessing )
+<SPAN CLASS="linenum">0788:</SPAN>         <SPAN CLASS="keyword">return</SPAN> 0;
+<SPAN CLASS="linenum">0789:</SPAN> 
+<SPAN CLASS="linenum">0790:</SPAN>     <SPAN CLASS="comment">// Pass all remaining windows messages to camera so it can respond to user input</SPAN>
+<SPAN CLASS="linenum">0791:</SPAN>     g_Camera.HandleMessages( hWnd, uMsg, wParam, lParam );
+<SPAN CLASS="linenum">0792:</SPAN> 
+<SPAN CLASS="linenum">0793:</SPAN>     <SPAN CLASS="keyword">return</SPAN> 0;
+<SPAN CLASS="linenum">0794:</SPAN> }
+<SPAN CLASS="linenum">0795:</SPAN> 
+<SPAN CLASS="linenum">0796:</SPAN> 
+<SPAN CLASS="linenum">0797:</SPAN> <SPAN CLASS="comment">//--------------------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0798:</SPAN> <SPAN CLASS="comment">// As a convenience, the sample framework inspects the incoming windows messages for</SPAN>
+<SPAN CLASS="linenum">0799:</SPAN> <SPAN CLASS="comment">// keystroke messages and decodes the message parameters to pass relevant keyboard</SPAN>
+<SPAN CLASS="linenum">0800:</SPAN> <SPAN CLASS="comment">// messages to the application.  The framework does not remove the underlying keystroke </SPAN>
+<SPAN CLASS="linenum">0801:</SPAN> <SPAN CLASS="comment">// messages, which are still passed to the application's MsgProc callback.</SPAN>
+<SPAN CLASS="linenum">0802:</SPAN> <SPAN CLASS="comment">//--------------------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0803:</SPAN> <SPAN CLASS="keyword">void</SPAN> CALLBACK KeyboardProc( UINT nChar, <SPAN CLASS="keyword">bool</SPAN> bKeyDown, <SPAN CLASS="keyword">bool</SPAN> bAltDown )
+<SPAN CLASS="linenum">0804:</SPAN> {
+<SPAN CLASS="linenum">0805:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( bKeyDown )
+<SPAN CLASS="linenum">0806:</SPAN>     {
+<SPAN CLASS="linenum">0807:</SPAN>         <SPAN CLASS="keyword">switch</SPAN>( nChar )
+<SPAN CLASS="linenum">0808:</SPAN>         {
+<SPAN CLASS="linenum">0809:</SPAN>             <SPAN CLASS="keyword">case</SPAN> VK_F1: g_bShowHelp = !g_bShowHelp; <SPAN CLASS="keyword">break</SPAN>;
+<SPAN CLASS="linenum">0810:</SPAN>         }
+<SPAN CLASS="linenum">0811:</SPAN>     }
+<SPAN CLASS="linenum">0812:</SPAN> }
+<SPAN CLASS="linenum">0813:</SPAN> 
+<SPAN CLASS="linenum">0814:</SPAN> 
+<SPAN CLASS="linenum">0815:</SPAN> <SPAN CLASS="comment">//--------------------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0816:</SPAN> <SPAN CLASS="comment">// Handles the GUI events</SPAN>
+<SPAN CLASS="linenum">0817:</SPAN> <SPAN CLASS="comment">//--------------------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0818:</SPAN> <SPAN CLASS="keyword">void</SPAN> CALLBACK OnGUIEvent( UINT nEvent, <SPAN CLASS="keyword">int</SPAN> nControlID, CDXUTControl* pControl )
+<SPAN CLASS="linenum">0819:</SPAN> {
+<SPAN CLASS="linenum">0820:</SPAN>     <SPAN CLASS="keyword">switch</SPAN>( nControlID )
+<SPAN CLASS="linenum">0821:</SPAN>     {
+<SPAN CLASS="linenum">0822:</SPAN>         <SPAN CLASS="keyword">case</SPAN> IDC_TOGGLEFULLSCREEN: DXUTToggleFullScreen(); <SPAN CLASS="keyword">break</SPAN>;
+<SPAN CLASS="linenum">0823:</SPAN>         <SPAN CLASS="keyword">case</SPAN> IDC_TOGGLEREF:        DXUTToggleREF(); <SPAN CLASS="keyword">break</SPAN>;
+<SPAN CLASS="linenum">0824:</SPAN>         <SPAN CLASS="keyword">case</SPAN> IDC_CHANGEDEVICE:     DXUTSetShowSettingsDialog( !DXUTGetShowSettingsDialog() ); <SPAN CLASS="keyword">break</SPAN>;
+<SPAN CLASS="linenum">0825:</SPAN>         <SPAN CLASS="keyword">case</SPAN> IDC_CHANGE_LEVEL:
+<SPAN CLASS="linenum">0826:</SPAN>         {
+<SPAN CLASS="linenum">0827:</SPAN>             WCHAR sz[100];
+<SPAN CLASS="linenum">0828:</SPAN>             g_MapSize = g_SampleUI.GetSlider( IDC_CHANGE_LEVEL )-&gt;GetValue();
+<SPAN CLASS="linenum">0829:</SPAN>             _snwprintf( sz, 100, L"<SPAN CLASS="string">SIZE: %3d</SPAN>", g_MapSize ); sz[99] = 0;
+<SPAN CLASS="linenum">0830:</SPAN>             g_SampleUI.GetStatic( IDC_CHANGE_LEVEL_STATIC )-&gt;SetText( sz );
+<SPAN CLASS="linenum">0831:</SPAN>             
+<SPAN CLASS="linenum">0832:</SPAN>             <SPAN CLASS="keyword">if</SPAN>( g_pRandTexture )
+<SPAN CLASS="linenum">0833:</SPAN>             {
+<SPAN CLASS="linenum">0834:</SPAN>                 SAFE_RELEASE( g_pRandTexture );
+<SPAN CLASS="linenum">0835:</SPAN>                 g_pd3dDevice-&gt;CreateTexture( g_MapSize, g_MapSize, 1
+<SPAN CLASS="linenum">0836:</SPAN>                                     , 0, D3DFMT_A8R8G8B8, D3DPOOL_MANAGED, &amp;g_pRandTexture, NULL);
+<SPAN CLASS="linenum">0837:</SPAN>                 InitFillRand(); <SPAN CLASS="comment">// @@@</SPAN>
+<SPAN CLASS="linenum">0838:</SPAN>                 D3DXFillTexture( g_pRandTexture, FillRand, NULL );
+<SPAN CLASS="linenum">0839:</SPAN>             }
+<SPAN CLASS="linenum">0840:</SPAN> 
+<SPAN CLASS="linenum">0841:</SPAN>             <SPAN CLASS="keyword">break</SPAN>;
+<SPAN CLASS="linenum">0842:</SPAN>         }
+<SPAN CLASS="linenum">0843:</SPAN>    }
+<SPAN CLASS="linenum">0844:</SPAN> }
+<SPAN CLASS="linenum">0845:</SPAN> 
+<SPAN CLASS="linenum">0846:</SPAN> 
+<SPAN CLASS="linenum">0847:</SPAN> <SPAN CLASS="comment">//--------------------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0848:</SPAN> <SPAN CLASS="comment">// This callback function will be called immediately after the Direct3D device has </SPAN>
+<SPAN CLASS="linenum">0849:</SPAN> <SPAN CLASS="comment">// entered a lost state and before IDirect3DDevice9::Reset is called. Resources created</SPAN>
+<SPAN CLASS="linenum">0850:</SPAN> <SPAN CLASS="comment">// in the OnResetDevice callback should be released here, which generally includes all </SPAN>
+<SPAN CLASS="linenum">0851:</SPAN> <SPAN CLASS="comment">// D3DPOOL_DEFAULT resources. See the "Lost Devices" section of the documentation for </SPAN>
+<SPAN CLASS="linenum">0852:</SPAN> <SPAN CLASS="comment">// information about lost devices.</SPAN>
+<SPAN CLASS="linenum">0853:</SPAN> <SPAN CLASS="comment">//--------------------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0854:</SPAN> <SPAN CLASS="keyword">void</SPAN> CALLBACK OnLostDevice()
+<SPAN CLASS="linenum">0855:</SPAN> {
+<SPAN CLASS="linenum">0856:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( g_pFont )
+<SPAN CLASS="linenum">0857:</SPAN>         g_pFont-&gt;OnLostDevice();
+<SPAN CLASS="linenum">0858:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( g_pEffect )
+<SPAN CLASS="linenum">0859:</SPAN>         g_pEffect-&gt;OnLostDevice();
+<SPAN CLASS="linenum">0860:</SPAN>     SAFE_RELEASE( g_pTextSprite );
+<SPAN CLASS="linenum">0861:</SPAN> }
+<SPAN CLASS="linenum">0862:</SPAN> 
+<SPAN CLASS="linenum">0863:</SPAN> 
+<SPAN CLASS="linenum">0864:</SPAN> <SPAN CLASS="comment">//--------------------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0865:</SPAN> <SPAN CLASS="comment">// This callback function will be called immediately after the Direct3D device has </SPAN>
+<SPAN CLASS="linenum">0866:</SPAN> <SPAN CLASS="comment">// been destroyed, which generally happens as a result of application termination or </SPAN>
+<SPAN CLASS="linenum">0867:</SPAN> <SPAN CLASS="comment">// windowed/full screen toggles. Resources created in the OnCreateDevice callback </SPAN>
+<SPAN CLASS="linenum">0868:</SPAN> <SPAN CLASS="comment">// should be released here, which generally includes all D3DPOOL_MANAGED resources. </SPAN>
+<SPAN CLASS="linenum">0869:</SPAN> <SPAN CLASS="comment">//--------------------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0870:</SPAN> <SPAN CLASS="keyword">void</SPAN> CALLBACK OnDestroyDevice()
+<SPAN CLASS="linenum">0871:</SPAN> {
+<SPAN CLASS="linenum">0872:</SPAN>     SAFE_RELEASE( g_pEffect );
+<SPAN CLASS="linenum">0873:</SPAN>     SAFE_RELEASE( g_pFont );
+<SPAN CLASS="linenum">0874:</SPAN> 
+<SPAN CLASS="linenum">0875:</SPAN> <SPAN CLASS="keyword">#if</SPAN> 1 <SPAN CLASS="comment">// @@@</SPAN>
+<SPAN CLASS="linenum">0876:</SPAN>     SAFE_RELEASE( g_pSpreadWangTexture );
+<SPAN CLASS="linenum">0877:</SPAN>     SAFE_RELEASE( g_pLODLookupTexture );
+<SPAN CLASS="linenum">0878:</SPAN> <SPAN CLASS="keyword">#endif</SPAN>
+<SPAN CLASS="linenum">0879:</SPAN>     SAFE_RELEASE( g_pRandTexture );
+<SPAN CLASS="linenum">0880:</SPAN>     SAFE_RELEASE( g_pWangTexture );
+<SPAN CLASS="linenum">0881:</SPAN> }
+<SPAN CLASS="linenum">0882:</SPAN> 
+<SPAN CLASS="linenum">0883:</SPAN> 
+<SPAN CLASS="linenum">0884:</SPAN> 
+<SPAN CLASS="linenum">0885:</SPAN> </PRE>
+</BODY>
+</HTML>

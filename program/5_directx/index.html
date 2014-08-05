@@ -1,0 +1,222 @@
+<html>
+<head>
+	<title>t-pot 『Direct X8.0 入門:Direct Xの初期化』</title>
+	<link rel="stylesheet" type="text/css" href="../if.css">
+</head>
+<meta http-equiv=Content-Type content="text/html; charset=shift_jis">
+<body>
+<div class="contents">
+<center>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<h1>DirectX の初期化</h1><br>
+<h3>～これさえあれば後は使いまわし～</h3>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+</center>
+<h2>■今回は?</h2>
+<p>
+今回は、DirectX の初期化を行います。<br>
+ソースは、次のものです
+<ul style = "LIST-STYLE-TYPE:none">
+<li><a href="dx8base.lzh">dx8base.lzh (DirectX アプリケーションの雛型のソース)</a>
+</ul>
+今後、サンプルを作ったり、ゲームを作る時に、今回のファイルを元に作っていくことになると思います。<br>
+というか、今回のものを一度作ってしまえば、少々の変更でいろいろなことが出来ます。
+</p>
+
+<h2>■追加するオブジェクト</h2>
+
+<p>
+今回から、DirectX を使うので、それらの定義ファイルである、
+</p>
+<pre class="CodeBlock">
+#include &lt;d3d8.h&gt;
+#include &lt;d3dx8.h&gt;
+</pre>
+<p>
+インクルードして下さい。<br>
+なお、今回のプロジェクトでは、すでに設定済みですが、<b>d3d8.lib、d3dx8.lib、winmm.lib を
+[プロジェクト]-[設定]-[リンク]-[オブジェクト/ライブラリ モジュール(L)]に追加してください。</b>
+</p>
+
+<p>
+今回、次のものを静的変数に追加します。
+</p>
+<pre class="CodeBlock">
+static LPDIRECT3D8            s_lpD3D = NULL;
+static LPDIRECT3DDEVICE8      s_lpD3DDEV = NULL;
+static D3DPRESENT_PARAMETERS  s_d3dpp;
+</pre>
+<p>
+これらは、今回使用するインターフェースのポインタ等ですが、こんな物を使うんだと思って、
+使っていく中で、おいおい分かっていけばいいのではないでしょうか。
+</p>
+
+<h2>■初期化関数</h2>
+
+<p>
+で、初期化関数です。InitD3D() にまとめました。<br>
+Winmain の CreateWindow で、ウィンドウを作成した後に呼び出します。<br>
+成功したら、ウィンドウの表示をして、メインループを回すようにします。<br>
+SUCCEEDED は HRESULT型の結果の成功、失敗を調べる関数です。
+SUCCEEDED(hr) では、hr が S_OK の時に、成功と判定し、if 文は先に進みます。
+</p>
+<pre class="CodeBlock">
+    HWND hWnd = CreateWindow(..............);
+    if(hWnd == NULL) return 0;
+    
+    if(<Font color = orange><b>SUCCEEDED(InitD3D(hWnd)</b></Font>)){  // ★★★★★ Direct3D の初期化
+
+        ShowWindow(hWnd, SW_SHOW);
+        UpdateWindow(hWnd);
+        
+        MSG msg;
+        while (!s_end)
+        {
+            // .... メインループ処理
+        }
+    }
+</pre>
+<p>
+InitD3D() の流れは、
+</p>
+<pre class="CodeBlock">
+Direct3DCreate8 : Direct3D オブジェクトを作成
+  ↓
+s_d3dpp を 適当なフォーマットに設定
+  ↓
+CreateDevice : Direct3D デバイスの作成
+</pre>
+<p>
+になります。<br>
+s_d3dpp で、解像度を設定したり、Z バッファの設定をします。<br>
+今回は、CreateDevice で、T&L や シェーディングがハードウェアでできるかどうかトライしています。
+</p>
+
+<p>
+実際の中身は、次のようになっています。
+</p>
+
+<pre class="CodeBlock">
+//-----------------------------------------------------------------------------
+// Name: InitD3D()
+// Desc: Direct3D の初期化
+//-----------------------------------------------------------------------------
+HRESULT InitD3D( HWND hWnd )
+{
+    // Direct3D オブジェクトを作成
+    if (NULL == (s_lpD3D = Direct3DCreate8(D3D_SDK_VERSION))){
+        MessageBox(NULL,"Direct3D の作成に失敗しました。",CAPTION,MB_OK | MB_ICONSTOP);
+        return E_FAIL;
+    }
+
+    // 現在の画面モードを取得
+    D3DDISPLAYMODE d3ddm;
+    if( FAILED( s_lpD3D->GetAdapterDisplayMode( D3DADAPTER_DEFAULT, &d3ddm ) ) ) return E_FAIL;
+
+    // Direct3D 初期化パラメータの設定
+    ZeroMemory(&s_d3dpp, sizeof(D3DPRESENT_PARAMETERS));
+
+    s_d3dpp.BackBufferCount = 1;
+    if (FULLSCREEN){
+        s_d3dpp.Windowed = FALSE;
+        s_d3dpp.BackBufferWidth = WIDTH;
+        s_d3dpp.BackBufferHeight = HEIGHT;
+    }else{
+        s_d3dpp.Windowed = TRUE;
+        s_d3dpp.BackBufferWidth = 0;
+        s_d3dpp.BackBufferHeight = 0;
+    }
+    // ウインドウ : 現在の画面モードを使用
+    s_d3dpp.BackBufferFormat = d3ddm.Format;
+    s_d3dpp.MultiSampleType = D3DMULTISAMPLE_NONE;
+    s_d3dpp.SwapEffect = D3DSWAPEFFECT_DISCARD;
+    s_d3dpp.hDeviceWindow = hWnd;
+    // Z バッファの自動作成
+    s_d3dpp.EnableAutoDepthStencil = TRUE;
+    s_d3dpp.AutoDepthStencilFormat = D3DFMT_D16;
+ 
+    // デバイスの作成 - T&L HAL
+    if (FAILED(s_lpD3D->CreateDevice(D3DADAPTER_DEFAULT, D3DDEVTYPE_HAL,hWnd,D3DCREATE_HARDWARE_VERTEXPROCESSING,&s_d3dpp,&s_lpD3DDEV))){
+        // 失敗したので HAL で試行
+        if (FAILED(s_lpD3D->CreateDevice(D3DADAPTER_DEFAULT, D3DDEVTYPE_HAL,hWnd,D3DCREATE_SOFTWARE_VERTEXPROCESSING,&s_d3dpp,&s_lpD3DDEV))){
+            // 失敗したので REF で試行
+            if (FAILED(s_lpD3D->CreateDevice(D3DADAPTER_DEFAULT, D3DDEVTYPE_REF,hWnd,D3DCREATE_SOFTWARE_VERTEXPROCESSING,&s_d3dpp,&s_lpD3DDEV))){
+                // 結局失敗した
+                MessageBox(NULL,"Direct3D の初期化に失敗しました。",CAPTION,MB_OK | MB_ICONSTOP);
+                return E_FAIL;
+            }
+        }
+    }
+
+    return S_OK;
+}
+</pre>
+
+<h2>■メインループ</h2>
+<p>
+さらに、メインループも追加します。<br>
+DirectX の描画は、BeginScene で始まり、EndScene で終わります。<br>
+BeginScene の前に、画面(とZバッファ)をきれいにするために塗りつぶしています。<br>
+イベントが無い時は、常に描画しますが、その描画対象は、
+実際のディスプレイではありません。
+常に画面で描いていると描いている途中が見えるので、見えないように、
+描画用と表示用のメモリをビデオカードのメモリもしくはメインメモリに用意して、
+描画し終わったら、現在表示している画面といれ替えます。
+次は、今まで表示していたメモリ上に画面を作っています。<br>
+</p>
+
+<pre class="CodeBlock">
+if (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE)){
+    // メッセージの処理
+    TranslateMessage(&msg);
+    DispatchMessage(&msg);
+}else{
+<Font color = orange><b>
+    // ★★★★★ Direct3D の描画
+    // バックバッファと Z バッファをクリア
+    s_lpD3DDEV->Clear(0,NULL,D3DCLEAR_TARGET | D3DCLEAR_ZBUFFER,D3DCOLOR_XRGB(0,0,0),1.0f,0);
+    // シーン開始
+    s_lpD3DDEV->BeginScene();
+    
+    // ポリゴン描画などの処理
+    
+    // シーン終了
+    s_lpD3DDEV->EndScene();
+    if (FAILED(s_lpD3DDEV->Present(NULL,NULL,NULL,NULL)))
+        s_lpD3DDEV->Reset(&s_d3dpp);// バックバッファをプライマリバッファにコピー
+</b></Font>
+}
+</pre>
+
+
+<h2>■後始末</h2>
+
+<p>
+最後に、使ったメモリーを開放します。<br>
+WinMain の一番最後に追加します。<br>
+今回は、Direct3DCreate8, CreateDevice で確保した、s_lpD3DDEV、s_lpD3DD のメモリを開放します。
+</p>
+<pre class="CodeBlock">
+    RELEASE(s_lpD3DDEV);
+    RELEASE(s_lpD3D);
+</pre>
+
+<p>
+RELEASE はDirectX を使っている人なら、ほとんどの人が使っているマクロで、メモリの多重開放を防止します。<br>
+DirectX 系のオブジェクトは、RELEASE (その中の Release()) で開放することは覚えて置いてください。<br>
+なお、これは main.h にあります。
+</p>
+
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<center>
+<hr>
+<p><a href="../index.html">もどる</a></p>
+<p><a href="mailto:imagire@gmail.com">imagire@gmail.com</a></p>
+</center>
+</body>
+</html>

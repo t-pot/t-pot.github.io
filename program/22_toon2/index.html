@@ -1,0 +1,243 @@
+<head>
+	<title>t-pot 『Vertex Shader 入門:トゥーンシェーダー２』</title>
+	<link rel="stylesheet" type="text/css" href="../if.css">
+</head>
+<meta http-equiv=Content-Type content="text/html; charset=shift_jis">
+<body>
+<div class="contents">
+<center>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<h1>トゥーンシェーダー２</h1><br>
+<h3>～輪郭抽出してみました～</h3>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+</center>
+<h2>■はじめに</h2>
+
+<p>
+前回の薄膜シェーダーで、輪郭抽出ができそうだったので、これをトゥーンシェーダーに使います。
+</p>
+<right><image src = "toon2.gif"></right>
+<p>
+全体の外側に黒い影が引かれるのが今回の特徴です。
+</p>
+<p>
+以下のファイルをダウンロードしてください。<br>
+</p>
+<ul style = "LIST-STYLE-TYPE:none">
+<li><a href="toon2.lzh">toon2.lzh (トゥーンシェーダー２のサンプル)</a>
+</ul>
+<p>
+また、トラ君に登場してもらいましょう。
+</p>
+<right><image src = "toon2tiger.gif"></right>
+<p>
+今回のものは、ポリゴン数が多いほうがきれいに出ますね。
+</p>
+
+<h2>■解説</h2>
+
+<p>
+今回使うエフェクト用のテクスチャーは、
+</p>
+<right><image src = "toon2tex.gif"></right>
+<p>
+です。
+今回は、横軸方向も色が変化します。それぞれ、
+</p>
+<table>
+<tr><td>U 軸</td><td>:</td><td>段階的な色分け</td>
+</tr>
+<tr><td>V 軸</td><td>:</td><td>輪郭抽出</td>
+</tr>
+</table>
+<p>
+に、使用します。<br>
+横軸の下の方を、見ると、前のトゥーンの時と同じようなグラデーションです。
+ということで、光源と法線の内積を取り、ライティングに使用します。<br>
+縦軸は、右のほうを見ると、上が黒で、下が白になっています。
+こちらは輪郭抽出に使用します。
+視線の方向と法線の内積を計算し、値が小さい、あさっての向きを向いているポリゴンを上の黒い色にします。
+これで、輪郭抽出がなされます。
+</p>
+
+<h2>■バーテックスシェーダー(vs.vsh)</h2>
+
+<p>
+では、バーテックスシェーダープログラムです。
+</p>
+<pre class="CodeBlock">
+vs.1.0
+
+; c0-3   -- world + ビュー + 透視変換行列
+; c4-7   -- world 行列
+; c8-11  -- world の逆転置行列
+; c12    -- {0.0, 0.5, 1.0, -1.0}
+; c13    -- ライトのベクトル
+; c14    -- カメラの位置
+; c15    -- メッシュの色
+;
+; v0    頂点の座標値
+; v3    法線ベクトル
+; v8    テクスチャ座標1
+
+;座標変換
+dp4 oPos.x,    v0,    c0
+dp4 oPos.y,    v0,    c1
+dp4 oPos.z,    v0,    c2
+dp4 oPos.w,    v0,    c3
+
+;法線の変換
+dp3 r0.x, v3, c8
+dp3 r0.y, v3, c9
+dp3 r0.z, v3, c10
+
+;法線の正規化
+dp3 r0.w, r0, r0
+rsq r0.w, r0.w
+mul r0, r0, r0.w
+
+<Font color = orange><b>;ワールド座標系での頂点の位置を計算する
+dp4 r1.x, v0, c4
+dp4 r1.y, v0, c5
+dp4 r1.z, v0, c6
+dp4 r1.w, v0, c7
+
+;カメラへの向きeを計算する
+add r2, c14, -r1
+
+;e の正規化
+dp3 r2.w, r2, r2
+rsq r2.w, r2.w
+mul r2, r2, r2.w</b></Font>
+
+; l dot n (ライティング)
+dp3 oT0.x, r0, c13
+
+<Font color = orange><b>; e dot n (輪郭抽出)
+dp3 oT0.y, r0, r2</b></Font>
+
+; メッシュのテクスチャー
+mov oT1, v8
+
+; メッシュの色
+mov oD0, c15
+</pre>
+
+<p>
+今回は、トゥーンのプログラムに、薄膜シェーダーで使った、e dot n の計算を行います。<br>
+それを oT0.y に入れて、テクスチャーの縦成分を利用します。<br>
+あと、oT0.x 及び oT0.y が 0 以下もしくは 1 以上の値になった場合に、
+SetTextureStageState の方で処理するようにしたので、内積計算の部分が簡単になっています。
+</p>
+
+
+<h2>■表示</h2>
+
+<p>
+今回の draw.cpp は、描画部分しか前回のトゥーンからの変化がありません。<br>
+しかも、今回の draw.cpp を前回のプログラムで使用してもきちんと動きます
+（テクスチャーの模様は変更しなければなりませんが）。
+</p>
+<p>
+違いは、SetTextureStageState(0,D3DTSS_ADDRESSU(D3DTSS_ADDRESSV), D3DTADDRESS_CLAMP) で、
+テクスチャーの繰り返しをクランプモードにします。
+これは、U, V の値が 0 より小さかったら、0 のピクセルを引っ張ってきて、
+1 より大きかったら、1 のピクセルを使用します。
+つまり、はみ出した分を境界の色で塗りつぶします。<br>
+これで、バーテックスシェーダープログラムでのクランプ処理がいらなくなりました。<br>
+後は、前回使用した視線方向の位置を固定レジスタの 14 に入れました。
+</p>
+
+<pre class="CodeBlock">
+void Render(LPDIRECT3DDEVICE8 lpD3DDEV)
+{
+    if(NULL == pMeshVB) return;
+    
+    D3DXMATRIX mWorld, mView, mProj;
+
+    D3DXMatrixRotationY( &mWorld, timeGetTime()/1000.0f );
+    
+    D3DXVECTOR3 eye, lookAt, up;
+    eye.x    = 0.0f; eye.y      = 1.5f; eye.z    = 3.0f;
+    lookAt.x = 0.0f; lookAt.y   = 0.0f; lookAt.z = 0.0f;
+    up.x     = 0.0f; up.y       = 1.0f; up.z     = 0.0f;
+    D3DXMatrixLookAtLH(&mView, &eye, &lookAt, &up);
+    
+    D3DXMatrixPerspectiveFovLH(&mProj
+        ,60.0f*PI/180.0f                          // 視野角
+        ,(float)WIDTH/(float)HEIGHT               // アスペクト比
+        ,0.01f                                    // 最近接距離
+        ,100.0f                                   // 最遠方距離
+        );
+    D3DXMATRIX  m = mWorld * mView * mProj;
+    D3DXMatrixTranspose( &m ,  &m);
+    lpD3DDEV->SetVertexShaderConstant(0,&m, 4);
+    D3DXMatrixTranspose( &m ,  &mWorld);
+    lpD3DDEV->SetVertexShaderConstant(4, &m, 4);
+    D3DXMatrixInverse( &m,  NULL, &mWorld);
+    lpD3DDEV->SetVertexShaderConstant(8, &m, 4);
+    lpD3DDEV->SetVertexShaderConstant(12, D3DXVECTOR4(0.0f, 0.5f, 1.0f, -1.0f), 1);
+    D3DXVECTOR4 lightDir(0.5f, 1.0f, 1.0f, 0.0f);
+    D3DXVec4Normalize(&lightDir, &lightDir);
+    lpD3DDEV->SetVertexShaderConstant(13, &lightDir, 1);
+    <Font color = orange><b>lpD3DDEV->SetVertexShaderConstant(14, &eye, 1);</b></Font>
+
+    lpD3DDEV->SetVertexShader(hVertexShader);
+    lpD3DDEV->SetTextureStageState(0,D3DTSS_COLOROP,    D3DTOP_MODULATE);
+    lpD3DDEV->SetTextureStageState(0,D3DTSS_COLORARG1,    D3DTA_TEXTURE);
+    lpD3DDEV->SetTextureStageState(0,D3DTSS_COLORARG2,    D3DTA_DIFFUSE);
+    lpD3DDEV->SetTextureStageState(0,D3DTSS_MAGFILTER,    D3DTEXF_LINEAR);
+    lpD3DDEV->SetTextureStageState(0,D3DTSS_MINFILTER,    D3DTEXF_LINEAR);
+    <Font color = orange><b>lpD3DDEV->SetTextureStageState(0,D3DTSS_ADDRESSU,    D3DTADDRESS_CLAMP);</b></Font>
+    <Font color = orange><b>lpD3DDEV->SetTextureStageState(0,D3DTSS_ADDRESSV,    D3DTADDRESS_CLAMP);</b></Font>
+    lpD3DDEV->SetTexture(0,pTexture);
+
+    //メッシュの描画
+    lpD3DDEV->SetStreamSource(0, pMeshVB, sizeof(D3D_CUSTOMVERTEX));
+    lpD3DDEV->SetIndices(pMeshIndex,0);
+    for(DWORD i=0;i<dwNumMaterials;i++){
+        //色をセット
+        D3DXVECTOR4 vl;
+        vl.x = pMeshMaterials[i].Diffuse.r;
+        vl.y = pMeshMaterials[i].Diffuse.g;
+        vl.z = pMeshMaterials[i].Diffuse.b;
+        lpD3DDEV->SetVertexShaderConstant(15,&vl,1);
+
+        lpD3DDEV->SetTexture(1,pMeshTextures[i]);
+        lpD3DDEV->SetTextureStageState(1,D3DTSS_COLOROP,D3DTOP_MODULATE);
+        lpD3DDEV->SetTextureStageState(1,D3DTSS_COLORARG1,D3DTA_TEXTURE);
+        lpD3DDEV->SetTextureStageState(1,D3DTSS_COLORARG2,D3DTA_CURRENT);
+        lpD3DDEV->SetTextureStageState(1,D3DTSS_MAGFILTER,D3DTEXF_LINEAR);
+        lpD3DDEV->SetTextureStageState(1,D3DTSS_MINFILTER,D3DTEXF_LINEAR);
+
+        lpD3DDEV->DrawIndexedPrimitive(D3DPT_TRIANGLELIST, 
+                                        pSubsetTable[i].VertexStart,
+                                        pSubsetTable[i].VertexCount,
+                                        pSubsetTable[i].FaceStart * 3,
+                                        pSubsetTable[i].FaceCount);
+    }
+    
+    lpD3DDEV->SetTexture(0, NULL);
+}
+</pre>
+
+<h2>■最後に</h2>
+
+<p>
+ということで、輪郭抽出も終わって、トォーンシェーダーと呼ばれるものができました。<br>
+ただ、輪郭がポリゴン数や、モデルの形にシビアなので、もう少し調整しないと、実用と呼ばれるレベルにはならないかと思います。
+</p>
+
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<center>
+<hr>
+<p><a href="../index.html">もどる</a></p>
+<p><a href="mailto:imagire@gmail.com">imagire@gmail.com</a></p>
+</center>
+</body>
+</html>

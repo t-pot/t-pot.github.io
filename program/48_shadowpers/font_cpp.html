@@ -1,0 +1,74 @@
+<HTML>
+<HEAD>
+<TITLE>font.cpp</TITLE>
+<meta name="GENERATOR" content="cpp2html 2.1 by Niisaka">
+<meta http-equiv="Content-Type" content="text/html">
+</HEAD>
+<BODY TEXT="#000000" BGCOLOR="#FFFFFF">
+<PRE><FONT COLOR="#40F628">0001:</FONT> <FONT COLOR="#008000">// ----------------------------------------------------------------------------</FONT>
+<FONT COLOR="#40F628">0002:</FONT> <FONT COLOR="#008000">//</FONT>
+<FONT COLOR="#40F628">0003:</FONT> <FONT COLOR="#008000">// font.cpp - フォント描画部分</FONT>
+<FONT COLOR="#40F628">0004:</FONT> <FONT COLOR="#008000">// </FONT>
+<FONT COLOR="#40F628">0005:</FONT> <FONT COLOR="#008000">// Copyright (c) 2001 if (if@edokko.com)</FONT>
+<FONT COLOR="#40F628">0006:</FONT> <FONT COLOR="#008000">// All Rights Reserved.</FONT>
+<FONT COLOR="#40F628">0007:</FONT> <FONT COLOR="#008000">//</FONT>
+<FONT COLOR="#40F628">0008:</FONT> <FONT COLOR="#008000">// ----------------------------------------------------------------------------</FONT>
+<FONT COLOR="#40F628">0009:</FONT> <FONT COLOR="#0000FF">#define</FONT> STRICT
+<FONT COLOR="#40F628">0010:</FONT> 
+<FONT COLOR="#40F628">0011:</FONT> <FONT COLOR="#0000FF">#include</FONT> "<FONT COLOR="#600000">main.h</FONT>"
+<FONT COLOR="#40F628">0012:</FONT> <FONT COLOR="#0000FF">#include</FONT> "<FONT COLOR="#600000">font.h</FONT>"
+<FONT COLOR="#40F628">0013:</FONT> 
+<FONT COLOR="#40F628">0014:</FONT> 
+<FONT COLOR="#40F628">0015:</FONT> <FONT COLOR="#008000">// ----------------------------------------------------------------------------</FONT>
+<FONT COLOR="#40F628">0016:</FONT> <FONT COLOR="#0000FF">void</FONT> CMyFont::Init(LPDIRECT3DDEVICE8 lpD3DDEV, <FONT COLOR="#0000FF">int</FONT> w, <FONT COLOR="#0000FF">int</FONT> h)
+<FONT COLOR="#40F628">0017:</FONT> {
+<FONT COLOR="#40F628">0018:</FONT>     HDC     hTextDC = NULL;
+<FONT COLOR="#40F628">0019:</FONT>     HFONT   hFont = NULL, hOldFont = NULL;
+<FONT COLOR="#40F628">0020:</FONT>     
+<FONT COLOR="#40F628">0021:</FONT>     hTextDC = CreateCompatibleDC(NULL);
+<FONT COLOR="#40F628">0022:</FONT>     hFont = CreateFont( h, w, 0, 0,
+<FONT COLOR="#40F628">0023:</FONT>                       FW_REGULAR,
+<FONT COLOR="#40F628">0024:</FONT>                       FALSE,FALSE,FALSE,
+<FONT COLOR="#40F628">0025:</FONT>                       SHIFTJIS_CHARSET,
+<FONT COLOR="#40F628">0026:</FONT>                       OUT_DEFAULT_PRECIS,
+<FONT COLOR="#40F628">0027:</FONT>                       CLIP_DEFAULT_PRECIS,
+<FONT COLOR="#40F628">0028:</FONT>                       DEFAULT_QUALITY,
+<FONT COLOR="#40F628">0029:</FONT>                       DEFAULT_PITCH,
+<FONT COLOR="#40F628">0030:</FONT>                       "<FONT COLOR="#600000">ＭＳ ゴシック</FONT>"
+<FONT COLOR="#40F628">0031:</FONT>                       );
+<FONT COLOR="#40F628">0032:</FONT>     <FONT COLOR="#0000FF">if</FONT>(!hFont) <FONT COLOR="#0000FF">return</FONT>;
+<FONT COLOR="#40F628">0033:</FONT>     hOldFont = (HFONT)SelectObject(hTextDC, hFont);
+<FONT COLOR="#40F628">0034:</FONT>     
+<FONT COLOR="#40F628">0035:</FONT>     <FONT COLOR="#0000FF">if</FONT>( FAILED( D3DXCreateFont( lpD3DDEV, hFont, &amp;m_lpFont ) ) ) {
+<FONT COLOR="#40F628">0036:</FONT>         MessageBox( 0, "<FONT COLOR="#600000">D3DXCreateFontIndirect FALSE</FONT>", "<FONT COLOR="#600000">ok</FONT>", MB_OK);
+<FONT COLOR="#40F628">0037:</FONT>         <FONT COLOR="#0000FF">return</FONT>;
+<FONT COLOR="#40F628">0038:</FONT>     }
+<FONT COLOR="#40F628">0039:</FONT>     SelectObject(hTextDC, hOldFont);
+<FONT COLOR="#40F628">0040:</FONT>     DeleteObject(hFont);
+<FONT COLOR="#40F628">0041:</FONT> }
+<FONT COLOR="#40F628">0042:</FONT> <FONT COLOR="#008000">// ----------------------------------------------------------------------------</FONT>
+<FONT COLOR="#40F628">0043:</FONT> <FONT COLOR="#008000">// 表示ルーチン</FONT>
+<FONT COLOR="#40F628">0044:</FONT> <FONT COLOR="#0000FF">void</FONT> CMyFont::Print( <FONT COLOR="#0000FF">char</FONT> *str, <FONT COLOR="#0000FF">int</FONT> x, <FONT COLOR="#0000FF">int</FONT> y, D3DCOLOR color )
+<FONT COLOR="#40F628">0045:</FONT> {
+<FONT COLOR="#40F628">0046:</FONT>     RECT rect;
+<FONT COLOR="#40F628">0047:</FONT>     rect.left = x; 
+<FONT COLOR="#40F628">0048:</FONT>     rect.right = WIDTH;
+<FONT COLOR="#40F628">0049:</FONT>     rect.top = y;
+<FONT COLOR="#40F628">0050:</FONT>     rect.bottom = HEIGHT;
+<FONT COLOR="#40F628">0051:</FONT> 
+<FONT COLOR="#40F628">0052:</FONT>     <FONT COLOR="#008000">// デバイス上に、整形した ANSI テキストを描画する</FONT>
+<FONT COLOR="#40F628">0053:</FONT>     m_lpFont-&gt;DrawText(str, -1, &amp;rect
+<FONT COLOR="#40F628">0054:</FONT>                     ,DT_LEFT | DT_EXPANDTABS
+<FONT COLOR="#40F628">0055:</FONT>                     ,color
+<FONT COLOR="#40F628">0056:</FONT>                     );
+<FONT COLOR="#40F628">0057:</FONT> }
+<FONT COLOR="#40F628">0058:</FONT> <FONT COLOR="#008000">// ----------------------------------------------------------------------------</FONT>
+<FONT COLOR="#40F628">0059:</FONT> <FONT COLOR="#0000FF">void</FONT> CMyFont::Clean()
+<FONT COLOR="#40F628">0060:</FONT> {
+<FONT COLOR="#40F628">0061:</FONT>     RELEASE(m_lpFont);
+<FONT COLOR="#40F628">0062:</FONT> }
+<FONT COLOR="#40F628">0063:</FONT> 
+<FONT COLOR="#40F628">0064:</FONT> 
+<FONT COLOR="#40F628">0065:</FONT> </PRE>
+</BODY>
+</HTML>

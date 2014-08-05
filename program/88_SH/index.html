@@ -1,0 +1,409 @@
+<head>
+	<title>t-pot『テイラー、フーリエ、球面調和関数』</title>
+	<link rel="stylesheet" type="text/css" href="../if.css">
+</head>
+<meta http-equiv=Content-Type content="text/html; charset=shift_jis">
+<body>
+
+
+<div class="contents">
+<center>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<h1>テイラー、フーリエ、球面調和関数</h1><br>
+<h3>～ Taylor, Fourier, Spherical Harmonic ～</h3>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<image src = "title.png">
+<br>
+<hr>
+</center>
+<div>
+
+
+<h2>■はじめに</h2>
+
+
+<p>
+最近の知識の暗黙の前提にある級数展開にとり組んでみましょう。<br>
+級数などによる関数の展開は、うまい級数を選んでやると、
+少ない基底関数で精度の高い関数の近似を行なってくれます。<br>
+級数展開がすらすらとできることは、将来のプログラマの必須条件になるかもしれません。
+</p>
+<p>
+また、球面調和関数を見るためのプログラムを作って見ました。<br>
+qやwでlを、aやsで球面調和関数のmの値を変えることができます。
+</p>
+<ul style = "LIST-STYLE-TYPE:none">
+<li><a href="src.zip">src.zip (球面調和関数:DirectX9)</a>
+</ul>
+
+
+<h2>■テイラー展開(Taylor Series expansion)</h2>
+
+
+<p>
+関数f(x)=x は２次元グラフではまっすぐなグラフです。関数f(x)=x<sup>2</sup>は放物線を描いて、f(x)=x<sup>3</sup>はより複雑なグラフになります。
+</p>
+<image src = "image007.png">y=x
+<image src = "image005.png">y=x<sup>2</sup>
+<image src = "image003.png">y=x<sup>3</sup>
+<p>
+これら、べき乗した変数のグラフは拡大縮小しても重なり合うことはありません。
+これら変数のべき乗の組は、線形に合成することによって、より複雑なグラフを描く関数を作ります。
+例えば、y = x<sup>3 </sup>- x<sup>2 </sup>- 2xは下のようなグラフです。
+</p>
+<image src = "image001.png">y = x<sup>3 </sup>- x<sup>2 </sup>- 2x
+<p>
+変数のべき乗の合成として作られる関数は、一般に
+</p>
+<table bgcolor="white"><tr><td>
+<image src = "image010.gif">
+</td></tr></table>
+
+<p>
+と書けます。これは、正に&lt;1, x, x<sup>2</sup>, x<sup>3</sup>,
+x<sup>4</sup>, …&gt;を基底ベクトルとするベクトルの姿です。このようにべき乗などの簡単な関数の組を基底ベクトルにつかって一般の関数を展開する方法を級数展開と呼びます。よく見る関数の多くは、べき乗で展開することができます。
+</p>
+
+<p>
+そもそもべき級数で関数を展開する理由は、非常に複雑な関数の場合には値を求めるのが難しいので、
+べき級数で展開して値を近似的に求めることによって、関数のおおよその形や性質をつかむためです。
+それ以外にも、高速に計算するために計算が簡単なべき級数に落とし込むという側面もあります。
+</p>
+<p>
+さて、a<sub>0</sub>, a<sub>1</sub>, a<sub>2</sub>, …はどのような値でしょうか？f(x)の関数の形が分かっていれば、a<sub>i</sub>を計算することができます。一度a<sub>i</sub>を求めておけば、どんなｘに対してもすぐにf(x)の値を求めることができます。
+</p>
+<p>
+a<sub>i</sub>を求める方法は、次のようになります。f(0)は、x<sup>i</sup>が必ず０になるので、
+</p>
+<table bgcolor="white"><tr><td>
+<image src = "image012.gif">
+</td></tr></table>
+<p>
+となります。従って、a<sub>0</sub>=f(0)です。
+</p>
+<p>
+次に、f(x)を微分してみましょう。f(x)の微分f<sup>(1)</sup>(x)は、
+</p>
+<table bgcolor="white"><tr><td>
+<image src = "image014.gif">
+</td></tr></table>
+<p>
+になります。従って、a<sub>1</sub> = f<sup>(1)</sup>(0)です。さらに微分していきましょう。f(x)の２階微分f<sup>(2)</sup>(x)は、
+</p>
+<table bgcolor="white"><tr><td>
+<image src = "image016.gif">
+</td></tr></table>
+<p>
+です。またx=0を代入すれば、a<sub>2</sub> = (1/2)f<sup>(2)</sup>(0)を求めることができます。これを続けていくと、全ての係数は、
+</p>
+<table bgcolor="white"><tr><td>
+<image src = "image018.gif">
+</td></tr></table>
+<p>
+と、求めることができます。従って、関数なんてものは、べき級数を使って
+</p>
+<table bgcolor="white"><tr><td>
+<image src = "image020.gif">
+</td></tr></table>
+<p>
+と書くことができます。展開係数にx=0での微分を使ったこの展開方法をマクローリン展開(Maclaurin Series expansion)と言います。<br>
+さて、今は、f(0)と、x=0を使って係数を求めましたが、別に0でなくてもかまいません。
+より一般的に、適当なxの値を使って係数を求める方法をテイラー展開といいます。
+テイラー展開の形は次のようになります。
+</p>
+<table bgcolor="white"><tr><td>
+<image src = "image022.gif">
+</td></tr></table>
+<p>
+有名なテイラー展開には、次の物があります。
+</p>
+<table bgcolor="white"><tr><td>
+<image src = "image024.gif">
+</td></tr></table>
+<table bgcolor="white"><tr><td>
+<image src = "image026.gif">
+</td></tr></table>
+<table bgcolor="white"><tr><td>
+<image src = "image028.gif">
+</td></tr></table>
+<table bgcolor="white"><tr><td>
+<image src = "image030.gif">
+</td></tr></table>
+<table bgcolor="white"><tr><td>
+<image src = "image032.gif">
+</td></tr></table>
+<table bgcolor="white"><tr><td>
+<image src = "image034.gif">
+</td></tr></table>
+<table bgcolor="white"><tr><td>
+<image src = "image036.gif">
+</td></tr></table>
+<table bgcolor="white"><tr><td>
+<image src = "image038.gif">
+</td></tr></table>
+<p>
+ちなみに、sin(x)を最初の項から順に計算していくと、
+</p>
+<image src = "image043.png">y = x
+<image src = "image041.png">y = x - x<sup>3</sup>/3
+<image src = "image039.png">y = x - x<sup>3</sup>/3! + x<sup>5</sup>/5!
+<p>
+と、項が増えるに従ってだんだんとホントの値に近づいていくようすが見えます。<br>
+一般にテイラー展開は展開した位置の精度が高くて、xが展開した場所から離れるに従って、誤差が大きくなります。
+</p>
+
+
+<h2>■ホーナーの方法(Horner's method)</h2>
+
+
+<p>
+あんまり数学的なことを言っていると疲れるので、少し実際に使う時のテクニックも取り扱っておきましょう。最近の GPU 等では、積和計算
+</p>
+<table bgcolor="white"><tr><td>
+<image src = "image046.gif">
+</td></tr></table>
+<p>
+を高速に処理することができます。テイラー展開も積和計算を有効に使えれば高速化につながります。テイラー展開を変形すると、
+</p>
+<table bgcolor="white"><tr><td>
+<image src = "image048.gif">
+</td></tr></table>
+<p>
+とかけます。つまり、テイラー展開は、積和計算を入れ子にした形に変形できます。より具体的には、
+</p>
+<table bgcolor="white"><tr><td>
+<image src = "image050.gif">
+</td></tr></table>
+<p>
+として、何回か積和計算すれば、テイラー展開を好きな精度で実現することができます。この方法を入れ子乗算(nested multiplication)もしくはホーナーの方法と言います。
+</p>
+
+
+<h2>■フーリエ級数(Fourier series)</h2>
+
+
+<p>
+関数がべき乗で展開できたのなら、他の関数でも展開したくなるのが人情というものです。展開する基底ベクトルを整数倍の周期を持った三角関数(フーリエ級数)にした関数の展開がフーリエ展開です。フーリエ展開は、区間で区切られた関数、特に区間の端でつながった周期的な関数を展開するのに良く用いられます。その根底には、「同じ形を繰り返している周期をもった波はどんなに複雑なものも、単純な波たくさん足し合わさってできている」という思想が隠されています。
+</p>
+<p>
+例えば、-XからXの範囲の値が分かっている関数f(x)を考えて見ましょう。この関数は三角関数を使って、
+</p>
+
+<table bgcolor="white"><tr><td>
+<image src = "image052.gif">
+</td></tr></table>
+<p>
+のように展開することができます。まぁ、どうして展開できるのかといえば、フーリエが証明したからで、ここでは展開できるということを事実として受け取って先に進みましょう。<br>
+あと、c<sub>0</sub>に掛けられた、わざとらしい1/2も、後々の係数を求めるときに綺麗な値になるように人為的に調整されています。<br>
+ちなみに、展開する三角関数は、項が増すに従って、間隔が短くなる波になります。
+例えば、X=1の時のフーリエ級数のそれぞれの関数は次のようになります。
+</p>
+<image src = "image059.png">Y = cos(πx)
+<image src = "image057.png">Y = cos(2πx)<br>
+<image src = "image055.png">Y = sin(πx)
+<image src = "image053.png">Y = sin(2πx)
+<p>
+それでは、展開係数c<sub>n</sub>, s<sub>n</sub>を求めましょう。ここで、三角関数に関して、次の式が成り立つことを利用します。
+</p>
+<table bgcolor="white"><tr><td>
+<image src = "image062.gif">
+</td></tr></table>
+<table bgcolor="white"><tr><td>
+<image src = "image064.gif">
+</td></tr></table>
+<table bgcolor="white"><tr><td>
+<image src = "image066.gif">
+</td></tr></table>
+<p>
+この式は、三角関数の和の公式を使って、証明することができます。これらを使うと、それぞれの係数は、
+</p>
+<table bgcolor="white"><tr><td>
+<image src = "image068.gif">
+</td></tr></table>
+<table bgcolor="white"><tr><td>
+<image src = "image070.gif">
+</td></tr></table>
+<p>
+と求められます。
+</p>
+<p>
+ためしに符号関数（xが負のときに-1正の時に+1）の関数をフーリエ展開してみましょう。計算をすると、c<sub>n</sub>の値は０になります。s<sub>n</sub>は、
+</p>
+<table bgcolor="white"><tr><td>
+<image src = "image072.gif">
+</td></tr></table>
+<p>
+になります。従って、グラフを描くと、Xを１として、下のようなグラフがかけます。
+</p>
+<image src = "image079.png">Sinの１次の項まで
+<image src = "image073.png">Sinの３次の項まで
+<image src = "image075.png">Sinの５次の項まで
+<image src = "image077.png">Sinの７次の項まで
+<p>
+フーリエ級数は「波」を重ね合わせるので、展開の形も波打ったものになります。特に今回のようにx=0で不連続になるような関数は苦手で、不連続点の周辺では収束が悪くなります。
+</p>
+
+
+<h2>■球面調和関数(Spherical Harmonic)</h2>
+
+
+<p>
+いままでに、テイラー展開、フーリエ展開をしてきましたが、
+級数 F<sub>n</sub>(x)をいくつも持ってきて、それらを使えば、
+</p>
+<table bgcolor="white"><tr><td>
+<image src = "image084.gif">
+</td></tr></table>
+<p>
+と、関数を展開でき、さらに、この級数 F<sub>n</sub>(x)が、
+</p>
+<table bgcolor="white"><tr><td>
+<image src = "image082.gif">
+</td></tr></table>
+<p>
+という性質を持っていれば、展開係数を
+</p>
+<p>
+</p>
+<table bgcolor="white"><tr><td>
+<image src = "image086.gif">
+</td></tr></table>
+<p>
+という形で計算することができます。<br>
+フーリエ展開;&lt 1, cos(πx/X), cos(2πx/X), ..., sin(πx/X), sin(2πx/X), ...&gt は、その様な級数の１つです。<br>
+そのような関数の１つで有名なものにルジャンドルの（陪）関数があります。ルジャンドル陪関数P<sub>n</sub><sup>m</sup>(x)は、
+-1から1の範囲で有効な関数で、ルジャンドル関数P<sub>n</sub>(x)から
+</p>
+<table bgcolor="white"><tr><td>
+<image src = "image088.gif">
+</td></tr></table>
+<p>
+として定義されます。<br>
+ちなみに、ルジャンドル陪関数 P<sub>n</sub><sup>m</sup>(x)の添え字、nとmは、０&lt;=m&lt;=nでなければなりません。n&lt;mの時は、定義から0になります。
+</p>
+<p>
+ルジャンドル陪関数は、次の性質を持っています(これらは、前の定義の式から計算することができます)。
+</p>
+<table bgcolor="white"><tr><td>
+<image src = "image090.gif">
+</td></tr></table>
+<p>
+この関係式から、しちめんどくさい微分を計算しなくても、ルジャンドル陪関数を求めることができます。<br>
+具体的には、１つめの式から、P<sub>0</sub><sup>0</sup>(x), P<sub>1</sub><sup>1</sup>(x), P<sub>2</sub><sup>2</sup>(x)…を求めて、次に２つめの式からP<sub>1</sub><sup>0</sup>(x), P<sub>2</sub><sup>1</sup>(x), P<sub>3</sub><sup>2</sup>(x)…を求めて、その後に３番目の式からそれ以外を求めます。<br>
+この計算方法は、特にコンピュータを使って求める場合に標準的な方法になるでしょう。
+</p>
+<p>
+具体的にいくつかのルジャンドル倍関数を求めると、
+</p>
+<image src = "Legendre.png" align="right">
+<table bgcolor="white" border=5><tr><td>
+<image src = "image092.gif">
+</td><td></td><td></td></tr>
+<tr><td>
+<image src = "image094.gif">
+</td><td>
+<image src = "image096.gif">
+</td><td></td></tr>
+<tr><td>
+<image src = "image098.gif">
+</td><td>
+<image src = "image100.gif">
+</td><td>
+<image src = "image102.gif">
+</td></tr>
+</table>
+<p>
+になります。
+</p>
+<p>
+さて、ルジャンドル陪関数の性質はいくつか扱いましたが、ルジャンドル陪関数を使った展開はどうなるのでしょうか？ルジャンドル陪関数の積分の性質は次のようになります。
+</p>
+<table bgcolor="white"><tr><td>
+<image src = "image104.gif">
+</td></tr></table>
+<p>
+nとlについては等しくなければ０という展開に使いやすい性質を持っています。<br>
+但し、これは、mの値は同じ時にだけ成り立つ式です。
+mが違うときについては、一般には複雑な式になります。<br>
+といっても、mが違うときのことを考える必要はありません。なぜなら我々はるジャンドル倍関数をそのままでは使わないからです。<br>
+ルジャンドル関数を使うときには、フーリエ級数を併用します。<br>
+ルジャンドル陪関数にフーリエ級数を掛けて、新しい級数Y<sub>l</sub><sup>m</sup>(θ,φ)を作ります。
+</p>
+<table bgcolor="white"><tr><td>
+<image src = "image106.gif">
+</td></tr></table>
+<p>
+このY<sub>l</sub><sup>m</sup>(θ,φ)が球面調和関数です。いままでにxとして扱っていた変数は、cosθになりました。<br>
+cosθを引数とするので、ルジャンドル陪関数の引数の範囲は-1から1になります。これは、ルジャンドル陪関数の定義域と等しくなっています。<br>
+球面調和関数は、３次元球面の角度方向に関する展開をするために考えられました。半径１の３次元球面を考えてみましょう。球面上の点は
+</p>
+<image src = "image107.png" ALIGN=RIGHT>
+<table bgcolor="white"><tr><td>
+<image src = "image110.gif">
+</td></tr></table>
+<p>
+と、θとφの２つの変数で書くことができます。地球儀に対応させてみれば、緯度がθ、軽度がφになります。
+</p>
+<p>
+このようなθとφでかける変数は、例えば地表の高さh(θ,φ)があります。地表の高さh(θ,φ)は、エベレストの山頂なら8850mとなるでしょう。また、マリアナ海溝なら-11000mになります。このようなθとφの関数を展開するのに適しているのが球面調和関数です。
+</p>
+<p>
+球面調和関数は、主に物理学の分野で有名な級数で、電磁気学におけるアンテナが受け取る電磁波の志向性（どの向きからどのくらいの電磁波を受けるか）や、量子力学での原子中の電子の軌道を求めるのに使います。電子の軌道を求める問題は、量子力学の山場のひとつで、多くの学生が球面調和関数にたどり着く前に数式の複雑さに睡魔に降伏してしまいます（だめじゃん）。原子核の周りを電子が飛んでいる絵<image src = "atom.png">を見かけたことがあると思います。実はこの電子が飛んで行る軌道は球面調和関数（の２乗）なのです。こう思うと球面調和関数に親しみがわくのではないでしょうか？（ホントか？）球面調和関数は現在の物理学では量子力学で主に勉強するので、より詳しく知りたければ、<A HREF="http://www.amazon.co.jp/exec/obidos/ASIN/4000079255/tpot-22">量子力学岩波基礎物理シリーズ (5)の量子力学</A>などの量子力学の本を読んでみるといいと思います<font size="-3">（どうして、わざわざこの本を出したかって？それは私の名前が載っているから…）</font>。
+</p>
+<p>
+球面調和関数同士の積分は、
+</p>
+<table bgcolor="white"><tr><td>
+<image src = "image1122.gif">
+</td></tr></table>
+<p>
+になります。この関係式を用いると、３次元球面上で定義された関数f(θ,φ)は球面調和関数によって、
+</p>
+<table bgcolor="white"><tr><td>
+<image src = "image112.gif">
+</td></tr></table>
+<p>
+</p>
+<table bgcolor="white"><tr><td>
+<image src = "image114.gif">
+</td></tr></table>
+<p>
+と、展開されます。球面調和関数のそれぞれの具体的な形は次のようになります。見て分かるとおりlが増えるに従ってどんどん複雑な関数になっていきます。
+</p>
+<image src = "image115.png">(Robin Green, Spherical Harmonic Lighting: The
+Gritty Details から引用)
+<p>
+球面調和関数を使って、丸まったオブジェクトを展開すると、最初は丸いオブジェクトですが、lが増えるに従って本来の形に近づいていきます。
+</p>
+<image src = "image117.png">(Robin Green, Spherical Harmonic Lighting: The
+Gritty Details から引用)
+
+
+<h2>■最後に</h2>
+
+
+<p>
+さて、こんな難しい球面調和関数ですが、何の役に立つのでしょうか？<br>
+最近の使い道は、光源が動く場合の静的なオブジェクトへのライティングです。<br>
+光源の方向を(θ,φ)としたときに、グローバルイルミネーションなどを使って、ライティングした結果f(θ,φ)をピクセルごとに計算するアルゴリズム(BRDF)をあらかじめ決めておきます。<br>
+この複雑な計算はリアルタイムには実行できないので、明るさの球面調和関数に関する展開係数を各ピクセルごとにテクスチャとして、格納しておきます。<br>
+レンダリング時には、球面調和関数を頂点単位（ピクセル単位でもできるかも）に求めて、テクスチャとして格納された係数をかけてライティングを計算します。<br>
+早い話、遮蔽マップの１つなのですが、光源が動いたときの変化が比較的なだらかであり、拡散光を少し変更した程度のライティングなら、テクスチャの枚数が少なくても実現できるところがもてはやされる理由でしょうか。
+</p>
+
+
+</div>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<center>
+<hr>
+<p><a href="../index.html">もどる</a></p>
+<p><a href="mailto:imagire@gmail.com">imagire@gmail.com</a></p>
+</center>
+
+</body>
+</html>

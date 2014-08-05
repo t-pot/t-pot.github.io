@@ -1,0 +1,142 @@
+<HTML>
+<HEAD>
+<TITLE>prim.h</TITLE>
+<meta name="GENERATOR" content="cpp2html 2.1 by Niisaka">
+<meta http-equiv="Content-Type" content="text/html">
+<meta http-equiv="Content-Style-Type" content="text/css">
+<STYLE TYPE="text/css">
+<!--
+SPAN.comment { color:#008000; font-weight:normal; font-style:normal;}
+SPAN.keyword { color:#0000FF; font-weight:normal; font-style:normal;}
+SPAN.string { color:#600000; font-weight:normal; font-style:normal;}
+SPAN.linenum { color:#A0A0A0; font-weight:normal; font-style:normal;}
+-->
+</STYLE>
+</HEAD>
+<BODY TEXT="#000000" BGCOLOR="#FFFFFF">
+<PRE><SPAN CLASS="linenum">0001:</SPAN> 
+<SPAN CLASS="linenum">0002:</SPAN> <SPAN CLASS="keyword">#include</SPAN> &lt;d3d9.h&gt;
+<SPAN CLASS="linenum">0003:</SPAN> <SPAN CLASS="keyword">#include</SPAN> &lt;d3dx9.h&gt;
+<SPAN CLASS="linenum">0004:</SPAN> 
+<SPAN CLASS="linenum">0005:</SPAN> 
+<SPAN CLASS="linenum">0006:</SPAN> <SPAN CLASS="keyword">#ifndef</SPAN> _PRIM_H_
+<SPAN CLASS="linenum">0007:</SPAN> <SPAN CLASS="keyword">#define</SPAN> _PRIM_H_
+<SPAN CLASS="linenum">0008:</SPAN> 
+<SPAN CLASS="linenum">0009:</SPAN> <SPAN CLASS="keyword">namespace</SPAN> Render {
+<SPAN CLASS="linenum">0010:</SPAN> 
+<SPAN CLASS="linenum">0011:</SPAN> <SPAN CLASS="comment">// ---------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0012:</SPAN> <SPAN CLASS="comment">// プリミティブの種類</SPAN>
+<SPAN CLASS="linenum">0013:</SPAN> <SPAN CLASS="comment">// ---------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0014:</SPAN> <SPAN CLASS="keyword">enum</SPAN> {
+<SPAN CLASS="linenum">0015:</SPAN>     OBJ_TYPE_SPHERE = 0,
+<SPAN CLASS="linenum">0016:</SPAN>     OBJ_TYPE_TRIANGLE,
+<SPAN CLASS="linenum">0017:</SPAN> };
+<SPAN CLASS="linenum">0018:</SPAN> <SPAN CLASS="comment">// ---------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0019:</SPAN> <SPAN CLASS="comment">// 初期化等のためのデータ</SPAN>
+<SPAN CLASS="linenum">0020:</SPAN> <SPAN CLASS="comment">// ---------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0021:</SPAN> <SPAN CLASS="keyword">typedef</SPAN> <SPAN CLASS="keyword">struct</SPAN>{
+<SPAN CLASS="linenum">0022:</SPAN>     <SPAN CLASS="keyword">float</SPAN>   COLOR_AMB[4];
+<SPAN CLASS="linenum">0023:</SPAN>     <SPAN CLASS="keyword">float</SPAN>   COLOR_DIF[4];
+<SPAN CLASS="linenum">0024:</SPAN>     <SPAN CLASS="keyword">float</SPAN>   COLOR_SPE[4];
+<SPAN CLASS="linenum">0025:</SPAN>     <SPAN CLASS="keyword">float</SPAN>   speq_power;
+<SPAN CLASS="linenum">0026:</SPAN>     <SPAN CLASS="keyword">float</SPAN>   reflection;
+<SPAN CLASS="linenum">0027:</SPAN>     <SPAN CLASS="keyword">float</SPAN>   refraction;
+<SPAN CLASS="linenum">0028:</SPAN>     <SPAN CLASS="keyword">float</SPAN>   diffuse;
+<SPAN CLASS="linenum">0029:</SPAN> }Material;
+<SPAN CLASS="linenum">0030:</SPAN> <SPAN CLASS="comment">// ---------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0031:</SPAN> <SPAN CLASS="keyword">typedef</SPAN> <SPAN CLASS="keyword">struct</SPAN>{
+<SPAN CLASS="linenum">0032:</SPAN>     <SPAN CLASS="keyword">int</SPAN> type;
+<SPAN CLASS="linenum">0033:</SPAN> 
+<SPAN CLASS="linenum">0034:</SPAN>     Material material;
+<SPAN CLASS="linenum">0035:</SPAN>     
+<SPAN CLASS="linenum">0036:</SPAN>     <SPAN CLASS="keyword">struct</SPAN>{
+<SPAN CLASS="linenum">0037:</SPAN>         <SPAN CLASS="comment">// 3角形</SPAN>
+<SPAN CLASS="linenum">0038:</SPAN>         <SPAN CLASS="keyword">float</SPAN> x0[3];    <SPAN CLASS="comment">// 座標１</SPAN>
+<SPAN CLASS="linenum">0039:</SPAN>         <SPAN CLASS="keyword">float</SPAN> x1[3];    <SPAN CLASS="comment">// 座標２</SPAN>
+<SPAN CLASS="linenum">0040:</SPAN>         <SPAN CLASS="keyword">float</SPAN> x2[3];    <SPAN CLASS="comment">// 座標３</SPAN>
+<SPAN CLASS="linenum">0041:</SPAN>     } triangle;
+<SPAN CLASS="linenum">0042:</SPAN>     <SPAN CLASS="keyword">struct</SPAN> {
+<SPAN CLASS="linenum">0043:</SPAN>         <SPAN CLASS="comment">// 玉用</SPAN>
+<SPAN CLASS="linenum">0044:</SPAN>         <SPAN CLASS="keyword">float</SPAN> center[3];<SPAN CLASS="comment">// 中心</SPAN>
+<SPAN CLASS="linenum">0045:</SPAN>         <SPAN CLASS="keyword">float</SPAN> radius;   <SPAN CLASS="comment">// 半径</SPAN>
+<SPAN CLASS="linenum">0046:</SPAN>     } sphere;
+<SPAN CLASS="linenum">0047:</SPAN> 
+<SPAN CLASS="linenum">0048:</SPAN> }OBJ_DATA;
+<SPAN CLASS="linenum">0049:</SPAN> 
+<SPAN CLASS="linenum">0050:</SPAN> <SPAN CLASS="comment">// ---------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0051:</SPAN> <SPAN CLASS="comment">// ---------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0052:</SPAN> <SPAN CLASS="comment">// プリミティブ</SPAN>
+<SPAN CLASS="linenum">0053:</SPAN> <SPAN CLASS="comment">// ---------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0054:</SPAN> <SPAN CLASS="comment">// ---------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0055:</SPAN> <SPAN CLASS="keyword">class</SPAN> CPrimitive
+<SPAN CLASS="linenum">0056:</SPAN> {
+<SPAN CLASS="linenum">0057:</SPAN> <SPAN CLASS="keyword">public</SPAN>:
+<SPAN CLASS="linenum">0058:</SPAN>     <SPAN CLASS="keyword">enum</SPAN> {
+<SPAN CLASS="linenum">0059:</SPAN>         INFINTY_DIST = 10000,
+<SPAN CLASS="linenum">0060:</SPAN>     };
+<SPAN CLASS="linenum">0061:</SPAN>     <SPAN CLASS="keyword">int</SPAN> m_type;
+<SPAN CLASS="linenum">0062:</SPAN>     Material m_material;
+<SPAN CLASS="linenum">0063:</SPAN> 
+<SPAN CLASS="linenum">0064:</SPAN>     <SPAN CLASS="keyword">void</SPAN> Init(OBJ_DATA *pData);
+<SPAN CLASS="linenum">0065:</SPAN>     <SPAN CLASS="keyword">float</SPAN> IsAcross(D3DXVECTOR4 *n, D3DXVECTOR4 *p, <SPAN CLASS="keyword">const</SPAN> D3DXVECTOR4 *x, <SPAN CLASS="keyword">const</SPAN> D3DXVECTOR4 *v){<SPAN CLASS="keyword">return</SPAN> INFINTY_DIST;}
+<SPAN CLASS="linenum">0066:</SPAN>     D3DXVECTOR3 *GetColor(D3DXVECTOR3 *dest, <SPAN CLASS="keyword">float</SPAN> LN, <SPAN CLASS="keyword">float</SPAN> HN );
+<SPAN CLASS="linenum">0067:</SPAN> };
+<SPAN CLASS="linenum">0068:</SPAN> <SPAN CLASS="comment">// ---------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0069:</SPAN> <SPAN CLASS="comment">// 球</SPAN>
+<SPAN CLASS="linenum">0070:</SPAN> <SPAN CLASS="comment">// ---------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0071:</SPAN> <SPAN CLASS="keyword">class</SPAN> CSphere : <SPAN CLASS="keyword">public</SPAN> CPrimitive
+<SPAN CLASS="linenum">0072:</SPAN> {
+<SPAN CLASS="linenum">0073:</SPAN> <SPAN CLASS="keyword">private</SPAN>:
+<SPAN CLASS="linenum">0074:</SPAN>     D3DXVECTOR4 center;
+<SPAN CLASS="linenum">0075:</SPAN>     <SPAN CLASS="keyword">float</SPAN> radius_sq;
+<SPAN CLASS="linenum">0076:</SPAN> 
+<SPAN CLASS="linenum">0077:</SPAN> <SPAN CLASS="keyword">public</SPAN>:
+<SPAN CLASS="linenum">0078:</SPAN>     CSphere();
+<SPAN CLASS="linenum">0079:</SPAN> 
+<SPAN CLASS="linenum">0080:</SPAN>     <SPAN CLASS="keyword">void</SPAN> Init(OBJ_DATA *pData);
+<SPAN CLASS="linenum">0081:</SPAN>     <SPAN CLASS="keyword">float</SPAN> IsAcross(D3DXVECTOR4 *n, D3DXVECTOR4 *p, <SPAN CLASS="keyword">const</SPAN> D3DXVECTOR4 *x, <SPAN CLASS="keyword">const</SPAN> D3DXVECTOR4 *v);
+<SPAN CLASS="linenum">0082:</SPAN> };
+<SPAN CLASS="linenum">0083:</SPAN> 
+<SPAN CLASS="linenum">0084:</SPAN> <SPAN CLASS="comment">// ---------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0085:</SPAN> <SPAN CLASS="comment">// ３角形</SPAN>
+<SPAN CLASS="linenum">0086:</SPAN> <SPAN CLASS="comment">// ---------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0087:</SPAN> <SPAN CLASS="keyword">class</SPAN> CTriangle : <SPAN CLASS="keyword">public</SPAN> CPrimitive
+<SPAN CLASS="linenum">0088:</SPAN> {
+<SPAN CLASS="linenum">0089:</SPAN> <SPAN CLASS="keyword">private</SPAN>:
+<SPAN CLASS="linenum">0090:</SPAN>     D3DXVECTOR4 pos[3];
+<SPAN CLASS="linenum">0091:</SPAN>     D3DXVECTOR4 t0; FLOAT l0;
+<SPAN CLASS="linenum">0092:</SPAN>     D3DXVECTOR4 t1; FLOAT l1;
+<SPAN CLASS="linenum">0093:</SPAN>     D3DXVECTOR4 normal;
+<SPAN CLASS="linenum">0094:</SPAN> 
+<SPAN CLASS="linenum">0095:</SPAN> <SPAN CLASS="keyword">public</SPAN>:
+<SPAN CLASS="linenum">0096:</SPAN>     CTriangle();
+<SPAN CLASS="linenum">0097:</SPAN> 
+<SPAN CLASS="linenum">0098:</SPAN>     <SPAN CLASS="keyword">void</SPAN> Init(OBJ_DATA *pData);
+<SPAN CLASS="linenum">0099:</SPAN>     <SPAN CLASS="keyword">float</SPAN> IsAcross(D3DXVECTOR4 *n, D3DXVECTOR4 *p, <SPAN CLASS="keyword">const</SPAN> D3DXVECTOR4 *x, <SPAN CLASS="keyword">const</SPAN> D3DXVECTOR4 *v);
+<SPAN CLASS="linenum">0100:</SPAN> };
+<SPAN CLASS="linenum">0101:</SPAN> <SPAN CLASS="comment">// ---------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0102:</SPAN> <SPAN CLASS="comment">// ---------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0103:</SPAN> <SPAN CLASS="comment">// メッシュ</SPAN>
+<SPAN CLASS="linenum">0104:</SPAN> <SPAN CLASS="comment">// ---------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0105:</SPAN> <SPAN CLASS="comment">// ---------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0106:</SPAN> <SPAN CLASS="keyword">class</SPAN> CMesh
+<SPAN CLASS="linenum">0107:</SPAN> {
+<SPAN CLASS="linenum">0108:</SPAN> <SPAN CLASS="keyword">public</SPAN>:
+<SPAN CLASS="linenum">0109:</SPAN>     CMesh();
+<SPAN CLASS="linenum">0110:</SPAN>     ~CMesh();
+<SPAN CLASS="linenum">0111:</SPAN>     CPrimitive **m_ppPrim;
+<SPAN CLASS="linenum">0112:</SPAN>     <SPAN CLASS="keyword">int</SPAN>         m_num;
+<SPAN CLASS="linenum">0113:</SPAN> 
+<SPAN CLASS="linenum">0114:</SPAN>     <SPAN CLASS="keyword">void</SPAN>  Init(OBJ_DATA *pData, <SPAN CLASS="keyword">int</SPAN> num);
+<SPAN CLASS="linenum">0115:</SPAN>     <SPAN CLASS="keyword">void</SPAN>  Delete();
+<SPAN CLASS="linenum">0116:</SPAN>     <SPAN CLASS="keyword">float</SPAN> IsAcross(<SPAN CLASS="keyword">float</SPAN> dist, D3DXVECTOR4 *n, D3DXVECTOR4 *p, CPrimitive **dest, <SPAN CLASS="keyword">const</SPAN> D3DXVECTOR4 *x, <SPAN CLASS="keyword">const</SPAN> D3DXVECTOR4 *v);
+<SPAN CLASS="linenum">0117:</SPAN>     <SPAN CLASS="keyword">bool</SPAN>  IsAcross(<SPAN CLASS="keyword">float</SPAN> dist, <SPAN CLASS="keyword">const</SPAN> D3DXVECTOR4 *x, <SPAN CLASS="keyword">const</SPAN> D3DXVECTOR4 *v);
+<SPAN CLASS="linenum">0118:</SPAN> };
+<SPAN CLASS="linenum">0119:</SPAN> <SPAN CLASS="comment">// ---------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0120:</SPAN> 
+<SPAN CLASS="linenum">0121:</SPAN> };<SPAN CLASS="comment">// namespace Render</SPAN>
+<SPAN CLASS="linenum">0122:</SPAN> 
+<SPAN CLASS="linenum">0123:</SPAN> <SPAN CLASS="keyword">#endif</SPAN> <SPAN CLASS="comment">// !_PRIM_H_</SPAN>
+<SPAN CLASS="linenum">0124:</SPAN> </PRE>
+</BODY>
+</HTML>

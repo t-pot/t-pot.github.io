@@ -1,0 +1,227 @@
+<HTML>
+<HEAD>
+<TITLE>main.cpp</TITLE>
+<meta name="GENERATOR" content="cpp2html 2.0 by Niisaka">
+<meta http-equiv="Content-Type" content="text/html">
+<meta http-equiv="Content-Style-Type" content="text/css">
+<STYLE TYPE="text/css">
+<!--
+SPAN.comment { color:#008000; font-weight:normal; font-style:normal;}
+SPAN.keyword { color:#0000FF; font-weight:normal; font-style:normal;}
+SPAN.string { color:#600000; font-weight:normal; font-style:normal;}
+SPAN.linenum { color:#A0A0A0; font-weight:normal; font-style:normal;}
+-->
+</STYLE>
+</HEAD>
+<BODY TEXT="#000000" BGCOLOR="#FFFFFF">
+<PRE><SPAN CLASS="linenum">0001:</SPAN> <SPAN CLASS="comment">// ----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0002:</SPAN> <SPAN CLASS="comment">//</SPAN>
+<SPAN CLASS="linenum">0003:</SPAN> <SPAN CLASS="comment">// main.cpp - ウィンドウズメイン部分</SPAN>
+<SPAN CLASS="linenum">0004:</SPAN> <SPAN CLASS="comment">// </SPAN>
+<SPAN CLASS="linenum">0005:</SPAN> <SPAN CLASS="comment">// Copyright (c) 2001 if (if@edokko.com)</SPAN>
+<SPAN CLASS="linenum">0006:</SPAN> <SPAN CLASS="comment">// All Rights Reserved.</SPAN>
+<SPAN CLASS="linenum">0007:</SPAN> <SPAN CLASS="comment">//</SPAN>
+<SPAN CLASS="linenum">0008:</SPAN> <SPAN CLASS="comment">// ----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0009:</SPAN> <SPAN CLASS="keyword">#define</SPAN> STRICT
+<SPAN CLASS="linenum">0010:</SPAN> 
+<SPAN CLASS="linenum">0011:</SPAN> <SPAN CLASS="keyword">#include</SPAN> &lt;windows.h&gt;
+<SPAN CLASS="linenum">0012:</SPAN> <SPAN CLASS="keyword">#include</SPAN> &lt;d3d8.h&gt;
+<SPAN CLASS="linenum">0013:</SPAN> <SPAN CLASS="keyword">#include</SPAN> &lt;d3dx8.h&gt;
+<SPAN CLASS="linenum">0014:</SPAN> <SPAN CLASS="keyword">#include</SPAN> "<SPAN CLASS="string">main.h</SPAN>"
+<SPAN CLASS="linenum">0015:</SPAN> <SPAN CLASS="keyword">#include</SPAN> "<SPAN CLASS="string">draw.h</SPAN>"
+<SPAN CLASS="linenum">0016:</SPAN> 
+<SPAN CLASS="linenum">0017:</SPAN> <SPAN CLASS="comment">// ----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0018:</SPAN> <SPAN CLASS="comment">// オブジェクト</SPAN>
+<SPAN CLASS="linenum">0019:</SPAN> <SPAN CLASS="comment">// ----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0020:</SPAN> <SPAN CLASS="keyword">static</SPAN> LPDIRECT3D8              s_lpD3D = NULL;
+<SPAN CLASS="linenum">0021:</SPAN> <SPAN CLASS="keyword">static</SPAN> LPDIRECT3DDEVICE8        s_lpD3DDEV = NULL;
+<SPAN CLASS="linenum">0022:</SPAN> <SPAN CLASS="keyword">static</SPAN> D3DPRESENT_PARAMETERS    s_d3dpp;
+<SPAN CLASS="linenum">0023:</SPAN> 
+<SPAN CLASS="linenum">0024:</SPAN> <SPAN CLASS="keyword">static</SPAN> <SPAN CLASS="keyword">bool</SPAN>                     s_end;      <SPAN CLASS="comment">// 終了フラグ</SPAN>
+<SPAN CLASS="linenum">0025:</SPAN> 
+<SPAN CLASS="linenum">0026:</SPAN> <SPAN CLASS="comment">// ----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0027:</SPAN> <SPAN CLASS="comment">// プロトタイプ宣言</SPAN>
+<SPAN CLASS="linenum">0028:</SPAN> <SPAN CLASS="comment">// ----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0029:</SPAN> <SPAN CLASS="keyword">int</SPAN> PASCAL WinMain(HINSTANCE hInst,HINSTANCE hPrev,<SPAN CLASS="keyword">char</SPAN> *CmdLine,<SPAN CLASS="keyword">int</SPAN> CmdShow);
+<SPAN CLASS="linenum">0030:</SPAN> LRESULT CALLBACK MsgProc(HWND hWnd,UINT msg,WPARAM wParam,LPARAM lParam);
+<SPAN CLASS="linenum">0031:</SPAN> HRESULT InitD3D( HWND hWnd );           <SPAN CLASS="comment">// DirectX の初期化</SPAN>
+<SPAN CLASS="linenum">0032:</SPAN> 
+<SPAN CLASS="linenum">0033:</SPAN> <SPAN CLASS="comment">// ----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0034:</SPAN> <SPAN CLASS="comment">// 外部関数</SPAN>
+<SPAN CLASS="linenum">0035:</SPAN> <SPAN CLASS="comment">// ----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0036:</SPAN> 
+<SPAN CLASS="linenum">0037:</SPAN> <SPAN CLASS="comment">// ----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0038:</SPAN> <SPAN CLASS="comment">// 関数</SPAN>
+<SPAN CLASS="linenum">0039:</SPAN> <SPAN CLASS="comment">// ----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0040:</SPAN> <SPAN CLASS="comment">// ----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0041:</SPAN> <SPAN CLASS="comment">// Name: WinMain()</SPAN>
+<SPAN CLASS="linenum">0042:</SPAN> <SPAN CLASS="comment">// Desc: Windows アプリケーションはここから始まる</SPAN>
+<SPAN CLASS="linenum">0043:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0044:</SPAN> <SPAN CLASS="keyword">int</SPAN> PASCAL WinMain(HINSTANCE hInst,HINSTANCE hPrev,<SPAN CLASS="keyword">char</SPAN> *CmdLine,<SPAN CLASS="keyword">int</SPAN> CmdShow)
+<SPAN CLASS="linenum">0045:</SPAN> {
+<SPAN CLASS="linenum">0046:</SPAN>     s_end = 0;
+<SPAN CLASS="linenum">0047:</SPAN>     
+<SPAN CLASS="linenum">0048:</SPAN>     <SPAN CLASS="comment">// ウインドウの作成</SPAN>
+<SPAN CLASS="linenum">0049:</SPAN>     RECT    rect;
+<SPAN CLASS="linenum">0050:</SPAN>     SetRect(&amp;rect, 0, 0, WIDTH, HEIGHT);
+<SPAN CLASS="linenum">0051:</SPAN>     DWORD   style = (FULLSCREEN) ? WS_POPUP :(WS_CAPTION|WS_SYSMENU|WS_BORDER|WS_MINIMIZEBOX);
+<SPAN CLASS="linenum">0052:</SPAN>     AdjustWindowRect(&amp;rect, style, FALSE);  <SPAN CLASS="comment">// ウィンドウスタイルを設定したときの、ウィンドウの大きさを調べる</SPAN>
+<SPAN CLASS="linenum">0053:</SPAN>     <SPAN CLASS="keyword">int</SPAN> width  = rect.right - rect.left;
+<SPAN CLASS="linenum">0054:</SPAN>     <SPAN CLASS="keyword">int</SPAN> height = rect.bottom - rect.top;    
+<SPAN CLASS="linenum">0055:</SPAN>     
+<SPAN CLASS="linenum">0056:</SPAN>     WNDCLASS wc;
+<SPAN CLASS="linenum">0057:</SPAN>     ZeroMemory(&amp;wc, <SPAN CLASS="keyword">sizeof</SPAN>(WNDCLASS));
+<SPAN CLASS="linenum">0058:</SPAN>     wc.hbrBackground    = (HBRUSH)GetStockObject(BLACK_BRUSH);
+<SPAN CLASS="linenum">0059:</SPAN>     wc.hCursor          = LoadCursor(NULL, IDC_ARROW);
+<SPAN CLASS="linenum">0060:</SPAN>     wc.hInstance        = hInst;
+<SPAN CLASS="linenum">0061:</SPAN>     wc.lpfnWndProc      = MsgProc;
+<SPAN CLASS="linenum">0062:</SPAN>     wc.lpszClassName    = CAPTION;
+<SPAN CLASS="linenum">0063:</SPAN>     <SPAN CLASS="keyword">if</SPAN>(RegisterClass(&amp;wc) == 0) <SPAN CLASS="keyword">return</SPAN> 0; <SPAN CLASS="comment">//ウィンドウ作成に使用できる新しいウィンドウクラスを作成する。</SPAN>
+<SPAN CLASS="linenum">0064:</SPAN>     
+<SPAN CLASS="linenum">0065:</SPAN>     HWND hWnd = CreateWindow(CAPTION        <SPAN CLASS="comment">// 登録されているクラス名</SPAN>
+<SPAN CLASS="linenum">0066:</SPAN>                             ,CAPTION        <SPAN CLASS="comment">// ウィンドウ名</SPAN>
+<SPAN CLASS="linenum">0067:</SPAN>                             ,style          <SPAN CLASS="comment">// ウィンドウスタイル</SPAN>
+<SPAN CLASS="linenum">0068:</SPAN>                             ,CW_USEDEFAULT  <SPAN CLASS="comment">// ウィンドウの横方向の位置</SPAN>
+<SPAN CLASS="linenum">0069:</SPAN>                             ,CW_USEDEFAULT  <SPAN CLASS="comment">// ウィンドウの縦方向の位置</SPAN>
+<SPAN CLASS="linenum">0070:</SPAN>                             ,width          <SPAN CLASS="comment">// ウィンドウの幅</SPAN>
+<SPAN CLASS="linenum">0071:</SPAN>                             ,height         <SPAN CLASS="comment">// ウィンドウの高さ</SPAN>
+<SPAN CLASS="linenum">0072:</SPAN>                             ,NULL           <SPAN CLASS="comment">// 親ウィンドウまたはオーナーウィンドウのハンドル</SPAN>
+<SPAN CLASS="linenum">0073:</SPAN>                             ,NULL           <SPAN CLASS="comment">// メニューハンドルまたは子ウィンドウ ID</SPAN>
+<SPAN CLASS="linenum">0074:</SPAN>                             ,hInst          <SPAN CLASS="comment">// アプリケーションインスタンスのハンドル</SPAN>
+<SPAN CLASS="linenum">0075:</SPAN>                             ,NULL           <SPAN CLASS="comment">// ウィンドウ作成データ</SPAN>
+<SPAN CLASS="linenum">0076:</SPAN>                             );
+<SPAN CLASS="linenum">0077:</SPAN>     <SPAN CLASS="keyword">if</SPAN>(hWnd == NULL) <SPAN CLASS="keyword">return</SPAN> 0;
+<SPAN CLASS="linenum">0078:</SPAN>     
+<SPAN CLASS="linenum">0079:</SPAN>     <SPAN CLASS="comment">// Direct3D の初期化</SPAN>
+<SPAN CLASS="linenum">0080:</SPAN>     <SPAN CLASS="keyword">if</SPAN>(SUCCEEDED(InitD3D(hWnd))){
+<SPAN CLASS="linenum">0081:</SPAN>         
+<SPAN CLASS="linenum">0082:</SPAN>         <SPAN CLASS="keyword">if</SPAN>(FAILED(InitRender(s_lpD3DDEV))) s_end = <SPAN CLASS="keyword">true</SPAN>;
+<SPAN CLASS="linenum">0083:</SPAN>         
+<SPAN CLASS="linenum">0084:</SPAN>         ShowWindow(hWnd, SW_SHOW);
+<SPAN CLASS="linenum">0085:</SPAN>         UpdateWindow(hWnd);
+<SPAN CLASS="linenum">0086:</SPAN>     
+<SPAN CLASS="linenum">0087:</SPAN>         <SPAN CLASS="comment">// メインループ</SPAN>
+<SPAN CLASS="linenum">0088:</SPAN>         MSG msg;
+<SPAN CLASS="linenum">0089:</SPAN>         <SPAN CLASS="keyword">while</SPAN> (!s_end)
+<SPAN CLASS="linenum">0090:</SPAN>         {
+<SPAN CLASS="linenum">0091:</SPAN>             <SPAN CLASS="keyword">if</SPAN> (PeekMessage(&amp;msg, NULL, 0, 0, PM_REMOVE)){
+<SPAN CLASS="linenum">0092:</SPAN>                 <SPAN CLASS="comment">// メッセージの処理</SPAN>
+<SPAN CLASS="linenum">0093:</SPAN>                 TranslateMessage(&amp;msg);
+<SPAN CLASS="linenum">0094:</SPAN>                 DispatchMessage(&amp;msg);
+<SPAN CLASS="linenum">0095:</SPAN>             }<SPAN CLASS="keyword">else</SPAN>{
+<SPAN CLASS="linenum">0096:</SPAN>                 <SPAN CLASS="comment">// Direct3D の描画</SPAN>
+<SPAN CLASS="linenum">0097:</SPAN>                 <SPAN CLASS="comment">// バックバッファと Z バッファをクリア</SPAN>
+<SPAN CLASS="linenum">0098:</SPAN>                 s_lpD3DDEV-&gt;Clear(0,NULL,D3DCLEAR_TARGET | D3DCLEAR_ZBUFFER,D3DCOLOR_XRGB(0,0,0),1.0f,0);
+<SPAN CLASS="linenum">0099:</SPAN>                 <SPAN CLASS="comment">// シーン開始</SPAN>
+<SPAN CLASS="linenum">0100:</SPAN>                 s_lpD3DDEV-&gt;BeginScene();
+<SPAN CLASS="linenum">0101:</SPAN>                 
+<SPAN CLASS="linenum">0102:</SPAN>                 <SPAN CLASS="comment">// 描画などの処理</SPAN>
+<SPAN CLASS="linenum">0103:</SPAN>                 Render(s_lpD3DDEV);
+<SPAN CLASS="linenum">0104:</SPAN>                 
+<SPAN CLASS="linenum">0105:</SPAN>                 <SPAN CLASS="comment">// シーン終了</SPAN>
+<SPAN CLASS="linenum">0106:</SPAN>                 s_lpD3DDEV-&gt;EndScene();
+<SPAN CLASS="linenum">0107:</SPAN>                 <SPAN CLASS="keyword">if</SPAN> (FAILED(s_lpD3DDEV-&gt;Present(NULL,NULL,NULL,NULL)))
+<SPAN CLASS="linenum">0108:</SPAN>                     s_lpD3DDEV-&gt;Reset(&amp;s_d3dpp);<SPAN CLASS="comment">// バックバッファをプライマリバッファにコピー</SPAN>
+<SPAN CLASS="linenum">0109:</SPAN>             }
+<SPAN CLASS="linenum">0110:</SPAN>         }
+<SPAN CLASS="linenum">0111:</SPAN>     }
+<SPAN CLASS="linenum">0112:</SPAN>     
+<SPAN CLASS="linenum">0113:</SPAN>     <SPAN CLASS="comment">// 終了</SPAN>
+<SPAN CLASS="linenum">0114:</SPAN>     CleanRender(s_lpD3DDEV);
+<SPAN CLASS="linenum">0115:</SPAN>     RELEASE(s_lpD3DDEV);
+<SPAN CLASS="linenum">0116:</SPAN>     RELEASE(s_lpD3D);
+<SPAN CLASS="linenum">0117:</SPAN>     
+<SPAN CLASS="linenum">0118:</SPAN>     <SPAN CLASS="keyword">return</SPAN> 0;
+<SPAN CLASS="linenum">0119:</SPAN> }
+<SPAN CLASS="linenum">0120:</SPAN> <SPAN CLASS="comment">// ----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0121:</SPAN> <SPAN CLASS="comment">// Name: MsgProc()</SPAN>
+<SPAN CLASS="linenum">0122:</SPAN> <SPAN CLASS="comment">// Desc: メインウインドウのイベントを処理する</SPAN>
+<SPAN CLASS="linenum">0123:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0124:</SPAN> LRESULT CALLBACK MsgProc(HWND hWnd,UINT msg,WPARAM wParam,LPARAM lParam)
+<SPAN CLASS="linenum">0125:</SPAN> {
+<SPAN CLASS="linenum">0126:</SPAN>     <SPAN CLASS="keyword">switch</SPAN> (msg){
+<SPAN CLASS="linenum">0127:</SPAN>     <SPAN CLASS="keyword">case</SPAN> WM_KEYDOWN:                <SPAN CLASS="comment">// 何かキーが押された</SPAN>
+<SPAN CLASS="linenum">0128:</SPAN>     <SPAN CLASS="keyword">case</SPAN> WM_CLOSE:                  <SPAN CLASS="comment">// ×ボタンを押した</SPAN>
+<SPAN CLASS="linenum">0129:</SPAN>         s_end = <SPAN CLASS="keyword">true</SPAN>;
+<SPAN CLASS="linenum">0130:</SPAN>         <SPAN CLASS="keyword">return</SPAN> 1;
+<SPAN CLASS="linenum">0131:</SPAN>         <SPAN CLASS="keyword">break</SPAN>;
+<SPAN CLASS="linenum">0132:</SPAN>     <SPAN CLASS="keyword">default</SPAN>:
+<SPAN CLASS="linenum">0133:</SPAN>         <SPAN CLASS="keyword">break</SPAN>;
+<SPAN CLASS="linenum">0134:</SPAN>     }
+<SPAN CLASS="linenum">0135:</SPAN>     <SPAN CLASS="keyword">return</SPAN> DefWindowProc(hWnd,msg,wParam,lParam);
+<SPAN CLASS="linenum">0136:</SPAN> }
+<SPAN CLASS="linenum">0137:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0138:</SPAN> <SPAN CLASS="comment">// Name: InitD3D()</SPAN>
+<SPAN CLASS="linenum">0139:</SPAN> <SPAN CLASS="comment">// Desc: Direct3D の初期化</SPAN>
+<SPAN CLASS="linenum">0140:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0141:</SPAN> HRESULT InitD3D( HWND hWnd )
+<SPAN CLASS="linenum">0142:</SPAN> {
+<SPAN CLASS="linenum">0143:</SPAN>     <SPAN CLASS="comment">// Direct3D オブジェクトを作成</SPAN>
+<SPAN CLASS="linenum">0144:</SPAN>     <SPAN CLASS="keyword">if</SPAN> (NULL == (s_lpD3D = Direct3DCreate8(D3D_SDK_VERSION))){
+<SPAN CLASS="linenum">0145:</SPAN>         MessageBox(NULL,"<SPAN CLASS="string">Direct3D の作成に失敗しました。</SPAN>",CAPTION,MB_OK | MB_ICONSTOP);
+<SPAN CLASS="linenum">0146:</SPAN>         <SPAN CLASS="keyword">return</SPAN> E_FAIL;
+<SPAN CLASS="linenum">0147:</SPAN>     }
+<SPAN CLASS="linenum">0148:</SPAN> 
+<SPAN CLASS="linenum">0149:</SPAN>     <SPAN CLASS="comment">// 現在の画面モードを取得</SPAN>
+<SPAN CLASS="linenum">0150:</SPAN>     D3DDISPLAYMODE d3ddm;
+<SPAN CLASS="linenum">0151:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( FAILED( s_lpD3D-&gt;GetAdapterDisplayMode( D3DADAPTER_DEFAULT, &amp;d3ddm ) ) ) <SPAN CLASS="keyword">return</SPAN> E_FAIL;
+<SPAN CLASS="linenum">0152:</SPAN> 
+<SPAN CLASS="linenum">0153:</SPAN>     <SPAN CLASS="comment">// Direct3D 初期化パラメータの設定</SPAN>
+<SPAN CLASS="linenum">0154:</SPAN>     ZeroMemory(&amp;s_d3dpp, <SPAN CLASS="keyword">sizeof</SPAN>(D3DPRESENT_PARAMETERS));
+<SPAN CLASS="linenum">0155:</SPAN> 
+<SPAN CLASS="linenum">0156:</SPAN>     s_d3dpp.BackBufferCount = 1;
+<SPAN CLASS="linenum">0157:</SPAN>     <SPAN CLASS="keyword">if</SPAN> (FULLSCREEN){
+<SPAN CLASS="linenum">0158:</SPAN>         s_d3dpp.Windowed = FALSE;
+<SPAN CLASS="linenum">0159:</SPAN>         s_d3dpp.BackBufferWidth = WIDTH;
+<SPAN CLASS="linenum">0160:</SPAN>         s_d3dpp.BackBufferHeight = HEIGHT;
+<SPAN CLASS="linenum">0161:</SPAN>     }<SPAN CLASS="keyword">else</SPAN>{
+<SPAN CLASS="linenum">0162:</SPAN>         s_d3dpp.Windowed = TRUE;
+<SPAN CLASS="linenum">0163:</SPAN>         s_d3dpp.BackBufferWidth = 0;
+<SPAN CLASS="linenum">0164:</SPAN>         s_d3dpp.BackBufferHeight = 0;
+<SPAN CLASS="linenum">0165:</SPAN>     }
+<SPAN CLASS="linenum">0166:</SPAN>     <SPAN CLASS="comment">// ウインドウ : 現在の画面モードを使用</SPAN>
+<SPAN CLASS="linenum">0167:</SPAN>     s_d3dpp.BackBufferFormat = d3ddm.Format;
+<SPAN CLASS="linenum">0168:</SPAN>     s_d3dpp.MultiSampleType = D3DMULTISAMPLE_NONE;
+<SPAN CLASS="linenum">0169:</SPAN>     s_d3dpp.SwapEffect = D3DSWAPEFFECT_DISCARD;
+<SPAN CLASS="linenum">0170:</SPAN>     s_d3dpp.hDeviceWindow = hWnd;
+<SPAN CLASS="linenum">0171:</SPAN>     <SPAN CLASS="comment">// Z バッファの自動作成</SPAN>
+<SPAN CLASS="linenum">0172:</SPAN>     s_d3dpp.EnableAutoDepthStencil = TRUE;
+<SPAN CLASS="linenum">0173:</SPAN>     s_d3dpp.AutoDepthStencilFormat = D3DFMT_D16;
+<SPAN CLASS="linenum">0174:</SPAN>  
+<SPAN CLASS="linenum">0175:</SPAN>     D3DCAPS8 caps;
+<SPAN CLASS="linenum">0176:</SPAN>     s_lpD3D-&gt;GetDeviceCaps(D3DADAPTER_DEFAULT, D3DDEVTYPE_HAL, &amp;caps);
+<SPAN CLASS="linenum">0177:</SPAN>     
+<SPAN CLASS="linenum">0178:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( 0 == ( caps.TextureCaps &amp; D3DPTEXTURECAPS_CUBEMAP ) ){
+<SPAN CLASS="linenum">0179:</SPAN>         <SPAN CLASS="comment">// キューブマップをサポートしていなかったら、REF</SPAN>
+<SPAN CLASS="linenum">0180:</SPAN>         s_lpD3D-&gt;CreateDevice(D3DADAPTER_DEFAULT, D3DDEVTYPE_REF,hWnd,D3DCREATE_SOFTWARE_VERTEXPROCESSING,&amp;s_d3dpp,&amp;s_lpD3DDEV);
+<SPAN CLASS="linenum">0181:</SPAN>         <SPAN CLASS="keyword">return</SPAN> S_OK;
+<SPAN CLASS="linenum">0182:</SPAN>     }
+<SPAN CLASS="linenum">0183:</SPAN> 
+<SPAN CLASS="linenum">0184:</SPAN>     <SPAN CLASS="keyword">if</SPAN>(caps.VertexShaderVersion &lt; D3DVS_VERSION(1,0)){
+<SPAN CLASS="linenum">0185:</SPAN>         <SPAN CLASS="comment">//vertex shader 1.0 をhwサポートしない場合はD3DCREATE_SOFTWARE_VERTEXPROCESSINGする必要があります</SPAN>
+<SPAN CLASS="linenum">0186:</SPAN>         <SPAN CLASS="keyword">if</SPAN>(FAILED(s_lpD3D-&gt;CreateDevice(D3DADAPTER_DEFAULT, D3DDEVTYPE_HAL, hWnd, D3DCREATE_SOFTWARE_VERTEXPROCESSING,&amp;s_d3dpp,&amp;s_lpD3DDEV))){
+<SPAN CLASS="linenum">0187:</SPAN>             <SPAN CLASS="keyword">if</SPAN>(FAILED(s_lpD3D-&gt;CreateDevice(D3DADAPTER_DEFAULT, D3DDEVTYPE_REF, hWnd, D3DCREATE_HARDWARE_VERTEXPROCESSING | D3DCREATE_PUREDEVICE,&amp;s_d3dpp,&amp;s_lpD3DDEV))){
+<SPAN CLASS="linenum">0188:</SPAN>                 <SPAN CLASS="keyword">if</SPAN> (FAILED(s_lpD3D-&gt;CreateDevice(D3DADAPTER_DEFAULT, D3DDEVTYPE_REF, hWnd, D3DCREATE_SOFTWARE_VERTEXPROCESSING,&amp;s_d3dpp,&amp;s_lpD3DDEV))){
+<SPAN CLASS="linenum">0189:</SPAN>                     <SPAN CLASS="keyword">return</SPAN> FALSE;
+<SPAN CLASS="linenum">0190:</SPAN>                 }
+<SPAN CLASS="linenum">0191:</SPAN>             }
+<SPAN CLASS="linenum">0192:</SPAN>         }
+<SPAN CLASS="linenum">0193:</SPAN>     }<SPAN CLASS="keyword">else</SPAN>{
+<SPAN CLASS="linenum">0194:</SPAN>         <SPAN CLASS="comment">// デバイスの作成 - T&L HAL</SPAN>
+<SPAN CLASS="linenum">0195:</SPAN>         <SPAN CLASS="keyword">if</SPAN> (FAILED(s_lpD3D-&gt;CreateDevice(D3DADAPTER_DEFAULT, D3DDEVTYPE_HAL,hWnd,D3DCREATE_HARDWARE_VERTEXPROCESSING,&amp;s_d3dpp,&amp;s_lpD3DDEV))){
+<SPAN CLASS="linenum">0196:</SPAN>             <SPAN CLASS="comment">// 失敗したので HAL で試行</SPAN>
+<SPAN CLASS="linenum">0197:</SPAN>             <SPAN CLASS="keyword">if</SPAN> (FAILED(s_lpD3D-&gt;CreateDevice(D3DADAPTER_DEFAULT, D3DDEVTYPE_HAL,hWnd,D3DCREATE_SOFTWARE_VERTEXPROCESSING,&amp;s_d3dpp,&amp;s_lpD3DDEV))){
+<SPAN CLASS="linenum">0198:</SPAN>                 <SPAN CLASS="comment">// 失敗したので REF で試行</SPAN>
+<SPAN CLASS="linenum">0199:</SPAN>                 <SPAN CLASS="keyword">if</SPAN> (FAILED(s_lpD3D-&gt;CreateDevice(D3DADAPTER_DEFAULT, D3DDEVTYPE_REF,hWnd,D3DCREATE_SOFTWARE_VERTEXPROCESSING,&amp;s_d3dpp,&amp;s_lpD3DDEV))){
+<SPAN CLASS="linenum">0200:</SPAN>                     <SPAN CLASS="comment">// 結局失敗した</SPAN>
+<SPAN CLASS="linenum">0201:</SPAN>                     MessageBox(NULL,"<SPAN CLASS="string">Direct3D の初期化に失敗しました。</SPAN>",CAPTION,MB_OK | MB_ICONSTOP);
+<SPAN CLASS="linenum">0202:</SPAN>                     <SPAN CLASS="keyword">return</SPAN> E_FAIL;
+<SPAN CLASS="linenum">0203:</SPAN>                 }
+<SPAN CLASS="linenum">0204:</SPAN>             }
+<SPAN CLASS="linenum">0205:</SPAN>         }
+<SPAN CLASS="linenum">0206:</SPAN>     }
+<SPAN CLASS="linenum">0207:</SPAN>     <SPAN CLASS="keyword">return</SPAN> S_OK;
+<SPAN CLASS="linenum">0208:</SPAN> }
+<SPAN CLASS="linenum">0209:</SPAN> </PRE>
+</BODY>
+</HTML>

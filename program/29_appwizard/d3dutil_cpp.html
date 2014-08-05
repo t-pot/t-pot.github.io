@@ -1,0 +1,710 @@
+<HTML>
+<HEAD>
+<TITLE>d3dutil.cpp</TITLE>
+<meta name="GENERATOR" content="cpp2html 2.0 by Niisaka">
+<meta http-equiv="Content-Type" content="text/html">
+<meta http-equiv="Content-Style-Type" content="text/css">
+<STYLE TYPE="text/css">
+<!--
+SPAN.comment { color:#008000; font-weight:normal; font-style:normal;}
+SPAN.keyword { color:#0000FF; font-weight:normal; font-style:normal;}
+SPAN.string { color:#600000; font-weight:normal; font-style:normal;}
+SPAN.linenum { color:#A0A0A0; font-weight:normal; font-style:normal;}
+-->
+</STYLE>
+</HEAD>
+<BODY TEXT="#000000" BGCOLOR="#FFFFFF">
+<PRE><SPAN CLASS="linenum">0001:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0002:</SPAN> <SPAN CLASS="comment">// File: D3DUtil.cpp</SPAN>
+<SPAN CLASS="linenum">0003:</SPAN> <SPAN CLASS="comment">//</SPAN>
+<SPAN CLASS="linenum">0004:</SPAN> <SPAN CLASS="comment">// Desc: Shortcut macros and functions for using DX objects</SPAN>
+<SPAN CLASS="linenum">0005:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0006:</SPAN> <SPAN CLASS="keyword">#define</SPAN> STRICT
+<SPAN CLASS="linenum">0007:</SPAN> <SPAN CLASS="keyword">#include</SPAN> &lt;tchar.h&gt;
+<SPAN CLASS="linenum">0008:</SPAN> <SPAN CLASS="keyword">#include</SPAN> &lt;stdio.h&gt;
+<SPAN CLASS="linenum">0009:</SPAN> <SPAN CLASS="keyword">#include</SPAN> "<SPAN CLASS="string">D3DUtil.h</SPAN>"
+<SPAN CLASS="linenum">0010:</SPAN> <SPAN CLASS="keyword">#include</SPAN> "<SPAN CLASS="string">DXUtil.h</SPAN>"
+<SPAN CLASS="linenum">0011:</SPAN> <SPAN CLASS="keyword">#include</SPAN> "<SPAN CLASS="string">D3DX8.h</SPAN>"
+<SPAN CLASS="linenum">0012:</SPAN> 
+<SPAN CLASS="linenum">0013:</SPAN> 
+<SPAN CLASS="linenum">0014:</SPAN> 
+<SPAN CLASS="linenum">0015:</SPAN> 
+<SPAN CLASS="linenum">0016:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0017:</SPAN> <SPAN CLASS="comment">// Name: D3DUtil_InitMaterial()</SPAN>
+<SPAN CLASS="linenum">0018:</SPAN> <SPAN CLASS="comment">// Desc: Initializes a D3DMATERIAL8 structure, setting the diffuse and ambient</SPAN>
+<SPAN CLASS="linenum">0019:</SPAN> <SPAN CLASS="comment">//       colors. It does not set emissive or specular colors.</SPAN>
+<SPAN CLASS="linenum">0020:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0021:</SPAN> VOID D3DUtil_InitMaterial( D3DMATERIAL8&amp; mtrl, FLOAT r, FLOAT g, FLOAT b,
+<SPAN CLASS="linenum">0022:</SPAN>                            FLOAT a )
+<SPAN CLASS="linenum">0023:</SPAN> {
+<SPAN CLASS="linenum">0024:</SPAN>     ZeroMemory( &amp;mtrl, <SPAN CLASS="keyword">sizeof</SPAN>(D3DMATERIAL8) );
+<SPAN CLASS="linenum">0025:</SPAN>     mtrl.Diffuse.r = mtrl.Ambient.r = r;
+<SPAN CLASS="linenum">0026:</SPAN>     mtrl.Diffuse.g = mtrl.Ambient.g = g;
+<SPAN CLASS="linenum">0027:</SPAN>     mtrl.Diffuse.b = mtrl.Ambient.b = b;
+<SPAN CLASS="linenum">0028:</SPAN>     mtrl.Diffuse.a = mtrl.Ambient.a = a;
+<SPAN CLASS="linenum">0029:</SPAN> }
+<SPAN CLASS="linenum">0030:</SPAN> 
+<SPAN CLASS="linenum">0031:</SPAN> 
+<SPAN CLASS="linenum">0032:</SPAN> 
+<SPAN CLASS="linenum">0033:</SPAN> 
+<SPAN CLASS="linenum">0034:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0035:</SPAN> <SPAN CLASS="comment">// Name: D3DUtil_InitLight()</SPAN>
+<SPAN CLASS="linenum">0036:</SPAN> <SPAN CLASS="comment">// Desc: Initializes a D3DLIGHT structure, setting the light position. The</SPAN>
+<SPAN CLASS="linenum">0037:</SPAN> <SPAN CLASS="comment">//       diffuse color is set to white; specular and ambient are left as black.</SPAN>
+<SPAN CLASS="linenum">0038:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0039:</SPAN> VOID D3DUtil_InitLight( D3DLIGHT8&amp; light, D3DLIGHTTYPE ltType,
+<SPAN CLASS="linenum">0040:</SPAN>                         FLOAT x, FLOAT y, FLOAT z )
+<SPAN CLASS="linenum">0041:</SPAN> {
+<SPAN CLASS="linenum">0042:</SPAN>     ZeroMemory( &amp;light, <SPAN CLASS="keyword">sizeof</SPAN>(D3DLIGHT8) );
+<SPAN CLASS="linenum">0043:</SPAN>     light.Type        = ltType;
+<SPAN CLASS="linenum">0044:</SPAN>     light.Diffuse.r   = 1.0f;
+<SPAN CLASS="linenum">0045:</SPAN>     light.Diffuse.g   = 1.0f;
+<SPAN CLASS="linenum">0046:</SPAN>     light.Diffuse.b   = 1.0f;
+<SPAN CLASS="linenum">0047:</SPAN>     D3DXVec3Normalize( (D3DXVECTOR3*)&amp;light.Direction, &amp;D3DXVECTOR3(x, y, z) );
+<SPAN CLASS="linenum">0048:</SPAN>     light.Position.x   = x;
+<SPAN CLASS="linenum">0049:</SPAN>     light.Position.y   = y;
+<SPAN CLASS="linenum">0050:</SPAN>     light.Position.z   = z;
+<SPAN CLASS="linenum">0051:</SPAN>     light.Range        = 1000.0f;
+<SPAN CLASS="linenum">0052:</SPAN> }
+<SPAN CLASS="linenum">0053:</SPAN> 
+<SPAN CLASS="linenum">0054:</SPAN> 
+<SPAN CLASS="linenum">0055:</SPAN> 
+<SPAN CLASS="linenum">0056:</SPAN> 
+<SPAN CLASS="linenum">0057:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0058:</SPAN> <SPAN CLASS="comment">// Name: D3DUtil_CreateTexture()</SPAN>
+<SPAN CLASS="linenum">0059:</SPAN> <SPAN CLASS="comment">// Desc: Helper function to create a texture. It checks the root path first,</SPAN>
+<SPAN CLASS="linenum">0060:</SPAN> <SPAN CLASS="comment">//       then tries the DXSDK media path (as specified in the system registry).</SPAN>
+<SPAN CLASS="linenum">0061:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0062:</SPAN> HRESULT D3DUtil_CreateTexture( LPDIRECT3DDEVICE8 pd3dDevice, TCHAR* strTexture,
+<SPAN CLASS="linenum">0063:</SPAN>                                LPDIRECT3DTEXTURE8* ppTexture, D3DFORMAT d3dFormat )
+<SPAN CLASS="linenum">0064:</SPAN> {
+<SPAN CLASS="linenum">0065:</SPAN>     <SPAN CLASS="comment">// Get the path to the texture</SPAN>
+<SPAN CLASS="linenum">0066:</SPAN>     TCHAR strPath[MAX_PATH];
+<SPAN CLASS="linenum">0067:</SPAN>     DXUtil_FindMediaFile( strPath, strTexture );
+<SPAN CLASS="linenum">0068:</SPAN> 
+<SPAN CLASS="linenum">0069:</SPAN>     <SPAN CLASS="comment">// Create the texture using D3DX</SPAN>
+<SPAN CLASS="linenum">0070:</SPAN>     <SPAN CLASS="keyword">return</SPAN> D3DXCreateTextureFromFileEx( pd3dDevice, strPath, 
+<SPAN CLASS="linenum">0071:</SPAN>                 D3DX_DEFAULT, D3DX_DEFAULT, D3DX_DEFAULT, 0, d3dFormat, 
+<SPAN CLASS="linenum">0072:</SPAN>                 D3DPOOL_MANAGED, D3DX_FILTER_TRIANGLE|D3DX_FILTER_MIRROR, 
+<SPAN CLASS="linenum">0073:</SPAN>                 D3DX_FILTER_TRIANGLE|D3DX_FILTER_MIRROR, 0, NULL, NULL, ppTexture );
+<SPAN CLASS="linenum">0074:</SPAN> }
+<SPAN CLASS="linenum">0075:</SPAN> 
+<SPAN CLASS="linenum">0076:</SPAN> 
+<SPAN CLASS="linenum">0077:</SPAN> 
+<SPAN CLASS="linenum">0078:</SPAN> 
+<SPAN CLASS="linenum">0079:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0080:</SPAN> <SPAN CLASS="comment">// Name: D3DUtil_SetColorKey()</SPAN>
+<SPAN CLASS="linenum">0081:</SPAN> <SPAN CLASS="comment">// Desc: Changes all texels matching the colorkey to transparent, black.</SPAN>
+<SPAN CLASS="linenum">0082:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0083:</SPAN> HRESULT D3DUtil_SetColorKey( LPDIRECT3DTEXTURE8 pTexture, DWORD dwColorKey )
+<SPAN CLASS="linenum">0084:</SPAN> {
+<SPAN CLASS="linenum">0085:</SPAN>     <SPAN CLASS="comment">// Get colorkey's red, green, and blue components</SPAN>
+<SPAN CLASS="linenum">0086:</SPAN>     DWORD r = ((dwColorKey&amp;0x00ff0000)&gt;&gt;16);
+<SPAN CLASS="linenum">0087:</SPAN>     DWORD g = ((dwColorKey&amp;0x0000ff00)&gt;&gt;8);
+<SPAN CLASS="linenum">0088:</SPAN>     DWORD b = ((dwColorKey&amp;0x000000ff)&gt;&gt;0);
+<SPAN CLASS="linenum">0089:</SPAN> 
+<SPAN CLASS="linenum">0090:</SPAN>     <SPAN CLASS="comment">// Put the colorkey in the texture's native format</SPAN>
+<SPAN CLASS="linenum">0091:</SPAN>     D3DSURFACE_DESC d3dsd;
+<SPAN CLASS="linenum">0092:</SPAN>     pTexture-&gt;GetLevelDesc( 0, &amp;d3dsd );
+<SPAN CLASS="linenum">0093:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( d3dsd.Format == D3DFMT_A4R4G4B4 )
+<SPAN CLASS="linenum">0094:</SPAN>         dwColorKey = 0xf000 + ((r&gt;&gt;4)&lt;&lt;8) + ((g&gt;&gt;4)&lt;&lt;4) + (b&gt;&gt;4);
+<SPAN CLASS="linenum">0095:</SPAN>     <SPAN CLASS="keyword">else</SPAN> <SPAN CLASS="keyword">if</SPAN>( d3dsd.Format == D3DFMT_A1R5G5B5 )
+<SPAN CLASS="linenum">0096:</SPAN>         dwColorKey = 0x8000 + ((r&gt;&gt;3)&lt;&lt;10) + ((g&gt;&gt;3)&lt;&lt;5) + (b&gt;&gt;3);
+<SPAN CLASS="linenum">0097:</SPAN>     <SPAN CLASS="keyword">else</SPAN> <SPAN CLASS="keyword">if</SPAN>( d3dsd.Format != D3DFMT_A8R8G8B8 )
+<SPAN CLASS="linenum">0098:</SPAN>         <SPAN CLASS="keyword">return</SPAN> E_FAIL;
+<SPAN CLASS="linenum">0099:</SPAN> 
+<SPAN CLASS="linenum">0100:</SPAN>     <SPAN CLASS="comment">// Lock the texture</SPAN>
+<SPAN CLASS="linenum">0101:</SPAN>     D3DLOCKED_RECT  d3dlr;
+<SPAN CLASS="linenum">0102:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( FAILED( pTexture-&gt;LockRect( 0, &amp;d3dlr, 0, 0 ) ) )
+<SPAN CLASS="linenum">0103:</SPAN>         <SPAN CLASS="keyword">return</SPAN> E_FAIL;
+<SPAN CLASS="linenum">0104:</SPAN> 
+<SPAN CLASS="linenum">0105:</SPAN>     <SPAN CLASS="comment">// Scan through each pixel, looking for the colorkey to replace</SPAN>
+<SPAN CLASS="linenum">0106:</SPAN>     <SPAN CLASS="keyword">for</SPAN>( DWORD y=0; y&lt;d3dsd.Height; y++ )
+<SPAN CLASS="linenum">0107:</SPAN>     {
+<SPAN CLASS="linenum">0108:</SPAN>         <SPAN CLASS="keyword">for</SPAN>( DWORD x=0; x&lt;d3dsd.Width; x++ )
+<SPAN CLASS="linenum">0109:</SPAN>         {
+<SPAN CLASS="linenum">0110:</SPAN>             <SPAN CLASS="keyword">if</SPAN>( d3dsd.Format==D3DFMT_A8R8G8B8 )
+<SPAN CLASS="linenum">0111:</SPAN>             {
+<SPAN CLASS="linenum">0112:</SPAN>                 <SPAN CLASS="comment">// Handle 32-bit formats</SPAN>
+<SPAN CLASS="linenum">0113:</SPAN>                 <SPAN CLASS="keyword">if</SPAN>( ((DWORD*)d3dlr.pBits)[d3dsd.Width*y+x] == dwColorKey )
+<SPAN CLASS="linenum">0114:</SPAN>                     ((DWORD*)d3dlr.pBits)[d3dsd.Width*y+x] = 0x00000000;
+<SPAN CLASS="linenum">0115:</SPAN>             }
+<SPAN CLASS="linenum">0116:</SPAN>             <SPAN CLASS="keyword">else</SPAN>
+<SPAN CLASS="linenum">0117:</SPAN>             {
+<SPAN CLASS="linenum">0118:</SPAN>                 <SPAN CLASS="comment">// Handle 16-bit formats</SPAN>
+<SPAN CLASS="linenum">0119:</SPAN>                 <SPAN CLASS="keyword">if</SPAN>( ((WORD*)d3dlr.pBits)[d3dsd.Width*y+x] == dwColorKey )
+<SPAN CLASS="linenum">0120:</SPAN>                     ((WORD*)d3dlr.pBits)[d3dsd.Width*y+x] = 0x0000;
+<SPAN CLASS="linenum">0121:</SPAN>             }
+<SPAN CLASS="linenum">0122:</SPAN>         }
+<SPAN CLASS="linenum">0123:</SPAN>     }
+<SPAN CLASS="linenum">0124:</SPAN> 
+<SPAN CLASS="linenum">0125:</SPAN>     <SPAN CLASS="comment">// Unlock the texture and return OK.</SPAN>
+<SPAN CLASS="linenum">0126:</SPAN>     pTexture-&gt;UnlockRect(0);
+<SPAN CLASS="linenum">0127:</SPAN>     <SPAN CLASS="keyword">return</SPAN> S_OK;
+<SPAN CLASS="linenum">0128:</SPAN> }
+<SPAN CLASS="linenum">0129:</SPAN> 
+<SPAN CLASS="linenum">0130:</SPAN> 
+<SPAN CLASS="linenum">0131:</SPAN> 
+<SPAN CLASS="linenum">0132:</SPAN> 
+<SPAN CLASS="linenum">0133:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0134:</SPAN> <SPAN CLASS="comment">// Name: D3DUtil_CreateVertexShader()</SPAN>
+<SPAN CLASS="linenum">0135:</SPAN> <SPAN CLASS="comment">// Desc: Assembles and creates a file-based vertex shader</SPAN>
+<SPAN CLASS="linenum">0136:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0137:</SPAN> HRESULT D3DUtil_CreateVertexShader( LPDIRECT3DDEVICE8 pd3dDevice, 
+<SPAN CLASS="linenum">0138:</SPAN>                                     TCHAR* strFilename, DWORD* pdwVertexDecl,
+<SPAN CLASS="linenum">0139:</SPAN>                                     DWORD* pdwVertexShader )
+<SPAN CLASS="linenum">0140:</SPAN> {
+<SPAN CLASS="linenum">0141:</SPAN>     LPD3DXBUFFER pCode;
+<SPAN CLASS="linenum">0142:</SPAN>     TCHAR        strPath[MAX_PATH];
+<SPAN CLASS="linenum">0143:</SPAN>     HRESULT      hr;
+<SPAN CLASS="linenum">0144:</SPAN> 
+<SPAN CLASS="linenum">0145:</SPAN>     <SPAN CLASS="comment">// Get the path to the vertex shader file</SPAN>
+<SPAN CLASS="linenum">0146:</SPAN>     DXUtil_FindMediaFile( strPath, strFilename );
+<SPAN CLASS="linenum">0147:</SPAN> 
+<SPAN CLASS="linenum">0148:</SPAN>     <SPAN CLASS="comment">// Assemble the vertex shader file</SPAN>
+<SPAN CLASS="linenum">0149:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( FAILED( hr = D3DXAssembleShaderFromFile( strPath, 0, NULL, &amp;pCode, NULL ) ) )
+<SPAN CLASS="linenum">0150:</SPAN>         <SPAN CLASS="keyword">return</SPAN> hr;
+<SPAN CLASS="linenum">0151:</SPAN> 
+<SPAN CLASS="linenum">0152:</SPAN>     <SPAN CLASS="comment">// Create the vertex shader</SPAN>
+<SPAN CLASS="linenum">0153:</SPAN>     hr = pd3dDevice-&gt;CreateVertexShader( pdwVertexDecl, 
+<SPAN CLASS="linenum">0154:</SPAN>                                          (DWORD*)pCode-&gt;GetBufferPointer(),
+<SPAN CLASS="linenum">0155:</SPAN>                                          pdwVertexShader, 0 );
+<SPAN CLASS="linenum">0156:</SPAN>     pCode-&gt;Release();
+<SPAN CLASS="linenum">0157:</SPAN>     <SPAN CLASS="keyword">return</SPAN> hr;
+<SPAN CLASS="linenum">0158:</SPAN> }
+<SPAN CLASS="linenum">0159:</SPAN> 
+<SPAN CLASS="linenum">0160:</SPAN> 
+<SPAN CLASS="linenum">0161:</SPAN> 
+<SPAN CLASS="linenum">0162:</SPAN> 
+<SPAN CLASS="linenum">0163:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0164:</SPAN> <SPAN CLASS="comment">// Name: D3DUtil_GetCubeMapViewMatrix()</SPAN>
+<SPAN CLASS="linenum">0165:</SPAN> <SPAN CLASS="comment">// Desc: Returns a view matrix for rendering to a face of a cubemap.</SPAN>
+<SPAN CLASS="linenum">0166:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0167:</SPAN> D3DXMATRIX D3DUtil_GetCubeMapViewMatrix( DWORD dwFace )
+<SPAN CLASS="linenum">0168:</SPAN> {
+<SPAN CLASS="linenum">0169:</SPAN>     D3DXVECTOR3 vEyePt   = D3DXVECTOR3( 0.0f, 0.0f, 0.0f );
+<SPAN CLASS="linenum">0170:</SPAN>     D3DXVECTOR3 vLookDir;
+<SPAN CLASS="linenum">0171:</SPAN>     D3DXVECTOR3 vUpDir;
+<SPAN CLASS="linenum">0172:</SPAN> 
+<SPAN CLASS="linenum">0173:</SPAN>     <SPAN CLASS="keyword">switch</SPAN>( dwFace )
+<SPAN CLASS="linenum">0174:</SPAN>     {
+<SPAN CLASS="linenum">0175:</SPAN>         <SPAN CLASS="keyword">case</SPAN> D3DCUBEMAP_FACE_POSITIVE_X:
+<SPAN CLASS="linenum">0176:</SPAN>             vLookDir = D3DXVECTOR3( 1.0f, 0.0f, 0.0f );
+<SPAN CLASS="linenum">0177:</SPAN>             vUpDir   = D3DXVECTOR3( 0.0f, 1.0f, 0.0f );
+<SPAN CLASS="linenum">0178:</SPAN>             <SPAN CLASS="keyword">break</SPAN>;
+<SPAN CLASS="linenum">0179:</SPAN>         <SPAN CLASS="keyword">case</SPAN> D3DCUBEMAP_FACE_NEGATIVE_X:
+<SPAN CLASS="linenum">0180:</SPAN>             vLookDir = D3DXVECTOR3(-1.0f, 0.0f, 0.0f );
+<SPAN CLASS="linenum">0181:</SPAN>             vUpDir   = D3DXVECTOR3( 0.0f, 1.0f, 0.0f );
+<SPAN CLASS="linenum">0182:</SPAN>             <SPAN CLASS="keyword">break</SPAN>;
+<SPAN CLASS="linenum">0183:</SPAN>         <SPAN CLASS="keyword">case</SPAN> D3DCUBEMAP_FACE_POSITIVE_Y:
+<SPAN CLASS="linenum">0184:</SPAN>             vLookDir = D3DXVECTOR3( 0.0f, 1.0f, 0.0f );
+<SPAN CLASS="linenum">0185:</SPAN>             vUpDir   = D3DXVECTOR3( 0.0f, 0.0f,-1.0f );
+<SPAN CLASS="linenum">0186:</SPAN>             <SPAN CLASS="keyword">break</SPAN>;
+<SPAN CLASS="linenum">0187:</SPAN>         <SPAN CLASS="keyword">case</SPAN> D3DCUBEMAP_FACE_NEGATIVE_Y:
+<SPAN CLASS="linenum">0188:</SPAN>             vLookDir = D3DXVECTOR3( 0.0f,-1.0f, 0.0f );
+<SPAN CLASS="linenum">0189:</SPAN>             vUpDir   = D3DXVECTOR3( 0.0f, 0.0f, 1.0f );
+<SPAN CLASS="linenum">0190:</SPAN>             <SPAN CLASS="keyword">break</SPAN>;
+<SPAN CLASS="linenum">0191:</SPAN>         <SPAN CLASS="keyword">case</SPAN> D3DCUBEMAP_FACE_POSITIVE_Z:
+<SPAN CLASS="linenum">0192:</SPAN>             vLookDir = D3DXVECTOR3( 0.0f, 0.0f, 1.0f );
+<SPAN CLASS="linenum">0193:</SPAN>             vUpDir   = D3DXVECTOR3( 0.0f, 1.0f, 0.0f );
+<SPAN CLASS="linenum">0194:</SPAN>             <SPAN CLASS="keyword">break</SPAN>;
+<SPAN CLASS="linenum">0195:</SPAN>         <SPAN CLASS="keyword">case</SPAN> D3DCUBEMAP_FACE_NEGATIVE_Z:
+<SPAN CLASS="linenum">0196:</SPAN>             vLookDir = D3DXVECTOR3( 0.0f, 0.0f,-1.0f );
+<SPAN CLASS="linenum">0197:</SPAN>             vUpDir   = D3DXVECTOR3( 0.0f, 1.0f, 0.0f );
+<SPAN CLASS="linenum">0198:</SPAN>             <SPAN CLASS="keyword">break</SPAN>;
+<SPAN CLASS="linenum">0199:</SPAN>     }
+<SPAN CLASS="linenum">0200:</SPAN> 
+<SPAN CLASS="linenum">0201:</SPAN>     <SPAN CLASS="comment">// Set the view transform for this cubemap surface</SPAN>
+<SPAN CLASS="linenum">0202:</SPAN>     D3DXMATRIX matView;
+<SPAN CLASS="linenum">0203:</SPAN>     D3DXMatrixLookAtLH( &amp;matView, &amp;vEyePt, &amp;vLookDir, &amp;vUpDir );
+<SPAN CLASS="linenum">0204:</SPAN>     <SPAN CLASS="keyword">return</SPAN> matView;
+<SPAN CLASS="linenum">0205:</SPAN> }
+<SPAN CLASS="linenum">0206:</SPAN> 
+<SPAN CLASS="linenum">0207:</SPAN> 
+<SPAN CLASS="linenum">0208:</SPAN> 
+<SPAN CLASS="linenum">0209:</SPAN> 
+<SPAN CLASS="linenum">0210:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0211:</SPAN> <SPAN CLASS="comment">// Name: D3DUtil_GetRotationFromCursor()</SPAN>
+<SPAN CLASS="linenum">0212:</SPAN> <SPAN CLASS="comment">// Desc: Returns a quaternion for the rotation implied by the window's cursor</SPAN>
+<SPAN CLASS="linenum">0213:</SPAN> <SPAN CLASS="comment">//       position.</SPAN>
+<SPAN CLASS="linenum">0214:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0215:</SPAN> D3DXQUATERNION D3DUtil_GetRotationFromCursor( HWND hWnd,
+<SPAN CLASS="linenum">0216:</SPAN>                                               FLOAT fTrackBallRadius )
+<SPAN CLASS="linenum">0217:</SPAN> {
+<SPAN CLASS="linenum">0218:</SPAN>     POINT pt;
+<SPAN CLASS="linenum">0219:</SPAN>     RECT  rc;
+<SPAN CLASS="linenum">0220:</SPAN>     GetCursorPos( &amp;pt );
+<SPAN CLASS="linenum">0221:</SPAN>     GetClientRect( hWnd, &amp;rc );
+<SPAN CLASS="linenum">0222:</SPAN>     ScreenToClient( hWnd, &amp;pt );
+<SPAN CLASS="linenum">0223:</SPAN>     FLOAT sx = ( ( ( 2.0f * pt.x ) / (rc.right-rc.left) ) - 1 );
+<SPAN CLASS="linenum">0224:</SPAN>     FLOAT sy = ( ( ( 2.0f * pt.y ) / (rc.bottom-rc.top) ) - 1 );
+<SPAN CLASS="linenum">0225:</SPAN>     FLOAT sz;
+<SPAN CLASS="linenum">0226:</SPAN> 
+<SPAN CLASS="linenum">0227:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( sx == 0.0f &amp;&amp; sy == 0.0f )
+<SPAN CLASS="linenum">0228:</SPAN>         <SPAN CLASS="keyword">return</SPAN> D3DXQUATERNION( 0.0f, 0.0f, 0.0f, 1.0f );
+<SPAN CLASS="linenum">0229:</SPAN> 
+<SPAN CLASS="linenum">0230:</SPAN>     FLOAT d1 = 0.0f;
+<SPAN CLASS="linenum">0231:</SPAN>     FLOAT d2 = sqrtf( sx*sx + sy*sy );
+<SPAN CLASS="linenum">0232:</SPAN> 
+<SPAN CLASS="linenum">0233:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( d2 &lt; fTrackBallRadius * 0.70710678118654752440 ) <SPAN CLASS="comment">// Inside sphere</SPAN>
+<SPAN CLASS="linenum">0234:</SPAN>         sz = sqrtf( fTrackBallRadius*fTrackBallRadius - d2*d2 );
+<SPAN CLASS="linenum">0235:</SPAN>     <SPAN CLASS="keyword">else</SPAN>                                                 <SPAN CLASS="comment">// On hyperbola</SPAN>
+<SPAN CLASS="linenum">0236:</SPAN>         sz = (fTrackBallRadius*fTrackBallRadius) / (2.0f*d2);
+<SPAN CLASS="linenum">0237:</SPAN> 
+<SPAN CLASS="linenum">0238:</SPAN>     <SPAN CLASS="comment">// Get two points on trackball's sphere</SPAN>
+<SPAN CLASS="linenum">0239:</SPAN>     D3DXVECTOR3 p1( sx, sy, sz );
+<SPAN CLASS="linenum">0240:</SPAN>     D3DXVECTOR3 p2( 0.0f, 0.0f, fTrackBallRadius );
+<SPAN CLASS="linenum">0241:</SPAN> 
+<SPAN CLASS="linenum">0242:</SPAN>     <SPAN CLASS="comment">// Get axis of rotation, which is cross product of p1 and p2</SPAN>
+<SPAN CLASS="linenum">0243:</SPAN>     D3DXVECTOR3 vAxis;
+<SPAN CLASS="linenum">0244:</SPAN>     D3DXVec3Cross( &amp;vAxis, &amp;p1, &amp;p2);
+<SPAN CLASS="linenum">0245:</SPAN> 
+<SPAN CLASS="linenum">0246:</SPAN>     <SPAN CLASS="comment">// Calculate angle for the rotation about that axis</SPAN>
+<SPAN CLASS="linenum">0247:</SPAN>     FLOAT t = D3DXVec3Length( &amp;(p2-p1) ) / ( 2.0f*fTrackBallRadius );
+<SPAN CLASS="linenum">0248:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( t &gt; +1.0f) t = +1.0f;
+<SPAN CLASS="linenum">0249:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( t &lt; -1.0f) t = -1.0f;
+<SPAN CLASS="linenum">0250:</SPAN>     FLOAT fAngle = 2.0f * asinf( t );
+<SPAN CLASS="linenum">0251:</SPAN> 
+<SPAN CLASS="linenum">0252:</SPAN>     <SPAN CLASS="comment">// Convert axis to quaternion</SPAN>
+<SPAN CLASS="linenum">0253:</SPAN>     D3DXQUATERNION quat;
+<SPAN CLASS="linenum">0254:</SPAN>     D3DXQuaternionRotationAxis( &amp;quat, &amp;vAxis, fAngle );
+<SPAN CLASS="linenum">0255:</SPAN>     <SPAN CLASS="keyword">return</SPAN> quat;
+<SPAN CLASS="linenum">0256:</SPAN> }
+<SPAN CLASS="linenum">0257:</SPAN> 
+<SPAN CLASS="linenum">0258:</SPAN> 
+<SPAN CLASS="linenum">0259:</SPAN> 
+<SPAN CLASS="linenum">0260:</SPAN> 
+<SPAN CLASS="linenum">0261:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0262:</SPAN> <SPAN CLASS="comment">// Name: D3DUtil_SetDeviceCursor</SPAN>
+<SPAN CLASS="linenum">0263:</SPAN> <SPAN CLASS="comment">// Desc: Gives the D3D device a cursor with image and hotspot from hCursor.</SPAN>
+<SPAN CLASS="linenum">0264:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0265:</SPAN> HRESULT D3DUtil_SetDeviceCursor( LPDIRECT3DDEVICE8 pd3dDevice, HCURSOR hCursor,
+<SPAN CLASS="linenum">0266:</SPAN>                                  BOOL bAddWatermark )
+<SPAN CLASS="linenum">0267:</SPAN> {
+<SPAN CLASS="linenum">0268:</SPAN>     HRESULT hr = E_FAIL;
+<SPAN CLASS="linenum">0269:</SPAN>     ICONINFO iconinfo;
+<SPAN CLASS="linenum">0270:</SPAN>     BOOL bBWCursor;
+<SPAN CLASS="linenum">0271:</SPAN>     LPDIRECT3DSURFACE8 pCursorBitmap = NULL;
+<SPAN CLASS="linenum">0272:</SPAN>     HDC hdcColor = NULL;
+<SPAN CLASS="linenum">0273:</SPAN>     HDC hdcMask = NULL;
+<SPAN CLASS="linenum">0274:</SPAN>     HDC hdcScreen = NULL;
+<SPAN CLASS="linenum">0275:</SPAN>     BITMAP bm;
+<SPAN CLASS="linenum">0276:</SPAN>     DWORD dwWidth;
+<SPAN CLASS="linenum">0277:</SPAN>     DWORD dwHeightSrc;
+<SPAN CLASS="linenum">0278:</SPAN>     DWORD dwHeightDest;
+<SPAN CLASS="linenum">0279:</SPAN>     COLORREF crColor;
+<SPAN CLASS="linenum">0280:</SPAN>     COLORREF crMask;
+<SPAN CLASS="linenum">0281:</SPAN>     UINT x;
+<SPAN CLASS="linenum">0282:</SPAN>     UINT y;
+<SPAN CLASS="linenum">0283:</SPAN>     BITMAPINFO bmi;
+<SPAN CLASS="linenum">0284:</SPAN>     COLORREF* pcrArrayColor = NULL;
+<SPAN CLASS="linenum">0285:</SPAN>     COLORREF* pcrArrayMask = NULL;
+<SPAN CLASS="linenum">0286:</SPAN>     DWORD* pBitmap;
+<SPAN CLASS="linenum">0287:</SPAN>     HGDIOBJ hgdiobjOld;
+<SPAN CLASS="linenum">0288:</SPAN> 
+<SPAN CLASS="linenum">0289:</SPAN>     ZeroMemory( &amp;iconinfo, <SPAN CLASS="keyword">sizeof</SPAN>(iconinfo) );
+<SPAN CLASS="linenum">0290:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( !GetIconInfo( hCursor, &amp;iconinfo ) )
+<SPAN CLASS="linenum">0291:</SPAN>         <SPAN CLASS="keyword">goto</SPAN> End;
+<SPAN CLASS="linenum">0292:</SPAN> 
+<SPAN CLASS="linenum">0293:</SPAN>     <SPAN CLASS="keyword">if</SPAN> (0 == GetObject((HGDIOBJ)iconinfo.hbmMask, <SPAN CLASS="keyword">sizeof</SPAN>(BITMAP), (LPVOID)&amp;bm))
+<SPAN CLASS="linenum">0294:</SPAN>         <SPAN CLASS="keyword">goto</SPAN> End;
+<SPAN CLASS="linenum">0295:</SPAN>     dwWidth = bm.bmWidth;
+<SPAN CLASS="linenum">0296:</SPAN>     dwHeightSrc = bm.bmHeight;
+<SPAN CLASS="linenum">0297:</SPAN> 
+<SPAN CLASS="linenum">0298:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( iconinfo.hbmColor == NULL )
+<SPAN CLASS="linenum">0299:</SPAN>     {
+<SPAN CLASS="linenum">0300:</SPAN>         bBWCursor = TRUE;
+<SPAN CLASS="linenum">0301:</SPAN>         dwHeightDest = dwHeightSrc / 2;
+<SPAN CLASS="linenum">0302:</SPAN>     }
+<SPAN CLASS="linenum">0303:</SPAN>     <SPAN CLASS="keyword">else</SPAN> 
+<SPAN CLASS="linenum">0304:</SPAN>     {
+<SPAN CLASS="linenum">0305:</SPAN>         bBWCursor = FALSE;
+<SPAN CLASS="linenum">0306:</SPAN>         dwHeightDest = dwHeightSrc;
+<SPAN CLASS="linenum">0307:</SPAN>     }
+<SPAN CLASS="linenum">0308:</SPAN> 
+<SPAN CLASS="linenum">0309:</SPAN>     <SPAN CLASS="comment">// Create a surface for the fullscreen cursor</SPAN>
+<SPAN CLASS="linenum">0310:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( FAILED( hr = pd3dDevice-&gt;CreateImageSurface( dwWidth, dwHeightDest, 
+<SPAN CLASS="linenum">0311:</SPAN>         D3DFMT_A8R8G8B8, &amp;pCursorBitmap ) ) )
+<SPAN CLASS="linenum">0312:</SPAN>     {
+<SPAN CLASS="linenum">0313:</SPAN>         <SPAN CLASS="keyword">goto</SPAN> End;
+<SPAN CLASS="linenum">0314:</SPAN>     }
+<SPAN CLASS="linenum">0315:</SPAN> 
+<SPAN CLASS="linenum">0316:</SPAN>     pcrArrayMask = <SPAN CLASS="keyword">new</SPAN> DWORD[dwWidth * dwHeightSrc];
+<SPAN CLASS="linenum">0317:</SPAN> 
+<SPAN CLASS="linenum">0318:</SPAN>     ZeroMemory(&amp;bmi, <SPAN CLASS="keyword">sizeof</SPAN>(bmi));
+<SPAN CLASS="linenum">0319:</SPAN>     bmi.bmiHeader.biSize = <SPAN CLASS="keyword">sizeof</SPAN>(bmi.bmiHeader);
+<SPAN CLASS="linenum">0320:</SPAN>     bmi.bmiHeader.biWidth = dwWidth;
+<SPAN CLASS="linenum">0321:</SPAN>     bmi.bmiHeader.biHeight = dwHeightSrc;
+<SPAN CLASS="linenum">0322:</SPAN>     bmi.bmiHeader.biPlanes = 1;
+<SPAN CLASS="linenum">0323:</SPAN>     bmi.bmiHeader.biBitCount = 32;
+<SPAN CLASS="linenum">0324:</SPAN>     bmi.bmiHeader.biCompression = BI_RGB;
+<SPAN CLASS="linenum">0325:</SPAN> 
+<SPAN CLASS="linenum">0326:</SPAN>     hdcScreen = GetDC( NULL );
+<SPAN CLASS="linenum">0327:</SPAN>     hdcMask = CreateCompatibleDC( hdcScreen );
+<SPAN CLASS="linenum">0328:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( hdcMask == NULL )
+<SPAN CLASS="linenum">0329:</SPAN>     {
+<SPAN CLASS="linenum">0330:</SPAN>         hr = E_FAIL;
+<SPAN CLASS="linenum">0331:</SPAN>         <SPAN CLASS="keyword">goto</SPAN> End;
+<SPAN CLASS="linenum">0332:</SPAN>     }
+<SPAN CLASS="linenum">0333:</SPAN>     hgdiobjOld = SelectObject(hdcMask, iconinfo.hbmMask);
+<SPAN CLASS="linenum">0334:</SPAN>     GetDIBits(hdcMask, iconinfo.hbmMask, 0, dwHeightSrc, 
+<SPAN CLASS="linenum">0335:</SPAN>         pcrArrayMask, &amp;bmi, DIB_RGB_COLORS);
+<SPAN CLASS="linenum">0336:</SPAN>     SelectObject(hdcMask, hgdiobjOld);
+<SPAN CLASS="linenum">0337:</SPAN> 
+<SPAN CLASS="linenum">0338:</SPAN>     <SPAN CLASS="keyword">if</SPAN> (!bBWCursor)
+<SPAN CLASS="linenum">0339:</SPAN>     {
+<SPAN CLASS="linenum">0340:</SPAN>         pcrArrayColor = <SPAN CLASS="keyword">new</SPAN> DWORD[dwWidth * dwHeightDest];
+<SPAN CLASS="linenum">0341:</SPAN>         hdcColor = CreateCompatibleDC( GetDC( NULL ) );
+<SPAN CLASS="linenum">0342:</SPAN>         <SPAN CLASS="keyword">if</SPAN>( hdcColor == NULL )
+<SPAN CLASS="linenum">0343:</SPAN>         {
+<SPAN CLASS="linenum">0344:</SPAN>             hr = E_FAIL;
+<SPAN CLASS="linenum">0345:</SPAN>             <SPAN CLASS="keyword">goto</SPAN> End;
+<SPAN CLASS="linenum">0346:</SPAN>         }
+<SPAN CLASS="linenum">0347:</SPAN>         SelectObject(hdcColor, iconinfo.hbmColor);
+<SPAN CLASS="linenum">0348:</SPAN>         GetDIBits(hdcColor, iconinfo.hbmColor, 0, dwHeightDest, 
+<SPAN CLASS="linenum">0349:</SPAN>             pcrArrayColor, &amp;bmi, DIB_RGB_COLORS);
+<SPAN CLASS="linenum">0350:</SPAN>     }
+<SPAN CLASS="linenum">0351:</SPAN> 
+<SPAN CLASS="linenum">0352:</SPAN>     <SPAN CLASS="comment">// Transfer cursor image into the surface</SPAN>
+<SPAN CLASS="linenum">0353:</SPAN>     D3DLOCKED_RECT lr;
+<SPAN CLASS="linenum">0354:</SPAN>     pCursorBitmap-&gt;LockRect( &amp;lr, NULL, 0 );
+<SPAN CLASS="linenum">0355:</SPAN>     pBitmap = (DWORD*)lr.pBits;
+<SPAN CLASS="linenum">0356:</SPAN>     <SPAN CLASS="keyword">for</SPAN>( y = 0; y &lt; dwHeightDest; y++ )
+<SPAN CLASS="linenum">0357:</SPAN>     {
+<SPAN CLASS="linenum">0358:</SPAN>         <SPAN CLASS="keyword">for</SPAN>( x = 0; x &lt; dwWidth; x++ )
+<SPAN CLASS="linenum">0359:</SPAN>         {
+<SPAN CLASS="linenum">0360:</SPAN>             <SPAN CLASS="keyword">if</SPAN> (bBWCursor)
+<SPAN CLASS="linenum">0361:</SPAN>             {
+<SPAN CLASS="linenum">0362:</SPAN>                 crColor = pcrArrayMask[dwWidth*(dwHeightDest-1-y) + x];
+<SPAN CLASS="linenum">0363:</SPAN>                 crMask = pcrArrayMask[dwWidth*(dwHeightSrc-1-y) + x];
+<SPAN CLASS="linenum">0364:</SPAN>             }
+<SPAN CLASS="linenum">0365:</SPAN>             <SPAN CLASS="keyword">else</SPAN>
+<SPAN CLASS="linenum">0366:</SPAN>             {
+<SPAN CLASS="linenum">0367:</SPAN>                 crColor = pcrArrayColor[dwWidth*(dwHeightDest-1-y) + x];
+<SPAN CLASS="linenum">0368:</SPAN>                 crMask = pcrArrayMask[dwWidth*(dwHeightDest-1-y) + x];
+<SPAN CLASS="linenum">0369:</SPAN>             }
+<SPAN CLASS="linenum">0370:</SPAN>             <SPAN CLASS="keyword">if</SPAN> (crMask == 0)
+<SPAN CLASS="linenum">0371:</SPAN>                 pBitmap[dwWidth*y + x] = 0xff000000 | crColor;
+<SPAN CLASS="linenum">0372:</SPAN>             <SPAN CLASS="keyword">else</SPAN>
+<SPAN CLASS="linenum">0373:</SPAN>                 pBitmap[dwWidth*y + x] = 0x00000000;
+<SPAN CLASS="linenum">0374:</SPAN> 
+<SPAN CLASS="linenum">0375:</SPAN>             <SPAN CLASS="comment">// It may be helpful to make the D3D cursor look slightly </SPAN>
+<SPAN CLASS="linenum">0376:</SPAN>             <SPAN CLASS="comment">// different from the Windows cursor so you can distinguish </SPAN>
+<SPAN CLASS="linenum">0377:</SPAN>             <SPAN CLASS="comment">// between the two when developing/testing code.  When</SPAN>
+<SPAN CLASS="linenum">0378:</SPAN>             <SPAN CLASS="comment">// bAddWatermark is TRUE, the following code adds some</SPAN>
+<SPAN CLASS="linenum">0379:</SPAN>             <SPAN CLASS="comment">// small grey "D3D" characters to the upper-left corner of</SPAN>
+<SPAN CLASS="linenum">0380:</SPAN>             <SPAN CLASS="comment">// the D3D cursor image.</SPAN>
+<SPAN CLASS="linenum">0381:</SPAN>             <SPAN CLASS="keyword">if</SPAN>( bAddWatermark &amp;&amp; x &lt; 12 &amp;&amp; y &lt; 5 )
+<SPAN CLASS="linenum">0382:</SPAN>             {
+<SPAN CLASS="linenum">0383:</SPAN>                 <SPAN CLASS="comment">// 11.. 11.. 11.. .... CCC0</SPAN>
+<SPAN CLASS="linenum">0384:</SPAN>                 <SPAN CLASS="comment">// 1.1. ..1. 1.1. .... A2A0</SPAN>
+<SPAN CLASS="linenum">0385:</SPAN>                 <SPAN CLASS="comment">// 1.1. .1.. 1.1. .... A4A0</SPAN>
+<SPAN CLASS="linenum">0386:</SPAN>                 <SPAN CLASS="comment">// 1.1. ..1. 1.1. .... A2A0</SPAN>
+<SPAN CLASS="linenum">0387:</SPAN>                 <SPAN CLASS="comment">// 11.. 11.. 11.. .... CCC0</SPAN>
+<SPAN CLASS="linenum">0388:</SPAN> 
+<SPAN CLASS="linenum">0389:</SPAN>                 <SPAN CLASS="keyword">const</SPAN> WORD wMask[5] = { 0xccc0, 0xa2a0, 0xa4a0, 0xa2a0, 0xccc0 };
+<SPAN CLASS="linenum">0390:</SPAN>                 <SPAN CLASS="keyword">if</SPAN>( wMask[y] &amp; (1 &lt;&lt; (15 - x)) )
+<SPAN CLASS="linenum">0391:</SPAN>                 {
+<SPAN CLASS="linenum">0392:</SPAN>                     pBitmap[dwWidth*y + x] |= 0xff808080;
+<SPAN CLASS="linenum">0393:</SPAN>                 }
+<SPAN CLASS="linenum">0394:</SPAN>             }
+<SPAN CLASS="linenum">0395:</SPAN>         }
+<SPAN CLASS="linenum">0396:</SPAN>     }
+<SPAN CLASS="linenum">0397:</SPAN>     pCursorBitmap-&gt;UnlockRect();
+<SPAN CLASS="linenum">0398:</SPAN> 
+<SPAN CLASS="linenum">0399:</SPAN>     <SPAN CLASS="comment">// Set the device cursor</SPAN>
+<SPAN CLASS="linenum">0400:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( FAILED( hr = pd3dDevice-&gt;SetCursorProperties( iconinfo.xHotspot, 
+<SPAN CLASS="linenum">0401:</SPAN>         iconinfo.yHotspot, pCursorBitmap ) ) )
+<SPAN CLASS="linenum">0402:</SPAN>     {
+<SPAN CLASS="linenum">0403:</SPAN>         <SPAN CLASS="keyword">goto</SPAN> End;
+<SPAN CLASS="linenum">0404:</SPAN>     }
+<SPAN CLASS="linenum">0405:</SPAN> 
+<SPAN CLASS="linenum">0406:</SPAN>     hr = S_OK;
+<SPAN CLASS="linenum">0407:</SPAN> 
+<SPAN CLASS="linenum">0408:</SPAN> End:
+<SPAN CLASS="linenum">0409:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( iconinfo.hbmMask != NULL )
+<SPAN CLASS="linenum">0410:</SPAN>         DeleteObject( iconinfo.hbmMask );
+<SPAN CLASS="linenum">0411:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( iconinfo.hbmColor != NULL )
+<SPAN CLASS="linenum">0412:</SPAN>         DeleteObject( iconinfo.hbmColor );
+<SPAN CLASS="linenum">0413:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( hdcScreen != NULL )
+<SPAN CLASS="linenum">0414:</SPAN>         ReleaseDC( NULL, hdcScreen );
+<SPAN CLASS="linenum">0415:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( hdcColor != NULL )
+<SPAN CLASS="linenum">0416:</SPAN>         DeleteDC( hdcColor );
+<SPAN CLASS="linenum">0417:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( hdcMask != NULL )
+<SPAN CLASS="linenum">0418:</SPAN>         DeleteDC( hdcMask );
+<SPAN CLASS="linenum">0419:</SPAN>     SAFE_DELETE_ARRAY( pcrArrayColor );
+<SPAN CLASS="linenum">0420:</SPAN>     SAFE_DELETE_ARRAY( pcrArrayMask );
+<SPAN CLASS="linenum">0421:</SPAN>     SAFE_RELEASE( pCursorBitmap );
+<SPAN CLASS="linenum">0422:</SPAN>     <SPAN CLASS="keyword">return</SPAN> hr;
+<SPAN CLASS="linenum">0423:</SPAN> }
+<SPAN CLASS="linenum">0424:</SPAN> 
+<SPAN CLASS="linenum">0425:</SPAN> 
+<SPAN CLASS="linenum">0426:</SPAN> 
+<SPAN CLASS="linenum">0427:</SPAN> 
+<SPAN CLASS="linenum">0428:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0429:</SPAN> <SPAN CLASS="comment">// Name: D3DXQuaternionUnitAxisToUnitAxis2</SPAN>
+<SPAN CLASS="linenum">0430:</SPAN> <SPAN CLASS="comment">// Desc: Axis to axis quaternion double angle (no normalization)</SPAN>
+<SPAN CLASS="linenum">0431:</SPAN> <SPAN CLASS="comment">//       Takes two points on unit sphere an angle THETA apart, returns</SPAN>
+<SPAN CLASS="linenum">0432:</SPAN> <SPAN CLASS="comment">//       quaternion that represents a rotation around cross product by 2*THETA.</SPAN>
+<SPAN CLASS="linenum">0433:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0434:</SPAN> <SPAN CLASS="keyword">inline</SPAN> D3DXQUATERNION* WINAPI D3DXQuaternionUnitAxisToUnitAxis2
+<SPAN CLASS="linenum">0435:</SPAN> ( D3DXQUATERNION *pOut, <SPAN CLASS="keyword">const</SPAN> D3DXVECTOR3 *pvFrom, <SPAN CLASS="keyword">const</SPAN> D3DXVECTOR3 *pvTo)
+<SPAN CLASS="linenum">0436:</SPAN> {
+<SPAN CLASS="linenum">0437:</SPAN>     D3DXVECTOR3 vAxis;
+<SPAN CLASS="linenum">0438:</SPAN>     D3DXVec3Cross(&amp;vAxis, pvFrom, pvTo);    <SPAN CLASS="comment">// proportional to sin(theta)</SPAN>
+<SPAN CLASS="linenum">0439:</SPAN>     pOut-&gt;x = vAxis.x;
+<SPAN CLASS="linenum">0440:</SPAN>     pOut-&gt;y = vAxis.y;
+<SPAN CLASS="linenum">0441:</SPAN>     pOut-&gt;z = vAxis.z;
+<SPAN CLASS="linenum">0442:</SPAN>     pOut-&gt;w = D3DXVec3Dot( pvFrom, pvTo );
+<SPAN CLASS="linenum">0443:</SPAN>     <SPAN CLASS="keyword">return</SPAN> pOut;
+<SPAN CLASS="linenum">0444:</SPAN> }
+<SPAN CLASS="linenum">0445:</SPAN> 
+<SPAN CLASS="linenum">0446:</SPAN> 
+<SPAN CLASS="linenum">0447:</SPAN> 
+<SPAN CLASS="linenum">0448:</SPAN> 
+<SPAN CLASS="linenum">0449:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0450:</SPAN> <SPAN CLASS="comment">// Name: D3DXQuaternionAxisToAxis</SPAN>
+<SPAN CLASS="linenum">0451:</SPAN> <SPAN CLASS="comment">// Desc: Axis to axis quaternion </SPAN>
+<SPAN CLASS="linenum">0452:</SPAN> <SPAN CLASS="comment">//       Takes two points on unit sphere an angle THETA apart, returns</SPAN>
+<SPAN CLASS="linenum">0453:</SPAN> <SPAN CLASS="comment">//       quaternion that represents a rotation around cross product by theta.</SPAN>
+<SPAN CLASS="linenum">0454:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0455:</SPAN> <SPAN CLASS="keyword">inline</SPAN> D3DXQUATERNION* WINAPI D3DXQuaternionAxisToAxis
+<SPAN CLASS="linenum">0456:</SPAN> ( D3DXQUATERNION *pOut, <SPAN CLASS="keyword">const</SPAN> D3DXVECTOR3 *pvFrom, <SPAN CLASS="keyword">const</SPAN> D3DXVECTOR3 *pvTo)
+<SPAN CLASS="linenum">0457:</SPAN> {
+<SPAN CLASS="linenum">0458:</SPAN>     D3DXVECTOR3 vA, vB;
+<SPAN CLASS="linenum">0459:</SPAN>     D3DXVec3Normalize(&amp;vA, pvFrom);
+<SPAN CLASS="linenum">0460:</SPAN>     D3DXVec3Normalize(&amp;vB, pvTo);
+<SPAN CLASS="linenum">0461:</SPAN>     D3DXVECTOR3 vHalf(vA + vB);
+<SPAN CLASS="linenum">0462:</SPAN>     D3DXVec3Normalize(&amp;vHalf, &amp;vHalf);
+<SPAN CLASS="linenum">0463:</SPAN>     <SPAN CLASS="keyword">return</SPAN> D3DXQuaternionUnitAxisToUnitAxis2(pOut, &amp;vA, &amp;vHalf);
+<SPAN CLASS="linenum">0464:</SPAN> }
+<SPAN CLASS="linenum">0465:</SPAN> 
+<SPAN CLASS="linenum">0466:</SPAN> 
+<SPAN CLASS="linenum">0467:</SPAN> 
+<SPAN CLASS="linenum">0468:</SPAN> 
+<SPAN CLASS="linenum">0469:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0470:</SPAN> <SPAN CLASS="comment">// Name:</SPAN>
+<SPAN CLASS="linenum">0471:</SPAN> <SPAN CLASS="comment">// Desc:</SPAN>
+<SPAN CLASS="linenum">0472:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0473:</SPAN> CD3DArcBall::CD3DArcBall()
+<SPAN CLASS="linenum">0474:</SPAN> {
+<SPAN CLASS="linenum">0475:</SPAN>     D3DXQuaternionIdentity( &amp;m_qDown );
+<SPAN CLASS="linenum">0476:</SPAN>     D3DXQuaternionIdentity( &amp;m_qNow );
+<SPAN CLASS="linenum">0477:</SPAN>     D3DXMatrixIdentity( &amp;m_matRotation );
+<SPAN CLASS="linenum">0478:</SPAN>     D3DXMatrixIdentity( &amp;m_matRotationDelta );
+<SPAN CLASS="linenum">0479:</SPAN>     D3DXMatrixIdentity( &amp;m_matTranslation );
+<SPAN CLASS="linenum">0480:</SPAN>     D3DXMatrixIdentity( &amp;m_matTranslationDelta );
+<SPAN CLASS="linenum">0481:</SPAN>     m_bDrag = FALSE;
+<SPAN CLASS="linenum">0482:</SPAN>     m_fRadiusTranslation = 1.0f;
+<SPAN CLASS="linenum">0483:</SPAN>     m_bRightHanded = FALSE;
+<SPAN CLASS="linenum">0484:</SPAN> }
+<SPAN CLASS="linenum">0485:</SPAN> 
+<SPAN CLASS="linenum">0486:</SPAN> 
+<SPAN CLASS="linenum">0487:</SPAN> 
+<SPAN CLASS="linenum">0488:</SPAN> 
+<SPAN CLASS="linenum">0489:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0490:</SPAN> <SPAN CLASS="comment">// Name:</SPAN>
+<SPAN CLASS="linenum">0491:</SPAN> <SPAN CLASS="comment">// Desc:</SPAN>
+<SPAN CLASS="linenum">0492:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0493:</SPAN> VOID CD3DArcBall::SetWindow( <SPAN CLASS="keyword">int</SPAN> iWidth, <SPAN CLASS="keyword">int</SPAN> iHeight, <SPAN CLASS="keyword">float</SPAN> fRadius )
+<SPAN CLASS="linenum">0494:</SPAN> {
+<SPAN CLASS="linenum">0495:</SPAN>     <SPAN CLASS="comment">// Set ArcBall info</SPAN>
+<SPAN CLASS="linenum">0496:</SPAN>     m_iWidth  = iWidth;
+<SPAN CLASS="linenum">0497:</SPAN>     m_iHeight = iHeight;
+<SPAN CLASS="linenum">0498:</SPAN>     m_fRadius = fRadius;
+<SPAN CLASS="linenum">0499:</SPAN> }
+<SPAN CLASS="linenum">0500:</SPAN> 
+<SPAN CLASS="linenum">0501:</SPAN> 
+<SPAN CLASS="linenum">0502:</SPAN> 
+<SPAN CLASS="linenum">0503:</SPAN> 
+<SPAN CLASS="linenum">0504:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0505:</SPAN> <SPAN CLASS="comment">// Name:</SPAN>
+<SPAN CLASS="linenum">0506:</SPAN> <SPAN CLASS="comment">// Desc:</SPAN>
+<SPAN CLASS="linenum">0507:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0508:</SPAN> D3DXVECTOR3 CD3DArcBall::ScreenToVector( <SPAN CLASS="keyword">int</SPAN> sx, <SPAN CLASS="keyword">int</SPAN> sy )
+<SPAN CLASS="linenum">0509:</SPAN> {
+<SPAN CLASS="linenum">0510:</SPAN>     <SPAN CLASS="comment">// Scale to screen</SPAN>
+<SPAN CLASS="linenum">0511:</SPAN>     FLOAT x   = -(sx - m_iWidth/2)  / (m_fRadius*m_iWidth/2);
+<SPAN CLASS="linenum">0512:</SPAN>     FLOAT y   =  (sy - m_iHeight/2) / (m_fRadius*m_iHeight/2);
+<SPAN CLASS="linenum">0513:</SPAN> 
+<SPAN CLASS="linenum">0514:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( m_bRightHanded )
+<SPAN CLASS="linenum">0515:</SPAN>     {
+<SPAN CLASS="linenum">0516:</SPAN>         x = -x;
+<SPAN CLASS="linenum">0517:</SPAN>         y = -y;
+<SPAN CLASS="linenum">0518:</SPAN>     }
+<SPAN CLASS="linenum">0519:</SPAN> 
+<SPAN CLASS="linenum">0520:</SPAN>     FLOAT z   = 0.0f;
+<SPAN CLASS="linenum">0521:</SPAN>     FLOAT mag = x*x + y*y;
+<SPAN CLASS="linenum">0522:</SPAN> 
+<SPAN CLASS="linenum">0523:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( mag &gt; 1.0f )
+<SPAN CLASS="linenum">0524:</SPAN>     {
+<SPAN CLASS="linenum">0525:</SPAN>         FLOAT scale = 1.0f/sqrtf(mag);
+<SPAN CLASS="linenum">0526:</SPAN>         x *= scale;
+<SPAN CLASS="linenum">0527:</SPAN>         y *= scale;
+<SPAN CLASS="linenum">0528:</SPAN>     }
+<SPAN CLASS="linenum">0529:</SPAN>     <SPAN CLASS="keyword">else</SPAN>
+<SPAN CLASS="linenum">0530:</SPAN>         z = sqrtf( 1.0f - mag );
+<SPAN CLASS="linenum">0531:</SPAN> 
+<SPAN CLASS="linenum">0532:</SPAN>     <SPAN CLASS="comment">// Return vector</SPAN>
+<SPAN CLASS="linenum">0533:</SPAN>     <SPAN CLASS="keyword">return</SPAN> D3DXVECTOR3( x, y, z );
+<SPAN CLASS="linenum">0534:</SPAN> }
+<SPAN CLASS="linenum">0535:</SPAN> 
+<SPAN CLASS="linenum">0536:</SPAN> 
+<SPAN CLASS="linenum">0537:</SPAN> 
+<SPAN CLASS="linenum">0538:</SPAN> 
+<SPAN CLASS="linenum">0539:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0540:</SPAN> <SPAN CLASS="comment">// Name:</SPAN>
+<SPAN CLASS="linenum">0541:</SPAN> <SPAN CLASS="comment">// Desc:</SPAN>
+<SPAN CLASS="linenum">0542:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0543:</SPAN> VOID CD3DArcBall::SetRadius( FLOAT fRadius )
+<SPAN CLASS="linenum">0544:</SPAN> {
+<SPAN CLASS="linenum">0545:</SPAN>     m_fRadiusTranslation = fRadius;
+<SPAN CLASS="linenum">0546:</SPAN> }
+<SPAN CLASS="linenum">0547:</SPAN> 
+<SPAN CLASS="linenum">0548:</SPAN> 
+<SPAN CLASS="linenum">0549:</SPAN> 
+<SPAN CLASS="linenum">0550:</SPAN> 
+<SPAN CLASS="linenum">0551:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0552:</SPAN> <SPAN CLASS="comment">// Name:</SPAN>
+<SPAN CLASS="linenum">0553:</SPAN> <SPAN CLASS="comment">// Desc:</SPAN>
+<SPAN CLASS="linenum">0554:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0555:</SPAN> LRESULT CD3DArcBall::HandleMouseMessages( HWND hWnd, UINT uMsg, WPARAM wParam,
+<SPAN CLASS="linenum">0556:</SPAN>                                           LPARAM lParam )
+<SPAN CLASS="linenum">0557:</SPAN> {
+<SPAN CLASS="linenum">0558:</SPAN>     <SPAN CLASS="keyword">static</SPAN> <SPAN CLASS="keyword">int</SPAN>         iCurMouseX;      <SPAN CLASS="comment">// Saved mouse position</SPAN>
+<SPAN CLASS="linenum">0559:</SPAN>     <SPAN CLASS="keyword">static</SPAN> <SPAN CLASS="keyword">int</SPAN>         iCurMouseY;
+<SPAN CLASS="linenum">0560:</SPAN>     <SPAN CLASS="keyword">static</SPAN> D3DXVECTOR3 s_vDown;         <SPAN CLASS="comment">// Button down vector</SPAN>
+<SPAN CLASS="linenum">0561:</SPAN> 
+<SPAN CLASS="linenum">0562:</SPAN>     <SPAN CLASS="comment">// Current mouse position</SPAN>
+<SPAN CLASS="linenum">0563:</SPAN>     <SPAN CLASS="keyword">int</SPAN> iMouseX = LOWORD(lParam);
+<SPAN CLASS="linenum">0564:</SPAN>     <SPAN CLASS="keyword">int</SPAN> iMouseY = HIWORD(lParam);
+<SPAN CLASS="linenum">0565:</SPAN> 
+<SPAN CLASS="linenum">0566:</SPAN>     <SPAN CLASS="keyword">switch</SPAN>( uMsg )
+<SPAN CLASS="linenum">0567:</SPAN>     {
+<SPAN CLASS="linenum">0568:</SPAN>         <SPAN CLASS="keyword">case</SPAN> WM_RBUTTONDOWN:
+<SPAN CLASS="linenum">0569:</SPAN>         <SPAN CLASS="keyword">case</SPAN> WM_MBUTTONDOWN:
+<SPAN CLASS="linenum">0570:</SPAN>             <SPAN CLASS="comment">// Store off the position of the cursor when the button is pressed</SPAN>
+<SPAN CLASS="linenum">0571:</SPAN>             iCurMouseX = iMouseX;
+<SPAN CLASS="linenum">0572:</SPAN>             iCurMouseY = iMouseY;
+<SPAN CLASS="linenum">0573:</SPAN>             <SPAN CLASS="keyword">return</SPAN> TRUE;
+<SPAN CLASS="linenum">0574:</SPAN> 
+<SPAN CLASS="linenum">0575:</SPAN>         <SPAN CLASS="keyword">case</SPAN> WM_LBUTTONDOWN:
+<SPAN CLASS="linenum">0576:</SPAN>             <SPAN CLASS="comment">// Start drag mode</SPAN>
+<SPAN CLASS="linenum">0577:</SPAN>             m_bDrag = TRUE;
+<SPAN CLASS="linenum">0578:</SPAN>             s_vDown = ScreenToVector( iMouseX, iMouseY );
+<SPAN CLASS="linenum">0579:</SPAN>             m_qDown = m_qNow;
+<SPAN CLASS="linenum">0580:</SPAN>             <SPAN CLASS="keyword">return</SPAN> TRUE;
+<SPAN CLASS="linenum">0581:</SPAN> 
+<SPAN CLASS="linenum">0582:</SPAN>         <SPAN CLASS="keyword">case</SPAN> WM_LBUTTONUP:
+<SPAN CLASS="linenum">0583:</SPAN>             <SPAN CLASS="comment">// End drag mode</SPAN>
+<SPAN CLASS="linenum">0584:</SPAN>             m_bDrag = FALSE;
+<SPAN CLASS="linenum">0585:</SPAN>             <SPAN CLASS="keyword">return</SPAN> TRUE;
+<SPAN CLASS="linenum">0586:</SPAN> 
+<SPAN CLASS="linenum">0587:</SPAN>         <SPAN CLASS="keyword">case</SPAN> WM_MOUSEMOVE:
+<SPAN CLASS="linenum">0588:</SPAN>             <SPAN CLASS="comment">// Drag object</SPAN>
+<SPAN CLASS="linenum">0589:</SPAN>             <SPAN CLASS="keyword">if</SPAN>( MK_LBUTTON&amp;wParam )
+<SPAN CLASS="linenum">0590:</SPAN>             {
+<SPAN CLASS="linenum">0591:</SPAN>                 <SPAN CLASS="keyword">if</SPAN>( m_bDrag )
+<SPAN CLASS="linenum">0592:</SPAN>                 {
+<SPAN CLASS="linenum">0593:</SPAN>                     <SPAN CLASS="comment">// recompute m_qNow</SPAN>
+<SPAN CLASS="linenum">0594:</SPAN>                     D3DXVECTOR3 vCur = ScreenToVector( iMouseX, iMouseY );
+<SPAN CLASS="linenum">0595:</SPAN>                     D3DXQUATERNION qAxisToAxis;
+<SPAN CLASS="linenum">0596:</SPAN>                     D3DXQuaternionAxisToAxis(&amp;qAxisToAxis, &amp;s_vDown, &amp;vCur);
+<SPAN CLASS="linenum">0597:</SPAN>                     m_qNow = m_qDown;
+<SPAN CLASS="linenum">0598:</SPAN>                     m_qNow *= qAxisToAxis;
+<SPAN CLASS="linenum">0599:</SPAN>                     D3DXMatrixRotationQuaternion(&amp;m_matRotationDelta, &amp;qAxisToAxis);
+<SPAN CLASS="linenum">0600:</SPAN>                 }
+<SPAN CLASS="linenum">0601:</SPAN>                 <SPAN CLASS="keyword">else</SPAN>
+<SPAN CLASS="linenum">0602:</SPAN>                     D3DXMatrixIdentity(&amp;m_matRotationDelta);
+<SPAN CLASS="linenum">0603:</SPAN>                 D3DXMatrixRotationQuaternion(&amp;m_matRotation, &amp;m_qNow);
+<SPAN CLASS="linenum">0604:</SPAN>                 m_bDrag = TRUE;
+<SPAN CLASS="linenum">0605:</SPAN>             }
+<SPAN CLASS="linenum">0606:</SPAN>             <SPAN CLASS="keyword">else</SPAN> <SPAN CLASS="keyword">if</SPAN>( (MK_RBUTTON&amp;wParam) || (MK_MBUTTON&amp;wParam) )
+<SPAN CLASS="linenum">0607:</SPAN>             {
+<SPAN CLASS="linenum">0608:</SPAN>                 <SPAN CLASS="comment">// Normalize based on size of window and bounding sphere radius</SPAN>
+<SPAN CLASS="linenum">0609:</SPAN>                 FLOAT fDeltaX = ( iCurMouseX-iMouseX ) * m_fRadiusTranslation / m_iWidth;
+<SPAN CLASS="linenum">0610:</SPAN>                 FLOAT fDeltaY = ( iCurMouseY-iMouseY ) * m_fRadiusTranslation / m_iHeight;
+<SPAN CLASS="linenum">0611:</SPAN> 
+<SPAN CLASS="linenum">0612:</SPAN>                 <SPAN CLASS="keyword">if</SPAN>( wParam &amp; MK_RBUTTON )
+<SPAN CLASS="linenum">0613:</SPAN>                 {
+<SPAN CLASS="linenum">0614:</SPAN>                     D3DXMatrixTranslation( &amp;m_matTranslationDelta, -2*fDeltaX, 2*fDeltaY, 0.0f );
+<SPAN CLASS="linenum">0615:</SPAN>                     D3DXMatrixMultiply( &amp;m_matTranslation, &amp;m_matTranslation, &amp;m_matTranslationDelta );
+<SPAN CLASS="linenum">0616:</SPAN>                 }
+<SPAN CLASS="linenum">0617:</SPAN>                 <SPAN CLASS="keyword">else</SPAN>  <SPAN CLASS="comment">// wParam & MK_MBUTTON</SPAN>
+<SPAN CLASS="linenum">0618:</SPAN>                 {
+<SPAN CLASS="linenum">0619:</SPAN>                     D3DXMatrixTranslation( &amp;m_matTranslationDelta, 0.0f, 0.0f, 5*fDeltaY );
+<SPAN CLASS="linenum">0620:</SPAN>                     D3DXMatrixMultiply( &amp;m_matTranslation, &amp;m_matTranslation, &amp;m_matTranslationDelta );
+<SPAN CLASS="linenum">0621:</SPAN>                 }
+<SPAN CLASS="linenum">0622:</SPAN> 
+<SPAN CLASS="linenum">0623:</SPAN>                 <SPAN CLASS="comment">// Store mouse coordinate</SPAN>
+<SPAN CLASS="linenum">0624:</SPAN>                 iCurMouseX = iMouseX;
+<SPAN CLASS="linenum">0625:</SPAN>                 iCurMouseY = iMouseY;
+<SPAN CLASS="linenum">0626:</SPAN>             }
+<SPAN CLASS="linenum">0627:</SPAN>             <SPAN CLASS="keyword">return</SPAN> TRUE;
+<SPAN CLASS="linenum">0628:</SPAN>     }
+<SPAN CLASS="linenum">0629:</SPAN> 
+<SPAN CLASS="linenum">0630:</SPAN>     <SPAN CLASS="keyword">return</SPAN> FALSE;
+<SPAN CLASS="linenum">0631:</SPAN> }
+<SPAN CLASS="linenum">0632:</SPAN> 
+<SPAN CLASS="linenum">0633:</SPAN> 
+<SPAN CLASS="linenum">0634:</SPAN> 
+<SPAN CLASS="linenum">0635:</SPAN> 
+<SPAN CLASS="linenum">0636:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0637:</SPAN> <SPAN CLASS="comment">// Name:</SPAN>
+<SPAN CLASS="linenum">0638:</SPAN> <SPAN CLASS="comment">// Desc:</SPAN>
+<SPAN CLASS="linenum">0639:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0640:</SPAN> CD3DCamera::CD3DCamera()
+<SPAN CLASS="linenum">0641:</SPAN> {
+<SPAN CLASS="linenum">0642:</SPAN>     <SPAN CLASS="comment">// Set attributes for the view matrix</SPAN>
+<SPAN CLASS="linenum">0643:</SPAN>     SetViewParams( D3DXVECTOR3(0.0f,0.0f,0.0f), D3DXVECTOR3(0.0f,0.0f,1.0f),
+<SPAN CLASS="linenum">0644:</SPAN>                    D3DXVECTOR3(0.0f,1.0f,0.0f) );
+<SPAN CLASS="linenum">0645:</SPAN> 
+<SPAN CLASS="linenum">0646:</SPAN>     <SPAN CLASS="comment">// Set attributes for the projection matrix</SPAN>
+<SPAN CLASS="linenum">0647:</SPAN>     SetProjParams( D3DX_PI/4, 1.0f, 1.0f, 1000.0f );
+<SPAN CLASS="linenum">0648:</SPAN> }
+<SPAN CLASS="linenum">0649:</SPAN> 
+<SPAN CLASS="linenum">0650:</SPAN> 
+<SPAN CLASS="linenum">0651:</SPAN> 
+<SPAN CLASS="linenum">0652:</SPAN> 
+<SPAN CLASS="linenum">0653:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0654:</SPAN> <SPAN CLASS="comment">// Name:</SPAN>
+<SPAN CLASS="linenum">0655:</SPAN> <SPAN CLASS="comment">// Desc:</SPAN>
+<SPAN CLASS="linenum">0656:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0657:</SPAN> VOID CD3DCamera::SetViewParams( D3DXVECTOR3 &amp;vEyePt, D3DXVECTOR3&amp; vLookatPt,
+<SPAN CLASS="linenum">0658:</SPAN>                                 D3DXVECTOR3&amp; vUpVec )
+<SPAN CLASS="linenum">0659:</SPAN> {
+<SPAN CLASS="linenum">0660:</SPAN>     <SPAN CLASS="comment">// Set attributes for the view matrix</SPAN>
+<SPAN CLASS="linenum">0661:</SPAN>     m_vEyePt    = vEyePt;
+<SPAN CLASS="linenum">0662:</SPAN>     m_vLookatPt = vLookatPt;
+<SPAN CLASS="linenum">0663:</SPAN>     m_vUpVec    = vUpVec;
+<SPAN CLASS="linenum">0664:</SPAN>     D3DXVec3Normalize( &amp;m_vView, &amp;(m_vLookatPt - m_vEyePt) );
+<SPAN CLASS="linenum">0665:</SPAN>     D3DXVec3Cross( &amp;m_vCross, &amp;m_vView, &amp;m_vUpVec );
+<SPAN CLASS="linenum">0666:</SPAN> 
+<SPAN CLASS="linenum">0667:</SPAN>     D3DXMatrixLookAtLH( &amp;m_matView, &amp;m_vEyePt, &amp;m_vLookatPt, &amp;m_vUpVec );
+<SPAN CLASS="linenum">0668:</SPAN>     D3DXMatrixInverse( &amp;m_matBillboard, NULL, &amp;m_matView );
+<SPAN CLASS="linenum">0669:</SPAN>     m_matBillboard._41 = 0.0f;
+<SPAN CLASS="linenum">0670:</SPAN>     m_matBillboard._42 = 0.0f;
+<SPAN CLASS="linenum">0671:</SPAN>     m_matBillboard._43 = 0.0f;
+<SPAN CLASS="linenum">0672:</SPAN> }
+<SPAN CLASS="linenum">0673:</SPAN> 
+<SPAN CLASS="linenum">0674:</SPAN> 
+<SPAN CLASS="linenum">0675:</SPAN> 
+<SPAN CLASS="linenum">0676:</SPAN> 
+<SPAN CLASS="linenum">0677:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0678:</SPAN> <SPAN CLASS="comment">// Name:</SPAN>
+<SPAN CLASS="linenum">0679:</SPAN> <SPAN CLASS="comment">// Desc:</SPAN>
+<SPAN CLASS="linenum">0680:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0681:</SPAN> VOID CD3DCamera::SetProjParams( FLOAT fFOV, FLOAT fAspect, FLOAT fNearPlane,
+<SPAN CLASS="linenum">0682:</SPAN>                                 FLOAT fFarPlane )
+<SPAN CLASS="linenum">0683:</SPAN> {
+<SPAN CLASS="linenum">0684:</SPAN>     <SPAN CLASS="comment">// Set attributes for the projection matrix</SPAN>
+<SPAN CLASS="linenum">0685:</SPAN>     m_fFOV        = fFOV;
+<SPAN CLASS="linenum">0686:</SPAN>     m_fAspect     = fAspect;
+<SPAN CLASS="linenum">0687:</SPAN>     m_fNearPlane  = fNearPlane;
+<SPAN CLASS="linenum">0688:</SPAN>     m_fFarPlane   = fFarPlane;
+<SPAN CLASS="linenum">0689:</SPAN> 
+<SPAN CLASS="linenum">0690:</SPAN>     D3DXMatrixPerspectiveFovLH( &amp;m_matProj, fFOV, fAspect, fNearPlane, fFarPlane );
+<SPAN CLASS="linenum">0691:</SPAN> }
+<SPAN CLASS="linenum">0692:</SPAN> </PRE>
+</BODY>
+</HTML>

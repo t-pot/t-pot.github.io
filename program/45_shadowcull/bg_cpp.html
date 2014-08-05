@@ -1,0 +1,195 @@
+<HTML>
+<HEAD>
+<TITLE>bg.cpp</TITLE>
+<meta name="GENERATOR" content="cpp2html 2.1 by Niisaka">
+<meta http-equiv="Content-Type" content="text/html">
+</HEAD>
+<BODY TEXT="#000000" BGCOLOR="#FFFFFF">
+<PRE><FONT COLOR="#40F628">0001:</FONT> <FONT COLOR="#008000">// ----------------------------------------------------------------------------</FONT>
+<FONT COLOR="#40F628">0002:</FONT> <FONT COLOR="#008000">//</FONT>
+<FONT COLOR="#40F628">0003:</FONT> <FONT COLOR="#008000">// bg.cpp - 背景</FONT>
+<FONT COLOR="#40F628">0004:</FONT> <FONT COLOR="#008000">// </FONT>
+<FONT COLOR="#40F628">0005:</FONT> <FONT COLOR="#008000">// Copyright (c) 2001 if (if@edokko.com)</FONT>
+<FONT COLOR="#40F628">0006:</FONT> <FONT COLOR="#008000">// All Rights Reserved.</FONT>
+<FONT COLOR="#40F628">0007:</FONT> <FONT COLOR="#008000">//</FONT>
+<FONT COLOR="#40F628">0008:</FONT> <FONT COLOR="#008000">// ----------------------------------------------------------------------------</FONT>
+<FONT COLOR="#40F628">0009:</FONT> <FONT COLOR="#0000FF">#define</FONT> STRICT
+<FONT COLOR="#40F628">0010:</FONT> 
+<FONT COLOR="#40F628">0011:</FONT> 
+<FONT COLOR="#40F628">0012:</FONT> <FONT COLOR="#0000FF">#include</FONT> "<FONT COLOR="#600000">main.h</FONT>"
+<FONT COLOR="#40F628">0013:</FONT> <FONT COLOR="#0000FF">#include</FONT> "<FONT COLOR="#600000">load.h</FONT>"
+<FONT COLOR="#40F628">0014:</FONT> <FONT COLOR="#0000FF">#include</FONT> "<FONT COLOR="#600000">draw.h</FONT>"
+<FONT COLOR="#40F628">0015:</FONT> 
+<FONT COLOR="#40F628">0016:</FONT> <FONT COLOR="#008000">// 空</FONT>
+<FONT COLOR="#40F628">0017:</FONT> <FONT COLOR="#0000FF">#define</FONT> NUM_Y       1   <FONT COLOR="#008000">// 縦方向に何ポリゴン使うか</FONT>
+<FONT COLOR="#40F628">0018:</FONT> <FONT COLOR="#0000FF">#define</FONT> NUM_CIRCLE  32  <FONT COLOR="#008000">// 一回り何ポリゴンか</FONT>
+<FONT COLOR="#40F628">0019:</FONT> <FONT COLOR="#0000FF">#define</FONT> NUM_VERTICES            ((NUM_Y+1)*(NUM_CIRCLE+1))
+<FONT COLOR="#40F628">0020:</FONT> <FONT COLOR="#0000FF">#define</FONT> NUM_INDICES_PERFACE     (3*2)
+<FONT COLOR="#40F628">0021:</FONT> <FONT COLOR="#0000FF">#define</FONT> NUM_FACES               (NUM_Y*NUM_CIRCLE)
+<FONT COLOR="#40F628">0022:</FONT> <FONT COLOR="#0000FF">#define</FONT> NUM_VERTICES_PERFACE    4
+<FONT COLOR="#40F628">0023:</FONT> 
+<FONT COLOR="#40F628">0024:</FONT> <FONT COLOR="#008000">// 床</FONT>
+<FONT COLOR="#40F628">0025:</FONT> <FONT COLOR="#0000FF">#define</FONT> FLOOR_GRID   10
+<FONT COLOR="#40F628">0026:</FONT> <FONT COLOR="#0000FF">#define</FONT> FLOOR_SIZE  (10.0f)
+<FONT COLOR="#40F628">0027:</FONT> <FONT COLOR="#0000FF">#define</FONT> FLOOR_UV    (10.0f)     <FONT COLOR="#008000">// テクスチャーの繰り返し回数</FONT>
+<FONT COLOR="#40F628">0028:</FONT> 
+<FONT COLOR="#40F628">0029:</FONT> <FONT COLOR="#008000">// ----------------------------------------------------------------------------</FONT>
+<FONT COLOR="#40F628">0030:</FONT> <FONT COLOR="#008000">// 空</FONT>
+<FONT COLOR="#40F628">0031:</FONT> LPDIRECT3DVERTEXBUFFER8     pCylinderVB;
+<FONT COLOR="#40F628">0032:</FONT> LPDIRECT3DINDEXBUFFER8      pCylinderIB;
+<FONT COLOR="#40F628">0033:</FONT> LPDIRECT3DTEXTURE8          pCylinderTex;
+<FONT COLOR="#40F628">0034:</FONT> <FONT COLOR="#008000">// 床</FONT>
+<FONT COLOR="#40F628">0035:</FONT> LPDIRECT3DVERTEXBUFFER8     pFloorVB;
+<FONT COLOR="#40F628">0036:</FONT> LPDIRECT3DINDEXBUFFER8      pFloorIB;
+<FONT COLOR="#40F628">0037:</FONT> LPDIRECT3DTEXTURE8          pFloorTex;
+<FONT COLOR="#40F628">0038:</FONT> 
+<FONT COLOR="#40F628">0039:</FONT> <FONT COLOR="#008000">// ----------------------------------------------------------------------------</FONT>
+<FONT COLOR="#40F628">0040:</FONT> <FONT COLOR="#0000FF">void</FONT> InitBg(LPDIRECT3DDEVICE8 lpD3DDev)
+<FONT COLOR="#40F628">0041:</FONT> {
+<FONT COLOR="#40F628">0042:</FONT>     <FONT COLOR="#008000">//</FONT>
+<FONT COLOR="#40F628">0043:</FONT>     <FONT COLOR="#008000">// 円柱</FONT>
+<FONT COLOR="#40F628">0044:</FONT>     <FONT COLOR="#008000">//</FONT>
+<FONT COLOR="#40F628">0045:</FONT>     <FONT COLOR="#008000">// 頂点バッファの作成 </FONT>
+<FONT COLOR="#40F628">0046:</FONT>     D3DVERTEX *pDest;
+<FONT COLOR="#40F628">0047:</FONT>     lpD3DDev-&gt;CreateVertexBuffer( NUM_VERTICES * <FONT COLOR="#0000FF">sizeof</FONT>(D3DVERTEX),
+<FONT COLOR="#40F628">0048:</FONT>                                 D3DUSAGE_WRITEONLY, 
+<FONT COLOR="#40F628">0049:</FONT>                                 D3DFVF_VERTEX, D3DPOOL_MANAGED,
+<FONT COLOR="#40F628">0050:</FONT>                                 &amp;pCylinderVB );
+<FONT COLOR="#40F628">0051:</FONT> 
+<FONT COLOR="#40F628">0052:</FONT>     <FONT COLOR="#008000">// 頂点をセットアップ</FONT>
+<FONT COLOR="#40F628">0053:</FONT>     WORD k=0;
+<FONT COLOR="#40F628">0054:</FONT>     pCylinderVB-&gt;Lock ( 0, 0, (BYTE**)&amp;pDest, 0 );
+<FONT COLOR="#40F628">0055:</FONT>     <FONT COLOR="#0000FF">float</FONT> r = 10.0f;
+<FONT COLOR="#40F628">0056:</FONT>     <FONT COLOR="#0000FF">float</FONT> h = 10.0f;
+<FONT COLOR="#40F628">0057:</FONT>     <FONT COLOR="#0000FF">for</FONT> (DWORD i = 0; i &lt;= NUM_CIRCLE; i++) {
+<FONT COLOR="#40F628">0058:</FONT>         <FONT COLOR="#0000FF">float</FONT> theta = (2*PI*(<FONT COLOR="#0000FF">float</FONT>)i)/(<FONT COLOR="#0000FF">float</FONT>)NUM_CIRCLE;
+<FONT COLOR="#40F628">0059:</FONT>         <FONT COLOR="#0000FF">for</FONT> (DWORD j = 0; j &lt;= NUM_Y; j++) {
+<FONT COLOR="#40F628">0060:</FONT>             pDest-&gt;x = r * (<FONT COLOR="#0000FF">float</FONT>)cos(theta);
+<FONT COLOR="#40F628">0061:</FONT>             pDest-&gt;z = r * (<FONT COLOR="#0000FF">float</FONT>)sin(theta);
+<FONT COLOR="#40F628">0062:</FONT>             pDest-&gt;y = h*((<FONT COLOR="#0000FF">float</FONT>)j/(<FONT COLOR="#0000FF">float</FONT>)NUM_Y-0.0f);
+<FONT COLOR="#40F628">0063:</FONT>             pDest-&gt;nx = 0;
+<FONT COLOR="#40F628">0064:</FONT>             pDest-&gt;nz = 0;
+<FONT COLOR="#40F628">0065:</FONT>             pDest-&gt;ny = 0;
+<FONT COLOR="#40F628">0066:</FONT>             pDest-&gt;tu0 = (<FONT COLOR="#0000FF">float</FONT>)i / (<FONT COLOR="#0000FF">float</FONT>)NUM_CIRCLE;
+<FONT COLOR="#40F628">0067:</FONT>             pDest-&gt;tv0 = 1.0f-(<FONT COLOR="#0000FF">float</FONT>)j / (<FONT COLOR="#0000FF">float</FONT>)NUM_Y;
+<FONT COLOR="#40F628">0068:</FONT>             pDest += 1;
+<FONT COLOR="#40F628">0069:</FONT>         }
+<FONT COLOR="#40F628">0070:</FONT>     }       
+<FONT COLOR="#40F628">0071:</FONT>     pCylinderVB-&gt;Unlock ();
+<FONT COLOR="#40F628">0072:</FONT> 
+<FONT COLOR="#40F628">0073:</FONT> 
+<FONT COLOR="#40F628">0074:</FONT>     <FONT COLOR="#008000">// インデックスをセットアップ</FONT>
+<FONT COLOR="#40F628">0075:</FONT>     WORD *pIndex;
+<FONT COLOR="#40F628">0076:</FONT>     lpD3DDev-&gt;CreateIndexBuffer( NUM_INDICES_PERFACE  * NUM_FACES * <FONT COLOR="#0000FF">sizeof</FONT>(WORD),
+<FONT COLOR="#40F628">0077:</FONT>                                      0 ,
+<FONT COLOR="#40F628">0078:</FONT>                                      D3DFMT_INDEX16, D3DPOOL_DEFAULT,
+<FONT COLOR="#40F628">0079:</FONT>                                      &amp;pCylinderIB );
+<FONT COLOR="#40F628">0080:</FONT>     pCylinderIB-&gt;Lock ( 0, 0, (BYTE**)&amp;pIndex, 0 );
+<FONT COLOR="#40F628">0081:</FONT>     {
+<FONT COLOR="#40F628">0082:</FONT>     <FONT COLOR="#0000FF">for</FONT> (WORD i = 0; i &lt; NUM_CIRCLE; i++) {
+<FONT COLOR="#40F628">0083:</FONT>         <FONT COLOR="#0000FF">for</FONT> (WORD j = 0; j &lt; NUM_Y; j++) {
+<FONT COLOR="#40F628">0084:</FONT>             *pIndex++ = j + 0 + (i+0) * (NUM_Y+1);
+<FONT COLOR="#40F628">0085:</FONT>             *pIndex++ = j + 0 + (i+1) * (NUM_Y+1);
+<FONT COLOR="#40F628">0086:</FONT>             *pIndex++ = j + 1 + (i+0) * (NUM_Y+1);
+<FONT COLOR="#40F628">0087:</FONT> 
+<FONT COLOR="#40F628">0088:</FONT>             *pIndex++ = j + 1 + (i+0) * (NUM_Y+1);
+<FONT COLOR="#40F628">0089:</FONT>             *pIndex++ = j + 0 + (i+1) * (NUM_Y+1);
+<FONT COLOR="#40F628">0090:</FONT>             *pIndex++ = j + 1 + (i+1) * (NUM_Y+1);
+<FONT COLOR="#40F628">0091:</FONT>         }
+<FONT COLOR="#40F628">0092:</FONT>     }
+<FONT COLOR="#40F628">0093:</FONT>     }
+<FONT COLOR="#40F628">0094:</FONT>     pCylinderIB-&gt;Unlock ();
+<FONT COLOR="#40F628">0095:</FONT> 
+<FONT COLOR="#40F628">0096:</FONT>     CTextureMgr::Load(lpD3DDev, "<FONT COLOR="#600000">sky.bmp</FONT>", &amp;pCylinderTex);
+<FONT COLOR="#40F628">0097:</FONT>     
+<FONT COLOR="#40F628">0098:</FONT>     <FONT COLOR="#008000">//</FONT>
+<FONT COLOR="#40F628">0099:</FONT>     <FONT COLOR="#008000">// 床</FONT>
+<FONT COLOR="#40F628">0100:</FONT>     <FONT COLOR="#008000">//</FONT>
+<FONT COLOR="#40F628">0101:</FONT>     <FONT COLOR="#008000">// 頂点バッファの作成 </FONT>
+<FONT COLOR="#40F628">0102:</FONT>     D3DVERTEX *pFloorDest;
+<FONT COLOR="#40F628">0103:</FONT>     lpD3DDev-&gt;CreateVertexBuffer( (FLOOR_GRID+1)*(FLOOR_GRID+1)*<FONT COLOR="#0000FF">sizeof</FONT>(D3DVERTEX),
+<FONT COLOR="#40F628">0104:</FONT>                                 D3DUSAGE_WRITEONLY, D3DFVF_VERTEX, D3DPOOL_MANAGED,
+<FONT COLOR="#40F628">0105:</FONT>                                 &amp;pFloorVB );
+<FONT COLOR="#40F628">0106:</FONT>     <FONT COLOR="#008000">// 頂点をセットアップ</FONT>
+<FONT COLOR="#40F628">0107:</FONT>     {
+<FONT COLOR="#40F628">0108:</FONT>     pFloorVB-&gt;Lock ( 0, 0, (BYTE**)&amp;pFloorDest, 0 );
+<FONT COLOR="#40F628">0109:</FONT>     <FONT COLOR="#0000FF">float</FONT> pos_z = -FLOOR_SIZE;
+<FONT COLOR="#40F628">0110:</FONT>     <FONT COLOR="#0000FF">for</FONT>(DWORD z = 0; z &lt;= FLOOR_GRID; z++){
+<FONT COLOR="#40F628">0111:</FONT>         <FONT COLOR="#0000FF">float</FONT> pos_x = -FLOOR_SIZE;
+<FONT COLOR="#40F628">0112:</FONT>         <FONT COLOR="#0000FF">for</FONT>(DWORD x = 0; x &lt;= FLOOR_GRID; x++){
+<FONT COLOR="#40F628">0113:</FONT>             pFloorDest-&gt;x   = pos_x;
+<FONT COLOR="#40F628">0114:</FONT>             pFloorDest-&gt;z   = pos_z;
+<FONT COLOR="#40F628">0115:</FONT>             pFloorDest-&gt;y   = 0.0f;
+<FONT COLOR="#40F628">0116:</FONT>             pFloorDest-&gt;nx  = 0.0f;
+<FONT COLOR="#40F628">0117:</FONT>             pFloorDest-&gt;nz  = 0.0f;
+<FONT COLOR="#40F628">0118:</FONT>             pFloorDest-&gt;ny  = 1.0f;
+<FONT COLOR="#40F628">0119:</FONT>             pFloorDest-&gt;tu0 = FLOOR_UV*(pos_x+FLOOR_SIZE)/(2.0f*FLOOR_SIZE);
+<FONT COLOR="#40F628">0120:</FONT>             pFloorDest-&gt;tv0 = FLOOR_UV*(pos_z+FLOOR_SIZE)/(2.0f*FLOOR_SIZE);
+<FONT COLOR="#40F628">0121:</FONT>             pFloorDest++;
+<FONT COLOR="#40F628">0122:</FONT>             pos_x += 2*FLOOR_SIZE/FLOOR_GRID;
+<FONT COLOR="#40F628">0123:</FONT>         }
+<FONT COLOR="#40F628">0124:</FONT>         pos_z += 2*FLOOR_SIZE/FLOOR_GRID;
+<FONT COLOR="#40F628">0125:</FONT>     }
+<FONT COLOR="#40F628">0126:</FONT>     pFloorVB-&gt;Unlock ();
+<FONT COLOR="#40F628">0127:</FONT>     }
+<FONT COLOR="#40F628">0128:</FONT> 
+<FONT COLOR="#40F628">0129:</FONT> 
+<FONT COLOR="#40F628">0130:</FONT>     <FONT COLOR="#008000">// インデックスをセットアップ</FONT>
+<FONT COLOR="#40F628">0131:</FONT>     lpD3DDev-&gt;CreateIndexBuffer( 3*2*FLOOR_GRID*FLOOR_GRID * <FONT COLOR="#0000FF">sizeof</FONT>(WORD),
+<FONT COLOR="#40F628">0132:</FONT>                                0,
+<FONT COLOR="#40F628">0133:</FONT>                                D3DFMT_INDEX16, D3DPOOL_MANAGED,
+<FONT COLOR="#40F628">0134:</FONT>                                &amp;pFloorIB );
+<FONT COLOR="#40F628">0135:</FONT>     pFloorIB-&gt;Lock ( 0, 0, (BYTE**)&amp;pIndex, 0 );
+<FONT COLOR="#40F628">0136:</FONT>     {
+<FONT COLOR="#40F628">0137:</FONT>     <FONT COLOR="#0000FF">for</FONT> (WORD i = 0; i &lt; FLOOR_GRID; i++) {
+<FONT COLOR="#40F628">0138:</FONT>         <FONT COLOR="#0000FF">for</FONT> (WORD j = 0; j &lt; FLOOR_GRID; j++) {
+<FONT COLOR="#40F628">0139:</FONT>             *pIndex++ = j + 0 + (i+0) * (FLOOR_GRID+1);
+<FONT COLOR="#40F628">0140:</FONT>             *pIndex++ = j + 0 + (i+1) * (FLOOR_GRID+1);
+<FONT COLOR="#40F628">0141:</FONT>             *pIndex++ = j + 1 + (i+0) * (FLOOR_GRID+1);
+<FONT COLOR="#40F628">0142:</FONT> 
+<FONT COLOR="#40F628">0143:</FONT>             *pIndex++ = j + 1 + (i+0) * (FLOOR_GRID+1);
+<FONT COLOR="#40F628">0144:</FONT>             *pIndex++ = j + 0 + (i+1) * (FLOOR_GRID+1);
+<FONT COLOR="#40F628">0145:</FONT>             *pIndex++ = j + 1 + (i+1) * (FLOOR_GRID+1);
+<FONT COLOR="#40F628">0146:</FONT>         }
+<FONT COLOR="#40F628">0147:</FONT>     }
+<FONT COLOR="#40F628">0148:</FONT>     }
+<FONT COLOR="#40F628">0149:</FONT> 
+<FONT COLOR="#40F628">0150:</FONT> <FONT COLOR="#008000">//  pIndex[0] = 0;  pIndex[1] = 1;  pIndex[2] = 2;</FONT>
+<FONT COLOR="#40F628">0151:</FONT> <FONT COLOR="#008000">//  pIndex[3] = 1;  pIndex[4] = 3;  pIndex[5] = 2;</FONT>
+<FONT COLOR="#40F628">0152:</FONT>     pFloorIB-&gt;Unlock ();
+<FONT COLOR="#40F628">0153:</FONT> 
+<FONT COLOR="#40F628">0154:</FONT>     CTextureMgr::Load(lpD3DDev, "<FONT COLOR="#600000">tile.bmp</FONT>", &amp;pFloorTex);
+<FONT COLOR="#40F628">0155:</FONT> }
+<FONT COLOR="#40F628">0156:</FONT> <FONT COLOR="#008000">// ----------------------------------------------------------------------------</FONT>
+<FONT COLOR="#40F628">0157:</FONT> <FONT COLOR="#0000FF">void</FONT> DrawBg(LPDIRECT3DDEVICE8 lpD3DDev)
+<FONT COLOR="#40F628">0158:</FONT> {
+<FONT COLOR="#40F628">0159:</FONT>     lpD3DDev-&gt;SetRenderState( D3DRS_ALPHABLENDENABLE, FALSE);
+<FONT COLOR="#40F628">0160:</FONT>     lpD3DDev-&gt;SetTextureStageState(0,D3DTSS_COLOROP,    D3DTOP_MODULATE);
+<FONT COLOR="#40F628">0161:</FONT>     lpD3DDev-&gt;SetTextureStageState(0,D3DTSS_COLORARG1,  D3DTA_TEXTURE);
+<FONT COLOR="#40F628">0162:</FONT>     lpD3DDev-&gt;SetTextureStageState(0,D3DTSS_COLORARG2,  D3DTA_DIFFUSE);
+<FONT COLOR="#40F628">0163:</FONT>     lpD3DDev-&gt;SetTextureStageState(1,D3DTSS_COLOROP,    D3DTOP_DISABLE);
+<FONT COLOR="#40F628">0164:</FONT>     <FONT COLOR="#008000">// 空</FONT>
+<FONT COLOR="#40F628">0165:</FONT>     lpD3DDev-&gt;SetTextureStageState(0,D3DTSS_ADDRESSU,   D3DTADDRESS_WRAP);
+<FONT COLOR="#40F628">0166:</FONT>     lpD3DDev-&gt;SetTextureStageState(0,D3DTSS_ADDRESSV,   D3DTADDRESS_CLAMP);
+<FONT COLOR="#40F628">0167:</FONT>     lpD3DDev-&gt;SetTexture(0,pCylinderTex);
+<FONT COLOR="#40F628">0168:</FONT>     lpD3DDev-&gt;SetStreamSource(0, pCylinderVB, <FONT COLOR="#0000FF">sizeof</FONT>(D3DVERTEX));
+<FONT COLOR="#40F628">0169:</FONT>     lpD3DDev-&gt;SetIndices(pCylinderIB,0);
+<FONT COLOR="#40F628">0170:</FONT>     lpD3DDev-&gt;DrawIndexedPrimitive( D3DPT_TRIANGLELIST, 0, NUM_VERTICES, 0 , NUM_FACES*2 );
+<FONT COLOR="#40F628">0171:</FONT>     
+<FONT COLOR="#40F628">0172:</FONT>     <FONT COLOR="#008000">// 床</FONT>
+<FONT COLOR="#40F628">0173:</FONT>     lpD3DDev-&gt;SetTextureStageState(0,D3DTSS_ADDRESSU,   D3DTADDRESS_WRAP);
+<FONT COLOR="#40F628">0174:</FONT>     lpD3DDev-&gt;SetTextureStageState(0,D3DTSS_ADDRESSV,   D3DTADDRESS_WRAP);
+<FONT COLOR="#40F628">0175:</FONT>     lpD3DDev-&gt;SetTexture(0,pFloorTex);
+<FONT COLOR="#40F628">0176:</FONT> 
+<FONT COLOR="#40F628">0177:</FONT>     lpD3DDev-&gt;SetStreamSource(0, pFloorVB, <FONT COLOR="#0000FF">sizeof</FONT>(D3DVERTEX));
+<FONT COLOR="#40F628">0178:</FONT>     lpD3DDev-&gt;SetIndices(pFloorIB,0);
+<FONT COLOR="#40F628">0179:</FONT>     lpD3DDev-&gt;DrawIndexedPrimitive( D3DPT_TRIANGLELIST, 0, (FLOOR_GRID+1)*(FLOOR_GRID+1), 0, 2*FLOOR_GRID*FLOOR_GRID );
+<FONT COLOR="#40F628">0180:</FONT> }
+<FONT COLOR="#40F628">0181:</FONT> <FONT COLOR="#008000">// ----------------------------------------------------------------------------</FONT>
+<FONT COLOR="#40F628">0182:</FONT> <FONT COLOR="#0000FF">void</FONT> CleanBg(LPDIRECT3DDEVICE8 lpD3DDev)
+<FONT COLOR="#40F628">0183:</FONT> {
+<FONT COLOR="#40F628">0184:</FONT>     CTextureMgr::Release(pFloorTex);
+<FONT COLOR="#40F628">0185:</FONT>     CTextureMgr::Release(pCylinderTex);
+<FONT COLOR="#40F628">0186:</FONT> }</PRE>
+</BODY>
+</HTML>

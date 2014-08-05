@@ -1,0 +1,704 @@
+<head>
+	<title>t-pot『Vertex Shader:環境/屈折マッピング』</title>
+	<link rel="stylesheet" type="text/css" href="../if.css">
+</head>
+<meta http-equiv=Content-Type content="text/html; charset=shift_jis">
+<body text=#ffffff>
+
+<div class="contents">
+<center>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<h1>環境/屈折マッピング</h1><br>
+<h3>～映り込みってやつです～</h3>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+</center>
+<h2>■はじめに</h2>
+<image src = "refrect.gif" width = 320 height = 240>
+<p>
+今回は、キューブ環境マップを用いた、反射と屈折です。<br>
+知っている人は、<a href="http://www.microsoft.com/japan/developer/directx/japan/dx8/refract.asp">『頂点シェーダを使った屈折エフェクト～ Cutting Edge DX 8 - 第 3 回目 ～』</A>のパクリだといってしまってはいけません。
+</p>
+
+<p>
+今回のソースは、次のものです。
+</p>
+<ul style = "LIST-STYLE-TYPE:none">
+<li><a href="cube.lzh">cube.lzh (環境/屈折マッピングのソース)</a>
+</ul>
+
+<p>
+内容は次のとおりになっています。
+</p>
+<table>
+<tr><td><a href="main_h.html">main.h</a></td><td>基本的な定数など。変更が無いので、今回も出番無し。</td></tr>
+<tr><td><a href="main_cpp.html">main.cpp</a></td><td>描画に関係しないシステム的な部分。一度作ればあまり書き換えない。</td></tr>
+<tr><td><a href="draw_h.html">draw.h</a></td><td>描画の各関数の定義。特に意味無いので出番無し。</td></tr>
+<tr><td><a href="draw_cpp.html">draw.cpp</a></td><td>メインの描画部分。主にここが説明される。</td></tr>
+<tr><td><a href="vs_vsh.html">vs.vsh</a></td><td>オブジェクト（クマさん）用の頂点シェーダープログラム。これ大事。</td></tr>
+<tr><td><a href="cube_vsh.html">cube.vsh</a></td><td>背景用の頂点シェーダープログラム。てきと～。</td></tr>
+</table>
+<p>
+あと、モデルとして、kuma.xと、背景用テクスチャーearth_0.bmp～earth_0.bmp、earth_u.bmp、earth_d.bmp 
+及び、earth.dds が環境マップ用のテクスチャーとして存在します。<br>
+勿論、VC++ でコンパイルするためのプロジェクトファイル MyBase.dsw MyBase.dsp や、実行ファイル MyBase.exe もついてきます。
+</p>
+
+<p>
+各ソースは、リンクを張ったので、クリックしてみてください
+（最近、『Web 上でソースを見せない奴は、真にソースを公開していない』というのを見てカチンと来たため、
+わざわざリンクを張ったというのは内緒です）。
+</p>
+
+<h2>■キューブマップ (earth.dds) の作り方</h2>
+
+<p>
+キューブマップとは、6枚のテクスチャーを使って、立方体で取り囲んだテクスチャーです。
+</p>
+<image src = "cube_earth.gif">底面があってないのが、ばればれだな。
+<p>
+さて、こんなものをどうやって作るのでしょう。<br>
+実は、DirectX8 のSDK にツールが含まれています。<br>
+[Microsoft DirectX 8 SDK]-[DirectX Utilities]-[DirectX Texture Tool]<br>
+がそれです。
+</p>
+<image src = "tex_tool.gif">
+<p>
+Texture Tool の[File]-[New Texture]を選択して、Type を Cubemap Textureにして、Surface は、A8R8G8B8 で、作ります。<br>
+その後は、テクスチャーを６枚用意して、{View]-[Cube Map Face]で、見る面を選択した後、
+[File]-[Open Onto This Cubemap Face]を使って、各面のテクスチャーを読み込みます。<br>
+ちなみに、今回の場合は、下のテクスチャーに対して、
+</p>
+<image src = "cube_map.gif">
+<table>
+<tr><td>X Positive(正)</td><td>: earth_0.bmp</td></tr>
+<tr><td>Z Negative(負)</td><td>: earth_1.bmp</td></tr>
+<tr><td>X Negative(負)</td><td>: earth_2.bmp</td></tr>
+<tr><td>Z Positive(正)</td><td>: earth_3.bmp</td></tr>
+<tr><td>Y Positive(正)</td><td>: earth_u.bmp</td></tr>
+<tr><td>Y Negative(負)</td><td>: earth_d.bmp</td></tr>
+</table>
+<p>
+で、貼り付けています。<br>
+各画像は、メルカトル図法の元画像の
+</p>
+<image src = "earth.gif">
+<p>
+を、黄色の線のように切り刻んでから、<br>
+上下に関しては、PhotoShop の極座標の変形のフィルターを使って加工し、<br>
+サイズを調整して出力しました。
+</p>
+<p>
+しっかし、めんどくさいっすね。何か方法はないのかしらん。
+</p>
+
+<h2>■サポートしてる？</h2>
+
+<p>
+今回は、頂点シェーダーだけでなく、キューブマップをサポートしているかどうかも調べなければなりません。<br>
+めんどくさかったので、caps.TextureCaps & D3DPTEXTURECAPS_CUBEMAP で、サポート具合を調べて、
+サポートしていなければ、全部ソフトウェアで実行するようにしました。<br>
+よい子は、頂点シェーダーは別に調べて、適切な初期化をして下さい。
+</p>
+<pre class="CodeBlock"><Font color = cyan>
+//-----------------------------------------------------------------------------
+// Desc: Direct3D の初期化
+//-----------------------------------------------------------------------------</Font>
+HRESULT InitD3D( HWND hWnd )
+{
+    <Font color = cyan>// Direct3D オブジェクトを作成</Font>
+    if (NULL == (s_lpD3D = Direct3DCreate8(D3D_SDK_VERSION))){
+        MessageBox(NULL,"Direct3D の作成に失敗しました。",CAPTION,MB_OK | MB_ICONSTOP);
+        return E_FAIL;
+    }
+
+    <Font color = cyan>// 現在の画面モードを取得</Font>
+    D3DDISPLAYMODE d3ddm;
+    if( FAILED( s_lpD3D->GetAdapterDisplayMode( D3DADAPTER_DEFAULT, &d3ddm ) ) ) return E_FAIL;
+
+    <Font color = cyan>// Direct3D 初期化パラメータの設定</Font>
+    ZeroMemory(&s_d3dpp, sizeof(D3DPRESENT_PARAMETERS));
+
+    s_d3dpp.BackBufferCount = 1;
+    if (FULLSCREEN){
+        s_d3dpp.Windowed = FALSE;
+        s_d3dpp.BackBufferWidth = WIDTH;
+        s_d3dpp.BackBufferHeight = HEIGHT;
+    }else{
+        s_d3dpp.Windowed = TRUE;
+        s_d3dpp.BackBufferWidth = 0;
+        s_d3dpp.BackBufferHeight = 0;
+    }
+    <Font color = cyan>// ウインドウ : 現在の画面モードを使用</Font>
+    s_d3dpp.BackBufferFormat = d3ddm.Format;
+    s_d3dpp.MultiSampleType = D3DMULTISAMPLE_NONE;
+    s_d3dpp.SwapEffect = D3DSWAPEFFECT_DISCARD;
+    s_d3dpp.hDeviceWindow = hWnd;
+    <Font color = cyan>// Z バッファの自動作成</Font>
+    s_d3dpp.EnableAutoDepthStencil = TRUE;
+    s_d3dpp.AutoDepthStencilFormat = D3DFMT_D16;
+ 
+    D3DCAPS8 caps;
+    s_lpD3D->GetDeviceCaps(D3DADAPTER_DEFAULT, D3DDEVTYPE_HAL, &caps);
+    
+    <Font color = yellow><b>if( 0 == ( caps.TextureCaps & D3DPTEXTURECAPS_CUBEMAP ) ){
+        // キューブマップをサポートしていなかったら、REF
+        s_lpD3D->CreateDevice(D3DADAPTER_DEFAULT, D3DDEVTYPE_REF,hWnd,D3DCREATE_SOFTWARE_VERTEXPROCESSING,&s_d3dpp,&s_lpD3DDEV);
+        return S_OK;
+    }</b></Font>
+
+    if(caps.VertexShaderVersion < D3DVS_VERSION(1,0)){
+        <Font color = cyan>//vertex shader 1.0 をhwサポートしない場合はD3DCREATE_SOFTWARE_VERTEXPROCESSINGする必要があります</Font>
+        if(FAILED(s_lpD3D->CreateDevice(D3DADAPTER_DEFAULT, D3DDEVTYPE_HAL, hWnd, D3DCREATE_SOFTWARE_VERTEXPROCESSING,&s_d3dpp,&s_lpD3DDEV))){
+            if(FAILED(s_lpD3D->CreateDevice(D3DADAPTER_DEFAULT, D3DDEVTYPE_REF, hWnd, D3DCREATE_HARDWARE_VERTEXPROCESSING | D3DCREATE_PUREDEVICE,&s_d3dpp,&s_lpD3DDEV))){
+                if (FAILED(s_lpD3D->CreateDevice(D3DADAPTER_DEFAULT, D3DDEVTYPE_REF, hWnd, D3DCREATE_SOFTWARE_VERTEXPROCESSING,&s_d3dpp,&s_lpD3DDEV))){
+                    return FALSE;
+                }
+            }
+        }
+    }else{
+        <Font color = cyan>// デバイスの作成 - T&L HAL</Font>
+        if (FAILED(s_lpD3D->CreateDevice(D3DADAPTER_DEFAULT, D3DDEVTYPE_HAL,hWnd,D3DCREATE_HARDWARE_VERTEXPROCESSING,&s_d3dpp,&s_lpD3DDEV))){
+            <Font color = cyan>// 失敗したので HAL で試行</Font>
+            if (FAILED(s_lpD3D->CreateDevice(D3DADAPTER_DEFAULT, D3DDEVTYPE_HAL,hWnd,D3DCREATE_SOFTWARE_VERTEXPROCESSING,&s_d3dpp,&s_lpD3DDEV))){
+                <Font color = cyan>// 失敗したので REF で試行</Font>
+                if (FAILED(s_lpD3D->CreateDevice(D3DADAPTER_DEFAULT, D3DDEVTYPE_REF,hWnd,D3DCREATE_SOFTWARE_VERTEXPROCESSING,&s_d3dpp,&s_lpD3DDEV))){
+                    <Font color = cyan>// 結局失敗した</Font>
+                    MessageBox(NULL,"Direct3D の初期化に失敗しました。",CAPTION,MB_OK | MB_ICONSTOP);
+                    return E_FAIL;
+                }
+            }
+        }
+    }
+    return S_OK;
+}
+</pre>
+<p>
+黄色い部分が、今回の変更点です。
+</p>
+
+
+<h2>■外壁を描く(ザコ戦)</h2>
+
+<p>
+最初に、周りを取り囲んでいる地球のテクスチャーを張った外壁を描画します。<br>
+頂点シェーダーで、オブジェクトが描ける人は、とっとと次に進んでください。
+</p>
+
+<p>
+使用する（グローバルな）オブジェクトは、次の4つです。<br>
+頂点情報が入る頂点バッファ pCubeVB と、ポリゴンが頂点を指定するための pFaceIB、
+各面のテクスチャーpCubeTex[6]と、頂点シェーダーhCubeVertexShaderです。
+</p>
+
+<pre class="CodeBlock">
+LPDIRECT3DVERTEXBUFFER8 pCubeVB = NULL;
+LPDIRECT3DINDEXBUFFER8  pFaceIB = NULL;
+LPDIRECT3DTEXTURE8      pCubeTex[6]  = {NULL,NULL,NULL,NULL,NULL,NULL};	<Font color = cyan>// 壁面用テクスチャー</Font>
+DWORD                   hCubeVertexShader=~0;
+</pre>
+
+<p>
+頂点シェーダー用に、定義する頂点情報は、次のものを用います。
+</p>
+<pre class="CodeBlock">
+typedef struct CubeVertex{
+    D3DXVECTOR3 Position;
+    D3DXVECTOR2 Texture;
+} CubeVertex;
+
+DWORD dwCubeDecl[] = {
+    D3DVSD_STREAM(0),
+    D3DVSD_REG(D3DVSDE_POSITION, D3DVSDT_FLOAT3 ),			<Font color = cyan>//D3DVSDE_POSITION,  0</Font>
+    D3DVSD_REG(D3DVSDE_TEXCOORD0,D3DVSDT_FLOAT2 ),		    <Font color = cyan>//D3DVSDE_TEXCOORD0, 7  </Font>
+    D3DVSD_END()
+};
+</pre>
+<p>
+頂点と座標だけの、今まで取り扱ったものの中で、いちばん簡単なものになっています。
+</p>
+
+<p>
+次のソースは、draw.cpp の各オブジェクトに関する初期化関数である InitRender の一部分です。<br>
+外壁に必要な部分だけを抜き出しました。<br>
+大きさが、2.0f の正方形の箱を作成します。
+</p>
+<pre class="CodeBlock">
+<Font color = cyan>// ------------------------------------------------------------------------
+// 外壁の初期化
+// ------------------------------------------------------------------------</Font>
+D3DXVECTOR3 CubePosition[] = {
+                            D3DXVECTOR3(-1.0f, -1.0f, -1.0f), 
+                            D3DXVECTOR3(-1.0f,  1.0f, -1.0f),    
+                            D3DXVECTOR3( 1.0f,  1.0f, -1.0f),  
+                            D3DXVECTOR3( 1.0f, -1.0f, -1.0f),
+                            D3DXVECTOR3(-1.0f, -1.0f,  1.0f),   
+                            D3DXVECTOR3(-1.0f,  1.0f,  1.0f),   
+                            D3DXVECTOR3( 1.0f,  1.0f,  1.0f),  
+                            D3DXVECTOR3( 1.0f, -1.0f,  1.0f),
+};
+<Font color = cyan>//                     前(z=-1)  左(x=-1)  後(z=+1)  右(x=+1)  上(y=+1)  下(y=-1)</Font>
+WORD CubeVertList[] = {0,1,2,3,  4,5,1,0,  7,6,5,4,  3,2,6,7,  1,5,6,2,  4,0,3,7};
+D3DXVECTOR2 CubeUV[] = {    D3DXVECTOR2(1.0f, 1.0f),   
+                            D3DXVECTOR2(1.0f, 0.0f),
+                            D3DXVECTOR2(0.0f, 0.0f),   
+                            D3DXVECTOR2(0.0f, 1.0f),
+};
+<Font color = cyan>// 頂点バッファの作成 </Font>
+CubeVertex *pDstCube;
+lpD3DDEV->CreateVertexBuffer( NUM_VERTICES * sizeof(CubeVertex),
+                            D3DUSAGE_WRITEONLY | D3DUSAGE_DYNAMIC , 
+                            0, D3DPOOL_DEFAULT,
+                            &pCubeVB );
+
+<Font color = cyan>// 頂点をセットアップ</Font>
+WORD k=0;
+pCubeVB->Lock ( 0, 0, (BYTE**)&pDstCube, D3DLOCK_NOOVERWRITE );
+for (DWORD i = 0; i < NUM_FACES; i++) {
+    for (DWORD j = 0; j < NUM_VERTICES_PERFACE; j++) {
+        pDstCube->Position = CubePosition[CubeVertList[k++]];
+        pDstCube->Texture  = CubeUV[j]; 
+        pDstCube++;
+    }
+}        
+pCubeVB->Unlock ();
+
+<Font color = cyan>// インデックス バッファを作成 </Font>
+WORD *pIndex;
+lpD3DDEV->CreateIndexBuffer( NUM_INDICES_PERFACE  * NUM_FACES * sizeof(WORD),
+                             D3DUSAGE_WRITEONLY | D3DUSAGE_DYNAMIC  ,
+                             D3DFMT_INDEX16, D3DPOOL_DEFAULT,
+                             &pFaceIB );
+<Font color = cyan>// インデックスをセットアップ</Font>
+pFaceIB->Lock ( 0, 0, (BYTE**)&pIndex, D3DLOCK_NOOVERWRITE );
+for ( WORD m = 0; m < NUM_FACES; m++) {
+    *pIndex++ = 0 + NUM_VERTICES_PERFACE * m;
+    *pIndex++ = 3 + NUM_VERTICES_PERFACE * m;
+    *pIndex++ = 2 + NUM_VERTICES_PERFACE * m;
+    *pIndex++ = 2 + NUM_VERTICES_PERFACE * m;
+    *pIndex++ = 1 + NUM_VERTICES_PERFACE * m;
+    *pIndex++ = 0 + NUM_VERTICES_PERFACE * m;
+}
+pFaceIB->Unlock ();
+
+<Font color = cyan>// テクスチャをセットアップ</Font>
+D3DXCreateTextureFromFileEx(lpD3DDEV, "earth_1.bmp"
+                            , 0,0,0,0,D3DFMT_A8R8G8B8, D3DPOOL_MANAGED, D3DX_FILTER_LINEAR, D3DX_FILTER_LINEAR,0, NULL, NULL
+                            , &pCubeTex[0]);<Font color = cyan>// 前(z=-1)</Font>
+D3DXCreateTextureFromFileEx(lpD3DDEV, "earth_2.bmp"
+                            , 0,0,0,0,D3DFMT_A8R8G8B8, D3DPOOL_MANAGED, D3DX_FILTER_LINEAR, D3DX_FILTER_LINEAR,0, NULL, NULL
+                            , &pCubeTex[1]);<Font color = cyan>// 左(x=-1)</Font>
+D3DXCreateTextureFromFileEx(lpD3DDEV, "earth_3.bmp"
+                            , 0,0,0,0,D3DFMT_A8R8G8B8, D3DPOOL_MANAGED, D3DX_FILTER_LINEAR, D3DX_FILTER_LINEAR,0, NULL, NULL
+                            , &pCubeTex[2]);<Font color = cyan>// 後(z=+1)</Font>
+D3DXCreateTextureFromFileEx(lpD3DDEV, "earth_0.bmp"
+                            , 0,0,0,0,D3DFMT_A8R8G8B8, D3DPOOL_MANAGED, D3DX_FILTER_LINEAR, D3DX_FILTER_LINEAR,0, NULL, NULL
+                            , &pCubeTex[3]);<Font color = cyan>// 右(x=+1)</Font>
+D3DXCreateTextureFromFileEx(lpD3DDEV, "earth_u.bmp"
+                            , 0,0,0,0,D3DFMT_A8R8G8B8, D3DPOOL_MANAGED, D3DX_FILTER_LINEAR, D3DX_FILTER_LINEAR,0, NULL, NULL
+                            , &pCubeTex[4]);<Font color = cyan>// 上(y=+1)</Font>
+D3DXCreateTextureFromFileEx(lpD3DDEV, "earth_d.bmp"
+                            , 0,0,0,0,D3DFMT_A8R8G8B8, D3DPOOL_MANAGED, D3DX_FILTER_LINEAR, D3DX_FILTER_LINEAR,0, NULL, NULL
+                            , &pCubeTex[5]);<Font color = cyan>// 下(y=-1)</Font>
+
+<Font color = cyan>// 頂点シェーダの作成</Font>
+ID3DXBuffer*    pshader;
+hr = D3DXAssembleShaderFromFile("cube.vsh", 0,NULL,&pshader,NULL);
+if ( FAILED(hr) ) return hr;
+hr = lpD3DDEV->CreateVertexShader( dwCubeDecl, (DWORD*)pshader->GetBufferPointer(), &hCubeVertexShader, 0 );
+RELEASE(pshader);
+if ( FAILED(hr) ) return hr;
+</pre>
+<p>
+CreateVertexBuffer で、頂点用のメモリを確保してから、
+Lock して、他のプログラムからそのメモリを使えなくしておいて、値を代入します。<br>
+次に、Index バッファを作成して、各ポリゴンがどの頂点を使うか指定します。<br>
+その後、それぞれの面のテクスチャーを読み込みます。<br>
+最後に、使用する頂点シェーダーを読み込みます。
+</p>
+
+<p>
+では、描画です。<br>
+ビュー行列、射影行列を作ったら、その積を計算して、頂点シェーダーのc0～c3レジスタに入れます。<br>
+後は、頂点シェーダーを設定した後、Index バッファを指定して、頂点シェーダーに描画してもらいます。<br>
+各面を描く時に、テクスチャーを指定しなおして（張り替えて）描画します。<br>
+また、他で何があるか分からないので、テクスチャーレジスタの設定をテクスチャーの色だけを使う（頂点色は使わない）設定にしました。
+</p>
+<pre class="CodeBlock"><Font color = cyan>
+//-----------------------------------------------------------------------------
+// Desc: ポリゴンの描画
+//-----------------------------------------------------------------------------</Font>
+void Render(LPDIRECT3DDEVICE8 lpD3DDEV)
+{
+    D3DXMATRIX mWorld, mView, mProj;
+
+    D3DXVECTOR3 eye, lookAt, up;
+    eye.x    = 0.0f; eye.y      = 0.0f; eye.z   = -2.0f;
+    lookAt.x = 0.0f; lookAt.y = 0.0f; lookAt.z = 0.0f;
+    up.x     = 0.0f; up.y       = 1.0f; up.z       = 0.0f;
+    D3DXMatrixLookAtLH(&mView, &eye, &lookAt, &up);
+    
+    D3DXMatrixPerspectiveFovLH(&mProj
+        ,60.0f*PI/180.0f                        <Font color = cyan>// 視野角</Font>
+        ,(float)WIDTH/(float)HEIGHT             <Font color = cyan>// アスペクト比</Font>
+        ,0.01f                                  <Font color = cyan>// 最近接距離</Font>
+        ,100.0f                                 <Font color = cyan>// 最遠方距離</Font>
+        );
+    
+    <Font color = cyan>// ------------------------------------------------------------------------
+    // 立方体
+    // ------------------------------------------------------------------------</Font>
+    if(NULL != pCubeVB){
+        <Font color = cyan>// ワールド・ビュー・射影 行列を設定 </Font>
+        D3DXMATRIX mat, matT;
+        mat = mView * mProj;
+        D3DXMatrixTranspose(&matT, &mat);
+        lpD3DDEV->SetVertexShaderConstant(0, &matT, 4);
+
+        <Font color = cyan>// 頂点シェーダを設定 </Font>
+        lpD3DDEV->SetVertexShader( hCubeVertexShader );
+
+        lpD3DDEV->SetTextureStageState(0,D3DTSS_COLOROP,    D3DTOP_SELECTARG1 );
+        lpD3DDEV->SetTextureStageState(0,D3DTSS_COLORARG1,  D3DTA_TEXTURE);
+       
+        <Font color = cyan>// 立方体を描画</Font>
+        lpD3DDEV->SetStreamSource(0, pCubeVB, sizeof(CubeVertex) );
+        lpD3DDEV->SetIndices( pFaceIB, 0 );
+        for (DWORD i= 0; i<NUM_FACES; i++) {
+            lpD3DDEV->SetTexture(0, pCubeTex[i]);
+            lpD3DDEV->DrawIndexedPrimitive( D3DPT_TRIANGLELIST,
+                0, NUM_VERTICES, NUM_INDICES_PERFACE * i , NUM_PRIMS_PERFACE );
+        }
+    }
+
+    <Font color = cyan>// ------------------------------------------------------------------------
+    // オブジェクト
+    // ------------------------------------------------------------------------
+    
+    // 略</Font>
+}
+</pre>
+
+<p>
+今回の頂点シェーダーはあっさりです。<br>
+透視変換して、テクスチャーのUV値をそのままコピーするだけです。
+</p>
+
+<pre class="CodeBlock">
+vs.1.0
+
+<Font color = cyan>;座標変換</Font>
+dp4 oPos.x, v0, c0 
+dp4 oPos.y, v0, c1 
+dp4 oPos.z, v0, c2 
+dp4 oPos.w, v0, c3    
+
+<Font color = cyan>; メッシュのテクスチャー</Font>
+mov oT0, v7
+</pre>
+
+<p>
+後片付けは、以上グローバルなオブジェクトを開放するだけです。
+</p>
+<pre class="CodeBlock"><Font color = cyan>
+//-----------------------------------------------------------------------------
+// Name: CleanRender()
+//-----------------------------------------------------------------------------</Font>
+void CleanRender(LPDIRECT3DDEVICE8 lpD3DDEV)
+{
+	<Font color = cyan>// 他の処理
+	
+	// ------------------------------------------------------------------------
+	// 外壁
+	// ------------------------------------------------------------------------</Font>
+	RELEASE(pCubeVB);
+	RELEASE(pFaceIB);
+
+	if ( hCubeVertexShader != ~0 ){
+		lpD3DDEV->DeleteVertexShader( hCubeVertexShader );
+		hCubeVertexShader = ~0;
+	}
+	RELEASE(pCubeTex[0]);
+	RELEASE(pCubeTex[1]);
+	RELEASE(pCubeTex[2]);
+	RELEASE(pCubeTex[3]);
+	RELEASE(pCubeTex[4]);
+	RELEASE(pCubeTex[5]);
+}
+</pre>
+
+<h2>■クマさんの描画 (ボス戦)</h2>
+
+<p>
+では、ボスキャラのクマさんの描画です。<br>
+まず、ミラーコーティングをした完全反射のクマさんを表示します。
+</p>
+<image src = "refrect.gif">
+<p>
+pEnvTexture というテクスチャー用のブローバル変数を用意します。<br>
+D3DXCreateCubeTextureFromFileEx で、キューブマップ earth.dds を読み込みます。<br>
+後は、頂点シェーダーを用いて、モデルを描画する時と同じです。<br>
+今回は一寸高速化を意識して、頂点シェーダーの定数レジスタのうち、値が変化しない c12～c14 レジスタを先に設定しました。
+</p>
+
+<pre class="CodeBlock">
+LPDIRECT3DCUBETEXTURE8	pEnvTexture  = NULL;  <Font color = cyan>// 環境マップのテクスチャー</Font>
+
+//-----------------------------------------------------------------------------
+// Name: Render()
+// Desc: ポリゴンの初期化
+//-----------------------------------------------------------------------------</Font>
+HRESULT InitRender(LPDIRECT3DDEVICE8 lpD3DDEV)
+{
+    HRESULT hr;
+
+    <Font color = cyan>// ------------------------------------------------------------------------
+    // 外壁の初期化
+    // ------------------------------------------------------------------------
+    
+    // 済み
+    
+    // ------------------------------------------------------------------------
+    // キューブ環境マップ テクスチャのセットアップ
+    // ------------------------------------------------------------------------</Font>
+    D3DXCreateCubeTextureFromFileEx(lpD3DDEV, 
+        "earth.dds",
+        D3DX_DEFAULT,
+        0,        0,
+        D3DFMT_UNKNOWN,
+        D3DPOOL_MANAGED,
+        D3DX_FILTER_LINEAR,
+        D3DX_FILTER_LINEAR,
+        0,        NULL,        NULL,
+        &pEnvTexture);
+    
+    <Font color = cyan>// ------------------------------------------------------------------------
+    // クマさんの初期化
+    // ------------------------------------------------------------------------</Font>
+    if ( FAILED(LoadXFile("kuma.x", lpD3DDEV)) ) return hr;
+ 
+    <Font color = cyan>// バーテックスシェーダーを作成する</Font>
+    hr = D3DXAssembleShaderFromFile("vs.vsh", 0,NULL,&pshader,NULL);
+    if ( FAILED(hr) ) return hr;
+    hr = lpD3DDEV->CreateVertexShader( dwDecl, (DWORD*)pshader->GetBufferPointer(), &hVertexShader, 0 );
+    RELEASE(pshader);
+    if ( FAILED(hr) ) return hr;
+    
+    <Font color = cyan>// レンダリングの状態の設定</Font>
+    lpD3DDEV->SetRenderState( D3DRS_ZENABLE, TRUE);
+    lpD3DDEV->SetVertexShaderConstant(12, D3DXVECTOR4(0.0f, 0.5f, 1.0f, -1.0f), 1);<Font color = cyan>// 便利な定数</Font>
+    <Font color = cyan>// 屈折用の設定</Font>
+    lpD3DDEV->SetVertexShaderConstant(13, D3DXVECTOR4(1.0f, 1.0f, 1.0f, 0.0f), 1);<Font color = cyan>// 屈折ファクタ (完全反射)</Font>
+    lpD3DDEV->SetVertexShaderConstant(14, D3DXVECTOR4(0.0f, 0.0f,-2.0f, 0.0f), 1);<Font color = cyan>// カメラの位置</Font>
+    
+    return S_OK;
+}
+</pre>
+<p>
+次に描画部分です。<br>
+今度は、（大きすぎたので）少し小さくしたり、回したり、位置を調整するワールド行列を作ります。<br>
+それ以外は、設定する行列が多かったり、テクスチャーが、環境マップの pEnvTexture であること意外は同じです。
+</p>
+
+<pre class="CodeBlock"><Font color = cyan>
+// ----------------------------------------------------------------------------
+// Name: Render()
+// Desc: ポリゴンの描画
+//-----------------------------------------------------------------------------</Font>
+void Render(LPDIRECT3DDEVICE8 lpD3DDEV)
+{
+    D3DXMATRIX mWorld, mView, mProj;
+
+    D3DXVECTOR3 eye, lookAt, up;
+    eye.x    = 0.0f; eye.y      = 0.0f; eye.z   = -2.0f;
+    lookAt.x = 0.0f; lookAt.y = 0.0f; lookAt.z = 0.0f;
+    up.x     = 0.0f; up.y       = 1.0f; up.z       = 0.0f;
+    D3DXMatrixLookAtLH(&mView, &eye, &lookAt, &up);
+    
+    D3DXMatrixPerspectiveFovLH(&mProj
+        ,60.0f*PI/180.0f                        <Font color = cyan>// 視野角</Font>
+        ,(float)WIDTH/(float)HEIGHT             <Font color = cyan>// アスペクト比</Font>
+        ,0.01f                                  <Font color = cyan>// 最近接距離</Font>
+        ,100.0f                                 <Font color = cyan>// 最遠方距離</Font>
+        );
+    
+    <Font color = cyan>// ------------------------------------------------------------------------
+    // 立方体
+    // ------------------------------------------------------------------------
+    
+    // 済み
+    
+    // ------------------------------------------------------------------------
+    // オブジェクト
+    // ------------------------------------------------------------------------</Font>
+    if(NULL != pMeshVB){
+        D3DXMATRIX  m, m2;
+        D3DXMatrixScaling(&mWorld, 0.2f, 0.2f, 0.2f);
+        D3DXMatrixRotationY( &m, timeGetTime()/1000.0f );
+        D3DXMatrixTranslation(&m2, 0, -0.7f, 0);
+        mWorld = mWorld * m * m2;
+        
+        m = mWorld * mView * mProj;
+        D3DXMatrixTranspose( &m ,  &m);
+        lpD3DDEV->SetVertexShaderConstant(0,&m, 4);     <Font color = cyan>// world + ビュー + 透視変換行列</Font>
+        D3DXMatrixTranspose( &m ,  &mWorld);
+        lpD3DDEV->SetVertexShaderConstant(4, &m, 4);    <Font color = cyan>// world 行列</Font>
+        D3DXMatrixInverse( &m,  NULL, &mWorld);
+        lpD3DDEV->SetVertexShaderConstant(8, &m, 4);    <Font color = cyan>// world の逆転置行列</Font>
+
+        lpD3DDEV->SetVertexShader(hVertexShader);
+
+        <Font color = cyan>//メッシュの描画</Font>
+        lpD3DDEV->SetStreamSource(0, pMeshVB, sizeof(D3D_CUSTOMVERTEX));
+        lpD3DDEV->SetIndices(pMeshIndex,0);
+        lpD3DDEV->SetTexture(0, pEnvTexture);
+        for(DWORD i=0;i<dwNumMaterials;i++){
+            lpD3DDEV->DrawIndexedPrimitive(D3DPT_TRIANGLELIST, 
+                                            pSubsetTable[i].VertexStart,
+                                            pSubsetTable[i].VertexCount,
+                                            pSubsetTable[i].FaceStart * 3,
+                                            pSubsetTable[i].FaceCount);
+        }
+    }
+}
+</pre>
+
+<p>
+外壁と大きく違うのは、頂点シェ－ダーです。<br>
+座標変換するだけでなく、法線を用いてテクスチャー座標の計算をします。
+</p>
+
+<pre class="CodeBlock">
+<Font color = cyan>; c0-3   -- world + ビュー + 透視変換行列
+; c4-7   -- world 行列
+; c8-11  -- world の逆転置行列
+; c12    -- {0.0, 0.5, 1.0, -1.0}
+; c14    -- カメラの位置
+; c13    -- 屈折ファクタ N = c13.w * n
+; c15    -- メッシュの色
+;
+; v0	頂点の座標値
+; v3	法線ベクトル
+; v7	テクスチャ座標0</Font>
+
+vs.1.0
+
+<Font color = cyan>; 位置座標を射影空間にトランスフォームし、レジスタに出力</Font>
+dp4 oPos.x, v0, c0
+dp4 oPos.y, v0, c1
+dp4 oPos.z, v0, c2
+dp4 oPos.w, v0, c3
+
+<Font color = cyan>; 頂点位置をワールド空間にトランスフォーム</Font>
+dp4 r0.x, v0, c4
+dp4 r0.y, v0, c5
+dp4 r0.z, v0, c6
+dp4 r0.w, v0, c7
+
+<Font color = cyan>; 法線ベクトルをワールド空間にトランスフォーム</Font>
+dp3 r1.x, v3, c8
+dp3 r1.y, v3, c9
+dp3 r1.z, v3, c10
+
+<Font color = cyan>; ワールド空間の法線ベクトルを正規化</Font>
+dp3 r1.w, r1, r1
+rsq r1.w, r1.w
+mul r1, r1, r1.w  <Font color = cyan>; r1 はワールド空間での規格化された法線</Font>
+
+<Font color = cyan>; 頂点から視点へのベクトル</Font>
+sub r3, c14, r0
+dp3 r2.w, r3, r3
+rsq r2.w, r2.w
+mul r2, r3, r2.w <Font color = cyan>; r1 規格化された頂点から視点へのベクトルE</Font>
+
+<Font color = cyan>; 屈折ファクタをセット</Font>
+mul r4.xyz, r1, c13         <Font color = cyan>; r4 = N (c13 は 1.0f)</Font>
+
+<Font color = cyan>; 2*(E dot N)*N - E を計算し、レジスタに出力</Font>
+dp3 r3, r2, r4              <Font color = cyan>; r3 = E dot N</Font>
+add r3, r3, r3              <Font color = cyan>; r3 = 2 * (E dot N)</Font>
+mad oT0.xyz, r4, r3, -r2    <Font color = cyan>; oT0.xyz = 2 * (E dot N) * N - E</Font>
+mov oT0.w, c12.z            <Font color = cyan>; oT0.w = 1.0f</Font>
+</pre>
+
+<p>
+出力したテクスチャー座標は、
+</p>
+<pre class="CodeBlock">
+oT0.xyz = 2 * (E dot N) * N - E
+</pre>
+<p>
+です。キューブマップで指定するテクスチャー座標は、このベクトルを代入します。<br>
+このベクトルは、法線Nを持つ平面に関して、視線を反射させた時のベクトルです。
+</p>
+<image src = "eye_refrect.gif">
+<p>
+まぁ、よくありがちな反射ベクトルを説明する絵ですが、この説明で理解できるでしょうか？<br>
+複雑と思われるかもしれませんが、ここから先、自分で各テクスチャーの各UV値を求めるのは至難の業です。<br>
+ここまでサポートしてくれるなら、大いに喜ぼうではありませんか。
+</p>
+
+<h2>■屈折マッピング</h2>
+
+<p>
+さて、屈折です。<br>
+下の画像を見てください。<br>
+インドネシアが透けています。さらにオーストラリアも引き伸ばされて表示されています。
+</p>
+<image src = "refract.gif">
+
+<p>
+では、屈折と反射がどこが違うかというと、実は一箇所だけです。<br>
+それは、頂点シェーダーの固定レジスタ c13 を変えます。
+</p>
+
+<pre class="CodeBlock">
+    <Font color = cyan>// 屈折用の設定</Font>
+    lpD3DDEV->SetVertexShaderConstant(13, D3DXVECTOR4(1.0f, 1.0f, 1.0f, 0.0f), 1);<Font color = cyan>// 屈折ファクタ (完全反射)</Font>
+    
+    ↓
+    
+    <Font color = cyan>// 屈折用の設定</Font>
+    lpD3DDEV->SetVertexShaderConstant(13, D3DXVECTOR4(0.5f, 0.5f, 0.5f, 0.0f), 1);<Font color = cyan>// 屈折ファクタ (屈折)</Font></pre>
+
+<p>
+これによる変化は、テクスチャー座標です。<br>
+反射ベクトルが、
+</p>
+<pre class="CodeBlock">
+oT0.xyz = 2 * (E dot c13*N) * c13*N - E = 0.5 * (E dot N) * N - E
+</pre>
+
+<p>
+の変更を受けます。<br>
+このベクトルを図示すると、
+</p>
+
+<image src = "eye_refract.gif">
+
+<p>
+のように、反射ではなく、内部にもぐりこむ屈折の作用を引き起こします。<br>
+但し、物体から出て行くときの効果は何も考慮されていないので、擬似的なものに過ぎないのですが、
+ゲームや、デモとして使われる分には、必要十分な効果でしょう。
+</p>
+
+<h2>■最後に</h2>
+
+<p>
+今回は、屈折のデモを解説してみました。<br>
+屈折のデモをまじめに勉強したのは今回が初めてだったのですが、
+小手先のテクニックでずいぶんやれるものだと感心しています。<br>
+こんな、一寸のネタで大いに驚かすような物を作りたいですね。
+</p>
+
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<center>
+<p><a href="../index.html">もどる</a></p>
+<p><a href="mailto:imagire@gmail.com">imagire@gmail.com</a></p>
+</center>
+</body>
+</html>

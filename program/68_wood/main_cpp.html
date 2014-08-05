@@ -1,0 +1,479 @@
+<HTML>
+<HEAD>
+<TITLE>main.cpp</TITLE>
+<meta name="GENERATOR" content="cpp2html 2.1 by Niisaka">
+<meta http-equiv="Content-Type" content="text/html">
+<meta http-equiv="Content-Style-Type" content="text/css">
+<STYLE TYPE="text/css">
+<!--
+SPAN.comment { color:#008000; font-weight:normal; font-style:normal;}
+SPAN.keyword { color:#0000FF; font-weight:normal; font-style:normal;}
+SPAN.string { color:#600000; font-weight:normal; font-style:normal;}
+SPAN.linenum { color:#A0A0A0; font-weight:normal; font-style:normal;}
+-->
+</STYLE>
+</HEAD>
+<BODY TEXT="#000000" BGCOLOR="#FFFFFF">
+<PRE><SPAN CLASS="linenum">0001:</SPAN> <SPAN CLASS="comment">// ----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0002:</SPAN> <SPAN CLASS="comment">//</SPAN>
+<SPAN CLASS="linenum">0003:</SPAN> <SPAN CLASS="comment">// main.cpp - GLUT で Cg のサンプルソース</SPAN>
+<SPAN CLASS="linenum">0004:</SPAN> <SPAN CLASS="comment">// </SPAN>
+<SPAN CLASS="linenum">0005:</SPAN> <SPAN CLASS="comment">// Copyright (c) 2002 今給黎 隆 (imagire@nify.com)</SPAN>
+<SPAN CLASS="linenum">0006:</SPAN> <SPAN CLASS="comment">// All Rights Reserved.</SPAN>
+<SPAN CLASS="linenum">0007:</SPAN> <SPAN CLASS="comment">//</SPAN>
+<SPAN CLASS="linenum">0008:</SPAN> <SPAN CLASS="comment">// ----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0009:</SPAN> <SPAN CLASS="keyword">#define</SPAN> GLH_EXT_SINGLE_FILE
+<SPAN CLASS="linenum">0010:</SPAN> <SPAN CLASS="keyword">#ifdef</SPAN> _WIN32
+<SPAN CLASS="linenum">0011:</SPAN> <SPAN CLASS="keyword">#pragma</SPAN> warning (disable:4786)
+<SPAN CLASS="linenum">0012:</SPAN> <SPAN CLASS="keyword">#endif</SPAN>
+<SPAN CLASS="linenum">0013:</SPAN> <SPAN CLASS="keyword">#pragma</SPAN> warning (disable:4267)
+<SPAN CLASS="linenum">0014:</SPAN> 
+<SPAN CLASS="linenum">0015:</SPAN> <SPAN CLASS="keyword">#include</SPAN> &lt;math.h&gt;
+<SPAN CLASS="linenum">0016:</SPAN> <SPAN CLASS="keyword">#include</SPAN> &lt;stdio.h&gt;
+<SPAN CLASS="linenum">0017:</SPAN> <SPAN CLASS="keyword">#include</SPAN> &lt;assert.h&gt;
+<SPAN CLASS="linenum">0018:</SPAN> <SPAN CLASS="keyword">#include</SPAN> &lt;GL/glut.h&gt;
+<SPAN CLASS="linenum">0019:</SPAN> <SPAN CLASS="keyword">#include</SPAN> &lt;Cg/cg.h&gt;
+<SPAN CLASS="linenum">0020:</SPAN> <SPAN CLASS="keyword">#include</SPAN> &lt;Cg/cgGL.h&gt;
+<SPAN CLASS="linenum">0021:</SPAN> <SPAN CLASS="keyword">#include</SPAN> &lt;glh_glut.h&gt;
+<SPAN CLASS="linenum">0022:</SPAN> <SPAN CLASS="keyword">#include</SPAN> "<SPAN CLASS="string">matrix.h</SPAN>"
+<SPAN CLASS="linenum">0023:</SPAN> <SPAN CLASS="keyword">#include</SPAN> "<SPAN CLASS="string">noise.h</SPAN>"
+<SPAN CLASS="linenum">0024:</SPAN> 
+<SPAN CLASS="linenum">0025:</SPAN> <SPAN CLASS="comment">// ---------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0026:</SPAN> <SPAN CLASS="comment">// オブジェクト</SPAN>
+<SPAN CLASS="linenum">0027:</SPAN> <SPAN CLASS="comment">// ---------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0028:</SPAN> 
+<SPAN CLASS="linenum">0029:</SPAN> <SPAN CLASS="keyword">static</SPAN> <SPAN CLASS="keyword">float</SPAN> r = 0.0f;      <SPAN CLASS="comment">// ポリゴンの回転角</SPAN>
+<SPAN CLASS="linenum">0030:</SPAN> 
+<SPAN CLASS="linenum">0031:</SPAN> <SPAN CLASS="comment">// テクスチャ</SPAN>
+<SPAN CLASS="linenum">0032:</SPAN> <SPAN CLASS="keyword">static</SPAN> CNoise           noise;
+<SPAN CLASS="linenum">0033:</SPAN> <SPAN CLASS="keyword">static</SPAN> <SPAN CLASS="keyword">int</SPAN>              g_iNoiseTex;
+<SPAN CLASS="linenum">0034:</SPAN> <SPAN CLASS="keyword">static</SPAN> <SPAN CLASS="keyword">int</SPAN>              g_iPilseTrainTex;
+<SPAN CLASS="linenum">0035:</SPAN> 
+<SPAN CLASS="linenum">0036:</SPAN> <SPAN CLASS="comment">// Cg のオブジェクト</SPAN>
+<SPAN CLASS="linenum">0037:</SPAN> cgContext               *CgContext              = NULL;
+<SPAN CLASS="linenum">0038:</SPAN> <SPAN CLASS="comment">// 頂点プログラム</SPAN>
+<SPAN CLASS="linenum">0039:</SPAN> <SPAN CLASS="keyword">static</SPAN> cgProgramIter    *VertexProgramIter      = NULL;
+<SPAN CLASS="linenum">0040:</SPAN> <SPAN CLASS="keyword">static</SPAN> cgBindIter       *WPMatrix               = NULL;
+<SPAN CLASS="linenum">0041:</SPAN> <SPAN CLASS="keyword">static</SPAN> cgBindIter       *WMatrix                = NULL;
+<SPAN CLASS="linenum">0042:</SPAN> <SPAN CLASS="keyword">static</SPAN> cgBindIter       *WITMatrix              = NULL;
+<SPAN CLASS="linenum">0043:</SPAN> <SPAN CLASS="keyword">static</SPAN> cgBindIter       *LightPos               = NULL;
+<SPAN CLASS="linenum">0044:</SPAN> <SPAN CLASS="keyword">static</SPAN> cgBindIter       *ShaderMatrix           = NULL;
+<SPAN CLASS="linenum">0045:</SPAN> <SPAN CLASS="comment">// フラグメントプログラム</SPAN>
+<SPAN CLASS="linenum">0046:</SPAN> <SPAN CLASS="keyword">static</SPAN> cgProgramIter    *FragmentProgramIter    = NULL;
+<SPAN CLASS="linenum">0047:</SPAN> <SPAN CLASS="keyword">static</SPAN> cgBindIter       *fLightWoodColorBind    = NULL;
+<SPAN CLASS="linenum">0048:</SPAN> <SPAN CLASS="keyword">static</SPAN> cgBindIter       *fDarkWoodColorBind     = NULL;
+<SPAN CLASS="linenum">0049:</SPAN> <SPAN CLASS="keyword">static</SPAN> cgBindIter       *fHighNoiseLevelBind    = NULL;
+<SPAN CLASS="linenum">0050:</SPAN> <SPAN CLASS="keyword">static</SPAN> cgBindIter       *fBaseRadiusFreqBind    = NULL;
+<SPAN CLASS="linenum">0051:</SPAN> <SPAN CLASS="keyword">static</SPAN> cgBindIter       *fLowPulseAmpBind       = NULL;
+<SPAN CLASS="linenum">0052:</SPAN> <SPAN CLASS="keyword">static</SPAN> cgBindIter       *NoiseMapBind           = NULL;
+<SPAN CLASS="linenum">0053:</SPAN> <SPAN CLASS="keyword">static</SPAN> cgBindIter       *PulseTrainMapBind      = NULL;
+<SPAN CLASS="linenum">0054:</SPAN> 
+<SPAN CLASS="linenum">0055:</SPAN> <SPAN CLASS="keyword">void</SPAN> myRotationMatrix(<SPAN CLASS="keyword">const</SPAN> <SPAN CLASS="keyword">float</SPAN> fDegree, <SPAN CLASS="keyword">const</SPAN> <SPAN CLASS="keyword">float</SPAN> fX, <SPAN CLASS="keyword">const</SPAN> <SPAN CLASS="keyword">float</SPAN> fY, <SPAN CLASS="keyword">const</SPAN> <SPAN CLASS="keyword">float</SPAN> fZ, <SPAN CLASS="keyword">float</SPAN>* m_fData)
+<SPAN CLASS="linenum">0056:</SPAN> {
+<SPAN CLASS="linenum">0057:</SPAN>     <SPAN CLASS="keyword">float</SPAN> sinA, cosA;
+<SPAN CLASS="linenum">0058:</SPAN>     <SPAN CLASS="keyword">float</SPAN> invCosA;
+<SPAN CLASS="linenum">0059:</SPAN>     <SPAN CLASS="keyword">float</SPAN> x, y, z;
+<SPAN CLASS="linenum">0060:</SPAN>     <SPAN CLASS="keyword">float</SPAN> xy, xz, yz;
+<SPAN CLASS="linenum">0061:</SPAN>     <SPAN CLASS="keyword">float</SPAN> xx, yy, zz;
+<SPAN CLASS="linenum">0062:</SPAN>     <SPAN CLASS="keyword">float</SPAN> fRadian = fDegree * 0.0174532925199f;
+<SPAN CLASS="linenum">0063:</SPAN> 
+<SPAN CLASS="linenum">0064:</SPAN>     x = fX;
+<SPAN CLASS="linenum">0065:</SPAN>     y = fY;
+<SPAN CLASS="linenum">0066:</SPAN>     z = fZ;
+<SPAN CLASS="linenum">0067:</SPAN> 
+<SPAN CLASS="linenum">0068:</SPAN>     <SPAN CLASS="keyword">float</SPAN> mult = 1.0f / sqrtf(x * x + y * y + z * z);
+<SPAN CLASS="linenum">0069:</SPAN>     x *= mult;
+<SPAN CLASS="linenum">0070:</SPAN>     y *= mult;
+<SPAN CLASS="linenum">0071:</SPAN>     z *= mult;
+<SPAN CLASS="linenum">0072:</SPAN> 
+<SPAN CLASS="linenum">0073:</SPAN> 
+<SPAN CLASS="linenum">0074:</SPAN>     sinA = (<SPAN CLASS="keyword">float</SPAN>)sinf(fRadian);
+<SPAN CLASS="linenum">0075:</SPAN>     cosA = (<SPAN CLASS="keyword">float</SPAN>)cosf(fRadian);
+<SPAN CLASS="linenum">0076:</SPAN>     invCosA = 1.0f - cosA;
+<SPAN CLASS="linenum">0077:</SPAN> 
+<SPAN CLASS="linenum">0078:</SPAN>     xy = x * y;
+<SPAN CLASS="linenum">0079:</SPAN>     xz = x * z;
+<SPAN CLASS="linenum">0080:</SPAN>     yz = y * z;
+<SPAN CLASS="linenum">0081:</SPAN> 
+<SPAN CLASS="linenum">0082:</SPAN>     xx = x * x;
+<SPAN CLASS="linenum">0083:</SPAN>     yy = y * y;
+<SPAN CLASS="linenum">0084:</SPAN>     zz = z * z;
+<SPAN CLASS="linenum">0085:</SPAN> 
+<SPAN CLASS="linenum">0086:</SPAN>     m_fData[0 ] = (invCosA * xx) + (cosA);
+<SPAN CLASS="linenum">0087:</SPAN>     m_fData[1 ] = (invCosA * xy) - (sinA * z );
+<SPAN CLASS="linenum">0088:</SPAN>     m_fData[2 ] = (invCosA * xz) + (sinA * y );
+<SPAN CLASS="linenum">0089:</SPAN>     m_fData[3 ] = 0.0F;
+<SPAN CLASS="linenum">0090:</SPAN> 
+<SPAN CLASS="linenum">0091:</SPAN>     m_fData[4 ] = (invCosA * xy) + (sinA * z);
+<SPAN CLASS="linenum">0092:</SPAN>     m_fData[5 ] = (invCosA * yy) + (cosA);
+<SPAN CLASS="linenum">0093:</SPAN>     m_fData[6 ] = (invCosA * yz) - (sinA * x);
+<SPAN CLASS="linenum">0094:</SPAN>     m_fData[7 ] = 0.0F;
+<SPAN CLASS="linenum">0095:</SPAN> 
+<SPAN CLASS="linenum">0096:</SPAN>     m_fData[8 ] = (invCosA * xz) - (sinA * y);
+<SPAN CLASS="linenum">0097:</SPAN>     m_fData[9 ] = (invCosA * yz) + (sinA * x);
+<SPAN CLASS="linenum">0098:</SPAN>     m_fData[10] = (invCosA * zz) + (cosA);
+<SPAN CLASS="linenum">0099:</SPAN>     m_fData[11] = 0.0F;
+<SPAN CLASS="linenum">0100:</SPAN> 
+<SPAN CLASS="linenum">0101:</SPAN>     m_fData[12] = m_fData[13] = m_fData[14] = 0.0F;
+<SPAN CLASS="linenum">0102:</SPAN>     
+<SPAN CLASS="linenum">0103:</SPAN>     m_fData[15] = 1.0F;
+<SPAN CLASS="linenum">0104:</SPAN> }
+<SPAN CLASS="linenum">0105:</SPAN> 
+<SPAN CLASS="linenum">0106:</SPAN> <SPAN CLASS="comment">// ---------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0107:</SPAN> <SPAN CLASS="comment">// min から max の間を0から1まで、スムーズにつなぐ</SPAN>
+<SPAN CLASS="linenum">0108:</SPAN> <SPAN CLASS="comment">// ---------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0109:</SPAN> <SPAN CLASS="keyword">float</SPAN> getSmoothStep(<SPAN CLASS="keyword">float</SPAN> min, <SPAN CLASS="keyword">float</SPAN> max, <SPAN CLASS="keyword">float</SPAN> x)
+<SPAN CLASS="linenum">0110:</SPAN> {
+<SPAN CLASS="linenum">0111:</SPAN>     <SPAN CLASS="keyword">if</SPAN> (x &lt; min) {
+<SPAN CLASS="linenum">0112:</SPAN>         <SPAN CLASS="keyword">return</SPAN> 0;
+<SPAN CLASS="linenum">0113:</SPAN>     }<SPAN CLASS="keyword">else</SPAN> <SPAN CLASS="keyword">if</SPAN> (x &gt; max) {
+<SPAN CLASS="linenum">0114:</SPAN>         <SPAN CLASS="keyword">return</SPAN> 1;
+<SPAN CLASS="linenum">0115:</SPAN>     }<SPAN CLASS="keyword">else</SPAN>{
+<SPAN CLASS="linenum">0116:</SPAN>         <SPAN CLASS="keyword">float</SPAN> t = (x-min)/(max-min);
+<SPAN CLASS="linenum">0117:</SPAN>         <SPAN CLASS="keyword">return</SPAN> (3 - 2*t)*t*t;
+<SPAN CLASS="linenum">0118:</SPAN>     }
+<SPAN CLASS="linenum">0119:</SPAN> }
+<SPAN CLASS="linenum">0120:</SPAN> <SPAN CLASS="comment">// ---------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0121:</SPAN> <SPAN CLASS="comment">// いい感じの山になっているテクスチャを作る</SPAN>
+<SPAN CLASS="linenum">0122:</SPAN> <SPAN CLASS="comment">// ---------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0123:</SPAN> GLint generateSmoothPulseTrain()
+<SPAN CLASS="linenum">0124:</SPAN> {
+<SPAN CLASS="linenum">0125:</SPAN>     <SPAN CLASS="keyword">const</SPAN> <SPAN CLASS="keyword">int</SPAN> iWidth = 512;
+<SPAN CLASS="linenum">0126:</SPAN>     <SPAN CLASS="keyword">unsigned</SPAN> <SPAN CLASS="keyword">char</SPAN>* pCharBuf = <SPAN CLASS="keyword">new</SPAN> <SPAN CLASS="keyword">unsigned</SPAN> <SPAN CLASS="keyword">char</SPAN>[iWidth];
+<SPAN CLASS="linenum">0127:</SPAN> 
+<SPAN CLASS="linenum">0128:</SPAN>     <SPAN CLASS="keyword">for</SPAN> (<SPAN CLASS="keyword">int</SPAN> i = 0; i &lt; iWidth; ++i) {
+<SPAN CLASS="linenum">0129:</SPAN>         <SPAN CLASS="keyword">float</SPAN> fX = <SPAN CLASS="keyword">float</SPAN>(i) / <SPAN CLASS="keyword">float</SPAN>(iWidth);
+<SPAN CLASS="linenum">0130:</SPAN>         <SPAN CLASS="keyword">float</SPAN> fVal = getSmoothStep(0.1, 0.65, fX) - getSmoothStep(0.8, 0.95, fX);
+<SPAN CLASS="linenum">0131:</SPAN>         pCharBuf[i] = 255 * fVal;
+<SPAN CLASS="linenum">0132:</SPAN>     }
+<SPAN CLASS="linenum">0133:</SPAN> 
+<SPAN CLASS="linenum">0134:</SPAN>     GLuint texid;
+<SPAN CLASS="linenum">0135:</SPAN>     glGenTextures(1, &amp;texid);
+<SPAN CLASS="linenum">0136:</SPAN>     glBindTexture(GL_TEXTURE_1D, texid);
+<SPAN CLASS="linenum">0137:</SPAN>     glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+<SPAN CLASS="linenum">0138:</SPAN>     glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_NEAREST);
+<SPAN CLASS="linenum">0139:</SPAN>     glTexParameteri(GL_TEXTURE_1D, GL_GENERATE_MIPMAP_SGIS, GL_TRUE);
+<SPAN CLASS="linenum">0140:</SPAN>     glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+<SPAN CLASS="linenum">0141:</SPAN>     glTexImage1D(GL_TEXTURE_1D, 0, GL_LUMINANCE, iWidth, 0, GL_LUMINANCE, GL_UNSIGNED_BYTE, pCharBuf);
+<SPAN CLASS="linenum">0142:</SPAN> 
+<SPAN CLASS="linenum">0143:</SPAN>     <SPAN CLASS="keyword">delete</SPAN> [] pCharBuf;
+<SPAN CLASS="linenum">0144:</SPAN>     <SPAN CLASS="keyword">return</SPAN> texid;
+<SPAN CLASS="linenum">0145:</SPAN> }
+<SPAN CLASS="linenum">0146:</SPAN> <SPAN CLASS="comment">// ---------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0147:</SPAN> <SPAN CLASS="comment">// ライト方向の設定</SPAN>
+<SPAN CLASS="linenum">0148:</SPAN> <SPAN CLASS="comment">// ---------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0149:</SPAN> <SPAN CLASS="keyword">void</SPAN> updateLights()
+<SPAN CLASS="linenum">0150:</SPAN> {
+<SPAN CLASS="linenum">0151:</SPAN>     ifVector4 v = {-5.0f, 5.0f, 3.0f, 1.0f};<SPAN CLASS="comment">// ライトの位置</SPAN>
+<SPAN CLASS="linenum">0152:</SPAN>     ifMatrix m;
+<SPAN CLASS="linenum">0153:</SPAN> 
+<SPAN CLASS="linenum">0154:</SPAN>     <SPAN CLASS="comment">// ビュー行列を所得</SPAN>
+<SPAN CLASS="linenum">0155:</SPAN>     glGetFloatv(GL_TRANSPOSE_MODELVIEW_MATRIX_ARB, (<SPAN CLASS="keyword">float</SPAN>*)&amp;m[0][0]);
+<SPAN CLASS="linenum">0156:</SPAN> 
+<SPAN CLASS="linenum">0157:</SPAN>     <SPAN CLASS="comment">// ライトの位置をビュー座標系に変換</SPAN>
+<SPAN CLASS="linenum">0158:</SPAN>     ifMatrixTranspose(&amp;m, (<SPAN CLASS="keyword">const</SPAN> ifMatrix *)&amp;m);
+<SPAN CLASS="linenum">0159:</SPAN>     ifVec4Transform(&amp;v, &amp;v, (<SPAN CLASS="keyword">const</SPAN> ifMatrix *)&amp;m);
+<SPAN CLASS="linenum">0160:</SPAN> 
+<SPAN CLASS="linenum">0161:</SPAN>     cgGLBindUniform4f(VertexProgramIter, LightPos, v[0], v[1], v[2], v[3]);
+<SPAN CLASS="linenum">0162:</SPAN> }
+<SPAN CLASS="linenum">0163:</SPAN> <SPAN CLASS="comment">// ---------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0164:</SPAN> <SPAN CLASS="comment">// 画面描画</SPAN>
+<SPAN CLASS="linenum">0165:</SPAN> <SPAN CLASS="comment">// ---------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0166:</SPAN> <SPAN CLASS="keyword">void</SPAN> display(<SPAN CLASS="keyword">void</SPAN>)
+<SPAN CLASS="linenum">0167:</SPAN> {
+<SPAN CLASS="linenum">0168:</SPAN>     ifMatrix mWorld, m;
+<SPAN CLASS="linenum">0169:</SPAN>     cgError Ret;
+<SPAN CLASS="linenum">0170:</SPAN>     
+<SPAN CLASS="linenum">0171:</SPAN>     <SPAN CLASS="comment">// -----------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0172:</SPAN>     <SPAN CLASS="comment">// 画面のクリア</SPAN>
+<SPAN CLASS="linenum">0173:</SPAN>     <SPAN CLASS="comment">// -----------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0174:</SPAN>     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+<SPAN CLASS="linenum">0175:</SPAN> 
+<SPAN CLASS="linenum">0176:</SPAN>     <SPAN CLASS="comment">// -----------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0177:</SPAN>     <SPAN CLASS="comment">// ビュー行列の設定</SPAN>
+<SPAN CLASS="linenum">0178:</SPAN>     <SPAN CLASS="comment">// -----------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0179:</SPAN>     glMatrixMode(GL_MODELVIEW);
+<SPAN CLASS="linenum">0180:</SPAN>     glLoadIdentity();
+<SPAN CLASS="linenum">0181:</SPAN>     gluLookAt(  0.0, 4.0, 6.0,      <SPAN CLASS="comment">// 視点</SPAN>
+<SPAN CLASS="linenum">0182:</SPAN>                 0.0, 1.0, 0.0,      <SPAN CLASS="comment">// 注目点</SPAN>
+<SPAN CLASS="linenum">0183:</SPAN>                 0.0, 1.0, 0.0);     <SPAN CLASS="comment">// 上方向</SPAN>
+<SPAN CLASS="linenum">0184:</SPAN> 
+<SPAN CLASS="linenum">0185:</SPAN>     glPushMatrix();                 <SPAN CLASS="comment">// ビュー行列が他のポリゴンでも使えるよう退避</SPAN>
+<SPAN CLASS="linenum">0186:</SPAN> 
+<SPAN CLASS="linenum">0187:</SPAN>     <SPAN CLASS="comment">// -----------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0188:</SPAN>     <SPAN CLASS="comment">// ライト方向の設定</SPAN>
+<SPAN CLASS="linenum">0189:</SPAN>     <SPAN CLASS="comment">// -----------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0190:</SPAN>     updateLights();
+<SPAN CLASS="linenum">0191:</SPAN> 
+<SPAN CLASS="linenum">0192:</SPAN>     <SPAN CLASS="comment">// -----------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0193:</SPAN>     <SPAN CLASS="comment">// Cg による描画へ切り替え</SPAN>
+<SPAN CLASS="linenum">0194:</SPAN>     <SPAN CLASS="comment">// -----------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0195:</SPAN>     Ret = cgGLBindProgram(VertexProgramIter);
+<SPAN CLASS="linenum">0196:</SPAN>     assert(Ret == cgNoError);
+<SPAN CLASS="linenum">0197:</SPAN>     cgGLEnableProgramType(cgVertexProfile);
+<SPAN CLASS="linenum">0198:</SPAN> 
+<SPAN CLASS="linenum">0199:</SPAN>     Ret = cgGLBindProgram(FragmentProgramIter);
+<SPAN CLASS="linenum">0200:</SPAN>     assert(Ret == cgNoError);
+<SPAN CLASS="linenum">0201:</SPAN>     cgGLEnableProgramType(cgFragmentProfile);
+<SPAN CLASS="linenum">0202:</SPAN> 
+<SPAN CLASS="linenum">0203:</SPAN>     <SPAN CLASS="comment">// -----------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0204:</SPAN>     <SPAN CLASS="comment">// テクスチャの設定</SPAN>
+<SPAN CLASS="linenum">0205:</SPAN>     <SPAN CLASS="comment">// -----------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0206:</SPAN>     cgGLActiveTexture(NoiseMapBind);
+<SPAN CLASS="linenum">0207:</SPAN>     glEnable(GL_TEXTURE_3D_EXT);
+<SPAN CLASS="linenum">0208:</SPAN>     glBindTexture(GL_TEXTURE_3D_EXT, g_iNoiseTex); 
+<SPAN CLASS="linenum">0209:</SPAN> 
+<SPAN CLASS="linenum">0210:</SPAN>     cgGLActiveTexture(PulseTrainMapBind);
+<SPAN CLASS="linenum">0211:</SPAN>     glEnable(GL_TEXTURE_1D);
+<SPAN CLASS="linenum">0212:</SPAN>     glBindTexture(GL_TEXTURE_1D, g_iPilseTrainTex); 
+<SPAN CLASS="linenum">0213:</SPAN> 
+<SPAN CLASS="linenum">0214:</SPAN>     <SPAN CLASS="comment">// -----------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0215:</SPAN>     <SPAN CLASS="comment">// 行列を設定する</SPAN>
+<SPAN CLASS="linenum">0216:</SPAN>     <SPAN CLASS="comment">// -----------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0217:</SPAN>     ifMatrixIdentity( &amp;mWorld );
+<SPAN CLASS="linenum">0218:</SPAN>     ifMatrixRotationX(&amp;m, -IF_PI*90/180);
+<SPAN CLASS="linenum">0219:</SPAN>     ifMatrixMultiply( &amp;mWorld, (<SPAN CLASS="keyword">const</SPAN> ifMatrix *)&amp;mWorld, (<SPAN CLASS="keyword">const</SPAN> ifMatrix *)&amp;m );
+<SPAN CLASS="linenum">0220:</SPAN>     ifMatrixRotationY(&amp;m,  IF_PI* r/180);
+<SPAN CLASS="linenum">0221:</SPAN>     ifMatrixMultiply( &amp;mWorld, (<SPAN CLASS="keyword">const</SPAN> ifMatrix *)&amp;mWorld, (<SPAN CLASS="keyword">const</SPAN> ifMatrix *)&amp;m );
+<SPAN CLASS="linenum">0222:</SPAN>     
+<SPAN CLASS="linenum">0223:</SPAN>     glMultMatrixf((<SPAN CLASS="keyword">const</SPAN> <SPAN CLASS="keyword">float</SPAN> *)&amp;mWorld);
+<SPAN CLASS="linenum">0224:</SPAN> 
+<SPAN CLASS="linenum">0225:</SPAN> <SPAN CLASS="keyword">#if</SPAN> 0
+<SPAN CLASS="linenum">0226:</SPAN>     <SPAN CLASS="comment">// さびた感じ</SPAN>
+<SPAN CLASS="linenum">0227:</SPAN>     cgGLBindUniform4f(FragmentProgramIter, fLightWoodColorBind, 0.76, 0.41, 0.17, 0.0);
+<SPAN CLASS="linenum">0228:</SPAN>     cgGLBindUniform4f(FragmentProgramIter, fDarkWoodColorBind,  0.42, 0.22, 0.03, 0.0);
+<SPAN CLASS="linenum">0229:</SPAN>     cgGLBindUniform4f(FragmentProgramIter, fHighNoiseLevelBind, 0.04, 0.0, 0.0, 0.0);
+<SPAN CLASS="linenum">0230:</SPAN>     cgGLBindUniform4f(FragmentProgramIter, fBaseRadiusFreqBind, 0.70, 0.0, 0.0, 0.0);
+<SPAN CLASS="linenum">0231:</SPAN>     cgGLBindUniform4f(FragmentProgramIter, fLowPulseAmpBind,    1.5, 0.0, 0.0, 0.0);    
+<SPAN CLASS="linenum">0232:</SPAN>     cgGLBindUniformMatrixcf(VertexProgramIter, ShaderMatrix, (<SPAN CLASS="keyword">const</SPAN> <SPAN CLASS="keyword">float</SPAN> *)&amp;mWorld[0][0]);
+<SPAN CLASS="linenum">0233:</SPAN> <SPAN CLASS="keyword">#else</SPAN>
+<SPAN CLASS="linenum">0234:</SPAN>     <SPAN CLASS="comment">// 木の感じ</SPAN>
+<SPAN CLASS="linenum">0235:</SPAN>     cgGLBindUniform4f(FragmentProgramIter, fLightWoodColorBind, 0.76, 0.54, 0.32, 0.0);
+<SPAN CLASS="linenum">0236:</SPAN>     cgGLBindUniform4f(FragmentProgramIter, fDarkWoodColorBind,  0.62, 0.38, 0.20, 0.0);
+<SPAN CLASS="linenum">0237:</SPAN>     cgGLBindUniform4f(FragmentProgramIter, fBaseRadiusFreqBind, 1.10, 0.0, 0.0, 0.0);
+<SPAN CLASS="linenum">0238:</SPAN>     cgGLBindUniform4f(FragmentProgramIter, fHighNoiseLevelBind, 0.03, 0.0, 0.0, 0.0);
+<SPAN CLASS="linenum">0239:</SPAN>     cgGLBindUniform4f(FragmentProgramIter, fLowPulseAmpBind,     1.0, 0.0, 0.0, 0.0);   
+<SPAN CLASS="linenum">0240:</SPAN> 
+<SPAN CLASS="linenum">0241:</SPAN>     ifMatrix m0, m1;
+<SPAN CLASS="linenum">0242:</SPAN>     ifMatrixScaling( &amp;m0, 10, 10, 10 ); 
+<SPAN CLASS="linenum">0243:</SPAN>     myRotationMatrix(20, 1.0f, 1.0f, 0.0f , (<SPAN CLASS="keyword">float</SPAN>*)&amp;m1[0][0]);
+<SPAN CLASS="linenum">0244:</SPAN>     ifMatrixMultiply(&amp;m0, (<SPAN CLASS="keyword">const</SPAN> ifMatrix *)&amp;m0, (<SPAN CLASS="keyword">const</SPAN> ifMatrix *)&amp;m1);
+<SPAN CLASS="linenum">0245:</SPAN>     ifMatrixTranspose(&amp;m0, (<SPAN CLASS="keyword">const</SPAN> ifMatrix *)&amp;m0);
+<SPAN CLASS="linenum">0246:</SPAN>     cgGLBindUniformMatrixcf(VertexProgramIter, ShaderMatrix, (<SPAN CLASS="keyword">const</SPAN> <SPAN CLASS="keyword">float</SPAN> *)&amp;m0[0][0]);
+<SPAN CLASS="linenum">0247:</SPAN> <SPAN CLASS="keyword">#endif</SPAN>
+<SPAN CLASS="linenum">0248:</SPAN> 
+<SPAN CLASS="linenum">0249:</SPAN>     <SPAN CLASS="comment">// local ⇒ proj</SPAN>
+<SPAN CLASS="linenum">0250:</SPAN>     cgGLBindUniformStateMatrix(VertexProgramIter, WPMatrix, 
+<SPAN CLASS="linenum">0251:</SPAN>         cgGLModelViewProjectionMatrix, cgGLMatrixIdentity);
+<SPAN CLASS="linenum">0252:</SPAN>     <SPAN CLASS="comment">// local ⇒ view</SPAN>
+<SPAN CLASS="linenum">0253:</SPAN>     cgGLBindUniformStateMatrix(VertexProgramIter, WMatrix, 
+<SPAN CLASS="linenum">0254:</SPAN>         cgGLModelViewMatrix, cgGLMatrixIdentity);
+<SPAN CLASS="linenum">0255:</SPAN>     <SPAN CLASS="comment">// view ⇒ local</SPAN>
+<SPAN CLASS="linenum">0256:</SPAN>     cgGLBindUniformStateMatrix(VertexProgramIter, WITMatrix, 
+<SPAN CLASS="linenum">0257:</SPAN>         cgGLModelViewMatrix, cgGLMatrixTranspose | cgGLMatrixInverse);
+<SPAN CLASS="linenum">0258:</SPAN> 
+<SPAN CLASS="linenum">0259:</SPAN>     <SPAN CLASS="comment">// -----------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0260:</SPAN>     <SPAN CLASS="comment">// 描画</SPAN>
+<SPAN CLASS="linenum">0261:</SPAN>     <SPAN CLASS="comment">// -----------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0262:</SPAN>     glutSolidTeapot(1);             <SPAN CLASS="comment">// ティーポットの描画</SPAN>
+<SPAN CLASS="linenum">0263:</SPAN> 
+<SPAN CLASS="linenum">0264:</SPAN>     <SPAN CLASS="comment">// -----------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0265:</SPAN>     <SPAN CLASS="comment">// 描画の終了</SPAN>
+<SPAN CLASS="linenum">0266:</SPAN>     <SPAN CLASS="comment">// -----------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0267:</SPAN>     <SPAN CLASS="comment">// テクスチャの無効化</SPAN>
+<SPAN CLASS="linenum">0268:</SPAN>     cgGLActiveTexture(NoiseMapBind);        glDisable(GL_TEXTURE_3D_EXT);
+<SPAN CLASS="linenum">0269:</SPAN>     cgGLActiveTexture(PulseTrainMapBind);   glDisable(GL_TEXTURE_1D);
+<SPAN CLASS="linenum">0270:</SPAN>     <SPAN CLASS="comment">// シェーダの無効化</SPAN>
+<SPAN CLASS="linenum">0271:</SPAN>     cgGLDisableProgramType(cgFragmentProfile);
+<SPAN CLASS="linenum">0272:</SPAN>     cgGLDisableProgramType(cgVertexProfile);
+<SPAN CLASS="linenum">0273:</SPAN> 
+<SPAN CLASS="linenum">0274:</SPAN>     glPopMatrix();                  <SPAN CLASS="comment">// ビュー行列に現在の行列を戻す</SPAN>
+<SPAN CLASS="linenum">0275:</SPAN>     glutSwapBuffers();              <SPAN CLASS="comment">// 画面の更新の終了</SPAN>
+<SPAN CLASS="linenum">0276:</SPAN> }
+<SPAN CLASS="linenum">0277:</SPAN> <SPAN CLASS="comment">// ---------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0278:</SPAN> <SPAN CLASS="comment">// 画面がリサイズされたとき</SPAN>
+<SPAN CLASS="linenum">0279:</SPAN> <SPAN CLASS="comment">// ---------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0280:</SPAN> <SPAN CLASS="keyword">void</SPAN> resize(<SPAN CLASS="keyword">int</SPAN> w, <SPAN CLASS="keyword">int</SPAN> h)
+<SPAN CLASS="linenum">0281:</SPAN> {
+<SPAN CLASS="linenum">0282:</SPAN>     <SPAN CLASS="comment">// ビューポートの設定</SPAN>
+<SPAN CLASS="linenum">0283:</SPAN>     glViewport(0, 0, w, h);
+<SPAN CLASS="linenum">0284:</SPAN> 
+<SPAN CLASS="linenum">0285:</SPAN>     <SPAN CLASS="comment">// 射影行列の設定</SPAN>
+<SPAN CLASS="linenum">0286:</SPAN>     glMatrixMode(GL_PROJECTION);
+<SPAN CLASS="linenum">0287:</SPAN>     glLoadIdentity();
+<SPAN CLASS="linenum">0288:</SPAN>     gluPerspective( 60.0,           <SPAN CLASS="comment">// 画角</SPAN>
+<SPAN CLASS="linenum">0289:</SPAN>                     1.0,            <SPAN CLASS="comment">// アスペクト比</SPAN>
+<SPAN CLASS="linenum">0290:</SPAN>                     0.1, 10.0);     <SPAN CLASS="comment">// 前方面、後方面</SPAN>
+<SPAN CLASS="linenum">0291:</SPAN> }
+<SPAN CLASS="linenum">0292:</SPAN> <SPAN CLASS="comment">// ---------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0293:</SPAN> <SPAN CLASS="comment">// ひまなときに実行される</SPAN>
+<SPAN CLASS="linenum">0294:</SPAN> <SPAN CLASS="comment">// ---------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0295:</SPAN> <SPAN CLASS="keyword">void</SPAN> idle()
+<SPAN CLASS="linenum">0296:</SPAN> {
+<SPAN CLASS="linenum">0297:</SPAN>     <SPAN CLASS="comment">// ポリゴンの回転</SPAN>
+<SPAN CLASS="linenum">0298:</SPAN>     r = r + 3.0f;
+<SPAN CLASS="linenum">0299:</SPAN>     <SPAN CLASS="keyword">while</SPAN> (360.0f &lt; r) r -= 360.0f;
+<SPAN CLASS="linenum">0300:</SPAN> 
+<SPAN CLASS="linenum">0301:</SPAN>     <SPAN CLASS="comment">// 再描画リクエスト</SPAN>
+<SPAN CLASS="linenum">0302:</SPAN>     glutPostRedisplay();
+<SPAN CLASS="linenum">0303:</SPAN> }
+<SPAN CLASS="linenum">0304:</SPAN> <SPAN CLASS="comment">// ---------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0305:</SPAN> <SPAN CLASS="comment">// OpenGL に関する初期化</SPAN>
+<SPAN CLASS="linenum">0306:</SPAN> <SPAN CLASS="comment">// ---------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0307:</SPAN> <SPAN CLASS="keyword">static</SPAN> <SPAN CLASS="keyword">void</SPAN> InitializeGlut(<SPAN CLASS="keyword">int</SPAN> argc, <SPAN CLASS="keyword">char</SPAN> *argv[])
+<SPAN CLASS="linenum">0308:</SPAN> {
+<SPAN CLASS="linenum">0309:</SPAN>     <SPAN CLASS="comment">// ウィンドウの作成</SPAN>
+<SPAN CLASS="linenum">0310:</SPAN>     glutInit(&amp;argc, argv);              <SPAN CLASS="comment">// GLの初期化</SPAN>
+<SPAN CLASS="linenum">0311:</SPAN>     glutInitDisplayMode(GLUT_DOUBLE     <SPAN CLASS="comment">// 描画モード</SPAN>
+<SPAN CLASS="linenum">0312:</SPAN>                      | GLUT_RGBA        <SPAN CLASS="comment">// wバッファ+RGBA+深度バッファ</SPAN>
+<SPAN CLASS="linenum">0313:</SPAN>                      | GLUT_DEPTH);
+<SPAN CLASS="linenum">0314:</SPAN>     glutInitWindowPosition(100, 100);   <SPAN CLASS="comment">// 表示位置</SPAN>
+<SPAN CLASS="linenum">0315:</SPAN>     glutInitWindowSize(512, 512);       <SPAN CLASS="comment">// サイズ</SPAN>
+<SPAN CLASS="linenum">0316:</SPAN>     glutCreateWindow("<SPAN CLASS="string">Wood</SPAN>");   <SPAN CLASS="comment">// ウィンドウの生成</SPAN>
+<SPAN CLASS="linenum">0317:</SPAN> 
+<SPAN CLASS="linenum">0318:</SPAN>     <SPAN CLASS="comment">// コールバック関数の設定</SPAN>
+<SPAN CLASS="linenum">0319:</SPAN>     glutDisplayFunc(display);   <SPAN CLASS="comment">// 描画関数</SPAN>
+<SPAN CLASS="linenum">0320:</SPAN>     glutReshapeFunc(resize);    <SPAN CLASS="comment">// 画面が変形したとき</SPAN>
+<SPAN CLASS="linenum">0321:</SPAN>     glutIdleFunc(idle);         <SPAN CLASS="comment">// ひまなとき</SPAN>
+<SPAN CLASS="linenum">0322:</SPAN> 
+<SPAN CLASS="linenum">0323:</SPAN>     <SPAN CLASS="comment">// 一度だけすればいい設定</SPAN>
+<SPAN CLASS="linenum">0324:</SPAN>     glClearColor(0.23, 0.43, 0.64, 0.0);    <SPAN CLASS="comment">// 背景色の設定</SPAN>
+<SPAN CLASS="linenum">0325:</SPAN>     glEnable(GL_DEPTH_TEST);            <SPAN CLASS="comment">// 深度バッファの使用</SPAN>
+<SPAN CLASS="linenum">0326:</SPAN> }
+<SPAN CLASS="linenum">0327:</SPAN> <SPAN CLASS="comment">// ---------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0328:</SPAN> <SPAN CLASS="comment">// Cgの初期化</SPAN>
+<SPAN CLASS="linenum">0329:</SPAN> <SPAN CLASS="comment">// ---------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0330:</SPAN> <SPAN CLASS="keyword">static</SPAN> <SPAN CLASS="keyword">void</SPAN> InitializeCg()
+<SPAN CLASS="linenum">0331:</SPAN> {
+<SPAN CLASS="linenum">0332:</SPAN>     cgError Ret;
+<SPAN CLASS="linenum">0333:</SPAN>     
+<SPAN CLASS="linenum">0334:</SPAN>     <SPAN CLASS="comment">// Cg の作成</SPAN>
+<SPAN CLASS="linenum">0335:</SPAN>     CgContext = cgCreateContext();
+<SPAN CLASS="linenum">0336:</SPAN>     assert(CgContext != NULL);
+<SPAN CLASS="linenum">0337:</SPAN> 
+<SPAN CLASS="linenum">0338:</SPAN>     <SPAN CLASS="comment">// 頂点プログラムの作成</SPAN>
+<SPAN CLASS="linenum">0339:</SPAN>     Ret = cgAddProgramFromFile(CgContext, "<SPAN CLASS="string">vp.cg</SPAN>", cgVertexProfile, NULL);
+<SPAN CLASS="linenum">0340:</SPAN>     fprintf(stderr, "<SPAN CLASS="string">LAST LISTING----%s----\n</SPAN>", cgGetLastListing(CgContext));
+<SPAN CLASS="linenum">0341:</SPAN>     assert(Ret == cgNoError);
+<SPAN CLASS="linenum">0342:</SPAN> 
+<SPAN CLASS="linenum">0343:</SPAN>     <SPAN CLASS="comment">// プログラム名でプログラムを結びつける</SPAN>
+<SPAN CLASS="linenum">0344:</SPAN>     VertexProgramIter = cgProgramByName(CgContext, "<SPAN CLASS="string">main</SPAN>");
+<SPAN CLASS="linenum">0345:</SPAN>     assert(VertexProgramIter != NULL);
+<SPAN CLASS="linenum">0346:</SPAN> 
+<SPAN CLASS="linenum">0347:</SPAN> <SPAN CLASS="keyword">#if</SPAN> 0
+<SPAN CLASS="linenum">0348:</SPAN>     <SPAN CLASS="comment">// ソースの表示</SPAN>
+<SPAN CLASS="linenum">0349:</SPAN>     fprintf(stderr, "<SPAN CLASS="string">---- プログラム はじめ ----\n</SPAN>"
+<SPAN CLASS="linenum">0350:</SPAN>                     "<SPAN CLASS="string">%s</SPAN>"
+<SPAN CLASS="linenum">0351:</SPAN>                     "<SPAN CLASS="string">---- プログラム 終わり ----\n</SPAN>",
+<SPAN CLASS="linenum">0352:</SPAN>     cgGetProgramObjectCode(VertexProgramIter));
+<SPAN CLASS="linenum">0353:</SPAN> <SPAN CLASS="keyword">#endif</SPAN>
+<SPAN CLASS="linenum">0354:</SPAN> 
+<SPAN CLASS="linenum">0355:</SPAN>     <SPAN CLASS="keyword">if</SPAN>(VertexProgramIter != NULL) {
+<SPAN CLASS="linenum">0356:</SPAN>         GLuint ProgId = 1;
+<SPAN CLASS="linenum">0357:</SPAN> 
+<SPAN CLASS="linenum">0358:</SPAN>         Ret = cgGLLoadProgram(VertexProgramIter, ProgId);
+<SPAN CLASS="linenum">0359:</SPAN>         assert(Ret == cgNoError);
+<SPAN CLASS="linenum">0360:</SPAN> 
+<SPAN CLASS="linenum">0361:</SPAN>         LightPos    = cgGetBindByName(VertexProgramIter, "<SPAN CLASS="string">LightPosition</SPAN>");
+<SPAN CLASS="linenum">0362:</SPAN>         WPMatrix    = cgGetBindByName(VertexProgramIter, "<SPAN CLASS="string">ModelViewProj</SPAN>");
+<SPAN CLASS="linenum">0363:</SPAN>         WMatrix     = cgGetBindByName(VertexProgramIter, "<SPAN CLASS="string">ModelView</SPAN>");
+<SPAN CLASS="linenum">0364:</SPAN>         WITMatrix   = cgGetBindByName(VertexProgramIter, "<SPAN CLASS="string">ModelViewIT</SPAN>");
+<SPAN CLASS="linenum">0365:</SPAN>         ShaderMatrix= cgGetBindByName(VertexProgramIter, "<SPAN CLASS="string">ShaderMatrix</SPAN>");
+<SPAN CLASS="linenum">0366:</SPAN> 
+<SPAN CLASS="linenum">0367:</SPAN>         <SPAN CLASS="comment">// エラーチェック</SPAN>
+<SPAN CLASS="linenum">0368:</SPAN>         assert(LightPos != NULL);
+<SPAN CLASS="linenum">0369:</SPAN>         assert(WPMatrix != NULL);
+<SPAN CLASS="linenum">0370:</SPAN>         assert(WMatrix != NULL);
+<SPAN CLASS="linenum">0371:</SPAN>         assert(WITMatrix != NULL);
+<SPAN CLASS="linenum">0372:</SPAN>         assert(ShaderMatrix != NULL);
+<SPAN CLASS="linenum">0373:</SPAN>     }
+<SPAN CLASS="linenum">0374:</SPAN> 
+<SPAN CLASS="linenum">0375:</SPAN>  
+<SPAN CLASS="linenum">0376:</SPAN>     <SPAN CLASS="comment">// フラグメントプログラム</SPAN>
+<SPAN CLASS="linenum">0377:</SPAN>     Ret = cgAddProgramFromFile(CgContext, "<SPAN CLASS="string">fp.cg</SPAN>", cgFragmentProfile, NULL);
+<SPAN CLASS="linenum">0378:</SPAN>     assert(Ret == cgNoError);
+<SPAN CLASS="linenum">0379:</SPAN> 
+<SPAN CLASS="linenum">0380:</SPAN>     <SPAN CLASS="comment">// プログラム名でプログラムを結びつける</SPAN>
+<SPAN CLASS="linenum">0381:</SPAN>     FragmentProgramIter = cgProgramByName(CgContext, "<SPAN CLASS="string">main</SPAN>");
+<SPAN CLASS="linenum">0382:</SPAN>     assert(FragmentProgramIter != NULL);
+<SPAN CLASS="linenum">0383:</SPAN> 
+<SPAN CLASS="linenum">0384:</SPAN> <SPAN CLASS="keyword">#if</SPAN> 0
+<SPAN CLASS="linenum">0385:</SPAN>     <SPAN CLASS="comment">// ソースの表示</SPAN>
+<SPAN CLASS="linenum">0386:</SPAN>     fprintf(stderr, "<SPAN CLASS="string">---- プログラム はじめ ----\n</SPAN>"
+<SPAN CLASS="linenum">0387:</SPAN>                     "<SPAN CLASS="string">%s</SPAN>"
+<SPAN CLASS="linenum">0388:</SPAN>                     "<SPAN CLASS="string">---- プログラム 終わり ----\n</SPAN>",
+<SPAN CLASS="linenum">0389:</SPAN>     cgGetProgramObjectCode(FragmentProgramIter));
+<SPAN CLASS="linenum">0390:</SPAN> <SPAN CLASS="keyword">#endif</SPAN>
+<SPAN CLASS="linenum">0391:</SPAN>     <SPAN CLASS="keyword">if</SPAN>(FragmentProgramIter != NULL) {
+<SPAN CLASS="linenum">0392:</SPAN>         GLuint ProgId = 2;
+<SPAN CLASS="linenum">0393:</SPAN> 
+<SPAN CLASS="linenum">0394:</SPAN>         Ret = cgGLLoadProgram(FragmentProgramIter, ProgId);
+<SPAN CLASS="linenum">0395:</SPAN>         assert(Ret == cgNoError);
+<SPAN CLASS="linenum">0396:</SPAN> 
+<SPAN CLASS="linenum">0397:</SPAN>         fLightWoodColorBind = cgGetBindByName(FragmentProgramIter, "<SPAN CLASS="string">fLightWood</SPAN>");
+<SPAN CLASS="linenum">0398:</SPAN>         fDarkWoodColorBind  = cgGetBindByName(FragmentProgramIter, "<SPAN CLASS="string">fDarkWood</SPAN>");
+<SPAN CLASS="linenum">0399:</SPAN>         fHighNoiseLevelBind = cgGetBindByName(FragmentProgramIter, "<SPAN CLASS="string">fHighNoiseLevel</SPAN>");
+<SPAN CLASS="linenum">0400:</SPAN>         fBaseRadiusFreqBind = cgGetBindByName(FragmentProgramIter, "<SPAN CLASS="string">fBaseRadiusFreq</SPAN>");
+<SPAN CLASS="linenum">0401:</SPAN>         fLowPulseAmpBind    = cgGetBindByName(FragmentProgramIter, "<SPAN CLASS="string">fLowPulseAmp</SPAN>");
+<SPAN CLASS="linenum">0402:</SPAN>         NoiseMapBind        = cgGetBindByName(FragmentProgramIter, "<SPAN CLASS="string">NoiseMap</SPAN>");
+<SPAN CLASS="linenum">0403:</SPAN>         PulseTrainMapBind   = cgGetBindByName(FragmentProgramIter, "<SPAN CLASS="string">PulseTrainMap</SPAN>");
+<SPAN CLASS="linenum">0404:</SPAN> 
+<SPAN CLASS="linenum">0405:</SPAN>         <SPAN CLASS="comment">// エラーチェック</SPAN>
+<SPAN CLASS="linenum">0406:</SPAN>         assert(fLightWoodColorBind != NULL);
+<SPAN CLASS="linenum">0407:</SPAN>         assert(fDarkWoodColorBind != NULL);
+<SPAN CLASS="linenum">0408:</SPAN>         assert(fHighNoiseLevelBind != NULL);
+<SPAN CLASS="linenum">0409:</SPAN>         assert(fBaseRadiusFreqBind != NULL);
+<SPAN CLASS="linenum">0410:</SPAN>         assert(fLowPulseAmpBind != NULL);
+<SPAN CLASS="linenum">0411:</SPAN>         assert(NoiseMapBind != NULL);
+<SPAN CLASS="linenum">0412:</SPAN>         assert(PulseTrainMapBind != NULL);
+<SPAN CLASS="linenum">0413:</SPAN>     }
+<SPAN CLASS="linenum">0414:</SPAN>     
+<SPAN CLASS="linenum">0415:</SPAN> }
+<SPAN CLASS="linenum">0416:</SPAN> <SPAN CLASS="comment">// ---------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0417:</SPAN> <SPAN CLASS="comment">// Cg の後片付け</SPAN>
+<SPAN CLASS="linenum">0418:</SPAN> <SPAN CLASS="comment">// ---------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0419:</SPAN> <SPAN CLASS="keyword">static</SPAN> <SPAN CLASS="keyword">void</SPAN> CleanupCg()
+<SPAN CLASS="linenum">0420:</SPAN> {
+<SPAN CLASS="linenum">0421:</SPAN>     <SPAN CLASS="comment">// フラグメントプログラム</SPAN>
+<SPAN CLASS="linenum">0422:</SPAN>     <SPAN CLASS="keyword">if</SPAN>(PulseTrainMapBind    )cgFreeBindIter( PulseTrainMapBind );
+<SPAN CLASS="linenum">0423:</SPAN>     <SPAN CLASS="keyword">if</SPAN>(NoiseMapBind         )cgFreeBindIter( NoiseMapBind );
+<SPAN CLASS="linenum">0424:</SPAN>     <SPAN CLASS="keyword">if</SPAN>(fLowPulseAmpBind     )cgFreeBindIter( fLowPulseAmpBind );
+<SPAN CLASS="linenum">0425:</SPAN>     <SPAN CLASS="keyword">if</SPAN>(fBaseRadiusFreqBind  )cgFreeBindIter( fBaseRadiusFreqBind );
+<SPAN CLASS="linenum">0426:</SPAN>     <SPAN CLASS="keyword">if</SPAN>(fHighNoiseLevelBind  )cgFreeBindIter( fHighNoiseLevelBind );
+<SPAN CLASS="linenum">0427:</SPAN>     <SPAN CLASS="keyword">if</SPAN>(fDarkWoodColorBind   )cgFreeBindIter( fDarkWoodColorBind );
+<SPAN CLASS="linenum">0428:</SPAN>     <SPAN CLASS="keyword">if</SPAN>(fLightWoodColorBind  )cgFreeBindIter( fLightWoodColorBind );
+<SPAN CLASS="linenum">0429:</SPAN>     cgFreeProgramIter( FragmentProgramIter );
+<SPAN CLASS="linenum">0430:</SPAN> 
+<SPAN CLASS="linenum">0431:</SPAN>     <SPAN CLASS="comment">// 頂点プログラム</SPAN>
+<SPAN CLASS="linenum">0432:</SPAN>     <SPAN CLASS="keyword">if</SPAN>(LightPos     )cgFreeBindIter( LightPos );
+<SPAN CLASS="linenum">0433:</SPAN>     <SPAN CLASS="keyword">if</SPAN>(WPMatrix     )cgFreeBindIter( WPMatrix );
+<SPAN CLASS="linenum">0434:</SPAN>     <SPAN CLASS="keyword">if</SPAN>(WMatrix      )cgFreeBindIter( WMatrix );
+<SPAN CLASS="linenum">0435:</SPAN>     <SPAN CLASS="keyword">if</SPAN>(WITMatrix    )cgFreeBindIter( WITMatrix );
+<SPAN CLASS="linenum">0436:</SPAN>     <SPAN CLASS="keyword">if</SPAN>(ShaderMatrix )cgFreeBindIter( ShaderMatrix );
+<SPAN CLASS="linenum">0437:</SPAN>     cgFreeProgramIter( VertexProgramIter );
+<SPAN CLASS="linenum">0438:</SPAN> 
+<SPAN CLASS="linenum">0439:</SPAN>     cgFreeContext( CgContext );
+<SPAN CLASS="linenum">0440:</SPAN>     cgCleanup( );
+<SPAN CLASS="linenum">0441:</SPAN> }
+<SPAN CLASS="linenum">0442:</SPAN> <SPAN CLASS="comment">// ---------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0443:</SPAN> <SPAN CLASS="comment">// メイン関数</SPAN>
+<SPAN CLASS="linenum">0444:</SPAN> <SPAN CLASS="comment">// ---------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0445:</SPAN> <SPAN CLASS="keyword">int</SPAN> main(<SPAN CLASS="keyword">int</SPAN> argc, <SPAN CLASS="keyword">char</SPAN> *argv[])
+<SPAN CLASS="linenum">0446:</SPAN> {
+<SPAN CLASS="linenum">0447:</SPAN>     <SPAN CLASS="comment">// 初期化</SPAN>
+<SPAN CLASS="linenum">0448:</SPAN>     InitializeGlut(argc, argv);
+<SPAN CLASS="linenum">0449:</SPAN>     InitializeCg();
+<SPAN CLASS="linenum">0450:</SPAN>     <SPAN CLASS="comment">// テクスチャの生成</SPAN>
+<SPAN CLASS="linenum">0451:</SPAN>     g_iNoiseTex = noise.CreateNoiseTexture3D(64,64,64,1.0,1.0);
+<SPAN CLASS="linenum">0452:</SPAN>     g_iPilseTrainTex = generateSmoothPulseTrain();
+<SPAN CLASS="linenum">0453:</SPAN>   
+<SPAN CLASS="linenum">0454:</SPAN>     <SPAN CLASS="comment">// メインループ</SPAN>
+<SPAN CLASS="linenum">0455:</SPAN>     glutMainLoop();
+<SPAN CLASS="linenum">0456:</SPAN> 
+<SPAN CLASS="linenum">0457:</SPAN>     <SPAN CLASS="comment">// 後片付け</SPAN>
+<SPAN CLASS="linenum">0458:</SPAN>     CleanupCg();
+<SPAN CLASS="linenum">0459:</SPAN>     
+<SPAN CLASS="linenum">0460:</SPAN>     <SPAN CLASS="keyword">return</SPAN> 0;
+<SPAN CLASS="linenum">0461:</SPAN> }</PRE>
+</BODY>
+</HTML>

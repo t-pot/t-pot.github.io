@@ -1,0 +1,927 @@
+<HTML>
+<HEAD>
+<TITLE>d3dsettings.cpp</TITLE>
+<meta name="GENERATOR" content="cpp2html 2.1 by Niisaka">
+<meta http-equiv="Content-Type" content="text/html">
+<meta http-equiv="Content-Style-Type" content="text/css">
+<STYLE TYPE="text/css">
+<!--
+SPAN.comment { color:#008000; font-weight:normal; font-style:normal;}
+SPAN.keyword { color:#0000FF; font-weight:normal; font-style:normal;}
+SPAN.string { color:#600000; font-weight:normal; font-style:normal;}
+SPAN.linenum { color:#A0A0A0; font-weight:normal; font-style:normal;}
+-->
+</STYLE>
+</HEAD>
+<BODY TEXT="#000000" BGCOLOR="#FFFFFF">
+<PRE><SPAN CLASS="linenum">0001:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0002:</SPAN> <SPAN CLASS="comment">// File: D3DSettings.cpp</SPAN>
+<SPAN CLASS="linenum">0003:</SPAN> <SPAN CLASS="comment">//</SPAN>
+<SPAN CLASS="linenum">0004:</SPAN> <SPAN CLASS="comment">// Desc: Settings class and change-settings dialog class for the Direct3D </SPAN>
+<SPAN CLASS="linenum">0005:</SPAN> <SPAN CLASS="comment">//       samples framework library.</SPAN>
+<SPAN CLASS="linenum">0006:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0007:</SPAN> <SPAN CLASS="keyword">#define</SPAN> STRICT
+<SPAN CLASS="linenum">0008:</SPAN> <SPAN CLASS="keyword">#include</SPAN> &lt;windows.h&gt;
+<SPAN CLASS="linenum">0009:</SPAN> <SPAN CLASS="keyword">#include</SPAN> &lt;windowsx.h&gt;
+<SPAN CLASS="linenum">0010:</SPAN> <SPAN CLASS="keyword">#include</SPAN> &lt;tchar.h&gt;
+<SPAN CLASS="linenum">0011:</SPAN> <SPAN CLASS="keyword">#include</SPAN> &lt;stdio.h&gt;
+<SPAN CLASS="linenum">0012:</SPAN> <SPAN CLASS="keyword">#include</SPAN> &lt;D3D9.h&gt;
+<SPAN CLASS="linenum">0013:</SPAN> <SPAN CLASS="keyword">#include</SPAN> "<SPAN CLASS="string">DXUtil.h</SPAN>"
+<SPAN CLASS="linenum">0014:</SPAN> <SPAN CLASS="keyword">#include</SPAN> "<SPAN CLASS="string">D3DUtil.h</SPAN>"
+<SPAN CLASS="linenum">0015:</SPAN> <SPAN CLASS="keyword">#include</SPAN> "<SPAN CLASS="string">D3DEnumeration.h</SPAN>"
+<SPAN CLASS="linenum">0016:</SPAN> <SPAN CLASS="keyword">#include</SPAN> "<SPAN CLASS="string">D3DSettings.h</SPAN>"
+<SPAN CLASS="linenum">0017:</SPAN> <SPAN CLASS="keyword">#include</SPAN> "<SPAN CLASS="string">resource.h</SPAN>"
+<SPAN CLASS="linenum">0018:</SPAN> 
+<SPAN CLASS="linenum">0019:</SPAN> CD3DSettingsDialog* s_pSettingsDialog = NULL;
+<SPAN CLASS="linenum">0020:</SPAN> 
+<SPAN CLASS="linenum">0021:</SPAN> 
+<SPAN CLASS="linenum">0022:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0023:</SPAN> <SPAN CLASS="comment">// Name: D3DDevTypeToString</SPAN>
+<SPAN CLASS="linenum">0024:</SPAN> <SPAN CLASS="comment">// Desc: Returns the string for the given D3DDEVTYPE.</SPAN>
+<SPAN CLASS="linenum">0025:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0026:</SPAN> TCHAR* D3DDevTypeToString(D3DDEVTYPE devType)
+<SPAN CLASS="linenum">0027:</SPAN> {
+<SPAN CLASS="linenum">0028:</SPAN>     <SPAN CLASS="keyword">switch</SPAN> (devType)
+<SPAN CLASS="linenum">0029:</SPAN>     {
+<SPAN CLASS="linenum">0030:</SPAN>     <SPAN CLASS="keyword">case</SPAN> D3DDEVTYPE_HAL:        <SPAN CLASS="keyword">return</SPAN> TEXT("<SPAN CLASS="string">D3DDEVTYPE_HAL</SPAN>");
+<SPAN CLASS="linenum">0031:</SPAN>     <SPAN CLASS="keyword">case</SPAN> D3DDEVTYPE_SW:         <SPAN CLASS="keyword">return</SPAN> TEXT("<SPAN CLASS="string">D3DDEVTYPE_SW</SPAN>");
+<SPAN CLASS="linenum">0032:</SPAN>     <SPAN CLASS="keyword">case</SPAN> D3DDEVTYPE_REF:        <SPAN CLASS="keyword">return</SPAN> TEXT("<SPAN CLASS="string">D3DDEVTYPE_REF</SPAN>");
+<SPAN CLASS="linenum">0033:</SPAN>     <SPAN CLASS="keyword">default</SPAN>:                    <SPAN CLASS="keyword">return</SPAN> TEXT("<SPAN CLASS="string">Unknown devType</SPAN>");
+<SPAN CLASS="linenum">0034:</SPAN>     }
+<SPAN CLASS="linenum">0035:</SPAN> }
+<SPAN CLASS="linenum">0036:</SPAN> 
+<SPAN CLASS="linenum">0037:</SPAN> 
+<SPAN CLASS="linenum">0038:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0039:</SPAN> <SPAN CLASS="comment">// Name: MultisampleTypeToString</SPAN>
+<SPAN CLASS="linenum">0040:</SPAN> <SPAN CLASS="comment">// Desc: Returns the string for the given D3DMULTISAMPLE_TYPE.</SPAN>
+<SPAN CLASS="linenum">0041:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0042:</SPAN> TCHAR* MultisampleTypeToString(D3DMULTISAMPLE_TYPE MultiSampleType)
+<SPAN CLASS="linenum">0043:</SPAN> {
+<SPAN CLASS="linenum">0044:</SPAN>     <SPAN CLASS="keyword">switch</SPAN> (MultiSampleType)
+<SPAN CLASS="linenum">0045:</SPAN>     {
+<SPAN CLASS="linenum">0046:</SPAN>     <SPAN CLASS="keyword">case</SPAN> D3DMULTISAMPLE_NONE:   <SPAN CLASS="keyword">return</SPAN> TEXT("<SPAN CLASS="string">D3DMULTISAMPLE_NONE</SPAN>");
+<SPAN CLASS="linenum">0047:</SPAN>     <SPAN CLASS="keyword">case</SPAN> D3DMULTISAMPLE_NONMASKABLE: <SPAN CLASS="keyword">return</SPAN> TEXT("<SPAN CLASS="string">D3DMULTISAMPLE_NONMASKABLE</SPAN>");
+<SPAN CLASS="linenum">0048:</SPAN>     <SPAN CLASS="keyword">case</SPAN> D3DMULTISAMPLE_2_SAMPLES: <SPAN CLASS="keyword">return</SPAN> TEXT("<SPAN CLASS="string">D3DMULTISAMPLE_2_SAMPLES</SPAN>");
+<SPAN CLASS="linenum">0049:</SPAN>     <SPAN CLASS="keyword">case</SPAN> D3DMULTISAMPLE_3_SAMPLES: <SPAN CLASS="keyword">return</SPAN> TEXT("<SPAN CLASS="string">D3DMULTISAMPLE_3_SAMPLES</SPAN>");
+<SPAN CLASS="linenum">0050:</SPAN>     <SPAN CLASS="keyword">case</SPAN> D3DMULTISAMPLE_4_SAMPLES: <SPAN CLASS="keyword">return</SPAN> TEXT("<SPAN CLASS="string">D3DMULTISAMPLE_4_SAMPLES</SPAN>");
+<SPAN CLASS="linenum">0051:</SPAN>     <SPAN CLASS="keyword">case</SPAN> D3DMULTISAMPLE_5_SAMPLES: <SPAN CLASS="keyword">return</SPAN> TEXT("<SPAN CLASS="string">D3DMULTISAMPLE_5_SAMPLES</SPAN>");
+<SPAN CLASS="linenum">0052:</SPAN>     <SPAN CLASS="keyword">case</SPAN> D3DMULTISAMPLE_6_SAMPLES: <SPAN CLASS="keyword">return</SPAN> TEXT("<SPAN CLASS="string">D3DMULTISAMPLE_6_SAMPLES</SPAN>");
+<SPAN CLASS="linenum">0053:</SPAN>     <SPAN CLASS="keyword">case</SPAN> D3DMULTISAMPLE_7_SAMPLES: <SPAN CLASS="keyword">return</SPAN> TEXT("<SPAN CLASS="string">D3DMULTISAMPLE_7_SAMPLES</SPAN>");
+<SPAN CLASS="linenum">0054:</SPAN>     <SPAN CLASS="keyword">case</SPAN> D3DMULTISAMPLE_8_SAMPLES: <SPAN CLASS="keyword">return</SPAN> TEXT("<SPAN CLASS="string">D3DMULTISAMPLE_8_SAMPLES</SPAN>");
+<SPAN CLASS="linenum">0055:</SPAN>     <SPAN CLASS="keyword">case</SPAN> D3DMULTISAMPLE_9_SAMPLES: <SPAN CLASS="keyword">return</SPAN> TEXT("<SPAN CLASS="string">D3DMULTISAMPLE_9_SAMPLES</SPAN>");
+<SPAN CLASS="linenum">0056:</SPAN>     <SPAN CLASS="keyword">case</SPAN> D3DMULTISAMPLE_10_SAMPLES: <SPAN CLASS="keyword">return</SPAN> TEXT("<SPAN CLASS="string">D3DMULTISAMPLE_10_SAMPLES</SPAN>");
+<SPAN CLASS="linenum">0057:</SPAN>     <SPAN CLASS="keyword">case</SPAN> D3DMULTISAMPLE_11_SAMPLES: <SPAN CLASS="keyword">return</SPAN> TEXT("<SPAN CLASS="string">D3DMULTISAMPLE_11_SAMPLES</SPAN>");
+<SPAN CLASS="linenum">0058:</SPAN>     <SPAN CLASS="keyword">case</SPAN> D3DMULTISAMPLE_12_SAMPLES: <SPAN CLASS="keyword">return</SPAN> TEXT("<SPAN CLASS="string">D3DMULTISAMPLE_12_SAMPLES</SPAN>");
+<SPAN CLASS="linenum">0059:</SPAN>     <SPAN CLASS="keyword">case</SPAN> D3DMULTISAMPLE_13_SAMPLES: <SPAN CLASS="keyword">return</SPAN> TEXT("<SPAN CLASS="string">D3DMULTISAMPLE_13_SAMPLES</SPAN>");
+<SPAN CLASS="linenum">0060:</SPAN>     <SPAN CLASS="keyword">case</SPAN> D3DMULTISAMPLE_14_SAMPLES: <SPAN CLASS="keyword">return</SPAN> TEXT("<SPAN CLASS="string">D3DMULTISAMPLE_14_SAMPLES</SPAN>");
+<SPAN CLASS="linenum">0061:</SPAN>     <SPAN CLASS="keyword">case</SPAN> D3DMULTISAMPLE_15_SAMPLES: <SPAN CLASS="keyword">return</SPAN> TEXT("<SPAN CLASS="string">D3DMULTISAMPLE_15_SAMPLES</SPAN>");
+<SPAN CLASS="linenum">0062:</SPAN>     <SPAN CLASS="keyword">case</SPAN> D3DMULTISAMPLE_16_SAMPLES: <SPAN CLASS="keyword">return</SPAN> TEXT("<SPAN CLASS="string">D3DMULTISAMPLE_16_SAMPLES</SPAN>");
+<SPAN CLASS="linenum">0063:</SPAN>     <SPAN CLASS="keyword">default</SPAN>:                    <SPAN CLASS="keyword">return</SPAN> TEXT("<SPAN CLASS="string">Unknown Multisample Type</SPAN>");
+<SPAN CLASS="linenum">0064:</SPAN>     }
+<SPAN CLASS="linenum">0065:</SPAN> }
+<SPAN CLASS="linenum">0066:</SPAN> 
+<SPAN CLASS="linenum">0067:</SPAN> 
+<SPAN CLASS="linenum">0068:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0069:</SPAN> <SPAN CLASS="comment">// Name: VertexProcessingTypeToString</SPAN>
+<SPAN CLASS="linenum">0070:</SPAN> <SPAN CLASS="comment">// Desc: Returns the string for the given VertexProcessingType.</SPAN>
+<SPAN CLASS="linenum">0071:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0072:</SPAN> TCHAR* VertexProcessingTypeToString(VertexProcessingType vpt)
+<SPAN CLASS="linenum">0073:</SPAN> {
+<SPAN CLASS="linenum">0074:</SPAN>     <SPAN CLASS="keyword">switch</SPAN> (vpt)
+<SPAN CLASS="linenum">0075:</SPAN>     {
+<SPAN CLASS="linenum">0076:</SPAN>     <SPAN CLASS="keyword">case</SPAN> SOFTWARE_VP:      <SPAN CLASS="keyword">return</SPAN> TEXT("<SPAN CLASS="string">SOFTWARE_VP</SPAN>");
+<SPAN CLASS="linenum">0077:</SPAN>     <SPAN CLASS="keyword">case</SPAN> MIXED_VP:         <SPAN CLASS="keyword">return</SPAN> TEXT("<SPAN CLASS="string">MIXED_VP</SPAN>");
+<SPAN CLASS="linenum">0078:</SPAN>     <SPAN CLASS="keyword">case</SPAN> HARDWARE_VP:      <SPAN CLASS="keyword">return</SPAN> TEXT("<SPAN CLASS="string">HARDWARE_VP</SPAN>");
+<SPAN CLASS="linenum">0079:</SPAN>     <SPAN CLASS="keyword">case</SPAN> PURE_HARDWARE_VP: <SPAN CLASS="keyword">return</SPAN> TEXT("<SPAN CLASS="string">PURE_HARDWARE_VP</SPAN>");
+<SPAN CLASS="linenum">0080:</SPAN>     <SPAN CLASS="keyword">default</SPAN>:               <SPAN CLASS="keyword">return</SPAN> TEXT("<SPAN CLASS="string">Unknown VertexProcessingType</SPAN>");
+<SPAN CLASS="linenum">0081:</SPAN>     }
+<SPAN CLASS="linenum">0082:</SPAN> }
+<SPAN CLASS="linenum">0083:</SPAN> 
+<SPAN CLASS="linenum">0084:</SPAN> 
+<SPAN CLASS="linenum">0085:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0086:</SPAN> <SPAN CLASS="comment">// Name: PresentIntervalToString</SPAN>
+<SPAN CLASS="linenum">0087:</SPAN> <SPAN CLASS="comment">// Desc: Returns the string for the given present interval.</SPAN>
+<SPAN CLASS="linenum">0088:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0089:</SPAN> TCHAR* PresentIntervalToString( UINT pi )
+<SPAN CLASS="linenum">0090:</SPAN> {
+<SPAN CLASS="linenum">0091:</SPAN>     <SPAN CLASS="keyword">switch</SPAN>( pi )
+<SPAN CLASS="linenum">0092:</SPAN>     {
+<SPAN CLASS="linenum">0093:</SPAN>     <SPAN CLASS="keyword">case</SPAN> D3DPRESENT_INTERVAL_IMMEDIATE: <SPAN CLASS="keyword">return</SPAN> TEXT("<SPAN CLASS="string">D3DPRESENT_INTERVAL_IMMEDIATE</SPAN>");
+<SPAN CLASS="linenum">0094:</SPAN>     <SPAN CLASS="keyword">case</SPAN> D3DPRESENT_INTERVAL_DEFAULT:   <SPAN CLASS="keyword">return</SPAN> TEXT("<SPAN CLASS="string">D3DPRESENT_INTERVAL_DEFAULT</SPAN>");
+<SPAN CLASS="linenum">0095:</SPAN>     <SPAN CLASS="keyword">case</SPAN> D3DPRESENT_INTERVAL_ONE:       <SPAN CLASS="keyword">return</SPAN> TEXT("<SPAN CLASS="string">D3DPRESENT_INTERVAL_ONE</SPAN>");
+<SPAN CLASS="linenum">0096:</SPAN>     <SPAN CLASS="keyword">case</SPAN> D3DPRESENT_INTERVAL_TWO:       <SPAN CLASS="keyword">return</SPAN> TEXT("<SPAN CLASS="string">D3DPRESENT_INTERVAL_TWO</SPAN>");
+<SPAN CLASS="linenum">0097:</SPAN>     <SPAN CLASS="keyword">case</SPAN> D3DPRESENT_INTERVAL_THREE:     <SPAN CLASS="keyword">return</SPAN> TEXT("<SPAN CLASS="string">D3DPRESENT_INTERVAL_THREE</SPAN>");
+<SPAN CLASS="linenum">0098:</SPAN>     <SPAN CLASS="keyword">case</SPAN> D3DPRESENT_INTERVAL_FOUR:      <SPAN CLASS="keyword">return</SPAN> TEXT("<SPAN CLASS="string">D3DPRESENT_INTERVAL_FOUR</SPAN>");
+<SPAN CLASS="linenum">0099:</SPAN>     <SPAN CLASS="keyword">default</SPAN>:                            <SPAN CLASS="keyword">return</SPAN> TEXT("<SPAN CLASS="string">Unknown PresentInterval</SPAN>");
+<SPAN CLASS="linenum">0100:</SPAN>     }
+<SPAN CLASS="linenum">0101:</SPAN> }
+<SPAN CLASS="linenum">0102:</SPAN> 
+<SPAN CLASS="linenum">0103:</SPAN> 
+<SPAN CLASS="linenum">0104:</SPAN> 
+<SPAN CLASS="linenum">0105:</SPAN> 
+<SPAN CLASS="linenum">0106:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0107:</SPAN> <SPAN CLASS="comment">// Name: DialogProcHelper</SPAN>
+<SPAN CLASS="linenum">0108:</SPAN> <SPAN CLASS="comment">// Desc: </SPAN>
+<SPAN CLASS="linenum">0109:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0110:</SPAN> INT_PTR CALLBACK DialogProcHelper( HWND hDlg, UINT msg, WPARAM wParam, LPARAM lParam )
+<SPAN CLASS="linenum">0111:</SPAN> {
+<SPAN CLASS="linenum">0112:</SPAN>     <SPAN CLASS="keyword">return</SPAN> s_pSettingsDialog-&gt;DialogProc( hDlg, msg, wParam, lParam );
+<SPAN CLASS="linenum">0113:</SPAN> }
+<SPAN CLASS="linenum">0114:</SPAN> 
+<SPAN CLASS="linenum">0115:</SPAN> 
+<SPAN CLASS="linenum">0116:</SPAN> 
+<SPAN CLASS="linenum">0117:</SPAN> 
+<SPAN CLASS="linenum">0118:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0119:</SPAN> <SPAN CLASS="comment">// Name: CD3DSettingsDialog constructor</SPAN>
+<SPAN CLASS="linenum">0120:</SPAN> <SPAN CLASS="comment">// Desc: </SPAN>
+<SPAN CLASS="linenum">0121:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0122:</SPAN> CD3DSettingsDialog::CD3DSettingsDialog( CD3DEnumeration* pEnumeration, 
+<SPAN CLASS="linenum">0123:</SPAN>                                         CD3DSettings* pSettings)
+<SPAN CLASS="linenum">0124:</SPAN> {
+<SPAN CLASS="linenum">0125:</SPAN>     s_pSettingsDialog = <SPAN CLASS="keyword">this</SPAN>;
+<SPAN CLASS="linenum">0126:</SPAN>     m_pEnumeration = pEnumeration;
+<SPAN CLASS="linenum">0127:</SPAN>     m_d3dSettings = *pSettings;
+<SPAN CLASS="linenum">0128:</SPAN> }
+<SPAN CLASS="linenum">0129:</SPAN> 
+<SPAN CLASS="linenum">0130:</SPAN> 
+<SPAN CLASS="linenum">0131:</SPAN> 
+<SPAN CLASS="linenum">0132:</SPAN> 
+<SPAN CLASS="linenum">0133:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0134:</SPAN> <SPAN CLASS="comment">// Name: ComboBoxAdd</SPAN>
+<SPAN CLASS="linenum">0135:</SPAN> <SPAN CLASS="comment">// Desc: Adds an entry to the combo box.</SPAN>
+<SPAN CLASS="linenum">0136:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0137:</SPAN> <SPAN CLASS="keyword">void</SPAN> CD3DSettingsDialog::ComboBoxAdd( <SPAN CLASS="keyword">int</SPAN> id, <SPAN CLASS="keyword">void</SPAN>* pData, TCHAR* pstrDesc )
+<SPAN CLASS="linenum">0138:</SPAN> {
+<SPAN CLASS="linenum">0139:</SPAN>     HWND hwndCtrl = GetDlgItem( m_hDlg, id );
+<SPAN CLASS="linenum">0140:</SPAN>     DWORD dwItem = ComboBox_AddString( hwndCtrl, pstrDesc );
+<SPAN CLASS="linenum">0141:</SPAN>     ComboBox_SetItemData( hwndCtrl, dwItem, pData );
+<SPAN CLASS="linenum">0142:</SPAN> }
+<SPAN CLASS="linenum">0143:</SPAN> 
+<SPAN CLASS="linenum">0144:</SPAN> 
+<SPAN CLASS="linenum">0145:</SPAN> 
+<SPAN CLASS="linenum">0146:</SPAN> 
+<SPAN CLASS="linenum">0147:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0148:</SPAN> <SPAN CLASS="comment">// Name: ComboBoxSelect</SPAN>
+<SPAN CLASS="linenum">0149:</SPAN> <SPAN CLASS="comment">// Desc: Selects an entry in the combo box.</SPAN>
+<SPAN CLASS="linenum">0150:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0151:</SPAN> <SPAN CLASS="keyword">void</SPAN> CD3DSettingsDialog::ComboBoxSelect( <SPAN CLASS="keyword">int</SPAN> id, <SPAN CLASS="keyword">void</SPAN>* pData )
+<SPAN CLASS="linenum">0152:</SPAN> {
+<SPAN CLASS="linenum">0153:</SPAN>     HWND hwndCtrl = GetDlgItem( m_hDlg, id );
+<SPAN CLASS="linenum">0154:</SPAN>     UINT count = ComboBoxCount( id );
+<SPAN CLASS="linenum">0155:</SPAN>     <SPAN CLASS="keyword">for</SPAN>( UINT iItem = 0; iItem &lt; count; iItem++ )
+<SPAN CLASS="linenum">0156:</SPAN>     {
+<SPAN CLASS="linenum">0157:</SPAN>         <SPAN CLASS="keyword">if</SPAN>( (<SPAN CLASS="keyword">void</SPAN>*)ComboBox_GetItemData( hwndCtrl, iItem ) == pData )
+<SPAN CLASS="linenum">0158:</SPAN>         {
+<SPAN CLASS="linenum">0159:</SPAN>             ComboBox_SetCurSel( hwndCtrl, iItem );
+<SPAN CLASS="linenum">0160:</SPAN>             PostMessage( m_hDlg, WM_COMMAND, 
+<SPAN CLASS="linenum">0161:</SPAN>                 MAKEWPARAM( id, CBN_SELCHANGE ), (LPARAM)hwndCtrl );
+<SPAN CLASS="linenum">0162:</SPAN>             <SPAN CLASS="keyword">return</SPAN>;
+<SPAN CLASS="linenum">0163:</SPAN>         }
+<SPAN CLASS="linenum">0164:</SPAN>     }
+<SPAN CLASS="linenum">0165:</SPAN> }
+<SPAN CLASS="linenum">0166:</SPAN> 
+<SPAN CLASS="linenum">0167:</SPAN> 
+<SPAN CLASS="linenum">0168:</SPAN> 
+<SPAN CLASS="linenum">0169:</SPAN> 
+<SPAN CLASS="linenum">0170:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0171:</SPAN> <SPAN CLASS="comment">// Name: ComboBoxSelectIndex</SPAN>
+<SPAN CLASS="linenum">0172:</SPAN> <SPAN CLASS="comment">// Desc: Selects an entry in the combo box.</SPAN>
+<SPAN CLASS="linenum">0173:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0174:</SPAN> <SPAN CLASS="keyword">void</SPAN> CD3DSettingsDialog::ComboBoxSelectIndex( <SPAN CLASS="keyword">int</SPAN> id, <SPAN CLASS="keyword">int</SPAN> index )
+<SPAN CLASS="linenum">0175:</SPAN> {
+<SPAN CLASS="linenum">0176:</SPAN>     HWND hwndCtrl = GetDlgItem( m_hDlg, id );
+<SPAN CLASS="linenum">0177:</SPAN>     ComboBox_SetCurSel( hwndCtrl, index );
+<SPAN CLASS="linenum">0178:</SPAN>     PostMessage( m_hDlg, WM_COMMAND, MAKEWPARAM( id, CBN_SELCHANGE ), 
+<SPAN CLASS="linenum">0179:</SPAN>         (LPARAM)hwndCtrl );
+<SPAN CLASS="linenum">0180:</SPAN> }
+<SPAN CLASS="linenum">0181:</SPAN> 
+<SPAN CLASS="linenum">0182:</SPAN> 
+<SPAN CLASS="linenum">0183:</SPAN> 
+<SPAN CLASS="linenum">0184:</SPAN> 
+<SPAN CLASS="linenum">0185:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0186:</SPAN> <SPAN CLASS="comment">// Name: ComboBoxSelected</SPAN>
+<SPAN CLASS="linenum">0187:</SPAN> <SPAN CLASS="comment">// Desc: Returns the data for the selected entry in the combo box.</SPAN>
+<SPAN CLASS="linenum">0188:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0189:</SPAN> <SPAN CLASS="keyword">void</SPAN>* CD3DSettingsDialog::ComboBoxSelected( <SPAN CLASS="keyword">int</SPAN> id )
+<SPAN CLASS="linenum">0190:</SPAN> {
+<SPAN CLASS="linenum">0191:</SPAN>     HWND hwndCtrl = GetDlgItem( m_hDlg, id );
+<SPAN CLASS="linenum">0192:</SPAN>     <SPAN CLASS="keyword">int</SPAN> index = ComboBox_GetCurSel( hwndCtrl );
+<SPAN CLASS="linenum">0193:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( index &lt; 0 )
+<SPAN CLASS="linenum">0194:</SPAN>         <SPAN CLASS="keyword">return</SPAN> NULL;
+<SPAN CLASS="linenum">0195:</SPAN>     <SPAN CLASS="keyword">return</SPAN> (<SPAN CLASS="keyword">void</SPAN>*)ComboBox_GetItemData( hwndCtrl, index );
+<SPAN CLASS="linenum">0196:</SPAN> }
+<SPAN CLASS="linenum">0197:</SPAN> 
+<SPAN CLASS="linenum">0198:</SPAN> 
+<SPAN CLASS="linenum">0199:</SPAN> 
+<SPAN CLASS="linenum">0200:</SPAN> 
+<SPAN CLASS="linenum">0201:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0202:</SPAN> <SPAN CLASS="comment">// Name: ComboBoxSomethingSelected</SPAN>
+<SPAN CLASS="linenum">0203:</SPAN> <SPAN CLASS="comment">// Desc: Returns whether any entry in the combo box is selected.  This is </SPAN>
+<SPAN CLASS="linenum">0204:</SPAN> <SPAN CLASS="comment">//       more useful than ComboBoxSelected() when you need to distinguish </SPAN>
+<SPAN CLASS="linenum">0205:</SPAN> <SPAN CLASS="comment">//       between having no item selected vs. having an item selected whose </SPAN>
+<SPAN CLASS="linenum">0206:</SPAN> <SPAN CLASS="comment">//       itemData is NULL.</SPAN>
+<SPAN CLASS="linenum">0207:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0208:</SPAN> <SPAN CLASS="keyword">bool</SPAN> CD3DSettingsDialog::ComboBoxSomethingSelected( <SPAN CLASS="keyword">int</SPAN> id )
+<SPAN CLASS="linenum">0209:</SPAN> {
+<SPAN CLASS="linenum">0210:</SPAN>     HWND hwndCtrl = GetDlgItem( m_hDlg, id );
+<SPAN CLASS="linenum">0211:</SPAN>     <SPAN CLASS="keyword">int</SPAN> index = ComboBox_GetCurSel( hwndCtrl );
+<SPAN CLASS="linenum">0212:</SPAN>     <SPAN CLASS="keyword">return</SPAN> ( index &gt;= 0 );
+<SPAN CLASS="linenum">0213:</SPAN> }
+<SPAN CLASS="linenum">0214:</SPAN> 
+<SPAN CLASS="linenum">0215:</SPAN> 
+<SPAN CLASS="linenum">0216:</SPAN> 
+<SPAN CLASS="linenum">0217:</SPAN> 
+<SPAN CLASS="linenum">0218:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0219:</SPAN> <SPAN CLASS="comment">// Name: ComboBoxCount</SPAN>
+<SPAN CLASS="linenum">0220:</SPAN> <SPAN CLASS="comment">// Desc: Returns the number of entries in the combo box.</SPAN>
+<SPAN CLASS="linenum">0221:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0222:</SPAN> UINT CD3DSettingsDialog::ComboBoxCount( <SPAN CLASS="keyword">int</SPAN> id )
+<SPAN CLASS="linenum">0223:</SPAN> {
+<SPAN CLASS="linenum">0224:</SPAN>     HWND hwndCtrl = GetDlgItem( m_hDlg, id );
+<SPAN CLASS="linenum">0225:</SPAN>     <SPAN CLASS="keyword">return</SPAN> ComboBox_GetCount( hwndCtrl );
+<SPAN CLASS="linenum">0226:</SPAN> }
+<SPAN CLASS="linenum">0227:</SPAN> 
+<SPAN CLASS="linenum">0228:</SPAN> 
+<SPAN CLASS="linenum">0229:</SPAN> 
+<SPAN CLASS="linenum">0230:</SPAN> 
+<SPAN CLASS="linenum">0231:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0232:</SPAN> <SPAN CLASS="comment">// Name: ComboBoxClear</SPAN>
+<SPAN CLASS="linenum">0233:</SPAN> <SPAN CLASS="comment">// Desc: Clears the entries in the combo box.</SPAN>
+<SPAN CLASS="linenum">0234:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0235:</SPAN> <SPAN CLASS="keyword">void</SPAN> CD3DSettingsDialog::ComboBoxClear( <SPAN CLASS="keyword">int</SPAN> id )
+<SPAN CLASS="linenum">0236:</SPAN> {
+<SPAN CLASS="linenum">0237:</SPAN>     HWND hwndCtrl = GetDlgItem( m_hDlg, id );
+<SPAN CLASS="linenum">0238:</SPAN>     ComboBox_ResetContent( hwndCtrl );
+<SPAN CLASS="linenum">0239:</SPAN> }
+<SPAN CLASS="linenum">0240:</SPAN> 
+<SPAN CLASS="linenum">0241:</SPAN> 
+<SPAN CLASS="linenum">0242:</SPAN> 
+<SPAN CLASS="linenum">0243:</SPAN> 
+<SPAN CLASS="linenum">0244:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0245:</SPAN> <SPAN CLASS="comment">// Name: ComboBoxContainsText</SPAN>
+<SPAN CLASS="linenum">0246:</SPAN> <SPAN CLASS="comment">// Desc: Returns whether the combo box contains the given text.</SPAN>
+<SPAN CLASS="linenum">0247:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0248:</SPAN> <SPAN CLASS="keyword">bool</SPAN> CD3DSettingsDialog::ComboBoxContainsText( <SPAN CLASS="keyword">int</SPAN> id, TCHAR* pstrText )
+<SPAN CLASS="linenum">0249:</SPAN> {
+<SPAN CLASS="linenum">0250:</SPAN>     TCHAR strItem[200];
+<SPAN CLASS="linenum">0251:</SPAN>     HWND hwndCtrl = GetDlgItem( m_hDlg, id );
+<SPAN CLASS="linenum">0252:</SPAN>     UINT count = ComboBoxCount( id );
+<SPAN CLASS="linenum">0253:</SPAN>     <SPAN CLASS="keyword">for</SPAN>( UINT iItem = 0; iItem &lt; count; iItem++ )
+<SPAN CLASS="linenum">0254:</SPAN>     {
+<SPAN CLASS="linenum">0255:</SPAN>         <SPAN CLASS="keyword">if</SPAN>( ComboBox_GetLBTextLen( hwndCtrl, iItem ) &gt;= 200 )
+<SPAN CLASS="linenum">0256:</SPAN>             <SPAN CLASS="keyword">continue</SPAN>; <SPAN CLASS="comment">// shouldn't happen, but don't overwrite buffer if it does</SPAN>
+<SPAN CLASS="linenum">0257:</SPAN>         ComboBox_GetLBText( hwndCtrl, iItem, strItem );
+<SPAN CLASS="linenum">0258:</SPAN>         <SPAN CLASS="keyword">if</SPAN>( lstrcmp( strItem, pstrText ) == 0 )
+<SPAN CLASS="linenum">0259:</SPAN>             <SPAN CLASS="keyword">return</SPAN> <SPAN CLASS="keyword">true</SPAN>;
+<SPAN CLASS="linenum">0260:</SPAN>     }
+<SPAN CLASS="linenum">0261:</SPAN>     <SPAN CLASS="keyword">return</SPAN> <SPAN CLASS="keyword">false</SPAN>;
+<SPAN CLASS="linenum">0262:</SPAN> }
+<SPAN CLASS="linenum">0263:</SPAN> 
+<SPAN CLASS="linenum">0264:</SPAN> 
+<SPAN CLASS="linenum">0265:</SPAN> 
+<SPAN CLASS="linenum">0266:</SPAN> 
+<SPAN CLASS="linenum">0267:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0268:</SPAN> <SPAN CLASS="comment">// Name: ShowDialog</SPAN>
+<SPAN CLASS="linenum">0269:</SPAN> <SPAN CLASS="comment">// Desc: Show the D3D settings dialog.</SPAN>
+<SPAN CLASS="linenum">0270:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0271:</SPAN> INT_PTR CD3DSettingsDialog::ShowDialog( HWND hwndParent )
+<SPAN CLASS="linenum">0272:</SPAN> {
+<SPAN CLASS="linenum">0273:</SPAN>     <SPAN CLASS="keyword">return</SPAN> DialogBox( NULL, MAKEINTRESOURCE( IDD_SELECTDEVICE ), 
+<SPAN CLASS="linenum">0274:</SPAN>         hwndParent, DialogProcHelper );
+<SPAN CLASS="linenum">0275:</SPAN> }
+<SPAN CLASS="linenum">0276:</SPAN> 
+<SPAN CLASS="linenum">0277:</SPAN> 
+<SPAN CLASS="linenum">0278:</SPAN> 
+<SPAN CLASS="linenum">0279:</SPAN> 
+<SPAN CLASS="linenum">0280:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0281:</SPAN> <SPAN CLASS="comment">// Name: DialogProc</SPAN>
+<SPAN CLASS="linenum">0282:</SPAN> <SPAN CLASS="comment">// Desc: Handle window messages in the dialog.</SPAN>
+<SPAN CLASS="linenum">0283:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0284:</SPAN> INT_PTR CD3DSettingsDialog::DialogProc( HWND hDlg, UINT msg, WPARAM wParam, LPARAM lParam )
+<SPAN CLASS="linenum">0285:</SPAN> {
+<SPAN CLASS="linenum">0286:</SPAN>     UNREFERENCED_PARAMETER( lParam );
+<SPAN CLASS="linenum">0287:</SPAN> 
+<SPAN CLASS="linenum">0288:</SPAN>     <SPAN CLASS="keyword">switch</SPAN>( msg )
+<SPAN CLASS="linenum">0289:</SPAN>     {
+<SPAN CLASS="linenum">0290:</SPAN>     <SPAN CLASS="keyword">case</SPAN> WM_INITDIALOG:
+<SPAN CLASS="linenum">0291:</SPAN>         {
+<SPAN CLASS="linenum">0292:</SPAN>             m_hDlg = hDlg;
+<SPAN CLASS="linenum">0293:</SPAN> 
+<SPAN CLASS="linenum">0294:</SPAN>             <SPAN CLASS="comment">// Fill adapter combo box.  Updating the selected adapter will trigger</SPAN>
+<SPAN CLASS="linenum">0295:</SPAN>             <SPAN CLASS="comment">// updates of the rest of the dialog.</SPAN>
+<SPAN CLASS="linenum">0296:</SPAN>             <SPAN CLASS="keyword">for</SPAN>( UINT iai = 0; iai &lt; m_pEnumeration-&gt;m_pAdapterInfoList-&gt;Count(); iai++ )
+<SPAN CLASS="linenum">0297:</SPAN>             {
+<SPAN CLASS="linenum">0298:</SPAN>                 D3DAdapterInfo* pAdapterInfo;
+<SPAN CLASS="linenum">0299:</SPAN>                 pAdapterInfo = (D3DAdapterInfo*)m_pEnumeration-&gt;m_pAdapterInfoList-&gt;GetPtr(iai);
+<SPAN CLASS="linenum">0300:</SPAN>                 TCHAR strDescription[512];
+<SPAN CLASS="linenum">0301:</SPAN>                 DXUtil_ConvertAnsiStringToGenericCch( strDescription, pAdapterInfo-&gt;AdapterIdentifier.Description, 512 );
+<SPAN CLASS="linenum">0302:</SPAN>                 ComboBoxAdd( IDC_ADAPTER_COMBO, pAdapterInfo, strDescription );
+<SPAN CLASS="linenum">0303:</SPAN>                 <SPAN CLASS="keyword">if</SPAN>( pAdapterInfo-&gt;AdapterOrdinal == m_d3dSettings.AdapterOrdinal() )
+<SPAN CLASS="linenum">0304:</SPAN>                     ComboBoxSelect( IDC_ADAPTER_COMBO, pAdapterInfo );
+<SPAN CLASS="linenum">0305:</SPAN>             }
+<SPAN CLASS="linenum">0306:</SPAN>             <SPAN CLASS="keyword">if</SPAN>( !ComboBoxSomethingSelected( IDC_ADAPTER_COMBO ) &amp;&amp;
+<SPAN CLASS="linenum">0307:</SPAN>                 ComboBoxCount( IDC_ADAPTER_COMBO ) &gt; 0 )
+<SPAN CLASS="linenum">0308:</SPAN>             {
+<SPAN CLASS="linenum">0309:</SPAN>                 ComboBoxSelectIndex( IDC_ADAPTER_COMBO, 0 );
+<SPAN CLASS="linenum">0310:</SPAN>             }
+<SPAN CLASS="linenum">0311:</SPAN>         }
+<SPAN CLASS="linenum">0312:</SPAN>         <SPAN CLASS="keyword">return</SPAN> TRUE;
+<SPAN CLASS="linenum">0313:</SPAN> 
+<SPAN CLASS="linenum">0314:</SPAN>     <SPAN CLASS="keyword">case</SPAN> WM_COMMAND:
+<SPAN CLASS="linenum">0315:</SPAN>         <SPAN CLASS="keyword">switch</SPAN>( LOWORD(wParam) )
+<SPAN CLASS="linenum">0316:</SPAN>         {
+<SPAN CLASS="linenum">0317:</SPAN>         <SPAN CLASS="keyword">case</SPAN> IDOK:
+<SPAN CLASS="linenum">0318:</SPAN>             EndDialog( hDlg, IDOK );
+<SPAN CLASS="linenum">0319:</SPAN>             <SPAN CLASS="keyword">break</SPAN>;
+<SPAN CLASS="linenum">0320:</SPAN>         <SPAN CLASS="keyword">case</SPAN> IDCANCEL:
+<SPAN CLASS="linenum">0321:</SPAN>             EndDialog( hDlg, IDCANCEL );
+<SPAN CLASS="linenum">0322:</SPAN>             <SPAN CLASS="keyword">break</SPAN>;
+<SPAN CLASS="linenum">0323:</SPAN>         <SPAN CLASS="keyword">case</SPAN> IDC_ADAPTER_COMBO:
+<SPAN CLASS="linenum">0324:</SPAN>             <SPAN CLASS="keyword">if</SPAN>( CBN_SELCHANGE == HIWORD(wParam) )
+<SPAN CLASS="linenum">0325:</SPAN>                 AdapterChanged();
+<SPAN CLASS="linenum">0326:</SPAN>             <SPAN CLASS="keyword">break</SPAN>;
+<SPAN CLASS="linenum">0327:</SPAN>         <SPAN CLASS="keyword">case</SPAN> IDC_DEVICE_COMBO:
+<SPAN CLASS="linenum">0328:</SPAN>             <SPAN CLASS="keyword">if</SPAN>( CBN_SELCHANGE == HIWORD(wParam) )
+<SPAN CLASS="linenum">0329:</SPAN>                 DeviceChanged();
+<SPAN CLASS="linenum">0330:</SPAN>             <SPAN CLASS="keyword">break</SPAN>;
+<SPAN CLASS="linenum">0331:</SPAN>         <SPAN CLASS="keyword">case</SPAN> IDC_ADAPTERFORMAT_COMBO:
+<SPAN CLASS="linenum">0332:</SPAN>             <SPAN CLASS="keyword">if</SPAN>( CBN_SELCHANGE == HIWORD(wParam) )
+<SPAN CLASS="linenum">0333:</SPAN>                 AdapterFormatChanged();
+<SPAN CLASS="linenum">0334:</SPAN>             <SPAN CLASS="keyword">break</SPAN>;
+<SPAN CLASS="linenum">0335:</SPAN>         <SPAN CLASS="keyword">case</SPAN> IDC_RESOLUTION_COMBO:
+<SPAN CLASS="linenum">0336:</SPAN>             <SPAN CLASS="keyword">if</SPAN>( CBN_SELCHANGE == HIWORD(wParam) )
+<SPAN CLASS="linenum">0337:</SPAN>                 ResolutionChanged();
+<SPAN CLASS="linenum">0338:</SPAN>             <SPAN CLASS="keyword">break</SPAN>;
+<SPAN CLASS="linenum">0339:</SPAN>         <SPAN CLASS="keyword">case</SPAN> IDC_REFRESHRATE_COMBO:
+<SPAN CLASS="linenum">0340:</SPAN>             <SPAN CLASS="keyword">if</SPAN>( CBN_SELCHANGE == HIWORD(wParam) )
+<SPAN CLASS="linenum">0341:</SPAN>                 RefreshRateChanged();
+<SPAN CLASS="linenum">0342:</SPAN>             <SPAN CLASS="keyword">break</SPAN>;
+<SPAN CLASS="linenum">0343:</SPAN>         <SPAN CLASS="keyword">case</SPAN> IDC_BACKBUFFERFORMAT_COMBO:
+<SPAN CLASS="linenum">0344:</SPAN>             <SPAN CLASS="keyword">if</SPAN>( CBN_SELCHANGE == HIWORD(wParam) )
+<SPAN CLASS="linenum">0345:</SPAN>                 BackBufferFormatChanged();
+<SPAN CLASS="linenum">0346:</SPAN>             <SPAN CLASS="keyword">break</SPAN>;
+<SPAN CLASS="linenum">0347:</SPAN>         <SPAN CLASS="keyword">case</SPAN> IDC_DEPTHSTENCILBUFFERFORMAT_COMBO:
+<SPAN CLASS="linenum">0348:</SPAN>             <SPAN CLASS="keyword">if</SPAN>( CBN_SELCHANGE == HIWORD(wParam) )
+<SPAN CLASS="linenum">0349:</SPAN>                 DepthStencilBufferFormatChanged();
+<SPAN CLASS="linenum">0350:</SPAN>             <SPAN CLASS="keyword">break</SPAN>;
+<SPAN CLASS="linenum">0351:</SPAN>         <SPAN CLASS="keyword">case</SPAN> IDC_MULTISAMPLE_COMBO:
+<SPAN CLASS="linenum">0352:</SPAN>             <SPAN CLASS="keyword">if</SPAN>( CBN_SELCHANGE == HIWORD(wParam) )
+<SPAN CLASS="linenum">0353:</SPAN>                 MultisampleTypeChanged();
+<SPAN CLASS="linenum">0354:</SPAN>             <SPAN CLASS="keyword">break</SPAN>;
+<SPAN CLASS="linenum">0355:</SPAN>         <SPAN CLASS="keyword">case</SPAN> IDC_MULTISAMPLE_QUALITY_COMBO:
+<SPAN CLASS="linenum">0356:</SPAN>             <SPAN CLASS="keyword">if</SPAN>( CBN_SELCHANGE == HIWORD(wParam) )
+<SPAN CLASS="linenum">0357:</SPAN>                 MultisampleQualityChanged();
+<SPAN CLASS="linenum">0358:</SPAN>             <SPAN CLASS="keyword">break</SPAN>;
+<SPAN CLASS="linenum">0359:</SPAN>         <SPAN CLASS="keyword">case</SPAN> IDC_VERTEXPROCESSING_COMBO:
+<SPAN CLASS="linenum">0360:</SPAN>             <SPAN CLASS="keyword">if</SPAN>( CBN_SELCHANGE == HIWORD(wParam) )
+<SPAN CLASS="linenum">0361:</SPAN>                 VertexProcessingChanged();
+<SPAN CLASS="linenum">0362:</SPAN>             <SPAN CLASS="keyword">break</SPAN>;
+<SPAN CLASS="linenum">0363:</SPAN>         <SPAN CLASS="keyword">case</SPAN> IDC_PRESENTINTERVAL_COMBO:
+<SPAN CLASS="linenum">0364:</SPAN>             <SPAN CLASS="keyword">if</SPAN>( CBN_SELCHANGE == HIWORD(wParam) )
+<SPAN CLASS="linenum">0365:</SPAN>                 PresentIntervalChanged();
+<SPAN CLASS="linenum">0366:</SPAN>             <SPAN CLASS="keyword">break</SPAN>;
+<SPAN CLASS="linenum">0367:</SPAN>         <SPAN CLASS="keyword">case</SPAN> IDC_WINDOW:
+<SPAN CLASS="linenum">0368:</SPAN>         <SPAN CLASS="keyword">case</SPAN> IDC_FULLSCREEN:
+<SPAN CLASS="linenum">0369:</SPAN>             WindowedFullscreenChanged();
+<SPAN CLASS="linenum">0370:</SPAN>             <SPAN CLASS="keyword">break</SPAN>;
+<SPAN CLASS="linenum">0371:</SPAN>         }
+<SPAN CLASS="linenum">0372:</SPAN>         <SPAN CLASS="keyword">return</SPAN> TRUE;
+<SPAN CLASS="linenum">0373:</SPAN> 
+<SPAN CLASS="linenum">0374:</SPAN>     <SPAN CLASS="keyword">default</SPAN>:
+<SPAN CLASS="linenum">0375:</SPAN>         <SPAN CLASS="keyword">return</SPAN> FALSE;
+<SPAN CLASS="linenum">0376:</SPAN>     }
+<SPAN CLASS="linenum">0377:</SPAN> }
+<SPAN CLASS="linenum">0378:</SPAN> 
+<SPAN CLASS="linenum">0379:</SPAN> 
+<SPAN CLASS="linenum">0380:</SPAN> 
+<SPAN CLASS="linenum">0381:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0382:</SPAN> <SPAN CLASS="comment">// Name: AdapterChanged</SPAN>
+<SPAN CLASS="linenum">0383:</SPAN> <SPAN CLASS="comment">// Desc: Respond to a change of selected adapter.</SPAN>
+<SPAN CLASS="linenum">0384:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0385:</SPAN> <SPAN CLASS="keyword">void</SPAN> CD3DSettingsDialog::AdapterChanged( <SPAN CLASS="keyword">void</SPAN> )
+<SPAN CLASS="linenum">0386:</SPAN> {
+<SPAN CLASS="linenum">0387:</SPAN>     D3DAdapterInfo* pAdapterInfo = (D3DAdapterInfo*)ComboBoxSelected( IDC_ADAPTER_COMBO );
+<SPAN CLASS="linenum">0388:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( pAdapterInfo == NULL )
+<SPAN CLASS="linenum">0389:</SPAN>         <SPAN CLASS="keyword">return</SPAN>;
+<SPAN CLASS="linenum">0390:</SPAN>     
+<SPAN CLASS="linenum">0391:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( m_d3dSettings.IsWindowed )
+<SPAN CLASS="linenum">0392:</SPAN>         m_d3dSettings.pWindowed_AdapterInfo = pAdapterInfo;
+<SPAN CLASS="linenum">0393:</SPAN>     <SPAN CLASS="keyword">else</SPAN>
+<SPAN CLASS="linenum">0394:</SPAN>         m_d3dSettings.pFullscreen_AdapterInfo = pAdapterInfo;
+<SPAN CLASS="linenum">0395:</SPAN> 
+<SPAN CLASS="linenum">0396:</SPAN>     <SPAN CLASS="comment">// Update device combo box</SPAN>
+<SPAN CLASS="linenum">0397:</SPAN>     ComboBoxClear( IDC_DEVICE_COMBO );
+<SPAN CLASS="linenum">0398:</SPAN>     <SPAN CLASS="keyword">for</SPAN>( UINT idi = 0; idi &lt; pAdapterInfo-&gt;pDeviceInfoList-&gt;Count(); idi++ )
+<SPAN CLASS="linenum">0399:</SPAN>     {
+<SPAN CLASS="linenum">0400:</SPAN>         D3DDeviceInfo* pDeviceInfo = (D3DDeviceInfo*)pAdapterInfo-&gt;pDeviceInfoList-&gt;GetPtr(idi);
+<SPAN CLASS="linenum">0401:</SPAN>         ComboBoxAdd( IDC_DEVICE_COMBO, pDeviceInfo, 
+<SPAN CLASS="linenum">0402:</SPAN>                      D3DDevTypeToString( pDeviceInfo-&gt;DevType ) );
+<SPAN CLASS="linenum">0403:</SPAN>         <SPAN CLASS="keyword">if</SPAN>( pDeviceInfo-&gt;DevType == m_d3dSettings.DevType() )
+<SPAN CLASS="linenum">0404:</SPAN>             ComboBoxSelect( IDC_DEVICE_COMBO, pDeviceInfo );
+<SPAN CLASS="linenum">0405:</SPAN>     }
+<SPAN CLASS="linenum">0406:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( !ComboBoxSomethingSelected( IDC_DEVICE_COMBO ) &amp;&amp;
+<SPAN CLASS="linenum">0407:</SPAN>         ComboBoxCount( IDC_DEVICE_COMBO ) &gt; 0 )
+<SPAN CLASS="linenum">0408:</SPAN>     {
+<SPAN CLASS="linenum">0409:</SPAN>         ComboBoxSelectIndex( IDC_DEVICE_COMBO, 0 );
+<SPAN CLASS="linenum">0410:</SPAN>     }
+<SPAN CLASS="linenum">0411:</SPAN> }
+<SPAN CLASS="linenum">0412:</SPAN> 
+<SPAN CLASS="linenum">0413:</SPAN> 
+<SPAN CLASS="linenum">0414:</SPAN> 
+<SPAN CLASS="linenum">0415:</SPAN> 
+<SPAN CLASS="linenum">0416:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0417:</SPAN> <SPAN CLASS="comment">// Name: DeviceChanged</SPAN>
+<SPAN CLASS="linenum">0418:</SPAN> <SPAN CLASS="comment">// Desc: Respond to a change of selected device by resetting the </SPAN>
+<SPAN CLASS="linenum">0419:</SPAN> <SPAN CLASS="comment">//       fullscreen/windowed radio buttons.  Updating these buttons will </SPAN>
+<SPAN CLASS="linenum">0420:</SPAN> <SPAN CLASS="comment">//       trigger updates of the rest of the dialog.</SPAN>
+<SPAN CLASS="linenum">0421:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0422:</SPAN> <SPAN CLASS="keyword">void</SPAN> CD3DSettingsDialog::DeviceChanged( <SPAN CLASS="keyword">void</SPAN> )
+<SPAN CLASS="linenum">0423:</SPAN> {
+<SPAN CLASS="linenum">0424:</SPAN>     D3DDeviceInfo* pDeviceInfo = (D3DDeviceInfo*)ComboBoxSelected( IDC_DEVICE_COMBO );
+<SPAN CLASS="linenum">0425:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( pDeviceInfo == NULL )
+<SPAN CLASS="linenum">0426:</SPAN>         <SPAN CLASS="keyword">return</SPAN>;
+<SPAN CLASS="linenum">0427:</SPAN> 
+<SPAN CLASS="linenum">0428:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( m_d3dSettings.IsWindowed )
+<SPAN CLASS="linenum">0429:</SPAN>         m_d3dSettings.pWindowed_DeviceInfo = pDeviceInfo;
+<SPAN CLASS="linenum">0430:</SPAN>     <SPAN CLASS="keyword">else</SPAN>
+<SPAN CLASS="linenum">0431:</SPAN>         m_d3dSettings.pFullscreen_DeviceInfo = pDeviceInfo;
+<SPAN CLASS="linenum">0432:</SPAN> 
+<SPAN CLASS="linenum">0433:</SPAN>     <SPAN CLASS="comment">// Update fullscreen/windowed radio buttons</SPAN>
+<SPAN CLASS="linenum">0434:</SPAN>     <SPAN CLASS="keyword">bool</SPAN> HasWindowedDeviceCombo = <SPAN CLASS="keyword">false</SPAN>;
+<SPAN CLASS="linenum">0435:</SPAN>     <SPAN CLASS="keyword">bool</SPAN> HasFullscreenDeviceCombo = <SPAN CLASS="keyword">false</SPAN>;
+<SPAN CLASS="linenum">0436:</SPAN>     <SPAN CLASS="keyword">for</SPAN>( UINT idc = 0; idc &lt; pDeviceInfo-&gt;pDeviceComboList-&gt;Count(); idc++ )
+<SPAN CLASS="linenum">0437:</SPAN>     {
+<SPAN CLASS="linenum">0438:</SPAN>         D3DDeviceCombo* pDeviceCombo = (D3DDeviceCombo*)pDeviceInfo-&gt;pDeviceComboList-&gt;GetPtr(idc);
+<SPAN CLASS="linenum">0439:</SPAN>         <SPAN CLASS="keyword">if</SPAN>( pDeviceCombo-&gt;IsWindowed )
+<SPAN CLASS="linenum">0440:</SPAN>             HasWindowedDeviceCombo = <SPAN CLASS="keyword">true</SPAN>;
+<SPAN CLASS="linenum">0441:</SPAN>         <SPAN CLASS="keyword">else</SPAN>
+<SPAN CLASS="linenum">0442:</SPAN>             HasFullscreenDeviceCombo = <SPAN CLASS="keyword">true</SPAN>;
+<SPAN CLASS="linenum">0443:</SPAN>     }
+<SPAN CLASS="linenum">0444:</SPAN>     EnableWindow( GetDlgItem( m_hDlg, IDC_WINDOW ), HasWindowedDeviceCombo );
+<SPAN CLASS="linenum">0445:</SPAN>     EnableWindow( GetDlgItem( m_hDlg, IDC_FULLSCREEN ), HasFullscreenDeviceCombo );
+<SPAN CLASS="linenum">0446:</SPAN>     <SPAN CLASS="keyword">if</SPAN> (m_d3dSettings.IsWindowed &amp;&amp; HasWindowedDeviceCombo)
+<SPAN CLASS="linenum">0447:</SPAN>     {
+<SPAN CLASS="linenum">0448:</SPAN>         CheckRadioButton( m_hDlg, IDC_WINDOW, IDC_FULLSCREEN, IDC_WINDOW );
+<SPAN CLASS="linenum">0449:</SPAN>     }
+<SPAN CLASS="linenum">0450:</SPAN>     <SPAN CLASS="keyword">else</SPAN>
+<SPAN CLASS="linenum">0451:</SPAN>     {
+<SPAN CLASS="linenum">0452:</SPAN>         CheckRadioButton( m_hDlg, IDC_WINDOW, IDC_FULLSCREEN, IDC_FULLSCREEN );
+<SPAN CLASS="linenum">0453:</SPAN>     }
+<SPAN CLASS="linenum">0454:</SPAN>     WindowedFullscreenChanged();
+<SPAN CLASS="linenum">0455:</SPAN> }
+<SPAN CLASS="linenum">0456:</SPAN> 
+<SPAN CLASS="linenum">0457:</SPAN> 
+<SPAN CLASS="linenum">0458:</SPAN> 
+<SPAN CLASS="linenum">0459:</SPAN> 
+<SPAN CLASS="linenum">0460:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0461:</SPAN> <SPAN CLASS="comment">// Name: WindowedFullscreenChanged</SPAN>
+<SPAN CLASS="linenum">0462:</SPAN> <SPAN CLASS="comment">// Desc: Respond to a change of windowed/fullscreen state by rebuilding the</SPAN>
+<SPAN CLASS="linenum">0463:</SPAN> <SPAN CLASS="comment">//       adapter format list, resolution list, and refresh rate list.</SPAN>
+<SPAN CLASS="linenum">0464:</SPAN> <SPAN CLASS="comment">//       Updating the selected adapter format will trigger updates of the </SPAN>
+<SPAN CLASS="linenum">0465:</SPAN> <SPAN CLASS="comment">//       rest of the dialog.</SPAN>
+<SPAN CLASS="linenum">0466:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0467:</SPAN> <SPAN CLASS="keyword">void</SPAN> CD3DSettingsDialog::WindowedFullscreenChanged( <SPAN CLASS="keyword">void</SPAN> )
+<SPAN CLASS="linenum">0468:</SPAN> {
+<SPAN CLASS="linenum">0469:</SPAN>     D3DAdapterInfo* pAdapterInfo = (D3DAdapterInfo*)ComboBoxSelected( IDC_ADAPTER_COMBO );
+<SPAN CLASS="linenum">0470:</SPAN>     D3DDeviceInfo* pDeviceInfo = (D3DDeviceInfo*)ComboBoxSelected( IDC_DEVICE_COMBO );
+<SPAN CLASS="linenum">0471:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( pAdapterInfo == NULL || pDeviceInfo == NULL )
+<SPAN CLASS="linenum">0472:</SPAN>         <SPAN CLASS="keyword">return</SPAN>;
+<SPAN CLASS="linenum">0473:</SPAN> 
+<SPAN CLASS="linenum">0474:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( IsDlgButtonChecked( m_hDlg, IDC_WINDOW ) )
+<SPAN CLASS="linenum">0475:</SPAN>     {
+<SPAN CLASS="linenum">0476:</SPAN>         m_d3dSettings.IsWindowed = <SPAN CLASS="keyword">true</SPAN>;
+<SPAN CLASS="linenum">0477:</SPAN>         m_d3dSettings.pWindowed_AdapterInfo = pAdapterInfo;
+<SPAN CLASS="linenum">0478:</SPAN>         m_d3dSettings.pWindowed_DeviceInfo = pDeviceInfo;
+<SPAN CLASS="linenum">0479:</SPAN> 
+<SPAN CLASS="linenum">0480:</SPAN>         <SPAN CLASS="comment">// Update adapter format combo box</SPAN>
+<SPAN CLASS="linenum">0481:</SPAN>         ComboBoxClear( IDC_ADAPTERFORMAT_COMBO );
+<SPAN CLASS="linenum">0482:</SPAN>         ComboBoxAdd( IDC_ADAPTERFORMAT_COMBO, (<SPAN CLASS="keyword">void</SPAN>*)m_d3dSettings.Windowed_DisplayMode.Format,
+<SPAN CLASS="linenum">0483:</SPAN>             D3DUtil_D3DFormatToString( m_d3dSettings.Windowed_DisplayMode.Format ) );
+<SPAN CLASS="linenum">0484:</SPAN>         ComboBoxSelectIndex( IDC_ADAPTERFORMAT_COMBO, 0 );
+<SPAN CLASS="linenum">0485:</SPAN>         EnableWindow( GetDlgItem( m_hDlg, IDC_ADAPTERFORMAT_COMBO ), <SPAN CLASS="keyword">false</SPAN> );
+<SPAN CLASS="linenum">0486:</SPAN> 
+<SPAN CLASS="linenum">0487:</SPAN>         <SPAN CLASS="comment">// Update resolution combo box</SPAN>
+<SPAN CLASS="linenum">0488:</SPAN>         DWORD dwResolutionData;
+<SPAN CLASS="linenum">0489:</SPAN>         TCHAR strResolution[50];
+<SPAN CLASS="linenum">0490:</SPAN>         dwResolutionData = MAKELONG( m_d3dSettings.Windowed_DisplayMode.Width,
+<SPAN CLASS="linenum">0491:</SPAN>                                      m_d3dSettings.Windowed_DisplayMode.Height );
+<SPAN CLASS="linenum">0492:</SPAN>         _sntprintf( strResolution, 50, TEXT("<SPAN CLASS="string">%d by %d</SPAN>"), m_d3dSettings.Windowed_DisplayMode.Width, 
+<SPAN CLASS="linenum">0493:</SPAN>             m_d3dSettings.Windowed_DisplayMode.Height );
+<SPAN CLASS="linenum">0494:</SPAN>         strResolution[49] = 0;
+<SPAN CLASS="linenum">0495:</SPAN>         ComboBoxClear( IDC_RESOLUTION_COMBO );
+<SPAN CLASS="linenum">0496:</SPAN>         ComboBoxAdd( IDC_RESOLUTION_COMBO, ULongToPtr(dwResolutionData), strResolution );
+<SPAN CLASS="linenum">0497:</SPAN>         ComboBoxSelectIndex( IDC_RESOLUTION_COMBO, 0 );
+<SPAN CLASS="linenum">0498:</SPAN>         EnableWindow( GetDlgItem( m_hDlg, IDC_RESOLUTION_COMBO ), <SPAN CLASS="keyword">false</SPAN> );
+<SPAN CLASS="linenum">0499:</SPAN> 
+<SPAN CLASS="linenum">0500:</SPAN>         <SPAN CLASS="comment">// Update refresh rate combo box</SPAN>
+<SPAN CLASS="linenum">0501:</SPAN>         TCHAR strRefreshRate[50];
+<SPAN CLASS="linenum">0502:</SPAN>         <SPAN CLASS="keyword">if</SPAN>( m_d3dSettings.Windowed_DisplayMode.RefreshRate == 0 )
+<SPAN CLASS="linenum">0503:</SPAN>             lstrcpy( strRefreshRate, TEXT("<SPAN CLASS="string">Default Rate</SPAN>") );
+<SPAN CLASS="linenum">0504:</SPAN>         <SPAN CLASS="keyword">else</SPAN>
+<SPAN CLASS="linenum">0505:</SPAN>             _sntprintf( strRefreshRate, 50, TEXT("<SPAN CLASS="string">%d Hz</SPAN>"), m_d3dSettings.Windowed_DisplayMode.RefreshRate );
+<SPAN CLASS="linenum">0506:</SPAN>         strRefreshRate[49] = 0;
+<SPAN CLASS="linenum">0507:</SPAN>         ComboBoxClear( IDC_REFRESHRATE_COMBO );
+<SPAN CLASS="linenum">0508:</SPAN>         ComboBoxAdd( IDC_REFRESHRATE_COMBO, ULongToPtr(m_d3dSettings.Windowed_DisplayMode.RefreshRate),
+<SPAN CLASS="linenum">0509:</SPAN>             strRefreshRate );
+<SPAN CLASS="linenum">0510:</SPAN>         ComboBoxSelectIndex( IDC_REFRESHRATE_COMBO, 0 );
+<SPAN CLASS="linenum">0511:</SPAN>         EnableWindow( GetDlgItem( m_hDlg, IDC_REFRESHRATE_COMBO ), <SPAN CLASS="keyword">false</SPAN> );
+<SPAN CLASS="linenum">0512:</SPAN>     }
+<SPAN CLASS="linenum">0513:</SPAN>     <SPAN CLASS="keyword">else</SPAN>
+<SPAN CLASS="linenum">0514:</SPAN>     {
+<SPAN CLASS="linenum">0515:</SPAN>         m_d3dSettings.IsWindowed = <SPAN CLASS="keyword">false</SPAN>;
+<SPAN CLASS="linenum">0516:</SPAN>         m_d3dSettings.pFullscreen_AdapterInfo = pAdapterInfo;
+<SPAN CLASS="linenum">0517:</SPAN>         m_d3dSettings.pFullscreen_DeviceInfo = pDeviceInfo;
+<SPAN CLASS="linenum">0518:</SPAN> 
+<SPAN CLASS="linenum">0519:</SPAN>         <SPAN CLASS="comment">// Update adapter format combo box</SPAN>
+<SPAN CLASS="linenum">0520:</SPAN>         ComboBoxClear( IDC_ADAPTERFORMAT_COMBO );
+<SPAN CLASS="linenum">0521:</SPAN>         <SPAN CLASS="keyword">for</SPAN>( UINT idc = 0; idc &lt; pDeviceInfo-&gt;pDeviceComboList-&gt;Count(); idc++ )
+<SPAN CLASS="linenum">0522:</SPAN>         {
+<SPAN CLASS="linenum">0523:</SPAN>             D3DDeviceCombo* pDeviceCombo = (D3DDeviceCombo*)pDeviceInfo-&gt;pDeviceComboList-&gt;GetPtr(idc);
+<SPAN CLASS="linenum">0524:</SPAN>             D3DFORMAT adapterFormat = pDeviceCombo-&gt;AdapterFormat;
+<SPAN CLASS="linenum">0525:</SPAN>             <SPAN CLASS="keyword">if</SPAN>( !ComboBoxContainsText( IDC_ADAPTERFORMAT_COMBO, D3DUtil_D3DFormatToString( adapterFormat ) ) )
+<SPAN CLASS="linenum">0526:</SPAN>             {
+<SPAN CLASS="linenum">0527:</SPAN>                 ComboBoxAdd( IDC_ADAPTERFORMAT_COMBO, (<SPAN CLASS="keyword">void</SPAN>*)adapterFormat, 
+<SPAN CLASS="linenum">0528:</SPAN>                     D3DUtil_D3DFormatToString( adapterFormat ) );
+<SPAN CLASS="linenum">0529:</SPAN>                 <SPAN CLASS="keyword">if</SPAN>( adapterFormat == m_d3dSettings.Fullscreen_DisplayMode.Format )
+<SPAN CLASS="linenum">0530:</SPAN>                 {
+<SPAN CLASS="linenum">0531:</SPAN>                     ComboBoxSelect( IDC_ADAPTERFORMAT_COMBO, (<SPAN CLASS="keyword">void</SPAN>*)adapterFormat );
+<SPAN CLASS="linenum">0532:</SPAN>                 }
+<SPAN CLASS="linenum">0533:</SPAN>             }
+<SPAN CLASS="linenum">0534:</SPAN>         }
+<SPAN CLASS="linenum">0535:</SPAN>         <SPAN CLASS="keyword">if</SPAN>( !ComboBoxSomethingSelected( IDC_ADAPTERFORMAT_COMBO ) &amp;&amp;
+<SPAN CLASS="linenum">0536:</SPAN>             ComboBoxCount( IDC_ADAPTERFORMAT_COMBO ) &gt; 0 )
+<SPAN CLASS="linenum">0537:</SPAN>         {
+<SPAN CLASS="linenum">0538:</SPAN>             ComboBoxSelectIndex( IDC_ADAPTERFORMAT_COMBO, 0 );
+<SPAN CLASS="linenum">0539:</SPAN>         }
+<SPAN CLASS="linenum">0540:</SPAN>         EnableWindow( GetDlgItem( m_hDlg, IDC_ADAPTERFORMAT_COMBO), <SPAN CLASS="keyword">true</SPAN> );
+<SPAN CLASS="linenum">0541:</SPAN>         
+<SPAN CLASS="linenum">0542:</SPAN>         <SPAN CLASS="comment">// Update resolution combo box</SPAN>
+<SPAN CLASS="linenum">0543:</SPAN>         EnableWindow( GetDlgItem( m_hDlg, IDC_RESOLUTION_COMBO), <SPAN CLASS="keyword">true</SPAN> );
+<SPAN CLASS="linenum">0544:</SPAN>         
+<SPAN CLASS="linenum">0545:</SPAN>         <SPAN CLASS="comment">// Update refresh rate combo box</SPAN>
+<SPAN CLASS="linenum">0546:</SPAN>         EnableWindow( GetDlgItem( m_hDlg, IDC_REFRESHRATE_COMBO), <SPAN CLASS="keyword">true</SPAN> );
+<SPAN CLASS="linenum">0547:</SPAN>     }
+<SPAN CLASS="linenum">0548:</SPAN> }
+<SPAN CLASS="linenum">0549:</SPAN> 
+<SPAN CLASS="linenum">0550:</SPAN> 
+<SPAN CLASS="linenum">0551:</SPAN> 
+<SPAN CLASS="linenum">0552:</SPAN> 
+<SPAN CLASS="linenum">0553:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0554:</SPAN> <SPAN CLASS="comment">// Name: AdapterFormatChanged</SPAN>
+<SPAN CLASS="linenum">0555:</SPAN> <SPAN CLASS="comment">// Desc: Respond to a change of selected adapter format by rebuilding the</SPAN>
+<SPAN CLASS="linenum">0556:</SPAN> <SPAN CLASS="comment">//       resolution list and back buffer format list.  Updating the selected </SPAN>
+<SPAN CLASS="linenum">0557:</SPAN> <SPAN CLASS="comment">//       resolution and back buffer format will trigger updates of the rest </SPAN>
+<SPAN CLASS="linenum">0558:</SPAN> <SPAN CLASS="comment">//       of the dialog.</SPAN>
+<SPAN CLASS="linenum">0559:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0560:</SPAN> <SPAN CLASS="keyword">void</SPAN> CD3DSettingsDialog::AdapterFormatChanged( <SPAN CLASS="keyword">void</SPAN> )
+<SPAN CLASS="linenum">0561:</SPAN> {
+<SPAN CLASS="linenum">0562:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( !IsDlgButtonChecked( m_hDlg, IDC_WINDOW ) )
+<SPAN CLASS="linenum">0563:</SPAN>     {
+<SPAN CLASS="linenum">0564:</SPAN>         D3DAdapterInfo* pAdapterInfo = (D3DAdapterInfo*)ComboBoxSelected( IDC_ADAPTER_COMBO );
+<SPAN CLASS="linenum">0565:</SPAN>         D3DFORMAT adapterFormat = (D3DFORMAT)PtrToUlong( ComboBoxSelected( IDC_ADAPTERFORMAT_COMBO ) );
+<SPAN CLASS="linenum">0566:</SPAN>         m_d3dSettings.Fullscreen_DisplayMode.Format = adapterFormat;
+<SPAN CLASS="linenum">0567:</SPAN> 
+<SPAN CLASS="linenum">0568:</SPAN>         ComboBoxClear( IDC_RESOLUTION_COMBO );
+<SPAN CLASS="linenum">0569:</SPAN>         <SPAN CLASS="keyword">for</SPAN>( UINT idm = 0; idm &lt; pAdapterInfo-&gt;pDisplayModeList-&gt;Count(); idm++ )
+<SPAN CLASS="linenum">0570:</SPAN>         {
+<SPAN CLASS="linenum">0571:</SPAN>             D3DDISPLAYMODE displayMode = *(D3DDISPLAYMODE*)pAdapterInfo-&gt;pDisplayModeList-&gt;GetPtr(idm);
+<SPAN CLASS="linenum">0572:</SPAN>             <SPAN CLASS="keyword">if</SPAN> (displayMode.Format == adapterFormat)
+<SPAN CLASS="linenum">0573:</SPAN>             {
+<SPAN CLASS="linenum">0574:</SPAN>                 DWORD dwResolutionData;
+<SPAN CLASS="linenum">0575:</SPAN>                 TCHAR strResolution[50];
+<SPAN CLASS="linenum">0576:</SPAN>                 dwResolutionData = MAKELONG( displayMode.Width, displayMode.Height );
+<SPAN CLASS="linenum">0577:</SPAN>                 _sntprintf( strResolution, 50, TEXT("<SPAN CLASS="string">%d by %d</SPAN>"), displayMode.Width, displayMode.Height );
+<SPAN CLASS="linenum">0578:</SPAN>                 strResolution[49] = 0;
+<SPAN CLASS="linenum">0579:</SPAN>                 <SPAN CLASS="keyword">if</SPAN> (!ComboBoxContainsText( IDC_RESOLUTION_COMBO, strResolution ) )
+<SPAN CLASS="linenum">0580:</SPAN>                 {
+<SPAN CLASS="linenum">0581:</SPAN>                     ComboBoxAdd( IDC_RESOLUTION_COMBO, ULongToPtr( dwResolutionData ), strResolution );
+<SPAN CLASS="linenum">0582:</SPAN>                     <SPAN CLASS="keyword">if</SPAN> (m_d3dSettings.Fullscreen_DisplayMode.Width == displayMode.Width &amp;&amp;
+<SPAN CLASS="linenum">0583:</SPAN>                         m_d3dSettings.Fullscreen_DisplayMode.Height == displayMode.Height)
+<SPAN CLASS="linenum">0584:</SPAN>                     {
+<SPAN CLASS="linenum">0585:</SPAN>                         ComboBoxSelect( IDC_RESOLUTION_COMBO, ULongToPtr( dwResolutionData ) );
+<SPAN CLASS="linenum">0586:</SPAN>                     }
+<SPAN CLASS="linenum">0587:</SPAN>                 }
+<SPAN CLASS="linenum">0588:</SPAN>             }
+<SPAN CLASS="linenum">0589:</SPAN>         }
+<SPAN CLASS="linenum">0590:</SPAN>         <SPAN CLASS="keyword">if</SPAN> (!ComboBoxSomethingSelected( IDC_RESOLUTION_COMBO ) &amp;&amp; 
+<SPAN CLASS="linenum">0591:</SPAN>             ComboBoxCount( IDC_RESOLUTION_COMBO ) &gt; 0)
+<SPAN CLASS="linenum">0592:</SPAN>         {
+<SPAN CLASS="linenum">0593:</SPAN>             ComboBoxSelectIndex( IDC_RESOLUTION_COMBO, 0 );
+<SPAN CLASS="linenum">0594:</SPAN>         }
+<SPAN CLASS="linenum">0595:</SPAN>     }
+<SPAN CLASS="linenum">0596:</SPAN> 
+<SPAN CLASS="linenum">0597:</SPAN>     <SPAN CLASS="comment">// Update backbuffer format combo box</SPAN>
+<SPAN CLASS="linenum">0598:</SPAN>     D3DDeviceInfo* pDeviceInfo = (D3DDeviceInfo*)ComboBoxSelected( IDC_DEVICE_COMBO );
+<SPAN CLASS="linenum">0599:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( pDeviceInfo == NULL )
+<SPAN CLASS="linenum">0600:</SPAN>         <SPAN CLASS="keyword">return</SPAN>;
+<SPAN CLASS="linenum">0601:</SPAN>     ComboBoxClear( IDC_BACKBUFFERFORMAT_COMBO );
+<SPAN CLASS="linenum">0602:</SPAN>     <SPAN CLASS="keyword">for</SPAN>( UINT idc = 0; idc &lt; pDeviceInfo-&gt;pDeviceComboList-&gt;Count(); idc++ )
+<SPAN CLASS="linenum">0603:</SPAN>     {
+<SPAN CLASS="linenum">0604:</SPAN>         D3DDeviceCombo* pDeviceCombo = (D3DDeviceCombo*)pDeviceInfo-&gt;pDeviceComboList-&gt;GetPtr(idc);
+<SPAN CLASS="linenum">0605:</SPAN>         <SPAN CLASS="keyword">if</SPAN> (pDeviceCombo-&gt;IsWindowed == m_d3dSettings.IsWindowed &amp;&amp;
+<SPAN CLASS="linenum">0606:</SPAN>             pDeviceCombo-&gt;AdapterFormat == m_d3dSettings.DisplayMode().Format)
+<SPAN CLASS="linenum">0607:</SPAN>         {
+<SPAN CLASS="linenum">0608:</SPAN>             <SPAN CLASS="keyword">if</SPAN> (!ComboBoxContainsText( IDC_BACKBUFFERFORMAT_COMBO, 
+<SPAN CLASS="linenum">0609:</SPAN>                 D3DUtil_D3DFormatToString( pDeviceCombo-&gt;BackBufferFormat ) ) )
+<SPAN CLASS="linenum">0610:</SPAN>             {
+<SPAN CLASS="linenum">0611:</SPAN>                 ComboBoxAdd( IDC_BACKBUFFERFORMAT_COMBO, (<SPAN CLASS="keyword">void</SPAN>*)pDeviceCombo-&gt;BackBufferFormat,
+<SPAN CLASS="linenum">0612:</SPAN>                     D3DUtil_D3DFormatToString( pDeviceCombo-&gt;BackBufferFormat ) );
+<SPAN CLASS="linenum">0613:</SPAN>                 <SPAN CLASS="keyword">if</SPAN> (pDeviceCombo-&gt;BackBufferFormat == m_d3dSettings.BackBufferFormat() )
+<SPAN CLASS="linenum">0614:</SPAN>                     ComboBoxSelect( IDC_BACKBUFFERFORMAT_COMBO, (<SPAN CLASS="keyword">void</SPAN>*)pDeviceCombo-&gt;BackBufferFormat );
+<SPAN CLASS="linenum">0615:</SPAN>             }
+<SPAN CLASS="linenum">0616:</SPAN>         }
+<SPAN CLASS="linenum">0617:</SPAN>     }
+<SPAN CLASS="linenum">0618:</SPAN>     <SPAN CLASS="keyword">if</SPAN> (!ComboBoxSomethingSelected( IDC_BACKBUFFERFORMAT_COMBO ) &amp;&amp; 
+<SPAN CLASS="linenum">0619:</SPAN>         ComboBoxCount( IDC_BACKBUFFERFORMAT_COMBO ) &gt; 0)
+<SPAN CLASS="linenum">0620:</SPAN>     {
+<SPAN CLASS="linenum">0621:</SPAN>         ComboBoxSelectIndex( IDC_BACKBUFFERFORMAT_COMBO, 0 );
+<SPAN CLASS="linenum">0622:</SPAN>     }
+<SPAN CLASS="linenum">0623:</SPAN> }
+<SPAN CLASS="linenum">0624:</SPAN> 
+<SPAN CLASS="linenum">0625:</SPAN> 
+<SPAN CLASS="linenum">0626:</SPAN> 
+<SPAN CLASS="linenum">0627:</SPAN> 
+<SPAN CLASS="linenum">0628:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0629:</SPAN> <SPAN CLASS="comment">// Name: ResolutionChanged</SPAN>
+<SPAN CLASS="linenum">0630:</SPAN> <SPAN CLASS="comment">// Desc: Respond to a change of selected resolution by rebuilding the</SPAN>
+<SPAN CLASS="linenum">0631:</SPAN> <SPAN CLASS="comment">//       refresh rate list.</SPAN>
+<SPAN CLASS="linenum">0632:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0633:</SPAN> <SPAN CLASS="keyword">void</SPAN> CD3DSettingsDialog::ResolutionChanged( <SPAN CLASS="keyword">void</SPAN> )
+<SPAN CLASS="linenum">0634:</SPAN> {
+<SPAN CLASS="linenum">0635:</SPAN>     <SPAN CLASS="keyword">if</SPAN> (m_d3dSettings.IsWindowed)
+<SPAN CLASS="linenum">0636:</SPAN>         <SPAN CLASS="keyword">return</SPAN>;
+<SPAN CLASS="linenum">0637:</SPAN> 
+<SPAN CLASS="linenum">0638:</SPAN>     D3DAdapterInfo* pAdapterInfo = (D3DAdapterInfo*)ComboBoxSelected( IDC_ADAPTER_COMBO );
+<SPAN CLASS="linenum">0639:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( pAdapterInfo == NULL )
+<SPAN CLASS="linenum">0640:</SPAN>         <SPAN CLASS="keyword">return</SPAN>;
+<SPAN CLASS="linenum">0641:</SPAN> 
+<SPAN CLASS="linenum">0642:</SPAN>     <SPAN CLASS="comment">// Update settingsNew with new resolution</SPAN>
+<SPAN CLASS="linenum">0643:</SPAN>     DWORD dwResolutionData = PtrToUlong( ComboBoxSelected( IDC_RESOLUTION_COMBO ) );
+<SPAN CLASS="linenum">0644:</SPAN>     UINT width = LOWORD( dwResolutionData );
+<SPAN CLASS="linenum">0645:</SPAN>     UINT height = HIWORD( dwResolutionData );
+<SPAN CLASS="linenum">0646:</SPAN>     m_d3dSettings.Fullscreen_DisplayMode.Width = width;
+<SPAN CLASS="linenum">0647:</SPAN>     m_d3dSettings.Fullscreen_DisplayMode.Height = height;
+<SPAN CLASS="linenum">0648:</SPAN> 
+<SPAN CLASS="linenum">0649:</SPAN>     <SPAN CLASS="comment">// Update refresh rate list based on new resolution</SPAN>
+<SPAN CLASS="linenum">0650:</SPAN>     D3DFORMAT adapterFormat = (D3DFORMAT)PtrToUlong( ComboBoxSelected( IDC_ADAPTERFORMAT_COMBO ) );
+<SPAN CLASS="linenum">0651:</SPAN>     ComboBoxClear( IDC_REFRESHRATE_COMBO );
+<SPAN CLASS="linenum">0652:</SPAN>     <SPAN CLASS="keyword">for</SPAN>( UINT idm = 0; idm &lt; pAdapterInfo-&gt;pDisplayModeList-&gt;Count(); idm++ )
+<SPAN CLASS="linenum">0653:</SPAN>     {
+<SPAN CLASS="linenum">0654:</SPAN>         D3DDISPLAYMODE displayMode = *(D3DDISPLAYMODE*)pAdapterInfo-&gt;pDisplayModeList-&gt;GetPtr(idm);
+<SPAN CLASS="linenum">0655:</SPAN>         <SPAN CLASS="keyword">if</SPAN> (displayMode.Format == adapterFormat &amp;&amp;
+<SPAN CLASS="linenum">0656:</SPAN>             displayMode.Width  == width &amp;&amp;
+<SPAN CLASS="linenum">0657:</SPAN>             displayMode.Height == height)
+<SPAN CLASS="linenum">0658:</SPAN>         {
+<SPAN CLASS="linenum">0659:</SPAN>             TCHAR strRefreshRate[50];
+<SPAN CLASS="linenum">0660:</SPAN>             <SPAN CLASS="keyword">if</SPAN>( displayMode.RefreshRate == 0 )
+<SPAN CLASS="linenum">0661:</SPAN>                 lstrcpy( strRefreshRate, TEXT("<SPAN CLASS="string">Default Rate</SPAN>") );
+<SPAN CLASS="linenum">0662:</SPAN>             <SPAN CLASS="keyword">else</SPAN>
+<SPAN CLASS="linenum">0663:</SPAN>                 _sntprintf( strRefreshRate, 50, TEXT("<SPAN CLASS="string">%d Hz</SPAN>"), displayMode.RefreshRate );
+<SPAN CLASS="linenum">0664:</SPAN>             strRefreshRate[49] = 0;
+<SPAN CLASS="linenum">0665:</SPAN>             <SPAN CLASS="keyword">if</SPAN>( !ComboBoxContainsText( IDC_REFRESHRATE_COMBO, strRefreshRate ) )
+<SPAN CLASS="linenum">0666:</SPAN>             {
+<SPAN CLASS="linenum">0667:</SPAN>                 ComboBoxAdd( IDC_REFRESHRATE_COMBO, UlongToPtr( displayMode.RefreshRate ), strRefreshRate );
+<SPAN CLASS="linenum">0668:</SPAN>                 <SPAN CLASS="keyword">if</SPAN> (m_d3dSettings.Fullscreen_DisplayMode.RefreshRate == displayMode.RefreshRate)
+<SPAN CLASS="linenum">0669:</SPAN>                     ComboBoxSelect( IDC_REFRESHRATE_COMBO, UlongToPtr( displayMode.RefreshRate ) );
+<SPAN CLASS="linenum">0670:</SPAN>             }
+<SPAN CLASS="linenum">0671:</SPAN>         }
+<SPAN CLASS="linenum">0672:</SPAN>     }
+<SPAN CLASS="linenum">0673:</SPAN>     <SPAN CLASS="keyword">if</SPAN> (!ComboBoxSomethingSelected( IDC_REFRESHRATE_COMBO ) &amp;&amp; 
+<SPAN CLASS="linenum">0674:</SPAN>         ComboBoxCount( IDC_REFRESHRATE_COMBO ) &gt; 0)
+<SPAN CLASS="linenum">0675:</SPAN>     {
+<SPAN CLASS="linenum">0676:</SPAN>         ComboBoxSelectIndex( IDC_REFRESHRATE_COMBO, 0 );
+<SPAN CLASS="linenum">0677:</SPAN>     }
+<SPAN CLASS="linenum">0678:</SPAN> }
+<SPAN CLASS="linenum">0679:</SPAN> 
+<SPAN CLASS="linenum">0680:</SPAN> 
+<SPAN CLASS="linenum">0681:</SPAN> 
+<SPAN CLASS="linenum">0682:</SPAN> 
+<SPAN CLASS="linenum">0683:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0684:</SPAN> <SPAN CLASS="comment">// Name: RefreshRateChanged</SPAN>
+<SPAN CLASS="linenum">0685:</SPAN> <SPAN CLASS="comment">// Desc: Respond to a change of selected refresh rate.</SPAN>
+<SPAN CLASS="linenum">0686:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0687:</SPAN> <SPAN CLASS="keyword">void</SPAN> CD3DSettingsDialog::RefreshRateChanged( <SPAN CLASS="keyword">void</SPAN> )
+<SPAN CLASS="linenum">0688:</SPAN> {
+<SPAN CLASS="linenum">0689:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( m_d3dSettings.IsWindowed )
+<SPAN CLASS="linenum">0690:</SPAN>         <SPAN CLASS="keyword">return</SPAN>;
+<SPAN CLASS="linenum">0691:</SPAN> 
+<SPAN CLASS="linenum">0692:</SPAN>     <SPAN CLASS="comment">// Update settingsNew with new refresh rate</SPAN>
+<SPAN CLASS="linenum">0693:</SPAN>     UINT refreshRate = PtrToUlong( ComboBoxSelected( IDC_REFRESHRATE_COMBO ) );
+<SPAN CLASS="linenum">0694:</SPAN>     m_d3dSettings.Fullscreen_DisplayMode.RefreshRate = refreshRate;
+<SPAN CLASS="linenum">0695:</SPAN> }
+<SPAN CLASS="linenum">0696:</SPAN> 
+<SPAN CLASS="linenum">0697:</SPAN> 
+<SPAN CLASS="linenum">0698:</SPAN> 
+<SPAN CLASS="linenum">0699:</SPAN> 
+<SPAN CLASS="linenum">0700:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0701:</SPAN> <SPAN CLASS="comment">// Name: BackBufferFormatChanged</SPAN>
+<SPAN CLASS="linenum">0702:</SPAN> <SPAN CLASS="comment">// Desc: Respond to a change of selected back buffer format by rebuilding</SPAN>
+<SPAN CLASS="linenum">0703:</SPAN> <SPAN CLASS="comment">//       the depth/stencil format list, multisample type list, and vertex</SPAN>
+<SPAN CLASS="linenum">0704:</SPAN> <SPAN CLASS="comment">//       processing type list.</SPAN>
+<SPAN CLASS="linenum">0705:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0706:</SPAN> <SPAN CLASS="keyword">void</SPAN> CD3DSettingsDialog::BackBufferFormatChanged( <SPAN CLASS="keyword">void</SPAN> )
+<SPAN CLASS="linenum">0707:</SPAN> {
+<SPAN CLASS="linenum">0708:</SPAN>     D3DDeviceInfo* pDeviceInfo = (D3DDeviceInfo*)ComboBoxSelected( IDC_DEVICE_COMBO );
+<SPAN CLASS="linenum">0709:</SPAN>     D3DFORMAT adapterFormat = (D3DFORMAT)PtrToUlong( ComboBoxSelected( IDC_ADAPTERFORMAT_COMBO ) );
+<SPAN CLASS="linenum">0710:</SPAN>     D3DFORMAT backBufferFormat = (D3DFORMAT)PtrToUlong( ComboBoxSelected( IDC_BACKBUFFERFORMAT_COMBO ) );
+<SPAN CLASS="linenum">0711:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( pDeviceInfo == NULL )
+<SPAN CLASS="linenum">0712:</SPAN>         <SPAN CLASS="keyword">return</SPAN>;
+<SPAN CLASS="linenum">0713:</SPAN> 
+<SPAN CLASS="linenum">0714:</SPAN>     <SPAN CLASS="keyword">for</SPAN>( UINT idc = 0; idc &lt; pDeviceInfo-&gt;pDeviceComboList-&gt;Count(); idc++ )
+<SPAN CLASS="linenum">0715:</SPAN>     {
+<SPAN CLASS="linenum">0716:</SPAN>         D3DDeviceCombo* pDeviceCombo = (D3DDeviceCombo*)pDeviceInfo-&gt;pDeviceComboList-&gt;GetPtr(idc);
+<SPAN CLASS="linenum">0717:</SPAN>         <SPAN CLASS="keyword">if</SPAN> (pDeviceCombo-&gt;IsWindowed == m_d3dSettings.IsWindowed &amp;&amp;
+<SPAN CLASS="linenum">0718:</SPAN>             pDeviceCombo-&gt;AdapterFormat == adapterFormat &amp;&amp;
+<SPAN CLASS="linenum">0719:</SPAN>             pDeviceCombo-&gt;BackBufferFormat == backBufferFormat)
+<SPAN CLASS="linenum">0720:</SPAN>         {
+<SPAN CLASS="linenum">0721:</SPAN>             <SPAN CLASS="keyword">if</SPAN>( m_d3dSettings.IsWindowed )
+<SPAN CLASS="linenum">0722:</SPAN>                 m_d3dSettings.pWindowed_DeviceCombo = pDeviceCombo;
+<SPAN CLASS="linenum">0723:</SPAN>             <SPAN CLASS="keyword">else</SPAN>
+<SPAN CLASS="linenum">0724:</SPAN>                 m_d3dSettings.pFullscreen_DeviceCombo = pDeviceCombo;
+<SPAN CLASS="linenum">0725:</SPAN> 
+<SPAN CLASS="linenum">0726:</SPAN>             ComboBoxClear( IDC_DEPTHSTENCILBUFFERFORMAT_COMBO );
+<SPAN CLASS="linenum">0727:</SPAN>             <SPAN CLASS="keyword">if</SPAN>( m_pEnumeration-&gt;AppUsesDepthBuffer )
+<SPAN CLASS="linenum">0728:</SPAN>             {
+<SPAN CLASS="linenum">0729:</SPAN>                 <SPAN CLASS="keyword">for</SPAN>( UINT ifmt = 0; ifmt &lt; pDeviceCombo-&gt;pDepthStencilFormatList-&gt;Count(); ifmt++ )
+<SPAN CLASS="linenum">0730:</SPAN>                 {
+<SPAN CLASS="linenum">0731:</SPAN>                     D3DFORMAT fmt = *(D3DFORMAT*)pDeviceCombo-&gt;pDepthStencilFormatList-&gt;GetPtr(ifmt);
+<SPAN CLASS="linenum">0732:</SPAN>                     ComboBoxAdd( IDC_DEPTHSTENCILBUFFERFORMAT_COMBO, (<SPAN CLASS="keyword">void</SPAN>*)fmt, 
+<SPAN CLASS="linenum">0733:</SPAN>                         D3DUtil_D3DFormatToString(fmt) );
+<SPAN CLASS="linenum">0734:</SPAN>                     <SPAN CLASS="keyword">if</SPAN>( fmt == m_d3dSettings.DepthStencilBufferFormat() )
+<SPAN CLASS="linenum">0735:</SPAN>                         ComboBoxSelect( IDC_DEPTHSTENCILBUFFERFORMAT_COMBO, (<SPAN CLASS="keyword">void</SPAN>*)fmt );
+<SPAN CLASS="linenum">0736:</SPAN>                 }
+<SPAN CLASS="linenum">0737:</SPAN>                 <SPAN CLASS="keyword">if</SPAN> (!ComboBoxSomethingSelected( IDC_DEPTHSTENCILBUFFERFORMAT_COMBO ) &amp;&amp; 
+<SPAN CLASS="linenum">0738:</SPAN>                     ComboBoxCount( IDC_DEPTHSTENCILBUFFERFORMAT_COMBO ) &gt; 0)
+<SPAN CLASS="linenum">0739:</SPAN>                 {
+<SPAN CLASS="linenum">0740:</SPAN>                     ComboBoxSelectIndex( IDC_DEPTHSTENCILBUFFERFORMAT_COMBO, 0 );
+<SPAN CLASS="linenum">0741:</SPAN>                 }
+<SPAN CLASS="linenum">0742:</SPAN>             }
+<SPAN CLASS="linenum">0743:</SPAN>             <SPAN CLASS="keyword">else</SPAN>
+<SPAN CLASS="linenum">0744:</SPAN>             {
+<SPAN CLASS="linenum">0745:</SPAN>                 EnableWindow( GetDlgItem( m_hDlg, IDC_DEPTHSTENCILBUFFERFORMAT_COMBO ), <SPAN CLASS="keyword">false</SPAN> );
+<SPAN CLASS="linenum">0746:</SPAN>                 ComboBoxAdd( IDC_DEPTHSTENCILBUFFERFORMAT_COMBO, NULL, TEXT("<SPAN CLASS="string">(not used)</SPAN>") );
+<SPAN CLASS="linenum">0747:</SPAN>                 ComboBoxSelectIndex( IDC_DEPTHSTENCILBUFFERFORMAT_COMBO, 0 );
+<SPAN CLASS="linenum">0748:</SPAN>             }
+<SPAN CLASS="linenum">0749:</SPAN> 
+<SPAN CLASS="linenum">0750:</SPAN>             ComboBoxClear( IDC_VERTEXPROCESSING_COMBO );
+<SPAN CLASS="linenum">0751:</SPAN>             <SPAN CLASS="keyword">for</SPAN>( UINT ivpt = 0; ivpt &lt; pDeviceCombo-&gt;pVertexProcessingTypeList-&gt;Count(); ivpt++ )
+<SPAN CLASS="linenum">0752:</SPAN>             {
+<SPAN CLASS="linenum">0753:</SPAN>                 VertexProcessingType vpt = *(VertexProcessingType*)pDeviceCombo-&gt;pVertexProcessingTypeList-&gt;GetPtr(ivpt);
+<SPAN CLASS="linenum">0754:</SPAN>                 ComboBoxAdd( IDC_VERTEXPROCESSING_COMBO, (<SPAN CLASS="keyword">void</SPAN>*)vpt, VertexProcessingTypeToString(vpt) );
+<SPAN CLASS="linenum">0755:</SPAN>                 <SPAN CLASS="keyword">if</SPAN>( vpt == m_d3dSettings.GetVertexProcessingType() )
+<SPAN CLASS="linenum">0756:</SPAN>                     ComboBoxSelect( IDC_VERTEXPROCESSING_COMBO, (<SPAN CLASS="keyword">void</SPAN>*)vpt );
+<SPAN CLASS="linenum">0757:</SPAN>             }
+<SPAN CLASS="linenum">0758:</SPAN>             <SPAN CLASS="keyword">if</SPAN> (!ComboBoxSomethingSelected( IDC_VERTEXPROCESSING_COMBO ) &amp;&amp; 
+<SPAN CLASS="linenum">0759:</SPAN>                 ComboBoxCount( IDC_VERTEXPROCESSING_COMBO ) &gt; 0)
+<SPAN CLASS="linenum">0760:</SPAN>             {
+<SPAN CLASS="linenum">0761:</SPAN>                 ComboBoxSelectIndex( IDC_VERTEXPROCESSING_COMBO, 0 );
+<SPAN CLASS="linenum">0762:</SPAN>             }
+<SPAN CLASS="linenum">0763:</SPAN> 
+<SPAN CLASS="linenum">0764:</SPAN>             ComboBoxClear( IDC_PRESENTINTERVAL_COMBO );
+<SPAN CLASS="linenum">0765:</SPAN>             <SPAN CLASS="keyword">for</SPAN>( UINT ipi = 0; ipi &lt; pDeviceCombo-&gt;pPresentIntervalList-&gt;Count(); ipi++ )
+<SPAN CLASS="linenum">0766:</SPAN>             {
+<SPAN CLASS="linenum">0767:</SPAN>                 UINT pi = *(UINT*)pDeviceCombo-&gt;pPresentIntervalList-&gt;GetPtr(ipi);
+<SPAN CLASS="linenum">0768:</SPAN>                 ComboBoxAdd( IDC_PRESENTINTERVAL_COMBO, UlongToPtr( pi ), PresentIntervalToString(pi) );
+<SPAN CLASS="linenum">0769:</SPAN>                 <SPAN CLASS="keyword">if</SPAN>( pi == m_d3dSettings.PresentInterval() )
+<SPAN CLASS="linenum">0770:</SPAN>                     ComboBoxSelect( IDC_PRESENTINTERVAL_COMBO, UlongToPtr( pi ) );
+<SPAN CLASS="linenum">0771:</SPAN>             }
+<SPAN CLASS="linenum">0772:</SPAN>             <SPAN CLASS="keyword">if</SPAN> (!ComboBoxSomethingSelected( IDC_PRESENTINTERVAL_COMBO ) &amp;&amp; 
+<SPAN CLASS="linenum">0773:</SPAN>                 ComboBoxCount( IDC_PRESENTINTERVAL_COMBO ) &gt; 0)
+<SPAN CLASS="linenum">0774:</SPAN>             {
+<SPAN CLASS="linenum">0775:</SPAN>                 ComboBoxSelectIndex( IDC_PRESENTINTERVAL_COMBO, 0 );
+<SPAN CLASS="linenum">0776:</SPAN>             }
+<SPAN CLASS="linenum">0777:</SPAN> 
+<SPAN CLASS="linenum">0778:</SPAN>             <SPAN CLASS="keyword">break</SPAN>;
+<SPAN CLASS="linenum">0779:</SPAN>         }
+<SPAN CLASS="linenum">0780:</SPAN>     }
+<SPAN CLASS="linenum">0781:</SPAN> }
+<SPAN CLASS="linenum">0782:</SPAN> 
+<SPAN CLASS="linenum">0783:</SPAN> 
+<SPAN CLASS="linenum">0784:</SPAN> 
+<SPAN CLASS="linenum">0785:</SPAN> 
+<SPAN CLASS="linenum">0786:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0787:</SPAN> <SPAN CLASS="comment">// Name: DepthStencilBufferFormatChanged</SPAN>
+<SPAN CLASS="linenum">0788:</SPAN> <SPAN CLASS="comment">// Desc: Respond to a change of selected depth/stencil buffer format.</SPAN>
+<SPAN CLASS="linenum">0789:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0790:</SPAN> <SPAN CLASS="keyword">void</SPAN> CD3DSettingsDialog::DepthStencilBufferFormatChanged( <SPAN CLASS="keyword">void</SPAN> )
+<SPAN CLASS="linenum">0791:</SPAN> {
+<SPAN CLASS="linenum">0792:</SPAN>     D3DFORMAT fmt = (D3DFORMAT)PtrToUlong( ComboBoxSelected( IDC_DEPTHSTENCILBUFFERFORMAT_COMBO ) );
+<SPAN CLASS="linenum">0793:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( m_pEnumeration-&gt;AppUsesDepthBuffer )
+<SPAN CLASS="linenum">0794:</SPAN>         m_d3dSettings.SetDepthStencilBufferFormat( fmt );
+<SPAN CLASS="linenum">0795:</SPAN> 
+<SPAN CLASS="linenum">0796:</SPAN>     <SPAN CLASS="comment">// Build multisample list</SPAN>
+<SPAN CLASS="linenum">0797:</SPAN>     D3DDeviceCombo* pDeviceCombo = m_d3dSettings.PDeviceCombo();
+<SPAN CLASS="linenum">0798:</SPAN>     ComboBoxClear( IDC_MULTISAMPLE_COMBO );
+<SPAN CLASS="linenum">0799:</SPAN>     <SPAN CLASS="keyword">for</SPAN>( UINT ims = 0; ims &lt; pDeviceCombo-&gt;pMultiSampleTypeList-&gt;Count(); ims++ )
+<SPAN CLASS="linenum">0800:</SPAN>     {
+<SPAN CLASS="linenum">0801:</SPAN>         D3DMULTISAMPLE_TYPE msType = *(D3DMULTISAMPLE_TYPE*)pDeviceCombo-&gt;pMultiSampleTypeList-&gt;GetPtr(ims);
+<SPAN CLASS="linenum">0802:</SPAN> 
+<SPAN CLASS="linenum">0803:</SPAN>         <SPAN CLASS="comment">// check for DS/MS conflicts</SPAN>
+<SPAN CLASS="linenum">0804:</SPAN>         BOOL bConflictFound = FALSE;
+<SPAN CLASS="linenum">0805:</SPAN>         <SPAN CLASS="keyword">for</SPAN>( UINT iConf = 0; iConf &lt; pDeviceCombo-&gt;pDSMSConflictList-&gt;Count(); iConf++ )
+<SPAN CLASS="linenum">0806:</SPAN>         {
+<SPAN CLASS="linenum">0807:</SPAN>             D3DDSMSConflict* pDSMSConf = (D3DDSMSConflict*)pDeviceCombo-&gt;pDSMSConflictList-&gt;GetPtr(iConf);
+<SPAN CLASS="linenum">0808:</SPAN>             <SPAN CLASS="keyword">if</SPAN>( pDSMSConf-&gt;DSFormat == fmt &amp;&amp; pDSMSConf-&gt;MSType == msType )
+<SPAN CLASS="linenum">0809:</SPAN>             {
+<SPAN CLASS="linenum">0810:</SPAN>                 bConflictFound = TRUE;
+<SPAN CLASS="linenum">0811:</SPAN>                 <SPAN CLASS="keyword">break</SPAN>;
+<SPAN CLASS="linenum">0812:</SPAN>             }
+<SPAN CLASS="linenum">0813:</SPAN>         }
+<SPAN CLASS="linenum">0814:</SPAN>         <SPAN CLASS="keyword">if</SPAN>( !bConflictFound )
+<SPAN CLASS="linenum">0815:</SPAN>         {
+<SPAN CLASS="linenum">0816:</SPAN>             ComboBoxAdd( IDC_MULTISAMPLE_COMBO, (<SPAN CLASS="keyword">void</SPAN>*)msType, MultisampleTypeToString(msType) );
+<SPAN CLASS="linenum">0817:</SPAN>             <SPAN CLASS="keyword">if</SPAN>( msType == m_d3dSettings.MultisampleType() )
+<SPAN CLASS="linenum">0818:</SPAN>                 ComboBoxSelect( IDC_MULTISAMPLE_COMBO, (<SPAN CLASS="keyword">void</SPAN>*)msType );
+<SPAN CLASS="linenum">0819:</SPAN>         }
+<SPAN CLASS="linenum">0820:</SPAN>     }
+<SPAN CLASS="linenum">0821:</SPAN>     <SPAN CLASS="keyword">if</SPAN> (!ComboBoxSomethingSelected( IDC_MULTISAMPLE_COMBO ) &amp;&amp; 
+<SPAN CLASS="linenum">0822:</SPAN>         ComboBoxCount( IDC_MULTISAMPLE_COMBO ) &gt; 0)
+<SPAN CLASS="linenum">0823:</SPAN>     {
+<SPAN CLASS="linenum">0824:</SPAN>         ComboBoxSelectIndex( IDC_MULTISAMPLE_COMBO, 0 );
+<SPAN CLASS="linenum">0825:</SPAN>     }
+<SPAN CLASS="linenum">0826:</SPAN> }
+<SPAN CLASS="linenum">0827:</SPAN> 
+<SPAN CLASS="linenum">0828:</SPAN> 
+<SPAN CLASS="linenum">0829:</SPAN> 
+<SPAN CLASS="linenum">0830:</SPAN> 
+<SPAN CLASS="linenum">0831:</SPAN> 
+<SPAN CLASS="linenum">0832:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0833:</SPAN> <SPAN CLASS="comment">// Name: MultisampleTypeChanged</SPAN>
+<SPAN CLASS="linenum">0834:</SPAN> <SPAN CLASS="comment">// Desc: Respond to a change of selected multisample type.</SPAN>
+<SPAN CLASS="linenum">0835:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0836:</SPAN> <SPAN CLASS="keyword">void</SPAN> CD3DSettingsDialog::MultisampleTypeChanged( <SPAN CLASS="keyword">void</SPAN> )
+<SPAN CLASS="linenum">0837:</SPAN> {
+<SPAN CLASS="linenum">0838:</SPAN>     D3DMULTISAMPLE_TYPE mst = (D3DMULTISAMPLE_TYPE)PtrToUlong( ComboBoxSelected( IDC_MULTISAMPLE_COMBO ) );
+<SPAN CLASS="linenum">0839:</SPAN>     m_d3dSettings.SetMultisampleType( mst );
+<SPAN CLASS="linenum">0840:</SPAN> 
+<SPAN CLASS="linenum">0841:</SPAN>     <SPAN CLASS="comment">// Set up max quality for this mst</SPAN>
+<SPAN CLASS="linenum">0842:</SPAN>     D3DDeviceCombo* pDeviceCombo = m_d3dSettings.PDeviceCombo();
+<SPAN CLASS="linenum">0843:</SPAN>     DWORD maxQuality = 0;
+<SPAN CLASS="linenum">0844:</SPAN> 
+<SPAN CLASS="linenum">0845:</SPAN>     <SPAN CLASS="keyword">for</SPAN>( UINT ims = 0; ims &lt; pDeviceCombo-&gt;pMultiSampleTypeList-&gt;Count(); ims++ )
+<SPAN CLASS="linenum">0846:</SPAN>     {
+<SPAN CLASS="linenum">0847:</SPAN>         D3DMULTISAMPLE_TYPE msType = *(D3DMULTISAMPLE_TYPE*)pDeviceCombo-&gt;pMultiSampleTypeList-&gt;GetPtr(ims);
+<SPAN CLASS="linenum">0848:</SPAN>         <SPAN CLASS="keyword">if</SPAN>( msType == mst )
+<SPAN CLASS="linenum">0849:</SPAN>         {
+<SPAN CLASS="linenum">0850:</SPAN>             maxQuality = *(DWORD*)pDeviceCombo-&gt;pMultiSampleQualityList-&gt;GetPtr(ims);
+<SPAN CLASS="linenum">0851:</SPAN>             <SPAN CLASS="keyword">break</SPAN>;
+<SPAN CLASS="linenum">0852:</SPAN>         }
+<SPAN CLASS="linenum">0853:</SPAN>     }
+<SPAN CLASS="linenum">0854:</SPAN> 
+<SPAN CLASS="linenum">0855:</SPAN>     ComboBoxClear( IDC_MULTISAMPLE_QUALITY_COMBO );
+<SPAN CLASS="linenum">0856:</SPAN>     <SPAN CLASS="keyword">for</SPAN>( UINT msq = 0; msq &lt; maxQuality; msq++ )
+<SPAN CLASS="linenum">0857:</SPAN>     {
+<SPAN CLASS="linenum">0858:</SPAN>         TCHAR str[100];
+<SPAN CLASS="linenum">0859:</SPAN>         wsprintf( str, TEXT("<SPAN CLASS="string">%d</SPAN>"), msq );
+<SPAN CLASS="linenum">0860:</SPAN>         ComboBoxAdd( IDC_MULTISAMPLE_QUALITY_COMBO, UlongToPtr( msq ), str );
+<SPAN CLASS="linenum">0861:</SPAN>         <SPAN CLASS="keyword">if</SPAN>( msq == m_d3dSettings.MultisampleQuality() )
+<SPAN CLASS="linenum">0862:</SPAN>             ComboBoxSelect( IDC_MULTISAMPLE_QUALITY_COMBO, UlongToPtr( msq ) );
+<SPAN CLASS="linenum">0863:</SPAN>     }
+<SPAN CLASS="linenum">0864:</SPAN>     <SPAN CLASS="keyword">if</SPAN> (!ComboBoxSomethingSelected( IDC_MULTISAMPLE_QUALITY_COMBO ) &amp;&amp; 
+<SPAN CLASS="linenum">0865:</SPAN>         ComboBoxCount( IDC_MULTISAMPLE_QUALITY_COMBO ) &gt; 0)
+<SPAN CLASS="linenum">0866:</SPAN>     {
+<SPAN CLASS="linenum">0867:</SPAN>         ComboBoxSelectIndex( IDC_MULTISAMPLE_QUALITY_COMBO, 0 );
+<SPAN CLASS="linenum">0868:</SPAN>     }
+<SPAN CLASS="linenum">0869:</SPAN> }
+<SPAN CLASS="linenum">0870:</SPAN> 
+<SPAN CLASS="linenum">0871:</SPAN> 
+<SPAN CLASS="linenum">0872:</SPAN> 
+<SPAN CLASS="linenum">0873:</SPAN> 
+<SPAN CLASS="linenum">0874:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0875:</SPAN> <SPAN CLASS="comment">// Name: MultisampleQualityChanged</SPAN>
+<SPAN CLASS="linenum">0876:</SPAN> <SPAN CLASS="comment">// Desc: Respond to a change of selected multisample quality.</SPAN>
+<SPAN CLASS="linenum">0877:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0878:</SPAN> <SPAN CLASS="keyword">void</SPAN> CD3DSettingsDialog::MultisampleQualityChanged( <SPAN CLASS="keyword">void</SPAN> )
+<SPAN CLASS="linenum">0879:</SPAN> {
+<SPAN CLASS="linenum">0880:</SPAN>     DWORD msq = (DWORD)PtrToUlong( ComboBoxSelected( IDC_MULTISAMPLE_QUALITY_COMBO ) );
+<SPAN CLASS="linenum">0881:</SPAN>     m_d3dSettings.SetMultisampleQuality( msq );
+<SPAN CLASS="linenum">0882:</SPAN> }
+<SPAN CLASS="linenum">0883:</SPAN> 
+<SPAN CLASS="linenum">0884:</SPAN> 
+<SPAN CLASS="linenum">0885:</SPAN> 
+<SPAN CLASS="linenum">0886:</SPAN> 
+<SPAN CLASS="linenum">0887:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0888:</SPAN> <SPAN CLASS="comment">// Name: VertexProcessingChanged</SPAN>
+<SPAN CLASS="linenum">0889:</SPAN> <SPAN CLASS="comment">// Desc: Respond to a change of selected vertex processing type.</SPAN>
+<SPAN CLASS="linenum">0890:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0891:</SPAN> <SPAN CLASS="keyword">void</SPAN> CD3DSettingsDialog::VertexProcessingChanged( <SPAN CLASS="keyword">void</SPAN> )
+<SPAN CLASS="linenum">0892:</SPAN> {
+<SPAN CLASS="linenum">0893:</SPAN>     VertexProcessingType vpt = (VertexProcessingType)PtrToUlong( ComboBoxSelected( IDC_VERTEXPROCESSING_COMBO ) );
+<SPAN CLASS="linenum">0894:</SPAN>     m_d3dSettings.SetVertexProcessingType( vpt );
+<SPAN CLASS="linenum">0895:</SPAN> }
+<SPAN CLASS="linenum">0896:</SPAN> 
+<SPAN CLASS="linenum">0897:</SPAN> 
+<SPAN CLASS="linenum">0898:</SPAN> 
+<SPAN CLASS="linenum">0899:</SPAN> 
+<SPAN CLASS="linenum">0900:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0901:</SPAN> <SPAN CLASS="comment">// Name: PresentIntervalChanged</SPAN>
+<SPAN CLASS="linenum">0902:</SPAN> <SPAN CLASS="comment">// Desc: Respond to a change of selected present interval.</SPAN>
+<SPAN CLASS="linenum">0903:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0904:</SPAN> <SPAN CLASS="keyword">void</SPAN> CD3DSettingsDialog::PresentIntervalChanged( <SPAN CLASS="keyword">void</SPAN> )
+<SPAN CLASS="linenum">0905:</SPAN> {
+<SPAN CLASS="linenum">0906:</SPAN>     UINT pi = PtrToUlong( ComboBoxSelected( IDC_PRESENTINTERVAL_COMBO ) );
+<SPAN CLASS="linenum">0907:</SPAN>     m_d3dSettings.SetPresentInterval( pi );
+<SPAN CLASS="linenum">0908:</SPAN> }
+<SPAN CLASS="linenum">0909:</SPAN> </PRE>
+</BODY>
+</HTML>

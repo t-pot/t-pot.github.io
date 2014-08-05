@@ -1,0 +1,137 @@
+<HTML>
+<HEAD>
+<TITLE>draw.h</TITLE>
+<meta name="GENERATOR" content="cpp2html 2.1 by Niisaka">
+<meta http-equiv="Content-Type" content="text/html">
+</HEAD>
+<BODY TEXT="#000000" BGCOLOR="#FFFFFF">
+<PRE><FONT COLOR="#40F628">0001:</FONT> <FONT COLOR="#008000">// ----------------------------------------------------------------------------</FONT>
+<FONT COLOR="#40F628">0002:</FONT> <FONT COLOR="#008000">//</FONT>
+<FONT COLOR="#40F628">0003:</FONT> <FONT COLOR="#008000">// draw.h - Rendering</FONT>
+<FONT COLOR="#40F628">0004:</FONT> <FONT COLOR="#008000">// </FONT>
+<FONT COLOR="#40F628">0005:</FONT> <FONT COLOR="#008000">// Copyright (c) 2002 IMAGIRE Takashi (imagire@gmail.com)</FONT>
+<FONT COLOR="#40F628">0006:</FONT> <FONT COLOR="#008000">// All Rights Reserved.</FONT>
+<FONT COLOR="#40F628">0007:</FONT> <FONT COLOR="#008000">//</FONT>
+<FONT COLOR="#40F628">0008:</FONT> <FONT COLOR="#008000">// ----------------------------------------------------------------------------</FONT>
+<FONT COLOR="#40F628">0009:</FONT> <FONT COLOR="#0000FF">#ifndef</FONT> _DRAW_H
+<FONT COLOR="#40F628">0010:</FONT> <FONT COLOR="#0000FF">#define</FONT> _DRAW_H
+<FONT COLOR="#40F628">0011:</FONT> 
+<FONT COLOR="#40F628">0012:</FONT> <FONT COLOR="#0000FF">#include</FONT> &lt;d3d8.h&gt;
+<FONT COLOR="#40F628">0013:</FONT> <FONT COLOR="#0000FF">#include</FONT> &lt;d3dx8.h&gt;
+<FONT COLOR="#40F628">0014:</FONT> 
+<FONT COLOR="#40F628">0015:</FONT> HRESULT InitRender(LPDIRECT3DDEVICE8 lpD3DDEV);
+<FONT COLOR="#40F628">0016:</FONT> <FONT COLOR="#0000FF">void</FONT> Render(LPDIRECT3DDEVICE8 lpD3DDEV);
+<FONT COLOR="#40F628">0017:</FONT> <FONT COLOR="#0000FF">void</FONT> CleanRender(LPDIRECT3DDEVICE8 lpD3DDEV);
+<FONT COLOR="#40F628">0018:</FONT> 
+<FONT COLOR="#40F628">0019:</FONT> <FONT COLOR="#008000">// ----------------------------------------------------------------------------</FONT>
+<FONT COLOR="#40F628">0020:</FONT> <FONT COLOR="#008000">// Management of the camera</FONT>
+<FONT COLOR="#40F628">0021:</FONT> <FONT COLOR="#008000">// ----------------------------------------------------------------------------</FONT>
+<FONT COLOR="#40F628">0022:</FONT> <FONT COLOR="#0000FF">class</FONT> CMyView{
+<FONT COLOR="#40F628">0023:</FONT>     D3DXMATRIX              m_mView;    <FONT COLOR="#008000">// View matrix</FONT>
+<FONT COLOR="#40F628">0024:</FONT>     D3DXVECTOR4             m_eye;      <FONT COLOR="#008000">// camera position</FONT>
+<FONT COLOR="#40F628">0025:</FONT>     D3DXVECTOR4             m_lookAt;   <FONT COLOR="#008000">// camera look at</FONT>
+<FONT COLOR="#40F628">0026:</FONT>     D3DXVECTOR4             m_up;       <FONT COLOR="#008000">// up direction</FONT>
+<FONT COLOR="#40F628">0027:</FONT> 
+<FONT COLOR="#40F628">0028:</FONT>     <FONT COLOR="#0000FF">void</FONT> Calc(){D3DXMatrixLookAtLH(&amp;m_mView,(D3DXVECTOR3*)&amp;m_eye,(D3DXVECTOR3*)&amp;m_lookAt,(D3DXVECTOR3*)&amp;m_up);}
+<FONT COLOR="#40F628">0029:</FONT> <FONT COLOR="#0000FF">public</FONT>:
+<FONT COLOR="#40F628">0030:</FONT>     CMyView(){Init();}
+<FONT COLOR="#40F628">0031:</FONT>     <FONT COLOR="#0000FF">void</FONT> Init(){m_eye.x    = 0.0f; m_eye.y    = 1.0f; m_eye.z    = 2.5f; m_eye.w    = 1.0f;
+<FONT COLOR="#40F628">0032:</FONT>                 m_lookAt.x = 0.0f; m_lookAt.y = 0.5f; m_lookAt.z = 0.0f; m_lookAt.w = 1.0f; 
+<FONT COLOR="#40F628">0033:</FONT>                 m_up.x     = 0.0f; m_up.y     = 1.0f; m_up.z     = 0.0f; m_up.w     = 1.0f; 
+<FONT COLOR="#40F628">0034:</FONT>                 <FONT COLOR="#0000FF">this</FONT>-&gt;Calc();}
+<FONT COLOR="#40F628">0035:</FONT>     <FONT COLOR="#0000FF">void</FONT> SetEye   (<FONT COLOR="#0000FF">const</FONT> D3DXVECTOR4    eye){m_eye   =   eye;<FONT COLOR="#0000FF">this</FONT>-&gt;Calc();}
+<FONT COLOR="#40F628">0036:</FONT>     <FONT COLOR="#0000FF">void</FONT> SetLookAt(<FONT COLOR="#0000FF">const</FONT> D3DXVECTOR4 lookAt){m_lookAt=lookAt;<FONT COLOR="#0000FF">this</FONT>-&gt;Calc();}
+<FONT COLOR="#40F628">0037:</FONT>     <FONT COLOR="#0000FF">void</FONT> SetUp    (<FONT COLOR="#0000FF">const</FONT> D3DXVECTOR4     up){m_up    =    up;<FONT COLOR="#0000FF">this</FONT>-&gt;Calc();}
+<FONT COLOR="#40F628">0038:</FONT>     <FONT COLOR="#0000FF">const</FONT> D3DXVECTOR4 &amp;GetEye()    <FONT COLOR="#0000FF">const</FONT> {<FONT COLOR="#0000FF">return</FONT> m_eye;}
+<FONT COLOR="#40F628">0039:</FONT>     <FONT COLOR="#0000FF">const</FONT> D3DXVECTOR4 &amp;GetLookAt() <FONT COLOR="#0000FF">const</FONT> {<FONT COLOR="#0000FF">return</FONT> m_lookAt;}
+<FONT COLOR="#40F628">0040:</FONT>     <FONT COLOR="#0000FF">const</FONT> D3DXVECTOR4 &amp;GetUp()     <FONT COLOR="#0000FF">const</FONT> {<FONT COLOR="#0000FF">return</FONT> m_up;}
+<FONT COLOR="#40F628">0041:</FONT>     <FONT COLOR="#0000FF">const</FONT> D3DXMATRIX  &amp;Get()       <FONT COLOR="#0000FF">const</FONT> {<FONT COLOR="#0000FF">return</FONT> m_mView;}
+<FONT COLOR="#40F628">0042:</FONT> };
+<FONT COLOR="#40F628">0043:</FONT> 
+<FONT COLOR="#40F628">0044:</FONT> <FONT COLOR="#008000">// ----------------------------------------------------------------------------</FONT>
+<FONT COLOR="#40F628">0045:</FONT> <FONT COLOR="#008000">// bullet</FONT>
+<FONT COLOR="#40F628">0046:</FONT> <FONT COLOR="#008000">// ----------------------------------------------------------------------------</FONT>
+<FONT COLOR="#40F628">0047:</FONT> <FONT COLOR="#0000FF">#define</FONT> BULLET_SPEED 5.0f
+<FONT COLOR="#40F628">0048:</FONT> 
+<FONT COLOR="#40F628">0049:</FONT> <FONT COLOR="#0000FF">class</FONT> CBullet{
+<FONT COLOR="#40F628">0050:</FONT> <FONT COLOR="#0000FF">private</FONT>:
+<FONT COLOR="#40F628">0051:</FONT>     BOOL            bActive;
+<FONT COLOR="#40F628">0052:</FONT>     D3DXVECTOR4     pos;
+<FONT COLOR="#40F628">0053:</FONT>     D3DXVECTOR4     velosity;
+<FONT COLOR="#40F628">0054:</FONT> <FONT COLOR="#0000FF">public</FONT>:
+<FONT COLOR="#40F628">0055:</FONT>     CBullet():bActive(FALSE){;}
+<FONT COLOR="#40F628">0056:</FONT> 
+<FONT COLOR="#40F628">0057:</FONT>     <FONT COLOR="#0000FF">void</FONT> Reset(){bActive=FALSE;}
+<FONT COLOR="#40F628">0058:</FONT> 
+<FONT COLOR="#40F628">0059:</FONT>     DWORD Create(D3DXVECTOR4 &amp;x, D3DXVECTOR4 &amp;v){
+<FONT COLOR="#40F628">0060:</FONT>         <FONT COLOR="#0000FF">if</FONT>(bActive) <FONT COLOR="#0000FF">return</FONT> -1;
+<FONT COLOR="#40F628">0061:</FONT>         bActive = TRUE;
+<FONT COLOR="#40F628">0062:</FONT>         pos = x;
+<FONT COLOR="#40F628">0063:</FONT>         velosity = v;
+<FONT COLOR="#40F628">0064:</FONT>         velosity.w = 0;
+<FONT COLOR="#40F628">0065:</FONT>         <FONT COLOR="#0000FF">return</FONT> 0;
+<FONT COLOR="#40F628">0066:</FONT>     }
+<FONT COLOR="#40F628">0067:</FONT>     DWORD Update(DWORD dt){
+<FONT COLOR="#40F628">0068:</FONT>         <FONT COLOR="#0000FF">if</FONT>(bActive){
+<FONT COLOR="#40F628">0069:</FONT>             pos += velosity*0.001f*(<FONT COLOR="#0000FF">float</FONT>)dt;
+<FONT COLOR="#40F628">0070:</FONT>             pos.w=0.0f;
+<FONT COLOR="#40F628">0071:</FONT>             <FONT COLOR="#008000">// Dead check</FONT>
+<FONT COLOR="#40F628">0072:</FONT>             <FONT COLOR="#0000FF">if</FONT>(pos.x &lt; -10.0f || 10.0f &lt; pos.x
+<FONT COLOR="#40F628">0073:</FONT>             || pos.y &lt; - 5.0f || 15.0f &lt; pos.y
+<FONT COLOR="#40F628">0074:</FONT>             || pos.z &lt; -10.0f || 10.0f &lt; pos.z
+<FONT COLOR="#40F628">0075:</FONT>             ){
+<FONT COLOR="#40F628">0076:</FONT>                 bActive = FALSE;
+<FONT COLOR="#40F628">0077:</FONT>                 <FONT COLOR="#0000FF">return</FONT> 1;
+<FONT COLOR="#40F628">0078:</FONT>             }
+<FONT COLOR="#40F628">0079:</FONT>             <FONT COLOR="#0000FF">return</FONT> 0;
+<FONT COLOR="#40F628">0080:</FONT>         }
+<FONT COLOR="#40F628">0081:</FONT>         <FONT COLOR="#0000FF">return</FONT> -1;
+<FONT COLOR="#40F628">0082:</FONT>     }
+<FONT COLOR="#40F628">0083:</FONT>     <FONT COLOR="#0000FF">void</FONT> Render(LPDIRECT3DDEVICE8 lpD3DDev, D3DXMATRIX &amp;mVP);
+<FONT COLOR="#40F628">0084:</FONT>     <FONT COLOR="#0000FF">void</FONT> Draw(LPDIRECT3DDEVICE8 lpD3DDev);
+<FONT COLOR="#40F628">0085:</FONT>     
+<FONT COLOR="#40F628">0086:</FONT>     <FONT COLOR="#008000">// ----------------------------------------------------------------------------</FONT>
+<FONT COLOR="#40F628">0087:</FONT>     <FONT COLOR="#008000">// Geter</FONT>
+<FONT COLOR="#40F628">0088:</FONT>     BOOL  IsActive() <FONT COLOR="#0000FF">const</FONT> {<FONT COLOR="#0000FF">return</FONT> bActive;}
+<FONT COLOR="#40F628">0089:</FONT>     D3DXVECTOR4 &amp;GetPosition(){<FONT COLOR="#0000FF">return</FONT> pos;}
+<FONT COLOR="#40F628">0090:</FONT>     D3DXVECTOR4 &amp;GetVelosity(){<FONT COLOR="#0000FF">return</FONT> velosity;}
+<FONT COLOR="#40F628">0091:</FONT> };
+<FONT COLOR="#40F628">0092:</FONT> <FONT COLOR="#008000">// ----------------------------------------------------------------------------</FONT>
+<FONT COLOR="#40F628">0093:</FONT> <FONT COLOR="#0000FF">#define</FONT> BULLET_MAX 10   <FONT COLOR="#008000">// The max count what we can shoot</FONT>
+<FONT COLOR="#40F628">0094:</FONT> <FONT COLOR="#0000FF">class</FONT> CBulletMgr{
+<FONT COLOR="#40F628">0095:</FONT> <FONT COLOR="#0000FF">private</FONT>:
+<FONT COLOR="#40F628">0096:</FONT>     CBullet bullet[BULLET_MAX];
+<FONT COLOR="#40F628">0097:</FONT> <FONT COLOR="#0000FF">public</FONT>:
+<FONT COLOR="#40F628">0098:</FONT>     DWORD Add(D3DXVECTOR4 &amp;x, D3DXVECTOR4 &amp;v){
+<FONT COLOR="#40F628">0099:</FONT>         DWORD i;
+<FONT COLOR="#40F628">0100:</FONT>         <FONT COLOR="#0000FF">for</FONT>(i=0;i&lt;BULLET_MAX;i++){
+<FONT COLOR="#40F628">0101:</FONT>             <FONT COLOR="#0000FF">if</FONT>(0==bullet[i].Create(x,v)) <FONT COLOR="#0000FF">return</FONT> 0;
+<FONT COLOR="#40F628">0102:</FONT>         }
+<FONT COLOR="#40F628">0103:</FONT>         <FONT COLOR="#0000FF">return</FONT> -1;
+<FONT COLOR="#40F628">0104:</FONT>     }
+<FONT COLOR="#40F628">0105:</FONT>     <FONT COLOR="#0000FF">void</FONT> Update(DWORD dt){
+<FONT COLOR="#40F628">0106:</FONT>         <FONT COLOR="#0000FF">for</FONT>(DWORD i=0;i&lt;BULLET_MAX;i++){
+<FONT COLOR="#40F628">0107:</FONT>             bullet[i].Update(dt);
+<FONT COLOR="#40F628">0108:</FONT>         }
+<FONT COLOR="#40F628">0109:</FONT>     }
+<FONT COLOR="#40F628">0110:</FONT>     <FONT COLOR="#0000FF">void</FONT> Render(LPDIRECT3DDEVICE8 lpD3DDev, D3DXMATRIX &amp;mVP){
+<FONT COLOR="#40F628">0111:</FONT>         <FONT COLOR="#0000FF">for</FONT>(DWORD i=0;i&lt;BULLET_MAX;i++){
+<FONT COLOR="#40F628">0112:</FONT>             bullet[i].Render(lpD3DDev, mVP);
+<FONT COLOR="#40F628">0113:</FONT>         }
+<FONT COLOR="#40F628">0114:</FONT>     }
+<FONT COLOR="#40F628">0115:</FONT>     <FONT COLOR="#0000FF">void</FONT> Reset(){
+<FONT COLOR="#40F628">0116:</FONT>         <FONT COLOR="#0000FF">for</FONT>(DWORD i=0;i&lt;BULLET_MAX;i++){
+<FONT COLOR="#40F628">0117:</FONT>             bullet[i].Reset();
+<FONT COLOR="#40F628">0118:</FONT>         }
+<FONT COLOR="#40F628">0119:</FONT>     }
+<FONT COLOR="#40F628">0120:</FONT>     DWORD GetNum()<FONT COLOR="#0000FF">const</FONT>{<FONT COLOR="#0000FF">return</FONT> BULLET_MAX;}
+<FONT COLOR="#40F628">0121:</FONT>     BOOL  IsActive(DWORD i) <FONT COLOR="#0000FF">const</FONT> {<FONT COLOR="#0000FF">return</FONT> bullet[i].IsActive();}
+<FONT COLOR="#40F628">0122:</FONT>     D3DXVECTOR4 &amp;GetPosition(DWORD i){<FONT COLOR="#0000FF">return</FONT> bullet[i].GetPosition();}
+<FONT COLOR="#40F628">0123:</FONT>     D3DXVECTOR4 &amp;GetVelosity(DWORD i){<FONT COLOR="#0000FF">return</FONT> bullet[i].GetVelosity();}
+<FONT COLOR="#40F628">0124:</FONT>     VOID Draw(DWORD i, LPDIRECT3DDEVICE8 lpD3DDev){bullet[i].Draw(lpD3DDev);}
+<FONT COLOR="#40F628">0125:</FONT> };
+<FONT COLOR="#40F628">0126:</FONT> 
+<FONT COLOR="#40F628">0127:</FONT> <FONT COLOR="#0000FF">#endif</FONT> <FONT COLOR="#008000">/* !_DRAW_H */</FONT>
+<FONT COLOR="#40F628">0128:</FONT> </PRE>
+</BODY>
+</HTML>

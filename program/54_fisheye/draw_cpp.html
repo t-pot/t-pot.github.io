@@ -1,0 +1,337 @@
+<HTML>
+<HEAD>
+<TITLE>draw.cpp</TITLE>
+<meta name="GENERATOR" content="cpp2html 2.1 by Niisaka">
+<meta http-equiv="Content-Type" content="text/html">
+</HEAD>
+<BODY TEXT="#000000" BGCOLOR="#FFFFFF">
+<PRE><FONT COLOR="#40F628">0001:</FONT> <FONT COLOR="#008000">// ----------------------------------------------------------------------------</FONT>
+<FONT COLOR="#40F628">0002:</FONT> <FONT COLOR="#008000">//</FONT>
+<FONT COLOR="#40F628">0003:</FONT> <FONT COLOR="#008000">// draw.cpp - 描画部分</FONT>
+<FONT COLOR="#40F628">0004:</FONT> <FONT COLOR="#008000">// </FONT>
+<FONT COLOR="#40F628">0005:</FONT> <FONT COLOR="#008000">// Copyright (c) 2001 if (if@edokko.com)</FONT>
+<FONT COLOR="#40F628">0006:</FONT> <FONT COLOR="#008000">// All Rights Reserved.</FONT>
+<FONT COLOR="#40F628">0007:</FONT> <FONT COLOR="#008000">//</FONT>
+<FONT COLOR="#40F628">0008:</FONT> <FONT COLOR="#008000">// ----------------------------------------------------------------------------</FONT>
+<FONT COLOR="#40F628">0009:</FONT> <FONT COLOR="#0000FF">#define</FONT> STRICT
+<FONT COLOR="#40F628">0010:</FONT> 
+<FONT COLOR="#40F628">0011:</FONT> <FONT COLOR="#0000FF">#include</FONT> &lt;windows.h&gt;
+<FONT COLOR="#40F628">0012:</FONT> <FONT COLOR="#0000FF">#include</FONT> "<FONT COLOR="#600000">main.h</FONT>"
+<FONT COLOR="#40F628">0013:</FONT> <FONT COLOR="#0000FF">#include</FONT> "<FONT COLOR="#600000">draw.h</FONT>"
+<FONT COLOR="#40F628">0014:</FONT> <FONT COLOR="#0000FF">#include</FONT> "<FONT COLOR="#600000">load.h</FONT>"
+<FONT COLOR="#40F628">0015:</FONT> 
+<FONT COLOR="#40F628">0016:</FONT> <FONT COLOR="#0000FF">static</FONT> <FONT COLOR="#0000FF">const</FONT> <FONT COLOR="#0000FF">int</FONT> SHADOWMAP_HEIGHT = 512;
+<FONT COLOR="#40F628">0017:</FONT> <FONT COLOR="#0000FF">static</FONT> <FONT COLOR="#0000FF">const</FONT> <FONT COLOR="#0000FF">int</FONT> SHADOWMAP_WIDTH = 512;
+<FONT COLOR="#40F628">0018:</FONT> 
+<FONT COLOR="#40F628">0019:</FONT> LPDIRECT3DVERTEXBUFFER8 pMeshVB = NULL;
+<FONT COLOR="#40F628">0020:</FONT> LPDIRECT3DINDEXBUFFER8  pMeshIndex = NULL;
+<FONT COLOR="#40F628">0021:</FONT> D3DXATTRIBUTERANGE      *pSubsetTable = NULL;
+<FONT COLOR="#40F628">0022:</FONT> DWORD                   nMeshFaces = 0;
+<FONT COLOR="#40F628">0023:</FONT> DWORD                   nMeshVertices = 0;
+<FONT COLOR="#40F628">0024:</FONT> D3DMATERIAL8            *pMeshMaterials = NULL;     <FONT COLOR="#008000">// メッシュの質感</FONT>
+<FONT COLOR="#40F628">0025:</FONT> LPDIRECT3DTEXTURE8      *pMeshTextures  = NULL;     <FONT COLOR="#008000">// メッシュのテクスチャー</FONT>
+<FONT COLOR="#40F628">0026:</FONT> DWORD                   dwNumMaterials = 0L;        <FONT COLOR="#008000">// マテリアルの数</FONT>
+<FONT COLOR="#40F628">0027:</FONT> FLOAT                   MeshRadius;                 <FONT COLOR="#008000">// メッシュの大きさ</FONT>
+<FONT COLOR="#40F628">0028:</FONT> 
+<FONT COLOR="#40F628">0029:</FONT> DWORD                   hVertexShader=~0;           <FONT COLOR="#008000">// モデルの描画</FONT>
+<FONT COLOR="#40F628">0030:</FONT> DWORD                   hPixelShader=~0;            <FONT COLOR="#008000">// モデルの描画</FONT>
+<FONT COLOR="#40F628">0031:</FONT> 
+<FONT COLOR="#40F628">0032:</FONT> 
+<FONT COLOR="#40F628">0033:</FONT> <FONT COLOR="#008000">// ----------------------------------------------------------------------------</FONT>
+<FONT COLOR="#40F628">0034:</FONT> <FONT COLOR="#008000">// 外部関数</FONT>
+<FONT COLOR="#40F628">0035:</FONT> <FONT COLOR="#0000FF">void</FONT> InitBg(LPDIRECT3DDEVICE8 lpD3DDev);
+<FONT COLOR="#40F628">0036:</FONT> <FONT COLOR="#0000FF">void</FONT> DrawBg(LPDIRECT3DDEVICE8 lpD3DDev);
+<FONT COLOR="#40F628">0037:</FONT> <FONT COLOR="#0000FF">void</FONT> CleanBg(LPDIRECT3DDEVICE8 lpD3DDev);
+<FONT COLOR="#40F628">0038:</FONT> 
+<FONT COLOR="#40F628">0039:</FONT> 
+<FONT COLOR="#40F628">0040:</FONT> 
+<FONT COLOR="#40F628">0041:</FONT> <FONT COLOR="#008000">// ----------------------------------------------------------------------------</FONT>
+<FONT COLOR="#40F628">0042:</FONT> <FONT COLOR="#008000">// Name: LoadXFile(char* filename, LPDIRECT3DDEVICE8 lpD3DDev)</FONT>
+<FONT COLOR="#40F628">0043:</FONT> <FONT COLOR="#008000">// Desc: X-Fileの読み込み</FONT>
+<FONT COLOR="#40F628">0044:</FONT> <FONT COLOR="#008000">//-----------------------------------------------------------------------------</FONT>
+<FONT COLOR="#40F628">0045:</FONT> HRESULT LoadXFile(<FONT COLOR="#0000FF">char</FONT>* filename, LPDIRECT3DDEVICE8 lpD3DDev)
+<FONT COLOR="#40F628">0046:</FONT> {
+<FONT COLOR="#40F628">0047:</FONT>     LPD3DXMESH pMesh, pMeshOpt;
+<FONT COLOR="#40F628">0048:</FONT>     LPD3DXBUFFER pD3DXMtrlBuffer = NULL;
+<FONT COLOR="#40F628">0049:</FONT>     DWORD i;
+<FONT COLOR="#40F628">0050:</FONT>     HRESULT hr;
+<FONT COLOR="#40F628">0051:</FONT> 
+<FONT COLOR="#40F628">0052:</FONT>     hr = D3DXLoadMeshFromX(filename, D3DXMESH_MANAGED,
+<FONT COLOR="#40F628">0053:</FONT>                                 lpD3DDev, NULL,
+<FONT COLOR="#40F628">0054:</FONT>                                 &amp;pD3DXMtrlBuffer, &amp;dwNumMaterials,
+<FONT COLOR="#40F628">0055:</FONT>                                 &amp;pMesh);
+<FONT COLOR="#40F628">0056:</FONT>     <FONT COLOR="#0000FF">if</FONT>(FAILED(hr)) <FONT COLOR="#0000FF">return</FONT> E_FAIL;
+<FONT COLOR="#40F628">0057:</FONT> 
+<FONT COLOR="#40F628">0058:</FONT>     <FONT COLOR="#008000">//並び替えておく</FONT>
+<FONT COLOR="#40F628">0059:</FONT>     pMesh-&gt;Optimize(D3DXMESHOPT_ATTRSORT, NULL, NULL, NULL, NULL, &amp;pMeshOpt);
+<FONT COLOR="#40F628">0060:</FONT>     RELEASE(pMesh);
+<FONT COLOR="#40F628">0061:</FONT> 
+<FONT COLOR="#40F628">0062:</FONT>     <FONT COLOR="#008000">//アトリビュートテーブル</FONT>
+<FONT COLOR="#40F628">0063:</FONT>     pMeshOpt-&gt;GetAttributeTable(NULL,&amp;dwNumMaterials);
+<FONT COLOR="#40F628">0064:</FONT>     pSubsetTable = <FONT COLOR="#0000FF">new</FONT> D3DXATTRIBUTERANGE[dwNumMaterials];
+<FONT COLOR="#40F628">0065:</FONT>     pMeshOpt-&gt;GetAttributeTable(pSubsetTable, &amp;dwNumMaterials);
+<FONT COLOR="#40F628">0066:</FONT> 
+<FONT COLOR="#40F628">0067:</FONT>     <FONT COLOR="#008000">// FVF変換</FONT>
+<FONT COLOR="#40F628">0068:</FONT>     hr = pMeshOpt-&gt;CloneMeshFVF(pMeshOpt-&gt;GetOptions(), D3DFVF_VERTEX, lpD3DDev, &amp;pMesh);
+<FONT COLOR="#40F628">0069:</FONT>     <FONT COLOR="#0000FF">if</FONT>(FAILED(hr)) <FONT COLOR="#0000FF">return</FONT> E_FAIL;
+<FONT COLOR="#40F628">0070:</FONT>     RELEASE(pMeshOpt);
+<FONT COLOR="#40F628">0071:</FONT>     D3DXComputeNormals(pMesh, NULL);
+<FONT COLOR="#40F628">0072:</FONT> 
+<FONT COLOR="#40F628">0073:</FONT>     <FONT COLOR="#008000">//Vertex Bufferにコピーする</FONT>
+<FONT COLOR="#40F628">0074:</FONT>     D3DVERTEX* pSrc;
+<FONT COLOR="#40F628">0075:</FONT>     D3D_CUSTOMVERTEX* pDest;
+<FONT COLOR="#40F628">0076:</FONT>     LPDIRECT3DINDEXBUFFER8 pSrcIndex;
+<FONT COLOR="#40F628">0077:</FONT>     WORD* pISrc;
+<FONT COLOR="#40F628">0078:</FONT>     WORD* pIDest;
+<FONT COLOR="#40F628">0079:</FONT> 
+<FONT COLOR="#40F628">0080:</FONT>     DWORD nMeshVertices = pMesh-&gt;GetNumVertices();
+<FONT COLOR="#40F628">0081:</FONT>     DWORD nMeshFaces = pMesh-&gt;GetNumFaces();
+<FONT COLOR="#40F628">0082:</FONT>     lpD3DDev-&gt;CreateVertexBuffer(nMeshVertices * <FONT COLOR="#0000FF">sizeof</FONT>(D3D_CUSTOMVERTEX),0,D3DFVF_CUSTOMVERTEX,D3DPOOL_MANAGED,&amp;pMeshVB);
+<FONT COLOR="#40F628">0083:</FONT>     lpD3DDev-&gt;CreateIndexBuffer(nMeshFaces * 3 * <FONT COLOR="#0000FF">sizeof</FONT>(WORD),0,D3DFMT_INDEX16,D3DPOOL_MANAGED,&amp;pMeshIndex);
+<FONT COLOR="#40F628">0084:</FONT> 
+<FONT COLOR="#40F628">0085:</FONT>     LPDIRECT3DVERTEXBUFFER8 pVB;
+<FONT COLOR="#40F628">0086:</FONT>     pMesh-&gt;GetVertexBuffer(&amp;pVB);
+<FONT COLOR="#40F628">0087:</FONT>     pVB-&gt;Lock(0,0,(BYTE**)&amp;pSrc,0);
+<FONT COLOR="#40F628">0088:</FONT>     pMeshVB-&gt;Lock(0,0,(BYTE**)&amp;pDest,0);
+<FONT COLOR="#40F628">0089:</FONT>     MeshRadius = 0.0f;
+<FONT COLOR="#40F628">0090:</FONT>     <FONT COLOR="#0000FF">for</FONT>(i=0;i&lt;nMeshVertices;i++){
+<FONT COLOR="#40F628">0091:</FONT>         pDest-&gt;x = pSrc-&gt;x;
+<FONT COLOR="#40F628">0092:</FONT>         pDest-&gt;y = pSrc-&gt;y;
+<FONT COLOR="#40F628">0093:</FONT>         pDest-&gt;z = pSrc-&gt;z;
+<FONT COLOR="#40F628">0094:</FONT>         pDest-&gt;nx = pSrc-&gt;nx;
+<FONT COLOR="#40F628">0095:</FONT>         pDest-&gt;ny = pSrc-&gt;ny;
+<FONT COLOR="#40F628">0096:</FONT>         pDest-&gt;nz = pSrc-&gt;nz;
+<FONT COLOR="#40F628">0097:</FONT>         pDest-&gt;tu0 = pSrc-&gt;tu0;
+<FONT COLOR="#40F628">0098:</FONT>         pDest-&gt;tu0 = pSrc-&gt;tu0;
+<FONT COLOR="#40F628">0099:</FONT>         <FONT COLOR="#008000">// サイズの計算</FONT>
+<FONT COLOR="#40F628">0100:</FONT>         FLOAT radius = sqrtf( pSrc-&gt;x*pSrc-&gt;x + pSrc-&gt;y*pSrc-&gt;y + pSrc-&gt;z*pSrc-&gt;z );
+<FONT COLOR="#40F628">0101:</FONT>         <FONT COLOR="#0000FF">if</FONT> (MeshRadius &lt; radius) MeshRadius = radius;
+<FONT COLOR="#40F628">0102:</FONT>         
+<FONT COLOR="#40F628">0103:</FONT>         pSrc += 1;
+<FONT COLOR="#40F628">0104:</FONT>         pDest += 1;
+<FONT COLOR="#40F628">0105:</FONT>     }
+<FONT COLOR="#40F628">0106:</FONT>     pVB-&gt;Unlock();
+<FONT COLOR="#40F628">0107:</FONT>     pVB-&gt;Release();
+<FONT COLOR="#40F628">0108:</FONT>     pMeshVB-&gt;Unlock();
+<FONT COLOR="#40F628">0109:</FONT> 
+<FONT COLOR="#40F628">0110:</FONT>     <FONT COLOR="#008000">//インデックスのコピー</FONT>
+<FONT COLOR="#40F628">0111:</FONT>     pMesh-&gt;GetIndexBuffer(&amp;pSrcIndex);
+<FONT COLOR="#40F628">0112:</FONT>     pSrcIndex-&gt;Lock(0,0,(BYTE**)&amp;pISrc,0);
+<FONT COLOR="#40F628">0113:</FONT>     pMeshIndex-&gt;Lock(0,0,(BYTE**)&amp;pIDest,0);
+<FONT COLOR="#40F628">0114:</FONT>     CopyMemory(pIDest,pISrc,nMeshFaces * 3 * <FONT COLOR="#0000FF">sizeof</FONT>(WORD));
+<FONT COLOR="#40F628">0115:</FONT>     pSrcIndex-&gt;Unlock();
+<FONT COLOR="#40F628">0116:</FONT>     pMeshIndex-&gt;Unlock();
+<FONT COLOR="#40F628">0117:</FONT>     pSrcIndex-&gt;Release();
+<FONT COLOR="#40F628">0118:</FONT> 
+<FONT COLOR="#40F628">0119:</FONT>     <FONT COLOR="#008000">// pD3DXMtrlBuffer から、質感やテクスチャーの情報を読み取る</FONT>
+<FONT COLOR="#40F628">0120:</FONT>     D3DXMATERIAL* d3dxMaterials = (D3DXMATERIAL*)pD3DXMtrlBuffer-&gt;GetBufferPointer();
+<FONT COLOR="#40F628">0121:</FONT>     pMeshTextures = <FONT COLOR="#0000FF">new</FONT> LPDIRECT3DTEXTURE8[dwNumMaterials];
+<FONT COLOR="#40F628">0122:</FONT>     pMeshMaterials = <FONT COLOR="#0000FF">new</FONT> D3DMATERIAL8[dwNumMaterials];
+<FONT COLOR="#40F628">0123:</FONT> 
+<FONT COLOR="#40F628">0124:</FONT>     <FONT COLOR="#0000FF">for</FONT>(i = 0; i &lt; dwNumMaterials; i++){
+<FONT COLOR="#40F628">0125:</FONT>         pMeshMaterials[i] = d3dxMaterials[i].MatD3D;
+<FONT COLOR="#40F628">0126:</FONT>         pMeshMaterials[i].Ambient = pMeshMaterials[i].Diffuse;
+<FONT COLOR="#40F628">0127:</FONT>         hr = D3DXCreateTextureFromFile( lpD3DDev, 
+<FONT COLOR="#40F628">0128:</FONT>                                         d3dxMaterials[i].pTextureFilename, 
+<FONT COLOR="#40F628">0129:</FONT>                                         &amp;pMeshTextures[i] );
+<FONT COLOR="#40F628">0130:</FONT>         <FONT COLOR="#0000FF">if</FONT>(FAILED(hr)) pMeshTextures[i] = NULL;
+<FONT COLOR="#40F628">0131:</FONT>     }
+<FONT COLOR="#40F628">0132:</FONT>     RELEASE(pD3DXMtrlBuffer);
+<FONT COLOR="#40F628">0133:</FONT>     
+<FONT COLOR="#40F628">0134:</FONT>     RELEASE(pMesh);
+<FONT COLOR="#40F628">0135:</FONT> 
+<FONT COLOR="#40F628">0136:</FONT>     <FONT COLOR="#0000FF">return</FONT> S_OK;
+<FONT COLOR="#40F628">0137:</FONT> }
+<FONT COLOR="#40F628">0138:</FONT> 
+<FONT COLOR="#40F628">0139:</FONT> <FONT COLOR="#008000">//-----------------------------------------------------------------------------</FONT>
+<FONT COLOR="#40F628">0140:</FONT> <FONT COLOR="#008000">// Name: InitRender()</FONT>
+<FONT COLOR="#40F628">0141:</FONT> <FONT COLOR="#008000">// Desc: Load the mesh and build the material and texture arrays</FONT>
+<FONT COLOR="#40F628">0142:</FONT> <FONT COLOR="#008000">//-----------------------------------------------------------------------------</FONT>
+<FONT COLOR="#40F628">0143:</FONT> HRESULT InitRender(LPDIRECT3DDEVICE8 lpD3DDev)
+<FONT COLOR="#40F628">0144:</FONT> {
+<FONT COLOR="#40F628">0145:</FONT>     HRESULT hr;
+<FONT COLOR="#40F628">0146:</FONT> 
+<FONT COLOR="#40F628">0147:</FONT>     <FONT COLOR="#008000">// モデルの読み込み</FONT>
+<FONT COLOR="#40F628">0148:</FONT>     <FONT COLOR="#0000FF">if</FONT> ( FAILED(hr = LoadXFile("<FONT COLOR="#600000">nsx.x</FONT>", lpD3DDev)) ) <FONT COLOR="#0000FF">return</FONT> hr;
+<FONT COLOR="#40F628">0149:</FONT>     
+<FONT COLOR="#40F628">0150:</FONT>     <FONT COLOR="#008000">// バーテックスシェーダーを作成する</FONT>
+<FONT COLOR="#40F628">0151:</FONT>     <FONT COLOR="#0000FF">if</FONT> ( FAILED(CVertexShaderMgr::Load(lpD3DDev, "<FONT COLOR="#600000">vs.vsh</FONT>",     &amp;hVertexShader, dwDecl)) ) <FONT COLOR="#0000FF">return</FONT> hr;
+<FONT COLOR="#40F628">0152:</FONT>     <FONT COLOR="#0000FF">if</FONT> ( FAILED( CPixelShaderMgr::Load(lpD3DDev, "<FONT COLOR="#600000">ps.psh</FONT>",      &amp;hPixelShader)) ) <FONT COLOR="#0000FF">return</FONT> hr;
+<FONT COLOR="#40F628">0153:</FONT>     
+<FONT COLOR="#40F628">0154:</FONT>     <FONT COLOR="#008000">// 背景部分の初期化</FONT>
+<FONT COLOR="#40F628">0155:</FONT>     InitBg(lpD3DDev);
+<FONT COLOR="#40F628">0156:</FONT> 
+<FONT COLOR="#40F628">0157:</FONT>     <FONT COLOR="#008000">// 不変なレジスタの設定</FONT>
+<FONT COLOR="#40F628">0158:</FONT>     lpD3DDev-&gt;SetRenderState( D3DRS_ZENABLE, TRUE );
+<FONT COLOR="#40F628">0159:</FONT>     lpD3DDev-&gt;SetRenderState( D3DRS_LIGHTING,  FALSE );
+<FONT COLOR="#40F628">0160:</FONT>     lpD3DDev-&gt;SetRenderState( D3DRS_ALPHABLENDENABLE, FALSE);
+<FONT COLOR="#40F628">0161:</FONT>     lpD3DDev-&gt;SetVertexShaderConstant(12, &amp;D3DXVECTOR4(0.0f, 0.5f, 1.0f, 2.0f), 1);
+<FONT COLOR="#40F628">0162:</FONT> 
+<FONT COLOR="#40F628">0163:</FONT>     
+<FONT COLOR="#40F628">0164:</FONT>     <FONT COLOR="#0000FF">return</FONT> S_OK;
+<FONT COLOR="#40F628">0165:</FONT> }
+<FONT COLOR="#40F628">0166:</FONT> <FONT COLOR="#008000">//-----------------------------------------------------------------------------</FONT>
+<FONT COLOR="#40F628">0167:</FONT> <FONT COLOR="#008000">// Name: Render()</FONT>
+<FONT COLOR="#40F628">0168:</FONT> <FONT COLOR="#008000">// Desc: Draws the scene</FONT>
+<FONT COLOR="#40F628">0169:</FONT> <FONT COLOR="#008000">//-----------------------------------------------------------------------------</FONT>
+<FONT COLOR="#40F628">0170:</FONT> <FONT COLOR="#0000FF">const</FONT> <FONT COLOR="#0000FF">float</FONT> z_min =   0.5f;
+<FONT COLOR="#40F628">0171:</FONT> <FONT COLOR="#0000FF">const</FONT> <FONT COLOR="#0000FF">float</FONT> z_max =  100.0f;
+<FONT COLOR="#40F628">0172:</FONT> D3DXVECTOR4 lightDir(1.0f, 1.0f, 0.5f, 0.0f);
+<FONT COLOR="#40F628">0173:</FONT> 
+<FONT COLOR="#40F628">0174:</FONT> VOID DrawModel(LPDIRECT3DDEVICE8 lpD3DDev)
+<FONT COLOR="#40F628">0175:</FONT> {
+<FONT COLOR="#40F628">0176:</FONT>     D3DXMATRIX mWorld, mView,  mProj;
+<FONT COLOR="#40F628">0177:</FONT>     D3DXMATRIX  m;
+<FONT COLOR="#40F628">0178:</FONT>     D3DXVECTOR4 vl;
+<FONT COLOR="#40F628">0179:</FONT>     DWORD i;
+<FONT COLOR="#40F628">0180:</FONT>     
+<FONT COLOR="#40F628">0181:</FONT>     <FONT COLOR="#008000">// </FONT>
+<FONT COLOR="#40F628">0182:</FONT>     <FONT COLOR="#008000">// 通常レンダリング用の行列を作成</FONT>
+<FONT COLOR="#40F628">0183:</FONT>     <FONT COLOR="#008000">// </FONT>
+<FONT COLOR="#40F628">0184:</FONT>     <FONT COLOR="#008000">// ビュー行列</FONT>
+<FONT COLOR="#40F628">0185:</FONT>     D3DXVECTOR3 eye    = D3DXVECTOR3(0.0f,1.0f*MeshRadius,2.0f*MeshRadius);
+<FONT COLOR="#40F628">0186:</FONT>     D3DXVECTOR3 lookAt = D3DXVECTOR3(0.0f,  0.0f,  0.0f);
+<FONT COLOR="#40F628">0187:</FONT>     D3DXVECTOR3 up     = D3DXVECTOR3(0.0f,  1.0f,  0.0f);
+<FONT COLOR="#40F628">0188:</FONT>     D3DXMatrixLookAtLH(&amp;mView, &amp;eye, &amp;lookAt, &amp;up);
+<FONT COLOR="#40F628">0189:</FONT> 
+<FONT COLOR="#40F628">0190:</FONT>     <FONT COLOR="#008000">// 射影行列(比較用)</FONT>
+<FONT COLOR="#40F628">0191:</FONT>     D3DXMatrixPerspectiveFovLH(&amp;mProj
+<FONT COLOR="#40F628">0192:</FONT>         , D3DXToRadian(60.0f)                       <FONT COLOR="#008000">// 視野角</FONT>
+<FONT COLOR="#40F628">0193:</FONT>         , (<FONT COLOR="#0000FF">float</FONT>)WIDTH/(<FONT COLOR="#0000FF">float</FONT>)HEIGHT                <FONT COLOR="#008000">// アスペクト比</FONT>
+<FONT COLOR="#40F628">0194:</FONT>         , 0.1f, 100.f                                   <FONT COLOR="#008000">// 最近接距離,最遠方距離</FONT>
+<FONT COLOR="#40F628">0195:</FONT>         );
+<FONT COLOR="#40F628">0196:</FONT>     D3DXMatrixTranspose( &amp;mProj ,  &amp;mProj);
+<FONT COLOR="#40F628">0197:</FONT>     lpD3DDev-&gt;SetVertexShaderConstant(4,&amp;mProj, 4);
+<FONT COLOR="#40F628">0198:</FONT>     
+<FONT COLOR="#40F628">0199:</FONT>     lpD3DDev-&gt;SetVertexShaderConstant(15, &amp;D3DXVECTOR4(z_max/(z_max-z_min), -z_max*z_min/(z_max-z_min), 0.0f, 0.0f), 1);
+<FONT COLOR="#40F628">0200:</FONT> 
+<FONT COLOR="#40F628">0201:</FONT> 
+<FONT COLOR="#40F628">0202:</FONT>     <FONT COLOR="#008000">//</FONT>
+<FONT COLOR="#40F628">0203:</FONT>     <FONT COLOR="#008000">// 外側もでる描画</FONT>
+<FONT COLOR="#40F628">0204:</FONT>     <FONT COLOR="#008000">//</FONT>
+<FONT COLOR="#40F628">0205:</FONT>     <FONT COLOR="#0000FF">int</FONT> t = timeGetTime()%314159;
+<FONT COLOR="#40F628">0206:</FONT>     D3DXMatrixTranslation(&amp;m, 1.5f*MeshRadius, 0,0);
+<FONT COLOR="#40F628">0207:</FONT>     D3DXMatrixRotationY( &amp;mWorld, t/1000.0f );
+<FONT COLOR="#40F628">0208:</FONT> <FONT COLOR="#008000">//D3DXMatrixRotationY( &amp;mWorld, -0.2*PI/2 ); // 撮影角度</FONT>
+<FONT COLOR="#40F628">0209:</FONT>     mWorld = m * mWorld;
+<FONT COLOR="#40F628">0210:</FONT>     m = mWorld * mView;
+<FONT COLOR="#40F628">0211:</FONT>     D3DXMatrixTranspose( &amp;m ,  &amp;m);
+<FONT COLOR="#40F628">0212:</FONT>     lpD3DDev-&gt;SetVertexShaderConstant(0,&amp;m, 4);
+<FONT COLOR="#40F628">0213:</FONT> 
+<FONT COLOR="#40F628">0214:</FONT>     D3DXMatrixInverse( &amp;m,  NULL, &amp;mWorld);
+<FONT COLOR="#40F628">0215:</FONT>     D3DXVec4Transform(&amp;vl, &amp;lightDir, &amp;m);
+<FONT COLOR="#40F628">0216:</FONT>     D3DXVec4Normalize(&amp;vl, &amp;vl);
+<FONT COLOR="#40F628">0217:</FONT>     vl[3] = 0.1f;<FONT COLOR="#008000">// w成分は環境色の強さ</FONT>
+<FONT COLOR="#40F628">0218:</FONT>     lpD3DDev-&gt;SetVertexShaderConstant(13, &amp;vl, 1);
+<FONT COLOR="#40F628">0219:</FONT>     
+<FONT COLOR="#40F628">0220:</FONT>     lpD3DDev-&gt;SetStreamSource(0, pMeshVB, <FONT COLOR="#0000FF">sizeof</FONT>(D3D_CUSTOMVERTEX));
+<FONT COLOR="#40F628">0221:</FONT>     lpD3DDev-&gt;SetIndices(pMeshIndex,0);
+<FONT COLOR="#40F628">0222:</FONT>     
+<FONT COLOR="#40F628">0223:</FONT>     <FONT COLOR="#0000FF">for</FONT>(i=0;i&lt;dwNumMaterials;i++){
+<FONT COLOR="#40F628">0224:</FONT>         <FONT COLOR="#008000">//色をセット</FONT>
+<FONT COLOR="#40F628">0225:</FONT>         D3DXVECTOR4 vl;
+<FONT COLOR="#40F628">0226:</FONT>         vl.x = pMeshMaterials[i].Diffuse.r;
+<FONT COLOR="#40F628">0227:</FONT>         vl.y = pMeshMaterials[i].Diffuse.g;
+<FONT COLOR="#40F628">0228:</FONT>         vl.z = pMeshMaterials[i].Diffuse.b;
+<FONT COLOR="#40F628">0229:</FONT>         lpD3DDev-&gt;SetVertexShaderConstant(14, &amp;vl, 1);
+<FONT COLOR="#40F628">0230:</FONT> 
+<FONT COLOR="#40F628">0231:</FONT>         lpD3DDev-&gt;SetTexture(0,pMeshTextures[i]);
+<FONT COLOR="#40F628">0232:</FONT>         lpD3DDev-&gt;DrawIndexedPrimitive(D3DPT_TRIANGLELIST, 
+<FONT COLOR="#40F628">0233:</FONT>                                         pSubsetTable[i].VertexStart,
+<FONT COLOR="#40F628">0234:</FONT>                                         pSubsetTable[i].VertexCount,
+<FONT COLOR="#40F628">0235:</FONT>                                         pSubsetTable[i].FaceStart * 3,
+<FONT COLOR="#40F628">0236:</FONT>                                         pSubsetTable[i].FaceCount);
+<FONT COLOR="#40F628">0237:</FONT>     }
+<FONT COLOR="#40F628">0238:</FONT>     <FONT COLOR="#008000">//</FONT>
+<FONT COLOR="#40F628">0239:</FONT>     <FONT COLOR="#008000">// モデル2</FONT>
+<FONT COLOR="#40F628">0240:</FONT>     <FONT COLOR="#008000">//</FONT>
+<FONT COLOR="#40F628">0241:</FONT>     D3DXMatrixRotationY( &amp;mWorld, -t/3000.0f );
+<FONT COLOR="#40F628">0242:</FONT> <FONT COLOR="#008000">//D3DXMatrixRotationY( &amp;mWorld, 1.4f*PI/2 ); // 撮影角度</FONT>
+<FONT COLOR="#40F628">0243:</FONT>     m = mWorld * mView;
+<FONT COLOR="#40F628">0244:</FONT>     D3DXMatrixTranspose( &amp;m ,  &amp;m);
+<FONT COLOR="#40F628">0245:</FONT>     lpD3DDev-&gt;SetVertexShaderConstant(0,&amp;m, 4);
+<FONT COLOR="#40F628">0246:</FONT> 
+<FONT COLOR="#40F628">0247:</FONT>     D3DXMatrixInverse( &amp;m,  NULL, &amp;mWorld);
+<FONT COLOR="#40F628">0248:</FONT>     D3DXVec4Transform(&amp;vl, &amp;lightDir, &amp;m);
+<FONT COLOR="#40F628">0249:</FONT>     D3DXVec4Normalize(&amp;vl, &amp;vl);
+<FONT COLOR="#40F628">0250:</FONT>     vl[3] = 0.1f;<FONT COLOR="#008000">// w成分は環境色の強さ</FONT>
+<FONT COLOR="#40F628">0251:</FONT>     lpD3DDev-&gt;SetVertexShaderConstant(13, &amp;vl, 1);
+<FONT COLOR="#40F628">0252:</FONT>     
+<FONT COLOR="#40F628">0253:</FONT>     <FONT COLOR="#0000FF">for</FONT>(i=0;i&lt;dwNumMaterials;i++){
+<FONT COLOR="#40F628">0254:</FONT>         <FONT COLOR="#008000">//色をセット</FONT>
+<FONT COLOR="#40F628">0255:</FONT>         D3DXVECTOR4 vl;
+<FONT COLOR="#40F628">0256:</FONT>         vl.x = pMeshMaterials[i].Diffuse.r;
+<FONT COLOR="#40F628">0257:</FONT>         vl.y = pMeshMaterials[i].Diffuse.g;
+<FONT COLOR="#40F628">0258:</FONT>         vl.z = pMeshMaterials[i].Diffuse.b;
+<FONT COLOR="#40F628">0259:</FONT>         lpD3DDev-&gt;SetVertexShaderConstant(14, &amp;vl, 1);
+<FONT COLOR="#40F628">0260:</FONT> 
+<FONT COLOR="#40F628">0261:</FONT>         lpD3DDev-&gt;SetTexture(0,pMeshTextures[i]);
+<FONT COLOR="#40F628">0262:</FONT>         lpD3DDev-&gt;DrawIndexedPrimitive(D3DPT_TRIANGLELIST, 
+<FONT COLOR="#40F628">0263:</FONT>                                         pSubsetTable[i].VertexStart,
+<FONT COLOR="#40F628">0264:</FONT>                                         pSubsetTable[i].VertexCount,
+<FONT COLOR="#40F628">0265:</FONT>                                         pSubsetTable[i].FaceStart * 3,
+<FONT COLOR="#40F628">0266:</FONT>                                         pSubsetTable[i].FaceCount);
+<FONT COLOR="#40F628">0267:</FONT>     }
+<FONT COLOR="#40F628">0268:</FONT> 
+<FONT COLOR="#40F628">0269:</FONT>     <FONT COLOR="#008000">//</FONT>
+<FONT COLOR="#40F628">0270:</FONT>     <FONT COLOR="#008000">// 背景描画</FONT>
+<FONT COLOR="#40F628">0271:</FONT>     <FONT COLOR="#008000">// </FONT>
+<FONT COLOR="#40F628">0272:</FONT>     D3DXMatrixScaling(&amp;mWorld, 3.0f, 3.0f, 3.0f);
+<FONT COLOR="#40F628">0273:</FONT>     m = mWorld * mView;
+<FONT COLOR="#40F628">0274:</FONT>     D3DXMatrixTranspose( &amp;m ,  &amp;m);
+<FONT COLOR="#40F628">0275:</FONT>     lpD3DDev-&gt;SetVertexShaderConstant(0,&amp;m, 4);
+<FONT COLOR="#40F628">0276:</FONT>     
+<FONT COLOR="#40F628">0277:</FONT>     lpD3DDev-&gt;SetVertexShaderConstant(13, &amp;D3DXVECTOR4(0.0f, 0.0f, 0.0f, 0.0f), 1);
+<FONT COLOR="#40F628">0278:</FONT>     lpD3DDev-&gt;SetVertexShaderConstant(14, &amp;D3DXVECTOR4(0.0f, 0.0f, 0.0f, 0.0f), 1);
+<FONT COLOR="#40F628">0279:</FONT>     DrawBg(lpD3DDev);
+<FONT COLOR="#40F628">0280:</FONT> }
+<FONT COLOR="#40F628">0281:</FONT> <FONT COLOR="#008000">//-----------------------------------------------------------------------------</FONT>
+<FONT COLOR="#40F628">0282:</FONT> <FONT COLOR="#008000">// Name: Render()</FONT>
+<FONT COLOR="#40F628">0283:</FONT> <FONT COLOR="#008000">// Desc: Draws the scene</FONT>
+<FONT COLOR="#40F628">0284:</FONT> <FONT COLOR="#008000">//-----------------------------------------------------------------------------</FONT>
+<FONT COLOR="#40F628">0285:</FONT> VOID Render(LPDIRECT3DDEVICE8 lpD3DDev)
+<FONT COLOR="#40F628">0286:</FONT> {
+<FONT COLOR="#40F628">0287:</FONT>     <FONT COLOR="#008000">// シェーダーの設定</FONT>
+<FONT COLOR="#40F628">0288:</FONT>     lpD3DDev-&gt;SetVertexShader(hVertexShader);
+<FONT COLOR="#40F628">0289:</FONT>     lpD3DDev-&gt;SetPixelShader(hPixelShader);
+<FONT COLOR="#40F628">0290:</FONT>     
+<FONT COLOR="#40F628">0291:</FONT>     DrawModel(lpD3DDev);
+<FONT COLOR="#40F628">0292:</FONT>     
+<FONT COLOR="#40F628">0293:</FONT>     <FONT COLOR="#008000">// 念のため、他のレンダーでおかしくならないように</FONT>
+<FONT COLOR="#40F628">0294:</FONT>     lpD3DDev-&gt;SetPixelShader(0);
+<FONT COLOR="#40F628">0295:</FONT> }
+<FONT COLOR="#40F628">0296:</FONT> <FONT COLOR="#008000">//-----------------------------------------------------------------------------</FONT>
+<FONT COLOR="#40F628">0297:</FONT> <FONT COLOR="#008000">// メッシュオブジェクト削除</FONT>
+<FONT COLOR="#40F628">0298:</FONT> <FONT COLOR="#008000">//-----------------------------------------------------------------------------</FONT>
+<FONT COLOR="#40F628">0299:</FONT> <FONT COLOR="#0000FF">void</FONT> DeleteMeshObject(<FONT COLOR="#0000FF">void</FONT>)
+<FONT COLOR="#40F628">0300:</FONT> {
+<FONT COLOR="#40F628">0301:</FONT>     DWORD i;
+<FONT COLOR="#40F628">0302:</FONT> 
+<FONT COLOR="#40F628">0303:</FONT>     <FONT COLOR="#0000FF">if</FONT>(pMeshVB == NULL) <FONT COLOR="#0000FF">return</FONT>;
+<FONT COLOR="#40F628">0304:</FONT> 
+<FONT COLOR="#40F628">0305:</FONT>     <FONT COLOR="#0000FF">for</FONT>(i=0; i&lt;dwNumMaterials; i++){
+<FONT COLOR="#40F628">0306:</FONT>         RELEASE(pMeshTextures[i]);
+<FONT COLOR="#40F628">0307:</FONT>     }
+<FONT COLOR="#40F628">0308:</FONT>     <FONT COLOR="#0000FF">delete</FONT>[] pMeshTextures;
+<FONT COLOR="#40F628">0309:</FONT>     <FONT COLOR="#0000FF">delete</FONT>[] pMeshMaterials;
+<FONT COLOR="#40F628">0310:</FONT>     <FONT COLOR="#0000FF">delete</FONT>[] pSubsetTable;
+<FONT COLOR="#40F628">0311:</FONT> 
+<FONT COLOR="#40F628">0312:</FONT>     RELEASE(pMeshVB);
+<FONT COLOR="#40F628">0313:</FONT>     RELEASE(pMeshIndex);
+<FONT COLOR="#40F628">0314:</FONT> }
+<FONT COLOR="#40F628">0315:</FONT> <FONT COLOR="#008000">//-----------------------------------------------------------------------------</FONT>
+<FONT COLOR="#40F628">0316:</FONT> <FONT COLOR="#008000">// Name: CleanRender()</FONT>
+<FONT COLOR="#40F628">0317:</FONT> <FONT COLOR="#008000">// Desc: 後始末</FONT>
+<FONT COLOR="#40F628">0318:</FONT> <FONT COLOR="#008000">//-----------------------------------------------------------------------------</FONT>
+<FONT COLOR="#40F628">0319:</FONT> <FONT COLOR="#0000FF">void</FONT> CleanRender(LPDIRECT3DDEVICE8 lpD3DDev)
+<FONT COLOR="#40F628">0320:</FONT> {
+<FONT COLOR="#40F628">0321:</FONT>     CleanBg(lpD3DDev);
+<FONT COLOR="#40F628">0322:</FONT>     
+<FONT COLOR="#40F628">0323:</FONT>     CPixelShaderMgr::Release(lpD3DDev, &amp;hPixelShader);
+<FONT COLOR="#40F628">0324:</FONT>     CVertexShaderMgr::Release(lpD3DDev, &amp;hVertexShader);
+<FONT COLOR="#40F628">0325:</FONT> 
+<FONT COLOR="#40F628">0326:</FONT>     DeleteMeshObject();
+<FONT COLOR="#40F628">0327:</FONT> }
+<FONT COLOR="#40F628">0328:</FONT> </PRE>
+</BODY>
+</HTML>

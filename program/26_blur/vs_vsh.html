@@ -1,0 +1,91 @@
+<HTML>
+<HEAD>
+<TITLE>vs.vsh</TITLE>
+<meta name="GENERATOR" content="cpp2html 2.0 by Niisaka">
+<meta http-equiv="Content-Type" content="text/html">
+<meta http-equiv="Content-Style-Type" content="text/css">
+<STYLE TYPE="text/css">
+<!--
+SPAN.comment { color:#008000; font-weight:normal; font-style:normal;}
+SPAN.keyword { color:#0000FF; font-weight:normal; font-style:normal;}
+SPAN.string { color:#600000; font-weight:normal; font-style:normal;}
+SPAN.linenum { color:#A0A0A0; font-weight:normal; font-style:normal;}
+-->
+</STYLE>
+</HEAD>
+<BODY TEXT="#000000" BGCOLOR="#FFFFFF">
+<PRE><SPAN CLASS="linenum">0001:</SPAN> ; c0     -- {0.0, 0.5, 1.0, 2.0}
+<SPAN CLASS="linenum">0002:</SPAN> ; c1     -- メッシュの色
+<SPAN CLASS="linenum">0003:</SPAN> ; c2     -- ブラーしたメッシュの色
+<SPAN CLASS="linenum">0004:</SPAN> ; c3     -- ブラー用パラメータ (メッシュのサイズ/2.0f, ブラーの長さの倍率, 1, 0)
+<SPAN CLASS="linenum">0005:</SPAN> ; c4-7   -- 透視変換行列
+<SPAN CLASS="linenum">0006:</SPAN> ; c8-11  -- 現在のビュー座標系
+<SPAN CLASS="linenum">0007:</SPAN> ; c12-15 -- 前のビュー座標系
+<SPAN CLASS="linenum">0008:</SPAN> ; c16-19 -- ビュー行列 の逆転置行列
+<SPAN CLASS="linenum">0009:</SPAN> ;
+<SPAN CLASS="linenum">0010:</SPAN> ; v0    頂点の座標値
+<SPAN CLASS="linenum">0011:</SPAN> ; v3    法線ベクトル
+<SPAN CLASS="linenum">0012:</SPAN> ; v7    テクスチャ座標0
+<SPAN CLASS="linenum">0013:</SPAN> 
+<SPAN CLASS="linenum">0014:</SPAN> vs.1.0
+<SPAN CLASS="linenum">0015:</SPAN> 
+<SPAN CLASS="linenum">0016:</SPAN> ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+<SPAN CLASS="linenum">0017:</SPAN> ; 座標変換
+<SPAN CLASS="linenum">0018:</SPAN> 
+<SPAN CLASS="linenum">0019:</SPAN> ; 前のビュー座標系で座標を変換する
+<SPAN CLASS="linenum">0020:</SPAN> dp4 r0.x, v0, c12
+<SPAN CLASS="linenum">0021:</SPAN> dp4 r0.y, v0, c13
+<SPAN CLASS="linenum">0022:</SPAN> dp4 r0.z, v0, c14
+<SPAN CLASS="linenum">0023:</SPAN> 
+<SPAN CLASS="linenum">0024:</SPAN> ; 現在のビュー座標系で座標を変換する
+<SPAN CLASS="linenum">0025:</SPAN> dp4 r1.x, v0, c8
+<SPAN CLASS="linenum">0026:</SPAN> dp4 r1.y, v0, c9
+<SPAN CLASS="linenum">0027:</SPAN> dp4 r1.z, v0, c10
+<SPAN CLASS="linenum">0028:</SPAN> 
+<SPAN CLASS="linenum">0029:</SPAN> ;差を取って、速度ベクトルを求める
+<SPAN CLASS="linenum">0030:</SPAN> add r2.xyz, r1, -r0
+<SPAN CLASS="linenum">0031:</SPAN> 
+<SPAN CLASS="linenum">0032:</SPAN> ; 適当な係数を掛けて、ブラーの長さを調整する
+<SPAN CLASS="linenum">0033:</SPAN> mul r2.xyz, r2, c3.y
+<SPAN CLASS="linenum">0034:</SPAN> 
+<SPAN CLASS="linenum">0035:</SPAN> ; 法線をビュー座標系に変換する
+<SPAN CLASS="linenum">0036:</SPAN> dp3 r3.x, v3, c16
+<SPAN CLASS="linenum">0037:</SPAN> dp3 r3.y, v3, c17
+<SPAN CLASS="linenum">0038:</SPAN> dp3 r3.z, v3, c18
+<SPAN CLASS="linenum">0039:</SPAN> 
+<SPAN CLASS="linenum">0040:</SPAN> ; 速度の法線方向の成分を求める
+<SPAN CLASS="linenum">0041:</SPAN> dp3 r2.w, r2, r3
+<SPAN CLASS="linenum">0042:</SPAN> 
+<SPAN CLASS="linenum">0043:</SPAN> ; (r2.w &lt; 0) ?  r4 = r0 : r4 = r1
+<SPAN CLASS="linenum">0044:</SPAN> slt  r3.w,   r2.w,  c0.x
+<SPAN CLASS="linenum">0045:</SPAN> mad  r4.xyz, r3.w, -r2, r1
+<SPAN CLASS="linenum">0046:</SPAN> mov  r4.w,   c0.z
+<SPAN CLASS="linenum">0047:</SPAN> 
+<SPAN CLASS="linenum">0048:</SPAN> ; r4 を透視変換
+<SPAN CLASS="linenum">0049:</SPAN> dp4 oPos.x, r4, c4
+<SPAN CLASS="linenum">0050:</SPAN> dp4 oPos.y, r4, c5
+<SPAN CLASS="linenum">0051:</SPAN> dp4 oPos.z, r4, c6
+<SPAN CLASS="linenum">0052:</SPAN> dp4 oPos.w, r4, c7
+<SPAN CLASS="linenum">0053:</SPAN> 
+<SPAN CLASS="linenum">0054:</SPAN> ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+<SPAN CLASS="linenum">0055:</SPAN> ; 速度と法線の関係から色を計算する
+<SPAN CLASS="linenum">0056:</SPAN> 
+<SPAN CLASS="linenum">0057:</SPAN> dp3 r2.w, r2,  r2
+<SPAN CLASS="linenum">0058:</SPAN> rsq r1.w, r2.w
+<SPAN CLASS="linenum">0059:</SPAN> mul r2.w, r2.w, r1.w                ; r2.w = 速度ベクトルの長さ
+<SPAN CLASS="linenum">0060:</SPAN> 
+<SPAN CLASS="linenum">0061:</SPAN> mad r2.w, -r2.w, c3.x, c3.z         ; r2.w = 1 - 速度ベクトルの長さ/extent　（extent = メッシュのサイズ/2.0f）
+<SPAN CLASS="linenum">0062:</SPAN> 
+<SPAN CLASS="linenum">0063:</SPAN> mul r5, c2, r2.w                    ; c2' = max (ブラーのついた基本色(c2), r2.w)
+<SPAN CLASS="linenum">0064:</SPAN> 
+<SPAN CLASS="linenum">0065:</SPAN> add r5,  r5, - c1
+<SPAN CLASS="linenum">0066:</SPAN> mad oD0, r3.w, r5, c1               ; 色 = c1 + Max(0,N･V)*(c2'-c1)
+<SPAN CLASS="linenum">0067:</SPAN>                                     ;     法線と速度の向きが同じなら color(ブラーの色として設定された色)
+<SPAN CLASS="linenum">0068:</SPAN>                                     ;     法線と速度の向き反対なら メッシュの色
+<SPAN CLASS="linenum">0069:</SPAN> 
+<SPAN CLASS="linenum">0070:</SPAN> ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+<SPAN CLASS="linenum">0071:</SPAN> ; テクスチャーを張る
+<SPAN CLASS="linenum">0072:</SPAN> mov oT0.xy, v7
+<SPAN CLASS="linenum">0073:</SPAN> </PRE>
+</BODY>
+</HTML>

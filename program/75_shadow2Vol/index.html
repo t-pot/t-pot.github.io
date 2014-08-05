@@ -1,0 +1,557 @@
+<head>
+	<title>t-pot『両面ステンシル影』</title>
+	<link rel="stylesheet" type="text/css" href="../if.css">
+</head>
+<meta http-equiv=Content-Type content="text/html; charset=shift_jis">
+<body>
+
+
+<div class="contents">
+<center>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<h1>両面ステンシル影</h1><br>
+<h3>～ 2-sided stencil shadow ～</h3>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<image src = "title.png">
+<br>
+<hr>
+</center>
+<div>
+
+
+<h2>■はじめに</h2>
+
+
+<p>
+DirectX9 で導入された機能に両面ステンシル機能があります。<br>
+両面ステンシル機能は、ステンシルテストで合格したときのステンシルへの書き込みを、
+表面と裏面をポリゴンで違う動作にすることができます
+（これだけに限らず、もっと多彩な変化が可能です。
+表と裏でステンシルのレンダリングステートに違う設定ができるのが両面ステンシルです）。<br>
+これを使えば、シャドウボリュームによる影の描画パスの回数を１回減らすことができます。<br>
+といっても、 id software の DOOMⅢ のために追加された気がしてしょうがありませんが…<br>
+今回は、前にやったボリューム影を両面ステンシルで行っただけでなく、元のモデルと同じ形の影を落とす方法に改良しました。
+</p>
+<ul style = "LIST-STYLE-TYPE:none">
+<li><a href="src.zip">src.zip (両面ステンシル影:DirectX9)</a>
+</ul>
+
+<p>
+まぁ、いつものように適当にファイルが入っています。<br>
+APP WIZARD から出力されるフレームワークのファイルは紹介を省かせていただきます。
+</p>
+<table>
+<tr><td><a href="hlsl_fx.html">hlsl.fx</a></td><td>シェーダの入ったエフェクトファイル</td></tr>
+<tr><td><a href="main_h.html">main.h</a></td><td>アプリケーションのヘッダ</td></tr>
+<tr><td><a href="main_cpp.html">main.cpp</a></td><td>アプリケーションのソース</td></tr>
+<tr><td><a href="CShadowVolume_h.html">CShadowVolume.h</a></td><td>アプリケーションのソース</td></tr>
+<tr><td><a href="CShadowVolume_cpp.html">CShadowVolume.cpp</a></td><td>アプリケーションのソース</td></tr>
+</table>
+<p>
+あと、実行ファイル、表示用モデル及び、プロジェクトファイルが入っています。<br>
+今回のモデルは、<a href = "http://www.graphics.cornell.edu/online/box/">コーネル箱</a>の外枠モデルと、大きさ１の箱を用意しました。<br>
+</p>
+
+
+<h2>■シャドウボリュームモデルの作成</h2>
+
+
+<p>
+今回の方法は、シャドウボリュームを作る専用のメッシュを作成します。<br>
+基本的にDirectXで扱うポリゴンは３角形ポリゴンです。
+その３角形を切り開いて、稜線（頂点と頂点を結ぶ辺）に４角形ポリゴンを挟み込みます。
+といっても、実際には、３角形ポリゴンを２枚埋め込むことになります。<br>
+シャドウボリュームのメッシュの法線には、面の法線を使います
+（この時点で共有された頂点はなくなるので、全ての頂点がどこかの３角形に所属しています）。<br>
+頂点の位置も、「切り開いた」といっても、位置はずらさないで、もとのモデルと同じ頂点座標を使います。<br>
+したがって、シャドウボリュームのメッシュは、元のメッシュと見た目上同じに見えます。<br>
+稜線に埋め込んだ四角形ポリゴンは、普段は大きさが０の縮退をして姿を現しません。
+</p>
+<image src = "how2.png">
+<p>
+さて、このポリゴンの量ですが、ちょっと多いです。<br>
+元のメッシュのポリゴン１つにつき３つの稜線があります。
+ただし、稜線は２つのポリゴンにまたがっているので、１つのポリゴンに付き3/2の四角形ポリゴンが追加されることになります。<br>
+４角形ポリゴンを３角形に割るとちょうど、１つのポリゴンに付き３つの３角形ポリゴンが追加されることになります。
+つまり、稜線に埋め込まれるのは、元のポリゴン数の３倍のポリゴンです。<br>
+さらに、元のメッシュも必要なので、シャドウボリュームのメッシュは元のメッシュの<b>４倍</b>のポリゴン数になります。<br>
+多いか少ないかは微妙なとこですね。
+</p>
+<p>
+さて、プログラムですが、ちょっとややこしいので少しづつ見ていきましょう。<br>
+最初に、元のメッシュのFVFを変換して、いらない情報を削りとります。<br>
+次に、メッシュの面の数から、シャドウボリュームのメッシュの面数や頂点数を算出して、メモリを確保します。
+</p>
+<pre class="CodeBlock">
+CShadowVolume.cpp
+<font color="deepskyblue">0032:</font> <font color="cyan">// ---------------------------------------------------------------------------</font>
+<font color="deepskyblue">0033:</font> <font color="cyan">// 生成</font>
+<font color="deepskyblue">0034:</font> <font color="cyan">// ---------------------------------------------------------------------------</font>
+<font color="deepskyblue">0035:</font> HRESULT CShadowVolume::Create( LPDIRECT3DDEVICE9 pd3dDevice, LPD3DXMESH pSrcMesh )
+<font color="deepskyblue">0036:</font> {
+<font color="deepskyblue">0037:</font>     HRESULT ret = S_OK;
+<font color="deepskyblue">0038:</font>     <font color="blue">struct</font> MESHVERTEX { D3DXVECTOR3 p, n; };
+<font color="deepskyblue">0039:</font>     SHADOW_VOLUME_VERTEX* pVertices;
+<font color="deepskyblue">0040:</font>     WORD*       pIndices;
+<font color="deepskyblue">0041:</font>     DWORD i,j,k,l, face;
+<font color="deepskyblue">0042:</font>     LPD3DXMESH pMesh;
+<font color="deepskyblue">0043:</font> 
+<font color="deepskyblue">0044:</font>     <font color="blue">if</font>( FAILED( pSrcMesh-&gt;CloneMeshFVF( D3DXMESH_SYSTEMMEM,
+<font color="deepskyblue">0045:</font>                                         D3DFVF_XYZ | D3DFVF_NORMAL,
+<font color="deepskyblue">0046:</font>                                         pd3dDevice, &amp;pMesh ) ) )
+<font color="deepskyblue">0047:</font>         <font color="blue">return</font> E_FAIL;
+<font color="deepskyblue">0048:</font>     DWORD dwNumFaces    = pMesh-&gt;GetNumFaces();
+<font color="deepskyblue">0049:</font> 
+<font color="deepskyblue">0050:</font>     <font color="cyan">// 出力用のメモリの確保</font>
+<font color="deepskyblue">0051:</font>     m_dwNumFaces = 4*dwNumFaces;
+<font color="deepskyblue">0052:</font>     m_pVertices = <font color="blue">new</font> SHADOW_VOLUME_VERTEX[3*m_dwNumFaces];
+</pre>
+<p>
+そしたら、元のメッシュをロックして、情報を所得します。<br>
+所得する情報は、面ごとの頂点の位置データです。
+位置データから面の法線ベクトルを計算します。<br>
+また、シャドウボリュームのメッシュの元のメッシュと同じ部分を作成しておきます。
+</p>
+<pre class="CodeBlock">
+CShadowVolume.cpp
+<font color="deepskyblue">0054:</font>     <font color="cyan">// バッファを専有</font>
+<font color="deepskyblue">0055:</font>     pMesh-&gt;LockVertexBuffer( 0L, (LPVOID*)&amp;pVertices );
+<font color="deepskyblue">0056:</font>     pMesh-&gt;LockIndexBuffer ( 0L, (LPVOID*)&amp;pIndices );
+<font color="deepskyblue">0057:</font>     
+<font color="deepskyblue">0058:</font>     <font color="cyan">// 法線保存用</font>
+<font color="deepskyblue">0059:</font>     D3DXVECTOR3 *vNormal = <font color="blue">new</font> D3DXVECTOR3[dwNumFaces];
+<font color="deepskyblue">0060:</font>     <font color="blue">if</font>(NULL==vNormal){
+<font color="deepskyblue">0061:</font>         m_dwNumFaces = 0;
+<font color="deepskyblue">0062:</font>         ret = E_OUTOFMEMORY;
+<font color="deepskyblue">0063:</font>         <font color="blue">goto</font> end;
+<font color="deepskyblue">0064:</font>     }
+<font color="deepskyblue">0065:</font>     <font color="cyan">// 通常データ製作</font>
+<font color="deepskyblue">0066:</font>     <font color="blue">for</font>( i=0; i&lt;dwNumFaces; i++ )
+<font color="deepskyblue">0067:</font>     {
+<font color="deepskyblue">0068:</font>         D3DXVECTOR3 v0 = pVertices[pIndices[3*i+0]].p;
+<font color="deepskyblue">0069:</font>         D3DXVECTOR3 v1 = pVertices[pIndices[3*i+1]].p;
+<font color="deepskyblue">0070:</font>         D3DXVECTOR3 v2 = pVertices[pIndices[3*i+2]].p;
+<font color="deepskyblue">0071:</font> 
+<font color="deepskyblue">0072:</font>         D3DXVECTOR3 vCross1(v1-v0);
+<font color="deepskyblue">0073:</font>         D3DXVECTOR3 vCross2(v2-v1);
+<font color="deepskyblue">0074:</font>         D3DXVec3Cross( &amp;vNormal[i], &amp;vCross1, &amp;vCross2 );
+<font color="deepskyblue">0075:</font>         
+<font color="deepskyblue">0076:</font>         m_pVertices[3*i+0].p = v0;
+<font color="deepskyblue">0077:</font>         m_pVertices[3*i+1].p = v1;
+<font color="deepskyblue">0078:</font>         m_pVertices[3*i+2].p = v2;
+<font color="deepskyblue">0079:</font>         m_pVertices[3*i+0].n = vNormal[i];
+<font color="deepskyblue">0080:</font>         m_pVertices[3*i+1].n = vNormal[i];
+<font color="deepskyblue">0081:</font>         m_pVertices[3*i+2].n = vNormal[i];
+<font color="deepskyblue">0082:</font>     }
+</pre>
+<p>
+後は、稜線に埋め込むデータです。<br>
+元のメッシュの各面を総当りして共通する辺があるか検索します。<br>
+共通する辺は同じ位置にある頂点が２つあれば辺が重なることを利用して計算します。<br>
+今回の方法では、厚さ０の張り合わさったメッシュは適応できないので、気をつけてください。<br>
+稜線が見つかったら、そのインデックスから頂点の位置や法線を求めます。<br>
+ここで、ポリゴンの表を決めるためにポリゴンの周り順が左回りになるように調整します。
+</p>
+<pre class="CodeBlock">
+CShadowVolume.cpp
+<font color="deepskyblue">0084:</font>     <font color="cyan">// 稜線に挟み込むデータ製作</font>
+<font color="deepskyblue">0085:</font>     face = dwNumFaces;
+<font color="deepskyblue">0086:</font>     <font color="blue">for</font>( i=0  ; i&lt;dwNumFaces; i++ ){
+<font color="deepskyblue">0087:</font>     <font color="blue">for</font>( j=i+1; j&lt;dwNumFaces; j++ ){
+<font color="deepskyblue">0088:</font>         DWORD id[2][2];
+<font color="deepskyblue">0089:</font>         DWORD cnt=0;
+<font color="deepskyblue">0090:</font>         <font color="blue">for</font>(k=0;k&lt;3;k++){
+<font color="deepskyblue">0091:</font>         <font color="blue">for</font>(l=0;l&lt;3;l++){
+<font color="deepskyblue">0092:</font>             D3DXVECTOR3 dv;
+<font color="deepskyblue">0093:</font>             D3DXVec3Subtract( &amp;dv,  &amp;pVertices[pIndices[3*i+k]].p,
+<font color="deepskyblue">0094:</font>                                     &amp;pVertices[pIndices[3*j+l]].p);
+<font color="deepskyblue">0095:</font>             <font color="blue">if</font>( D3DXVec3LengthSq( &amp;dv ) &lt; 0.001f ){
+<font color="deepskyblue">0096:</font>                 <font color="cyan">// 頂点の位置が同じデータを検索</font>
+<font color="deepskyblue">0097:</font>                 id[cnt][0] = 3*i+k;
+<font color="deepskyblue">0098:</font>                 id[cnt][1] = 3*j+l;
+<font color="deepskyblue">0099:</font>                 cnt++;
+<font color="deepskyblue">0100:</font>             }
+<font color="deepskyblue">0101:</font>         }
+<font color="deepskyblue">0102:</font>         }
+<font color="deepskyblue">0103:</font>         <font color="blue">if</font>(2==cnt){
+<font color="deepskyblue">0104:</font>             <font color="cyan">// 共有稜線があった</font>
+<font color="deepskyblue">0105:</font>             <font color="blue">if</font>(id[1][0]-id[0][0]!=1){
+<font color="deepskyblue">0106:</font>                 <font color="cyan">// ポリゴンの表向きを調整するための順番ずらし</font>
+<font color="deepskyblue">0107:</font>                 DWORD tmp = id[0][0];
+<font color="deepskyblue">0108:</font>                 id[0][0] = id[1][0];
+<font color="deepskyblue">0109:</font>                 id[1][0] = tmp;
+<font color="deepskyblue">0110:</font>                 tmp = id[0][1];
+<font color="deepskyblue">0111:</font>                 id[0][1] = id[1][1];
+<font color="deepskyblue">0112:</font>                 id[1][1] = tmp;
+<font color="deepskyblue">0113:</font>             }
+<font color="deepskyblue">0114:</font>             <font color="cyan">// 稜線にポリゴンを埋め込む</font>
+<font color="deepskyblue">0115:</font>             m_pVertices[3*face+0].p = pVertices[pIndices[id[1][0]]].p;
+<font color="deepskyblue">0116:</font>             m_pVertices[3*face+2].p = pVertices[pIndices[id[0][1]]].p;
+<font color="deepskyblue">0117:</font>             m_pVertices[3*face+1].p = pVertices[pIndices[id[0][0]]].p;
+<font color="deepskyblue">0118:</font>             m_pVertices[3*face+0].n = vNormal[i];
+<font color="deepskyblue">0119:</font>             m_pVertices[3*face+2].n = vNormal[j];
+<font color="deepskyblue">0120:</font>             m_pVertices[3*face+1].n = vNormal[i];
+<font color="deepskyblue">0121:</font>             face++;
+<font color="deepskyblue">0122:</font>             m_pVertices[3*face+0].p = pVertices[pIndices[id[1][0]]].p;
+<font color="deepskyblue">0123:</font>             m_pVertices[3*face+2].p = pVertices[pIndices[id[1][1]]].p;
+<font color="deepskyblue">0124:</font>             m_pVertices[3*face+1].p = pVertices[pIndices[id[0][1]]].p;
+<font color="deepskyblue">0125:</font>             m_pVertices[3*face+0].n = vNormal[i];
+<font color="deepskyblue">0126:</font>             m_pVertices[3*face+2].n = vNormal[j];
+<font color="deepskyblue">0127:</font>             m_pVertices[3*face+1].n = vNormal[j];
+<font color="deepskyblue">0128:</font>             face++;
+<font color="deepskyblue">0129:</font>         }
+<font color="deepskyblue">0130:</font>     }
+<font color="deepskyblue">0131:</font>     }
+<font color="deepskyblue">0132:</font>     assert(face == m_dwNumFaces);
+</pre>
+<p>
+後は、ロックを解いたり、メモリを開放します。
+</p>
+<pre class="CodeBlock">
+CShadowVolume.cpp
+<font color="deepskyblue">0135:</font>     <font color="blue">delete</font>[] vNormal;
+<font color="deepskyblue">0136:</font> end:
+<font color="deepskyblue">0137:</font>     <font color="cyan">// バッファの専有を解除</font>
+<font color="deepskyblue">0138:</font>     pMesh-&gt;UnlockVertexBuffer();
+<font color="deepskyblue">0139:</font>     pMesh-&gt;UnlockIndexBuffer();
+<font color="deepskyblue">0140:</font>     
+<font color="deepskyblue">0141:</font>     pMesh-&gt;Release();
+<font color="deepskyblue">0142:</font> 
+<font color="deepskyblue">0143:</font>     <font color="blue">return</font> ret;
+<font color="deepskyblue">0144:</font> }
+</pre>
+
+
+<h2>■シェーダ</h2>
+
+
+<p>
+さて、シェーダです。<br>
+シャドウボリュームをレンダリングするときにはフレームバッファにピクセルを埋め込まなくてもよいので、
+ピクセルシェーダは必要ありません（固定機能が使われます）。<br>
+さらに、ラスタライザに渡すデータも何も要らないので、位置情報だけを頂点シェーダの出力とします。
+</p>
+<p>
+頂点シェーダのプログラム自体はいたって普通で、法線とライトの方向を比較して、表を向いていたらそのまま、
+裏を向いていたら、定数だけライトから反対に引き伸ばします。<br>
+影をプログラムする時の常で、シャドウボリュームのメッシュと元のメッシュが重なるところでちらつくので、
+少し内側にずらしています。
+ワールド行列に少し縮小スケールをかけておいてもいいかもしれません（元のメッシュを大きくする手もありますが）。<br>
+今回の計算はローカル座標系で行っているので、ライトの位置をローカル座標に変換しておく必要があります。
+</p>
+<pre class="CodeBlock">
+hlsl.fx
+<font color="deepskyblue">0007:</font> <font color="cyan">// -------------------------------------------------------------</font>
+<font color="deepskyblue">0008:</font> <font color="cyan">// グローバル変数</font>
+<font color="deepskyblue">0009:</font> <font color="cyan">// -------------------------------------------------------------</font>
+<font color="deepskyblue">0010:</font> float4x4 mWVP;      <font color="cyan">// ローカルから射影空間への座標変換</font>
+<font color="deepskyblue">0011:</font> float4   vLightPos; <font color="cyan">// ライトの位置</font>
+<font color="deepskyblue">0012:</font> 
+<font color="deepskyblue">0013:</font> <font color="cyan">// -------------------------------------------------------------</font>
+<font color="deepskyblue">0014:</font> <font color="cyan">// 頂点シェーダからピクセルシェーダに渡すデータ</font>
+<font color="deepskyblue">0015:</font> <font color="cyan">// -------------------------------------------------------------</font>
+<font color="deepskyblue">0016:</font> <font color="blue">struct</font> VS_OUTPUT
+<font color="deepskyblue">0017:</font> {
+<font color="deepskyblue">0018:</font>     float4 Pos      : POSITION;
+<font color="deepskyblue">0019:</font> };
+<font color="deepskyblue">0020:</font> 
+<font color="deepskyblue">0021:</font> <font color="cyan">// -------------------------------------------------------------</font>
+<font color="deepskyblue">0022:</font> <font color="cyan">// 頂点シェーダプログラム</font>
+<font color="deepskyblue">0023:</font> <font color="cyan">// -------------------------------------------------------------</font>
+<font color="deepskyblue">0024:</font> VS_OUTPUT VS (
+<font color="deepskyblue">0025:</font>       float4 Pos    : POSITION,          <font color="cyan">// モデルの頂点</font>
+<font color="deepskyblue">0026:</font>       float3 Normal : NORMAL             <font color="cyan">// モデルの法線</font>
+<font color="deepskyblue">0027:</font> ){
+<font color="deepskyblue">0028:</font>     VS_OUTPUT Out = (VS_OUTPUT)0;        <font color="cyan">// 出力データ</font>
+<font color="deepskyblue">0029:</font>     
+<font color="deepskyblue">0030:</font>     <font color="cyan">// 光の裏になっている面を後ろに引き伸ばす</font>
+<font color="deepskyblue">0031:</font>     float4 dir = vLightPos - Pos;
+<font color="deepskyblue">0032:</font>     <font color="blue">float</font> LN = dot( Normal, dir );
+<font color="deepskyblue">0033:</font>     <font color="blue">float</font> scale = (0&lt;LN) ? 0.0f : 1.0f;
+<font color="deepskyblue">0034:</font>     
+<font color="deepskyblue">0035:</font>     <font color="cyan">// 座標変換</font>
+<font color="deepskyblue">0036:</font>     Pos.xyz -= 0.001f*Pos;<font color="cyan">// 縞がおきないように少し縮める</font>
+<font color="deepskyblue">0037:</font>     Out.Pos = mul( Pos - scale * dir, mWVP );
+<font color="deepskyblue">0038:</font>     
+<font color="deepskyblue">0039:</font>     <font color="blue">return</font> Out;
+<font color="deepskyblue">0040:</font> }
+<font color="deepskyblue">0041:</font> <font color="cyan">// -------------------------------------------------------------</font>
+<font color="deepskyblue">0042:</font> <font color="cyan">// テクニック</font>
+<font color="deepskyblue">0043:</font> <font color="cyan">// -------------------------------------------------------------</font>
+<font color="deepskyblue">0044:</font> technique TShader
+<font color="deepskyblue">0045:</font> {
+<font color="deepskyblue">0046:</font>     pass P0
+<font color="deepskyblue">0047:</font>     {
+<font color="deepskyblue">0048:</font>         <font color="cyan">// シェーダ</font>
+<font color="deepskyblue">0049:</font>         VertexShader = compile vs_1_1 VS();
+<font color="deepskyblue">0050:</font>         PixelShader  = NULL;
+<font color="deepskyblue">0051:</font>     }
+<font color="deepskyblue">0052:</font> }
+</pre>
+<p>
+このシェーダでレンダリングされるシャドウボリュームは、下のようになります。
+</p>
+<image src = "draw_vol.png">
+<p>
+真っ白な部分が、シェーダでレンダリングされたシャドウボリュームです。
+</p>
+
+
+
+<h2>■能力チェック</h2>
+
+
+<p>
+DirectX で必要なのが能力チェックです。<br>
+今回は、いつものシェーダのほかに、両面ステンシルが使えるかどうかのチェックと、ステンシルバッファが使えるかどうかチェックします。<br>
+今回は、adapterFormat と、backBufferFormat の２つのフォーマットが必要なので、
+AppWizard のフレームワークを使うのではなくて、サンプルのものを使いました。
+</p>
+<pre class="CodeBlock">
+main.cpp
+<font color="deepskyblue">0200:</font> HRESULT CMyD3DApplication::ConfirmDevice( D3DCAPS9* pCaps, DWORD dwBehavior,
+<font color="deepskyblue">0201:</font> D3DFORMAT adapterFormat, D3DFORMAT backBufferFormat )
+<font color="deepskyblue">0202:</font> {
+<font color="deepskyblue">0203:</font>     <font color="cyan">// シェーダのチェック</font>
+<font color="deepskyblue">0204:</font>     <font color="blue">if</font>( pCaps-&gt;VertexShaderVersion &lt; D3DVS_VERSION(1,1) )
+<font color="deepskyblue">0205:</font>         <font color="blue">if</font>( (dwBehavior &amp; D3DCREATE_SOFTWARE_VERTEXPROCESSING ) == 0 )
+<font color="deepskyblue">0206:</font>             <font color="blue">return</font> E_FAIL;
+<font color="deepskyblue">0207:</font>     
+<font color="deepskyblue">0208:</font>     <font color="cyan">// 両面ステンシル機能の確認</font>
+<font color="deepskyblue">0209:</font>     <font color="blue">if</font>( !( pCaps-&gt;StencilCaps &amp; D3DSTENCILCAPS_TWOSIDED ) ) <font color="blue">return</font> E_FAIL;
+<font color="deepskyblue">0210:</font>     
+<font color="deepskyblue">0211:</font>     <font color="cyan">// ステンシル機能をサポートしているかチェック</font>
+<font color="deepskyblue">0212:</font>     <font color="blue">if</font>( FAILED( m_pD3D-&gt;CheckDeviceFormat( pCaps-&gt;AdapterOrdinal
+<font color="deepskyblue">0213:</font>                                     , pCaps-&gt;DeviceType
+<font color="deepskyblue">0214:</font>                                     , adapterFormat
+<font color="deepskyblue">0215:</font>                                     , D3DUSAGE_RENDERTARGET
+<font color="deepskyblue">0216:</font>                                     | D3DUSAGE_QUERY_POSTPIXELSHADER_BLENDING
+<font color="deepskyblue">0217:</font>                                     , D3DRTYPE_SURFACE
+<font color="deepskyblue">0218:</font>                                     , backBufferFormat ) ) )
+<font color="deepskyblue">0219:</font>         <font color="blue">return</font> E_FAIL;
+<font color="deepskyblue">0220:</font> 
+<font color="deepskyblue">0221:</font>     <font color="blue">return</font> S_OK;
+<font color="deepskyblue">0222:</font> }
+</pre>
+
+
+<h2>■レンダリング</h2>
+
+
+<p>
+では、描画の部分を見てみましょう。<br>
+ステンシルシャドウの最初はいつもどおりの描画です。<br>
+画面クリアした後に、普通にモデルを表示します。
+</p>
+<pre class="CodeBlock">
+main.cpp
+<font color="deepskyblue">0425:</font> HRESULT CMyD3DApplication::Render()
+<font color="deepskyblue">0426:</font> {
+<font color="deepskyblue">0427:</font>     D3DXMATRIX m, mW, mS, mR, mT;
+<font color="deepskyblue">0428:</font>     D3DXVECTOR4 v;
+<font color="deepskyblue">0429:</font> 
+<font color="deepskyblue">0430:</font>     
+<font color="deepskyblue">0431:</font>     <font color="cyan">//画面のクリア</font>
+<font color="deepskyblue">0432:</font>     m_pd3dDevice-&gt;Clear( 0L, NULL, D3DCLEAR_TARGET|D3DCLEAR_ZBUFFER|D3DCLEAR_STENCIL,
+<font color="deepskyblue">0433:</font>                          0x000000ff, 1.0f, 0L );
+<font color="deepskyblue">0434:</font> 
+<font color="deepskyblue">0435:</font>     <font color="cyan">// 描画の開始</font>
+<font color="deepskyblue">0436:</font>     <font color="blue">if</font>( SUCCEEDED( m_pd3dDevice-&gt;BeginScene() ) ) {
+<font color="deepskyblue">0437:</font> 
+<font color="deepskyblue">0438:</font>         <font color="cyan">// ----------------------------------------------------------</font>
+<font color="deepskyblue">0439:</font>         <font color="cyan">// 下準備：影なし部分の描画</font>
+<font color="deepskyblue">0440:</font>         <font color="cyan">// ----------------------------------------------------------</font>
+<font color="deepskyblue">0441:</font>         D3DXMatrixIdentity( &amp;m );
+<font color="deepskyblue">0442:</font>         m_pd3dDevice-&gt;SetTransform( D3DTS_WORLD,  &amp;m );
+<font color="deepskyblue">0443:</font>         m_pMeshBG-&gt;Render( m_pd3dDevice );
+<font color="deepskyblue">0444:</font> 
+<font color="deepskyblue">0445:</font>         <font color="cyan">// 小さい箱</font>
+<font color="deepskyblue">0446:</font>         D3DXMatrixScaling( &amp;mS, 1.82f,1.65f, 1.82f );
+<font color="deepskyblue">0447:</font>         D3DXMatrixRotationY( &amp;mR, 0.59f*D3DX_PI );
+<font color="deepskyblue">0448:</font>         D3DXMatrixTranslation( &amp;mT, 2.73f-1.85f, 0.f , 1.69f );
+<font color="deepskyblue">0449:</font>         m = mS * mR * mT;
+<font color="deepskyblue">0450:</font>         m_pd3dDevice-&gt;SetTransform( D3DTS_WORLD,  &amp;m );
+<font color="deepskyblue">0451:</font>         m_pMeshBox-&gt;Render( m_pd3dDevice );
+<font color="deepskyblue">0452:</font> 
+<font color="deepskyblue">0453:</font>         <font color="cyan">// 大きい箱</font>
+<font color="deepskyblue">0454:</font>         D3DXMatrixScaling( &amp;mS, 1.69f, 3.30f, 1.69f );
+<font color="deepskyblue">0455:</font>         D3DXMatrixRotationY( &amp;mR, 0.91f*D3DX_PI );
+<font color="deepskyblue">0456:</font>         D3DXMatrixTranslation( &amp;mT, 2.73f-3.685f, 0, 3.51f );
+<font color="deepskyblue">0457:</font>         m = mS * mR * mT;
+<font color="deepskyblue">0458:</font>         m_pd3dDevice-&gt;SetTransform( D3DTS_WORLD,  &amp;m );
+<font color="deepskyblue">0459:</font>         m_pMeshBox-&gt;Render( m_pd3dDevice );
+<font color="deepskyblue">0460:</font> 
+</pre>
+<p>
+次にシャドウボリュームの描画です。<br>
+とにかくステンシル系の設定が倍になりました。<br>
+D3DRS_TWOSIDEDSTENCILMODE を有効にすれば、両面ステンシルがつかるようになります。<br>
+後は、「CCW」が付く状態が裏面を描画したときに変更されるステンシルバッファに関する設定なので、
+いつも２パス目で書くシャドウボリュームの設定をこちらに描きます。
+</p>
+<pre class="CodeBlock">
+main.cpp
+<font color="deepskyblue">0461:</font>         <font color="cyan">// ----------------------------------------------------------</font>
+<font color="deepskyblue">0462:</font>         <font color="cyan">// パス1:影ボリュームの描画</font>
+<font color="deepskyblue">0463:</font>         <font color="cyan">// ----------------------------------------------------------</font>
+<font color="deepskyblue">0464:</font>         <font color="cyan">// 深度バッファに書き込みはしない</font>
+<font color="deepskyblue">0465:</font>         m_pd3dDevice-&gt;SetRenderState( D3DRS_ZWRITEENABLE,  FALSE );
+<font color="deepskyblue">0466:</font>         <font color="cyan">// レンダリングターゲットに書き込みはしない</font>
+<font color="deepskyblue">0467:</font>         m_pd3dDevice-&gt;SetRenderState( D3DRS_COLORWRITEENABLE,  FALSE );
+<font color="deepskyblue">0468:</font>         <font color="cyan">// フラットシェーディングする</font>
+<font color="deepskyblue">0469:</font>         m_pd3dDevice-&gt;SetRenderState( D3DRS_SHADEMODE,   D3DSHADE_FLAT );
+<font color="deepskyblue">0470:</font>         <font color="cyan">// 両面描く</font>
+<font color="deepskyblue">0471:</font>         m_pd3dDevice-&gt;SetRenderState( D3DRS_CULLMODE,  D3DCULL_NONE );
+<font color="deepskyblue">0472:</font> 
+<font color="deepskyblue">0473:</font>         <font color="cyan">// 両面ステンシルを使用する</font>
+<font color="deepskyblue">0474:</font>         m_pd3dDevice-&gt;SetRenderState( D3DRS_STENCILENABLE, TRUE );
+<font color="deepskyblue">0475:</font>         <font color="yellow">m_pd3dDevice-&gt;SetRenderState( D3DRS_TWOSIDEDSTENCILMODE, TRUE );</font>
+<font color="deepskyblue">0476:</font> 
+<font color="deepskyblue">0477:</font>         <font color="cyan">// ステンシルテストは常に合格する（＝テストしない）</font>
+<font color="deepskyblue">0478:</font>         m_pd3dDevice-&gt;SetRenderState( D3DRS_STENCILFUNC,  D3DCMP_ALWAYS );
+<font color="deepskyblue">0479:</font>         <font color="yellow">m_pd3dDevice-&gt;SetRenderState( D3DRS_CCW_STENCILFUNC,  D3DCMP_ALWAYS );</font>
+<font color="deepskyblue">0480:</font>         <font color="cyan">// ステンシルバッファの増減を1に設定する</font>
+<font color="deepskyblue">0481:</font>         m_pd3dDevice-&gt;SetRenderState( D3DRS_STENCILREF,    0x1 );
+<font color="deepskyblue">0482:</font>         m_pd3dDevice-&gt;SetRenderState( D3DRS_STENCILMASK,      0xffffffff );
+<font color="deepskyblue">0483:</font>         m_pd3dDevice-&gt;SetRenderState( D3DRS_STENCILWRITEMASK, 0xffffffff );
+<font color="deepskyblue">0484:</font>         <font color="cyan">// 表面は深度テストに合格したらステンシルバッファの内容を+1する</font>
+<font color="deepskyblue">0485:</font>         m_pd3dDevice-&gt;SetRenderState( D3DRS_STENCILPASS,  D3DSTENCILOP_INCR );
+<font color="deepskyblue">0486:</font>         m_pd3dDevice-&gt;SetRenderState( D3DRS_STENCILZFAIL, D3DSTENCILOP_KEEP );
+<font color="deepskyblue">0487:</font>         m_pd3dDevice-&gt;SetRenderState( D3DRS_STENCILFAIL,  D3DSTENCILOP_KEEP );
+<font color="deepskyblue">0488:</font>         <font color="yellow"><font color="cyan">// 裏面は深度テストに合格したらステンシルバッファの内容を-1する</font>
+<font color="deepskyblue">0489:</font>         m_pd3dDevice-&gt;SetRenderState( D3DRS_CCW_STENCILPASS, D3DSTENCILOP_DECR );
+<font color="deepskyblue">0490:</font>         m_pd3dDevice-&gt;SetRenderState( D3DRS_CCW_STENCILZFAIL, D3DSTENCILOP_KEEP );
+<font color="deepskyblue">0491:</font>         m_pd3dDevice-&gt;SetRenderState( D3DRS_CCW_STENCILFAIL,  D3DSTENCILOP_KEEP );</font>
+</pre>
+<p>
+そして、実際のレンダリングは、シェーダやシェーダの変数を設定してレンダリングすれば大丈夫です。
+</p>
+<pre class="CodeBlock">
+main.cpp
+<font color="deepskyblue">0493:</font>         <font color="cyan">// レンダリングする</font>
+<font color="deepskyblue">0494:</font>         <font color="blue">if</font>( m_pFx != NULL ){
+<font color="deepskyblue">0495:</font>             D3DXHANDLE hTechnique = m_pFx-&gt;GetTechniqueByName( "<font color="blue">TShader</font>" );
+<font color="deepskyblue">0496:</font>             m_pFx-&gt;SetTechnique( hTechnique );
+<font color="deepskyblue">0497:</font>             m_pFx-&gt;Begin( NULL, 0 );
+<font color="deepskyblue">0498:</font>             m_pFx-&gt;Pass( 0 );
+<font color="deepskyblue">0499:</font> 
+<font color="deepskyblue">0500:</font>             <font color="cyan">// 小さい箱</font>
+<font color="deepskyblue">0501:</font>             D3DXMatrixScaling( &amp;mS, 1.82f,1.65f, 1.82f );
+<font color="deepskyblue">0502:</font>             D3DXMatrixRotationY( &amp;mR, 0.59f*D3DX_PI );
+<font color="deepskyblue">0503:</font>             D3DXMatrixTranslation( &amp;mT, 2.73f-1.85f, 0.f , 1.69f );
+<font color="deepskyblue">0504:</font>             mW = mS * mR * mT;
+<font color="deepskyblue">0505:</font>             m = mW * m_mView * m_mProj;
+<font color="deepskyblue">0506:</font>             <font color="blue">if</font>( m_hmWVP != NULL ) m_pFx-&gt;SetMatrix( m_hmWVP, &amp;m );
+<font color="deepskyblue">0507:</font>             D3DXMatrixInverse( &amp;m, NULL, &amp;mW);
+<font color="deepskyblue">0508:</font>             D3DXVec3Transform( &amp;v, &amp;m_LighPos, &amp;m );
+<font color="deepskyblue">0509:</font>             <font color="blue">if</font>( m_hvPos != NULL ) m_pFx-&gt;SetVector( m_hvPos, &amp;v );
+<font color="deepskyblue">0510:</font>             m_pShadowBox-&gt;Render( m_pd3dDevice );
+<font color="deepskyblue">0511:</font> 
+<font color="deepskyblue">0512:</font>             <font color="cyan">// 大きい箱</font>
+<font color="deepskyblue">0513:</font>             D3DXMatrixScaling( &amp;mS, 1.69f, 3.30f, 1.69f );
+<font color="deepskyblue">0514:</font>             D3DXMatrixRotationY( &amp;mR, 0.91f*D3DX_PI );
+<font color="deepskyblue">0515:</font>             D3DXMatrixTranslation( &amp;mT, 2.73f-3.685f, 0, 3.51f );
+<font color="deepskyblue">0516:</font>             mW = mS * mR * mT;
+<font color="deepskyblue">0517:</font>             m = mW * m_mView * m_mProj;
+<font color="deepskyblue">0518:</font>             <font color="blue">if</font>( m_hmWVP != NULL ) m_pFx-&gt;SetMatrix( m_hmWVP, &amp;m );
+<font color="deepskyblue">0519:</font>             D3DXMatrixInverse( &amp;m, NULL, &amp;mW);
+<font color="deepskyblue">0520:</font>             D3DXVec3Transform( &amp;v, &amp;m_LighPos, &amp;m );
+<font color="deepskyblue">0521:</font>             <font color="blue">if</font>( m_hvPos != NULL ) m_pFx-&gt;SetVector( m_hvPos, &amp;v );
+<font color="deepskyblue">0522:</font>             m_pShadowBox-&gt;Render( m_pd3dDevice );
+<font color="deepskyblue">0523:</font> 
+<font color="deepskyblue">0524:</font>             m_pFx-&gt;End();
+<font color="deepskyblue">0525:</font>         }
+</pre>
+<p>
+最後にステンシルテストしながら全画面に暗い半透明を描画します。<br>
+ステンシルバッファの値が０でないところが影になるので、そのようなテストで書き込みます。
+</p>
+<pre class="CodeBlock">
+main.cpp
+<font color="deepskyblue">0527:</font>         <font color="cyan">// 状態を元に戻す</font>
+<font color="deepskyblue">0528:</font>         m_pd3dDevice-&gt;SetRenderState( D3DRS_SHADEMODE, D3DSHADE_GOURAUD );
+<font color="deepskyblue">0529:</font>         m_pd3dDevice-&gt;SetRenderState( D3DRS_CULLMODE,  D3DCULL_CCW );
+<font color="deepskyblue">0530:</font>         m_pd3dDevice-&gt;SetRenderState( D3DRS_ZWRITEENABLE,    TRUE );
+<font color="deepskyblue">0531:</font>         m_pd3dDevice-&gt;SetRenderState( D3DRS_COLORWRITEENABLE,  0xf );
+<font color="deepskyblue">0532:</font>         m_pd3dDevice-&gt;SetRenderState( D3DRS_STENCILENABLE,  FALSE );
+<font color="deepskyblue">0533:</font>         m_pd3dDevice-&gt;SetRenderState( D3DRS_ALPHABLENDENABLE, FALSE );
+<font color="deepskyblue">0534:</font>         m_pd3dDevice-&gt;SetRenderState( D3DRS_TWOSIDEDSTENCILMODE, FALSE );
+<font color="deepskyblue">0535:</font> 
+<font color="deepskyblue">0536:</font>         <font color="cyan">// ----------------------------------------------------------</font>
+<font color="deepskyblue">0537:</font>         <font color="cyan">// パス2:影の描画</font>
+<font color="deepskyblue">0538:</font>         <font color="cyan">// ----------------------------------------------------------</font>
+<font color="deepskyblue">0539:</font>         <font color="cyan">// 深度テストはしない</font>
+<font color="deepskyblue">0540:</font>         m_pd3dDevice-&gt;SetRenderState( D3DRS_ZENABLE,          FALSE );
+<font color="deepskyblue">0541:</font>         <font color="cyan">// ステンシルテストはする</font>
+<font color="deepskyblue">0542:</font>         m_pd3dDevice-&gt;SetRenderState( D3DRS_STENCILENABLE,  TRUE );
+<font color="deepskyblue">0543:</font>         <font color="cyan">// アルファブレンディングは線形に掛ける</font>
+<font color="deepskyblue">0544:</font>         m_pd3dDevice-&gt;SetRenderState( D3DRS_ALPHABLENDENABLE, TRUE );
+<font color="deepskyblue">0545:</font>         m_pd3dDevice-&gt;SetRenderState( D3DRS_SRCBLEND,  D3DBLEND_SRCALPHA );
+<font color="deepskyblue">0546:</font>         m_pd3dDevice-&gt;SetRenderState( D3DRS_DESTBLEND, D3DBLEND_INVSRCALPHA );
+<font color="deepskyblue">0547:</font>         <font color="cyan">// ポリゴンを描画するときには、テクスチャと頂点色の両方を見る</font>
+<font color="deepskyblue">0548:</font>         m_pd3dDevice-&gt;SetTextureStageState( 0, D3DTSS_COLORARG1, D3DTA_TEXTURE );
+<font color="deepskyblue">0549:</font>         m_pd3dDevice-&gt;SetTextureStageState( 0, D3DTSS_COLORARG2, D3DTA_DIFFUSE );
+<font color="deepskyblue">0550:</font>         m_pd3dDevice-&gt;SetTextureStageState( 0, D3DTSS_COLOROP,   D3DTOP_MODULATE );
+<font color="deepskyblue">0551:</font>         m_pd3dDevice-&gt;SetTextureStageState( 0, D3DTSS_ALPHAARG1, D3DTA_TEXTURE );
+<font color="deepskyblue">0552:</font>         m_pd3dDevice-&gt;SetTextureStageState( 0, D3DTSS_ALPHAARG2, D3DTA_DIFFUSE );
+<font color="deepskyblue">0553:</font>         m_pd3dDevice-&gt;SetTextureStageState( 0, D3DTSS_ALPHAOP,   D3DTOP_MODULATE );
+<font color="deepskyblue">0554:</font> 
+<font color="deepskyblue">0555:</font>         <font color="cyan">// ステンシルバッファの値が１以上のときに書き込む</font>
+<font color="deepskyblue">0556:</font>         m_pd3dDevice-&gt;SetRenderState( D3DRS_STENCILREF,  0x1 );
+<font color="deepskyblue">0557:</font>         m_pd3dDevice-&gt;SetRenderState( D3DRS_STENCILFUNC, D3DCMP_LESSEQUAL );
+<font color="deepskyblue">0558:</font>         m_pd3dDevice-&gt;SetRenderState( D3DRS_STENCILPASS, D3DSTENCILOP_KEEP );
+<font color="deepskyblue">0559:</font>         
+<font color="deepskyblue">0560:</font>         m_pBigSquare-&gt;Render( m_pd3dDevice );
+</pre>
+<p>
+最後に元に戻して終了です。
+</p>
+<pre class="CodeBlock">
+main.cpp
+<font color="deepskyblue">0562:</font>         <font color="cyan">// 状態を元に戻す</font>
+<font color="deepskyblue">0563:</font>         m_pd3dDevice-&gt;SetRenderState( D3DRS_ZENABLE,          TRUE );
+<font color="deepskyblue">0564:</font>         m_pd3dDevice-&gt;SetRenderState( D3DRS_STENCILENABLE,  FALSE );
+<font color="deepskyblue">0565:</font>         m_pd3dDevice-&gt;SetRenderState( D3DRS_ALPHABLENDENABLE, FALSE );
+<font color="deepskyblue">0566:</font> 
+<font color="deepskyblue">0570:</font>         <font color="cyan">// 描画の終了</font>
+<font color="deepskyblue">0571:</font>         m_pd3dDevice-&gt;EndScene();
+<font color="deepskyblue">0572:</font>     }
+<font color="deepskyblue">0573:</font> 
+<font color="deepskyblue">0574:</font>     <font color="blue">return</font> S_OK;
+<font color="deepskyblue">0575:</font> }
+</pre>
+
+
+
+
+<h2>■最後に</h2>
+
+
+<p>
+まぁ、当たり前なのですが、<a href = "http://www.graphics.cornell.edu/online/box/data.html">コーネル大にある元の配置</a>と
+今回の結果は、影の位置が一致しますね(もちろん、こちらは面光源を使っていないのでぼやけませんが)。<br>
+コーネル箱は本当にただの箱なので、メリハリをつけるのが大変ですね。
+</p>
+<image src = "title.png"    width = "256" height = "256">
+<image src = "original.jpg" width = "256" height = "256">
+<p>
+影については、ちゃんとしたのができたので、個人的には気に入っています。<br>
+ただ、ステンシルシャドウのくっきりする欠点はどうしようも無いですね。<br>
+ステンシルソフトシャドウは、どうすればできるのだろうか・・・
+</p>
+
+</div>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<center>
+<hr>
+<p><a href="../index.html">もどる</a></p>
+<p><a href="mailto:imagire@gmail.com">imagire@gmail.com</a></p>
+</center>
+
+</body>
+</html>

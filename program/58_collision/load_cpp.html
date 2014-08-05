@@ -1,0 +1,180 @@
+<HTML>
+<HEAD>
+<TITLE>load.cpp</TITLE>
+<meta name="GENERATOR" content="cpp2html 2.1 by Niisaka">
+<meta http-equiv="Content-Type" content="text/html">
+</HEAD>
+<BODY TEXT="#000000" BGCOLOR="#FFFFFF">
+<PRE><FONT COLOR="#40F628">0001:</FONT> <FONT COLOR="#008000">// ----------------------------------------------------------------------------</FONT>
+<FONT COLOR="#40F628">0002:</FONT> <FONT COLOR="#008000">//</FONT>
+<FONT COLOR="#40F628">0003:</FONT> <FONT COLOR="#008000">// load.cpp - Load the Object</FONT>
+<FONT COLOR="#40F628">0004:</FONT> <FONT COLOR="#008000">// </FONT>
+<FONT COLOR="#40F628">0005:</FONT> <FONT COLOR="#008000">// Copyright (c) 2002 IMAGIRE Takashi (imagire@gmail.com)</FONT>
+<FONT COLOR="#40F628">0006:</FONT> <FONT COLOR="#008000">// All Rights Reserved.</FONT>
+<FONT COLOR="#40F628">0007:</FONT> <FONT COLOR="#008000">//</FONT>
+<FONT COLOR="#40F628">0008:</FONT> <FONT COLOR="#008000">// ----------------------------------------------------------------------------</FONT>
+<FONT COLOR="#40F628">0009:</FONT> <FONT COLOR="#0000FF">#define</FONT> STRICT
+<FONT COLOR="#40F628">0010:</FONT> 
+<FONT COLOR="#40F628">0011:</FONT> <FONT COLOR="#0000FF">#include</FONT> "<FONT COLOR="#600000">main.h</FONT>"
+<FONT COLOR="#40F628">0012:</FONT> <FONT COLOR="#0000FF">#include</FONT> "<FONT COLOR="#600000">load.h</FONT>"
+<FONT COLOR="#40F628">0013:</FONT> 
+<FONT COLOR="#40F628">0014:</FONT> <FONT COLOR="#008000">// ----------------------------------------------------------------------------</FONT>
+<FONT COLOR="#40F628">0015:</FONT> <FONT COLOR="#008000">// Declaration</FONT>
+<FONT COLOR="#40F628">0016:</FONT> <FONT COLOR="#008000">// ----------------------------------------------------------------------------</FONT>
+<FONT COLOR="#40F628">0017:</FONT> <FONT COLOR="#008000">// Original model</FONT>
+<FONT COLOR="#40F628">0018:</FONT> <FONT COLOR="#0000FF">typedef</FONT> <FONT COLOR="#0000FF">struct</FONT> {
+<FONT COLOR="#40F628">0019:</FONT>     <FONT COLOR="#0000FF">float</FONT> x,y,z;
+<FONT COLOR="#40F628">0020:</FONT>     <FONT COLOR="#0000FF">float</FONT> nx,ny,nz;
+<FONT COLOR="#40F628">0021:</FONT>     <FONT COLOR="#0000FF">float</FONT> tu0,tv0;
+<FONT COLOR="#40F628">0022:</FONT> }D3DVERTEX;
+<FONT COLOR="#40F628">0023:</FONT> <FONT COLOR="#0000FF">#define</FONT> D3DFVF_VERTEX       (D3DFVF_XYZ | D3DFVF_NORMAL | D3DFVF_TEX1)
+<FONT COLOR="#40F628">0024:</FONT> 
+<FONT COLOR="#40F628">0025:</FONT> <FONT COLOR="#008000">// D3D_CUSTOMVERTEX</FONT>
+<FONT COLOR="#40F628">0026:</FONT> DWORD dwDecl[] = {
+<FONT COLOR="#40F628">0027:</FONT>     D3DVSD_STREAM(0),
+<FONT COLOR="#40F628">0028:</FONT>     D3DVSD_REG( D3DVSDE_POSITION,   D3DVSDT_FLOAT3 ),           <FONT COLOR="#008000">// D3DVSDE_POSITION = 0</FONT>
+<FONT COLOR="#40F628">0029:</FONT>     D3DVSD_REG( D3DVSDE_BLENDWEIGHT,D3DVSDT_FLOAT4 ),           <FONT COLOR="#008000">// D3DVSDE_BLENDWEIGHT = 1</FONT>
+<FONT COLOR="#40F628">0030:</FONT>     D3DVSD_REG( D3DVSDE_NORMAL,     D3DVSDT_FLOAT3 ),           <FONT COLOR="#008000">// D3DVSDE_NORMAL,  = 3</FONT>
+<FONT COLOR="#40F628">0031:</FONT>     D3DVSD_REG( D3DVSDE_TEXCOORD0,  D3DVSDT_FLOAT2 ),           <FONT COLOR="#008000">// D3DVSDE_TEXCOORD0= 7</FONT>
+<FONT COLOR="#40F628">0032:</FONT>     D3DVSD_END()
+<FONT COLOR="#40F628">0033:</FONT> };
+<FONT COLOR="#40F628">0034:</FONT> 
+<FONT COLOR="#40F628">0035:</FONT> <FONT COLOR="#008000">// ----------------------------------------------------------------------------</FONT>
+<FONT COLOR="#40F628">0036:</FONT> <FONT COLOR="#008000">// ƒ‚ƒfƒ‹</FONT>
+<FONT COLOR="#40F628">0037:</FONT> <FONT COLOR="#008000">// ----------------------------------------------------------------------------</FONT>
+<FONT COLOR="#40F628">0038:</FONT> HRESULT CMyMesh::Load(LPDIRECT3DDEVICE8 lpD3DDev, <FONT COLOR="#0000FF">char</FONT> *filename)
+<FONT COLOR="#40F628">0039:</FONT> {
+<FONT COLOR="#40F628">0040:</FONT>     LPD3DXMESH pMesh, pMeshOpt;
+<FONT COLOR="#40F628">0041:</FONT>     LPD3DXBUFFER pD3DXMtrlBuffer = NULL;
+<FONT COLOR="#40F628">0042:</FONT>     DWORD i;
+<FONT COLOR="#40F628">0043:</FONT>     HRESULT hr;
+<FONT COLOR="#40F628">0044:</FONT>     
+<FONT COLOR="#40F628">0045:</FONT>     <FONT COLOR="#0000FF">this</FONT>-&gt;Release();
+<FONT COLOR="#40F628">0046:</FONT>     hr = D3DXLoadMeshFromX(filename, D3DXMESH_MANAGED,
+<FONT COLOR="#40F628">0047:</FONT>                                 lpD3DDev, NULL,
+<FONT COLOR="#40F628">0048:</FONT>                                 &amp;pD3DXMtrlBuffer, &amp;<FONT COLOR="#0000FF">this</FONT>-&gt;dwNumMaterials,
+<FONT COLOR="#40F628">0049:</FONT>                                 &amp;pMesh);
+<FONT COLOR="#40F628">0050:</FONT>     <FONT COLOR="#0000FF">if</FONT>(FAILED(hr)) <FONT COLOR="#0000FF">return</FONT> E_FAIL;
+<FONT COLOR="#40F628">0051:</FONT> 
+<FONT COLOR="#40F628">0052:</FONT>     <FONT COLOR="#008000">// sort the data</FONT>
+<FONT COLOR="#40F628">0053:</FONT>     pMesh-&gt;Optimize(D3DXMESHOPT_ATTRSORT, NULL, NULL, NULL, NULL, &amp;pMeshOpt);
+<FONT COLOR="#40F628">0054:</FONT>     RELEASE(pMesh);
+<FONT COLOR="#40F628">0055:</FONT> 
+<FONT COLOR="#40F628">0056:</FONT>     <FONT COLOR="#008000">// search the size of the mesh</FONT>
+<FONT COLOR="#40F628">0057:</FONT>     LPDIRECT3DVERTEXBUFFER8 pVB;
+<FONT COLOR="#40F628">0058:</FONT>     BYTE* pVByte;
+<FONT COLOR="#40F628">0059:</FONT>     pMeshOpt-&gt;GetVertexBuffer(&amp;pVB);
+<FONT COLOR="#40F628">0060:</FONT>     pVB-&gt;Lock(0,0,&amp;pVByte,0);
+<FONT COLOR="#40F628">0061:</FONT>     D3DXComputeBoundingSphere(pVByte, pMeshOpt-&gt;GetNumVertices(), pMeshOpt-&gt;GetFVF(), &amp;<FONT COLOR="#0000FF">this</FONT>-&gt;center, &amp;<FONT COLOR="#0000FF">this</FONT>-&gt;radius);
+<FONT COLOR="#40F628">0062:</FONT>     pVB-&gt;Unlock();
+<FONT COLOR="#40F628">0063:</FONT>     pVB-&gt;Release();
+<FONT COLOR="#40F628">0064:</FONT> 
+<FONT COLOR="#40F628">0065:</FONT>     pMeshOpt-&gt;GetAttributeTable(NULL,&amp;<FONT COLOR="#0000FF">this</FONT>-&gt;dwNumMaterials);
+<FONT COLOR="#40F628">0066:</FONT>     <FONT COLOR="#0000FF">this</FONT>-&gt;pSubsetTable = <FONT COLOR="#0000FF">new</FONT> D3DXATTRIBUTERANGE[<FONT COLOR="#0000FF">this</FONT>-&gt;dwNumMaterials];
+<FONT COLOR="#40F628">0067:</FONT>     pMeshOpt-&gt;GetAttributeTable(<FONT COLOR="#0000FF">this</FONT>-&gt;pSubsetTable, &amp;<FONT COLOR="#0000FF">this</FONT>-&gt;dwNumMaterials);
+<FONT COLOR="#40F628">0068:</FONT> 
+<FONT COLOR="#40F628">0069:</FONT>     <FONT COLOR="#008000">// transformation of the FVF</FONT>
+<FONT COLOR="#40F628">0070:</FONT>     hr = pMeshOpt-&gt;CloneMeshFVF(pMeshOpt-&gt;GetOptions(), D3DFVF_VERTEX, lpD3DDev, &amp;pMesh);
+<FONT COLOR="#40F628">0071:</FONT>     <FONT COLOR="#0000FF">if</FONT>(FAILED(hr)) <FONT COLOR="#0000FF">return</FONT> E_FAIL;
+<FONT COLOR="#40F628">0072:</FONT>     RELEASE(pMeshOpt);
+<FONT COLOR="#40F628">0073:</FONT>     D3DXComputeNormals(pMesh,NULL);
+<FONT COLOR="#40F628">0074:</FONT> 
+<FONT COLOR="#40F628">0075:</FONT>     <FONT COLOR="#008000">// Copy to the Vertex Buffer</FONT>
+<FONT COLOR="#40F628">0076:</FONT>     D3DVERTEX* pSrc;
+<FONT COLOR="#40F628">0077:</FONT>     D3D_CUSTOMVERTEX* pDest;
+<FONT COLOR="#40F628">0078:</FONT>     LPDIRECT3DINDEXBUFFER8 pSrcIndex;
+<FONT COLOR="#40F628">0079:</FONT>     WORD* pISrc;
+<FONT COLOR="#40F628">0080:</FONT>     WORD* pIDest;
+<FONT COLOR="#40F628">0081:</FONT> 
+<FONT COLOR="#40F628">0082:</FONT>     DWORD nMeshVertices = pMesh-&gt;GetNumVertices();
+<FONT COLOR="#40F628">0083:</FONT>     DWORD nMeshFaces = pMesh-&gt;GetNumFaces();
+<FONT COLOR="#40F628">0084:</FONT>     lpD3DDev-&gt;CreateVertexBuffer(nMeshVertices * <FONT COLOR="#0000FF">sizeof</FONT>(D3D_CUSTOMVERTEX),
+<FONT COLOR="#40F628">0085:</FONT>                             D3DUSAGE_WRITEONLY, D3DFVF_CUSTOMVERTEX, D3DPOOL_MANAGED, &amp;<FONT COLOR="#0000FF">this</FONT>-&gt;pVB);
+<FONT COLOR="#40F628">0086:</FONT>     lpD3DDev-&gt;CreateIndexBuffer(nMeshFaces * 3 * <FONT COLOR="#0000FF">sizeof</FONT>(WORD),0,D3DFMT_INDEX16,D3DPOOL_MANAGED,&amp;<FONT COLOR="#0000FF">this</FONT>-&gt;pIndex);
+<FONT COLOR="#40F628">0087:</FONT> 
+<FONT COLOR="#40F628">0088:</FONT>     pMesh-&gt;GetVertexBuffer(&amp;pVB);
+<FONT COLOR="#40F628">0089:</FONT>     pVB-&gt;Lock(0,0,(BYTE**)&amp;pSrc,0);
+<FONT COLOR="#40F628">0090:</FONT>     <FONT COLOR="#0000FF">this</FONT>-&gt;pVB-&gt;Lock(0,0,(BYTE**)&amp;pDest,0);
+<FONT COLOR="#40F628">0091:</FONT>     <FONT COLOR="#0000FF">for</FONT>(i=0;i&lt;nMeshVertices;i++){
+<FONT COLOR="#40F628">0092:</FONT>         pDest-&gt;position[0] = pSrc-&gt;x;
+<FONT COLOR="#40F628">0093:</FONT>         pDest-&gt;position[1] = pSrc-&gt;y;
+<FONT COLOR="#40F628">0094:</FONT>         pDest-&gt;position[2] = pSrc-&gt;z;
+<FONT COLOR="#40F628">0095:</FONT>         pDest-&gt;position[3] = 1.0f;
+<FONT COLOR="#40F628">0096:</FONT>         pDest-&gt;texcoord0[0] = pSrc-&gt;tu0;
+<FONT COLOR="#40F628">0097:</FONT>         pDest-&gt;texcoord0[1] = pSrc-&gt;tv0;
+<FONT COLOR="#40F628">0098:</FONT> 
+<FONT COLOR="#40F628">0099:</FONT>         pSrc++;
+<FONT COLOR="#40F628">0100:</FONT>         pDest++;
+<FONT COLOR="#40F628">0101:</FONT>     }
+<FONT COLOR="#40F628">0102:</FONT>     pVB-&gt;Unlock();
+<FONT COLOR="#40F628">0103:</FONT>     pVB-&gt;Release();
+<FONT COLOR="#40F628">0104:</FONT>     <FONT COLOR="#0000FF">this</FONT>-&gt;pVB-&gt;Unlock();
+<FONT COLOR="#40F628">0105:</FONT> 
+<FONT COLOR="#40F628">0106:</FONT>     <FONT COLOR="#008000">// Copy the Index buffer</FONT>
+<FONT COLOR="#40F628">0107:</FONT>     pMesh-&gt;GetIndexBuffer(&amp;pSrcIndex);
+<FONT COLOR="#40F628">0108:</FONT>     pSrcIndex-&gt;Lock(0,0,(BYTE**)&amp;pISrc,0);
+<FONT COLOR="#40F628">0109:</FONT>     <FONT COLOR="#0000FF">this</FONT>-&gt;pIndex-&gt;Lock(0,0,(BYTE**)&amp;pIDest,0);
+<FONT COLOR="#40F628">0110:</FONT>     CopyMemory(pIDest,pISrc,nMeshFaces * 3 * <FONT COLOR="#0000FF">sizeof</FONT>(WORD));
+<FONT COLOR="#40F628">0111:</FONT>     pSrcIndex-&gt;Unlock();
+<FONT COLOR="#40F628">0112:</FONT>     <FONT COLOR="#0000FF">this</FONT>-&gt;pIndex-&gt;Unlock();
+<FONT COLOR="#40F628">0113:</FONT>     pSrcIndex-&gt;Release();
+<FONT COLOR="#40F628">0114:</FONT> 
+<FONT COLOR="#40F628">0115:</FONT>     <FONT COLOR="#008000">// Read the material information</FONT>
+<FONT COLOR="#40F628">0116:</FONT>     D3DXMATERIAL* d3dxMaterials = (D3DXMATERIAL*)pD3DXMtrlBuffer-&gt;GetBufferPointer();
+<FONT COLOR="#40F628">0117:</FONT>     <FONT COLOR="#0000FF">this</FONT>-&gt;pTextures = <FONT COLOR="#0000FF">new</FONT> LPDIRECT3DTEXTURE8[<FONT COLOR="#0000FF">this</FONT>-&gt;dwNumMaterials];
+<FONT COLOR="#40F628">0118:</FONT>     <FONT COLOR="#0000FF">this</FONT>-&gt;pMaterials = <FONT COLOR="#0000FF">new</FONT> D3DMATERIAL8[<FONT COLOR="#0000FF">this</FONT>-&gt;dwNumMaterials];
+<FONT COLOR="#40F628">0119:</FONT> 
+<FONT COLOR="#40F628">0120:</FONT>     <FONT COLOR="#0000FF">for</FONT>(i = 0; i &lt; <FONT COLOR="#0000FF">this</FONT>-&gt;dwNumMaterials; i++){
+<FONT COLOR="#40F628">0121:</FONT>         <FONT COLOR="#0000FF">this</FONT>-&gt;pMaterials[i] = d3dxMaterials[i].MatD3D;
+<FONT COLOR="#40F628">0122:</FONT>         <FONT COLOR="#0000FF">this</FONT>-&gt;pMaterials[i].Ambient = <FONT COLOR="#0000FF">this</FONT>-&gt;pMaterials[i].Diffuse;
+<FONT COLOR="#40F628">0123:</FONT>         hr = D3DXCreateTextureFromFile( lpD3DDev, 
+<FONT COLOR="#40F628">0124:</FONT>                                         d3dxMaterials[i].pTextureFilename, 
+<FONT COLOR="#40F628">0125:</FONT>                                         &amp;<FONT COLOR="#0000FF">this</FONT>-&gt;pTextures[i] );
+<FONT COLOR="#40F628">0126:</FONT>         <FONT COLOR="#0000FF">if</FONT>(FAILED(hr)) <FONT COLOR="#0000FF">this</FONT>-&gt;pTextures[i] = NULL;
+<FONT COLOR="#40F628">0127:</FONT>     }
+<FONT COLOR="#40F628">0128:</FONT>     RELEASE(pD3DXMtrlBuffer);
+<FONT COLOR="#40F628">0129:</FONT>     
+<FONT COLOR="#40F628">0130:</FONT>     RELEASE(pMesh);
+<FONT COLOR="#40F628">0131:</FONT>     
+<FONT COLOR="#40F628">0132:</FONT>     <FONT COLOR="#0000FF">this</FONT>-&gt;bActive = <FONT COLOR="#0000FF">true</FONT>;       <FONT COLOR="#008000">// OK. Use this mesh!</FONT>
+<FONT COLOR="#40F628">0133:</FONT>     
+<FONT COLOR="#40F628">0134:</FONT>     <FONT COLOR="#0000FF">return</FONT> S_OK;
+<FONT COLOR="#40F628">0135:</FONT> }
+<FONT COLOR="#40F628">0136:</FONT> <FONT COLOR="#008000">// ----------------------------------------------------------------------------</FONT>
+<FONT COLOR="#40F628">0137:</FONT> <FONT COLOR="#0000FF">void</FONT> CMyMesh::Release()
+<FONT COLOR="#40F628">0138:</FONT> {
+<FONT COLOR="#40F628">0139:</FONT>     DWORD i;
+<FONT COLOR="#40F628">0140:</FONT> 
+<FONT COLOR="#40F628">0141:</FONT>     <FONT COLOR="#0000FF">if</FONT>(<FONT COLOR="#0000FF">this</FONT>-&gt;pVB == NULL) <FONT COLOR="#0000FF">return</FONT>;
+<FONT COLOR="#40F628">0142:</FONT> 
+<FONT COLOR="#40F628">0143:</FONT>     <FONT COLOR="#0000FF">for</FONT>(i=0; i&lt;<FONT COLOR="#0000FF">this</FONT>-&gt;dwNumMaterials; i++){
+<FONT COLOR="#40F628">0144:</FONT>         RELEASE(<FONT COLOR="#0000FF">this</FONT>-&gt;pTextures[i]);
+<FONT COLOR="#40F628">0145:</FONT>     }
+<FONT COLOR="#40F628">0146:</FONT>     <FONT COLOR="#0000FF">delete</FONT>[] <FONT COLOR="#0000FF">this</FONT>-&gt;pTextures;
+<FONT COLOR="#40F628">0147:</FONT>     <FONT COLOR="#0000FF">delete</FONT>[] <FONT COLOR="#0000FF">this</FONT>-&gt;pMaterials;
+<FONT COLOR="#40F628">0148:</FONT>     <FONT COLOR="#0000FF">delete</FONT>[] <FONT COLOR="#0000FF">this</FONT>-&gt;pSubsetTable;
+<FONT COLOR="#40F628">0149:</FONT> 
+<FONT COLOR="#40F628">0150:</FONT>     RELEASE(<FONT COLOR="#0000FF">this</FONT>-&gt;pVB);
+<FONT COLOR="#40F628">0151:</FONT>     RELEASE(<FONT COLOR="#0000FF">this</FONT>-&gt;pIndex);
+<FONT COLOR="#40F628">0152:</FONT>     
+<FONT COLOR="#40F628">0153:</FONT>     <FONT COLOR="#0000FF">this</FONT>-&gt;bActive = <FONT COLOR="#0000FF">false</FONT>;
+<FONT COLOR="#40F628">0154:</FONT> }
+<FONT COLOR="#40F628">0155:</FONT> <FONT COLOR="#008000">// ----------------------------------------------------------------------------</FONT>
+<FONT COLOR="#40F628">0156:</FONT> <FONT COLOR="#008000">// Texture</FONT>
+<FONT COLOR="#40F628">0157:</FONT> <FONT COLOR="#008000">// ----------------------------------------------------------------------------</FONT>
+<FONT COLOR="#40F628">0158:</FONT> HRESULT CTextureMgr::Load(LPDIRECT3DDEVICE8 lpD3DDev, <FONT COLOR="#0000FF">const</FONT> <FONT COLOR="#0000FF">char</FONT> *filename, LPDIRECT3DTEXTURE8 *ppTexture)
+<FONT COLOR="#40F628">0159:</FONT> {
+<FONT COLOR="#40F628">0160:</FONT>     D3DXCreateTextureFromFileEx(lpD3DDev, filename,0,0,0,0,D3DFMT_A8R8G8B8,
+<FONT COLOR="#40F628">0161:</FONT>                                 D3DPOOL_MANAGED, D3DX_FILTER_LINEAR, D3DX_FILTER_LINEAR,
+<FONT COLOR="#40F628">0162:</FONT>                                 0, NULL, NULL, ppTexture);
+<FONT COLOR="#40F628">0163:</FONT>     
+<FONT COLOR="#40F628">0164:</FONT>     <FONT COLOR="#0000FF">return</FONT> S_OK;
+<FONT COLOR="#40F628">0165:</FONT> }
+<FONT COLOR="#40F628">0166:</FONT> <FONT COLOR="#008000">// ----------------------------------------------------------------------------</FONT>
+<FONT COLOR="#40F628">0167:</FONT> <FONT COLOR="#0000FF">void</FONT> CTextureMgr::Release(LPDIRECT3DTEXTURE8 pTexture)
+<FONT COLOR="#40F628">0168:</FONT> {
+<FONT COLOR="#40F628">0169:</FONT>     RELEASE(pTexture);
+<FONT COLOR="#40F628">0170:</FONT> }
+<FONT COLOR="#40F628">0171:</FONT> </PRE>
+</BODY>
+</HTML>

@@ -1,0 +1,220 @@
+<head>
+	<title>t-pot『Ray Tracing : Intersection with triangle』</title>
+	<link rel="stylesheet" type="text/css" href="../if.css">
+</head>
+<meta http-equiv=Content-Type content="text/html; charset=shift_jis">
+<body>
+
+
+<div class="contents">
+<center>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<h1>レイトレース：３角形と視線の交差判定</h1><br>
+<h3>～ Ray Tracing : Intersection with triangle ～</h3>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<image src = "title.png">
+<br>
+<br>
+<hr>
+</center>
+<div>
+
+
+<h2>■はじめに</h2>
+
+
+<p>
+球の交差判定ができるようになったら、次は３角形との交差判定です。<br>
+3角形の交差判定ができれば、ポリゴンモデルでの交差判定ができるようになるので、世界が一気に広がります。
+</p>
+
+<p>
+今回のプログラムは、次のものです。
+</p>
+<ul style = "LIST-STYLE-TYPE:none">
+<li><a href="src.zip">src.zip (３角形と視線の交差判定:MFC, DirectX9)</a>
+</ul>
+
+<p>
+まぁ、いつものように適当にファイルが入っています。<br>
+APP WIZARD から出力されるフレームワークのファイルは紹介を省かせていただきます。
+</p>
+<table>
+<tr><td><a href="render_cpp.html">render.cpp</a></td><td>レイトレ用の描画関数群</td></tr>
+<tr><td><a href="render_h.html">render.h</a></td><td>レイトレ用の描画関数群</td></tr>
+<tr><td><a href="mainDlg_cpp.html">mainDlg.cpp</a></td><td>ダイアログを管理するクラスのメソッドが書かれたファイル</td></tr>
+<tr><td><a href="mainDlg_h.html">mainDlg.h</a></td><td>ダイアログを管理するクラスのヘッダ</td></tr>
+</table>
+
+<p>
+あと、実行ファイル、リソースファイル、プロジェクトファイルが入っています。
+</p>
+
+
+<h2>■何やってるの？</h2>
+
+
+<p>
+３角形とレイの交差判定ですが、２段階の手順を踏みます。<br>
+第１段階では、レイと３角形の作る平面との交点を求めます。<br>
+第２段階では、交点が３角形の中に入っているかどうかを調べます。
+</p>
+<p>
+レイと３角形の作る平面との交点pの求め方ですが、
+レイの方程式
+</p>
+<pre class="CodeBlock">
+<b>p</b> = <b>x</b> + t <b>v</b>
+</pre>
+<p>
+と、３角形の作る平面の方程式
+</p>
+<pre class="CodeBlock">
+(<b>p</b> - <b>p</b>0)・<b>n</b> = 0
+</pre>
+<p>
+を連立して、求めます。ここで、<b>x</b>はレイの出る点、<b>v</b>はレイの方向、
+<b>p</b>0は３角形の１点、<b>n</b>は３角形の法線ベクトルです。
+</p>
+<image src = "explain.png">
+<p>
+連立した結果、レイの進んだ距離tは、
+</p>
+<pre class="CodeBlock">
+    (<b>x</b> - <b>p</b>0)・<b>n</b>
+t = ------------
+        <b>v</b>・<b>n</b>
+</pre>
+<p>
+になります。<br>
+ここで、<b>v</b>・<b>n</b>=0 の時は、レイと３角形の面に平行に進んでいるので、交わりません。<br>
+また、t&lt;0の時は、視線の後ろ側に交点があるので、やはり交わることがありません。
+</p>
+<p>
+次に、この交点が３角形の内部にあるかどうかの判定をします。<br>
+この判定には、外積を使います。<br>
+交点と３角形を結ぶベクトルd0と、３角形の１辺d1との外積を計算します。<br>
+すると、外積によってできたベクトルは、３角形の法線と同じ方向か反対の方向を向きます。<br>
+この向きは、交点が３角形の中にあるか外にあるかで符号が変わるので、全ての辺に関して、符号が同じならば、交点は３角形の中にあることになります。
+</p>
+<image src = "explain2.png">
+<p>
+実際のプログラムでは、次のようになります。<br>
+このプログラムは、レイが３角形に衝突したら、黄色（RGB=(1, 0.9, 0.5)）を返し、外れたらBG_COLORを返す関数です。<br>
+とりあえず、３角形の頂点は決めうちにして、コードの中に埋め込みました。
+</p>
+<pre class="CodeBlock">
+render.cpp
+<font color="deepskyblue">0115:</font> D3DXVECTOR3 *GetColor(D3DXVECTOR3 *dest, D3DXVECTOR4 *x, D3DXVECTOR4 *v)
+<font color="deepskyblue">0116:</font> {
+<font color="deepskyblue">0117:</font>     D3DXVECTOR4 d0, d1;
+<font color="deepskyblue">0118:</font>     D3DXVECTOR3 c;
+<font color="deepskyblue">0119:</font>     D3DXVECTOR4 normal;
+<font color="deepskyblue">0120:</font> 
+<font color="deepskyblue">0121:</font>     <font color="cyan">// ３角形の各頂点</font>
+<font color="deepskyblue">0122:</font>     D3DXVECTOR4 pos[3] = {
+<font color="deepskyblue">0123:</font>         D3DXVECTOR4( 0.000f, 0.866f, 0.0f, 1),
+<font color="deepskyblue">0124:</font>         D3DXVECTOR4( 0.866f,-0.500f, 0.0f, 1),
+<font color="deepskyblue">0125:</font>         D3DXVECTOR4(-0.866f,-0.500f, 0.0f, 1),
+<font color="deepskyblue">0126:</font>     };
+<font color="deepskyblue">0127:</font> 
+<font color="deepskyblue">0128:</font>     *dest = BG_COLOR;   <font color="cyan">// 外れたときの色</font>
+<font color="deepskyblue">0129:</font> 
+</pre>
+<p>
+最初に頂点から法線ベクトルを計算します。<br>
+法線ベクトルは、２つの辺の外積を正規化して求めます。<br>
+データで持ってもいいでしょう。
+</p>
+<pre class="CodeBlock">
+render.cpp
+<font color="deepskyblue">0130:</font>     <font color="cyan">// 法線ベクトルの計算</font>
+<font color="deepskyblue">0131:</font>     D3DXVECTOR4 t0 = pos[1]-pos[0];
+<font color="deepskyblue">0132:</font>     D3DXVECTOR4 t1 = pos[2]-pos[0];
+<font color="deepskyblue">0133:</font>     D3DXVec3Cross((D3DXVECTOR3*)&amp;normal, (D3DXVECTOR3*)&amp;t1, (D3DXVECTOR3*)&amp;t0);
+<font color="deepskyblue">0134:</font>     D3DXVec3Normalize((D3DXVECTOR3*)&amp;normal, (D3DXVECTOR3*)&amp;normal);
+<font color="deepskyblue">0135:</font> 
+<font color="deepskyblue">0136:</font> 
+</pre>
+<p>
+次に、レイがすすだ量のパラメータtを計算します。<br>
+今回は、裏を向いているポリゴンとの交差判定はしないようにします。<br>
+それは、レイと法線ベクトルの向きが反対の場合(vn&lt;0)は、外れた事にするという処理で行います。<br>
+また、３角形がレイと平行なときの条件は、少しゆとりを持って、(0&lt;vn &amp vn&lt;0.00001f)で判定します。<br>
+この２つは、１つの式で一度に判定します。<br>
+tが求まった後で、交点がレイの後ろにあるかどうかの判定をします。
+</p>
+<pre class="CodeBlock">
+render.cpp
+<font color="deepskyblue">0137:</font>     <font color="cyan">// 線分との判定</font>
+<font color="deepskyblue">0138:</font>     D3DXVECTOR4 xp = pos[0]-(*x);
+<font color="deepskyblue">0139:</font>     FLOAT xpn = D3DXVec3Dot((D3DXVECTOR3 *)&amp;xp, (D3DXVECTOR3 *)&amp;normal);
+<font color="deepskyblue">0140:</font>     FLOAT vn  = D3DXVec3Dot((D3DXVECTOR3 *)v,   (D3DXVECTOR3 *)&amp;normal);
+<font color="deepskyblue">0141:</font>     
+<font color="deepskyblue">0142:</font>     <font color="blue">if</font>(-0.00001f&lt;=vn) <font color="blue">return</font> dest;<font color="cyan">// カリングと発散を外す</font>
+<font color="deepskyblue">0143:</font> 
+<font color="deepskyblue">0144:</font>     <font color="blue">float</font> t = xpn/vn;
+<font color="deepskyblue">0145:</font>     
+<font color="deepskyblue">0146:</font>     <font color="blue">if</font>(t&lt;0) <font color="blue">return</font> dest;<font color="cyan">// 後ろ向きのレイは無効</font>
+<font color="deepskyblue">0147:</font> 
+</pre>
+<p>
+次に交点を求めて、交点が３角形の内部にあるか判定をします。
+</p>
+<pre class="CodeBlock">
+render.cpp
+<font color="deepskyblue">0148:</font>     D3DXVECTOR4 p = (*x)+t*(*v);<font color="cyan">// ３角形の平面への射影</font>
+<font color="deepskyblue">0149:</font> 
+<font color="deepskyblue">0150:</font>     <font color="cyan">// 射影した点が３角形の内側にあるかテスト</font>
+<font color="deepskyblue">0151:</font>     d0 = p-pos[0];
+<font color="deepskyblue">0152:</font>     d1 = pos[1]-pos[0];
+<font color="deepskyblue">0153:</font>     D3DXVec3Cross(&amp;c, (D3DXVECTOR3*)&amp;d0, (D3DXVECTOR3*)&amp;d1);
+<font color="deepskyblue">0154:</font>     <font color="blue">if</font>(D3DXVec3Dot(&amp;c, (D3DXVECTOR3 *)&amp;normal)&lt;0) <font color="blue">return</font> dest;
+<font color="deepskyblue">0155:</font>     d0 = p-pos[1];
+<font color="deepskyblue">0156:</font>     d1 = pos[2]-pos[1];
+<font color="deepskyblue">0157:</font>     D3DXVec3Cross(&amp;c, (D3DXVECTOR3*)&amp;d0, (D3DXVECTOR3*)&amp;d1);
+<font color="deepskyblue">0158:</font>     <font color="blue">if</font>(D3DXVec3Dot(&amp;c, (D3DXVECTOR3 *)&amp;normal)&lt;0) <font color="blue">return</font> dest;
+<font color="deepskyblue">0159:</font>     d0 = p-pos[2];
+<font color="deepskyblue">0160:</font>     d1 = pos[0]-pos[2];
+<font color="deepskyblue">0161:</font>     D3DXVec3Cross(&amp;c, (D3DXVECTOR3*)&amp;d0, (D3DXVECTOR3*)&amp;d1);
+<font color="deepskyblue">0162:</font>     <font color="blue">if</font>(D3DXVec3Dot(&amp;c, (D3DXVECTOR3 *)&amp;normal)&lt;0) <font color="blue">return</font> dest;
+<font color="deepskyblue">0163:</font>     
+</pre>
+<p>
+最後に（ここまで来たら、レイは３角形とあたっているので）、あたったときの色を出力します。
+</p>
+<pre class="CodeBlock">
+render.cpp
+<font color="deepskyblue">0164:</font>     <font color="cyan">// 当たったときの色</font>
+<font color="deepskyblue">0165:</font>     *dest = D3DXVECTOR3( 1.0f, 0.9f, 0.5f );
+<font color="deepskyblue">0166:</font>     
+<font color="deepskyblue">0167:</font>     <font color="blue">return</font> dest;
+<font color="deepskyblue">0168:</font> }
+</pre>
+
+
+<h2>■最後に</h2>
+
+
+<p>
+さぁ、ポリゴンとの判定ができるようになりました。<br>
+実際にメッシュとの判定をするときには、高速化を考えなくてはなりませんが、
+最初はこんなもんでしょう。
+</p>
+
+
+</div>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<center>
+<hr>
+<p><a href="../index.html">もどる</a></p>
+<p><a href="mailto:imagire@gmail.com">imagire@gmail.com</a></p>
+</center>
+
+</body>
+</html>

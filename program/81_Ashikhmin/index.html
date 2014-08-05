@@ -1,0 +1,409 @@
+<head>
+	<title>t-pot『異方性ライティング』</title>
+	<link rel="stylesheet" type="text/css" href="../if.css">
+</head>
+<meta http-equiv=Content-Type content="text/html; charset=shift_jis">
+<body>
+
+
+<div class="contents">
+<center>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<h1>異方性ライティング</h1><br>
+<h3>～ Ashikhmin Lighting ～</h3>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<image src = "title.png">
+<br>
+<hr>
+<br>
+<p>
+下の画像をクリックすると、異方性のパラメータを変化させたAshikhmin照明の効果がアニメーションで見られます。<br>
+<a href="anim.gif"><image src = "title.png" width = "50" height = "50"></a>
+</p>
+<hr>
+</center>
+<div>
+
+
+<h2>■はじめに</h2>
+
+
+<p>
+今回は、サテンやベルベットの生地に適したライティングである、Ashikhmin 照明モデルを扱います。<br>
+</p>
+<ul style = "LIST-STYLE-TYPE:none">
+<li><a href="src.zip">src.zip (異方性ライティング:DirectX9)</a>
+</ul>
+
+<p>
+まぁ、いつものように適当にファイルが入っています。<br>
+APP WIZARD から出力されるフレームワークのファイルは紹介を省かせていただきます。
+</p>
+<table>
+<tr><td><a href="hlsl_fx.html">hlsl.fx</a></td><td>シェーダの入ったエフェクトファイル</td></tr>
+<tr><td><a href="main_h.html">main.h</a></td><td>アプリケーションのヘッダ</td></tr>
+<tr><td><a href="main_cpp.html">main.cpp</a></td><td>アプリケーションのソース</td></tr>
+</table>
+
+<p>
+あと、実行ファイル、モデル及び、プロジェクトファイルが入っています。
+</p>
+
+
+<h2>■Ashikhmin 照明モデルとは</h2>
+
+
+<image src = "Ashikhmin.jpg" width = "96" height = "128" STYLE="vertical-align:top;float:left" >
+<p>
+Ashikhmin 照明モデルとは、1999年に <a href="http://www.cs.utah.edu/~michael/">Michael Ashikhmin</a> らよって、提唱された異方性の照明モデルです。<br>
+有名なのは、SIGGRAPH 2000での論文でしょうか。ここ最近、<a href="http://spin.s2c.ne.jp/">spin</a>でも取り上げられていたこともあって取り組んでみました。
+</p>
+<p>
+　
+</p>
+<p>
+Ashikhmin 照明モデルでは、入射光照度と反射光輝度の比であるBRDF（双方向反射関数）を求めるのにすべての精力がさかれます。<br>
+最初に、BRDFを２つの成分に分けます。
+</p>
+<pre class="CodeBlock">
+ρ(<b>e</b>, <b>l</b>) = ρ<sub>d</sub>(<b>e</b>, <b>l</b>) + ρ<sub>s</sub>(<b>e</b>, <b>l</b>)
+</pre>
+<p>
+ρ<sub>d</sub>(<b>e</b>, <b>l</b>)は、BRDFの拡散光の成分で、ρ<sub>s</sub>(<b>e</b>, <b>l</b>)は、鏡面反射光の成分です。<br>
+ここで、<b>l</b>は光源への方向ベクトル、 <b>e</b>は視線への方向ベクトルです。
+</p>
+<p>
+最初に鏡面反射成分を見ていきましょう。<br>
+鏡面反射成分には、基本として Phong のモデル、
+</p>
+<pre class="CodeBlock">
+             (<b>n</b>･<b>h</b>)<sup>n</sup>
+ρ<sub>s</sub>(<b>e</b>, <b>l</b>) = c ―――
+              <b>n</b>･<b>l</b>
+</pre>
+<p>
+が、使われます。nは面の粗さをあらわすパラメータです。<br>
+<b>n</b>･<b>l</b> で割る部分は、BRDFの定義をするための積分計算
+</p>
+<pre class="CodeBlock">
+L<sub>r</sub>(<b>e</b>) = ∫ρ(<b>e</b>, <b>l</b>)L<sub>i</sub>(<b>l</b>)cosθ<sub>l</sub>dω<sub>l</sub>
+</pre>
+<p>
+に、入射方向の余弦が入るので、その項をキャンセルするために挿入します。<br>
+ここで、L<sub>r</sub>(<b>e</b>)は、放射された放射輝度で、L<sub>i</sub>(<b>l</b>)は入射された放射輝度です。
+</p>
+<p>
+ただし、このρ<sub>s</sub>(<b>e</b>, <b>l</b>)は、BRDFが備えているべきであるHelmholtzの相反性ρ<sub>s</sub>(<b>e</b>, <b>l</b>)=ρ<sub>s</sub>(<b>l</b>, <b>e</b>)を満たしていません。<br>
+Neumann と Neumann は、鏡面反射の特性から、相反性を満たすBRDFを考案しました。<br>
+Neumann と Neumann が導入したBRDFは、
+</p>
+<pre class="CodeBlock">
+                  (<b>n</b>･<b>h</b>)<sup>n</sup>
+ρ<sub>s</sub>(<b>e</b>, <b>l</b>) = c ――――――― F(<b>k</b>･<b>h</b>)
+              max(<b>n</b>･<b>e</b>, <b>n</b>･<b>l</b>)
+</pre>
+<p>
+です。<b>k</b>は、<b>e</b>か<b>l</b>のどちらかになります。<br>
+ここで、金属物質が持つFrenselの項を追加しました。
+</p>
+<p>
+さて、Ashikhmin らは、このBRDFに異方性を追加しました。<br>
+異方性は、反射のパラメータnを拡張します。<br>
+nに関して、従法線ベクトル方向uと、接ベクトル方向vに応じて反射率が違うものと設定します。<br>
+ここで、従法線ベクトルや接ベクトルは、それぞれの局所座標で直行する必要がありますが、場所に応じて向きは異なります。例えば、ＣＤの裏面をレンダリングしようと思えば、
+従法線ベクトルや接ベクトルは、ＣＤの動径方向と、円周方向に取るのが適切でしょう。
+</p>
+<image src = "param.png">
+<p>
+Ashikhmin らによるBRDFは、次のようになります。
+</p>
+<pre class="CodeBlock">
+              (<b>n</b>･<b>h</b>)<sup>n<sub>u</sub>cos<sup>2</sup>φ+n<sub>v</sub>sin<sup>2</sup>φ</sup>
+ρ<sub>s</sub>(<b>e</b>, <b>l</b>) = c ―――――――― F(<b>k</b>･<b>h</b>)
+               max(<b>n</b>･<b>e</b>, <b>n</b>･<b>l</b>)
+</pre>
+<p>
+n<sub>u</sub> = n<sub>v</sub> の異方性がないときには、Ashikhmin らのBRDFは、Neumann & Neumann のBRDFと一致します。
+</p>
+<p>
+さらに、Ashikhmin らは係数cも求めました。係数はエネルギーの保存則
+</p>
+<pre class="CodeBlock">
+R(<b>e</b>) = ∫ρ(<b>e</b>, <b>l</b>)cosθ<sub>l</sub>dω<sub>l</sub>≦1
+</pre>
+<p>
+から求められ、最終的な結果は、
+</p>
+<pre class="CodeBlock">
+              (n<sub>u</sub>+1)<sup>1/2</sup>(n<sub>v</sub>+1)<sup>1/2</sup>   (<b>n</b>･<b>h</b>)<sup>n<sub>u</sub>cos<sup>2</sup>φ+n<sub>v</sub>sin<sup>2</sup>φ</sup>
+ρ<sub>s</sub>(<b>e</b>, <b>l</b>) = R<sub>s</sub> ―――――――― ―――――――――― F(<b>k</b>･<b>h</b>)
+                    8π       (<b>h</b>･<b>k</b>) max(<b>n</b>･<b>e</b>, <b>n</b>･<b>l</b>)
+</pre>
+<p>
+になります。
+</p>
+
+<p>
+Ashikhmin らは、拡散光成分に関しても議論しています。<br>
+彼らは、Shirley らによる総エネルギーの保存を考慮した、拡散光に関するBRDF
+</p>
+<pre class="CodeBlock">
+ρ<sub>d</sub>(<b>e</b>, <b>l</b>) = c R<sub>d</sub> (1-R(<b>e</b>)) (1-R(<b>l</b>))
+</pre>
+<p>
+から、議論を始め、鏡面反射光の時と同じように、エネルギーの保存則から、
+</p>
+<pre class="CodeBlock">
+            28                      <b>n</b>･<b>e</b>            <b>n</b>･<b>l</b>
+ρ<sub>d</sub>(<b>e</b>, <b>l</b>) = ―― R<sub>d</sub> (1 - R<sub>s</sub>) (1-(1 - ――)<sup>5</sup>) (1-(1 - ――)<sup>5</sup>)
+            23π                  2              2
+</pre>
+<p>
+を導きました。これら式が、Ashikhmin モデルで使われるBRDFの式になります。
+</p>
+
+
+
+<h2>■実装</h2>
+
+
+<p>
+さて、Ashikhmin モデルは結構複雑です。今回は、Steigleder と McCool による実装を追います。<br>
+簡単なのは、拡散光です。<br>
+拡散光のBRDFを簡単に計算できる部分と、複雑な部分に分け、(1-u)<sup>5</sup>のような複雑な項を含んだ部分に関しては、テクスチャからサンプリングします。
+</p>
+
+<pre class="CodeBlock">
+            28
+ρ<sub>d</sub>(<b>e</b>, <b>l</b>) = ―― R<sub>d</sub> (1 - R<sub>s</sub>) Tex0(<b>n</b>･<b>e</b>, <b>n</b>･<b>l</b>)
+            23π
+
+Tex0(u, v) = (1-(1 - u)<sup>5</sup>) (1-(1 - v)<sup>5</sup>)
+</pre>
+<p>
+このテクスチャTex0は、次のようになります。
+</p>
+<image src = "diffuse.png">
+<p>
+実際にテクスチャを作るソースコードは、次のようになります
+</p>
+<pre class="CodeBlock">
+main.cpp
+<font color="deepskyblue">0088:</font> VOID WINAPI Diffuse (D3DXVECTOR4* pOut, CONST D3DXVECTOR2* pTexCoord, 
+<font color="deepskyblue">0089:</font> CONST D3DXVECTOR2* pTexelSize, LPVOID pData)
+<font color="deepskyblue">0090:</font> {
+<font color="deepskyblue">0091:</font>     FLOAT u = pTexCoord-&gt;x;
+<font color="deepskyblue">0092:</font>     FLOAT v = pTexCoord-&gt;y;
+<font color="deepskyblue">0093:</font>     
+<font color="deepskyblue">0094:</font>     u = 1-powf(1-u/2, 5);
+<font color="deepskyblue">0095:</font>     v = 1-powf(1-v/2, 5);
+<font color="deepskyblue">0096:</font> 
+<font color="deepskyblue">0097:</font>     pOut-&gt;x = pOut-&gt;y = pOut-&gt;z = u*v;
+<font color="deepskyblue">0098:</font> }
+</pre>
+
+<p>
+鏡面反射光のBRDFもテクスチャサンプリングを利用して、複数のテクスチャの積として表現します。<br>
+BRDFを適当に分割します。
+</p>
+<pre class="CodeBlock">
+              (n<sub>u</sub>+1)<sup>1/2</sup>(n<sub>v</sub>+1)<sup>1/2</sup>       F(<b>k</b>･<b>h</b>)
+ρ<sub>s</sub>(<b>e</b>, <b>l</b>) = R<sub>s</sub> ―――――――― ―――――――――― (<b>n</b>･<b>h</b>)<sup>n<sub>u</sub>cos<sup>2</sup>φ</sup> (<b>n</b>･<b>h</b>)<sup>n<sub>v</sub>sin<sup>2</sup>φ</sup>
+                8π       (<b>h</b>･<b>k</b>) max(<b>n</b>･<b>e</b>, <b>n</b>･<b>l</b>)
+</pre>
+<p>
+ここで、角度を幾何学的に記述すると、
+</p>
+<pre class="CodeBlock">
+          (<b>h</b>･<b>u</b>)<sup>2</sup>
+cos<sup>2</sup>φ</sup> = ――――
+         1-(<b>h</b>･<b>n</b>)<sup>2</sup>
+
+          (<b>h</b>･<b>v</b>)<sup>2</sup>
+sin<sup>2</sup>φ</sup> = ――――
+         1-(<b>h</b>･<b>n</b>)<sup>2</sup>
+</pre>
+<p>
+のように描けるので、BRDFは、次のように描けます。
+</p>
+<pre class="CodeBlock">
+              (n<sub>u</sub>+1)<sup>1/2</sup>(n<sub>v</sub>+1)<sup>1/2</sup>
+ρ<sub>s</sub>(<b>e</b>, <b>l</b>) = R<sub>s</sub> ―――――――― Tex1(<b>h</b>･<b>k</b>, max(<b>n</b>･<b>e</b>, <b>n</b>･<b>l</b>)) Tex2(<b>n</b>･<b>h</b>, √n<sub>u</sub> <b>h</b>･<b>u</b>) Tex2(<b>n</b>･<b>h</b>, √n<sub>v</sub> <b>h</b>･<b>v</b>)
+                8π       
+
+Tex1(u, v) = F(u)/uv
+Tex2(u, v) = u <sup>v<sup>2</sup>/(1-u<sup>2</sup>)</sup>
+</pre>
+<p>
+さて、Tex2は、u→1のときに指数の分母が発散します。<br>
+ところが、ここで具合のいい極限の式
+</p>
+<pre class="CodeBlock">
+lim u <sup>v<sup>2</sup>/(1-u<sup>2</sup>)</sup> = e <sup>-v<sup>2</sup>/2</sup>
+<sup>u→1</sup>
+</pre>
+<p>
+があるので、発散を防ぐことができます。
+</p>
+<p>
+さらに、テクスチャとして使うために、Tex2にオフセットを設定します。<b>h</b>･<b>u</b>は、正の値も負の値も取りうるので、0.5のオフセットを入れて、テクスチャの中心をずらします。また、スケールファクターβも導入します。n<sub>u</sub>の値は、10から10000程度まで動くので、テクスチャの範囲がいい感じに収まるようにスケールを入れて調整します。今回は5.0を入れましたが、実際は、√n<sub>u</sub>ぐらいがいいのでしょうか。<br>
+スケールを考慮に入れたTex2(u, v)は、次のようになります。
+</p>
+<pre class="CodeBlock">
+                u～1  : e <sup>-(β(v-0.5))<sup>2</sup>/2</sup>
+Tex2(u, v) =
+              それ以外: u <sup>(β(v-0.5))<sup>2</sup>/(1-u<sup>2</sup>)</sup>
+</pre>
+<p>
+また、BRDFで読み込まれる値はスケールとオフセットで次の変更を受けます。
+</p>
+<pre class="CodeBlock">
+          √n<sub>u</sub>(<b>h</b>･<b>u</b>)                  √n<sub>u</sub>(<b>h</b>･<b>v</b>)
+Tex2(<b>n</b>･<b>h</b>, ―――― + 0.5f) Tex2(<b>n</b>･<b>h</b>, ―――― + 0.5f)
+      　      β      　                β
+</pre>
+<p>
+テクスチャTex2は、次のようになります。
+</p>
+<image src = "uv.png">
+<p>
+テクスチャを作る関数は、次のようになります
+</p>
+<pre class="CodeBlock">
+main.cpp
+<font color="deepskyblue">0104:</font> VOID WINAPI gs (D3DXVECTOR4* pOut, CONST D3DXVECTOR2* pTexCoord, 
+<font color="deepskyblue">0105:</font> CONST D3DXVECTOR2* pTexelSize, LPVOID pData)
+<font color="deepskyblue">0106:</font> {
+<font color="deepskyblue">0107:</font>     FLOAT u = pTexCoord-&gt;x;
+<font color="deepskyblue">0108:</font>     FLOAT v = pTexCoord-&gt;y;
+<font color="deepskyblue">0109:</font>     FLOAT g;
+<font color="deepskyblue">0110:</font> 
+<font color="deepskyblue">0111:</font>     <font color="blue">if</font>(1.0f-1.0f/256.0f&lt;u){
+<font color="deepskyblue">0112:</font>         g = expf(-5.0f*5.0f*(v-0.5f)*(v-0.5f)/2.0f );
+<font color="deepskyblue">0113:</font>     }<font color="blue">else</font>{
+<font color="deepskyblue">0114:</font>         g = powf(u, 5.0f*5.0f*(v-0.5f)*(v-0.5f)/(1.0f-u*u));
+<font color="deepskyblue">0115:</font>     }
+<font color="deepskyblue">0116:</font>     pOut-&gt;x = pOut-&gt;y = pOut-&gt;z = g;
+<font color="deepskyblue">0117:</font> }
+</pre>
+<p>
+また、Tex1もu～0, v～0の時に発散しますが、適当な小さな数εを使って、
+</p>
+<pre class="CodeBlock">
+Tex1(u, v) = F(u)/(ε+uv)
+</pre>
+<p>
+のようにすることによって、発散を防ぐことができます。
+</p>
+<p>
+テクスチャTex1は、次のようになります。
+</p>
+<image src = "frensel.png">
+<p>
+テクスチャを作る関数は、次のようになります
+</p>
+<pre class="CodeBlock">
+main.cpp
+<font color="deepskyblue">0134:</font> VOID WINAPI gp (D3DXVECTOR4* pOut, CONST D3DXVECTOR2* pTexCoord, 
+<font color="deepskyblue">0135:</font> CONST D3DXVECTOR2* pTexelSize, LPVOID pData)
+<font color="deepskyblue">0136:</font> {
+<font color="deepskyblue">0137:</font>     FLOAT u = pTexCoord-&gt;x;
+<font color="deepskyblue">0138:</font>     FLOAT v = pTexCoord-&gt;y;
+<font color="deepskyblue">0139:</font>     FLOAT g;
+<font color="deepskyblue">0140:</font>     
+<font color="deepskyblue">0141:</font>     g = Fresnel(u)/(1.0f/256.0f+u*v);
+<font color="deepskyblue">0142:</font> 
+<font color="deepskyblue">0143:</font>     pOut-&gt;x = pOut-&gt;y = pOut-&gt;z = g;
+<font color="deepskyblue">0144:</font> }
+</pre>
+<p>
+Fresnel 項は、Schlickによる近似を用いました。
+</p>
+<pre class="CodeBlock">
+<font color="deepskyblue">0123:</font> FLOAT Fresnel(FLOAT n)
+<font color="deepskyblue">0124:</font> {
+<font color="deepskyblue">0125:</font>     FLOAT Rs = 0.5f;<font color="cyan">// 鏡面反射率</font>
+<font color="deepskyblue">0126:</font> 
+<font color="deepskyblue">0127:</font>     <font color="blue">return</font> Rs+(1-Rs)*(1-powf(n,5));
+<font color="deepskyblue">0128:</font> }
+</pre>
+
+
+<h2>■プログラム</h2>
+
+
+<p>
+では、プログラムを軽く見ていきましょう。<br>
+今回もピクセルシェーダでほとんどの作業をこなしています。<br>
+頂点シェーダから視線ベクトルや光源ベクトルをもらい、ピクセル単位で正規化しつつハーフベクトルなどを計算します。<br>
+後は、それぞれのテクスチャをサンプリングして、係数を掛けることによって値を整えて描画します。
+</p>
+<pre class="CodeBlock">
+hlsl.fx
+<font color="deepskyblue">0102:</font> <font color="cyan">// -------------------------------------------------------------</font>
+<font color="deepskyblue">0103:</font> <font color="cyan">// ピクセルシェーダ</font>
+<font color="deepskyblue">0104:</font> <font color="cyan">// -------------------------------------------------------------</font>
+<font color="deepskyblue">0105:</font> float4 PS(VS_OUTPUT In) : COLOR
+<font color="deepskyblue">0106:</font> {
+<font color="deepskyblue">0107:</font>     <font color="blue">float</font> nu = 1000;
+<font color="deepskyblue">0108:</font>     <font color="blue">float</font> nv = 10;
+<font color="deepskyblue">0109:</font>     <font color="blue">float</font> PI = 3.14159;
+<font color="deepskyblue">0110:</font>     <font color="blue">float4</font> Out = 0;
+<font color="deepskyblue">0111:</font>     <font color="blue">float4</font> Rd = In.Color;
+<font color="deepskyblue">0112:</font>     <font color="blue">float</font>  Rs = 0.5f;
+<font color="deepskyblue">0113:</font>     <font color="blue">float</font> fp, fu, fv;
+<font color="deepskyblue">0114:</font>     <font color="blue">float</font> fd, fs;
+<font color="deepskyblue">0115:</font>     
+<font color="deepskyblue">0116:</font>     <font color="blue">float3</font> n = normalize(In.Normal);
+<font color="deepskyblue">0117:</font>     <font color="blue">float3</font> l = normalize(In.Light);
+<font color="deepskyblue">0118:</font>     <font color="blue">float3</font> e = normalize(In.Eye);
+<font color="deepskyblue">0119:</font>     <font color="blue">float3</font> h = normalize(l+e);
+<font color="deepskyblue">0120:</font>     <font color="red">
+<font color="deepskyblue">0121:</font>     <font color="blue">float2</font> td = {dot(l,n), dot(e,n)};
+<font color="deepskyblue">0122:</font>     fd = (28/(23*PI))*tex2D( DiffuseSamp, td ).x;</font>
+<font color="deepskyblue">0123:</font>     <font color="yellow">
+<font color="deepskyblue">0124:</font>     <font color="blue">float2</font> tp = {dot(h,l), max(dot(e,n),dot(l,n))};
+<font color="deepskyblue">0125:</font>     fp = tex2D( GpSamp, tp ).x;</font>
+<font color="deepskyblue">0126:</font> <font color="orange">
+<font color="deepskyblue">0127:</font>     <font color="blue">float2</font> tu = {dot(n,h), sqrt(nu)*dot(h,normalize(In.U))/5.0f+0.5f};
+<font color="deepskyblue">0128:</font>     fu = tex2D( GsSamp, tu ).x;
+<font color="deepskyblue">0129:</font>     <font color="blue">float2</font> tv = {dot(n,h), sqrt(nv)*dot(h,normalize(In.V))/5.0f+0.5f};
+<font color="deepskyblue">0130:</font>     fv = tex2D( GsSamp, tv ).x;</font>
+<font color="deepskyblue">0131:</font> 
+<font color="deepskyblue">0132:</font>     fs = (sqrt((nu+1)*(nv+1))/(8*PI))*<font color="orange">fu*fv</font>*<font color="yellow">fp</font>;
+<font color="deepskyblue">0133:</font>     
+<font color="deepskyblue">0134:</font>     Out = (<font color="red">Rd*(1-Rs)*fd</font> + Rs*fs)*dot(l,n);
+<font color="deepskyblue">0135:</font>     
+<font color="deepskyblue">0136:</font>     <font color="blue">return</font> Out;
+<font color="deepskyblue">0137:</font> }
+</pre>
+<p>
+図で見ると、次のような感じでしょうか。
+</p>
+<image src = "how2.png">
+<p>
+</p>
+
+
+<h2>■最後に</h2>
+
+
+<p>
+実用にはなるようですが、パラメータの調整は細かくする必要がありそうですね。
+</p>
+
+</div>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<center>
+<hr>
+<p><a href="../index.html">もどる</a></p>
+<p><a href="mailto:imagire@gmail.com">imagire@gmail.com</a></p>
+</center>
+
+</body>
+</html>

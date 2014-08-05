@@ -1,0 +1,410 @@
+<head>
+	<title>t-pot『Ray Tracing : Thin-lens cameras』</title>
+	<link rel="stylesheet" type="text/css" href="../if.css">
+</head>
+<meta http-equiv=Content-Type content="text/html; charset=shift_jis">
+<body>
+
+
+<div class="contents">
+<center>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<h1>レイトレース：薄いレンズのカメラ</h1><br>
+<h3>～ Ray Tracing : Thin-lens cameras ～</h3>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<image src = "title.png">
+<br>
+<br>
+<hr>
+</center>
+<div>
+
+
+<h2>■はじめに</h2>
+
+
+<p>
+Shirley の <A HREF="http://www.amazon.co.jp/exec/obidos/ASIN/1568811985/tpot-22">Realistic Ray Tracing</A> を買ってみたのですが、その中で被写界深度を実現するための薄いレンズのモデルを紹介していました。
+今回は、その方法を現在のプログラムに実装しようと思います。
+</p>
+<p>
+上の画像の左側が今までのレンズを考慮しない（ピンホールカメラによる）画像で、
+右側が今回の結果です。ピントを画面の奥のほうに合わせているので手前側がぼけています。現実にはありえないパラメータでレンダリングしたので、非常にぼけぼけです。
+</p>
+
+<p>
+今回のプログラムは、次のものです。
+</p>
+<ul style = "LIST-STYLE-TYPE:none">
+<li><a href="src.zip">src.zip (レイトレース:MFC, DirectX9.0c)</a>
+</ul>
+
+<p>
+まぁ、いつものように適当にファイルが入っています。<br>
+APP WIZARD から出力されるフレームワークのファイルは紹介を省かせていただきます。</p>
+<table>
+<tr><td><a href="render_cpp.html">render.cpp</a></td><td>レイトレ用の描画関数群</td></tr>
+<tr><td><a href="render_h.html">render.h</a></td><td>レイトレ用の描画関数群</td></tr>
+<tr><td><a href="prim_cpp.html">prim.cpp</a></td><td>オブジェクトのデータのための関数</td></tr>
+<tr><td><a href="prim_h.html">prim.h</a></td><td>オブジェクトのデータのための関数</td></tr>
+<tr><td><a href="mainDlg_cpp.html">mainDlg.cpp</a></td><td>ダイアログを管理するクラスのメソッドが書かれたファイル</td></tr>
+<tr><td><a href="mainDlg_h.html">mainDlg.h</a></td><td>ダイアログを管理するクラスのヘッダ</td></tr>
+
+<tr><td><a href="CBitmap_cpp.html">CBitmap.cpp</a></td><td>BMP保存用の関数</td></tr>
+<tr><td><a href="CBitmap_h.html">CBitmap.h</a></td><td>BMP保存用の関数</td></tr>
+<tr><td><a href="MyTypes_h.html">math/MyTypes.h</a></td><td>環境の依存性をなくすためのオレ用型定義</td></tr>
+<tr><td><a href="CRand_h.html">math/CRand.h</a></td><td>MTによる乱数</td></tr>
+</table>
+
+<p>
+あと、実行ファイル、リソースファイル、プロジェクトファイルが入っています。
+</p>
+
+
+<h2>■何やってるの？</h2>
+
+
+<p>
+カメラのカタログを見ると、焦点距離fとかF値とかのわけのわからない名前が列挙されています。
+これらは、大体が次のようなレンズのモデルを仮定した値になっています。
+</p>
+
+<image src = "layout.png">
+
+<p>
+物体とフィルムの間にレンズが置かれていて、ピントの合う場所からでた光はレンズの違う位置に入射したとしても
+フィルムの同じ位置を感光します。<br>
+このモデルでは、ピントが合う距離Lとフィルムが置かれた距離Vに関して、「光学定理」と呼ばれる１つの関係式が成り立ちます。
+</p>
+
+<pre class="CodeBlock">
+1   1   1
+- + - = -
+L   V   f
+</pre>
+
+<p>
+ここで、fが焦点距離と呼ばれる定数で、レンズの性能で決まります。<br>
+この関係式から、レンズの位置をフィルムからどれだけ離したかによってどの位置にピントが合うのか決定されます。<br>
+今回の場合には、ピントの合う位置が決められたときに、レンズをフィルムからどの程度離せばよいのかが大事になってきます。
+その値は、上の関係式を逆に解いて次のように求められます。
+</p>
+
+<pre class="CodeBlock">
+      L f
+V = -------
+     L - f
+</pre>
+
+<p>
+また、カメラを制御するパラメータにＦ値があります。
+これは、レンズの有効な直径2Rと焦点距離の比でこの値が小さなほど入射する光の量が増えて映像が明るくなります。
+</p>
+
+<pre class="CodeBlock">
+     f
+F = --
+    2R
+</pre>
+
+<p>
+F値はレンズ固有の性能に加えて絞りの大きさによって値が変わります。<br>
+上の式を逆に解けば、レンズの有効な半径は、焦点距離とＦ値で次のように書けます。
+</p>
+
+<pre class="CodeBlock">
+     f
+R = --
+    2F
+</pre>
+
+<p>
+さて、以上でカメラの基本は終了です。
+では、これをいかにレイトレに乗せるのかが、これからの話です。<br>
+モンテカルロ法によるレイトレでは、パスごとにレイがフィルムに飛び込んでくる方向を変えることができます。
+ただし、全てのレイはレンズを通過してきます。<br>
+ということで、各レイごとにレンズのどこを通過するかをランダムに与えて、その寄与を計算します。<br>
+レイが通過するレンズ上の点をSとすると、Sはレンズの中心Cと視線方向以外のカメラ座標系での基底ベクトルu,vを用いて次のように書けます。
+</p>
+
+<pre class="CodeBlock">
+S = C + r cosφ v + r sinφ u
+</pre>
+
+<p>
+ここで、r(0<=r<R)と、φ(0<=φ<2π)は、ランダムなパラメータです（ただし、rは、レンズ上に一定の密度で分布するように、一様な０～１の乱数z1を用いて、r=R√z1によるランダムな分布を採用します）。
+</p>
+<p>
+さて、フィルムからでてSを通った光はどこへ向かって飛べばいいのでしょうか？<br>
+ここで、光学定理をおもいだすと、レンズを通る全てのレイは、ピントの合う距離で同じ位置Pを通ります。ということで、ピントの合う点Pを求めて、この点へ向かう方向をレイの進む方向とします。<br>
+Pを求めましょう。フィルムの点Xから出てレンズの中心Cを通る光はピントの合う位置Pへ一直線に向かいます。フィルムの点Xからレンズの中心Cへの向きをeとすると、Pは、次の式で求められます（図を見てください）。
+</p>
+
+<pre class="CodeBlock">
+         L             L
+P = C + ---- e = C + ----- e
+        cosθ        (e.l)
+</pre>
+
+<p>
+レンズの中心までの向きは、ベクトルを正規化する関数normalizeを用いて次のように書けます。
+</p>
+
+<pre class="CodeBlock">
+e = normalize( C - X )
+</pre>
+
+<p>
+フィルム上の点は、フィルムのサイズを(w,h)、ピクセルの解像度を(W,H)として、求めようとするピクセルの位置を(x,y)とすれば、次の式で計算できます。
+</p>
+
+<pre class="CodeBlock">
+                x       y
+X = C - V l + w - u + h - v
+                W       H
+</pre>
+
+<p>
+これで、全ての値が与えられた量から求められるようになります。
+</p>
+<p>
+ちなみに、Sからでたレイが進む方向rは、次の式で求められます。
+</p>
+
+<pre class="CodeBlock">
+r = normalize( P - S )
+</pre>
+
+
+<h2>■レイの設定</h2>
+
+
+<p>
+さて、具体的な実装方法ですが、カメラのクラスを変更しました。<br>
+視野角やアスペクト比といったおなじみのパラメータは影を潜めて、
+焦点距離やF値、フィルムのサイズといったものに変わっています。<br>
+２次的なパラメータとして、レンズの半径やレンズからフィルムまでの距離というものも（パラメータが決定し次第計算して）保持します。<br>
+また、ビュー行列もそれらの基底ベクトル u, v, lに変更しました。
+</p>
+
+
+<pre class="CodeBlock">
+<font color="deepskyblue">0023:</font> <font color="blue">class</font> CCamera
+<font color="deepskyblue">0024:</font> {
+<font color="deepskyblue">0025:</font> <font color="blue">private</font>:
+<font color="deepskyblue">0026:</font>     D3DXVECTOR3 m_vFrom;
+<font color="deepskyblue">0027:</font>     D3DXVECTOR3 m_vLookat;
+<font color="deepskyblue">0028:</font>     D3DXVECTOR3 m_vUp;
+<font color="deepskyblue">0029:</font> 
+<font color="deepskyblue">0030:</font>     <font color="blue">float</font>   m_fFilmSize[2];  <font color="cyan">// フィルムの実寸0.036*0.024[m*m]0.025*0.025(Cornell Box)</font>
+<font color="deepskyblue">0031:</font>     <font color="blue">float</font>   m_fFocalLength;  <font color="cyan">// 焦点距離 0.035(Cornell Box )</font>
+<font color="deepskyblue">0032:</font>     <font color="blue">float</font>   m_fFNumber;      <font color="cyan">// F値</font>
+<font color="deepskyblue">0033:</font>     <font color="blue">float</font>   m_fFocusDistance;<font color="cyan">// ピントが合う位置までの距離</font>
+<font color="deepskyblue">0034:</font> 
+<font color="deepskyblue">0035:</font>     <font color="blue">float</font>   m_fLensRadius;   <font color="cyan">// レンズの半径(f/2F)</font>
+<font color="deepskyblue">0036:</font>     <font color="blue">float</font>   m_fFilmDistance; <font color="cyan">// フィルムまでの距離 Lf/(L-f)</font>
+<font color="deepskyblue">0037:</font> 
+<font color="deepskyblue">0038:</font>     D3DXVECTOR3 u, v, l;
+<font color="deepskyblue">0052:</font> };
+</pre>
+
+<p>
+実際にレイを計算する関数は、かなりべたに実装しました。<br>
+最初にレンズの何所から飛ばすか決定するための乱数を作って、その位置がワールド座標系でどこになるのか計算します。<br>
+次に、ピクセルの位置をフィルムの大きさ等からワールド座標に変換して、レンズがあたるべき位置を算出し、向きを決定します。
+</p>
+
+<pre class="CodeBlock">
+<font color="deepskyblue">0491:</font> <font color="blue">void</font> CCamera::GetRay( D3DXVECTOR3 *o, D3DXVECTOR3 *dir, <font color="blue">float</font> x, <font color="blue">float</font> y)
+<font color="deepskyblue">0492:</font> {
+<font color="deepskyblue">0493:</font>     D3DXVECTOR3 ds, e;
+<font color="deepskyblue">0494:</font>     D3DXVECTOR3 tmp, tmp1;
+<font color="deepskyblue">0495:</font>     <font color="blue">float</font> z1 = frand();
+<font color="deepskyblue">0496:</font>     <font color="blue">float</font> z2 = frand();
+<font color="deepskyblue">0497:</font> 
+<font color="deepskyblue">0498:</font>     <font color="blue">float</font> r = m_fLensRadius * sqrtf(z1);
+<font color="deepskyblue">0499:</font>     <font color="blue">float</font> theta = 2.0f * D3DX_PI * z2;
+<font color="deepskyblue">0500:</font>     
+<font color="deepskyblue">0501:</font>     <font color="cyan">// レイを飛ばす位置</font>
+<font color="deepskyblue">0502:</font>     D3DXVec3Scale( &amp;tmp, &amp;v, cosf(theta) );
+<font color="deepskyblue">0503:</font>     D3DXVec3Scale( &amp;ds,  &amp;u, cosf(theta) );
+<font color="deepskyblue">0504:</font>     D3DXVec3Add( &amp;ds, &amp;ds, &amp;tmp );
+<font color="deepskyblue">0505:</font>     D3DXVec3Scale( &amp;ds, &amp;ds, r );
+<font color="deepskyblue">0506:</font>     D3DXVec3Add( o, &amp;ds, &amp;m_vFrom );
+<font color="deepskyblue">0507:</font> 
+<font color="deepskyblue">0508:</font>     <font color="cyan">// レンズの中心からピントの当たる位置へのベクトル</font>
+<font color="deepskyblue">0509:</font>     D3DXVec3Scale( &amp;e,    &amp;l,   m_fFilmDistance );
+<font color="deepskyblue">0510:</font>     D3DXVec3Scale( &amp;tmp,  &amp;v,   m_fFilmSize[0] * (x-0.5f) );
+<font color="deepskyblue">0511:</font>     D3DXVec3Scale( &amp;tmp1, &amp;u, - m_fFilmSize[1] * (y-0.5f) );
+<font color="deepskyblue">0512:</font>     D3DXVec3Add( &amp;e, &amp;e, &amp;tmp );
+<font color="deepskyblue">0513:</font>     D3DXVec3Add( &amp;e, &amp;e, &amp;tmp1 );
+<font color="deepskyblue">0514:</font>     D3DXVec3Normalize( &amp;e, &amp;e );
+<font color="deepskyblue">0515:</font> 
+<font color="deepskyblue">0516:</font>     D3DXVec3Scale( dir, &amp;e, m_fFocusDistance / D3DXVec3Dot( &amp;e, &amp;l ) );
+<font color="deepskyblue">0517:</font>     D3DXVec3Subtract( dir, dir, &amp;ds );
+<font color="deepskyblue">0518:</font>     D3DXVec3Normalize( dir, dir );
+<font color="deepskyblue">0519:</font> }
+</pre>
+
+
+<h2>■マルチスレッド化</h2>
+
+
+<p>
+Hyper-Threading とかマルチＣＰＵとかが流行の今日この頃、
+普通にプログラムを組んだだけでは、CPUの性能を使い切ることはできません。<br>
+レイトレースは、各ピクセルごとに計算するので、マルチスレッド化しやすいアプリケーションということもあるので、
+今回マルチスレッド化してみました。
+</p>
+<p>
+マルチスレッド化するには、_beginthreadex とかを使ってスレッドを作ります。<br>
+気をつけなくてはならないのは、別のスレッドで同じメモリを書き込まないことです。
+グローバル変数を用意して、各スレッドがその変数に書き込むようにするとどのスレッドが書き込むか
+不定になるので、そのような状況は避けなくてはなりません。<br>
+また、各スレッドが起動、終了するタイミングもばらばらなので、
+スレッドの順番に依存するプログラムを組むときには注意が必要になります。<br>
+また、変数とかの寿命で、うかつにauto変数とかを使ってスレッドを呼び出すと
+スレッドを呼び出した直後に変数が無効になり、呼ばれたスレッドでは値が使えないことがあります。
+</p>
+<p>
+さて、今回は、レンダリングする画面を BLOCK_X x BLOCK_Y(2x2=4) のブロックに分けて、
+それぞれを独自スレッドとして計算させます。<br>
+各スレッドの違いは描画する画面の位置なので、描画範囲を引数としてスレッドを生成します。<br>
+描画範囲は、普通に四角形の構造体 rect に範囲を入れておきます。
+</p>
+
+<pre class="CodeBlock">
+<font color="deepskyblue">0624:</font>     <font color="blue">static</font> rect r[BLOCK_Y][BLOCK_X];
+<font color="deepskyblue">0625:</font>     HANDLE  hThread[BLOCK_Y][BLOCK_X];
+<font color="deepskyblue">0626:</font>     <font color="blue">unsigned</font> <font color="blue">int</font>  dummy;
+<font color="deepskyblue">0627:</font>     
+<font color="deepskyblue">0628:</font>     <font color="blue">for</font>( s32 i = 0; i &lt; BLOCK_Y; i++ )
+<font color="deepskyblue">0629:</font>     {
+<font color="deepskyblue">0630:</font>         <font color="blue">for</font>( s32 j = 0; j &lt; BLOCK_X; j++ )
+<font color="deepskyblue">0631:</font>         {
+<font color="deepskyblue">0632:</font>             r[i][j].left   = (j+0)*RENDER_WIDTH /BLOCK_X;
+<font color="deepskyblue">0633:</font>             r[i][j].right  = (j+1)*RENDER_WIDTH /BLOCK_X;
+<font color="deepskyblue">0634:</font>             r[i][j].top    = (i+0)*RENDER_HEIGHT/BLOCK_Y;
+<font color="deepskyblue">0635:</font>             r[i][j].bottom = (i+1)*RENDER_HEIGHT/BLOCK_Y;
+<font color="deepskyblue">0636:</font>         }
+<font color="deepskyblue">0637:</font>     }
+</pre>
+
+<p>
+スレッドは、呼び出す関数 RayTrace や、引数 r[i][j] を指定して_beginthreadex を呼び出せばよいです。
+失敗したときに 0 が返ってくるようなので、そのときには後から再挑戦するように bFinished[][] という変数を用意しておいて
+終わったかどうかを覚えて置くようにしました
+（ところで、どのくらい失敗するのでしょうねぇ。こんな大げさに対応しなくてもいいのかな？）。<br>
+なお、Windows では、_beginthreadex の返り値をハンドルにでき、
+WaitForSingleObject でスレッドが終了したかどうかも判定できるようなので、
+これを利用して、一通りスレッドを作り終えた後に、作成した全てのスレッドが終了するのを待っています。
+</p>
+
+<pre class="CodeBlock">
+<font color="deepskyblue">0639:</font>     <font color="blue">bool</font> bFinished[BLOCK_Y][BLOCK_X]; <font color="cyan">// 終わった？</font>
+<font color="deepskyblue">0640:</font>     
+<font color="deepskyblue">0641:</font>     <font color="cyan">// 終了フラグ</font>
+<font color="deepskyblue">0642:</font>     <font color="blue">for</font>( s32 i = 0; i &lt; BLOCK_Y; i++ )
+<font color="deepskyblue">0643:</font>         <font color="blue">for</font>( s32 j = 0; j &lt; BLOCK_X; j++ )
+<font color="deepskyblue">0644:</font>             bFinished[i][j] = <font color="blue">false</font>;
+<font color="deepskyblue">0645:</font>     
+<font color="deepskyblue">0646:</font>     <font color="blue">for</font>( u32 n = BLOCK_X * BLOCK_Y; 0 &lt; n; )
+<font color="deepskyblue">0647:</font>     {
+<font color="deepskyblue">0648:</font>         <font color="cyan">// スレッドを生成する</font>
+<font color="deepskyblue">0649:</font>         <font color="blue">for</font>( s32 i = 0; i &lt; BLOCK_Y; i++ )
+<font color="deepskyblue">0650:</font>         {
+<font color="deepskyblue">0651:</font>             <font color="blue">for</font>( s32 j = 0; j &lt; BLOCK_X; j++ )
+<font color="deepskyblue">0652:</font>             {
+<font color="deepskyblue">0653:</font>                 <font color="blue">if</font>( !bFinished[i][j] )
+<font color="deepskyblue">0654:</font>                 {
+<font color="deepskyblue">0655:</font>                     hThread[i][j] = (HANDLE)_beginthreadex( NULL, 0, &amp;RayTrace, (LPVOID)&amp;r[i][j], 0, &amp;dummy );
+<font color="deepskyblue">0656:</font>                 }
+<font color="deepskyblue">0657:</font>                 <font color="blue">if</font>(0==hThread[i][j])
+<font color="deepskyblue">0658:</font>                 {
+<font color="deepskyblue">0659:</font>                     hThread[i][j]=0;
+<font color="deepskyblue">0660:</font>                 }
+<font color="deepskyblue">0661:</font>             }
+<font color="deepskyblue">0662:</font>         }
+<font color="deepskyblue">0663:</font>         
+<font color="deepskyblue">0664:</font>         <font color="cyan">// スレッドを待つ</font>
+<font color="deepskyblue">0665:</font>         <font color="blue">for</font>( s32 i = 0; i &lt; BLOCK_Y; i++ )
+<font color="deepskyblue">0666:</font>         {
+<font color="deepskyblue">0667:</font>             <font color="blue">for</font>( s32 j = 0; j &lt; BLOCK_X; j++ )
+<font color="deepskyblue">0668:</font>             {
+<font color="deepskyblue">0669:</font>                 <font color="blue">if</font>( !bFinished[i][j] &amp;&amp; 0 != hThread[i][j] )
+<font color="deepskyblue">0670:</font>                 {
+<font color="deepskyblue">0671:</font>                     WaitForSingleObject( hThread[i][j], INFINITE );  <font color="cyan">// 受信スレッド終了待ち</font>
+<font color="deepskyblue">0672:</font>                     CloseHandle( hThread[i][j] );                    <font color="cyan">// ハンドルを閉じる</font>
+<font color="deepskyblue">0673:</font>                     bFinished[i][j] = <font color="blue">true</font>;
+<font color="deepskyblue">0674:</font>                     n--;
+<font color="deepskyblue">0675:</font>                 }
+<font color="deepskyblue">0676:</font>             }
+<font color="deepskyblue">0677:</font>         }
+<font color="deepskyblue">0678:</font>     }
+</pre>
+
+<p>
+呼び出されるスレッドの関数 RayTrace は、次のようになります。<br>
+与えられた矩形の中を走査してレイを飛ばしまくり、結果をグローバルなバッファ s_total に格納します。<br>
+GetColor は、各ピクセルの位置からレイを飛ばして、最終的な色の結果を得る関数です。
+</p>
+
+<pre class="CodeBlock">
+<font color="deepskyblue">0593:</font> <font color="blue">unsigned</font> <font color="blue">int</font> WINAPI RayTrace ( LPVOID pParam )
+<font color="deepskyblue">0594:</font> {
+<font color="deepskyblue">0595:</font>     rect *pRect = (rect *)pParam;
+<font color="deepskyblue">0596:</font>     D3DXVECTOR3 col;
+<font color="deepskyblue">0597:</font>     
+<font color="deepskyblue">0598:</font> <font color="blue">for</font>(<font color="blue">int</font> i=0;i&lt;10;i++)
+<font color="deepskyblue">0599:</font>     <font color="blue">for</font>( s32 y = pRect-&gt;top; y &lt; pRect-&gt;bottom; y++ )
+<font color="deepskyblue">0600:</font>     {
+<font color="deepskyblue">0601:</font>         <font color="blue">for</font>( s32 x = pRect-&gt;left; x &lt; pRect-&gt;right; x++ )
+<font color="deepskyblue">0602:</font>         {
+<font color="deepskyblue">0603:</font>             GetColor(&amp;col, ((<font color="blue">float</font>)x+0.5f)/(<font color="blue">float</font>)RENDER_WIDTH
+<font color="deepskyblue">0604:</font>                          , ((<font color="blue">float</font>)y+0.5f)/(<font color="blue">float</font>)RENDER_HEIGHT);
+<font color="deepskyblue">0605:</font>             <font color="blue">int</font> no = 4*(y*RENDER_WIDTH+x);
+<font color="deepskyblue">0606:</font>             s_total[no+0]+=col.x;<font color="cyan">// R</font>
+<font color="deepskyblue">0607:</font>             s_total[no+1]+=col.y;<font color="cyan">// G</font>
+<font color="deepskyblue">0608:</font>             s_total[no+2]+=col.z;<font color="cyan">// B</font>
+<font color="deepskyblue">0609:</font>         }
+<font color="deepskyblue">0610:</font>     }
+<font color="deepskyblue">0611:</font> 
+<font color="deepskyblue">0612:</font>     <font color="blue">return</font> 0;
+<font color="deepskyblue">0613:</font> }
+</pre>
+
+<p>
+最初、各ピクセル１回のレイを飛ばすごとにスレッドを生成していたのですが、
+オーバーヘッドが大きかったので、各ピクセルごとに１０回のレイを飛ばすようなスレッドを生成しています。
+</p>
+
+
+<h2>■最後に</h2>
+
+
+<p>
+ぶっちゃけ、Shirley の本を読んで、プログラムを書き直したかっただけなのですが、
+その道のりは遠そうです…
+</p>
+<p>
+あと、Fナンバーを使ってカメラを設定するのは、本物のカメラを使う人にはよいと思うのですが、
+自分的には調整しづらいと感じました。<br>
+パラメータの吟味はしないといけないでしょうねぇ
+</p>
+
+
+</div>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<center>
+<hr>
+<p><a href="../index.html">もどる</a></p>
+<p><a href="mailto:imagire@gmail.com">imagire@gmail.com</a></p>
+</center>
+
+</body>
+</html>

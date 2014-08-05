@@ -1,0 +1,66 @@
+<HTML>
+<HEAD>
+<TITLE>diffuse.vsh</TITLE>
+<meta name="GENERATOR" content="vsh2html 1.0 by Niisaka">
+<meta http-equiv="Content-Type" content="text/html">
+<meta http-equiv="Content-Style-Type" content="text/css">
+<STYLE TYPE="text/css">
+<!--
+SPAN.comment { color:#008000; font-weight:normal; font-style:normal;}
+SPAN.linenum { color:#A0A0A0; font-weight:normal; font-style:normal;}
+-->
+</STYLE>
+</HEAD>
+<BODY TEXT="#000000" BGCOLOR="#FFFFFF">
+<PRE><SPAN CLASS="linenum">0001:</SPAN> <SPAN CLASS="comment">; diffuse.vsh</SPAN>
+<SPAN CLASS="linenum">0002:</SPAN> <SPAN CLASS="comment">; c0-3   -- world + ビュー + 透視変換行列</SPAN>
+<SPAN CLASS="linenum">0003:</SPAN> <SPAN CLASS="comment">; c8-11  -- 逆（ビュー + 透視変換）行列</SPAN>
+<SPAN CLASS="linenum">0004:</SPAN> <SPAN CLASS="comment">; c12    -- {0.0, 0.5, 1.0, 2.0}</SPAN>
+<SPAN CLASS="linenum">0005:</SPAN> <SPAN CLASS="comment">;</SPAN>
+<SPAN CLASS="linenum">0006:</SPAN> <SPAN CLASS="comment">; v0    頂点の座標値</SPAN>
+<SPAN CLASS="linenum">0007:</SPAN> <SPAN CLASS="comment">; v3    法線ベクトル (w成分は1.0f)</SPAN>
+<SPAN CLASS="linenum">0008:</SPAN> 
+<SPAN CLASS="linenum">0009:</SPAN> vs.1.1
+<SPAN CLASS="linenum">0010:</SPAN> 
+<SPAN CLASS="linenum">0011:</SPAN> <SPAN CLASS="comment">;座標変換</SPAN>
+<SPAN CLASS="linenum">0012:</SPAN> mov oPos,  v0
+<SPAN CLASS="linenum">0013:</SPAN> 
+<SPAN CLASS="linenum">0014:</SPAN> m4x4 r3, v0, c8
+<SPAN CLASS="linenum">0015:</SPAN> // 正規化
+<SPAN CLASS="linenum">0016:</SPAN> dp3 r3.w, r3, r3
+<SPAN CLASS="linenum">0017:</SPAN> rsq r3.w, r3.w
+<SPAN CLASS="linenum">0018:</SPAN> mul r3, r3, r3.w
+<SPAN CLASS="linenum">0019:</SPAN> 
+<SPAN CLASS="linenum">0020:</SPAN> // oT0 = (0&lt;=(N･L1))?L1:-L1
+<SPAN CLASS="linenum">0021:</SPAN> dp3 r0,   r3, c32           <SPAN CLASS="comment">; (N･L1)</SPAN>
+<SPAN CLASS="linenum">0022:</SPAN> sge   r1,  r0,  c12.x
+<SPAN CLASS="linenum">0023:</SPAN> add   r2,  c32, c32
+<SPAN CLASS="linenum">0024:</SPAN> mad  oT0,  r1,  r2, -c32
+<SPAN CLASS="linenum">0025:</SPAN> 
+<SPAN CLASS="linenum">0026:</SPAN> // oT1 = (0&lt;=(N･L2))?L2:-L2
+<SPAN CLASS="linenum">0027:</SPAN> dp3 r0.a,  r3, c33          <SPAN CLASS="comment">; (N･L2)</SPAN>
+<SPAN CLASS="linenum">0028:</SPAN> sge   r1,  r0.a,  c12.x
+<SPAN CLASS="linenum">0029:</SPAN> add   r2,  c33, c33
+<SPAN CLASS="linenum">0030:</SPAN> mad  oT1,  r1,  r2, -c33
+<SPAN CLASS="linenum">0031:</SPAN> 
+<SPAN CLASS="linenum">0032:</SPAN> <SPAN CLASS="comment">;// (|N･L1|, |N･L1|, |N･L1|, |N･L2|)</SPAN>
+<SPAN CLASS="linenum">0033:</SPAN> max oD0, r0, -r0
+<SPAN CLASS="linenum">0034:</SPAN> 
+<SPAN CLASS="linenum">0035:</SPAN> 
+<SPAN CLASS="linenum">0036:</SPAN> // oT2 = (0&lt;=(N･L3))?L3:-L3
+<SPAN CLASS="linenum">0037:</SPAN> dp3 r0,   r3, c34           <SPAN CLASS="comment">; (N･L3)</SPAN>
+<SPAN CLASS="linenum">0038:</SPAN> sge   r1,  r0,  c12.x
+<SPAN CLASS="linenum">0039:</SPAN> add   r2,  c34, c34
+<SPAN CLASS="linenum">0040:</SPAN> mad  oT2,  r1,  r2, -c34
+<SPAN CLASS="linenum">0041:</SPAN> 
+<SPAN CLASS="linenum">0042:</SPAN> // oT3 = (0&lt;=(N･L4))?L4:-L4
+<SPAN CLASS="linenum">0043:</SPAN> dp3 r0.a,  r3, c35          <SPAN CLASS="comment">; (N･L4)</SPAN>
+<SPAN CLASS="linenum">0044:</SPAN> sge   r1,  r0.a,  c12.x
+<SPAN CLASS="linenum">0045:</SPAN> add   r2,  c35, c35
+<SPAN CLASS="linenum">0046:</SPAN> mad  oT3,  r1,  r2, -c35
+<SPAN CLASS="linenum">0047:</SPAN> 
+<SPAN CLASS="linenum">0048:</SPAN> // (|N･L3|, |N･L3|, |N･L3|, |N･L4|)
+<SPAN CLASS="linenum">0049:</SPAN> max oD1, r0, -r0
+<SPAN CLASS="linenum">0050:</SPAN> </PRE>
+</BODY>
+</HTML>

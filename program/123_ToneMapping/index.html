@@ -1,0 +1,293 @@
+<head>
+	<title>t-pot『Tone mapping』</title>
+	<link rel="stylesheet" type="text/css" href="../if.css">
+</head>
+<meta http-equiv=Content-Type content="text/html; charset=shift_jis">
+<body>
+
+
+<div class="contents">
+<center>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<h1>トーンマッピング</h1><br>
+<h3>～ Tone mapping ～</h3>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<image src = "title.png">
+<br>
+<hr>
+</center>
+<div>
+
+
+<h2>■はじめに</h2>
+
+
+<p>
+あいも変わらず Shirley の <A HREF="http://www.amazon.co.jp/exec/obidos/ASIN/1568811985/tpot-22">Realistic Ray Tracing</A>を読んでいるのですが、その中にトーンマッピングのネタがありました。トーンマッピングは、かなりピクセルごとの並列的な処理なので、久しぶりのシェーダネタとして実装してみました。
+</p>
+<p>
+今回のプログラムは、次のものです。
+</p>
+<ul style = "LIST-STYLE-TYPE:none">
+<li><a href="TpotToneMapping.zip">TpotToneMapping.zip (トーンマッピング:DirectX9.0c, vs_1_1, ps_2_0)</a>
+</ul>
+
+<p>
+まぁ、いつものように適当にファイルが入っています。
+今回は、レイトレースした画像をテクスチャとして張り付けているので、レイトレースに関するプログラムも入っています。
+それらは今回の話とは関係ないので、大事な部分だけを抜粋すると、次のファイルだけに注目すればいいことになります。
+</p>
+<table>
+<tr><td><a href="main_cpp.html">main.cpp</a></td><td>メイン関数</td></tr>
+<tr><td><a href="main_fx.html">main.fx</a></td><td>シェーダプログラム</td></tr>
+</table>
+
+<p>
+他にも、実行ファイル、リソースファイル、プロジェクトファイルが入っています。
+</p>
+
+
+<h2>■何やってるの？</h2>
+
+
+<p>
+トーンマッピングとは、画像を綺麗に見せるための手法です。<br>
+HDRが流行になってきて、1.0 以上の光も自然に扱うようになってきました。
+ただ、現在のディスプレイは1.0以上の光を表現する方法がありません。<br>
+一方、人間の目などは、明るい屋外や暗い室内など、
+ほとんどの景色に関して光の総量が変わってもいい感じに見れるように入ってくる光の量を自動的に調整します。<br>
+この目に入る光の調整をレンダリング過程として処理して、LDRの環境でもHDRの広いレンジの光の画像を自然に見れるように調整するのがトーンマッピングです。<br>
+下の画像がトーンマッピングする前と後の画像です。
+トーンマッピングする前は明るい部分は全て一番強い色に飽和してどうなっているのか良く分からないのに比べて、
+トーンマッピングした後の画像は、光が強い部分は直接光源を見ている部分だけになっており、
+それ以外の部分は、光が強い中でも濃淡が分かるように調整されています。<br>
+なお、トーンマッピングでは、１つの画像に関して色調整するのみなので、
+時間とともに光の量を調整する明順応や暗順応には対応していません。
+</p>
+<image src = "beforeafter.png">
+<p>
+トーンマッピングは、写真の分野で古くから取り組まれており、ネガに写した景色をどのように焼き付ければ一番見栄えが良くなるかということで研究されていました。<br>
+CG の分野では、2002 年の <a href="http://www.cs.utah.edu/~reinhard/cdrom/">Photographic Tone Reproduction for Digital Images (Reinhard et.al., Transactions on Graphics(Proc. SIGGRAPH '02), 2002)</a> の論文が一番有名でしょうか（この中に Shirley もいますね）。
+今回は、この論文に載っている手法を実装します。
+</p>
+<p>
+トーンマッピングでは、最初にシーン内の基準となる明るさを決めます。<br>
+ここでは、光の強さに関する対数平均を採用します。
+</p>
+<pre class="CodeBlock">
+_<sub> </sub>       1
+L<sub>w</sub> = exp(-Σlog(ε+L<sub>w</sub>(x,y)))
+ <sub> </sub>       N
+</pre>
+<p>
+ここで、和は全ての画素(x,y)で計算し、ピクセル数の合計がNになります。<br>
+L<sub>w</sub>(x,y) は、各画素における輝度にです。<br>
+εはlogが発散しないための小さな定数になります。<br>
+</p>
+<p>
+この平均輝度を用いて、各ピクセルの輝度をスケーリングします。
+</p>
+<pre class="CodeBlock">
+              <sub> </sub>        _
+L(x,y) = a * L<sub>w</sub>(x,y) / L<sub>w</sub>
+
+</pre>
+<p>
+a は、"key value" と呼ばれるもので、
+今回は 0.18 を用います。この値が大きいほどシーン全体の明るさは明るくなります。
+</p>
+<p>
+次に、明るい部分と暗い部分のバランスを取ります。<br>
+HDR 画像では、明るい部分の輝度はとてつもなく明るくなります。
+上の線形の調整では暗い部分の情報が消えてしまうので、
+明るい部分の情報は間引きして暗い部分の解像度を高めるといい見栄えになります。<br>
+ということで、次の変換式を使って、輝度の調整をします。
+</p>
+<pre class="CodeBlock">
+ <sub> </sub>        L(x,y)(1+L(x,y)/L<sub>white</sub><sup>2</sup>)
+L<sub>d</sub>(x,y) = ----------------------
+ <sub> </sub>              (1+L(x,y))
+</pre>
+<p>
+ここで、L<sub>white</sub> は、一番強く（白く）表示される輝度の強さで、
+今回は、一番強いピクセルの輝度を採用します。<br>
+この数式を使えば、輝度の低いところでは、色情報が線形に変化し、
+輝度が非常に強くなると輝度の変化に対する色の変化はにぶっていきます。
+</p>
+
+
+<h2>■シェーダプログラム</h2>
+
+
+<p>
+さて、トーンマッピングの実装ですが、複数のステップに分けて処理を行います。<br>
+1つ目が、対数平均を求めるための輝度および対数の計算です。<br>
+2つ目が、縮小バッファを使って、平均値を求めるとともに一番強い輝度を求ます。<br>
+最後に、縮小バッファを使って１テクセルにまで落とした情報を使ってトーンマッピングをします。
+</p>
+<p>
+下の画像は、対数、輝度計算および縮小バッファを撮影したときテクスチャです。<br>
+一番左が元画像で、その右が、r 成分に輝度 gb 成分に輝度の対数を格納しています
+（４テクセル同時に処理をして、画面サイズを半分にしています）。<br>
+そこから、右に行くにつれて、1/4に縮小して平均を取ります。<br>
+なお、全てIEEE フォーマットのバッファを使用しています。
+</p>
+<image src = "howto.png">
+<p>
+さて、実際のプログラムです。<br>
+最初のパスでは、対数計算するとともに、輝度の最大値を求めます。<br>
+輝度は、YCbCr の Y 値を使います。<br>
+後は、赤成分は輝度の最大値を入れるということで、max 命令を入れ子に使って４つのテクセルの最大値を求めます。<br>
+それ以外の成分には、対数を取ったものを平均化します。
+</p>
+<pre class="CodeBlock">
+main.fx
+<font color="deepskyblue">0084:</font> float4 LogPS( LogVS_OUTPUT In ) : COLOR
+<font color="deepskyblue">0085:</font> {
+<font color="deepskyblue">0086:</font>     <font color="blue">const</font> float3 RGB2Y   = float3( +0.29900f, +0.58700f, +0.11400f );
+<font color="deepskyblue">0087:</font>     <font color="blue">const</font> <font color="blue">float</font> EPSILON = 0.00001;
+<font color="deepskyblue">0088:</font>     float4 output;
+<font color="deepskyblue">0089:</font>     
+<font color="deepskyblue">0090:</font>     <font color="blue">float</font> l0 = dot( RGB2Y, tex2D( Sampler, In.TexCoord0 ));
+<font color="deepskyblue">0091:</font>     <font color="blue">float</font> l1 = dot( RGB2Y, tex2D( Sampler, In.TexCoord1 ));
+<font color="deepskyblue">0092:</font>     <font color="blue">float</font> l2 = dot( RGB2Y, tex2D( Sampler, In.TexCoord2 ));
+<font color="deepskyblue">0093:</font>     <font color="blue">float</font> l3 = dot( RGB2Y, tex2D( Sampler, In.TexCoord3 ));
+<font color="deepskyblue">0094:</font>     
+<font color="deepskyblue">0095:</font>     <font color="blue">float</font> l_max = max(max(l0,l1),max(l2,l3));
+<font color="deepskyblue">0096:</font>     
+<font color="deepskyblue">0097:</font>     <font color="blue">float</font> total =  log( EPSILON + l0 )
+<font color="deepskyblue">0098:</font>                  + log( EPSILON + l1 )
+<font color="deepskyblue">0099:</font>                  + log( EPSILON + l2 )
+<font color="deepskyblue">0100:</font>                  + log( EPSILON + l3 );
+<font color="deepskyblue">0101:</font>                  
+<font color="deepskyblue">0102:</font>     output.r = l_max;
+<font color="deepskyblue">0103:</font>     output.gba = 0.25f * total;
+<font color="deepskyblue">0104:</font>     
+<font color="deepskyblue">0105:</font>     <font color="blue">return</font> output;
+<font color="deepskyblue">0106:</font> }
+</pre>
+
+<p>
+次のステップは、情報を１テクセルにまで小さくすることです。<br>
+赤成分は、最大の値を求めるので、max 命令をこれでもかというほど入れ子にします。<br>
+それ以外の成分は、平均を取るだけなので、和を取って、テクセル数(16)で割ります。<br>
+サンプリングするテクセルは、レンダリングするピクセルの右下4x4の16テクセルにしています。
+</p>
+
+<pre class="CodeBlock">
+main.fx
+<font color="deepskyblue">0173:</font> float4 SmallPS( SmallVS_OUTPUT In ) : COLOR
+<font color="deepskyblue">0174:</font> {
+<font color="deepskyblue">0175:</font>     float4 output;
+<font color="deepskyblue">0176:</font>     
+<font color="deepskyblue">0177:</font>     float4 t0 = tex2D( Sampler, In.TexCoord0 );
+<font color="deepskyblue">0178:</font>     float4 t1 = tex2D( Sampler, In.TexCoord1 );
+<font color="deepskyblue">0179:</font>     float4 t2 = tex2D( Sampler, In.TexCoord2 );
+<font color="deepskyblue">0180:</font>     float4 t3 = tex2D( Sampler, In.TexCoord3 );
+<font color="deepskyblue">0181:</font>     float4 t4 = tex2D( Sampler, In.TexCoord4 );
+<font color="deepskyblue">0182:</font>     float4 t5 = tex2D( Sampler, In.TexCoord5 );
+<font color="deepskyblue">0183:</font>     float4 t6 = tex2D( Sampler, In.TexCoord6 );
+<font color="deepskyblue">0184:</font>     float4 t7 = tex2D( Sampler, In.TexCoord7 );
+<font color="deepskyblue">0185:</font>     float4 t8 = tex2D( Sampler, In.TexCoord0 + float2(0,2.0*g_fInvTexSize) );
+<font color="deepskyblue">0186:</font>     float4 t9 = tex2D( Sampler, In.TexCoord1 + float2(0,2.0*g_fInvTexSize) );
+<font color="deepskyblue">0187:</font>     float4 ta = tex2D( Sampler, In.TexCoord2 + float2(0,2.0*g_fInvTexSize) );
+<font color="deepskyblue">0188:</font>     float4 tb = tex2D( Sampler, In.TexCoord3 + float2(0,2.0*g_fInvTexSize) );
+<font color="deepskyblue">0189:</font>     float4 tc = tex2D( Sampler, In.TexCoord4 + float2(0,2.0*g_fInvTexSize) );
+<font color="deepskyblue">0190:</font>     float4 td = tex2D( Sampler, In.TexCoord5 + float2(0,2.0*g_fInvTexSize) );
+<font color="deepskyblue">0191:</font>     float4 te = tex2D( Sampler, In.TexCoord6 + float2(0,2.0*g_fInvTexSize) );
+<font color="deepskyblue">0192:</font>     float4 tf = tex2D( Sampler, In.TexCoord7 + float2(0,2.0*g_fInvTexSize) );
+<font color="deepskyblue">0193:</font>     
+<font color="deepskyblue">0194:</font>     <font color="blue">float</font> l_max = max(max(max(max(t0.r,t1.r),max(t2.r,t3.r)),
+<font color="deepskyblue">0195:</font>                           max(max(t4.r,t5.r),max(t6.r,t7.r))),
+<font color="deepskyblue">0196:</font>                       max(max(max(t8.r,t9.r),max(ta.r,tb.r)),
+<font color="deepskyblue">0197:</font>                           max(max(tc.r,td.r),max(te.r,tf.r))));
+<font color="deepskyblue">0198:</font>     
+<font color="deepskyblue">0199:</font>     output.r = l_max;
+<font color="deepskyblue">0200:</font>     output.gba = (1.0/16.0)* (t0.gba + t1.gba + t2.gba + t3.gba
+<font color="deepskyblue">0201:</font>                             + t4.gba + t5.gba + t6.gba + t7.gba
+<font color="deepskyblue">0202:</font>                             + t8.gba + t9.gba + ta.gba + tb.gba
+<font color="deepskyblue">0203:</font>                             + tc.gba + td.gba + te.gba + tf.gba);
+<font color="deepskyblue">0204:</font>     
+<font color="deepskyblue">0205:</font>     <font color="blue">return</font> output;
+<font color="deepskyblue">0206:</font> }
+</pre>
+
+<p>
+最後に、各ピクセルをトーンマッピングします。<br>
+色情報をYCbCr色座標系に変換してから、Y 値に関してトーンマッピングし、
+最後に RGB 色座標系に戻します。
+</p>
+
+<pre class="CodeBlock">
+main.fx
+<font color="deepskyblue">0256:</font> float4 FinalPS( FinalVS_OUTPUT In ) : COLOR
+<font color="deepskyblue">0257:</font> {
+<font color="deepskyblue">0258:</font>     <font color="blue">const</font> float3 RGB2Y   = float3( +0.29900f, +0.58700f, +0.11400f );
+<font color="deepskyblue">0259:</font>     <font color="blue">const</font> float3 RGB2Cb  = float3( -0.16874f, -0.33126f, +0.50000f );
+<font color="deepskyblue">0260:</font>     <font color="blue">const</font> float3 RGB2Cr  = float3( +0.50000f, -0.41869f, -0.08131f );
+<font color="deepskyblue">0261:</font>     <font color="blue">const</font> float3 YCbCr2R = float3( +1.00000f, +0.00000f, +1.40200f );
+<font color="deepskyblue">0262:</font>     <font color="blue">const</font> float3 YCbCr2G = float3( +1.00000f, -0.34414f, -0.71414f );
+<font color="deepskyblue">0263:</font>     <font color="blue">const</font> float3 YCbCr2B = float3( +1.00000f, +1.77200f, +0.00000f );
+<font color="deepskyblue">0264:</font>     
+<font color="deepskyblue">0265:</font>     float4 info  = tex2D( SamplerInfo, float2(0.5,0.5) );
+<font color="deepskyblue">0266:</font>     float3 texel = tex2D( Sampler, In.TexCoord ).rgb;
+<font color="deepskyblue">0267:</font>     
+<font color="deepskyblue">0268:</font>     <font color="blue">float</font> coeff = 0.18 * exp( -info.g );
+<font color="deepskyblue">0269:</font>     <font color="blue">float</font> l_max = coeff * info.r;
+<font color="deepskyblue">0270:</font> 
+<font color="deepskyblue">0271:</font>     <font color="cyan">// YCbCr系に変換</font>
+<font color="deepskyblue">0272:</font>     float3 YCbCr;
+<font color="deepskyblue">0273:</font>     YCbCr.y = dot( RGB2Cb, texel );
+<font color="deepskyblue">0274:</font>     YCbCr.z = dot( RGB2Cr, texel );
+<font color="deepskyblue">0275:</font> 
+<font color="deepskyblue">0276:</font>     <font color="cyan">// 色の強さは補正</font>
+<font color="deepskyblue">0277:</font>     <font color="blue">float</font> lum = coeff * dot( RGB2Y,  texel );
+<font color="deepskyblue">0278:</font>     YCbCr.x = lum * (1.0f+lum/(l_max*l_max)) / (1.0f+lum);
+<font color="deepskyblue">0279:</font>     
+<font color="deepskyblue">0280:</font>     <font color="cyan">// RGB系にして出力</font>
+<font color="deepskyblue">0281:</font>     float4 color;
+<font color="deepskyblue">0282:</font>     color.r = dot( YCbCr2R,  YCbCr );
+<font color="deepskyblue">0283:</font>     color.g = dot( YCbCr2G,  YCbCr );
+<font color="deepskyblue">0284:</font>     color.b = dot( YCbCr2B,  YCbCr );
+<font color="deepskyblue">0285:</font>     color.a = 0;
+<font color="deepskyblue">0286:</font>     
+<font color="deepskyblue">0287:</font>     <font color="blue">return</font> color;
+<font color="deepskyblue">0288:</font> }
+</pre>
+<p>
+SamplerInfo に先ほど計算した対数の平均や最大輝度が入っています。<br>
+係数 coeff や、スケーリングされた最大輝度 l_max は、毎回やる必要も無いので、
+縮小するときの最後のパスで求めておくと高速化できるでしょう。
+</p>
+
+
+<h2>■最後に</h2>
+
+
+<p>
+過去の論文を追っていないので、トーンマッピングの物理的な意味がよくわからんのですが、
+どないなもんなんでしょうかねぇ。<br>
+なんか、適当に補正する手法にしか見えないのですが…
+</p>
+<p>
+あと、表示するごとにトーンマッピングを掛けているのですが、
+この方法だとレイトレでつかうＣＰＵ時間が減るので、
+画面を更新するときだけ使うか、画面更新の間隔を押さえるかしないと駄目ですな。
+</p>
+
+
+</div>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<center>
+<hr>
+<p><a href="../index.html">もどる</a></p>
+<p><a href="mailto:imagire@gmail.com">imagire@gmail.com</a></p>
+</center>
+
+</body>
+</html>

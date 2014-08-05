@@ -1,0 +1,150 @@
+<head>
+	<title>t-pot 『DirectX8.0 入門:テクスチャーを張る』</title>
+	<link rel="stylesheet" type="text/css" href="../if.css">
+</head>
+<body>
+<div class="contents">
+<center>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<h1>テクスチャーを張る</h1><br>
+<h3>～これで、それっぽく見えますね～</h3>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+</center>
+<h2>■今回のファイルは</h2>
+
+<p>
+今回は、テクスチャーを張ります。これで、きれいな画像が表示できるようになります。
+</p>
+<right><image src = "texture.jpg" width = 256 height = 192></right>
+<p>
+次のソースを、ダウンロードしてください。
+<p>
+
+<ul style = "LIST-STYLE-TYPE:none">
+<li><a href="tex.lzh">tex.lzh (テクスチャーを張ったポリゴン表示のソース)</a>
+</ul>
+
+<p>
+今回は、draw.cpp を書き換えただけです。
+</p>
+
+<h2>■頂点の定義</h2>
+
+<p>
+頂点情報にテクスチャーの座標情報を追加します。<br>
+この値は、通常 UV 値と呼ばれます。U が X、 V が Y 軸の方向に対応します。
+</p>
+
+<pre class="CodeBlock">
+// 頂点の定義
+typedef struct {
+    FLOAT x, y, z, rhw;  // 位置
+    DWORD color;         // 色
+    <Font color = orange><b>FLOAT tu, tv;      // テクスチャーの画像の位置</b></Font>
+} CUSTOMVERTEX;
+
+#define D3DFVF_CUSTOMVERTEX (D3DFVF_XYZRHW | D3DFVF_DIFFUSE<Font color = orange><b> | D3DFVF_TEX1</b></Font>)
+</pre>
+また、頂点フォーマットの構成、 D3DFVF_CUSTOMVERTEX も追加します。
+
+<h2>■オブジェクト</h2>
+
+<p>
+テクスチャーの情報を格納するのに使われるオブジェクトは、LPDIRECT3DTEXTURE8 です。
+</p>
+<pre class="CodeBlock">
+LPDIRECT3DTEXTURE8 pTexture = NULL; // テクスチャーに使うオブジェクト
+</pre>
+<p>
+他のオブジェクトと同じように、NULL で初期化しておきます。
+</p>
+
+<h2>■初期化</h2>
+
+<p>
+さて、初期化です。<br>
+今回は、四角形を表示します。
+vertices を4つにして、さらに tu、tv の情報を追加します。
+tu, tv は、テクスチャーの左及び上端が 0.0f であり、右、下端が 1.0f になります。<br>
+頂点数が増えた分、CreateVertexBuffer の一つ目の引数も増えます。<br>
+D3DXCreateTextureFromFileEx でテクスチャーを読み込みます。
+今回は、sakura.bmp をテクスチャー画像として取り込みました。
+</p>
+<pre class="CodeBlock">
+HRESULT InitRender(LPDIRECT3DDEVICE8 lpD3DDEV)
+{
+    CUSTOMVERTEX vertices[] = {
+        //     x,      y,    z,  rhw, color,                                 tu, tv,
+<Font color = orange><b>        { 100.0f, 100.0f, 0.5f, 1.0f, D3DCOLOR_RGBA(0xff, 0xff, 0xff, 0xff), 0.0f,0.0f,},
+        { 420.0f, 100.0f, 0.5f, 1.0f, D3DCOLOR_RGBA(0xff, 0xff, 0xff, 0xff), 1.0f,0.0f,},
+        { 100.0f, 340.0f, 0.5f, 1.0f, D3DCOLOR_RGBA(0xff, 0xff, 0xff, 0xff), 0.0f,1.0f,},
+        { 420.0f, 340.0f, 0.5f, 1.0f, D3DCOLOR_RGBA(0xff, 0xff, 0xff, 0xff), 1.0f,1.0f,},</b></Font>
+    };
+    HRESULT hr;
+    
+    hr = lpD3DDEV->CreateVertexBuffer( <Font color = orange><b>4</b></Font>*sizeof(CUSTOMVERTEX),0,
+                                   D3DFVF_CUSTOMVERTEX, D3DPOOL_DEFAULT, &pVB);
+    if(FAILED(hr)) return E_FAIL;
+
+    VOID* pVertices;
+    hr = pVB->Lock( 0, sizeof(vertices), (BYTE**)&pVertices, 0);
+    if(FAILED(hr)) return E_FAIL;
+    memcpy( pVertices, vertices, sizeof(vertices) );
+    pVB->Unlock();
+<Font color = orange><b>
+    D3DXCreateTextureFromFileEx(lpD3DDEV, "sakura.bmp",0,0,0,0,D3DFMT_A8R8G8B8,
+                                D3DPOOL_MANAGED, D3DX_FILTER_LINEAR, D3DX_FILTER_LINEAR,
+                                0, NULL, NULL, &pTexture);
+</b></Font>
+    return S_OK;
+}
+</pre>
+
+<h2>■描画</h2>
+
+<p>
+SetTexture で、テクスチャー情報を指定します。<br>
+あとは、DrawPrimitive で、表示するだけです。
+今回はフォーマットを D3DPT_TRIANGLESTRIP にしました。
+D3DPT_TRIANGLESTRIP は、トライアングルストリップといわれるもので、三角形ポリゴンを帯状につなげます。
+また、表示するポリゴンの数が（３角形）２枚なので、最後の引数を 2 にします。
+</p>
+
+<pre class="CodeBlock">
+void Render(LPDIRECT3DDEVICE8 lpD3DDEV)
+{
+    <Font color = orange><b>lpD3DDEV->SetTexture( 0, pTexture);</b></Font>
+    lpD3DDEV->SetStreamSource( 0, pVB, sizeof(CUSTOMVERTEX) );
+    lpD3DDEV->SetVertexShader( D3DFVF_CUSTOMVERTEX );
+    lpD3DDEV->DrawPrimitive(  <Font color = orange><b>D3DPT_TRIANGLESTRIP</b></Font>, 0, <Font color = orange><b>2</b></Font> );
+}
+</pre>
+
+<h2>■後片付け</h2>
+
+<p>
+後片付けは、LPDIRECT3DTEXTURE8 を開放するだけです。<br>
+</p>
+
+<pre class="CodeBlock">
+void CleanRender()
+{
+    <Font color = orange><b>RELEASE(pTexture);</b></Font>
+    RELEASE(pVB);
+}
+</pre>
+
+
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<center>
+<hr>
+<p><a href="../index.html">もどる</a></p>
+<p><a href="mailto:imagire@gmail.com">imagire@gmail.com</a></p>
+</center>
+</body>
+</html>

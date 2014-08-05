@@ -1,0 +1,128 @@
+<HTML>
+<HEAD>
+<TITLE>CRand.h</TITLE>
+<meta name="GENERATOR" content="cpp2html 2.1 by Niisaka">
+<meta http-equiv="Content-Type" content="text/html">
+<meta http-equiv="Content-Style-Type" content="text/css">
+<STYLE TYPE="text/css">
+<!--
+SPAN.comment { color:#008000; font-weight:normal; font-style:normal;}
+SPAN.keyword { color:#0000FF; font-weight:normal; font-style:normal;}
+SPAN.string { color:#600000; font-weight:normal; font-style:normal;}
+SPAN.linenum { color:#A0A0A0; font-weight:normal; font-style:normal;}
+-->
+</STYLE>
+</HEAD>
+<BODY TEXT="#000000" BGCOLOR="#FFFFFF">
+<PRE><SPAN CLASS="linenum">0001:</SPAN> <SPAN CLASS="comment">//--------------------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0002:</SPAN> <SPAN CLASS="comment">// File: CRand.h</SPAN>
+<SPAN CLASS="linenum">0003:</SPAN> <SPAN CLASS="comment">//</SPAN>
+<SPAN CLASS="linenum">0004:</SPAN> <SPAN CLASS="comment">// Mersenne Twister擬似乱数発生法による乱数</SPAN>
+<SPAN CLASS="linenum">0005:</SPAN> <SPAN CLASS="comment">//</SPAN>
+<SPAN CLASS="linenum">0006:</SPAN> <SPAN CLASS="comment">// Copyright (c) Takashi Imagire. All rights reserved.</SPAN>
+<SPAN CLASS="linenum">0007:</SPAN> <SPAN CLASS="comment">// Mersenne Twister : Copyright (C) 1997 - 2002, Makoto Matsumoto and Takuji Nishimura, All rights reserved.</SPAN>
+<SPAN CLASS="linenum">0008:</SPAN> <SPAN CLASS="comment">//--------------------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0009:</SPAN> <SPAN CLASS="keyword">#ifndef</SPAN> __CRAND_H_
+<SPAN CLASS="linenum">0010:</SPAN> <SPAN CLASS="keyword">#define</SPAN> __CRAND_H_
+<SPAN CLASS="linenum">0011:</SPAN> 
+<SPAN CLASS="linenum">0012:</SPAN> <SPAN CLASS="keyword">#include</SPAN> "<SPAN CLASS="string">..\my_types.h</SPAN>"
+<SPAN CLASS="linenum">0013:</SPAN> 
+<SPAN CLASS="linenum">0014:</SPAN> <SPAN CLASS="keyword">#define</SPAN> N 624
+<SPAN CLASS="linenum">0015:</SPAN> <SPAN CLASS="keyword">#define</SPAN> M 397
+<SPAN CLASS="linenum">0016:</SPAN> <SPAN CLASS="keyword">#define</SPAN> MATRIX_A 0x9908b0dfUL   <SPAN CLASS="comment">/* constant vector a */</SPAN>
+<SPAN CLASS="linenum">0017:</SPAN> <SPAN CLASS="keyword">#define</SPAN> UPPER_MASK 0x80000000UL <SPAN CLASS="comment">/* most significant w-r bits */</SPAN>
+<SPAN CLASS="linenum">0018:</SPAN> <SPAN CLASS="keyword">#define</SPAN> LOWER_MASK 0x7fffffffUL <SPAN CLASS="comment">/* least significant r bits */</SPAN>
+<SPAN CLASS="linenum">0019:</SPAN> 
+<SPAN CLASS="linenum">0020:</SPAN> 
+<SPAN CLASS="linenum">0021:</SPAN> <SPAN CLASS="keyword">class</SPAN> CRand
+<SPAN CLASS="linenum">0022:</SPAN> {
+<SPAN CLASS="linenum">0023:</SPAN> <SPAN CLASS="keyword">private</SPAN>:
+<SPAN CLASS="linenum">0024:</SPAN>     <SPAN CLASS="keyword">void</SPAN> Init( u32 seed );
+<SPAN CLASS="linenum">0025:</SPAN> 
+<SPAN CLASS="linenum">0026:</SPAN>     u32 mt[N];   <SPAN CLASS="comment">/* the array for the state vector  */</SPAN>
+<SPAN CLASS="linenum">0027:</SPAN>     s32 mti; 
+<SPAN CLASS="linenum">0028:</SPAN> 
+<SPAN CLASS="linenum">0029:</SPAN> <SPAN CLASS="keyword">public</SPAN>:
+<SPAN CLASS="linenum">0030:</SPAN>     <SPAN CLASS="comment">// コンストラクタ</SPAN>
+<SPAN CLASS="linenum">0031:</SPAN>     CRand( u32 seed = 0 );
+<SPAN CLASS="linenum">0032:</SPAN>     
+<SPAN CLASS="linenum">0033:</SPAN>     <SPAN CLASS="comment">// 擬似乱数を所得する</SPAN>
+<SPAN CLASS="linenum">0034:</SPAN>     u32    GetU32(<SPAN CLASS="keyword">void</SPAN>);
+<SPAN CLASS="linenum">0035:</SPAN>     <SPAN CLASS="keyword">double</SPAN> GetF32(<SPAN CLASS="keyword">void</SPAN>);
+<SPAN CLASS="linenum">0036:</SPAN> };
+<SPAN CLASS="linenum">0037:</SPAN> 
+<SPAN CLASS="linenum">0038:</SPAN> 
+<SPAN CLASS="linenum">0039:</SPAN> <SPAN CLASS="comment">// ---------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0040:</SPAN> <SPAN CLASS="keyword">inline</SPAN> CRand::CRand( u32 seed )
+<SPAN CLASS="linenum">0041:</SPAN> {
+<SPAN CLASS="linenum">0042:</SPAN>     mti = N+1; <SPAN CLASS="comment">/* mti==N+1 means mt[N] is not initialized */</SPAN>
+<SPAN CLASS="linenum">0043:</SPAN>     Init( seed );
+<SPAN CLASS="linenum">0044:</SPAN> }
+<SPAN CLASS="linenum">0045:</SPAN> 
+<SPAN CLASS="linenum">0046:</SPAN> <SPAN CLASS="comment">// ---------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0047:</SPAN> <SPAN CLASS="keyword">inline</SPAN> <SPAN CLASS="keyword">void</SPAN> CRand::Init( u32 s )
+<SPAN CLASS="linenum">0048:</SPAN> {
+<SPAN CLASS="linenum">0049:</SPAN>     mt[0]= s &amp; 0xffffffff;
+<SPAN CLASS="linenum">0050:</SPAN>     <SPAN CLASS="keyword">for</SPAN> (mti=1; mti&lt;N; mti++) {
+<SPAN CLASS="linenum">0051:</SPAN>         mt[mti] = 
+<SPAN CLASS="linenum">0052:</SPAN>         (1812433253 * (mt[mti-1] ^ (mt[mti-1] &gt;&gt; 30)) + mti); 
+<SPAN CLASS="linenum">0053:</SPAN>         <SPAN CLASS="comment">/* See Knuth TAOCP Vol2. 3rd Ed. P.106 for multiplier. */</SPAN>
+<SPAN CLASS="linenum">0054:</SPAN>         <SPAN CLASS="comment">/* In the previous versions, MSBs of the seed affect   */</SPAN>
+<SPAN CLASS="linenum">0055:</SPAN>         <SPAN CLASS="comment">/* only MSBs of the array mt[].                        */</SPAN>
+<SPAN CLASS="linenum">0056:</SPAN>         <SPAN CLASS="comment">/* 2002/01/09 modified by Makoto Matsumoto             */</SPAN>
+<SPAN CLASS="linenum">0057:</SPAN>         mt[mti] &amp;= 0xffffffff;
+<SPAN CLASS="linenum">0058:</SPAN>         <SPAN CLASS="comment">/* for &gt;32 bit machines */</SPAN>
+<SPAN CLASS="linenum">0059:</SPAN>     }
+<SPAN CLASS="linenum">0060:</SPAN> }
+<SPAN CLASS="linenum">0061:</SPAN> 
+<SPAN CLASS="linenum">0062:</SPAN> <SPAN CLASS="comment">// ---------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0063:</SPAN> <SPAN CLASS="keyword">inline</SPAN> u32 CRand::GetU32(<SPAN CLASS="keyword">void</SPAN>)
+<SPAN CLASS="linenum">0064:</SPAN> {
+<SPAN CLASS="linenum">0065:</SPAN>     u32 y;
+<SPAN CLASS="linenum">0066:</SPAN>     <SPAN CLASS="keyword">static</SPAN> u32 mag01[2]={0x0UL, MATRIX_A};
+<SPAN CLASS="linenum">0067:</SPAN>     <SPAN CLASS="comment">/* mag01[x] = x * MATRIX_A  for x=0,1 */</SPAN>
+<SPAN CLASS="linenum">0068:</SPAN> 
+<SPAN CLASS="linenum">0069:</SPAN>     <SPAN CLASS="keyword">if</SPAN> (mti &gt;= N) { <SPAN CLASS="comment">/* generate N words at one time */</SPAN>
+<SPAN CLASS="linenum">0070:</SPAN>         <SPAN CLASS="keyword">int</SPAN> kk;
+<SPAN CLASS="linenum">0071:</SPAN> 
+<SPAN CLASS="linenum">0072:</SPAN>         <SPAN CLASS="keyword">if</SPAN> (mti == N+1)   <SPAN CLASS="comment">/* if init_genrand() has not been called, */</SPAN>
+<SPAN CLASS="linenum">0073:</SPAN>             Init(5489UL); <SPAN CLASS="comment">/* a default initial seed is used */</SPAN>
+<SPAN CLASS="linenum">0074:</SPAN> 
+<SPAN CLASS="linenum">0075:</SPAN>         <SPAN CLASS="keyword">for</SPAN> (kk=0;kk&lt;N-M;kk++) {
+<SPAN CLASS="linenum">0076:</SPAN>             y = (mt[kk]&amp;UPPER_MASK)|(mt[kk+1]&amp;LOWER_MASK);
+<SPAN CLASS="linenum">0077:</SPAN>             mt[kk] = mt[kk+M] ^ (y &gt;&gt; 1) ^ mag01[y &amp; 0x1UL];
+<SPAN CLASS="linenum">0078:</SPAN>         }
+<SPAN CLASS="linenum">0079:</SPAN>         <SPAN CLASS="keyword">for</SPAN> (;kk&lt;N-1;kk++) {
+<SPAN CLASS="linenum">0080:</SPAN>             y = (mt[kk]&amp;UPPER_MASK)|(mt[kk+1]&amp;LOWER_MASK);
+<SPAN CLASS="linenum">0081:</SPAN>             mt[kk] = mt[kk+(M-N)] ^ (y &gt;&gt; 1) ^ mag01[y &amp; 0x1UL];
+<SPAN CLASS="linenum">0082:</SPAN>         }
+<SPAN CLASS="linenum">0083:</SPAN>         y = (mt[N-1]&amp;UPPER_MASK)|(mt[0]&amp;LOWER_MASK);
+<SPAN CLASS="linenum">0084:</SPAN>         mt[N-1] = mt[M-1] ^ (y &gt;&gt; 1) ^ mag01[y &amp; 0x1UL];
+<SPAN CLASS="linenum">0085:</SPAN> 
+<SPAN CLASS="linenum">0086:</SPAN>         mti = 0;
+<SPAN CLASS="linenum">0087:</SPAN>     }
+<SPAN CLASS="linenum">0088:</SPAN>   
+<SPAN CLASS="linenum">0089:</SPAN>     y = mt[mti++];
+<SPAN CLASS="linenum">0090:</SPAN> 
+<SPAN CLASS="linenum">0091:</SPAN>     <SPAN CLASS="comment">/* Tempering */</SPAN>
+<SPAN CLASS="linenum">0092:</SPAN>     y ^= (y &gt;&gt; 11);
+<SPAN CLASS="linenum">0093:</SPAN>     y ^= (y &lt;&lt;  7) &amp; 0x9d2c5680;
+<SPAN CLASS="linenum">0094:</SPAN>     y ^= (y &lt;&lt; 15) &amp; 0xefc60000;
+<SPAN CLASS="linenum">0095:</SPAN>     y ^= (y &gt;&gt; 18);
+<SPAN CLASS="linenum">0096:</SPAN> 
+<SPAN CLASS="linenum">0097:</SPAN>     <SPAN CLASS="keyword">return</SPAN> y;
+<SPAN CLASS="linenum">0098:</SPAN> }
+<SPAN CLASS="linenum">0099:</SPAN> 
+<SPAN CLASS="linenum">0100:</SPAN> <SPAN CLASS="comment">// ---------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0101:</SPAN> <SPAN CLASS="comment">// 一様実乱数[0,1) (32ビット精度)</SPAN>
+<SPAN CLASS="linenum">0102:</SPAN> <SPAN CLASS="keyword">double</SPAN> CRand::GetF32(<SPAN CLASS="keyword">void</SPAN>)
+<SPAN CLASS="linenum">0103:</SPAN> {
+<SPAN CLASS="linenum">0104:</SPAN>     <SPAN CLASS="keyword">return</SPAN> GetU32()*(1.0/4294967296.0); 
+<SPAN CLASS="linenum">0105:</SPAN>     <SPAN CLASS="comment">/* 2^32 で割る */</SPAN>
+<SPAN CLASS="linenum">0106:</SPAN> }
+<SPAN CLASS="linenum">0107:</SPAN> 
+<SPAN CLASS="linenum">0108:</SPAN> 
+<SPAN CLASS="linenum">0109:</SPAN> <SPAN CLASS="keyword">#endif</SPAN> <SPAN CLASS="comment">// !__RAND_H_</SPAN>
+<SPAN CLASS="linenum">0110:</SPAN> </PRE>
+</BODY>
+</HTML>

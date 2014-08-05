@@ -1,0 +1,204 @@
+<head>
+	<title>t-pot 『Vertex Shader:３次元フェードイン/アウト』</title>
+	<link rel="stylesheet" type="text/css" href="../if.css">
+</head>
+<meta http-equiv=Content-Type content="text/html; charset=shift_jis">
+<body text=#ffffff>
+
+<div class="contents">
+<center>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<h1>Vertex Shader:３次元フェードイン/アウト</h1><br>
+<h3>～ゲームの演出に使えそう～</h3>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+</center>
+
+
+<h2>■はじめに</h2>
+
+
+<p>
+フォグの深度をプログラムできることを知ったときに、真っ先に考えたのがこの効果です。<br>
+アニメで、黒い輪が縮まりながらシーンを切り替える画面を見ると思いますが、
+その３次元版を狙ってみました。<br>
+ここまでくると、フォグに見えませんね。
+
+</p>
+<br>
+<image src = "title.jpg">
+<p>
+今回のソースは、次のものです（DirectX8.1用です）。
+</p>
+<ul style = "LIST-STYLE-TYPE:none">
+<li><a href="fog_fade.lzh">fog_fade.lzh (３次元フェードイン/アウトのソース)</a>
+</ul>
+
+<p>
+まぁ、いつものように適当にファイルが入っています。<br>
+前回と頂点シェーダプログラムと、draw.cpp が変化しています。
+</p>
+<table>
+<tr><td><a href="vs_vsh.html">vs.vsh</a></td><td>頂点シェーダープログラム。久しぶりに、ここに新しい要素が入る。</td></tr>
+<tr><td><a href="draw_cpp.html">draw.cpp</a></td><td>メインの描画部分。</td></tr>
+<tr><td><a href="draw_h.html">draw.h</a></td><td>描画の各関数の定義。特に意味無いので出番無し。</td></tr>
+<tr><td><a href="main_h.html">main.h</a></td><td>基本的な定数など。今回も出番無し。</td></tr>
+<tr><td><a href="main_cpp.html">main.cpp</a></td><td>描画に関係しないシステム的な部分。変更が無いので、出番無し。</td></tr>
+<tr><td><a href="load_h.html">load.h</a></td><td>ファイルの読み込み。</td></tr>
+<tr><td><a href="load_cpp.html">load.cpp</a></td><td>ファイルの読み込み。</td></tr>
+<tr><td><a href="bg_cpp.html">bg.cpp</a></td><td>地面＋天円柱の描画。今回説明無し。</td></tr>
+
+</table>
+<image src = "tile_bmp.jpg" width = 64 height=64>tile.bmp (床デカール)
+<image src = "sky_bmp.jpg" width = 64 height=64>sky.bmp (空デカール)
+<p>
+あと、いつもの様に、モデルと、実行ファイル及び、プロジェクトファイルが入っています。
+</p>
+
+
+<h2>■やってること</h2>
+
+
+<p>
+やってることは簡単です。<br>
+深度を中心からの距離にとり、フォグを計算します。
+</p>
+<image src = "z.gif">
+
+
+<h2>■ソース解説</h2>
+
+
+<p>
+今回の描画ソースファイルは、前回と違い描画部分の変更しかありません。<br>
+フォグのかかり始めと終わりの距離を調整し、必要な定数を設定します。
+</p>
+<pre class="CodeBlock">
+<font color = deepskyblue>0211:</font> <font color = cyan>//-----------------------------------------------------------------------------</font>
+<font color = deepskyblue>0212:</font> <font color = cyan>// Name: Render()</font>
+<font color = deepskyblue>0213:</font> <font color = cyan>// Desc: 毎フレームの描画</font>
+<font color = deepskyblue>0214:</font> <font color = cyan>//-----------------------------------------------------------------------------</font>
+<font color = deepskyblue>0215:</font> VOID Render(LPDIRECT3DDEVICE8 lpD3DDev)
+<font color = deepskyblue>0216:</font> {
+<font color = deepskyblue>0217:</font>     <font color = yellow>DWORD cnt = timeGetTime()%10000;</font>
+<font color = deepskyblue>0218:</font>     <font color = yellow>float t = (float)cnt/1000.0f;</font>
+<font color = deepskyblue>0219:</font> 
+<font color = deepskyblue>0220:</font>     <font color = yellow>float Near;</font>
+<font color = deepskyblue>0221:</font>     <font color = yellow>float Far;</font>
+<font color = deepskyblue>0222:</font>     <font color = yellow>float max = 100.0f;</font>
+<font color = deepskyblue>0223:</font> 
+<font color = deepskyblue>0224:</font>     <font color = cyan>// 頂点シェーダーのフォグに関するパラメータ </font>
+<font color = deepskyblue>0225:</font>     <font color = yellow>if(t < 3.0f){</font>
+<font color = deepskyblue>0226:</font>         <font color = cyan>// フェードイン</font>
+<font color = deepskyblue>0227:</font>         <font color = yellow>t /= 3.0f;</font>
+<font color = deepskyblue>0228:</font>         <font color = yellow>Near = max*(t-0.15f);</font>
+<font color = deepskyblue>0229:</font>         <font color = yellow>Far  = max*(t-0.0f);</font>
+<font color = deepskyblue>0230:</font>     <font color = yellow>}else</font>
+<font color = deepskyblue>0231:</font>     <font color = yellow>if( t < 5.0f){</font>
+<font color = deepskyblue>0232:</font>         <font color = cyan>// 明るい</font>
+<font color = deepskyblue>0233:</font>         <font color = yellow>Near = max-0.1f; </font>
+<font color = deepskyblue>0234:</font>         <font color = yellow>Far  = max;</font>
+<font color = deepskyblue>0235:</font>     <font color = yellow>}else</font>
+<font color = deepskyblue>0236:</font>     <font color = yellow>if( t < 8.0f){</font>
+<font color = deepskyblue>0237:</font>         <font color = cyan>// フェードアウト</font>
+<font color = deepskyblue>0238:</font>         <font color = yellow>t = 8.0f-t;</font>
+<font color = deepskyblue>0239:</font>         <font color = yellow>t /= 3.0f;</font><font color = cyan>// これで、tは1.0fから0.0fと動くので、フェードインの逆になる</font>
+<font color = deepskyblue>0240:</font>         <font color = yellow>Near = max*(t-0.15f);</font>
+<font color = deepskyblue>0241:</font>         <font color = yellow>Far  = max*(t-0.0f);</font>
+<font color = deepskyblue>0242:</font>     <font color = yellow>}else{</font>
+<font color = deepskyblue>0243:</font>         <font color = cyan>// 暗い</font>
+<font color = deepskyblue>0244:</font>         <font color = yellow>Near = -0.1f;</font>
+<font color = deepskyblue>0245:</font>         <font color = yellow>Far  =  0.0f;</font>
+<font color = deepskyblue>0246:</font>     <font color = yellow>}</font>
+<font color = deepskyblue>0247:</font>     <font color = yellow>if(Far-Near<0.1f)Near=Far-0.1f;</font>
+<font color = deepskyblue>0248:</font>     <font color = yellow>lpD3DDev->SetVertexShaderConstant(16, &D3DXVECTOR4(-1.0f/(Far-Near), Far/(Far-Near), 0.0f, 0.0f), 1);</font>
+<font color = deepskyblue>0249:</font> 
+<font color = deepskyblue>0250:</font>     D3DXMATRIX mWorld, mView, mProj, m;
+<font color = deepskyblue>0251:</font> 
+<font color = deepskyblue>0252:</font>     <font color = cyan>// ビュー行列</font>
+<font color = deepskyblue>0253:</font>     D3DXVECTOR3 eye    = D3DXVECTOR3(0.0f,MeshRadius,2.5f*MeshRadius);
+<font color = deepskyblue>0254:</font>     D3DXVECTOR3 lookAt = D3DXVECTOR3(0.0f,  0.0f,  0.0f);
+<font color = deepskyblue>0255:</font>     D3DXVECTOR3 up     = D3DXVECTOR3(0.0f,  1.0f,  0.0f);
+<font color = deepskyblue>0256:</font>     <font color = cyan>// 通常表示</font>
+<font color = deepskyblue>0257:</font>     D3DXMatrixLookAtLH(&mView, &eye, &lookAt, &up);
+<font color = deepskyblue>0258:</font>     D3DXMatrixPerspectiveFovLH(&mProj
+<font color = deepskyblue>0259:</font>         ,60.0f*PI/180.0f                        <font color = cyan>// 視野角</font>
+<font color = deepskyblue>0260:</font>         ,(float)WIDTH/(float)HEIGHT             <font color = cyan>// アスペクト比</font>
+<font color = deepskyblue>0261:</font>         ,0.01f,100.0f                           <font color = cyan>// 最近接距離,最遠方距離</font>
+<font color = deepskyblue>0262:</font>         );
+<font color = deepskyblue>0263:</font>     <font color = yellow>lpD3DDev->SetVertexShaderConstant(15, &D3DXVECTOR4(eye.x, eye.y, eye.z</font>
+<font color = deepskyblue>0264:</font>                                 <font color = yellow>, (float)sqrt(eye.x*eye.x+eye.y*eye.y+eye.z*eye.z)), 1);</font>
+<font color = deepskyblue>0265:</font>    
+後は、通常のモデル描画
+</pre>
+<p>
+ほとんどが時間に応じてフォグのかかる範囲を調整する部分ですが、図でかくと
+</p>
+<image src = "time_tbl.gif">
+<p>
+の様になります。<br>
+わずかにフォグのかかりはじめる部分を手前にして、ぼやける幅を作っています。
+</p>
+<p>
+シェーダープログラムは、ワールド座標での原点からの距離を求めて、その距離をフォグの係数にしています。
+</p>
+
+<pre class="CodeBlock">
+<font color = deepskyblue>0001:</font> <font color = cyan>; c0-3   -- world + ビュー + 透視変換行列</font>
+<font color = deepskyblue>0002:</font> <font color = cyan>; c4-7   -- world</font>
+<font color = deepskyblue>0003:</font> <font color = cyan>; c12    -- (0.0, 0.5, 1.0, 2.0)</font>
+<font color = deepskyblue>0004:</font> <font color = cyan>; c13    -- ライトのベクトル (w成分は環境光の強さ)</font>
+<font color = deepskyblue>0005:</font> <font color = cyan>; c14    -- ライトの色(メッシュの色)</font>
+<font color = deepskyblue>0006:</font> <font color = cyan>; c15    -- 視点</font>
+<font color = deepskyblue>0007:</font> <font color = cyan>; c16    -- (-1/(far-near), far/(far-near), 0,0) </font>
+<font color = deepskyblue>0008:</font> <font color = cyan>;</font>
+<font color = deepskyblue>0009:</font> <font color = cyan>; v0    頂点の座標値</font>
+<font color = deepskyblue>0010:</font> <font color = cyan>; v3    法線ベクトル (w成分は1.0f)</font>
+<font color = deepskyblue>0011:</font> <font color = cyan>; v7    テクスチャ座標</font>
+<font color = deepskyblue>0012:</font> 
+<font color = deepskyblue>0013:</font> vs.1.0
+<font color = deepskyblue>0014:</font> 
+<font color = deepskyblue>0015:</font> <font color = cyan>;座標変換</font>
+<font color = deepskyblue>0016:</font> dp4 oPos.x, v0, c0
+<font color = deepskyblue>0017:</font> dp4 oPos.y, v0, c1
+<font color = deepskyblue>0018:</font> dp4 oPos.z, v0, c2
+<font color = deepskyblue>0019:</font> dp4 oPos.w, v0, c3
+<font color = deepskyblue>0020:</font> 
+<font color = deepskyblue>0021:</font> <font color = cyan>; ランバート diffuse</font>
+<font color = deepskyblue>0022:</font> dp4 r0.w,   v3,  c13            <font color = cyan>; l･n</font>
+<font color = deepskyblue>0023:</font> mul oD0,    c14,  r0.w          <font color = cyan>; ライトの色(メッシュの色付き)をつける</font>
+<font color = deepskyblue>0024:</font> 
+<font color = deepskyblue>0025:</font> mov oT0, v7
+<font color = deepskyblue>0026:</font> 
+<font color = deepskyblue>0027:</font> <font color = cyan>; フォグの計算</font>
+<font color = deepskyblue>0028:</font> <font color = yellow>dp4 r0.x, v0, c4</font>
+<font color = deepskyblue>0029:</font> <font color = yellow>dp4 r0.y, v0, c5</font>
+<font color = deepskyblue>0030:</font> <font color = yellow>dp4 r0.z, v0, c6</font>
+<font color = deepskyblue>0031:</font> 
+<font color = deepskyblue>0032:</font> <font color = yellow>dp3 r1.x, r0, r0</font>
+<font color = deepskyblue>0033:</font> <font color = yellow>rsq r1.y, r1.x</font>
+<font color = deepskyblue>0034:</font> <font color = yellow>mul r1.z, r1.x, r1.y</font>            <font color = cyan>; r1 = (|R|^2, 1/|R|, |R|)</font>
+<font color = deepskyblue>0035:</font> 
+<font color = deepskyblue>0036:</font> mad oFog.x, r1.z, c16.x, c16.y  <font color = cyan>; fog = (far-|R|)/(far-near)</font>
+</pre>
+
+<h2>■最後に</h2>
+
+
+<p>
+フォグを使った自明でないエフェクトを作ってみました。<br>
+空間に存在する塵の濃さは考えていないので、ボリュームフォグとは違うものなのですが、
+変わった演出として使えると思います。
+</p>
+
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<center>
+<p><a href="../index.html">もどる</a></p>
+<p><a href="mailto:imagire@gmail.com">imagire@gmail.com</a></p>
+</center>
+</body>
+</html>

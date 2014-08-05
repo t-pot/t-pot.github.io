@@ -1,0 +1,394 @@
+<head>
+	<title>t-pot 『Vertex Shader 入門:基本的なライティング』</title>
+	<link rel="stylesheet" type="text/css" href="../if.css">
+</head>
+<meta http-equiv=Content-Type content="text/html; charset=shift_jis">
+<body>
+
+<div class="contents">
+<center>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<h1>基本的なライティング</h1><br>
+<h3>～とりあえず知っとけ～</h3>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+</center>
+
+<h2>■今回のファイルは</h2>
+
+<p>
+さて、前回は、バーテックスシェーダーの使い方を覚えました。
+前回のポリゴンは、テクスチャーを張っただけのポリゴンの表示でした。
+今回は、基本的なライティングの例題を取り扱います。
+</p>
+
+<h2>■頂点色</h2>
+
+<right><image src = "vsdiffuse.gif"></right>
+
+<p>
+まずは、ライティングはせずに、頂点色でポリゴンの色をつけます。<br>
+以下のファイルをロードしてください。
+</p>
+
+<ul style = "LIST-STYLE-TYPE:none">
+<li><a href="vsdiffuse.lzh">vsdiffuse.lzh 頂点色でポリゴンを表示するバーテックスシェーダーのサンプル)</a>
+</ul>
+
+<p>
+まずは、ライティングはせずに、頂点色でポリゴンの色をつけます。<br>
+以下のファイルをロードしてください。<br>
+今回は、vs.vsh というファイルを追加しました。
+これは、バーテックスシェーダーのプログラムです。
+前回は、D3DXAssembleShaderFromFile を使って、ファイルから読み込むようにしました。
+</p>
+
+<p>
+さて、いつもの様に draw.cpp です。今回の頂点は、
+</p>
+<pre class="CodeBlock">
+struct CUSTOMVERTEX
+{
+    FLOAT x, y, z;  // 位置
+    <Font color = orange><b>DWORD color;    // 色</b></font>
+    FLOAT tu, tv;   // テクスチャーの画像の位置
+};
+#define D3DFVF_CUSTOMVERTEX (D3DFVF_XYZ | <Font color = orange><b>D3DFVF_DIFFUSE | </b></font>D3DFVF_TEX1)
+
+DWORD dwDecl[] = {
+    D3DVSD_STREAM(0),
+    D3DVSD_REG(D3DVSDE_POSITION, D3DVSDT_FLOAT3 ),            //D3DVSDE_POSITION,  0
+    <Font color = orange><b>D3DVSD_REG(D3DVSDE_DIFFUSE,  D3DVSDT_D3DCOLOR ),   //D3DVSDE_DIFFUSE, 5</b></font>
+    D3DVSD_REG(D3DVSDE_TEXCOORD0,D3DVSDT_FLOAT2 ),            //D3DVSDE_TEXCOORD0, 7
+    D3DVSD_END()
+};
+</pre>
+<p>
+です。前回と比較して、DWORD color が付きました。
+バーテックスシェーダープログラムに伝えるフォーマット dwDecl にも、D3DVSDE_DIFFUSE を追加しました。
+色のような、DWORD 型のデータの場合には、D3DVSDT_D3DCOLOR を使います。
+</p>
+
+<p>
+初期化は、D3DXAssembleShaderFromFile を使うことが前回との違いです。<br>
+また、頂点の変更に対応して、頂点色を指定しました。左上、右上、左下、右下の順に、白、赤、緑、青色になります。
+</p>
+
+<pre class="CodeBlock">
+HRESULT InitRender(LPDIRECT3DDEVICE8 lpD3DDEV)
+{
+    <Font color = orange><b>CUSTOMVERTEX vertices[] = {
+        // x,     y,    z,                   赤    緑    青    α     tu   tv
+        {-16.0f, 12.0f, 0.0f, D3DCOLOR_RGBA(0xff, 0xff, 0xff, 0xff), 0.0f,0.0f,},
+        { 16.0f, 12.0f, 0.0f, D3DCOLOR_RGBA(0xff, 0x00, 0x00, 0xff), 1.0f,0.0f,},
+        {-16.0f,-12.0f, 0.0f, D3DCOLOR_RGBA(0x00, 0xff, 0x00, 0xff), 0.0f,1.0f,},
+        { 16.0f,-12.0f, 0.0f, D3DCOLOR_RGBA(0x00, 0x00, 0xff, 0xff), 1.0f,1.0f,},
+    };</b></font>
+    HRESULT hr;
+    
+    hr = lpD3DDEV->CreateVertexBuffer( 4*sizeof(CUSTOMVERTEX),0,
+                    D3DFVF_CUSTOMVERTEX, D3DPOOL_DEFAULT, &pVB);
+    if(FAILED(hr)) return E_FAIL;
+
+    VOID* pVertices;
+    hr = pVB->Lock( 0, sizeof(vertices), (BYTE**)&pVertices, 0);
+    if(FAILED(hr)) return E_FAIL;
+    memcpy( pVertices, vertices, sizeof(vertices) );
+    pVB->Unlock();
+    
+    D3DXCreateTextureFromFileEx(lpD3DDEV, "sakura.bmp",0,0,0,0,D3DFMT_A8R8G8B8,
+                                D3DPOOL_MANAGED, D3DX_FILTER_LINEAR, D3DX_FILTER_LINEAR,
+                                0, NULL, NULL, &pTexture);
+
+    // バーテックスシェーダーを作成する
+    ID3DXBuffer*    pshader;
+    <Font color = orange><b>hr = D3DXAssembleShaderFromFile("vs.vsh", 0,NULL,&pshader,NULL);</b></font>
+    <Font color = orange><b>if ( FAILED(hr) ) return hr;</b></font>
+    hr = lpD3DDEV->CreateVertexShader( dwDecl, (DWORD*)pshader->GetBufferPointer(), &hVertexShader, 0 );
+    RELEASE(pshader);
+    if ( FAILED(hr) ) return hr;
+  
+    lpD3DDEV->SetRenderState( D3DRS_ZENABLE,      TRUE );
+    lpD3DDEV->SetRenderState( D3DRS_LIGHTING,     FALSE );        // 頂点の色を使うので、ライトは使わない
+    lpD3DDEV->SetRenderState( D3DRS_CULLMODE, D3DCULL_NONE );    // 両面表示
+    
+    return S_OK;
+}
+</pre>
+
+<p>
+描画部分は一箇所だけ異なります。
+座標変換するための固定レジスタを c4 ～ c7 から、c0 ～ c3 に、移しました。<br>
+まぁ、バーテックスシェーダーのプログラムを、そう変えただけで、深い意味はありません。
+</p>
+<pre class="CodeBlock">
+    lpD3DDEV->SetVertexShaderConstant( 0 , &trans , 4 );	// Vertex shader の c0 ～ c3 レジスタの設定
+</pre>
+
+<p>
+肝心かなめのバーテックスシェーダープログラムですが、次のようになります。
+</p>
+<pre class="CodeBlock">
+vs.1.0
+; 単純な頂点シェーダ
+; 定数
+;      reg c0-3   = WorldViewProj 行列
+; ストリーム 0
+;     reg v0   = 位置 ( 3 x 1 ベクトル)
+;     reg v5   = ディフューズ色
+;     reg v7   = テクスチャ座標 (2 x 1 ベクトル)
+dp4     oPos.x , v0   , c0      ; 射影後の x 位置を出力
+dp4     oPos.y , v0   , c1      ; 射影後の y 位置を出力
+dp4     oPos.z , v0   , c2      ; 射影後の z 位置を出力
+dp4     oPos.w , v0   , c3      ; 射影後の w 位置を出力
+<Font color = orange><b>mov     oD0    , v5</b></font>
+mov     oT0.xy , v7             ; テクスチャ座標をコピー
+</pre>
+<p>
+前回との違いは、oD0 への出力です。これが頂点色になります。<br>
+ここでは、v5 レジスタに入った CUSTOMVERTEX の color 成分を、そのまま、コピーします。<br>
+これで、頂点の色が反映されたポリゴンの表示ができます。
+</p>
+
+<h2>■平行光源</h2>
+
+<right><image src = "vslight.gif"></right>
+
+<p>
+次は、平行光源です。平行光源は、太陽のような非常に遠方にあり、ほとんど光が広がらないライトをシミュレートしたものです。<br>
+ソースは、次です。
+</p>
+
+<ul style = "LIST-STYLE-TYPE:none">
+<li><a href="vslight.lzh">vslight.lzh 平行光源でポリゴンを照らすバーテックスシェーダーのサンプル)</a>
+</ul>
+
+<p>
+平行光源の光の強さは、光源の方向のみに依存するので、各頂点の明るさは、法線 <b>n</b> と、光源の方向 <b>l</b> の内積（の関数）になります。<br>
+したがって、頂点に法線情報を追加します。
+</p>
+
+<pre class="CodeBlock">
+struct CUSTOMVERTEX
+{
+    FLOAT x, y, z;  // 位置
+    <Font color = orange><b>FLOAT nx, ny, nz; // 法線</b></font>
+    FLOAT tu, tv;   // テクスチャーの画像の位置
+};
+#define D3DFVF_CUSTOMVERTEX (D3DFVF_XYZ | <Font color = orange><b>D3DFVF_NORMAL | </b></font>D3DFVF_TEX1)
+
+DWORD dwDecl[] = {
+    D3DVSD_STREAM(0),
+    D3DVSD_REG(D3DVSDE_POSITION, D3DVSDT_FLOAT3 ),            //D3DVSDE_POSITION,  0
+    <Font color = orange><b>D3DVSD_REG(D3DVSDE_NORMAL,   D3DVSDT_FLOAT3 ),     //D3DVSDE_NORMAL,  3</b></font>
+    D3DVSD_REG(D3DVSDE_TEXCOORD0,D3DVSDT_FLOAT2 ),            //D3DVSDE_TEXCOORD0, 7
+    D3DVSD_END()
+};
+</pre>
+
+<p>
+初期化は、先ほどの例と、頂点のデータが違うだけです。<br>
+今回は、光の表現をディフォルメするために、法線を面の外側に少し広げました。
+広げないときには、各頂点に関する光の強さが変化しないので、面に当たる光の強さが一様になります。
+</p>
+
+<pre class="CodeBlock">
+CUSTOMVERTEX vertices[] = {
+    // x,     y,    z,        nx        ny           nz          tu   tv
+    {-16.0f, 12.0f, 0.0f,-1.0f/2.0f, 1.0f/2.0f,-1.7320508f/2.0f, 0.0f,0.0f,},
+    { 16.0f, 12.0f, 0.0f, 1.0f/2.0f, 1.0f/2.0f,-1.7320508f/2.0f, 1.0f,0.0f,},
+    {-16.0f,-12.0f, 0.0f,-1.0f/2.0f,-1.0f/2.0f,-1.7320508f/2.0f, 0.0f,1.0f,},
+    { 16.0f,-12.0f, 0.0f, 1.0f/2.0f,-1.0f/2.0f,-1.7320508f/2.0f, 1.0f,1.0f,},
+};
+</pre>
+
+<p>
+描画部分は、ちょいと違います。ライトの方向のベクトルを、固定レジスタの c4 に入れています。
+</p>
+
+<pre class="CodeBlock">
+void Render(LPDIRECT3DDEVICE8 lpD3DDEV)
+{
+    D3DXMATRIX mWorld, mRotX, mRotY, mTrans;
+    D3DXMatrixTranslation(&mTrans, 0,0,0);
+    float time = (float)timeGetTime();
+    D3DXMatrixRotationY(&mRotY, time/600.0f);
+    D3DXMatrixRotationX(&mRotX, 0.0f);
+    mWorld = mRotX * mRotY * mTrans;
+    
+    // ワールド、ビュー座標系の変換
+    D3DXMATRIX mView, mProj;
+    D3DXMatrixLookAtLH(&mView
+                    ,&D3DXVECTOR3(0,0.0f,-50.0f)  // カメラ位置
+                    ,&D3DXVECTOR3(0,0,0)          // カメラの注目点
+                    ,&D3DXVECTOR3(0,1,0)          // 上の向き
+                    );
+    
+    // ビュー、スクリーン座標系の変換
+    D3DXMatrixPerspectiveFovLH(&mProj
+        ,60.0f*D3DX_PI/180.0f                   // 視野角
+        ,(float)WIDTH/(float)HEIGHT             // アスペクト比
+        ,0.01f                                  // 最近接距離
+        ,100.0f                                 // 最遠方距離
+        );
+    
+    // Vertex shader の c0 ～ c3 レジスタの設定
+    D3DXMATRIX  m = mWorld * mView * mProj;
+    D3DXMATRIX    trans;
+    D3DXMatrixTranspose( &trans ,  &m);
+    lpD3DDEV->SetVertexShaderConstant( 0 , &trans , 4 );
+    
+    <Font color = orange><b>// ライトのc4 レジスタの設定
+    D3DXVECTOR4 vLight(0, 0.707f, 0.707f, 0);
+    D3DXMatrixInverse(&mWorld, NULL, &mWorld);
+    D3DXVec4Transform( &vLight, &vLight, &mWorld);
+    lpD3DDEV->SetVertexShaderConstant( 4 , &vLight , 1 );</b></font>
+    
+    lpD3DDEV->SetVertexShader( hVertexShader );
+    
+    lpD3DDEV->SetTexture( 0, pTexture);
+    lpD3DDEV->SetStreamSource( 0, pVB, sizeof(CUSTOMVERTEX) );
+    lpD3DDEV->DrawPrimitive( D3DPT_TRIANGLESTRIP, 0, 2);
+}
+</pre>
+<p>
+この時に、ワールド行列の逆行列を掛けました。<br>
+ポリゴンが回転すると、法線も回転する必要があるので、その計算をしています。<br>
+ただ、各頂点の法線を毎回ワールド座標に変換するのは、計算量が多いので、
+</p>
+<pre class="CodeBlock">
+ライトが固定して、ポリゴンが回る=ポリゴンを固定して、ライトを逆方向に回す
+</pre>
+<p>
+ということを利用して、ライトにワールド行列の逆行列を掛けることで、ワールド座標への変換を済ませています。<br>
+もし、各頂点の法線を全て変換していたら、行列変換が数百～数千頂点の計算が必要です。
+それを行列演算一回ですましたことになります。
+</p>
+
+<pre class="CodeBlock">
+; v0 : 頂点座標
+; v3 : 法線
+; v7 : テクスチャー座標(UV)
+;
+; c0-c3 : World-View-Proj 行列
+; c4 : ライトベクトル
+;
+vs.1.0                             ; バージョン情報
+dp4     oPos.x , v0   , c0         ; x成分の透視変換
+dp4     oPos.y , v0   , c1         ; y成分の透視変換
+dp4     oPos.z , v0   , c2         ; z成分の透視変換
+dp4     oPos.w , v0   , c3         ; w成分の透視変換
+<Font color = orange><b>dp3    oD0   , v3  , -c4       ; 法線とライトの方向ベクトルの内積から、色を計算</b></font>
+mov     oT0.xy , v7                ; copy texcoords
+</pre>
+
+<p>
+さて、シェーダープログラムです。<br>
+今回は、oD0 の出力が v3 と -c4 の内積になっています。<br>
+これは、負の値を取っているのは、法線とライトの向きは向かい合っているとき（内積の値が-1の時）が、
+一番光が強く当たっている時なので、そのときに色が1になるように調整しました。
+この計算では、内積の値が xyzw の全ての成分に入ります。
+したがって、光の色は白になります。
+</p>
+
+<h2>■頂点色付き平行光源</h2>
+
+<right><image src = "vsld.gif"></right>
+
+<p>
+さて、以上の二つの合成です。<br>
+頂点に法線と、頂点色の両方が入ります。
+</p>
+
+<ul style = "LIST-STYLE-TYPE:none">
+<li><a href="vsld.lzh">vsld.lzh 平行光源で頂点色付きポリゴンを照らすバーテックスシェーダーのサンプル)</a>
+</ul>
+
+<pre class="CodeBlock">
+struct CUSTOMVERTEX
+{
+    FLOAT x, y, z;    // 位置
+    FLOAT nx, ny, nz; // 法線
+    DWORD color;      // 頂点色
+    FLOAT tu, tv;     // テクスチャーの画像の位置
+};
+#define D3DFVF_CUSTOMVERTEX (D3DFVF_XYZ | D3DFVF_NORMAL | D3DFVF_DIFFUSE | D3DFVF_TEX1)
+
+DWORD dwDecl[] = {
+    D3DVSD_STREAM(0),
+    D3DVSD_REG(D3DVSDE_POSITION, D3DVSDT_FLOAT3 ),          //D3DVSDE_POSITION,  0
+    D3DVSD_REG(D3DVSDE_NORMAL,   D3DVSDT_FLOAT3 ),          //D3DVSDE_NORMAL,    3
+    D3DVSD_REG(D3DVSDE_DIFFUSE,  D3DVSDT_D3DCOLOR ),        //D3DVSDE_DIFFUSE,   5
+    D3DVSD_REG(D3DVSDE_TEXCOORD0,D3DVSDT_FLOAT2 ),          //D3DVSDE_TEXCOORD0, 7
+    D3DVSD_END()
+};
+</pre>
+
+<p>
+初期化も、データが違うだけで、平行光源のものそのままです。
+描画に関しては、全く同じです。
+</p>
+<pre class="CodeBlock">
+CUSTOMVERTEX vertices[] = {
+    // x,     y,    z,        nx        ny           nz                         赤    緑    青    α     tu   tv
+    {-16.0f, 12.0f, 0.0f,-1.0f/2.0f, 1.0f/2.0f,-1.7320508f/2.0f, D3DCOLOR_RGBA(0xff, 0xff, 0xff, 0xff), 0.0f,0.0f,},
+    { 16.0f, 12.0f, 0.0f, 1.0f/2.0f, 1.0f/2.0f,-1.7320508f/2.0f, D3DCOLOR_RGBA(0xff, 0x00, 0x00, 0xff), 1.0f,0.0f,},
+    {-16.0f,-12.0f, 0.0f,-1.0f/2.0f,-1.0f/2.0f,-1.7320508f/2.0f, D3DCOLOR_RGBA(0x00, 0xff, 0x00, 0xff), 0.0f,1.0f,},
+    { 16.0f,-12.0f, 0.0f, 1.0f/2.0f,-1.0f/2.0f,-1.7320508f/2.0f, D3DCOLOR_RGBA(0x00, 0x00, 0xff, 0xff), 1.0f,1.0f,},
+};
+</pre>
+
+<p>
+そして、シェーダープログラムは、次のようになります。
+</p>
+<pre class="CodeBlock">
+; v0 : 頂点座標
+; v3 : 法線
+; v5 : 頂点色
+; v7 : テクスチャー座標(UV)
+;
+; c0-c3 : World-View-Proj 行列
+; c4 : ライトベクトル
+;
+vs.1.0                             ; バージョン情報
+; 座標変換
+dp4     oPos.x , v0   , c0         ; x成分の透視変換
+dp4     oPos.y , v0   , c1         ; y成分の透視変換
+dp4     oPos.z , v0   , c2         ; z成分の透視変換
+dp4     oPos.w , v0   , c3         ; w成分の透視変換
+<Font color = orange><b>; ライトの計算
+dp3     r0.x , v3   , -c4      ; 法線とライトの方向ベクトルの内積から、色を計算
+mul     oD0  , v5   , r0.x     ; さらに頂点カラーも考える</b></font>
+; テクスチャーを張る
+mov     oT0.xy , v7                ; ビットマップのコピー
+</pre>
+<p>
+もったいないので、最初の内積計算を、x 成分だけ出力しました。
+その値 r0.x をもちいて、mul 演算で、頂点色に強弱をつけて、光源の影響を計算します。
+</p>
+<p>
+一般に、頂点色はデザイナーさんが付けて、物体の質感を高めます。
+光源計算は、ライトの影響によって物体に存在感を与えます。
+もちろん、どちらも使えると便利なのですが、一般に光源計算は遅いので、
+頂点色だけで物体を表現することも多いです。<br>
+したがって、この計算ができれば、光源計算はできたと思ってもいいと思います。
+</p>
+
+<h2>■今後</h2>
+
+<p>
+これで、普通の光源計算はできました。<br>
+この後、バーテックスシェーダー特有の計算に移ろうと思います。
+</p>
+
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<center>
+<hr>
+<p><a href="../index.html">もどる</a></p>
+<p><a href="mailto:imagire@gmail.com">imagire@gmail.com</a></p>
+</body>
+</html>

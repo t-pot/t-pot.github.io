@@ -1,0 +1,1120 @@
+<HTML>
+<HEAD>
+<TITLE>dxutil.cpp</TITLE>
+<meta name="GENERATOR" content="cpp2html 2.1 by Niisaka">
+<meta http-equiv="Content-Type" content="text/html">
+<meta http-equiv="Content-Style-Type" content="text/css">
+<STYLE TYPE="text/css">
+<!--
+SPAN.comment { color:#008000; font-weight:normal; font-style:normal;}
+SPAN.keyword { color:#0000FF; font-weight:normal; font-style:normal;}
+SPAN.string { color:#600000; font-weight:normal; font-style:normal;}
+SPAN.linenum { color:#A0A0A0; font-weight:normal; font-style:normal;}
+-->
+</STYLE>
+</HEAD>
+<BODY TEXT="#000000" BGCOLOR="#FFFFFF">
+<PRE><SPAN CLASS="linenum">0001:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0002:</SPAN> <SPAN CLASS="comment">// File: DXUtil.cpp</SPAN>
+<SPAN CLASS="linenum">0003:</SPAN> <SPAN CLASS="comment">//</SPAN>
+<SPAN CLASS="linenum">0004:</SPAN> <SPAN CLASS="comment">// Desc: Shortcut macros and functions for using DX objects</SPAN>
+<SPAN CLASS="linenum">0005:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0006:</SPAN> <SPAN CLASS="keyword">#ifndef</SPAN> STRICT
+<SPAN CLASS="linenum">0007:</SPAN> <SPAN CLASS="keyword">#define</SPAN> STRICT
+<SPAN CLASS="linenum">0008:</SPAN> <SPAN CLASS="keyword">#endif</SPAN> <SPAN CLASS="comment">// !STRICT</SPAN>
+<SPAN CLASS="linenum">0009:</SPAN> <SPAN CLASS="keyword">#include</SPAN> &lt;windows.h&gt;
+<SPAN CLASS="linenum">0010:</SPAN> <SPAN CLASS="keyword">#include</SPAN> &lt;mmsystem.h&gt;
+<SPAN CLASS="linenum">0011:</SPAN> <SPAN CLASS="keyword">#include</SPAN> &lt;tchar.h&gt;
+<SPAN CLASS="linenum">0012:</SPAN> <SPAN CLASS="keyword">#include</SPAN> &lt;stdio.h&gt; 
+<SPAN CLASS="linenum">0013:</SPAN> <SPAN CLASS="keyword">#include</SPAN> &lt;stdarg.h&gt;
+<SPAN CLASS="linenum">0014:</SPAN> <SPAN CLASS="keyword">#include</SPAN> "<SPAN CLASS="string">DXUtil.h</SPAN>"
+<SPAN CLASS="linenum">0015:</SPAN> 
+<SPAN CLASS="linenum">0016:</SPAN> 
+<SPAN CLASS="linenum">0017:</SPAN> <SPAN CLASS="keyword">#ifdef</SPAN> UNICODE
+<SPAN CLASS="linenum">0018:</SPAN>     <SPAN CLASS="keyword">typedef</SPAN> HINSTANCE (WINAPI* LPShellExecute)(HWND hwnd, LPCWSTR lpOperation, LPCWSTR lpFile, LPCWSTR lpParameters, LPCWSTR lpDirectory, INT nShowCmd);
+<SPAN CLASS="linenum">0019:</SPAN> <SPAN CLASS="keyword">#else</SPAN>
+<SPAN CLASS="linenum">0020:</SPAN>     <SPAN CLASS="keyword">typedef</SPAN> HINSTANCE (WINAPI* LPShellExecute)(HWND hwnd, LPCSTR lpOperation, LPCSTR lpFile, LPCSTR lpParameters, LPCSTR lpDirectory, INT nShowCmd);
+<SPAN CLASS="linenum">0021:</SPAN> <SPAN CLASS="keyword">#endif</SPAN>
+<SPAN CLASS="linenum">0022:</SPAN> 
+<SPAN CLASS="linenum">0023:</SPAN> 
+<SPAN CLASS="linenum">0024:</SPAN> <SPAN CLASS="keyword">#ifndef</SPAN> UNDER_CE
+<SPAN CLASS="linenum">0025:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0026:</SPAN> <SPAN CLASS="comment">// Name: DXUtil_GetDXSDKMediaPathCch()</SPAN>
+<SPAN CLASS="linenum">0027:</SPAN> <SPAN CLASS="comment">// Desc: Returns the DirectX SDK media path</SPAN>
+<SPAN CLASS="linenum">0028:</SPAN> <SPAN CLASS="comment">//       cchDest is the size in TCHARs of strDest.  Be careful not to </SPAN>
+<SPAN CLASS="linenum">0029:</SPAN> <SPAN CLASS="comment">//       pass in sizeof(strDest) on UNICODE builds.</SPAN>
+<SPAN CLASS="linenum">0030:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0031:</SPAN> HRESULT DXUtil_GetDXSDKMediaPathCch( TCHAR* strDest, <SPAN CLASS="keyword">int</SPAN> cchDest )
+<SPAN CLASS="linenum">0032:</SPAN> {
+<SPAN CLASS="linenum">0033:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( strDest == NULL || cchDest &lt; 1 )
+<SPAN CLASS="linenum">0034:</SPAN>         <SPAN CLASS="keyword">return</SPAN> E_INVALIDARG;
+<SPAN CLASS="linenum">0035:</SPAN> 
+<SPAN CLASS="linenum">0036:</SPAN>     lstrcpy( strDest, TEXT("<SPAN CLASS="string"></SPAN>") );
+<SPAN CLASS="linenum">0037:</SPAN> 
+<SPAN CLASS="linenum">0038:</SPAN>     <SPAN CLASS="comment">// Open the appropriate registry key</SPAN>
+<SPAN CLASS="linenum">0039:</SPAN>     HKEY  hKey;
+<SPAN CLASS="linenum">0040:</SPAN>     LONG lResult = RegOpenKeyEx( HKEY_LOCAL_MACHINE,
+<SPAN CLASS="linenum">0041:</SPAN>                                 _T("<SPAN CLASS="string">Software\\Microsoft\\DirectX SDK</SPAN>"),
+<SPAN CLASS="linenum">0042:</SPAN>                                 0, KEY_READ, &amp;hKey );
+<SPAN CLASS="linenum">0043:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( ERROR_SUCCESS != lResult )
+<SPAN CLASS="linenum">0044:</SPAN>         <SPAN CLASS="keyword">return</SPAN> E_FAIL;
+<SPAN CLASS="linenum">0045:</SPAN> 
+<SPAN CLASS="linenum">0046:</SPAN>     DWORD dwType;
+<SPAN CLASS="linenum">0047:</SPAN>     DWORD dwSize = cchDest * <SPAN CLASS="keyword">sizeof</SPAN>(TCHAR);
+<SPAN CLASS="linenum">0048:</SPAN>     lResult = RegQueryValueEx( hKey, _T("<SPAN CLASS="string">DX9SDK Samples Path</SPAN>"), NULL,
+<SPAN CLASS="linenum">0049:</SPAN>                               &amp;dwType, (BYTE*)strDest, &amp;dwSize );
+<SPAN CLASS="linenum">0050:</SPAN>     strDest[cchDest-1] = 0; <SPAN CLASS="comment">// RegQueryValueEx doesn't NULL term if buffer too small</SPAN>
+<SPAN CLASS="linenum">0051:</SPAN>     RegCloseKey( hKey );
+<SPAN CLASS="linenum">0052:</SPAN> 
+<SPAN CLASS="linenum">0053:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( ERROR_SUCCESS != lResult )
+<SPAN CLASS="linenum">0054:</SPAN>         <SPAN CLASS="keyword">return</SPAN> E_FAIL;
+<SPAN CLASS="linenum">0055:</SPAN> 
+<SPAN CLASS="linenum">0056:</SPAN>     <SPAN CLASS="keyword">const</SPAN> TCHAR* strMedia = _T("<SPAN CLASS="string">\\Media\\</SPAN>");
+<SPAN CLASS="linenum">0057:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( lstrlen(strDest) + lstrlen(strMedia) &lt; cchDest )
+<SPAN CLASS="linenum">0058:</SPAN>         _tcscat( strDest, strMedia );
+<SPAN CLASS="linenum">0059:</SPAN>     <SPAN CLASS="keyword">else</SPAN>
+<SPAN CLASS="linenum">0060:</SPAN>         <SPAN CLASS="keyword">return</SPAN> E_INVALIDARG;
+<SPAN CLASS="linenum">0061:</SPAN> 
+<SPAN CLASS="linenum">0062:</SPAN>     <SPAN CLASS="keyword">return</SPAN> S_OK;
+<SPAN CLASS="linenum">0063:</SPAN> }
+<SPAN CLASS="linenum">0064:</SPAN> <SPAN CLASS="keyword">#endif</SPAN> <SPAN CLASS="comment">// !UNDER_CE</SPAN>
+<SPAN CLASS="linenum">0065:</SPAN> 
+<SPAN CLASS="linenum">0066:</SPAN> 
+<SPAN CLASS="linenum">0067:</SPAN> 
+<SPAN CLASS="linenum">0068:</SPAN> <SPAN CLASS="keyword">#ifndef</SPAN> UNDER_CE
+<SPAN CLASS="linenum">0069:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0070:</SPAN> <SPAN CLASS="comment">// Name: DXUtil_FindMediaFileCch()</SPAN>
+<SPAN CLASS="linenum">0071:</SPAN> <SPAN CLASS="comment">// Desc: Returns a valid path to a DXSDK media file</SPAN>
+<SPAN CLASS="linenum">0072:</SPAN> <SPAN CLASS="comment">//       cchDest is the size in TCHARs of strDestPath.  Be careful not to </SPAN>
+<SPAN CLASS="linenum">0073:</SPAN> <SPAN CLASS="comment">//       pass in sizeof(strDest) on UNICODE builds.</SPAN>
+<SPAN CLASS="linenum">0074:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0075:</SPAN> HRESULT DXUtil_FindMediaFileCch( TCHAR* strDestPath, <SPAN CLASS="keyword">int</SPAN> cchDest, TCHAR* strFilename )
+<SPAN CLASS="linenum">0076:</SPAN> {
+<SPAN CLASS="linenum">0077:</SPAN>     HRESULT hr;
+<SPAN CLASS="linenum">0078:</SPAN>     HANDLE file;
+<SPAN CLASS="linenum">0079:</SPAN>     TCHAR* strShortNameTmp = NULL;
+<SPAN CLASS="linenum">0080:</SPAN>     TCHAR strShortName[MAX_PATH];
+<SPAN CLASS="linenum">0081:</SPAN>     <SPAN CLASS="keyword">int</SPAN> cchPath;
+<SPAN CLASS="linenum">0082:</SPAN> 
+<SPAN CLASS="linenum">0083:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( NULL==strFilename || NULL==strDestPath || cchDest &lt; 1 )
+<SPAN CLASS="linenum">0084:</SPAN>         <SPAN CLASS="keyword">return</SPAN> E_INVALIDARG;
+<SPAN CLASS="linenum">0085:</SPAN> 
+<SPAN CLASS="linenum">0086:</SPAN>     lstrcpy( strDestPath, TEXT("<SPAN CLASS="string"></SPAN>") );
+<SPAN CLASS="linenum">0087:</SPAN>     lstrcpy( strShortName, TEXT("<SPAN CLASS="string"></SPAN>") );
+<SPAN CLASS="linenum">0088:</SPAN> 
+<SPAN CLASS="linenum">0089:</SPAN>     <SPAN CLASS="comment">// Build full path name from strFileName (strShortName will be just the leaf filename)</SPAN>
+<SPAN CLASS="linenum">0090:</SPAN>     cchPath = GetFullPathName(strFilename, cchDest, strDestPath, &amp;strShortNameTmp);
+<SPAN CLASS="linenum">0091:</SPAN>     <SPAN CLASS="keyword">if</SPAN> ((cchPath == 0) || (cchDest &lt;= cchPath))
+<SPAN CLASS="linenum">0092:</SPAN>         <SPAN CLASS="keyword">return</SPAN> E_FAIL;
+<SPAN CLASS="linenum">0093:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( strShortNameTmp )
+<SPAN CLASS="linenum">0094:</SPAN>         lstrcpyn( strShortName, strShortNameTmp, MAX_PATH );
+<SPAN CLASS="linenum">0095:</SPAN> 
+<SPAN CLASS="linenum">0096:</SPAN>     <SPAN CLASS="comment">// first try to find the filename given a full path</SPAN>
+<SPAN CLASS="linenum">0097:</SPAN>     file = CreateFile( strDestPath, GENERIC_READ, FILE_SHARE_READ, NULL, 
+<SPAN CLASS="linenum">0098:</SPAN>                        OPEN_EXISTING, 0, NULL );
+<SPAN CLASS="linenum">0099:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( INVALID_HANDLE_VALUE != file )
+<SPAN CLASS="linenum">0100:</SPAN>     {
+<SPAN CLASS="linenum">0101:</SPAN>         CloseHandle( file );
+<SPAN CLASS="linenum">0102:</SPAN>         <SPAN CLASS="keyword">return</SPAN> S_OK;
+<SPAN CLASS="linenum">0103:</SPAN>     }
+<SPAN CLASS="linenum">0104:</SPAN>     
+<SPAN CLASS="linenum">0105:</SPAN>     <SPAN CLASS="comment">// next try to find the filename in the current working directory (path stripped)</SPAN>
+<SPAN CLASS="linenum">0106:</SPAN>     file = CreateFile( strShortName, GENERIC_READ, FILE_SHARE_READ, NULL, 
+<SPAN CLASS="linenum">0107:</SPAN>                        OPEN_EXISTING, 0, NULL );
+<SPAN CLASS="linenum">0108:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( INVALID_HANDLE_VALUE != file )
+<SPAN CLASS="linenum">0109:</SPAN>     {
+<SPAN CLASS="linenum">0110:</SPAN>         _tcsncpy( strDestPath, strShortName, cchDest );
+<SPAN CLASS="linenum">0111:</SPAN>         strDestPath[cchDest-1] = 0; <SPAN CLASS="comment">// _tcsncpy doesn't NULL term if it runs out of space</SPAN>
+<SPAN CLASS="linenum">0112:</SPAN>         CloseHandle( file );
+<SPAN CLASS="linenum">0113:</SPAN>         <SPAN CLASS="keyword">return</SPAN> S_OK;
+<SPAN CLASS="linenum">0114:</SPAN>     }
+<SPAN CLASS="linenum">0115:</SPAN>     
+<SPAN CLASS="linenum">0116:</SPAN>     <SPAN CLASS="comment">// last, check if the file exists in the media directory</SPAN>
+<SPAN CLASS="linenum">0117:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( FAILED( hr = DXUtil_GetDXSDKMediaPathCch( strDestPath, cchDest ) ) )
+<SPAN CLASS="linenum">0118:</SPAN>         <SPAN CLASS="keyword">return</SPAN> hr;
+<SPAN CLASS="linenum">0119:</SPAN> 
+<SPAN CLASS="linenum">0120:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( lstrlen(strDestPath) + lstrlen(strShortName) &lt; cchDest )
+<SPAN CLASS="linenum">0121:</SPAN>         lstrcat( strDestPath, strShortName );
+<SPAN CLASS="linenum">0122:</SPAN>     <SPAN CLASS="keyword">else</SPAN>
+<SPAN CLASS="linenum">0123:</SPAN>         <SPAN CLASS="keyword">return</SPAN> E_INVALIDARG;
+<SPAN CLASS="linenum">0124:</SPAN> 
+<SPAN CLASS="linenum">0125:</SPAN>     file = CreateFile( strDestPath, GENERIC_READ, FILE_SHARE_READ, NULL, 
+<SPAN CLASS="linenum">0126:</SPAN>                        OPEN_EXISTING, 0, NULL );
+<SPAN CLASS="linenum">0127:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( INVALID_HANDLE_VALUE != file )
+<SPAN CLASS="linenum">0128:</SPAN>     {
+<SPAN CLASS="linenum">0129:</SPAN>         CloseHandle( file );
+<SPAN CLASS="linenum">0130:</SPAN>         <SPAN CLASS="keyword">return</SPAN> S_OK;
+<SPAN CLASS="linenum">0131:</SPAN>     }
+<SPAN CLASS="linenum">0132:</SPAN> 
+<SPAN CLASS="linenum">0133:</SPAN>     <SPAN CLASS="comment">// On failure, just return the file as the path</SPAN>
+<SPAN CLASS="linenum">0134:</SPAN>     _tcsncpy( strDestPath, strFilename, cchDest );
+<SPAN CLASS="linenum">0135:</SPAN>     strDestPath[cchDest-1] = 0; <SPAN CLASS="comment">// _tcsncpy doesn't NULL term if it runs out of space</SPAN>
+<SPAN CLASS="linenum">0136:</SPAN>     <SPAN CLASS="keyword">return</SPAN> HRESULT_FROM_WIN32( ERROR_FILE_NOT_FOUND );
+<SPAN CLASS="linenum">0137:</SPAN> }
+<SPAN CLASS="linenum">0138:</SPAN> <SPAN CLASS="keyword">#endif</SPAN> <SPAN CLASS="comment">// !UNDER_CE</SPAN>
+<SPAN CLASS="linenum">0139:</SPAN> 
+<SPAN CLASS="linenum">0140:</SPAN> 
+<SPAN CLASS="linenum">0141:</SPAN> 
+<SPAN CLASS="linenum">0142:</SPAN> 
+<SPAN CLASS="linenum">0143:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0144:</SPAN> <SPAN CLASS="comment">// Name: DXUtil_ReadStringRegKeyCch()</SPAN>
+<SPAN CLASS="linenum">0145:</SPAN> <SPAN CLASS="comment">// Desc: Helper function to read a registry key string</SPAN>
+<SPAN CLASS="linenum">0146:</SPAN> <SPAN CLASS="comment">//       cchDest is the size in TCHARs of strDest.  Be careful not to </SPAN>
+<SPAN CLASS="linenum">0147:</SPAN> <SPAN CLASS="comment">//       pass in sizeof(strDest) on UNICODE builds.</SPAN>
+<SPAN CLASS="linenum">0148:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0149:</SPAN> HRESULT DXUtil_ReadStringRegKeyCch( HKEY hKey, TCHAR* strRegName, TCHAR* strDest, 
+<SPAN CLASS="linenum">0150:</SPAN>                                     DWORD cchDest, TCHAR* strDefault )
+<SPAN CLASS="linenum">0151:</SPAN> {
+<SPAN CLASS="linenum">0152:</SPAN>     DWORD dwType;
+<SPAN CLASS="linenum">0153:</SPAN>     DWORD cbDest = cchDest * <SPAN CLASS="keyword">sizeof</SPAN>(TCHAR);
+<SPAN CLASS="linenum">0154:</SPAN> 
+<SPAN CLASS="linenum">0155:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( ERROR_SUCCESS != RegQueryValueEx( hKey, strRegName, 0, &amp;dwType, 
+<SPAN CLASS="linenum">0156:</SPAN>                                           (BYTE*)strDest, &amp;cbDest ) )
+<SPAN CLASS="linenum">0157:</SPAN>     {
+<SPAN CLASS="linenum">0158:</SPAN>         _tcsncpy( strDest, strDefault, cchDest );
+<SPAN CLASS="linenum">0159:</SPAN>         strDest[cchDest-1] = 0;
+<SPAN CLASS="linenum">0160:</SPAN> 
+<SPAN CLASS="linenum">0161:</SPAN>         <SPAN CLASS="keyword">if</SPAN>( dwType != REG_SZ )
+<SPAN CLASS="linenum">0162:</SPAN>             <SPAN CLASS="keyword">return</SPAN> E_FAIL;
+<SPAN CLASS="linenum">0163:</SPAN> 
+<SPAN CLASS="linenum">0164:</SPAN>         <SPAN CLASS="keyword">return</SPAN> S_OK;
+<SPAN CLASS="linenum">0165:</SPAN>     }
+<SPAN CLASS="linenum">0166:</SPAN> 
+<SPAN CLASS="linenum">0167:</SPAN>     <SPAN CLASS="keyword">return</SPAN> E_FAIL;
+<SPAN CLASS="linenum">0168:</SPAN> }
+<SPAN CLASS="linenum">0169:</SPAN> 
+<SPAN CLASS="linenum">0170:</SPAN> 
+<SPAN CLASS="linenum">0171:</SPAN> 
+<SPAN CLASS="linenum">0172:</SPAN> 
+<SPAN CLASS="linenum">0173:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0174:</SPAN> <SPAN CLASS="comment">// Name: DXUtil_WriteStringRegKey()</SPAN>
+<SPAN CLASS="linenum">0175:</SPAN> <SPAN CLASS="comment">// Desc: Helper function to write a registry key string</SPAN>
+<SPAN CLASS="linenum">0176:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0177:</SPAN> HRESULT DXUtil_WriteStringRegKey( HKEY hKey, TCHAR* strRegName,
+<SPAN CLASS="linenum">0178:</SPAN>                                   TCHAR* strValue )
+<SPAN CLASS="linenum">0179:</SPAN> {
+<SPAN CLASS="linenum">0180:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( NULL == strValue )
+<SPAN CLASS="linenum">0181:</SPAN>         <SPAN CLASS="keyword">return</SPAN> E_INVALIDARG;
+<SPAN CLASS="linenum">0182:</SPAN>         
+<SPAN CLASS="linenum">0183:</SPAN>     DWORD cbValue = ((DWORD)_tcslen(strValue)+1) * <SPAN CLASS="keyword">sizeof</SPAN>(TCHAR);
+<SPAN CLASS="linenum">0184:</SPAN> 
+<SPAN CLASS="linenum">0185:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( ERROR_SUCCESS != RegSetValueEx( hKey, strRegName, 0, REG_SZ, 
+<SPAN CLASS="linenum">0186:</SPAN>                                         (BYTE*)strValue, cbValue ) )
+<SPAN CLASS="linenum">0187:</SPAN>         <SPAN CLASS="keyword">return</SPAN> E_FAIL;
+<SPAN CLASS="linenum">0188:</SPAN> 
+<SPAN CLASS="linenum">0189:</SPAN>     <SPAN CLASS="keyword">return</SPAN> S_OK;
+<SPAN CLASS="linenum">0190:</SPAN> }
+<SPAN CLASS="linenum">0191:</SPAN> 
+<SPAN CLASS="linenum">0192:</SPAN> 
+<SPAN CLASS="linenum">0193:</SPAN> 
+<SPAN CLASS="linenum">0194:</SPAN> 
+<SPAN CLASS="linenum">0195:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0196:</SPAN> <SPAN CLASS="comment">// Name: DXUtil_ReadIntRegKey()</SPAN>
+<SPAN CLASS="linenum">0197:</SPAN> <SPAN CLASS="comment">// Desc: Helper function to read a registry key int</SPAN>
+<SPAN CLASS="linenum">0198:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0199:</SPAN> HRESULT DXUtil_ReadIntRegKey( HKEY hKey, TCHAR* strRegName, DWORD* pdwDest, 
+<SPAN CLASS="linenum">0200:</SPAN>                               DWORD dwDefault )
+<SPAN CLASS="linenum">0201:</SPAN> {
+<SPAN CLASS="linenum">0202:</SPAN>     DWORD dwType;
+<SPAN CLASS="linenum">0203:</SPAN>     DWORD dwLength = <SPAN CLASS="keyword">sizeof</SPAN>(DWORD);
+<SPAN CLASS="linenum">0204:</SPAN> 
+<SPAN CLASS="linenum">0205:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( ERROR_SUCCESS != RegQueryValueEx( hKey, strRegName, 0, &amp;dwType, 
+<SPAN CLASS="linenum">0206:</SPAN>                                           (BYTE*)pdwDest, &amp;dwLength ) )
+<SPAN CLASS="linenum">0207:</SPAN>     {
+<SPAN CLASS="linenum">0208:</SPAN>         *pdwDest = dwDefault;
+<SPAN CLASS="linenum">0209:</SPAN>         <SPAN CLASS="keyword">if</SPAN>( dwType != REG_DWORD )
+<SPAN CLASS="linenum">0210:</SPAN>             <SPAN CLASS="keyword">return</SPAN> E_FAIL;
+<SPAN CLASS="linenum">0211:</SPAN> 
+<SPAN CLASS="linenum">0212:</SPAN>         <SPAN CLASS="keyword">return</SPAN> S_OK;
+<SPAN CLASS="linenum">0213:</SPAN>     }
+<SPAN CLASS="linenum">0214:</SPAN> 
+<SPAN CLASS="linenum">0215:</SPAN>     <SPAN CLASS="keyword">return</SPAN> E_FAIL;
+<SPAN CLASS="linenum">0216:</SPAN> }
+<SPAN CLASS="linenum">0217:</SPAN> 
+<SPAN CLASS="linenum">0218:</SPAN> 
+<SPAN CLASS="linenum">0219:</SPAN> 
+<SPAN CLASS="linenum">0220:</SPAN> 
+<SPAN CLASS="linenum">0221:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0222:</SPAN> <SPAN CLASS="comment">// Name: DXUtil_WriteIntRegKey()</SPAN>
+<SPAN CLASS="linenum">0223:</SPAN> <SPAN CLASS="comment">// Desc: Helper function to write a registry key int</SPAN>
+<SPAN CLASS="linenum">0224:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0225:</SPAN> HRESULT DXUtil_WriteIntRegKey( HKEY hKey, TCHAR* strRegName, DWORD dwValue )
+<SPAN CLASS="linenum">0226:</SPAN> {
+<SPAN CLASS="linenum">0227:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( ERROR_SUCCESS != RegSetValueEx( hKey, strRegName, 0, REG_DWORD, 
+<SPAN CLASS="linenum">0228:</SPAN>                                         (BYTE*)&amp;dwValue, <SPAN CLASS="keyword">sizeof</SPAN>(DWORD) ) )
+<SPAN CLASS="linenum">0229:</SPAN>         <SPAN CLASS="keyword">return</SPAN> E_FAIL;
+<SPAN CLASS="linenum">0230:</SPAN> 
+<SPAN CLASS="linenum">0231:</SPAN>     <SPAN CLASS="keyword">return</SPAN> S_OK;
+<SPAN CLASS="linenum">0232:</SPAN> }
+<SPAN CLASS="linenum">0233:</SPAN> 
+<SPAN CLASS="linenum">0234:</SPAN> 
+<SPAN CLASS="linenum">0235:</SPAN> 
+<SPAN CLASS="linenum">0236:</SPAN> 
+<SPAN CLASS="linenum">0237:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0238:</SPAN> <SPAN CLASS="comment">// Name: DXUtil_ReadBoolRegKey()</SPAN>
+<SPAN CLASS="linenum">0239:</SPAN> <SPAN CLASS="comment">// Desc: Helper function to read a registry key BOOL</SPAN>
+<SPAN CLASS="linenum">0240:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0241:</SPAN> HRESULT DXUtil_ReadBoolRegKey( HKEY hKey, TCHAR* strRegName, BOOL* pbDest, 
+<SPAN CLASS="linenum">0242:</SPAN>                               BOOL bDefault )
+<SPAN CLASS="linenum">0243:</SPAN> {
+<SPAN CLASS="linenum">0244:</SPAN>     DWORD dwType;
+<SPAN CLASS="linenum">0245:</SPAN>     DWORD dwLength = <SPAN CLASS="keyword">sizeof</SPAN>(BOOL);
+<SPAN CLASS="linenum">0246:</SPAN> 
+<SPAN CLASS="linenum">0247:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( ERROR_SUCCESS != RegQueryValueEx( hKey, strRegName, 0, &amp;dwType, 
+<SPAN CLASS="linenum">0248:</SPAN>                                           (BYTE*)pbDest, &amp;dwLength ) )
+<SPAN CLASS="linenum">0249:</SPAN>     {
+<SPAN CLASS="linenum">0250:</SPAN>         *pbDest = bDefault;
+<SPAN CLASS="linenum">0251:</SPAN>         <SPAN CLASS="keyword">if</SPAN>( dwType != REG_DWORD )
+<SPAN CLASS="linenum">0252:</SPAN>             <SPAN CLASS="keyword">return</SPAN> E_FAIL;
+<SPAN CLASS="linenum">0253:</SPAN> 
+<SPAN CLASS="linenum">0254:</SPAN>         <SPAN CLASS="keyword">return</SPAN> S_OK;
+<SPAN CLASS="linenum">0255:</SPAN>     }
+<SPAN CLASS="linenum">0256:</SPAN> 
+<SPAN CLASS="linenum">0257:</SPAN>     <SPAN CLASS="keyword">return</SPAN> E_FAIL;
+<SPAN CLASS="linenum">0258:</SPAN> }
+<SPAN CLASS="linenum">0259:</SPAN> 
+<SPAN CLASS="linenum">0260:</SPAN> 
+<SPAN CLASS="linenum">0261:</SPAN> 
+<SPAN CLASS="linenum">0262:</SPAN> 
+<SPAN CLASS="linenum">0263:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0264:</SPAN> <SPAN CLASS="comment">// Name: DXUtil_WriteBoolRegKey()</SPAN>
+<SPAN CLASS="linenum">0265:</SPAN> <SPAN CLASS="comment">// Desc: Helper function to write a registry key BOOL</SPAN>
+<SPAN CLASS="linenum">0266:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0267:</SPAN> HRESULT DXUtil_WriteBoolRegKey( HKEY hKey, TCHAR* strRegName, BOOL bValue )
+<SPAN CLASS="linenum">0268:</SPAN> {
+<SPAN CLASS="linenum">0269:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( ERROR_SUCCESS != RegSetValueEx( hKey, strRegName, 0, REG_DWORD, 
+<SPAN CLASS="linenum">0270:</SPAN>                                         (BYTE*)&amp;bValue, <SPAN CLASS="keyword">sizeof</SPAN>(BOOL) ) )
+<SPAN CLASS="linenum">0271:</SPAN>         <SPAN CLASS="keyword">return</SPAN> E_FAIL;
+<SPAN CLASS="linenum">0272:</SPAN> 
+<SPAN CLASS="linenum">0273:</SPAN>     <SPAN CLASS="keyword">return</SPAN> S_OK;
+<SPAN CLASS="linenum">0274:</SPAN> }
+<SPAN CLASS="linenum">0275:</SPAN> 
+<SPAN CLASS="linenum">0276:</SPAN> 
+<SPAN CLASS="linenum">0277:</SPAN> 
+<SPAN CLASS="linenum">0278:</SPAN> 
+<SPAN CLASS="linenum">0279:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0280:</SPAN> <SPAN CLASS="comment">// Name: DXUtil_ReadGuidRegKey()</SPAN>
+<SPAN CLASS="linenum">0281:</SPAN> <SPAN CLASS="comment">// Desc: Helper function to read a registry key guid</SPAN>
+<SPAN CLASS="linenum">0282:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0283:</SPAN> HRESULT DXUtil_ReadGuidRegKey( HKEY hKey, TCHAR* strRegName, GUID* pGuidDest, 
+<SPAN CLASS="linenum">0284:</SPAN>                                GUID&amp; guidDefault )
+<SPAN CLASS="linenum">0285:</SPAN> {
+<SPAN CLASS="linenum">0286:</SPAN>     DWORD dwType;
+<SPAN CLASS="linenum">0287:</SPAN>     DWORD dwLength = <SPAN CLASS="keyword">sizeof</SPAN>(GUID);
+<SPAN CLASS="linenum">0288:</SPAN> 
+<SPAN CLASS="linenum">0289:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( ERROR_SUCCESS != RegQueryValueEx( hKey, strRegName, 0, &amp;dwType, 
+<SPAN CLASS="linenum">0290:</SPAN>                                           (LPBYTE) pGuidDest, &amp;dwLength ) )
+<SPAN CLASS="linenum">0291:</SPAN>     {
+<SPAN CLASS="linenum">0292:</SPAN>         *pGuidDest = guidDefault;
+<SPAN CLASS="linenum">0293:</SPAN>         <SPAN CLASS="keyword">if</SPAN>( dwType != REG_BINARY )
+<SPAN CLASS="linenum">0294:</SPAN>             <SPAN CLASS="keyword">return</SPAN> E_FAIL;
+<SPAN CLASS="linenum">0295:</SPAN> 
+<SPAN CLASS="linenum">0296:</SPAN>         <SPAN CLASS="keyword">return</SPAN> S_OK;
+<SPAN CLASS="linenum">0297:</SPAN>     }
+<SPAN CLASS="linenum">0298:</SPAN> 
+<SPAN CLASS="linenum">0299:</SPAN>     <SPAN CLASS="keyword">return</SPAN> E_FAIL;
+<SPAN CLASS="linenum">0300:</SPAN> }
+<SPAN CLASS="linenum">0301:</SPAN> 
+<SPAN CLASS="linenum">0302:</SPAN> 
+<SPAN CLASS="linenum">0303:</SPAN> 
+<SPAN CLASS="linenum">0304:</SPAN> 
+<SPAN CLASS="linenum">0305:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0306:</SPAN> <SPAN CLASS="comment">// Name: DXUtil_WriteGuidRegKey()</SPAN>
+<SPAN CLASS="linenum">0307:</SPAN> <SPAN CLASS="comment">// Desc: Helper function to write a registry key guid</SPAN>
+<SPAN CLASS="linenum">0308:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0309:</SPAN> HRESULT DXUtil_WriteGuidRegKey( HKEY hKey, TCHAR* strRegName, GUID guidValue )
+<SPAN CLASS="linenum">0310:</SPAN> {
+<SPAN CLASS="linenum">0311:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( ERROR_SUCCESS != RegSetValueEx( hKey, strRegName, 0, REG_BINARY, 
+<SPAN CLASS="linenum">0312:</SPAN>                                         (BYTE*)&amp;guidValue, <SPAN CLASS="keyword">sizeof</SPAN>(GUID) ) )
+<SPAN CLASS="linenum">0313:</SPAN>         <SPAN CLASS="keyword">return</SPAN> E_FAIL;
+<SPAN CLASS="linenum">0314:</SPAN> 
+<SPAN CLASS="linenum">0315:</SPAN>     <SPAN CLASS="keyword">return</SPAN> S_OK;
+<SPAN CLASS="linenum">0316:</SPAN> }
+<SPAN CLASS="linenum">0317:</SPAN> 
+<SPAN CLASS="linenum">0318:</SPAN> 
+<SPAN CLASS="linenum">0319:</SPAN> 
+<SPAN CLASS="linenum">0320:</SPAN> 
+<SPAN CLASS="linenum">0321:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0322:</SPAN> <SPAN CLASS="comment">// Name: DXUtil_Timer()</SPAN>
+<SPAN CLASS="linenum">0323:</SPAN> <SPAN CLASS="comment">// Desc: Performs timer opertations. Use the following commands:</SPAN>
+<SPAN CLASS="linenum">0324:</SPAN> <SPAN CLASS="comment">//          TIMER_RESET           - to reset the timer</SPAN>
+<SPAN CLASS="linenum">0325:</SPAN> <SPAN CLASS="comment">//          TIMER_START           - to start the timer</SPAN>
+<SPAN CLASS="linenum">0326:</SPAN> <SPAN CLASS="comment">//          TIMER_STOP            - to stop (or pause) the timer</SPAN>
+<SPAN CLASS="linenum">0327:</SPAN> <SPAN CLASS="comment">//          TIMER_ADVANCE         - to advance the timer by 0.1 seconds</SPAN>
+<SPAN CLASS="linenum">0328:</SPAN> <SPAN CLASS="comment">//          TIMER_GETABSOLUTETIME - to get the absolute system time</SPAN>
+<SPAN CLASS="linenum">0329:</SPAN> <SPAN CLASS="comment">//          TIMER_GETAPPTIME      - to get the current time</SPAN>
+<SPAN CLASS="linenum">0330:</SPAN> <SPAN CLASS="comment">//          TIMER_GETELAPSEDTIME  - to get the time that elapsed between </SPAN>
+<SPAN CLASS="linenum">0331:</SPAN> <SPAN CLASS="comment">//                                  TIMER_GETELAPSEDTIME calls</SPAN>
+<SPAN CLASS="linenum">0332:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0333:</SPAN> FLOAT <SPAN CLASS="keyword">__stdcall</SPAN> DXUtil_Timer( TIMER_COMMAND command )
+<SPAN CLASS="linenum">0334:</SPAN> {
+<SPAN CLASS="linenum">0335:</SPAN>     <SPAN CLASS="keyword">static</SPAN> BOOL     m_bTimerInitialized = FALSE;
+<SPAN CLASS="linenum">0336:</SPAN>     <SPAN CLASS="keyword">static</SPAN> BOOL     m_bUsingQPF         = FALSE;
+<SPAN CLASS="linenum">0337:</SPAN>     <SPAN CLASS="keyword">static</SPAN> BOOL     m_bTimerStopped     = TRUE;
+<SPAN CLASS="linenum">0338:</SPAN>     <SPAN CLASS="keyword">static</SPAN> LONGLONG m_llQPFTicksPerSec  = 0;
+<SPAN CLASS="linenum">0339:</SPAN> 
+<SPAN CLASS="linenum">0340:</SPAN>     <SPAN CLASS="comment">// Initialize the timer</SPAN>
+<SPAN CLASS="linenum">0341:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( FALSE == m_bTimerInitialized )
+<SPAN CLASS="linenum">0342:</SPAN>     {
+<SPAN CLASS="linenum">0343:</SPAN>         m_bTimerInitialized = TRUE;
+<SPAN CLASS="linenum">0344:</SPAN> 
+<SPAN CLASS="linenum">0345:</SPAN>         <SPAN CLASS="comment">// Use QueryPerformanceFrequency() to get frequency of timer.  If QPF is</SPAN>
+<SPAN CLASS="linenum">0346:</SPAN>         <SPAN CLASS="comment">// not supported, we will timeGetTime() which returns milliseconds.</SPAN>
+<SPAN CLASS="linenum">0347:</SPAN>         LARGE_INTEGER qwTicksPerSec;
+<SPAN CLASS="linenum">0348:</SPAN>         m_bUsingQPF = QueryPerformanceFrequency( &amp;qwTicksPerSec );
+<SPAN CLASS="linenum">0349:</SPAN>         <SPAN CLASS="keyword">if</SPAN>( m_bUsingQPF )
+<SPAN CLASS="linenum">0350:</SPAN>             m_llQPFTicksPerSec = qwTicksPerSec.QuadPart;
+<SPAN CLASS="linenum">0351:</SPAN>     }
+<SPAN CLASS="linenum">0352:</SPAN> 
+<SPAN CLASS="linenum">0353:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( m_bUsingQPF )
+<SPAN CLASS="linenum">0354:</SPAN>     {
+<SPAN CLASS="linenum">0355:</SPAN>         <SPAN CLASS="keyword">static</SPAN> LONGLONG m_llStopTime        = 0;
+<SPAN CLASS="linenum">0356:</SPAN>         <SPAN CLASS="keyword">static</SPAN> LONGLONG m_llLastElapsedTime = 0;
+<SPAN CLASS="linenum">0357:</SPAN>         <SPAN CLASS="keyword">static</SPAN> LONGLONG m_llBaseTime        = 0;
+<SPAN CLASS="linenum">0358:</SPAN>         <SPAN CLASS="keyword">double</SPAN> fTime;
+<SPAN CLASS="linenum">0359:</SPAN>         <SPAN CLASS="keyword">double</SPAN> fElapsedTime;
+<SPAN CLASS="linenum">0360:</SPAN>         LARGE_INTEGER qwTime;
+<SPAN CLASS="linenum">0361:</SPAN>         
+<SPAN CLASS="linenum">0362:</SPAN>         <SPAN CLASS="comment">// Get either the current time or the stop time, depending</SPAN>
+<SPAN CLASS="linenum">0363:</SPAN>         <SPAN CLASS="comment">// on whether we're stopped and what command was sent</SPAN>
+<SPAN CLASS="linenum">0364:</SPAN>         <SPAN CLASS="keyword">if</SPAN>( m_llStopTime != 0 &amp;&amp; command != TIMER_START &amp;&amp; command != TIMER_GETABSOLUTETIME)
+<SPAN CLASS="linenum">0365:</SPAN>             qwTime.QuadPart = m_llStopTime;
+<SPAN CLASS="linenum">0366:</SPAN>         <SPAN CLASS="keyword">else</SPAN>
+<SPAN CLASS="linenum">0367:</SPAN>             QueryPerformanceCounter( &amp;qwTime );
+<SPAN CLASS="linenum">0368:</SPAN> 
+<SPAN CLASS="linenum">0369:</SPAN>         <SPAN CLASS="comment">// Return the elapsed time</SPAN>
+<SPAN CLASS="linenum">0370:</SPAN>         <SPAN CLASS="keyword">if</SPAN>( command == TIMER_GETELAPSEDTIME )
+<SPAN CLASS="linenum">0371:</SPAN>         {
+<SPAN CLASS="linenum">0372:</SPAN>             fElapsedTime = (<SPAN CLASS="keyword">double</SPAN>) ( qwTime.QuadPart - m_llLastElapsedTime ) / (<SPAN CLASS="keyword">double</SPAN>) m_llQPFTicksPerSec;
+<SPAN CLASS="linenum">0373:</SPAN>             m_llLastElapsedTime = qwTime.QuadPart;
+<SPAN CLASS="linenum">0374:</SPAN>             <SPAN CLASS="keyword">return</SPAN> (FLOAT) fElapsedTime;
+<SPAN CLASS="linenum">0375:</SPAN>         }
+<SPAN CLASS="linenum">0376:</SPAN>     
+<SPAN CLASS="linenum">0377:</SPAN>         <SPAN CLASS="comment">// Return the current time</SPAN>
+<SPAN CLASS="linenum">0378:</SPAN>         <SPAN CLASS="keyword">if</SPAN>( command == TIMER_GETAPPTIME )
+<SPAN CLASS="linenum">0379:</SPAN>         {
+<SPAN CLASS="linenum">0380:</SPAN>             <SPAN CLASS="keyword">double</SPAN> fAppTime = (<SPAN CLASS="keyword">double</SPAN>) ( qwTime.QuadPart - m_llBaseTime ) / (<SPAN CLASS="keyword">double</SPAN>) m_llQPFTicksPerSec;
+<SPAN CLASS="linenum">0381:</SPAN>             <SPAN CLASS="keyword">return</SPAN> (FLOAT) fAppTime;
+<SPAN CLASS="linenum">0382:</SPAN>         }
+<SPAN CLASS="linenum">0383:</SPAN>     
+<SPAN CLASS="linenum">0384:</SPAN>         <SPAN CLASS="comment">// Reset the timer</SPAN>
+<SPAN CLASS="linenum">0385:</SPAN>         <SPAN CLASS="keyword">if</SPAN>( command == TIMER_RESET )
+<SPAN CLASS="linenum">0386:</SPAN>         {
+<SPAN CLASS="linenum">0387:</SPAN>             m_llBaseTime        = qwTime.QuadPart;
+<SPAN CLASS="linenum">0388:</SPAN>             m_llLastElapsedTime = qwTime.QuadPart;
+<SPAN CLASS="linenum">0389:</SPAN>             m_llStopTime        = 0;
+<SPAN CLASS="linenum">0390:</SPAN>             m_bTimerStopped     = FALSE;
+<SPAN CLASS="linenum">0391:</SPAN>             <SPAN CLASS="keyword">return</SPAN> 0.0f;
+<SPAN CLASS="linenum">0392:</SPAN>         }
+<SPAN CLASS="linenum">0393:</SPAN>     
+<SPAN CLASS="linenum">0394:</SPAN>         <SPAN CLASS="comment">// Start the timer</SPAN>
+<SPAN CLASS="linenum">0395:</SPAN>         <SPAN CLASS="keyword">if</SPAN>( command == TIMER_START )
+<SPAN CLASS="linenum">0396:</SPAN>         {
+<SPAN CLASS="linenum">0397:</SPAN>             <SPAN CLASS="keyword">if</SPAN>( m_bTimerStopped )
+<SPAN CLASS="linenum">0398:</SPAN>                 m_llBaseTime += qwTime.QuadPart - m_llStopTime;
+<SPAN CLASS="linenum">0399:</SPAN>             m_llStopTime = 0;
+<SPAN CLASS="linenum">0400:</SPAN>             m_llLastElapsedTime = qwTime.QuadPart;
+<SPAN CLASS="linenum">0401:</SPAN>             m_bTimerStopped = FALSE;
+<SPAN CLASS="linenum">0402:</SPAN>             <SPAN CLASS="keyword">return</SPAN> 0.0f;
+<SPAN CLASS="linenum">0403:</SPAN>         }
+<SPAN CLASS="linenum">0404:</SPAN>     
+<SPAN CLASS="linenum">0405:</SPAN>         <SPAN CLASS="comment">// Stop the timer</SPAN>
+<SPAN CLASS="linenum">0406:</SPAN>         <SPAN CLASS="keyword">if</SPAN>( command == TIMER_STOP )
+<SPAN CLASS="linenum">0407:</SPAN>         {
+<SPAN CLASS="linenum">0408:</SPAN>             <SPAN CLASS="keyword">if</SPAN>( !m_bTimerStopped )
+<SPAN CLASS="linenum">0409:</SPAN>             {
+<SPAN CLASS="linenum">0410:</SPAN>                 m_llStopTime = qwTime.QuadPart;
+<SPAN CLASS="linenum">0411:</SPAN>                 m_llLastElapsedTime = qwTime.QuadPart;
+<SPAN CLASS="linenum">0412:</SPAN>                 m_bTimerStopped = TRUE;
+<SPAN CLASS="linenum">0413:</SPAN>             }
+<SPAN CLASS="linenum">0414:</SPAN>             <SPAN CLASS="keyword">return</SPAN> 0.0f;
+<SPAN CLASS="linenum">0415:</SPAN>         }
+<SPAN CLASS="linenum">0416:</SPAN>     
+<SPAN CLASS="linenum">0417:</SPAN>         <SPAN CLASS="comment">// Advance the timer by 1/10th second</SPAN>
+<SPAN CLASS="linenum">0418:</SPAN>         <SPAN CLASS="keyword">if</SPAN>( command == TIMER_ADVANCE )
+<SPAN CLASS="linenum">0419:</SPAN>         {
+<SPAN CLASS="linenum">0420:</SPAN>             m_llStopTime += m_llQPFTicksPerSec/10;
+<SPAN CLASS="linenum">0421:</SPAN>             <SPAN CLASS="keyword">return</SPAN> 0.0f;
+<SPAN CLASS="linenum">0422:</SPAN>         }
+<SPAN CLASS="linenum">0423:</SPAN> 
+<SPAN CLASS="linenum">0424:</SPAN>         <SPAN CLASS="keyword">if</SPAN>( command == TIMER_GETABSOLUTETIME )
+<SPAN CLASS="linenum">0425:</SPAN>         {
+<SPAN CLASS="linenum">0426:</SPAN>             fTime = qwTime.QuadPart / (<SPAN CLASS="keyword">double</SPAN>) m_llQPFTicksPerSec;
+<SPAN CLASS="linenum">0427:</SPAN>             <SPAN CLASS="keyword">return</SPAN> (FLOAT) fTime;
+<SPAN CLASS="linenum">0428:</SPAN>         }
+<SPAN CLASS="linenum">0429:</SPAN> 
+<SPAN CLASS="linenum">0430:</SPAN>         <SPAN CLASS="keyword">return</SPAN> -1.0f; <SPAN CLASS="comment">// Invalid command specified</SPAN>
+<SPAN CLASS="linenum">0431:</SPAN>     }
+<SPAN CLASS="linenum">0432:</SPAN>     <SPAN CLASS="keyword">else</SPAN>
+<SPAN CLASS="linenum">0433:</SPAN>     {
+<SPAN CLASS="linenum">0434:</SPAN>         <SPAN CLASS="comment">// Get the time using timeGetTime()</SPAN>
+<SPAN CLASS="linenum">0435:</SPAN>         <SPAN CLASS="keyword">static</SPAN> <SPAN CLASS="keyword">double</SPAN> m_fLastElapsedTime  = 0.0;
+<SPAN CLASS="linenum">0436:</SPAN>         <SPAN CLASS="keyword">static</SPAN> <SPAN CLASS="keyword">double</SPAN> m_fBaseTime         = 0.0;
+<SPAN CLASS="linenum">0437:</SPAN>         <SPAN CLASS="keyword">static</SPAN> <SPAN CLASS="keyword">double</SPAN> m_fStopTime         = 0.0;
+<SPAN CLASS="linenum">0438:</SPAN>         <SPAN CLASS="keyword">double</SPAN> fTime;
+<SPAN CLASS="linenum">0439:</SPAN>         <SPAN CLASS="keyword">double</SPAN> fElapsedTime;
+<SPAN CLASS="linenum">0440:</SPAN>         
+<SPAN CLASS="linenum">0441:</SPAN>         <SPAN CLASS="comment">// Get either the current time or the stop time, depending</SPAN>
+<SPAN CLASS="linenum">0442:</SPAN>         <SPAN CLASS="comment">// on whether we're stopped and what command was sent</SPAN>
+<SPAN CLASS="linenum">0443:</SPAN>         <SPAN CLASS="keyword">if</SPAN>( m_fStopTime != 0.0 &amp;&amp; command != TIMER_START &amp;&amp; command != TIMER_GETABSOLUTETIME)
+<SPAN CLASS="linenum">0444:</SPAN>             fTime = m_fStopTime;
+<SPAN CLASS="linenum">0445:</SPAN>         <SPAN CLASS="keyword">else</SPAN>
+<SPAN CLASS="linenum">0446:</SPAN>             fTime = GETTIMESTAMP() * 0.001;
+<SPAN CLASS="linenum">0447:</SPAN>     
+<SPAN CLASS="linenum">0448:</SPAN>         <SPAN CLASS="comment">// Return the elapsed time</SPAN>
+<SPAN CLASS="linenum">0449:</SPAN>         <SPAN CLASS="keyword">if</SPAN>( command == TIMER_GETELAPSEDTIME )
+<SPAN CLASS="linenum">0450:</SPAN>         {   
+<SPAN CLASS="linenum">0451:</SPAN>             fElapsedTime = (<SPAN CLASS="keyword">double</SPAN>) (fTime - m_fLastElapsedTime);
+<SPAN CLASS="linenum">0452:</SPAN>             m_fLastElapsedTime = fTime;
+<SPAN CLASS="linenum">0453:</SPAN>             <SPAN CLASS="keyword">return</SPAN> (FLOAT) fElapsedTime;
+<SPAN CLASS="linenum">0454:</SPAN>         }
+<SPAN CLASS="linenum">0455:</SPAN>     
+<SPAN CLASS="linenum">0456:</SPAN>         <SPAN CLASS="comment">// Return the current time</SPAN>
+<SPAN CLASS="linenum">0457:</SPAN>         <SPAN CLASS="keyword">if</SPAN>( command == TIMER_GETAPPTIME )
+<SPAN CLASS="linenum">0458:</SPAN>         {
+<SPAN CLASS="linenum">0459:</SPAN>             <SPAN CLASS="keyword">return</SPAN> (FLOAT) (fTime - m_fBaseTime);
+<SPAN CLASS="linenum">0460:</SPAN>         }
+<SPAN CLASS="linenum">0461:</SPAN>     
+<SPAN CLASS="linenum">0462:</SPAN>         <SPAN CLASS="comment">// Reset the timer</SPAN>
+<SPAN CLASS="linenum">0463:</SPAN>         <SPAN CLASS="keyword">if</SPAN>( command == TIMER_RESET )
+<SPAN CLASS="linenum">0464:</SPAN>         {
+<SPAN CLASS="linenum">0465:</SPAN>             m_fBaseTime         = fTime;
+<SPAN CLASS="linenum">0466:</SPAN>             m_fLastElapsedTime  = fTime;
+<SPAN CLASS="linenum">0467:</SPAN>             m_fStopTime         = 0;
+<SPAN CLASS="linenum">0468:</SPAN>             m_bTimerStopped     = FALSE;
+<SPAN CLASS="linenum">0469:</SPAN>             <SPAN CLASS="keyword">return</SPAN> 0.0f;
+<SPAN CLASS="linenum">0470:</SPAN>         }
+<SPAN CLASS="linenum">0471:</SPAN>     
+<SPAN CLASS="linenum">0472:</SPAN>         <SPAN CLASS="comment">// Start the timer</SPAN>
+<SPAN CLASS="linenum">0473:</SPAN>         <SPAN CLASS="keyword">if</SPAN>( command == TIMER_START )
+<SPAN CLASS="linenum">0474:</SPAN>         {
+<SPAN CLASS="linenum">0475:</SPAN>             <SPAN CLASS="keyword">if</SPAN>( m_bTimerStopped )
+<SPAN CLASS="linenum">0476:</SPAN>                 m_fBaseTime += fTime - m_fStopTime;
+<SPAN CLASS="linenum">0477:</SPAN>             m_fStopTime = 0.0f;
+<SPAN CLASS="linenum">0478:</SPAN>             m_fLastElapsedTime  = fTime;
+<SPAN CLASS="linenum">0479:</SPAN>             m_bTimerStopped = FALSE;
+<SPAN CLASS="linenum">0480:</SPAN>             <SPAN CLASS="keyword">return</SPAN> 0.0f;
+<SPAN CLASS="linenum">0481:</SPAN>         }
+<SPAN CLASS="linenum">0482:</SPAN>     
+<SPAN CLASS="linenum">0483:</SPAN>         <SPAN CLASS="comment">// Stop the timer</SPAN>
+<SPAN CLASS="linenum">0484:</SPAN>         <SPAN CLASS="keyword">if</SPAN>( command == TIMER_STOP )
+<SPAN CLASS="linenum">0485:</SPAN>         {
+<SPAN CLASS="linenum">0486:</SPAN>             <SPAN CLASS="keyword">if</SPAN>( !m_bTimerStopped )
+<SPAN CLASS="linenum">0487:</SPAN>             {
+<SPAN CLASS="linenum">0488:</SPAN>                 m_fStopTime = fTime;
+<SPAN CLASS="linenum">0489:</SPAN>                 m_fLastElapsedTime  = fTime;
+<SPAN CLASS="linenum">0490:</SPAN>                 m_bTimerStopped = TRUE;
+<SPAN CLASS="linenum">0491:</SPAN>             }
+<SPAN CLASS="linenum">0492:</SPAN>             <SPAN CLASS="keyword">return</SPAN> 0.0f;
+<SPAN CLASS="linenum">0493:</SPAN>         }
+<SPAN CLASS="linenum">0494:</SPAN>     
+<SPAN CLASS="linenum">0495:</SPAN>         <SPAN CLASS="comment">// Advance the timer by 1/10th second</SPAN>
+<SPAN CLASS="linenum">0496:</SPAN>         <SPAN CLASS="keyword">if</SPAN>( command == TIMER_ADVANCE )
+<SPAN CLASS="linenum">0497:</SPAN>         {
+<SPAN CLASS="linenum">0498:</SPAN>             m_fStopTime += 0.1f;
+<SPAN CLASS="linenum">0499:</SPAN>             <SPAN CLASS="keyword">return</SPAN> 0.0f;
+<SPAN CLASS="linenum">0500:</SPAN>         }
+<SPAN CLASS="linenum">0501:</SPAN> 
+<SPAN CLASS="linenum">0502:</SPAN>         <SPAN CLASS="keyword">if</SPAN>( command == TIMER_GETABSOLUTETIME )
+<SPAN CLASS="linenum">0503:</SPAN>         {
+<SPAN CLASS="linenum">0504:</SPAN>             <SPAN CLASS="keyword">return</SPAN> (FLOAT) fTime;
+<SPAN CLASS="linenum">0505:</SPAN>         }
+<SPAN CLASS="linenum">0506:</SPAN> 
+<SPAN CLASS="linenum">0507:</SPAN>         <SPAN CLASS="keyword">return</SPAN> -1.0f; <SPAN CLASS="comment">// Invalid command specified</SPAN>
+<SPAN CLASS="linenum">0508:</SPAN>     }
+<SPAN CLASS="linenum">0509:</SPAN> }
+<SPAN CLASS="linenum">0510:</SPAN> 
+<SPAN CLASS="linenum">0511:</SPAN> 
+<SPAN CLASS="linenum">0512:</SPAN> 
+<SPAN CLASS="linenum">0513:</SPAN> 
+<SPAN CLASS="linenum">0514:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0515:</SPAN> <SPAN CLASS="comment">// Name: DXUtil_ConvertAnsiStringToWideCch()</SPAN>
+<SPAN CLASS="linenum">0516:</SPAN> <SPAN CLASS="comment">// Desc: This is a UNICODE conversion utility to convert a CHAR string into a</SPAN>
+<SPAN CLASS="linenum">0517:</SPAN> <SPAN CLASS="comment">//       WCHAR string. </SPAN>
+<SPAN CLASS="linenum">0518:</SPAN> <SPAN CLASS="comment">//       cchDestChar is the size in TCHARs of wstrDestination.  Be careful not to </SPAN>
+<SPAN CLASS="linenum">0519:</SPAN> <SPAN CLASS="comment">//       pass in sizeof(strDest) </SPAN>
+<SPAN CLASS="linenum">0520:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0521:</SPAN> HRESULT DXUtil_ConvertAnsiStringToWideCch( WCHAR* wstrDestination, <SPAN CLASS="keyword">const</SPAN> CHAR* strSource, 
+<SPAN CLASS="linenum">0522:</SPAN>                                      <SPAN CLASS="keyword">int</SPAN> cchDestChar )
+<SPAN CLASS="linenum">0523:</SPAN> {
+<SPAN CLASS="linenum">0524:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( wstrDestination==NULL || strSource==NULL || cchDestChar &lt; 1 )
+<SPAN CLASS="linenum">0525:</SPAN>         <SPAN CLASS="keyword">return</SPAN> E_INVALIDARG;
+<SPAN CLASS="linenum">0526:</SPAN> 
+<SPAN CLASS="linenum">0527:</SPAN>     <SPAN CLASS="keyword">int</SPAN> nResult = MultiByteToWideChar( CP_ACP, 0, strSource, -1, 
+<SPAN CLASS="linenum">0528:</SPAN>                                        wstrDestination, cchDestChar );
+<SPAN CLASS="linenum">0529:</SPAN>     wstrDestination[cchDestChar-1] = 0;
+<SPAN CLASS="linenum">0530:</SPAN>     
+<SPAN CLASS="linenum">0531:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( nResult == 0 )
+<SPAN CLASS="linenum">0532:</SPAN>         <SPAN CLASS="keyword">return</SPAN> E_FAIL;
+<SPAN CLASS="linenum">0533:</SPAN>     <SPAN CLASS="keyword">return</SPAN> S_OK;
+<SPAN CLASS="linenum">0534:</SPAN> }
+<SPAN CLASS="linenum">0535:</SPAN> 
+<SPAN CLASS="linenum">0536:</SPAN> 
+<SPAN CLASS="linenum">0537:</SPAN> 
+<SPAN CLASS="linenum">0538:</SPAN> 
+<SPAN CLASS="linenum">0539:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0540:</SPAN> <SPAN CLASS="comment">// Name: DXUtil_ConvertWideStringToAnsi()</SPAN>
+<SPAN CLASS="linenum">0541:</SPAN> <SPAN CLASS="comment">// Desc: This is a UNICODE conversion utility to convert a WCHAR string into a</SPAN>
+<SPAN CLASS="linenum">0542:</SPAN> <SPAN CLASS="comment">//       CHAR string. </SPAN>
+<SPAN CLASS="linenum">0543:</SPAN> <SPAN CLASS="comment">//       cchDestChar is the size in TCHARs of strDestination</SPAN>
+<SPAN CLASS="linenum">0544:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0545:</SPAN> HRESULT DXUtil_ConvertWideStringToAnsiCch( CHAR* strDestination, <SPAN CLASS="keyword">const</SPAN> WCHAR* wstrSource, 
+<SPAN CLASS="linenum">0546:</SPAN>                                      <SPAN CLASS="keyword">int</SPAN> cchDestChar )
+<SPAN CLASS="linenum">0547:</SPAN> {
+<SPAN CLASS="linenum">0548:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( strDestination==NULL || wstrSource==NULL || cchDestChar &lt; 1 )
+<SPAN CLASS="linenum">0549:</SPAN>         <SPAN CLASS="keyword">return</SPAN> E_INVALIDARG;
+<SPAN CLASS="linenum">0550:</SPAN> 
+<SPAN CLASS="linenum">0551:</SPAN>     <SPAN CLASS="keyword">int</SPAN> nResult = WideCharToMultiByte( CP_ACP, 0, wstrSource, -1, strDestination, 
+<SPAN CLASS="linenum">0552:</SPAN>                                        cchDestChar*<SPAN CLASS="keyword">sizeof</SPAN>(CHAR), NULL, NULL );
+<SPAN CLASS="linenum">0553:</SPAN>     strDestination[cchDestChar-1] = 0;
+<SPAN CLASS="linenum">0554:</SPAN>     
+<SPAN CLASS="linenum">0555:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( nResult == 0 )
+<SPAN CLASS="linenum">0556:</SPAN>         <SPAN CLASS="keyword">return</SPAN> E_FAIL;
+<SPAN CLASS="linenum">0557:</SPAN>     <SPAN CLASS="keyword">return</SPAN> S_OK;
+<SPAN CLASS="linenum">0558:</SPAN> }
+<SPAN CLASS="linenum">0559:</SPAN> 
+<SPAN CLASS="linenum">0560:</SPAN> 
+<SPAN CLASS="linenum">0561:</SPAN> 
+<SPAN CLASS="linenum">0562:</SPAN> 
+<SPAN CLASS="linenum">0563:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0564:</SPAN> <SPAN CLASS="comment">// Name: DXUtil_ConvertGenericStringToAnsi()</SPAN>
+<SPAN CLASS="linenum">0565:</SPAN> <SPAN CLASS="comment">// Desc: This is a UNICODE conversion utility to convert a TCHAR string into a</SPAN>
+<SPAN CLASS="linenum">0566:</SPAN> <SPAN CLASS="comment">//       CHAR string. </SPAN>
+<SPAN CLASS="linenum">0567:</SPAN> <SPAN CLASS="comment">//       cchDestChar is the size in TCHARs of strDestination</SPAN>
+<SPAN CLASS="linenum">0568:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0569:</SPAN> HRESULT DXUtil_ConvertGenericStringToAnsiCch( CHAR* strDestination, <SPAN CLASS="keyword">const</SPAN> TCHAR* tstrSource, 
+<SPAN CLASS="linenum">0570:</SPAN>                                            <SPAN CLASS="keyword">int</SPAN> cchDestChar )
+<SPAN CLASS="linenum">0571:</SPAN> {
+<SPAN CLASS="linenum">0572:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( strDestination==NULL || tstrSource==NULL || cchDestChar &lt; 1 )
+<SPAN CLASS="linenum">0573:</SPAN>         <SPAN CLASS="keyword">return</SPAN> E_INVALIDARG;
+<SPAN CLASS="linenum">0574:</SPAN> 
+<SPAN CLASS="linenum">0575:</SPAN> <SPAN CLASS="keyword">#ifdef</SPAN> _UNICODE
+<SPAN CLASS="linenum">0576:</SPAN>     <SPAN CLASS="keyword">return</SPAN> DXUtil_ConvertWideStringToAnsiCch( strDestination, tstrSource, cchDestChar );
+<SPAN CLASS="linenum">0577:</SPAN> <SPAN CLASS="keyword">#else</SPAN>
+<SPAN CLASS="linenum">0578:</SPAN>     strncpy( strDestination, tstrSource, cchDestChar );
+<SPAN CLASS="linenum">0579:</SPAN>     strDestination[cchDestChar-1] = '<SPAN CLASS="string">\0</SPAN>';
+<SPAN CLASS="linenum">0580:</SPAN>     <SPAN CLASS="keyword">return</SPAN> S_OK;
+<SPAN CLASS="linenum">0581:</SPAN> <SPAN CLASS="keyword">#endif</SPAN>   
+<SPAN CLASS="linenum">0582:</SPAN> }
+<SPAN CLASS="linenum">0583:</SPAN> 
+<SPAN CLASS="linenum">0584:</SPAN> 
+<SPAN CLASS="linenum">0585:</SPAN> 
+<SPAN CLASS="linenum">0586:</SPAN> 
+<SPAN CLASS="linenum">0587:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0588:</SPAN> <SPAN CLASS="comment">// Name: DXUtil_ConvertGenericStringToWide()</SPAN>
+<SPAN CLASS="linenum">0589:</SPAN> <SPAN CLASS="comment">// Desc: This is a UNICODE conversion utility to convert a TCHAR string into a</SPAN>
+<SPAN CLASS="linenum">0590:</SPAN> <SPAN CLASS="comment">//       WCHAR string. </SPAN>
+<SPAN CLASS="linenum">0591:</SPAN> <SPAN CLASS="comment">//       cchDestChar is the size in TCHARs of wstrDestination.  Be careful not to </SPAN>
+<SPAN CLASS="linenum">0592:</SPAN> <SPAN CLASS="comment">//       pass in sizeof(strDest) </SPAN>
+<SPAN CLASS="linenum">0593:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0594:</SPAN> HRESULT DXUtil_ConvertGenericStringToWideCch( WCHAR* wstrDestination, <SPAN CLASS="keyword">const</SPAN> TCHAR* tstrSource, 
+<SPAN CLASS="linenum">0595:</SPAN>                                            <SPAN CLASS="keyword">int</SPAN> cchDestChar )
+<SPAN CLASS="linenum">0596:</SPAN> {
+<SPAN CLASS="linenum">0597:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( wstrDestination==NULL || tstrSource==NULL || cchDestChar &lt; 1 )
+<SPAN CLASS="linenum">0598:</SPAN>         <SPAN CLASS="keyword">return</SPAN> E_INVALIDARG;
+<SPAN CLASS="linenum">0599:</SPAN> 
+<SPAN CLASS="linenum">0600:</SPAN> <SPAN CLASS="keyword">#ifdef</SPAN> _UNICODE
+<SPAN CLASS="linenum">0601:</SPAN>     wcsncpy( wstrDestination, tstrSource, cchDestChar );
+<SPAN CLASS="linenum">0602:</SPAN>     wstrDestination[cchDestChar-1] = L'\0';
+<SPAN CLASS="linenum">0603:</SPAN>     <SPAN CLASS="keyword">return</SPAN> S_OK;
+<SPAN CLASS="linenum">0604:</SPAN> <SPAN CLASS="keyword">#else</SPAN>
+<SPAN CLASS="linenum">0605:</SPAN>     <SPAN CLASS="keyword">return</SPAN> DXUtil_ConvertAnsiStringToWideCch( wstrDestination, tstrSource, cchDestChar );
+<SPAN CLASS="linenum">0606:</SPAN> <SPAN CLASS="keyword">#endif</SPAN>    
+<SPAN CLASS="linenum">0607:</SPAN> }
+<SPAN CLASS="linenum">0608:</SPAN> 
+<SPAN CLASS="linenum">0609:</SPAN> 
+<SPAN CLASS="linenum">0610:</SPAN> 
+<SPAN CLASS="linenum">0611:</SPAN> 
+<SPAN CLASS="linenum">0612:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0613:</SPAN> <SPAN CLASS="comment">// Name: DXUtil_ConvertAnsiStringToGeneric()</SPAN>
+<SPAN CLASS="linenum">0614:</SPAN> <SPAN CLASS="comment">// Desc: This is a UNICODE conversion utility to convert a CHAR string into a</SPAN>
+<SPAN CLASS="linenum">0615:</SPAN> <SPAN CLASS="comment">//       TCHAR string. </SPAN>
+<SPAN CLASS="linenum">0616:</SPAN> <SPAN CLASS="comment">//       cchDestChar is the size in TCHARs of tstrDestination.  Be careful not to </SPAN>
+<SPAN CLASS="linenum">0617:</SPAN> <SPAN CLASS="comment">//       pass in sizeof(strDest) on UNICODE builds</SPAN>
+<SPAN CLASS="linenum">0618:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0619:</SPAN> HRESULT DXUtil_ConvertAnsiStringToGenericCch( TCHAR* tstrDestination, <SPAN CLASS="keyword">const</SPAN> CHAR* strSource, 
+<SPAN CLASS="linenum">0620:</SPAN>                                            <SPAN CLASS="keyword">int</SPAN> cchDestChar )
+<SPAN CLASS="linenum">0621:</SPAN> {
+<SPAN CLASS="linenum">0622:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( tstrDestination==NULL || strSource==NULL || cchDestChar &lt; 1 )
+<SPAN CLASS="linenum">0623:</SPAN>         <SPAN CLASS="keyword">return</SPAN> E_INVALIDARG;
+<SPAN CLASS="linenum">0624:</SPAN>         
+<SPAN CLASS="linenum">0625:</SPAN> <SPAN CLASS="keyword">#ifdef</SPAN> _UNICODE
+<SPAN CLASS="linenum">0626:</SPAN>     <SPAN CLASS="keyword">return</SPAN> DXUtil_ConvertAnsiStringToWideCch( tstrDestination, strSource, cchDestChar );
+<SPAN CLASS="linenum">0627:</SPAN> <SPAN CLASS="keyword">#else</SPAN>
+<SPAN CLASS="linenum">0628:</SPAN>     strncpy( tstrDestination, strSource, cchDestChar );
+<SPAN CLASS="linenum">0629:</SPAN>     tstrDestination[cchDestChar-1] = '<SPAN CLASS="string">\0</SPAN>';
+<SPAN CLASS="linenum">0630:</SPAN>     <SPAN CLASS="keyword">return</SPAN> S_OK;
+<SPAN CLASS="linenum">0631:</SPAN> <SPAN CLASS="keyword">#endif</SPAN>    
+<SPAN CLASS="linenum">0632:</SPAN> }
+<SPAN CLASS="linenum">0633:</SPAN> 
+<SPAN CLASS="linenum">0634:</SPAN> 
+<SPAN CLASS="linenum">0635:</SPAN> 
+<SPAN CLASS="linenum">0636:</SPAN> 
+<SPAN CLASS="linenum">0637:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0638:</SPAN> <SPAN CLASS="comment">// Name: DXUtil_ConvertAnsiStringToGeneric()</SPAN>
+<SPAN CLASS="linenum">0639:</SPAN> <SPAN CLASS="comment">// Desc: This is a UNICODE conversion utility to convert a WCHAR string into a</SPAN>
+<SPAN CLASS="linenum">0640:</SPAN> <SPAN CLASS="comment">//       TCHAR string. </SPAN>
+<SPAN CLASS="linenum">0641:</SPAN> <SPAN CLASS="comment">//       cchDestChar is the size in TCHARs of tstrDestination.  Be careful not to </SPAN>
+<SPAN CLASS="linenum">0642:</SPAN> <SPAN CLASS="comment">//       pass in sizeof(strDest) on UNICODE builds</SPAN>
+<SPAN CLASS="linenum">0643:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0644:</SPAN> HRESULT DXUtil_ConvertWideStringToGenericCch( TCHAR* tstrDestination, <SPAN CLASS="keyword">const</SPAN> WCHAR* wstrSource, 
+<SPAN CLASS="linenum">0645:</SPAN>                                            <SPAN CLASS="keyword">int</SPAN> cchDestChar )
+<SPAN CLASS="linenum">0646:</SPAN> {
+<SPAN CLASS="linenum">0647:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( tstrDestination==NULL || wstrSource==NULL || cchDestChar &lt; 1 )
+<SPAN CLASS="linenum">0648:</SPAN>         <SPAN CLASS="keyword">return</SPAN> E_INVALIDARG;
+<SPAN CLASS="linenum">0649:</SPAN> 
+<SPAN CLASS="linenum">0650:</SPAN> <SPAN CLASS="keyword">#ifdef</SPAN> _UNICODE
+<SPAN CLASS="linenum">0651:</SPAN>     wcsncpy( tstrDestination, wstrSource, cchDestChar );
+<SPAN CLASS="linenum">0652:</SPAN>     tstrDestination[cchDestChar-1] = L'\0';    
+<SPAN CLASS="linenum">0653:</SPAN>     <SPAN CLASS="keyword">return</SPAN> S_OK;
+<SPAN CLASS="linenum">0654:</SPAN> <SPAN CLASS="keyword">#else</SPAN>
+<SPAN CLASS="linenum">0655:</SPAN>     <SPAN CLASS="keyword">return</SPAN> DXUtil_ConvertWideStringToAnsiCch( tstrDestination, wstrSource, cchDestChar );
+<SPAN CLASS="linenum">0656:</SPAN> <SPAN CLASS="keyword">#endif</SPAN>
+<SPAN CLASS="linenum">0657:</SPAN> }
+<SPAN CLASS="linenum">0658:</SPAN> 
+<SPAN CLASS="linenum">0659:</SPAN> 
+<SPAN CLASS="linenum">0660:</SPAN> 
+<SPAN CLASS="linenum">0661:</SPAN> 
+<SPAN CLASS="linenum">0662:</SPAN> 
+<SPAN CLASS="linenum">0663:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0664:</SPAN> <SPAN CLASS="comment">// Name: DXUtil_LaunchReadme()</SPAN>
+<SPAN CLASS="linenum">0665:</SPAN> <SPAN CLASS="comment">// Desc: Finds and opens the readme.txt for this sample</SPAN>
+<SPAN CLASS="linenum">0666:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0667:</SPAN> VOID DXUtil_LaunchReadme( HWND hWnd, TCHAR* strLoc )
+<SPAN CLASS="linenum">0668:</SPAN> {
+<SPAN CLASS="linenum">0669:</SPAN> 
+<SPAN CLASS="linenum">0670:</SPAN> <SPAN CLASS="keyword">#ifdef</SPAN> UNDER_CE
+<SPAN CLASS="linenum">0671:</SPAN>     <SPAN CLASS="comment">// This is not available on PocketPC</SPAN>
+<SPAN CLASS="linenum">0672:</SPAN>     MessageBox( hWnd, TEXT("<SPAN CLASS="string">For operating instructions, please open the </SPAN>")
+<SPAN CLASS="linenum">0673:</SPAN>                       TEXT("<SPAN CLASS="string">readme.txt file included with the project.</SPAN>"),
+<SPAN CLASS="linenum">0674:</SPAN>                 TEXT("<SPAN CLASS="string">DirectX SDK Sample</SPAN>"), MB_ICONWARNING | MB_OK );
+<SPAN CLASS="linenum">0675:</SPAN> 
+<SPAN CLASS="linenum">0676:</SPAN>     <SPAN CLASS="keyword">return</SPAN>;
+<SPAN CLASS="linenum">0677:</SPAN> <SPAN CLASS="keyword">#else</SPAN> 
+<SPAN CLASS="linenum">0678:</SPAN> 
+<SPAN CLASS="linenum">0679:</SPAN>     <SPAN CLASS="keyword">bool</SPAN> bSuccess = <SPAN CLASS="keyword">false</SPAN>;
+<SPAN CLASS="linenum">0680:</SPAN>     <SPAN CLASS="keyword">bool</SPAN> bFound = <SPAN CLASS="keyword">false</SPAN>;
+<SPAN CLASS="linenum">0681:</SPAN>     TCHAR strReadmePath[1024];
+<SPAN CLASS="linenum">0682:</SPAN>     TCHAR strExeName[MAX_PATH];
+<SPAN CLASS="linenum">0683:</SPAN>     TCHAR strExePath[MAX_PATH];
+<SPAN CLASS="linenum">0684:</SPAN>     TCHAR strSamplePath[MAX_PATH];
+<SPAN CLASS="linenum">0685:</SPAN>     TCHAR* strLastSlash = NULL;
+<SPAN CLASS="linenum">0686:</SPAN> 
+<SPAN CLASS="linenum">0687:</SPAN>     lstrcpy( strReadmePath, TEXT("<SPAN CLASS="string"></SPAN>") );
+<SPAN CLASS="linenum">0688:</SPAN>     lstrcpy( strExePath, TEXT("<SPAN CLASS="string"></SPAN>") );
+<SPAN CLASS="linenum">0689:</SPAN>     lstrcpy( strExeName, TEXT("<SPAN CLASS="string"></SPAN>") );
+<SPAN CLASS="linenum">0690:</SPAN>     lstrcpy( strSamplePath, TEXT("<SPAN CLASS="string"></SPAN>") );
+<SPAN CLASS="linenum">0691:</SPAN> 
+<SPAN CLASS="linenum">0692:</SPAN>     <SPAN CLASS="comment">// If the user provided a location for the readme, check there first.</SPAN>
+<SPAN CLASS="linenum">0693:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( strLoc )
+<SPAN CLASS="linenum">0694:</SPAN>     {
+<SPAN CLASS="linenum">0695:</SPAN>         HKEY  hKey;
+<SPAN CLASS="linenum">0696:</SPAN>         LONG lResult = RegOpenKeyEx( HKEY_LOCAL_MACHINE,
+<SPAN CLASS="linenum">0697:</SPAN>                                     _T("<SPAN CLASS="string">Software\\Microsoft\\DirectX SDK</SPAN>"),
+<SPAN CLASS="linenum">0698:</SPAN>                                     0, KEY_READ, &amp;hKey );
+<SPAN CLASS="linenum">0699:</SPAN>         <SPAN CLASS="keyword">if</SPAN>( ERROR_SUCCESS == lResult )
+<SPAN CLASS="linenum">0700:</SPAN>         {
+<SPAN CLASS="linenum">0701:</SPAN>             DWORD dwType;
+<SPAN CLASS="linenum">0702:</SPAN>             DWORD dwSize = MAX_PATH * <SPAN CLASS="keyword">sizeof</SPAN>(TCHAR);
+<SPAN CLASS="linenum">0703:</SPAN>             lResult = RegQueryValueEx( hKey, _T("<SPAN CLASS="string">DX9SDK Samples Path</SPAN>"), NULL,
+<SPAN CLASS="linenum">0704:</SPAN>                                       &amp;dwType, (BYTE*)strSamplePath, &amp;dwSize );
+<SPAN CLASS="linenum">0705:</SPAN>             strSamplePath[MAX_PATH-1] = 0; <SPAN CLASS="comment">// RegQueryValueEx doesn't NULL term if buffer too small</SPAN>
+<SPAN CLASS="linenum">0706:</SPAN>             
+<SPAN CLASS="linenum">0707:</SPAN>             <SPAN CLASS="keyword">if</SPAN>( ERROR_SUCCESS == lResult )
+<SPAN CLASS="linenum">0708:</SPAN>             {
+<SPAN CLASS="linenum">0709:</SPAN>                 _sntprintf( strReadmePath, 1023, TEXT("<SPAN CLASS="string">%s\\C++\\%s\\readme.txt</SPAN>"), 
+<SPAN CLASS="linenum">0710:</SPAN>                             strSamplePath, strLoc );
+<SPAN CLASS="linenum">0711:</SPAN>                 strReadmePath[1023] = 0;
+<SPAN CLASS="linenum">0712:</SPAN> 
+<SPAN CLASS="linenum">0713:</SPAN>                 <SPAN CLASS="keyword">if</SPAN>( GetFileAttributes( strReadmePath ) != 0xFFFFFFFF )
+<SPAN CLASS="linenum">0714:</SPAN>                     bFound = TRUE;
+<SPAN CLASS="linenum">0715:</SPAN>             }
+<SPAN CLASS="linenum">0716:</SPAN>         }
+<SPAN CLASS="linenum">0717:</SPAN> 
+<SPAN CLASS="linenum">0718:</SPAN>         RegCloseKey( hKey );
+<SPAN CLASS="linenum">0719:</SPAN>     }
+<SPAN CLASS="linenum">0720:</SPAN> 
+<SPAN CLASS="linenum">0721:</SPAN>     <SPAN CLASS="comment">// Get the exe name, and exe path</SPAN>
+<SPAN CLASS="linenum">0722:</SPAN>     GetModuleFileName( NULL, strExePath, MAX_PATH );
+<SPAN CLASS="linenum">0723:</SPAN>     strExePath[MAX_PATH-1]=0;
+<SPAN CLASS="linenum">0724:</SPAN> 
+<SPAN CLASS="linenum">0725:</SPAN>     strLastSlash = _tcsrchr( strExePath, TEXT('<SPAN CLASS="string">\\</SPAN>') );
+<SPAN CLASS="linenum">0726:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( strLastSlash )
+<SPAN CLASS="linenum">0727:</SPAN>     {
+<SPAN CLASS="linenum">0728:</SPAN>         _tcsncpy( strExeName, &amp;strLastSlash[1], MAX_PATH );
+<SPAN CLASS="linenum">0729:</SPAN>         strExeName[MAX_PATH-1]=0;
+<SPAN CLASS="linenum">0730:</SPAN> 
+<SPAN CLASS="linenum">0731:</SPAN>         <SPAN CLASS="comment">// Chop the exe name from the exe path</SPAN>
+<SPAN CLASS="linenum">0732:</SPAN>         *strLastSlash = 0;
+<SPAN CLASS="linenum">0733:</SPAN> 
+<SPAN CLASS="linenum">0734:</SPAN>         <SPAN CLASS="comment">// Chop the .exe from the exe name</SPAN>
+<SPAN CLASS="linenum">0735:</SPAN>         strLastSlash = _tcsrchr( strExeName, TEXT('<SPAN CLASS="string">.</SPAN>') );
+<SPAN CLASS="linenum">0736:</SPAN>         <SPAN CLASS="keyword">if</SPAN>( strLastSlash )
+<SPAN CLASS="linenum">0737:</SPAN>             *strLastSlash = 0;
+<SPAN CLASS="linenum">0738:</SPAN>     }
+<SPAN CLASS="linenum">0739:</SPAN> 
+<SPAN CLASS="linenum">0740:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( !bFound )
+<SPAN CLASS="linenum">0741:</SPAN>     {
+<SPAN CLASS="linenum">0742:</SPAN>         <SPAN CLASS="comment">// Search in "%EXE_DIR%\..\%EXE_NAME%".  This matchs the DirectX SDK layout</SPAN>
+<SPAN CLASS="linenum">0743:</SPAN>         _tcscpy( strReadmePath, strExePath );
+<SPAN CLASS="linenum">0744:</SPAN> 
+<SPAN CLASS="linenum">0745:</SPAN>         strLastSlash = _tcsrchr( strReadmePath, TEXT('<SPAN CLASS="string">\\</SPAN>') );
+<SPAN CLASS="linenum">0746:</SPAN>         <SPAN CLASS="keyword">if</SPAN>( strLastSlash )
+<SPAN CLASS="linenum">0747:</SPAN>             *strLastSlash = 0;
+<SPAN CLASS="linenum">0748:</SPAN>         lstrcat( strReadmePath, TEXT("<SPAN CLASS="string">\\</SPAN>") );
+<SPAN CLASS="linenum">0749:</SPAN>         lstrcat( strReadmePath, strExeName );
+<SPAN CLASS="linenum">0750:</SPAN>         lstrcat( strReadmePath, TEXT("<SPAN CLASS="string">\\readme.txt</SPAN>") );
+<SPAN CLASS="linenum">0751:</SPAN>         <SPAN CLASS="keyword">if</SPAN>( GetFileAttributes( strReadmePath ) != 0xFFFFFFFF )
+<SPAN CLASS="linenum">0752:</SPAN>             bFound = TRUE;
+<SPAN CLASS="linenum">0753:</SPAN>     }
+<SPAN CLASS="linenum">0754:</SPAN> 
+<SPAN CLASS="linenum">0755:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( !bFound )
+<SPAN CLASS="linenum">0756:</SPAN>     {
+<SPAN CLASS="linenum">0757:</SPAN>         <SPAN CLASS="comment">// Search in "%EXE_DIR%\"</SPAN>
+<SPAN CLASS="linenum">0758:</SPAN>         _tcscpy( strReadmePath, strExePath );
+<SPAN CLASS="linenum">0759:</SPAN>         lstrcat( strReadmePath, TEXT("<SPAN CLASS="string">\\readme.txt</SPAN>") );
+<SPAN CLASS="linenum">0760:</SPAN>         <SPAN CLASS="keyword">if</SPAN>( GetFileAttributes( strReadmePath ) != 0xFFFFFFFF )
+<SPAN CLASS="linenum">0761:</SPAN>             bFound = TRUE;
+<SPAN CLASS="linenum">0762:</SPAN>     }
+<SPAN CLASS="linenum">0763:</SPAN> 
+<SPAN CLASS="linenum">0764:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( !bFound )
+<SPAN CLASS="linenum">0765:</SPAN>     {
+<SPAN CLASS="linenum">0766:</SPAN>         <SPAN CLASS="comment">// Search in "%EXE_DIR%\.."</SPAN>
+<SPAN CLASS="linenum">0767:</SPAN>         _tcscpy( strReadmePath, strExePath );
+<SPAN CLASS="linenum">0768:</SPAN>         strLastSlash = _tcsrchr( strReadmePath, TEXT('<SPAN CLASS="string">\\</SPAN>') );
+<SPAN CLASS="linenum">0769:</SPAN>         <SPAN CLASS="keyword">if</SPAN>( strLastSlash )
+<SPAN CLASS="linenum">0770:</SPAN>             *strLastSlash = 0;
+<SPAN CLASS="linenum">0771:</SPAN>         lstrcat( strReadmePath, TEXT("<SPAN CLASS="string">\\readme.txt</SPAN>") );
+<SPAN CLASS="linenum">0772:</SPAN>         <SPAN CLASS="keyword">if</SPAN>( GetFileAttributes( strReadmePath ) != 0xFFFFFFFF )
+<SPAN CLASS="linenum">0773:</SPAN>             bFound = TRUE;
+<SPAN CLASS="linenum">0774:</SPAN>     }
+<SPAN CLASS="linenum">0775:</SPAN> 
+<SPAN CLASS="linenum">0776:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( !bFound )
+<SPAN CLASS="linenum">0777:</SPAN>     {
+<SPAN CLASS="linenum">0778:</SPAN>         <SPAN CLASS="comment">// Search in "%EXE_DIR%\..\.."</SPAN>
+<SPAN CLASS="linenum">0779:</SPAN>         _tcscpy( strReadmePath, strExePath );
+<SPAN CLASS="linenum">0780:</SPAN>         strLastSlash = _tcsrchr( strReadmePath, TEXT('<SPAN CLASS="string">\\</SPAN>') );
+<SPAN CLASS="linenum">0781:</SPAN>         <SPAN CLASS="keyword">if</SPAN>( strLastSlash )
+<SPAN CLASS="linenum">0782:</SPAN>             *strLastSlash = 0;
+<SPAN CLASS="linenum">0783:</SPAN>         strLastSlash = _tcsrchr( strReadmePath, TEXT('<SPAN CLASS="string">\\</SPAN>') );
+<SPAN CLASS="linenum">0784:</SPAN>         <SPAN CLASS="keyword">if</SPAN>( strLastSlash )
+<SPAN CLASS="linenum">0785:</SPAN>             *strLastSlash = 0;
+<SPAN CLASS="linenum">0786:</SPAN>         lstrcat( strReadmePath, TEXT("<SPAN CLASS="string">\\readme.txt</SPAN>") );
+<SPAN CLASS="linenum">0787:</SPAN>         <SPAN CLASS="keyword">if</SPAN>( GetFileAttributes( strReadmePath ) != 0xFFFFFFFF )
+<SPAN CLASS="linenum">0788:</SPAN>             bFound = TRUE;
+<SPAN CLASS="linenum">0789:</SPAN>     }
+<SPAN CLASS="linenum">0790:</SPAN> 
+<SPAN CLASS="linenum">0791:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( bFound )
+<SPAN CLASS="linenum">0792:</SPAN>     {
+<SPAN CLASS="linenum">0793:</SPAN>         <SPAN CLASS="comment">// GetProcAddress for ShellExecute, so we don't have to include shell32.lib </SPAN>
+<SPAN CLASS="linenum">0794:</SPAN>         <SPAN CLASS="comment">// in every project that uses dxutil.cpp</SPAN>
+<SPAN CLASS="linenum">0795:</SPAN>         LPShellExecute pShellExecute = NULL;
+<SPAN CLASS="linenum">0796:</SPAN>         HINSTANCE hInstShell32 = LoadLibrary(TEXT("<SPAN CLASS="string">shell32.dll</SPAN>"));
+<SPAN CLASS="linenum">0797:</SPAN>         <SPAN CLASS="keyword">if</SPAN> (hInstShell32 != NULL)
+<SPAN CLASS="linenum">0798:</SPAN>         {
+<SPAN CLASS="linenum">0799:</SPAN> <SPAN CLASS="keyword">#ifdef</SPAN> UNICODE
+<SPAN CLASS="linenum">0800:</SPAN>             pShellExecute = (LPShellExecute)GetProcAddress(hInstShell32, _TWINCE("<SPAN CLASS="string">ShellExecuteW</SPAN>"));
+<SPAN CLASS="linenum">0801:</SPAN> <SPAN CLASS="keyword">#else</SPAN>
+<SPAN CLASS="linenum">0802:</SPAN>             pShellExecute = (LPShellExecute)GetProcAddress(hInstShell32, _TWINCE("<SPAN CLASS="string">ShellExecuteA</SPAN>"));
+<SPAN CLASS="linenum">0803:</SPAN> <SPAN CLASS="keyword">#endif</SPAN>
+<SPAN CLASS="linenum">0804:</SPAN>             <SPAN CLASS="keyword">if</SPAN>( pShellExecute != NULL )
+<SPAN CLASS="linenum">0805:</SPAN>             {
+<SPAN CLASS="linenum">0806:</SPAN>                 <SPAN CLASS="keyword">if</SPAN>( pShellExecute( hWnd, TEXT("<SPAN CLASS="string">open</SPAN>"), strReadmePath, NULL, NULL, SW_SHOW ) &gt; (HINSTANCE) 32 )
+<SPAN CLASS="linenum">0807:</SPAN>                     bSuccess = <SPAN CLASS="keyword">true</SPAN>;
+<SPAN CLASS="linenum">0808:</SPAN>             }
+<SPAN CLASS="linenum">0809:</SPAN> 
+<SPAN CLASS="linenum">0810:</SPAN>             FreeLibrary(hInstShell32);
+<SPAN CLASS="linenum">0811:</SPAN>         }
+<SPAN CLASS="linenum">0812:</SPAN>     }
+<SPAN CLASS="linenum">0813:</SPAN> 
+<SPAN CLASS="linenum">0814:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( !bSuccess )
+<SPAN CLASS="linenum">0815:</SPAN>     {
+<SPAN CLASS="linenum">0816:</SPAN>         <SPAN CLASS="comment">// Tell the user that the readme couldn't be opened</SPAN>
+<SPAN CLASS="linenum">0817:</SPAN>         MessageBox( hWnd, TEXT("<SPAN CLASS="string">Could not find readme.txt</SPAN>"), 
+<SPAN CLASS="linenum">0818:</SPAN>                     TEXT("<SPAN CLASS="string">DirectX SDK Sample</SPAN>"), MB_ICONWARNING | MB_OK );
+<SPAN CLASS="linenum">0819:</SPAN>     }
+<SPAN CLASS="linenum">0820:</SPAN> 
+<SPAN CLASS="linenum">0821:</SPAN> <SPAN CLASS="keyword">#endif</SPAN> <SPAN CLASS="comment">// UNDER_CE</SPAN>
+<SPAN CLASS="linenum">0822:</SPAN> }
+<SPAN CLASS="linenum">0823:</SPAN> 
+<SPAN CLASS="linenum">0824:</SPAN> 
+<SPAN CLASS="linenum">0825:</SPAN> 
+<SPAN CLASS="linenum">0826:</SPAN> 
+<SPAN CLASS="linenum">0827:</SPAN> 
+<SPAN CLASS="linenum">0828:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0829:</SPAN> <SPAN CLASS="comment">// Name: DXUtil_Trace()</SPAN>
+<SPAN CLASS="linenum">0830:</SPAN> <SPAN CLASS="comment">// Desc: Outputs to the debug stream a formatted string with a variable-</SPAN>
+<SPAN CLASS="linenum">0831:</SPAN> <SPAN CLASS="comment">//       argument list.</SPAN>
+<SPAN CLASS="linenum">0832:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0833:</SPAN> VOID DXUtil_Trace( TCHAR* strMsg, ... )
+<SPAN CLASS="linenum">0834:</SPAN> {
+<SPAN CLASS="linenum">0835:</SPAN> <SPAN CLASS="keyword">#if</SPAN> defined(DEBUG) | defined(_DEBUG)
+<SPAN CLASS="linenum">0836:</SPAN>     TCHAR strBuffer[512];
+<SPAN CLASS="linenum">0837:</SPAN>     
+<SPAN CLASS="linenum">0838:</SPAN>     va_list args;
+<SPAN CLASS="linenum">0839:</SPAN>     va_start(args, strMsg);
+<SPAN CLASS="linenum">0840:</SPAN>     _vsntprintf( strBuffer, 512, strMsg, args );
+<SPAN CLASS="linenum">0841:</SPAN>     va_end(args);
+<SPAN CLASS="linenum">0842:</SPAN> 
+<SPAN CLASS="linenum">0843:</SPAN>     OutputDebugString( strBuffer );
+<SPAN CLASS="linenum">0844:</SPAN> <SPAN CLASS="keyword">#else</SPAN>
+<SPAN CLASS="linenum">0845:</SPAN>     UNREFERENCED_PARAMETER(strMsg);
+<SPAN CLASS="linenum">0846:</SPAN> <SPAN CLASS="keyword">#endif</SPAN>
+<SPAN CLASS="linenum">0847:</SPAN> }
+<SPAN CLASS="linenum">0848:</SPAN> 
+<SPAN CLASS="linenum">0849:</SPAN> 
+<SPAN CLASS="linenum">0850:</SPAN> 
+<SPAN CLASS="linenum">0851:</SPAN> 
+<SPAN CLASS="linenum">0852:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0853:</SPAN> <SPAN CLASS="comment">// Name: DXUtil_ConvertStringToGUID()</SPAN>
+<SPAN CLASS="linenum">0854:</SPAN> <SPAN CLASS="comment">// Desc: Converts a string to a GUID</SPAN>
+<SPAN CLASS="linenum">0855:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0856:</SPAN> HRESULT DXUtil_ConvertStringToGUID( <SPAN CLASS="keyword">const</SPAN> TCHAR* strSrc, GUID* pGuidDest )
+<SPAN CLASS="linenum">0857:</SPAN> {
+<SPAN CLASS="linenum">0858:</SPAN>     UINT aiTmp[10];
+<SPAN CLASS="linenum">0859:</SPAN> 
+<SPAN CLASS="linenum">0860:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( _stscanf( strSrc, TEXT("<SPAN CLASS="string">{%8X-%4X-%4X-%2X%2X-%2X%2X%2X%2X%2X%2X}</SPAN>"),
+<SPAN CLASS="linenum">0861:</SPAN>                     &amp;pGuidDest-&gt;Data1, 
+<SPAN CLASS="linenum">0862:</SPAN>                     &amp;aiTmp[0], &amp;aiTmp[1], 
+<SPAN CLASS="linenum">0863:</SPAN>                     &amp;aiTmp[2], &amp;aiTmp[3],
+<SPAN CLASS="linenum">0864:</SPAN>                     &amp;aiTmp[4], &amp;aiTmp[5],
+<SPAN CLASS="linenum">0865:</SPAN>                     &amp;aiTmp[6], &amp;aiTmp[7],
+<SPAN CLASS="linenum">0866:</SPAN>                     &amp;aiTmp[8], &amp;aiTmp[9] ) != 11 )
+<SPAN CLASS="linenum">0867:</SPAN>     {
+<SPAN CLASS="linenum">0868:</SPAN>         ZeroMemory( pGuidDest, <SPAN CLASS="keyword">sizeof</SPAN>(GUID) );
+<SPAN CLASS="linenum">0869:</SPAN>         <SPAN CLASS="keyword">return</SPAN> E_FAIL;
+<SPAN CLASS="linenum">0870:</SPAN>     }
+<SPAN CLASS="linenum">0871:</SPAN>     <SPAN CLASS="keyword">else</SPAN>
+<SPAN CLASS="linenum">0872:</SPAN>     {
+<SPAN CLASS="linenum">0873:</SPAN>         pGuidDest-&gt;Data2       = (USHORT) aiTmp[0];
+<SPAN CLASS="linenum">0874:</SPAN>         pGuidDest-&gt;Data3       = (USHORT) aiTmp[1];
+<SPAN CLASS="linenum">0875:</SPAN>         pGuidDest-&gt;Data4[0]    = (BYTE) aiTmp[2];
+<SPAN CLASS="linenum">0876:</SPAN>         pGuidDest-&gt;Data4[1]    = (BYTE) aiTmp[3];
+<SPAN CLASS="linenum">0877:</SPAN>         pGuidDest-&gt;Data4[2]    = (BYTE) aiTmp[4];
+<SPAN CLASS="linenum">0878:</SPAN>         pGuidDest-&gt;Data4[3]    = (BYTE) aiTmp[5];
+<SPAN CLASS="linenum">0879:</SPAN>         pGuidDest-&gt;Data4[4]    = (BYTE) aiTmp[6];
+<SPAN CLASS="linenum">0880:</SPAN>         pGuidDest-&gt;Data4[5]    = (BYTE) aiTmp[7];
+<SPAN CLASS="linenum">0881:</SPAN>         pGuidDest-&gt;Data4[6]    = (BYTE) aiTmp[8];
+<SPAN CLASS="linenum">0882:</SPAN>         pGuidDest-&gt;Data4[7]    = (BYTE) aiTmp[9];
+<SPAN CLASS="linenum">0883:</SPAN>         <SPAN CLASS="keyword">return</SPAN> S_OK;
+<SPAN CLASS="linenum">0884:</SPAN>     }
+<SPAN CLASS="linenum">0885:</SPAN> }
+<SPAN CLASS="linenum">0886:</SPAN> 
+<SPAN CLASS="linenum">0887:</SPAN> 
+<SPAN CLASS="linenum">0888:</SPAN> 
+<SPAN CLASS="linenum">0889:</SPAN> 
+<SPAN CLASS="linenum">0890:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0891:</SPAN> <SPAN CLASS="comment">// Name: DXUtil_ConvertGUIDToStringCch()</SPAN>
+<SPAN CLASS="linenum">0892:</SPAN> <SPAN CLASS="comment">// Desc: Converts a GUID to a string </SPAN>
+<SPAN CLASS="linenum">0893:</SPAN> <SPAN CLASS="comment">//       cchDestChar is the size in TCHARs of strDest.  Be careful not to </SPAN>
+<SPAN CLASS="linenum">0894:</SPAN> <SPAN CLASS="comment">//       pass in sizeof(strDest) on UNICODE builds</SPAN>
+<SPAN CLASS="linenum">0895:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0896:</SPAN> HRESULT DXUtil_ConvertGUIDToStringCch( <SPAN CLASS="keyword">const</SPAN> GUID* pGuidSrc, TCHAR* strDest, <SPAN CLASS="keyword">int</SPAN> cchDestChar )
+<SPAN CLASS="linenum">0897:</SPAN> {
+<SPAN CLASS="linenum">0898:</SPAN>     <SPAN CLASS="keyword">int</SPAN> nResult = _sntprintf( strDest, cchDestChar, TEXT("<SPAN CLASS="string">{%0.8X-%0.4X-%0.4X-%0.2X%0.2X-%0.2X%0.2X%0.2X%0.2X%0.2X%0.2X}</SPAN>"),
+<SPAN CLASS="linenum">0899:</SPAN>                pGuidSrc-&gt;Data1, pGuidSrc-&gt;Data2, pGuidSrc-&gt;Data3,
+<SPAN CLASS="linenum">0900:</SPAN>                pGuidSrc-&gt;Data4[0], pGuidSrc-&gt;Data4[1],
+<SPAN CLASS="linenum">0901:</SPAN>                pGuidSrc-&gt;Data4[2], pGuidSrc-&gt;Data4[3],
+<SPAN CLASS="linenum">0902:</SPAN>                pGuidSrc-&gt;Data4[4], pGuidSrc-&gt;Data4[5],
+<SPAN CLASS="linenum">0903:</SPAN>                pGuidSrc-&gt;Data4[6], pGuidSrc-&gt;Data4[7] );
+<SPAN CLASS="linenum">0904:</SPAN> 
+<SPAN CLASS="linenum">0905:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( nResult &lt; 0 )
+<SPAN CLASS="linenum">0906:</SPAN>         <SPAN CLASS="keyword">return</SPAN> E_FAIL;
+<SPAN CLASS="linenum">0907:</SPAN>     <SPAN CLASS="keyword">return</SPAN> S_OK;
+<SPAN CLASS="linenum">0908:</SPAN> }
+<SPAN CLASS="linenum">0909:</SPAN> 
+<SPAN CLASS="linenum">0910:</SPAN> 
+<SPAN CLASS="linenum">0911:</SPAN> 
+<SPAN CLASS="linenum">0912:</SPAN> 
+<SPAN CLASS="linenum">0913:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0914:</SPAN> <SPAN CLASS="comment">// Name: CArrayList constructor</SPAN>
+<SPAN CLASS="linenum">0915:</SPAN> <SPAN CLASS="comment">// Desc: </SPAN>
+<SPAN CLASS="linenum">0916:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0917:</SPAN> CArrayList::CArrayList( ArrayListType Type, UINT BytesPerEntry )
+<SPAN CLASS="linenum">0918:</SPAN> {
+<SPAN CLASS="linenum">0919:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( Type == AL_REFERENCE )
+<SPAN CLASS="linenum">0920:</SPAN>         BytesPerEntry = <SPAN CLASS="keyword">sizeof</SPAN>(<SPAN CLASS="keyword">void</SPAN>*);
+<SPAN CLASS="linenum">0921:</SPAN>     m_ArrayListType = Type;
+<SPAN CLASS="linenum">0922:</SPAN>     m_pData = NULL;
+<SPAN CLASS="linenum">0923:</SPAN>     m_BytesPerEntry = BytesPerEntry;
+<SPAN CLASS="linenum">0924:</SPAN>     m_NumEntries = 0;
+<SPAN CLASS="linenum">0925:</SPAN>     m_NumEntriesAllocated = 0;
+<SPAN CLASS="linenum">0926:</SPAN> }
+<SPAN CLASS="linenum">0927:</SPAN> 
+<SPAN CLASS="linenum">0928:</SPAN> 
+<SPAN CLASS="linenum">0929:</SPAN> 
+<SPAN CLASS="linenum">0930:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0931:</SPAN> <SPAN CLASS="comment">// Name: CArrayList destructor</SPAN>
+<SPAN CLASS="linenum">0932:</SPAN> <SPAN CLASS="comment">// Desc: </SPAN>
+<SPAN CLASS="linenum">0933:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0934:</SPAN> CArrayList::~CArrayList( <SPAN CLASS="keyword">void</SPAN> )
+<SPAN CLASS="linenum">0935:</SPAN> {
+<SPAN CLASS="linenum">0936:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( m_pData != NULL )
+<SPAN CLASS="linenum">0937:</SPAN>         <SPAN CLASS="keyword">delete</SPAN>[] m_pData;
+<SPAN CLASS="linenum">0938:</SPAN> }
+<SPAN CLASS="linenum">0939:</SPAN> 
+<SPAN CLASS="linenum">0940:</SPAN> 
+<SPAN CLASS="linenum">0941:</SPAN> 
+<SPAN CLASS="linenum">0942:</SPAN> 
+<SPAN CLASS="linenum">0943:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0944:</SPAN> <SPAN CLASS="comment">// Name: CArrayList::Add</SPAN>
+<SPAN CLASS="linenum">0945:</SPAN> <SPAN CLASS="comment">// Desc: Adds pEntry to the list.</SPAN>
+<SPAN CLASS="linenum">0946:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0947:</SPAN> HRESULT CArrayList::Add( <SPAN CLASS="keyword">void</SPAN>* pEntry )
+<SPAN CLASS="linenum">0948:</SPAN> {
+<SPAN CLASS="linenum">0949:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( m_BytesPerEntry == 0 )
+<SPAN CLASS="linenum">0950:</SPAN>         <SPAN CLASS="keyword">return</SPAN> E_FAIL;
+<SPAN CLASS="linenum">0951:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( m_pData == NULL || m_NumEntries + 1 &gt; m_NumEntriesAllocated )
+<SPAN CLASS="linenum">0952:</SPAN>     {
+<SPAN CLASS="linenum">0953:</SPAN>         <SPAN CLASS="keyword">void</SPAN>* pDataNew;
+<SPAN CLASS="linenum">0954:</SPAN>         UINT NumEntriesAllocatedNew;
+<SPAN CLASS="linenum">0955:</SPAN>         <SPAN CLASS="keyword">if</SPAN>( m_NumEntriesAllocated == 0 )
+<SPAN CLASS="linenum">0956:</SPAN>             NumEntriesAllocatedNew = 16;
+<SPAN CLASS="linenum">0957:</SPAN>         <SPAN CLASS="keyword">else</SPAN>
+<SPAN CLASS="linenum">0958:</SPAN>             NumEntriesAllocatedNew = m_NumEntriesAllocated * 2;
+<SPAN CLASS="linenum">0959:</SPAN>         pDataNew = <SPAN CLASS="keyword">new</SPAN> BYTE[NumEntriesAllocatedNew * m_BytesPerEntry];
+<SPAN CLASS="linenum">0960:</SPAN>         <SPAN CLASS="keyword">if</SPAN>( pDataNew == NULL )
+<SPAN CLASS="linenum">0961:</SPAN>             <SPAN CLASS="keyword">return</SPAN> E_OUTOFMEMORY;
+<SPAN CLASS="linenum">0962:</SPAN>         <SPAN CLASS="keyword">if</SPAN>( m_pData != NULL )
+<SPAN CLASS="linenum">0963:</SPAN>         {
+<SPAN CLASS="linenum">0964:</SPAN>             CopyMemory( pDataNew, m_pData, m_NumEntries * m_BytesPerEntry );
+<SPAN CLASS="linenum">0965:</SPAN>             <SPAN CLASS="keyword">delete</SPAN>[] m_pData;
+<SPAN CLASS="linenum">0966:</SPAN>         }
+<SPAN CLASS="linenum">0967:</SPAN>         m_pData = pDataNew;
+<SPAN CLASS="linenum">0968:</SPAN>         m_NumEntriesAllocated = NumEntriesAllocatedNew;
+<SPAN CLASS="linenum">0969:</SPAN>     }
+<SPAN CLASS="linenum">0970:</SPAN> 
+<SPAN CLASS="linenum">0971:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( m_ArrayListType == AL_VALUE )
+<SPAN CLASS="linenum">0972:</SPAN>         CopyMemory( (BYTE*)m_pData + (m_NumEntries * m_BytesPerEntry), pEntry, m_BytesPerEntry );
+<SPAN CLASS="linenum">0973:</SPAN>     <SPAN CLASS="keyword">else</SPAN>
+<SPAN CLASS="linenum">0974:</SPAN>         *(((<SPAN CLASS="keyword">void</SPAN>**)m_pData) + m_NumEntries) = pEntry;
+<SPAN CLASS="linenum">0975:</SPAN>     m_NumEntries++;
+<SPAN CLASS="linenum">0976:</SPAN> 
+<SPAN CLASS="linenum">0977:</SPAN>     <SPAN CLASS="keyword">return</SPAN> S_OK;
+<SPAN CLASS="linenum">0978:</SPAN> }
+<SPAN CLASS="linenum">0979:</SPAN> 
+<SPAN CLASS="linenum">0980:</SPAN> 
+<SPAN CLASS="linenum">0981:</SPAN> 
+<SPAN CLASS="linenum">0982:</SPAN> 
+<SPAN CLASS="linenum">0983:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0984:</SPAN> <SPAN CLASS="comment">// Name: CArrayList::Remove</SPAN>
+<SPAN CLASS="linenum">0985:</SPAN> <SPAN CLASS="comment">// Desc: Remove the item at Entry in the list, and collapse the array. </SPAN>
+<SPAN CLASS="linenum">0986:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0987:</SPAN> <SPAN CLASS="keyword">void</SPAN> CArrayList::Remove( UINT Entry )
+<SPAN CLASS="linenum">0988:</SPAN> {
+<SPAN CLASS="linenum">0989:</SPAN>     <SPAN CLASS="comment">// Decrement count</SPAN>
+<SPAN CLASS="linenum">0990:</SPAN>     m_NumEntries--;
+<SPAN CLASS="linenum">0991:</SPAN> 
+<SPAN CLASS="linenum">0992:</SPAN>     <SPAN CLASS="comment">// Find the entry address</SPAN>
+<SPAN CLASS="linenum">0993:</SPAN>     BYTE* pData = (BYTE*)m_pData + (Entry * m_BytesPerEntry);
+<SPAN CLASS="linenum">0994:</SPAN> 
+<SPAN CLASS="linenum">0995:</SPAN>     <SPAN CLASS="comment">// Collapse the array</SPAN>
+<SPAN CLASS="linenum">0996:</SPAN>     MoveMemory( pData, pData + m_BytesPerEntry, ( m_NumEntries - Entry ) * m_BytesPerEntry );
+<SPAN CLASS="linenum">0997:</SPAN> }
+<SPAN CLASS="linenum">0998:</SPAN> 
+<SPAN CLASS="linenum">0999:</SPAN> 
+<SPAN CLASS="linenum">1000:</SPAN> 
+<SPAN CLASS="linenum">1001:</SPAN> 
+<SPAN CLASS="linenum">1002:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">1003:</SPAN> <SPAN CLASS="comment">// Name: CArrayList::GetPtr</SPAN>
+<SPAN CLASS="linenum">1004:</SPAN> <SPAN CLASS="comment">// Desc: Returns a pointer to the Entry'th entry in the list.</SPAN>
+<SPAN CLASS="linenum">1005:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">1006:</SPAN> <SPAN CLASS="keyword">void</SPAN>* CArrayList::GetPtr( UINT Entry )
+<SPAN CLASS="linenum">1007:</SPAN> {
+<SPAN CLASS="linenum">1008:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( m_ArrayListType == AL_VALUE )
+<SPAN CLASS="linenum">1009:</SPAN>         <SPAN CLASS="keyword">return</SPAN> (BYTE*)m_pData + (Entry * m_BytesPerEntry);
+<SPAN CLASS="linenum">1010:</SPAN>     <SPAN CLASS="keyword">else</SPAN>
+<SPAN CLASS="linenum">1011:</SPAN>         <SPAN CLASS="keyword">return</SPAN> *(((<SPAN CLASS="keyword">void</SPAN>**)m_pData) + Entry);
+<SPAN CLASS="linenum">1012:</SPAN> }
+<SPAN CLASS="linenum">1013:</SPAN> 
+<SPAN CLASS="linenum">1014:</SPAN> 
+<SPAN CLASS="linenum">1015:</SPAN> 
+<SPAN CLASS="linenum">1016:</SPAN> 
+<SPAN CLASS="linenum">1017:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">1018:</SPAN> <SPAN CLASS="comment">// Name: CArrayList::Contains</SPAN>
+<SPAN CLASS="linenum">1019:</SPAN> <SPAN CLASS="comment">// Desc: Returns whether the list contains an entry identical to the </SPAN>
+<SPAN CLASS="linenum">1020:</SPAN> <SPAN CLASS="comment">//       specified entry data.</SPAN>
+<SPAN CLASS="linenum">1021:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">1022:</SPAN> <SPAN CLASS="keyword">bool</SPAN> CArrayList::Contains( <SPAN CLASS="keyword">void</SPAN>* pEntryData )
+<SPAN CLASS="linenum">1023:</SPAN> {
+<SPAN CLASS="linenum">1024:</SPAN>     <SPAN CLASS="keyword">for</SPAN>( UINT iEntry = 0; iEntry &lt; m_NumEntries; iEntry++ )
+<SPAN CLASS="linenum">1025:</SPAN>     {
+<SPAN CLASS="linenum">1026:</SPAN>         <SPAN CLASS="keyword">if</SPAN>( m_ArrayListType == AL_VALUE )
+<SPAN CLASS="linenum">1027:</SPAN>         {
+<SPAN CLASS="linenum">1028:</SPAN>             <SPAN CLASS="keyword">if</SPAN>( memcmp( GetPtr(iEntry), pEntryData, m_BytesPerEntry ) == 0 )
+<SPAN CLASS="linenum">1029:</SPAN>                 <SPAN CLASS="keyword">return</SPAN> <SPAN CLASS="keyword">true</SPAN>;
+<SPAN CLASS="linenum">1030:</SPAN>         }
+<SPAN CLASS="linenum">1031:</SPAN>         <SPAN CLASS="keyword">else</SPAN>
+<SPAN CLASS="linenum">1032:</SPAN>         {
+<SPAN CLASS="linenum">1033:</SPAN>             <SPAN CLASS="keyword">if</SPAN>( GetPtr(iEntry) == pEntryData )
+<SPAN CLASS="linenum">1034:</SPAN>                 <SPAN CLASS="keyword">return</SPAN> <SPAN CLASS="keyword">true</SPAN>;
+<SPAN CLASS="linenum">1035:</SPAN>         }
+<SPAN CLASS="linenum">1036:</SPAN>     }
+<SPAN CLASS="linenum">1037:</SPAN>     <SPAN CLASS="keyword">return</SPAN> <SPAN CLASS="keyword">false</SPAN>;
+<SPAN CLASS="linenum">1038:</SPAN> }
+<SPAN CLASS="linenum">1039:</SPAN> 
+<SPAN CLASS="linenum">1040:</SPAN> 
+<SPAN CLASS="linenum">1041:</SPAN> 
+<SPAN CLASS="linenum">1042:</SPAN> 
+<SPAN CLASS="linenum">1043:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">1044:</SPAN> <SPAN CLASS="comment">// Name: BYTE helper functions</SPAN>
+<SPAN CLASS="linenum">1045:</SPAN> <SPAN CLASS="comment">// Desc: cchDestChar is the size in BYTEs of strDest.  Be careful not to </SPAN>
+<SPAN CLASS="linenum">1046:</SPAN> <SPAN CLASS="comment">//       pass use sizeof() if the strDest is a string pointer.  </SPAN>
+<SPAN CLASS="linenum">1047:</SPAN> <SPAN CLASS="comment">//       eg.</SPAN>
+<SPAN CLASS="linenum">1048:</SPAN> <SPAN CLASS="comment">//       TCHAR* sz = new TCHAR[100]; // sizeof(sz)  == 4</SPAN>
+<SPAN CLASS="linenum">1049:</SPAN> <SPAN CLASS="comment">//       TCHAR sz2[100];             // sizeof(sz2) == 200</SPAN>
+<SPAN CLASS="linenum">1050:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">1051:</SPAN> HRESULT DXUtil_ConvertAnsiStringToWideCb( WCHAR* wstrDestination, <SPAN CLASS="keyword">const</SPAN> CHAR* strSource, <SPAN CLASS="keyword">int</SPAN> cbDestChar )
+<SPAN CLASS="linenum">1052:</SPAN> {
+<SPAN CLASS="linenum">1053:</SPAN>     <SPAN CLASS="keyword">return</SPAN> DXUtil_ConvertAnsiStringToWideCch( wstrDestination, strSource, cbDestChar / <SPAN CLASS="keyword">sizeof</SPAN>(WCHAR) );
+<SPAN CLASS="linenum">1054:</SPAN> }
+<SPAN CLASS="linenum">1055:</SPAN> 
+<SPAN CLASS="linenum">1056:</SPAN> HRESULT DXUtil_ConvertWideStringToAnsiCb( CHAR* strDestination, <SPAN CLASS="keyword">const</SPAN> WCHAR* wstrSource, <SPAN CLASS="keyword">int</SPAN> cbDestChar )
+<SPAN CLASS="linenum">1057:</SPAN> {
+<SPAN CLASS="linenum">1058:</SPAN>     <SPAN CLASS="keyword">return</SPAN> DXUtil_ConvertWideStringToAnsiCch( strDestination, wstrSource, cbDestChar / <SPAN CLASS="keyword">sizeof</SPAN>(CHAR) );
+<SPAN CLASS="linenum">1059:</SPAN> }
+<SPAN CLASS="linenum">1060:</SPAN> 
+<SPAN CLASS="linenum">1061:</SPAN> HRESULT DXUtil_ConvertGenericStringToAnsiCb( CHAR* strDestination, <SPAN CLASS="keyword">const</SPAN> TCHAR* tstrSource, <SPAN CLASS="keyword">int</SPAN> cbDestChar )
+<SPAN CLASS="linenum">1062:</SPAN> {
+<SPAN CLASS="linenum">1063:</SPAN>     <SPAN CLASS="keyword">return</SPAN> DXUtil_ConvertGenericStringToAnsiCch( strDestination, tstrSource, cbDestChar / <SPAN CLASS="keyword">sizeof</SPAN>(CHAR) );
+<SPAN CLASS="linenum">1064:</SPAN> }
+<SPAN CLASS="linenum">1065:</SPAN> 
+<SPAN CLASS="linenum">1066:</SPAN> HRESULT DXUtil_ConvertGenericStringToWideCb( WCHAR* wstrDestination, <SPAN CLASS="keyword">const</SPAN> TCHAR* tstrSource, <SPAN CLASS="keyword">int</SPAN> cbDestChar )
+<SPAN CLASS="linenum">1067:</SPAN> {
+<SPAN CLASS="linenum">1068:</SPAN>     <SPAN CLASS="keyword">return</SPAN> DXUtil_ConvertGenericStringToWideCch( wstrDestination, tstrSource, cbDestChar / <SPAN CLASS="keyword">sizeof</SPAN>(WCHAR) );
+<SPAN CLASS="linenum">1069:</SPAN> }
+<SPAN CLASS="linenum">1070:</SPAN> 
+<SPAN CLASS="linenum">1071:</SPAN> HRESULT DXUtil_ConvertAnsiStringToGenericCb( TCHAR* tstrDestination, <SPAN CLASS="keyword">const</SPAN> CHAR* strSource, <SPAN CLASS="keyword">int</SPAN> cbDestChar )
+<SPAN CLASS="linenum">1072:</SPAN> {
+<SPAN CLASS="linenum">1073:</SPAN>     <SPAN CLASS="keyword">return</SPAN> DXUtil_ConvertAnsiStringToGenericCch( tstrDestination, strSource, cbDestChar / <SPAN CLASS="keyword">sizeof</SPAN>(TCHAR) );
+<SPAN CLASS="linenum">1074:</SPAN> }
+<SPAN CLASS="linenum">1075:</SPAN> 
+<SPAN CLASS="linenum">1076:</SPAN> HRESULT DXUtil_ConvertWideStringToGenericCb( TCHAR* tstrDestination, <SPAN CLASS="keyword">const</SPAN> WCHAR* wstrSource, <SPAN CLASS="keyword">int</SPAN> cbDestChar )
+<SPAN CLASS="linenum">1077:</SPAN> {
+<SPAN CLASS="linenum">1078:</SPAN>     <SPAN CLASS="keyword">return</SPAN> DXUtil_ConvertWideStringToGenericCch( tstrDestination, wstrSource, cbDestChar / <SPAN CLASS="keyword">sizeof</SPAN>(TCHAR) );
+<SPAN CLASS="linenum">1079:</SPAN> }
+<SPAN CLASS="linenum">1080:</SPAN> 
+<SPAN CLASS="linenum">1081:</SPAN> HRESULT DXUtil_ReadStringRegKeyCb( HKEY hKey, TCHAR* strRegName, TCHAR* strDest, DWORD cbDest, TCHAR* strDefault )
+<SPAN CLASS="linenum">1082:</SPAN> {
+<SPAN CLASS="linenum">1083:</SPAN>     <SPAN CLASS="keyword">return</SPAN> DXUtil_ReadStringRegKeyCch( hKey, strRegName, strDest, cbDest / <SPAN CLASS="keyword">sizeof</SPAN>(TCHAR), strDefault );
+<SPAN CLASS="linenum">1084:</SPAN> }
+<SPAN CLASS="linenum">1085:</SPAN> 
+<SPAN CLASS="linenum">1086:</SPAN> HRESULT DXUtil_ConvertGUIDToStringCb( <SPAN CLASS="keyword">const</SPAN> GUID* pGuidSrc, TCHAR* strDest, <SPAN CLASS="keyword">int</SPAN> cbDestChar )
+<SPAN CLASS="linenum">1087:</SPAN> {
+<SPAN CLASS="linenum">1088:</SPAN>     <SPAN CLASS="keyword">return</SPAN> DXUtil_ConvertGUIDToStringCch( pGuidSrc, strDest, cbDestChar / <SPAN CLASS="keyword">sizeof</SPAN>(TCHAR) );
+<SPAN CLASS="linenum">1089:</SPAN> }
+<SPAN CLASS="linenum">1090:</SPAN> 
+<SPAN CLASS="linenum">1091:</SPAN> <SPAN CLASS="keyword">#ifndef</SPAN> UNDER_CE
+<SPAN CLASS="linenum">1092:</SPAN> HRESULT DXUtil_GetDXSDKMediaPathCb( TCHAR* szDest, <SPAN CLASS="keyword">int</SPAN> cbDest )
+<SPAN CLASS="linenum">1093:</SPAN> {
+<SPAN CLASS="linenum">1094:</SPAN>     <SPAN CLASS="keyword">return</SPAN> DXUtil_GetDXSDKMediaPathCch( szDest, cbDest / <SPAN CLASS="keyword">sizeof</SPAN>(TCHAR) );
+<SPAN CLASS="linenum">1095:</SPAN> }
+<SPAN CLASS="linenum">1096:</SPAN> 
+<SPAN CLASS="linenum">1097:</SPAN> HRESULT DXUtil_FindMediaFileCb( TCHAR* szDestPath, <SPAN CLASS="keyword">int</SPAN> cbDest, TCHAR* strFilename )
+<SPAN CLASS="linenum">1098:</SPAN> {
+<SPAN CLASS="linenum">1099:</SPAN>     <SPAN CLASS="keyword">return</SPAN> DXUtil_FindMediaFileCch( szDestPath, cbDest / <SPAN CLASS="keyword">sizeof</SPAN>(TCHAR), strFilename );
+<SPAN CLASS="linenum">1100:</SPAN> }
+<SPAN CLASS="linenum">1101:</SPAN> <SPAN CLASS="keyword">#endif</SPAN> <SPAN CLASS="comment">// !UNDER_CE</SPAN>
+<SPAN CLASS="linenum">1102:</SPAN> </PRE>
+</BODY>
+</HTML>

@@ -1,0 +1,274 @@
+<HTML>
+<HEAD>
+<TITLE>te_tms.cpp</TITLE>
+<meta name="GENERATOR" content="cpp2html 2.1 by Niisaka">
+<meta http-equiv="Content-Type" content="text/html">
+<meta http-equiv="Content-Style-Type" content="text/css">
+<STYLE TYPE="text/css">
+<!--
+SPAN.comment { color:#008000; font-weight:normal; font-style:normal;}
+SPAN.keyword { color:#0000FF; font-weight:normal; font-style:normal;}
+SPAN.string { color:#600000; font-weight:normal; font-style:normal;}
+SPAN.linenum { color:#A0A0A0; font-weight:normal; font-style:normal;}
+-->
+</STYLE>
+</HEAD>
+<BODY TEXT="#000000" BGCOLOR="#FFFFFF">
+<PRE><SPAN CLASS="linenum">0001:</SPAN> <SPAN CLASS="comment">// ---------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0002:</SPAN> <SPAN CLASS="comment">// tms.cpp</SPAN>
+<SPAN CLASS="linenum">0003:</SPAN> <SPAN CLASS="comment">//      T-pot engine MeSh format</SPAN>
+<SPAN CLASS="linenum">0004:</SPAN> <SPAN CLASS="comment">// ---------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0005:</SPAN> 
+<SPAN CLASS="linenum">0006:</SPAN> <SPAN CLASS="keyword">#include</SPAN> &lt;windows.h&gt;                                            <SPAN CLASS="comment">// Header File For Windows</SPAN>
+<SPAN CLASS="linenum">0007:</SPAN> <SPAN CLASS="keyword">#include</SPAN> &lt;GL/glut.h&gt;
+<SPAN CLASS="linenum">0008:</SPAN> <SPAN CLASS="keyword">#include</SPAN> "<SPAN CLASS="string">te_tms.h</SPAN>"
+<SPAN CLASS="linenum">0009:</SPAN> 
+<SPAN CLASS="linenum">0010:</SPAN> <SPAN CLASS="keyword">#define</SPAN> DISPLAY_LIST<SPAN CLASS="comment">// ディスプレイリストを使って表示</SPAN>
+<SPAN CLASS="linenum">0011:</SPAN> <SPAN CLASS="keyword">#define</SPAN> NO_VBOS     <SPAN CLASS="comment">// VBO の強制OFF</SPAN>
+<SPAN CLASS="linenum">0012:</SPAN> 
+<SPAN CLASS="linenum">0013:</SPAN> <SPAN CLASS="keyword">namespace</SPAN> Te
+<SPAN CLASS="linenum">0014:</SPAN> {
+<SPAN CLASS="linenum">0015:</SPAN> <SPAN CLASS="comment">// glext.h からの VBO Extension の定義</SPAN>
+<SPAN CLASS="linenum">0016:</SPAN> <SPAN CLASS="keyword">#define</SPAN> GL_ARRAY_BUFFER_ARB 0x8892
+<SPAN CLASS="linenum">0017:</SPAN> <SPAN CLASS="keyword">#define</SPAN> GL_STATIC_DRAW_ARB 0x88E4
+<SPAN CLASS="linenum">0018:</SPAN> <SPAN CLASS="keyword">typedef</SPAN> <SPAN CLASS="keyword">void</SPAN> (APIENTRY * PFNGLBINDBUFFERARBPROC)    (GLenum target, GLuint buffer);
+<SPAN CLASS="linenum">0019:</SPAN> <SPAN CLASS="keyword">typedef</SPAN> <SPAN CLASS="keyword">void</SPAN> (APIENTRY * PFNGLDELETEBUFFERSARBPROC) (GLsizei n, <SPAN CLASS="keyword">const</SPAN> GLuint *buffers);
+<SPAN CLASS="linenum">0020:</SPAN> <SPAN CLASS="keyword">typedef</SPAN> <SPAN CLASS="keyword">void</SPAN> (APIENTRY * PFNGLGENBUFFERSARBPROC)    (GLsizei n, GLuint *buffers);
+<SPAN CLASS="linenum">0021:</SPAN> <SPAN CLASS="keyword">typedef</SPAN> <SPAN CLASS="keyword">void</SPAN> (APIENTRY * PFNGLBUFFERDATAARBPROC)    (GLenum target, <SPAN CLASS="keyword">int</SPAN> size, <SPAN CLASS="keyword">const</SPAN> GLvoid *data, GLenum usage);
+<SPAN CLASS="linenum">0022:</SPAN> 
+<SPAN CLASS="linenum">0023:</SPAN> <SPAN CLASS="comment">// VBO Extension 関数のポインタ</SPAN>
+<SPAN CLASS="linenum">0024:</SPAN> PFNGLGENBUFFERSARBPROC glGenBuffersARB = NULL;                  <SPAN CLASS="comment">// VBO 名前生成</SPAN>
+<SPAN CLASS="linenum">0025:</SPAN> PFNGLBINDBUFFERARBPROC glBindBufferARB = NULL;                  <SPAN CLASS="comment">// VBO 結びつけ</SPAN>
+<SPAN CLASS="linenum">0026:</SPAN> PFNGLBUFFERDATAARBPROC glBufferDataARB = NULL;                  <SPAN CLASS="comment">// VBO データロード</SPAN>
+<SPAN CLASS="linenum">0027:</SPAN> PFNGLDELETEBUFFERSARBPROC glDeleteBuffersARB = NULL;            <SPAN CLASS="comment">// VBO 削除</SPAN>
+<SPAN CLASS="linenum">0028:</SPAN> 
+<SPAN CLASS="linenum">0029:</SPAN> <SPAN CLASS="keyword">bool</SPAN> CTms::_fVBOSupported = FALSE;
+<SPAN CLASS="linenum">0030:</SPAN> 
+<SPAN CLASS="linenum">0031:</SPAN> <SPAN CLASS="comment">// ===========================================================================</SPAN>
+<SPAN CLASS="linenum">0032:</SPAN> <SPAN CLASS="comment">// 公開関数</SPAN>
+<SPAN CLASS="linenum">0033:</SPAN> <SPAN CLASS="comment">// ===========================================================================</SPAN>
+<SPAN CLASS="linenum">0034:</SPAN> 
+<SPAN CLASS="linenum">0035:</SPAN> 
+<SPAN CLASS="linenum">0036:</SPAN> <SPAN CLASS="comment">// ---------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0037:</SPAN> <SPAN CLASS="comment">// TMS の初期化</SPAN>
+<SPAN CLASS="linenum">0038:</SPAN> <SPAN CLASS="comment">// ---------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0039:</SPAN> PTMS SetupTms( <SPAN CLASS="keyword">const</SPAN> PTMS_DATA data )
+<SPAN CLASS="linenum">0040:</SPAN> {
+<SPAN CLASS="linenum">0041:</SPAN>     CTms *pTms = <SPAN CLASS="keyword">new</SPAN> CTms( data );
+<SPAN CLASS="linenum">0042:</SPAN>     
+<SPAN CLASS="linenum">0043:</SPAN>     <SPAN CLASS="keyword">return</SPAN> (PTMS)pTms;
+<SPAN CLASS="linenum">0044:</SPAN> }
+<SPAN CLASS="linenum">0045:</SPAN> 
+<SPAN CLASS="linenum">0046:</SPAN> <SPAN CLASS="comment">// ---------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0047:</SPAN> <SPAN CLASS="comment">// TMS の片付け</SPAN>
+<SPAN CLASS="linenum">0048:</SPAN> <SPAN CLASS="comment">// ---------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0049:</SPAN> <SPAN CLASS="keyword">void</SPAN> ClenaTms( PTMS p )
+<SPAN CLASS="linenum">0050:</SPAN> {
+<SPAN CLASS="linenum">0051:</SPAN>     CTms *pTms = (CTms *)p;
+<SPAN CLASS="linenum">0052:</SPAN>     
+<SPAN CLASS="linenum">0053:</SPAN>     <SPAN CLASS="keyword">delete</SPAN> pTms;
+<SPAN CLASS="linenum">0054:</SPAN> }
+<SPAN CLASS="linenum">0055:</SPAN> 
+<SPAN CLASS="linenum">0056:</SPAN> <SPAN CLASS="comment">// ---------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0057:</SPAN> <SPAN CLASS="comment">// TMS の描画</SPAN>
+<SPAN CLASS="linenum">0058:</SPAN> <SPAN CLASS="comment">// ---------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0059:</SPAN> <SPAN CLASS="keyword">void</SPAN> RenderTms( PTMS p )
+<SPAN CLASS="linenum">0060:</SPAN> {
+<SPAN CLASS="linenum">0061:</SPAN>     CTms *pTms = (CTms *)p;
+<SPAN CLASS="linenum">0062:</SPAN>     
+<SPAN CLASS="linenum">0063:</SPAN>     pTms-&gt;Render();
+<SPAN CLASS="linenum">0064:</SPAN> }
+<SPAN CLASS="linenum">0065:</SPAN> 
+<SPAN CLASS="linenum">0066:</SPAN> 
+<SPAN CLASS="linenum">0067:</SPAN> <SPAN CLASS="comment">// ===========================================================================</SPAN>
+<SPAN CLASS="linenum">0068:</SPAN> <SPAN CLASS="comment">// メッシュクラス</SPAN>
+<SPAN CLASS="linenum">0069:</SPAN> <SPAN CLASS="comment">// ===========================================================================</SPAN>
+<SPAN CLASS="linenum">0070:</SPAN> 
+<SPAN CLASS="linenum">0071:</SPAN> <SPAN CLASS="comment">// ---------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0072:</SPAN> <SPAN CLASS="comment">// システムの初期化</SPAN>
+<SPAN CLASS="linenum">0073:</SPAN> <SPAN CLASS="comment">// ---------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0074:</SPAN> <SPAN CLASS="keyword">void</SPAN> CTms::Initialize()
+<SPAN CLASS="linenum">0075:</SPAN> {
+<SPAN CLASS="linenum">0076:</SPAN>     CheckDeviceAbility();
+<SPAN CLASS="linenum">0077:</SPAN> }
+<SPAN CLASS="linenum">0078:</SPAN> 
+<SPAN CLASS="linenum">0079:</SPAN> 
+<SPAN CLASS="linenum">0080:</SPAN> <SPAN CLASS="comment">// ---------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0081:</SPAN> <SPAN CLASS="comment">// コンストラクタ</SPAN>
+<SPAN CLASS="linenum">0082:</SPAN> <SPAN CLASS="comment">// ---------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0083:</SPAN> CTms::CTms( <SPAN CLASS="keyword">const</SPAN> PTMS_DATA p )
+<SPAN CLASS="linenum">0084:</SPAN> {
+<SPAN CLASS="linenum">0085:</SPAN>     <SPAN CLASS="keyword">const</SPAN> PTMS_HEADER pHeader = (<SPAN CLASS="keyword">const</SPAN> PTMS_HEADER)p;
+<SPAN CLASS="linenum">0086:</SPAN>     _nVertex = pHeader-&gt;vertex_count;
+<SPAN CLASS="linenum">0087:</SPAN>     
+<SPAN CLASS="linenum">0088:</SPAN>     <SPAN CLASS="comment">// -----------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0089:</SPAN>     <SPAN CLASS="comment">// データ配列の所得</SPAN>
+<SPAN CLASS="linenum">0090:</SPAN>     <SPAN CLASS="comment">// -----------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0091:</SPAN>     _pPosition = (<SPAN CLASS="keyword">const</SPAN> <SPAN CLASS="keyword">float</SPAN> *)(pHeader+1);
+<SPAN CLASS="linenum">0092:</SPAN>     _pNormal   = _pPosition + 3 * _nVertex;
+<SPAN CLASS="linenum">0093:</SPAN>     _pTexCoord = _pNormal   + 3 * _nVertex;
+<SPAN CLASS="linenum">0094:</SPAN> 
+<SPAN CLASS="linenum">0095:</SPAN> <SPAN CLASS="keyword">#ifdef</SPAN> DISPLAY_LIST
+<SPAN CLASS="linenum">0096:</SPAN>     _iDisplayList = glGenLists(1);
+<SPAN CLASS="linenum">0097:</SPAN>     glNewList( _iDisplayList, GL_COMPILE );
+<SPAN CLASS="linenum">0098:</SPAN> 
+<SPAN CLASS="linenum">0099:</SPAN>         glBegin( GL_TRIANGLES );
+<SPAN CLASS="linenum">0100:</SPAN>         <SPAN CLASS="comment">// ディスプレイリストの作成</SPAN>
+<SPAN CLASS="linenum">0101:</SPAN>         <SPAN CLASS="keyword">for</SPAN>( <SPAN CLASS="keyword">unsigned</SPAN> <SPAN CLASS="keyword">int</SPAN> i = 0; i &lt; _nVertex; i++ )
+<SPAN CLASS="linenum">0102:</SPAN>         {
+<SPAN CLASS="linenum">0103:</SPAN>             glNormal3fv  (   _pNormal ); _pNormal   += 3;
+<SPAN CLASS="linenum">0104:</SPAN>             glTexCoord2fv( _pTexCoord ); _pTexCoord += 2;
+<SPAN CLASS="linenum">0105:</SPAN>             glVertex3fv  ( _pPosition ); _pPosition += 3;
+<SPAN CLASS="linenum">0106:</SPAN>         }
+<SPAN CLASS="linenum">0107:</SPAN>         glEnd();
+<SPAN CLASS="linenum">0108:</SPAN> 
+<SPAN CLASS="linenum">0109:</SPAN>     glEndList();
+<SPAN CLASS="linenum">0110:</SPAN> <SPAN CLASS="keyword">#else</SPAN>
+<SPAN CLASS="linenum">0111:</SPAN> <SPAN CLASS="keyword">#ifndef</SPAN> NO_VBOS
+<SPAN CLASS="linenum">0112:</SPAN>     <SPAN CLASS="comment">// -----------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0113:</SPAN>     <SPAN CLASS="comment">// 頂点データをグラフィックスカードのメモリに格納する。</SPAN>
+<SPAN CLASS="linenum">0114:</SPAN>     <SPAN CLASS="comment">// -----------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0115:</SPAN>     <SPAN CLASS="comment">// 位置座標バッファを生成して結びつける</SPAN>
+<SPAN CLASS="linenum">0116:</SPAN>     glGenBuffersARB( 1, &amp;_nVBOPosition );                           <SPAN CLASS="comment">// ID を得る</SPAN>
+<SPAN CLASS="linenum">0117:</SPAN>     glBindBufferARB( GL_ARRAY_BUFFER_ARB, _nVBOPosition );          <SPAN CLASS="comment">// バッファを結びつける</SPAN>
+<SPAN CLASS="linenum">0118:</SPAN>     glBufferDataARB( GL_ARRAY_BUFFER_ARB, _nVertex*3*<SPAN CLASS="keyword">sizeof</SPAN>(<SPAN CLASS="keyword">float</SPAN>), _pPosition, GL_STATIC_DRAW_ARB );
+<SPAN CLASS="linenum">0119:</SPAN> 
+<SPAN CLASS="linenum">0120:</SPAN>     <SPAN CLASS="comment">// 法線ベクトルバッファを生成して結びつける</SPAN>
+<SPAN CLASS="linenum">0121:</SPAN>     glGenBuffersARB( 1, &amp;_nVBONormal );                             <SPAN CLASS="comment">// ID を得る</SPAN>
+<SPAN CLASS="linenum">0122:</SPAN>     glBindBufferARB( GL_ARRAY_BUFFER_ARB, _nVBONormal );            <SPAN CLASS="comment">// バッファを結びつける</SPAN>
+<SPAN CLASS="linenum">0123:</SPAN>     glBufferDataARB( GL_ARRAY_BUFFER_ARB, _nVertex*3*<SPAN CLASS="keyword">sizeof</SPAN>(<SPAN CLASS="keyword">float</SPAN>), _pNormal, GL_STATIC_DRAW_ARB );
+<SPAN CLASS="linenum">0124:</SPAN> 
+<SPAN CLASS="linenum">0125:</SPAN>     <SPAN CLASS="comment">// テクスチャ座標バッファを生成して結びつける</SPAN>
+<SPAN CLASS="linenum">0126:</SPAN>     <SPAN CLASS="comment">// Generate And Bind The Texture Coordinate Buffer</SPAN>
+<SPAN CLASS="linenum">0127:</SPAN>     glGenBuffersARB( 1, &amp;_nVBOTexCoord );                           <SPAN CLASS="comment">// ID を得る</SPAN>
+<SPAN CLASS="linenum">0128:</SPAN>     glBindBufferARB( GL_ARRAY_BUFFER_ARB, _nVBOTexCoord );          <SPAN CLASS="comment">// バッファを結びつける</SPAN>
+<SPAN CLASS="linenum">0129:</SPAN>     glBufferDataARB( GL_ARRAY_BUFFER_ARB, _nVertex*2*<SPAN CLASS="keyword">sizeof</SPAN>(<SPAN CLASS="keyword">float</SPAN>), _pTexCoord, GL_STATIC_DRAW_ARB );
+<SPAN CLASS="linenum">0130:</SPAN> <SPAN CLASS="keyword">#endif</SPAN> <SPAN CLASS="comment">// !NO_VBOS</SPAN>
+<SPAN CLASS="linenum">0131:</SPAN> <SPAN CLASS="keyword">#endif</SPAN> <SPAN CLASS="comment">// DISPLAY_LIST</SPAN>
+<SPAN CLASS="linenum">0132:</SPAN> }
+<SPAN CLASS="linenum">0133:</SPAN> 
+<SPAN CLASS="linenum">0134:</SPAN> 
+<SPAN CLASS="linenum">0135:</SPAN> <SPAN CLASS="comment">// ---------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0136:</SPAN> <SPAN CLASS="comment">// デストラクタ</SPAN>
+<SPAN CLASS="linenum">0137:</SPAN> <SPAN CLASS="comment">// ---------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0138:</SPAN> CTms::~CTms( )
+<SPAN CLASS="linenum">0139:</SPAN> {
+<SPAN CLASS="linenum">0140:</SPAN> <SPAN CLASS="keyword">#ifdef</SPAN> DISPLAY_LIST
+<SPAN CLASS="linenum">0141:</SPAN>     glDeleteLists( _iDisplayList, 1 );
+<SPAN CLASS="linenum">0142:</SPAN> <SPAN CLASS="keyword">#endif</SPAN> <SPAN CLASS="comment">// DISPLAY_LIST</SPAN>
+<SPAN CLASS="linenum">0143:</SPAN> 
+<SPAN CLASS="linenum">0144:</SPAN>     <SPAN CLASS="comment">// VBO の削除</SPAN>
+<SPAN CLASS="linenum">0145:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( _fVBOSupported )
+<SPAN CLASS="linenum">0146:</SPAN>     {
+<SPAN CLASS="linenum">0147:</SPAN>         <SPAN CLASS="keyword">unsigned</SPAN> <SPAN CLASS="keyword">int</SPAN> nBuffers[] = { _nVBOPosition, _nVBONormal, _nVBOTexCoord };
+<SPAN CLASS="linenum">0148:</SPAN>         glDeleteBuffersARB( 3, nBuffers );
+<SPAN CLASS="linenum">0149:</SPAN>     }
+<SPAN CLASS="linenum">0150:</SPAN> 
+<SPAN CLASS="linenum">0151:</SPAN>     _pTexCoord = 0;
+<SPAN CLASS="linenum">0152:</SPAN>     _pNormal = 0;
+<SPAN CLASS="linenum">0153:</SPAN>     _pPosition = 0;
+<SPAN CLASS="linenum">0154:</SPAN>     _nVertex = 0;
+<SPAN CLASS="linenum">0155:</SPAN> }
+<SPAN CLASS="linenum">0156:</SPAN> 
+<SPAN CLASS="linenum">0157:</SPAN> <SPAN CLASS="comment">// ---------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0158:</SPAN> <SPAN CLASS="comment">// エクステンションのサポートを調べる</SPAN>
+<SPAN CLASS="linenum">0159:</SPAN> <SPAN CLASS="comment">// ---------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0160:</SPAN> <SPAN CLASS="keyword">static</SPAN> <SPAN CLASS="keyword">bool</SPAN> IsExtensionSupported( <SPAN CLASS="keyword">char</SPAN>* szTargetExtension )
+<SPAN CLASS="linenum">0161:</SPAN> {
+<SPAN CLASS="linenum">0162:</SPAN>     <SPAN CLASS="keyword">const</SPAN> <SPAN CLASS="keyword">unsigned</SPAN> <SPAN CLASS="keyword">char</SPAN> *pszExtensions = NULL;
+<SPAN CLASS="linenum">0163:</SPAN>     <SPAN CLASS="keyword">const</SPAN> <SPAN CLASS="keyword">unsigned</SPAN> <SPAN CLASS="keyword">char</SPAN> *pszStart;
+<SPAN CLASS="linenum">0164:</SPAN>     <SPAN CLASS="keyword">unsigned</SPAN> <SPAN CLASS="keyword">char</SPAN> *pszWhere, *pszTerminator;
+<SPAN CLASS="linenum">0165:</SPAN> 
+<SPAN CLASS="linenum">0166:</SPAN>     <SPAN CLASS="comment">// Extension names should not have spaces</SPAN>
+<SPAN CLASS="linenum">0167:</SPAN>     pszWhere = (<SPAN CLASS="keyword">unsigned</SPAN> <SPAN CLASS="keyword">char</SPAN> *) strchr( szTargetExtension, '<SPAN CLASS="string"> </SPAN>' );
+<SPAN CLASS="linenum">0168:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( pszWhere || *szTargetExtension == '<SPAN CLASS="string">\0</SPAN>' )
+<SPAN CLASS="linenum">0169:</SPAN>         <SPAN CLASS="keyword">return</SPAN> <SPAN CLASS="keyword">false</SPAN>;
+<SPAN CLASS="linenum">0170:</SPAN> 
+<SPAN CLASS="linenum">0171:</SPAN>     <SPAN CLASS="comment">// Get Extensions String</SPAN>
+<SPAN CLASS="linenum">0172:</SPAN>     pszExtensions = glGetString( GL_EXTENSIONS );
+<SPAN CLASS="linenum">0173:</SPAN> 
+<SPAN CLASS="linenum">0174:</SPAN>     <SPAN CLASS="comment">// Search The Extensions String For An Exact Copy</SPAN>
+<SPAN CLASS="linenum">0175:</SPAN>     pszStart = pszExtensions;
+<SPAN CLASS="linenum">0176:</SPAN>     <SPAN CLASS="keyword">for</SPAN>(;;)
+<SPAN CLASS="linenum">0177:</SPAN>     {
+<SPAN CLASS="linenum">0178:</SPAN>         pszWhere = (<SPAN CLASS="keyword">unsigned</SPAN> <SPAN CLASS="keyword">char</SPAN> *) strstr( (<SPAN CLASS="keyword">const</SPAN> <SPAN CLASS="keyword">char</SPAN> *) pszStart, szTargetExtension );
+<SPAN CLASS="linenum">0179:</SPAN>         <SPAN CLASS="keyword">if</SPAN>( !pszWhere )
+<SPAN CLASS="linenum">0180:</SPAN>             <SPAN CLASS="keyword">break</SPAN>;
+<SPAN CLASS="linenum">0181:</SPAN>         pszTerminator = pszWhere + strlen( szTargetExtension );
+<SPAN CLASS="linenum">0182:</SPAN>         <SPAN CLASS="keyword">if</SPAN>( pszWhere == pszStart || *( pszWhere - 1 ) == '<SPAN CLASS="string"> </SPAN>' )
+<SPAN CLASS="linenum">0183:</SPAN>             <SPAN CLASS="keyword">if</SPAN>( *pszTerminator == '<SPAN CLASS="string"> </SPAN>' || *pszTerminator == '<SPAN CLASS="string">\0</SPAN>' )
+<SPAN CLASS="linenum">0184:</SPAN>                 <SPAN CLASS="keyword">return</SPAN> <SPAN CLASS="keyword">true</SPAN>;
+<SPAN CLASS="linenum">0185:</SPAN>         pszStart = pszTerminator;
+<SPAN CLASS="linenum">0186:</SPAN>     }
+<SPAN CLASS="linenum">0187:</SPAN>     <SPAN CLASS="keyword">return</SPAN> <SPAN CLASS="keyword">false</SPAN>;
+<SPAN CLASS="linenum">0188:</SPAN> }
+<SPAN CLASS="linenum">0189:</SPAN> 
+<SPAN CLASS="linenum">0190:</SPAN> <SPAN CLASS="comment">// ---------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0191:</SPAN> <SPAN CLASS="comment">// 描画能力を検証する</SPAN>
+<SPAN CLASS="linenum">0192:</SPAN> <SPAN CLASS="comment">// ---------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0193:</SPAN> <SPAN CLASS="keyword">void</SPAN> CTms::CheckDeviceAbility()
+<SPAN CLASS="linenum">0194:</SPAN> {
+<SPAN CLASS="linenum">0195:</SPAN> <SPAN CLASS="keyword">#ifdef</SPAN> DISPLAY_LIST
+<SPAN CLASS="linenum">0196:</SPAN>     _fVBOSupported = <SPAN CLASS="keyword">false</SPAN>;
+<SPAN CLASS="linenum">0197:</SPAN>     <SPAN CLASS="keyword">return</SPAN>;
+<SPAN CLASS="linenum">0198:</SPAN> <SPAN CLASS="keyword">#endif</SPAN>// DISPLAY_LIST
+<SPAN CLASS="linenum">0199:</SPAN> 
+<SPAN CLASS="linenum">0200:</SPAN>     <SPAN CLASS="comment">// VBO のサポートを確認する</SPAN>
+<SPAN CLASS="linenum">0201:</SPAN> <SPAN CLASS="keyword">#ifndef</SPAN> NO_VBOS
+<SPAN CLASS="linenum">0202:</SPAN>     _fVBOSupported = IsExtensionSupported( "<SPAN CLASS="string">GL_ARB_vertex_buffer_object</SPAN>" );
+<SPAN CLASS="linenum">0203:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( _fVBOSupported )
+<SPAN CLASS="linenum">0204:</SPAN>     {
+<SPAN CLASS="linenum">0205:</SPAN>         <SPAN CLASS="comment">// GL 関数のポインタを所得する</SPAN>
+<SPAN CLASS="linenum">0206:</SPAN>         glGenBuffersARB = (PFNGLGENBUFFERSARBPROC) wglGetProcAddress("<SPAN CLASS="string">glGenBuffersARB</SPAN>");
+<SPAN CLASS="linenum">0207:</SPAN>         glBindBufferARB = (PFNGLBINDBUFFERARBPROC) wglGetProcAddress("<SPAN CLASS="string">glBindBufferARB</SPAN>");
+<SPAN CLASS="linenum">0208:</SPAN>         glBufferDataARB = (PFNGLBUFFERDATAARBPROC) wglGetProcAddress("<SPAN CLASS="string">glBufferDataARB</SPAN>");
+<SPAN CLASS="linenum">0209:</SPAN>         glDeleteBuffersARB = (PFNGLDELETEBUFFERSARBPROC) wglGetProcAddress("<SPAN CLASS="string">glDeleteBuffersARB</SPAN>");
+<SPAN CLASS="linenum">0210:</SPAN>     }
+<SPAN CLASS="linenum">0211:</SPAN> <SPAN CLASS="keyword">#else</SPAN> <SPAN CLASS="comment">/* NO_VBOS */</SPAN>
+<SPAN CLASS="linenum">0212:</SPAN>     _fVBOSupported = <SPAN CLASS="keyword">false</SPAN>;
+<SPAN CLASS="linenum">0213:</SPAN> <SPAN CLASS="keyword">#endif</SPAN>
+<SPAN CLASS="linenum">0214:</SPAN> }
+<SPAN CLASS="linenum">0215:</SPAN> 
+<SPAN CLASS="linenum">0216:</SPAN> <SPAN CLASS="comment">// ---------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0217:</SPAN> <SPAN CLASS="comment">// 描画</SPAN>
+<SPAN CLASS="linenum">0218:</SPAN> <SPAN CLASS="comment">// ---------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0219:</SPAN> <SPAN CLASS="keyword">void</SPAN> CTms::Render( )
+<SPAN CLASS="linenum">0220:</SPAN> {
+<SPAN CLASS="linenum">0221:</SPAN> <SPAN CLASS="keyword">#ifdef</SPAN> DISPLAY_LIST
+<SPAN CLASS="linenum">0222:</SPAN>     glCallList( _iDisplayList );
+<SPAN CLASS="linenum">0223:</SPAN> <SPAN CLASS="keyword">#else</SPAN> <SPAN CLASS="comment">// DISPLAY_LIST</SPAN>
+<SPAN CLASS="linenum">0224:</SPAN>     <SPAN CLASS="comment">// データ配列を有効にする</SPAN>
+<SPAN CLASS="linenum">0225:</SPAN>     glEnableClientState( GL_VERTEX_ARRAY );
+<SPAN CLASS="linenum">0226:</SPAN>     glEnableClientState( GL_NORMAL_ARRAY );
+<SPAN CLASS="linenum">0227:</SPAN>     glEnableClientState( GL_TEXTURE_COORD_ARRAY );
+<SPAN CLASS="linenum">0228:</SPAN> 
+<SPAN CLASS="linenum">0229:</SPAN>     <SPAN CLASS="comment">// データをポインタにセットする</SPAN>
+<SPAN CLASS="linenum">0230:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( _fVBOSupported )
+<SPAN CLASS="linenum">0231:</SPAN>     {
+<SPAN CLASS="linenum">0232:</SPAN>         glBindBufferARB( GL_ARRAY_BUFFER_ARB, _nVBOPosition );
+<SPAN CLASS="linenum">0233:</SPAN>         glVertexPointer( 3, GL_FLOAT, 0, (<SPAN CLASS="keyword">char</SPAN> *) NULL );
+<SPAN CLASS="linenum">0234:</SPAN>         glBindBufferARB( GL_ARRAY_BUFFER_ARB, _nVBONormal );
+<SPAN CLASS="linenum">0235:</SPAN>         glNormalPointer( GL_FLOAT, 0, (<SPAN CLASS="keyword">char</SPAN> *) NULL );
+<SPAN CLASS="linenum">0236:</SPAN>         glBindBufferARB( GL_ARRAY_BUFFER_ARB, _nVBOTexCoord );
+<SPAN CLASS="linenum">0237:</SPAN>         glTexCoordPointer( 2, GL_FLOAT, 0, (<SPAN CLASS="keyword">char</SPAN> *) NULL );
+<SPAN CLASS="linenum">0238:</SPAN>     } <SPAN CLASS="keyword">else</SPAN>
+<SPAN CLASS="linenum">0239:</SPAN>     {
+<SPAN CLASS="linenum">0240:</SPAN>         glVertexPointer( 3, GL_FLOAT, 0, _pPosition );
+<SPAN CLASS="linenum">0241:</SPAN>         glNormalPointer( GL_FLOAT, 0, _pNormal );
+<SPAN CLASS="linenum">0242:</SPAN>         glTexCoordPointer( 2, GL_FLOAT, 0, _pTexCoord );
+<SPAN CLASS="linenum">0243:</SPAN>     }
+<SPAN CLASS="linenum">0244:</SPAN>     
+<SPAN CLASS="linenum">0245:</SPAN>     <SPAN CLASS="comment">// 描画</SPAN>
+<SPAN CLASS="linenum">0246:</SPAN>     glDrawArrays( GL_TRIANGLES, 0, _nVertex );
+<SPAN CLASS="linenum">0247:</SPAN> 
+<SPAN CLASS="linenum">0248:</SPAN>     <SPAN CLASS="comment">// データ配列を無効にする</SPAN>
+<SPAN CLASS="linenum">0249:</SPAN>     glDisableClientState( GL_VERTEX_ARRAY );
+<SPAN CLASS="linenum">0250:</SPAN>     glDisableClientState( GL_NORMAL_ARRAY );
+<SPAN CLASS="linenum">0251:</SPAN>     glDisableClientState( GL_TEXTURE_COORD_ARRAY );
+<SPAN CLASS="linenum">0252:</SPAN> <SPAN CLASS="keyword">#endif</SPAN> <SPAN CLASS="comment">// DISPLAY_LIST</SPAN>
+<SPAN CLASS="linenum">0253:</SPAN> }
+<SPAN CLASS="linenum">0254:</SPAN> 
+<SPAN CLASS="linenum">0255:</SPAN> }<SPAN CLASS="comment">// namespace Te</SPAN>
+<SPAN CLASS="linenum">0256:</SPAN> </PRE>
+</BODY>
+</HTML>

@@ -1,0 +1,268 @@
+<head>
+	<title>t-pot『OpenGL:3D 表示』</title>
+	<link rel="stylesheet" type="text/css" href="../if.css">
+</head>
+<meta http-equiv=Content-Type content="text/html; charset=shift_jis">
+<body>
+
+
+<div class="contents">
+<center>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<h1>OpenGL:3D 表示</h1><br>
+<h3>～３次元ポリゴン表示の一通り～</h3>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<image src = "title.png">
+<br>
+<hr>
+</center>
+<div>
+
+<h2>■はじめに</h2>
+
+
+<p>
+ポリゴンが表示できたら、それをまわして見ましょう。
+</p>
+<ul style = "LIST-STYLE-TYPE:none">
+<li><a href="src.lzh">src.lzh (３次元ポリゴン表示のサンプルプログラム:GLUT)</a>
+</ul>
+
+<p>
+まぁ、いつものように適当にファイルが入っています。
+</p>
+<table>
+<tr><td><a href="main_cpp.html">main.cpp</a></td><td>これだけ。</td></tr>
+</table>
+<p>
+あと、実行ファイル及び、プロジェクトファイルが入っています。
+</p>
+
+
+<h2>■メイン関数</h2>
+
+
+<p>
+今回は、前回のプログラムを拡張して、３次元ポリゴンの表示を行います。<br>
+メイン関数も少し拡張しています。
+</p>
+<pre class="CodeBlock">
+main.cpp
+<font COLOR=deepskyblue>0079:</font> <font COLOR=cyan>// ---------------------------------------------------------------------------</font>
+<font COLOR=deepskyblue>0080:</font> <font COLOR=cyan>// メイン関数</font>
+<font COLOR=deepskyblue>0081:</font> <font COLOR=cyan>// ---------------------------------------------------------------------------</font>
+<font COLOR=deepskyblue>0082:</font> <font COLOR=blue>int</font> main(<font COLOR=blue>int</font> argc, <font COLOR=blue>char</font> *argv[])
+<font COLOR=deepskyblue>0083:</font> {
+<font COLOR=deepskyblue>0084:</font>     <font COLOR=cyan>// ウィンドウの作成</font>
+<font COLOR=deepskyblue>0085:</font>     glutInitWindowPosition(100, 100);   <font COLOR=cyan>// 表示位置</font>
+<font COLOR=deepskyblue>0086:</font>     glutInitWindowSize(512, 512);       <font COLOR=cyan>// サイズ</font>
+<font COLOR=deepskyblue>0087:</font>     glutInit(&amp;argc, argv);              <font COLOR=cyan>// GLの初期化</font>
+<font COLOR=deepskyblue>0088:</font>     glutInitDisplayMode(GLUT_DOUBLE     <font COLOR=cyan>// 描画モード</font>
+<font COLOR=deepskyblue>0089:</font>                      | GLUT_RGBA        <font COLOR=cyan>// wバッファ+RGBA+深度バッファ</font>
+<font COLOR=deepskyblue>0090:</font>                      | GLUT_DEPTH);
+<font COLOR=deepskyblue>0091:</font>     glutCreateWindow(argv[0]);          <font COLOR=cyan>// ウィンドウの生成</font>
+<font COLOR=deepskyblue>0092:</font> 
+<font COLOR=deepskyblue>0093:</font>     <font COLOR=cyan>// コールバック関数の設定</font>
+<font COLOR=deepskyblue>0094:</font>     glutDisplayFunc(display);   <font COLOR=cyan>// 描画関数</font>
+<font COLOR=deepskyblue>0095:</font>     glutReshapeFunc(resize);    <font COLOR=cyan>// 画面が変形したとき</font>
+<font COLOR=deepskyblue>0096:</font>     glutIdleFunc(idle);         <font COLOR=cyan>// ひまなとき</font>
+<font COLOR=deepskyblue>0097:</font> 
+<font COLOR=deepskyblue>0098:</font>     <font COLOR=cyan>// 一度だけすればいい設定</font>
+<font COLOR=deepskyblue>0099:</font>     glClearColor(0.0, 0.0, 0.3, 0.0);   <font COLOR=cyan>// 背景色の設定</font>
+<font COLOR=deepskyblue>0100:</font>     glEnable(GL_DEPTH_TEST);            <font COLOR=cyan>// 深度バッファの使用</font>
+<font COLOR=deepskyblue>0101:</font>   
+<font COLOR=deepskyblue>0102:</font>     glutMainLoop();                     <font COLOR=cyan>// メインループ</font>
+<font COLOR=deepskyblue>0103:</font> 
+<font COLOR=deepskyblue>0104:</font>     <font COLOR=blue>return</font> 0;
+<font COLOR=deepskyblue>0105:</font> }
+</pre>
+<p>
+３次元で表示するためには、深度バッファを使います
+（今回は１枚板だけなので、実は深度バッファは要らないのですが・・・）。<br>
+このためには、ディスプレイモードの設定 glutInitDisplayMode に、GLUT_DEPTH を追加します。<br>
+また、glEnable(GL_DEPTH_TEST) で、深度テストを有効にします。
+</p>
+<p>
+その他に、画面がちらつかないように、ディスプレイモードにGLUT_DOUBLEを設定して、２重バッファを使います。<br>
+あと、ウィンドウの大きさや、表示位置も指定しました。
+</p>
+<p>
+コールバックを追加しました。<br>
+一通り、処理が終わって、ひまになった時のアイドリング状態のときの関数の設定、glutIdleFunc() と、
+リサイズのイベントが発生したときの、glutReshapeFunc()です。
+</p>
+
+
+<h2>■リサイズイベント</h2>
+
+
+<p>
+リサイズのイベントが発生したときの関数は、resizeです。<br>
+このとき、ビューポートと、射影行列を設定します。
+</p>
+<pre class="CodeBlock">
+main.cpp
+<font COLOR=deepskyblue>0053:</font> <font COLOR=cyan>// ---------------------------------------------------------------------------</font>
+<font COLOR=deepskyblue>0054:</font> <font COLOR=cyan>// 画面がリサイズされたとき</font>
+<font COLOR=deepskyblue>0055:</font> <font COLOR=cyan>// ---------------------------------------------------------------------------</font>
+<font COLOR=deepskyblue>0056:</font> <font COLOR=blue>void</font> resize(<font COLOR=blue>int</font> w, <font COLOR=blue>int</font> h)
+<font COLOR=deepskyblue>0057:</font> {
+<font COLOR=deepskyblue>0058:</font>     <font COLOR=cyan>// ビューポートの設定</font>
+<font COLOR=deepskyblue>0059:</font>     glViewport(0, 0, w, h);
+<font COLOR=deepskyblue>0060:</font> 
+<font COLOR=deepskyblue>0061:</font>     <font COLOR=cyan>// 射影行列の設定</font>
+<font COLOR=deepskyblue>0062:</font>     glMatrixMode(GL_PROJECTION);
+<font COLOR=deepskyblue>0063:</font>     glLoadIdentity();
+<font COLOR=deepskyblue>0064:</font>     gluPerspective( 60.0,           <font COLOR=cyan>// 画角</font>
+<font COLOR=deepskyblue>0065:</font>                     1.0,            <font COLOR=cyan>// アスペクト比</font>
+<font COLOR=deepskyblue>0066:</font>                     1.0, 100.0);    <font COLOR=cyan>// 前方面、後方面</font>
+<font COLOR=deepskyblue>0067:</font> }
+</pre>
+<p>
+ビューポートは、表示領域の左上の座標と、大きさを指定します。
+関数の引数にサイズが渡されるので、そのまま幅と高さに使いましょう。<br>
+射影行列は、glMatrixMode(GL_PROJECTION) で、
+射影行列を設定することを宣言してから、行列を作成します。<br>
+gluPerspective という、射影行列を作成するそのままの関数があるので、それを使います。
+設定内容は、DirectXと同じですね。
+</p>
+
+
+<h2>■アイドルイベント</h2>
+
+
+<p>
+アイドリング中の処理を見ましょう。<br>
+今回は、ポリゴンを回すので、回転角度の変数を変化して、
+glutPostRedisplay() で再描画のリクエストをします。
+</p>
+
+<pre class="CodeBlock">
+main.cpp
+<font COLOR=deepskyblue>0012:</font> <font COLOR=cyan>// ---------------------------------------------------------------------------</font>
+<font COLOR=deepskyblue>0013:</font> <font COLOR=cyan>// オブジェクト</font>
+<font COLOR=deepskyblue>0014:</font> <font COLOR=cyan>// ---------------------------------------------------------------------------</font>
+<font COLOR=deepskyblue>0015:</font> <font COLOR=blue>static</font> <font COLOR=blue>float</font> r = 0.0f;      <font COLOR=cyan>// ポリゴンの回転角</font>
+<font COLOR=deepskyblue>0016:</font> 
+<font COLOR=deepskyblue>0068:</font> <font COLOR=cyan>// ---------------------------------------------------------------------------</font>
+<font COLOR=deepskyblue>0069:</font> <font COLOR=cyan>// ひまなときに実行される</font>
+<font COLOR=deepskyblue>0070:</font> <font COLOR=cyan>// ---------------------------------------------------------------------------</font>
+<font COLOR=deepskyblue>0071:</font> <font COLOR=blue>void</font> idle()
+<font COLOR=deepskyblue>0072:</font> {
+<font COLOR=deepskyblue>0073:</font>     <font COLOR=cyan>// ポリゴンの回転</font>
+<font COLOR=deepskyblue>0074:</font>     r = r + 3.0f;
+<font COLOR=deepskyblue>0075:</font>     <font COLOR=blue>while</font> (360.0f &lt; r) r -= 360.0f;
+<font COLOR=deepskyblue>0076:</font> 
+<font COLOR=deepskyblue>0077:</font>     glutPostRedisplay();            <font COLOR=cyan>// 再描画リクエスト</font>
+<font COLOR=deepskyblue>0078:</font> }
+</pre>
+
+
+<h2>■描画関数</h2>
+
+
+<p>
+それでは、描画関数を見ましょう。<br>
+画面をクリアするときに、深度バッファもクリアします。
+</p>
+<pre class="CodeBlock">
+main.cpp
+<font COLOR=deepskyblue>0017:</font> <font COLOR=cyan>// ---------------------------------------------------------------------------</font>
+<font COLOR=deepskyblue>0018:</font> <font COLOR=cyan>// 画面描画</font>
+<font COLOR=deepskyblue>0019:</font> <font COLOR=cyan>// ---------------------------------------------------------------------------</font>
+<font COLOR=deepskyblue>0020:</font> <font COLOR=blue>void</font> display(<font COLOR=blue>void</font>)
+<font COLOR=deepskyblue>0021:</font> {
+<font COLOR=deepskyblue>0022:</font>     <font COLOR=cyan>// 画面のクリア</font>
+<font COLOR=deepskyblue>0023:</font>     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+<font COLOR=deepskyblue>0024:</font> 
+<font COLOR=deepskyblue>0025:</font>     <font COLOR=cyan>// ビュー行列の設定</font>
+<font COLOR=deepskyblue>0026:</font>     glMatrixMode(GL_MODELVIEW);
+<font COLOR=deepskyblue>0027:</font>     glLoadIdentity();
+<font COLOR=deepskyblue>0028:</font>     gluLookAt(  0.0, 0.0, 3.0,      <font COLOR=cyan>// 視点</font>
+<font COLOR=deepskyblue>0029:</font>                 0.0, 0.0, 0.0,      <font COLOR=cyan>// 注目点</font>
+<font COLOR=deepskyblue>0030:</font>                 0.0, 1.0, 0.0);     <font COLOR=cyan>// 上方向</font>
+<font COLOR=deepskyblue>0031:</font> 
+<font COLOR=deepskyblue>0032:</font>     <font COLOR=cyan>// -----------------------------------------------------------------------</font>
+<font COLOR=deepskyblue>0033:</font>     <font COLOR=cyan>// ポリゴン描画</font>
+<font COLOR=deepskyblue>0034:</font> 
+<font COLOR=deepskyblue>0035:</font>     glPushMatrix();                 <font COLOR=cyan>// ビュー行列が他のポリゴンでも使えるよう退避</font>
+<font COLOR=deepskyblue>0036:</font>     <font COLOR=cyan>//        rot    x    y    z    </font>
+<font COLOR=deepskyblue>0037:</font>     glRotated(r, 0.0, 1.0, 0.0);    <font COLOR=cyan>// ポリゴンの回転角を設定</font>
+<font COLOR=deepskyblue>0038:</font>     <font COLOR=cyan>// ポリゴン描画</font>
+<font COLOR=deepskyblue>0039:</font>     glBegin(GL_TRIANGLE_STRIP);     <font COLOR=cyan>// ストリップ設定</font>
+<font COLOR=deepskyblue>0040:</font>     glColor3d(1.0, 0.0, 0.0);       <font COLOR=cyan>// 赤</font>
+<font COLOR=deepskyblue>0041:</font>     glVertex3d(-0.9, +0.9, 0.0);
+<font COLOR=deepskyblue>0042:</font>     glColor3d(0.0, 1.0, 0.0);       <font COLOR=cyan>// 青</font>
+<font COLOR=deepskyblue>0043:</font>     glVertex3d(+0.9, +0.9, 0.0);
+<font COLOR=deepskyblue>0044:</font>     glColor3d(0.0, 0.0, 1.0);       <font COLOR=cyan>// 緑</font>
+<font COLOR=deepskyblue>0045:</font>     glVertex3d(-0.9, -0.9, 0.0);
+<font COLOR=deepskyblue>0046:</font>     glColor3d(1.0, 1.0, 1.0);       <font COLOR=cyan>// 白</font>
+<font COLOR=deepskyblue>0047:</font>     glVertex3d(+0.9, -0.9, 0.0);
+<font COLOR=deepskyblue>0048:</font>     glEnd();                        <font COLOR=cyan>// ポリゴンの描画終了</font>
+<font COLOR=deepskyblue>0049:</font>     glPopMatrix();                  <font COLOR=cyan>// ビュー行列に現在の行列を戻す</font>
+<font COLOR=deepskyblue>0050:</font> 
+<font COLOR=deepskyblue>0051:</font>     glutSwapBuffers();              <font COLOR=cyan>// 画面の更新の終了</font>
+<font COLOR=deepskyblue>0052:</font> }
+</pre>
+<p>
+モデル座標系から、カメラ座標系への変換行列は、１つになっています。<br>
+glMatrixMode(GL_MODELVIEW) で、ビュー行列を設定する宣言をしてから、行列を設定します。<br>
+ビュー行列は、gluLookAt で作成します。<br>
+あとは、ワールド行列をビュー行列にかけて、変換行列を作成します。
+変換行列の作成には、Matrix stack を使います（DirectXでも、ID3DXMatrixStackってやつがありますね）。<br>
+Matrix stack は、行列を積み重ねることによって、行列計算の複数の実行を意識することなく行います。<br>
+ビュー行列を作成したあとに、glRotated 等で、各ポリゴンのワールド行列を作成します。<br>
+描画するときは、その時点までの行列計算が順次行われます。<br>
+このとき、glRotated だけでなく、glTranslated を書けば、平行移動が行えます。<br>
+注意することは、最後に設定した行列計算から実行されるということです。<br>
+よくある、普通の描画方法では、
+</p>
+<pre class="CodeBlock">
+ビュー行列   gluLookAt
+平行移動     glTranslated
+回転         glRotated
+スケーリング glScaled
+</pre>
+<p>
+の順で行列を設定する必要があります。<br>
+さらに、Matrix stack の大きな特徴として、行列を使いまわすことができます。
+</p>
+<image src = "stack.png">
+<p>
+その時点までに設定された行列を glPushMatrix() で、退避します。<br>
+使い終わったら、glPopMatrix() で、退避した行列を元に戻せます。<br>
+今回は、ポリゴンが１つしか使わないですが、複数のオブジェクトを表示するときでも、
+glPushMatrix でビュー行列を退避しておけば、ビュー行列を何度も設定しなくてもよくなります。
+</p>
+<p>
+それ以外は、２Ｄの時とほとんど変わりません。glColor3dで3次元座標を設定するぐらいです。
+</p>
+<p>
+最後の画面の更新でダブルバッファを切り替えます。
+具体的には、glutSwapBuffers で、切り替えます。
+</p>
+
+
+<h2>■最後に</h2>
+
+
+<p>
+これで、基本的な３Ｄ描画ができるようになりました。<br>
+あとは、応用して、いろいろなものを描画しましょう。
+</p>
+
+</div>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<center>
+<hr>
+<p><a href="../index.html">もどる</a></p>
+<p><a href="mailto:imagire@gmail.com">imagire@gmail.com</a></p>
+</center>
+
+</body>
+</html>

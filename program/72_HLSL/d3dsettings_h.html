@@ -1,0 +1,138 @@
+<HTML>
+<HEAD>
+<TITLE>d3dsettings.h</TITLE>
+<meta name="GENERATOR" content="cpp2html 2.1 by Niisaka">
+<meta http-equiv="Content-Type" content="text/html">
+<meta http-equiv="Content-Style-Type" content="text/css">
+<STYLE TYPE="text/css">
+<!--
+SPAN.comment { color:#008000; font-weight:normal; font-style:normal;}
+SPAN.keyword { color:#0000FF; font-weight:normal; font-style:normal;}
+SPAN.string { color:#600000; font-weight:normal; font-style:normal;}
+SPAN.linenum { color:#A0A0A0; font-weight:normal; font-style:normal;}
+-->
+</STYLE>
+</HEAD>
+<BODY TEXT="#000000" BGCOLOR="#FFFFFF">
+<PRE><SPAN CLASS="linenum">0001:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0002:</SPAN> <SPAN CLASS="comment">// File: D3DSettings.h</SPAN>
+<SPAN CLASS="linenum">0003:</SPAN> <SPAN CLASS="comment">//</SPAN>
+<SPAN CLASS="linenum">0004:</SPAN> <SPAN CLASS="comment">// Desc: Settings class and change-settings dialog class for the Direct3D </SPAN>
+<SPAN CLASS="linenum">0005:</SPAN> <SPAN CLASS="comment">//       samples framework library.</SPAN>
+<SPAN CLASS="linenum">0006:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0007:</SPAN> <SPAN CLASS="keyword">#ifndef</SPAN> D3DSETTINGS_H
+<SPAN CLASS="linenum">0008:</SPAN> <SPAN CLASS="keyword">#define</SPAN> D3DSETTINGS_H
+<SPAN CLASS="linenum">0009:</SPAN> 
+<SPAN CLASS="linenum">0010:</SPAN> 
+<SPAN CLASS="linenum">0011:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0012:</SPAN> <SPAN CLASS="comment">// Name: class CD3DSettings</SPAN>
+<SPAN CLASS="linenum">0013:</SPAN> <SPAN CLASS="comment">// Desc: Current D3D settings: adapter, device, mode, formats, etc.</SPAN>
+<SPAN CLASS="linenum">0014:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0015:</SPAN> <SPAN CLASS="keyword">class</SPAN> CD3DSettings 
+<SPAN CLASS="linenum">0016:</SPAN> {
+<SPAN CLASS="linenum">0017:</SPAN> <SPAN CLASS="keyword">public</SPAN>:
+<SPAN CLASS="linenum">0018:</SPAN>     <SPAN CLASS="keyword">bool</SPAN> IsWindowed;
+<SPAN CLASS="linenum">0019:</SPAN> 
+<SPAN CLASS="linenum">0020:</SPAN>     D3DAdapterInfo* pWindowed_AdapterInfo;
+<SPAN CLASS="linenum">0021:</SPAN>     D3DDeviceInfo* pWindowed_DeviceInfo;
+<SPAN CLASS="linenum">0022:</SPAN>     D3DDeviceCombo* pWindowed_DeviceCombo;
+<SPAN CLASS="linenum">0023:</SPAN> 
+<SPAN CLASS="linenum">0024:</SPAN>     D3DDISPLAYMODE Windowed_DisplayMode; <SPAN CLASS="comment">// not changable by the user</SPAN>
+<SPAN CLASS="linenum">0025:</SPAN>     D3DFORMAT Windowed_DepthStencilBufferFormat;
+<SPAN CLASS="linenum">0026:</SPAN>     D3DMULTISAMPLE_TYPE Windowed_MultisampleType;
+<SPAN CLASS="linenum">0027:</SPAN>     DWORD Windowed_MultisampleQuality;
+<SPAN CLASS="linenum">0028:</SPAN>     VertexProcessingType Windowed_VertexProcessingType;
+<SPAN CLASS="linenum">0029:</SPAN>     UINT Windowed_PresentInterval;
+<SPAN CLASS="linenum">0030:</SPAN>     <SPAN CLASS="keyword">int</SPAN> Windowed_Width;
+<SPAN CLASS="linenum">0031:</SPAN>     <SPAN CLASS="keyword">int</SPAN> Windowed_Height;
+<SPAN CLASS="linenum">0032:</SPAN> 
+<SPAN CLASS="linenum">0033:</SPAN>     D3DAdapterInfo* pFullscreen_AdapterInfo;
+<SPAN CLASS="linenum">0034:</SPAN>     D3DDeviceInfo* pFullscreen_DeviceInfo;
+<SPAN CLASS="linenum">0035:</SPAN>     D3DDeviceCombo* pFullscreen_DeviceCombo;
+<SPAN CLASS="linenum">0036:</SPAN> 
+<SPAN CLASS="linenum">0037:</SPAN>     D3DDISPLAYMODE Fullscreen_DisplayMode; <SPAN CLASS="comment">// changable by the user</SPAN>
+<SPAN CLASS="linenum">0038:</SPAN>     D3DFORMAT Fullscreen_DepthStencilBufferFormat;
+<SPAN CLASS="linenum">0039:</SPAN>     D3DMULTISAMPLE_TYPE Fullscreen_MultisampleType;
+<SPAN CLASS="linenum">0040:</SPAN>     DWORD Fullscreen_MultisampleQuality;
+<SPAN CLASS="linenum">0041:</SPAN>     VertexProcessingType Fullscreen_VertexProcessingType;
+<SPAN CLASS="linenum">0042:</SPAN>     UINT Fullscreen_PresentInterval;
+<SPAN CLASS="linenum">0043:</SPAN> 
+<SPAN CLASS="linenum">0044:</SPAN>     D3DAdapterInfo* PAdapterInfo() { <SPAN CLASS="keyword">return</SPAN> IsWindowed ? pWindowed_AdapterInfo : pFullscreen_AdapterInfo; }
+<SPAN CLASS="linenum">0045:</SPAN>     D3DDeviceInfo* PDeviceInfo() { <SPAN CLASS="keyword">return</SPAN> IsWindowed ? pWindowed_DeviceInfo : pFullscreen_DeviceInfo; }
+<SPAN CLASS="linenum">0046:</SPAN>     D3DDeviceCombo* PDeviceCombo() { <SPAN CLASS="keyword">return</SPAN> IsWindowed ? pWindowed_DeviceCombo : pFullscreen_DeviceCombo; }
+<SPAN CLASS="linenum">0047:</SPAN> 
+<SPAN CLASS="linenum">0048:</SPAN>     <SPAN CLASS="keyword">int</SPAN> AdapterOrdinal() { <SPAN CLASS="keyword">return</SPAN> PDeviceCombo()-&gt;AdapterOrdinal; }
+<SPAN CLASS="linenum">0049:</SPAN>     D3DDEVTYPE DevType() { <SPAN CLASS="keyword">return</SPAN> PDeviceCombo()-&gt;DevType; }
+<SPAN CLASS="linenum">0050:</SPAN>     D3DFORMAT BackBufferFormat() { <SPAN CLASS="keyword">return</SPAN> PDeviceCombo()-&gt;BackBufferFormat; }
+<SPAN CLASS="linenum">0051:</SPAN> 
+<SPAN CLASS="linenum">0052:</SPAN>     D3DDISPLAYMODE DisplayMode() { <SPAN CLASS="keyword">return</SPAN> IsWindowed ? Windowed_DisplayMode : Fullscreen_DisplayMode; }
+<SPAN CLASS="linenum">0053:</SPAN>     <SPAN CLASS="keyword">void</SPAN> SetDisplayMode(D3DDISPLAYMODE value) { <SPAN CLASS="keyword">if</SPAN> (IsWindowed) Windowed_DisplayMode = value; <SPAN CLASS="keyword">else</SPAN> Fullscreen_DisplayMode = value; }
+<SPAN CLASS="linenum">0054:</SPAN> 
+<SPAN CLASS="linenum">0055:</SPAN>     D3DFORMAT DepthStencilBufferFormat() { <SPAN CLASS="keyword">return</SPAN> IsWindowed ? Windowed_DepthStencilBufferFormat : Fullscreen_DepthStencilBufferFormat; }
+<SPAN CLASS="linenum">0056:</SPAN>     <SPAN CLASS="keyword">void</SPAN> SetDepthStencilBufferFormat(D3DFORMAT value) { <SPAN CLASS="keyword">if</SPAN> (IsWindowed) Windowed_DepthStencilBufferFormat = value; <SPAN CLASS="keyword">else</SPAN> Fullscreen_DepthStencilBufferFormat = value; }
+<SPAN CLASS="linenum">0057:</SPAN> 
+<SPAN CLASS="linenum">0058:</SPAN>     D3DMULTISAMPLE_TYPE MultisampleType() { <SPAN CLASS="keyword">return</SPAN> IsWindowed ? Windowed_MultisampleType : Fullscreen_MultisampleType; }
+<SPAN CLASS="linenum">0059:</SPAN>     <SPAN CLASS="keyword">void</SPAN> SetMultisampleType(D3DMULTISAMPLE_TYPE value) { <SPAN CLASS="keyword">if</SPAN> (IsWindowed) Windowed_MultisampleType = value; <SPAN CLASS="keyword">else</SPAN> Fullscreen_MultisampleType = value; }
+<SPAN CLASS="linenum">0060:</SPAN> 
+<SPAN CLASS="linenum">0061:</SPAN>     DWORD MultisampleQuality() { <SPAN CLASS="keyword">return</SPAN> IsWindowed ? Windowed_MultisampleQuality : Fullscreen_MultisampleQuality; }
+<SPAN CLASS="linenum">0062:</SPAN>     <SPAN CLASS="keyword">void</SPAN> SetMultisampleQuality(DWORD value) { <SPAN CLASS="keyword">if</SPAN> (IsWindowed) Windowed_MultisampleQuality = value; <SPAN CLASS="keyword">else</SPAN> Fullscreen_MultisampleQuality = value; }
+<SPAN CLASS="linenum">0063:</SPAN> 
+<SPAN CLASS="linenum">0064:</SPAN>     VertexProcessingType GetVertexProcessingType() { <SPAN CLASS="keyword">return</SPAN> IsWindowed ? Windowed_VertexProcessingType : Fullscreen_VertexProcessingType; }
+<SPAN CLASS="linenum">0065:</SPAN>     <SPAN CLASS="keyword">void</SPAN> SetVertexProcessingType(VertexProcessingType value) { <SPAN CLASS="keyword">if</SPAN> (IsWindowed) Windowed_VertexProcessingType = value; <SPAN CLASS="keyword">else</SPAN> Fullscreen_VertexProcessingType = value; }
+<SPAN CLASS="linenum">0066:</SPAN> 
+<SPAN CLASS="linenum">0067:</SPAN>     UINT PresentInterval() { <SPAN CLASS="keyword">return</SPAN> IsWindowed ? Windowed_PresentInterval : Fullscreen_PresentInterval; }
+<SPAN CLASS="linenum">0068:</SPAN>     <SPAN CLASS="keyword">void</SPAN> SetPresentInterval(UINT value) { <SPAN CLASS="keyword">if</SPAN> (IsWindowed) Windowed_PresentInterval = value; <SPAN CLASS="keyword">else</SPAN> Fullscreen_PresentInterval = value; }
+<SPAN CLASS="linenum">0069:</SPAN> };
+<SPAN CLASS="linenum">0070:</SPAN> 
+<SPAN CLASS="linenum">0071:</SPAN> 
+<SPAN CLASS="linenum">0072:</SPAN> 
+<SPAN CLASS="linenum">0073:</SPAN> 
+<SPAN CLASS="linenum">0074:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0075:</SPAN> <SPAN CLASS="comment">// Name: class CD3DSettingsDialog</SPAN>
+<SPAN CLASS="linenum">0076:</SPAN> <SPAN CLASS="comment">// Desc: Dialog box to allow the user to change the D3D settings</SPAN>
+<SPAN CLASS="linenum">0077:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0078:</SPAN> <SPAN CLASS="keyword">class</SPAN> CD3DSettingsDialog
+<SPAN CLASS="linenum">0079:</SPAN> {
+<SPAN CLASS="linenum">0080:</SPAN> <SPAN CLASS="keyword">private</SPAN>:
+<SPAN CLASS="linenum">0081:</SPAN>     HWND m_hDlg;
+<SPAN CLASS="linenum">0082:</SPAN>     CD3DEnumeration* m_pEnumeration;
+<SPAN CLASS="linenum">0083:</SPAN>     CD3DSettings m_d3dSettings;
+<SPAN CLASS="linenum">0084:</SPAN> 
+<SPAN CLASS="linenum">0085:</SPAN> <SPAN CLASS="keyword">private</SPAN>:
+<SPAN CLASS="linenum">0086:</SPAN>     <SPAN CLASS="comment">// ComboBox helper functions</SPAN>
+<SPAN CLASS="linenum">0087:</SPAN>     <SPAN CLASS="keyword">void</SPAN> ComboBoxAdd( <SPAN CLASS="keyword">int</SPAN> id, <SPAN CLASS="keyword">void</SPAN>* pData, TCHAR* pstrDesc );
+<SPAN CLASS="linenum">0088:</SPAN>     <SPAN CLASS="keyword">void</SPAN> ComboBoxSelect( <SPAN CLASS="keyword">int</SPAN> id, <SPAN CLASS="keyword">void</SPAN>* pData );
+<SPAN CLASS="linenum">0089:</SPAN>     <SPAN CLASS="keyword">void</SPAN>* ComboBoxSelected( <SPAN CLASS="keyword">int</SPAN> id );
+<SPAN CLASS="linenum">0090:</SPAN>     <SPAN CLASS="keyword">bool</SPAN> ComboBoxSomethingSelected( <SPAN CLASS="keyword">int</SPAN> id );
+<SPAN CLASS="linenum">0091:</SPAN>     UINT ComboBoxCount( <SPAN CLASS="keyword">int</SPAN> id );
+<SPAN CLASS="linenum">0092:</SPAN>     <SPAN CLASS="keyword">void</SPAN> ComboBoxSelectIndex( <SPAN CLASS="keyword">int</SPAN> id, <SPAN CLASS="keyword">int</SPAN> index );
+<SPAN CLASS="linenum">0093:</SPAN>     <SPAN CLASS="keyword">void</SPAN> ComboBoxClear( <SPAN CLASS="keyword">int</SPAN> id );
+<SPAN CLASS="linenum">0094:</SPAN>     <SPAN CLASS="keyword">bool</SPAN> ComboBoxContainsText( <SPAN CLASS="keyword">int</SPAN> id, TCHAR* pstrText );
+<SPAN CLASS="linenum">0095:</SPAN> 
+<SPAN CLASS="linenum">0096:</SPAN>     <SPAN CLASS="keyword">void</SPAN> AdapterChanged( <SPAN CLASS="keyword">void</SPAN> );
+<SPAN CLASS="linenum">0097:</SPAN>     <SPAN CLASS="keyword">void</SPAN> DeviceChanged( <SPAN CLASS="keyword">void</SPAN> );
+<SPAN CLASS="linenum">0098:</SPAN>     <SPAN CLASS="keyword">void</SPAN> WindowedFullscreenChanged( <SPAN CLASS="keyword">void</SPAN> );
+<SPAN CLASS="linenum">0099:</SPAN>     <SPAN CLASS="keyword">void</SPAN> AdapterFormatChanged( <SPAN CLASS="keyword">void</SPAN> );
+<SPAN CLASS="linenum">0100:</SPAN>     <SPAN CLASS="keyword">void</SPAN> ResolutionChanged( <SPAN CLASS="keyword">void</SPAN> );
+<SPAN CLASS="linenum">0101:</SPAN>     <SPAN CLASS="keyword">void</SPAN> RefreshRateChanged( <SPAN CLASS="keyword">void</SPAN> );
+<SPAN CLASS="linenum">0102:</SPAN>     <SPAN CLASS="keyword">void</SPAN> BackBufferFormatChanged( <SPAN CLASS="keyword">void</SPAN> );
+<SPAN CLASS="linenum">0103:</SPAN>     <SPAN CLASS="keyword">void</SPAN> DepthStencilBufferFormatChanged( <SPAN CLASS="keyword">void</SPAN> );
+<SPAN CLASS="linenum">0104:</SPAN>     <SPAN CLASS="keyword">void</SPAN> MultisampleTypeChanged( <SPAN CLASS="keyword">void</SPAN> );
+<SPAN CLASS="linenum">0105:</SPAN>     <SPAN CLASS="keyword">void</SPAN> MultisampleQualityChanged( <SPAN CLASS="keyword">void</SPAN> );
+<SPAN CLASS="linenum">0106:</SPAN>     <SPAN CLASS="keyword">void</SPAN> VertexProcessingChanged( <SPAN CLASS="keyword">void</SPAN> );
+<SPAN CLASS="linenum">0107:</SPAN>     <SPAN CLASS="keyword">void</SPAN> PresentIntervalChanged( <SPAN CLASS="keyword">void</SPAN> );
+<SPAN CLASS="linenum">0108:</SPAN> 
+<SPAN CLASS="linenum">0109:</SPAN> <SPAN CLASS="keyword">public</SPAN>:
+<SPAN CLASS="linenum">0110:</SPAN>     CD3DSettingsDialog( CD3DEnumeration* pEnumeration, CD3DSettings* pSettings);
+<SPAN CLASS="linenum">0111:</SPAN>     INT_PTR ShowDialog( HWND hwndParent );
+<SPAN CLASS="linenum">0112:</SPAN>     INT_PTR DialogProc( HWND hDlg, UINT msg, WPARAM wParam, LPARAM lParam );
+<SPAN CLASS="linenum">0113:</SPAN>     <SPAN CLASS="keyword">void</SPAN> GetFinalSettings( CD3DSettings* pSettings ) { *pSettings = m_d3dSettings; }
+<SPAN CLASS="linenum">0114:</SPAN> };
+<SPAN CLASS="linenum">0115:</SPAN> 
+<SPAN CLASS="linenum">0116:</SPAN> <SPAN CLASS="keyword">#endif</SPAN>
+<SPAN CLASS="linenum">0117:</SPAN> 
+<SPAN CLASS="linenum">0118:</SPAN> 
+<SPAN CLASS="linenum">0119:</SPAN> 
+<SPAN CLASS="linenum">0120:</SPAN> </PRE>
+</BODY>
+</HTML>

@@ -1,0 +1,1019 @@
+<PRE>   1: <FONT COLOR="#008040">//--------------------------------------------------------------------------------------</FONT>
+   2: <FONT COLOR="#008040">// File: main.cpp</FONT>
+   3: <FONT COLOR="#008040">//--------------------------------------------------------------------------------------</FONT>
+   4: <FONT COLOR="#0000FF">#include</FONT> <FONT COLOR="#FF0000">&quot;dxstdafx.h&quot;</FONT>
+   5: <FONT COLOR="#0000FF">#include</FONT> <FONT COLOR="#FF0000">&quot;resource.h&quot;</FONT>
+   6: <FONT COLOR="#0000FF">#include</FONT> <FONT COLOR="#FF0000">&quot;rendertarget.h&quot;</FONT>
+   7: 
+   8: <FONT COLOR="#0000FF">#undef</FONT> FAST_RENDERING
+   9: <FONT COLOR="#008040">//#define FAST_RENDERING</FONT>
+  10: 
+  11: <FONT COLOR="#008040">//#define DEBUG_VS   // Uncomment this line to debug vertex shaders </FONT>
+  12: <FONT COLOR="#008040">//#define DEBUG_PS   // Uncomment this line to debug pixel shaders </FONT>
+  13: 
+  14: <FONT COLOR="#0000FF">#define</FONT> ORIGINAL_WIDTH   <FONT COLOR="#FF0000">512.0</FONT>f
+  15: <FONT COLOR="#0000FF">#define</FONT> ORIGINAL_HEIGHT  <FONT COLOR="#FF0000">512.0</FONT>f
+  16: 
+  17: <FONT COLOR="#0000FF">#define</FONT> SCREEN_WIDTH   <FONT COLOR="#FF0000">512.0</FONT>f
+  18: <FONT COLOR="#0000FF">#define</FONT> SCREEN_HEIGHT  <FONT COLOR="#FF0000">512.0</FONT>f
+  19: <FONT COLOR="#008040">//#define SCREEN_WIDTH   1024.0f</FONT>
+  20: <FONT COLOR="#008040">//#define SCREEN_HEIGHT  1024.0f</FONT>
+  21: <FONT COLOR="#008040">//#define SCREEN_WIDTH  1280.0f</FONT>
+  22: <FONT COLOR="#008040">//#define SCREEN_HEIGHT  720.0f</FONT>
+  23: 
+  24: <FONT COLOR="#008040">//#define SCREEN_FORMAT 	RTF_RGBA</FONT>
+  25: <FONT COLOR="#0000FF">#define</FONT> SCREEN_FORMAT 	RTF_RGBA16F
+  26: 
+  27: <FONT COLOR="#0000FF">#define</FONT> Z_NEAR <FONT COLOR="#FF0000">0.5</FONT>f
+  28: <FONT COLOR="#0000FF">#define</FONT> Z_FAR  <FONT COLOR="#FF0000">10.0</FONT>f
+  29: <FONT COLOR="#008040">//--------------------------------------------------------------------------------------</FONT>
+  30: <FONT COLOR="#008040">// Vertex format</FONT>
+  31: <FONT COLOR="#008040">//--------------------------------------------------------------------------------------</FONT>
+  32: <FONT COLOR="#0000FF">struct</FONT> VERTEX 
+  33: {
+  34:     D3DXVECTOR4 pos;
+  35:     D3DXVECTOR2 tex1;
+  36: 
+  37:     <FONT COLOR="#0000FF">static</FONT> <FONT COLOR="#0000FF">const</FONT> DWORD FVF;
+  38: };
+  39: <FONT COLOR="#0000FF">const</FONT> DWORD VERTEX::FVF = D3DFVF_XYZRHW | D3DFVF_TEX1;
+  40: 
+  41: 
+  42: <FONT COLOR="#0000FF">typedef</FONT> <FONT COLOR="#0000FF">struct</FONT> {
+  43: 	FLOAT       p[<FONT COLOR="#FF0000">4</FONT>];
+  44: 	FLOAT       tu, tv;
+  45: } TVERTEX;
+  46: 
+  47: 
+  48: 
+  49: <FONT COLOR="#008040">//--------------------------------------------------------------------------------------</FONT>
+  50: <FONT COLOR="#008040">// UI control IDs</FONT>
+  51: <FONT COLOR="#008040">//--------------------------------------------------------------------------------------</FONT>
+  52: <FONT COLOR="#0000FF">#define</FONT> IDC_TOGGLEFULLSCREEN     <FONT COLOR="#FF0000">1</FONT>
+  53: <FONT COLOR="#0000FF">#define</FONT> IDC_TOGGLEREF            <FONT COLOR="#FF0000">2</FONT>
+  54: <FONT COLOR="#0000FF">#define</FONT> IDC_CHANGEDEVICE         <FONT COLOR="#FF0000">3</FONT>
+  55: <FONT COLOR="#0000FF">#define</FONT> IDC_CHANGE_SCENE         <FONT COLOR="#FF0000">4</FONT>
+  56: <FONT COLOR="#0000FF">#define</FONT> IDC_PAUSE                <FONT COLOR="#FF0000">10</FONT>
+  57: <FONT COLOR="#0000FF">#define</FONT> IDC_RADIUS_L_STATIC      <FONT COLOR="#FF0000">11</FONT>
+  58: <FONT COLOR="#0000FF">#define</FONT> IDC_RADIUS_L             <FONT COLOR="#FF0000">12</FONT>
+  59: <FONT COLOR="#0000FF">#define</FONT> IDC_RADIUS_X_STATIC      <FONT COLOR="#FF0000">13</FONT>
+  60: <FONT COLOR="#0000FF">#define</FONT> IDC_RADIUS_X             <FONT COLOR="#FF0000">14</FONT>
+  61: 
+  62: <FONT COLOR="#008040">//--------------------------------------------------------------------------------------</FONT>
+  63: <FONT COLOR="#008040">// Global variables</FONT>
+  64: <FONT COLOR="#008040">//--------------------------------------------------------------------------------------</FONT>
+  65: HWND g_hWnd;
+  66: ID3DXFont*              g_pFont = NULL;         <FONT COLOR="#008040">// Font for drawing text</FONT>
+  67: ID3DXSprite*            g_pTextSprite = NULL;   <FONT COLOR="#008040">// Sprite for batching draw text calls</FONT>
+  68: CFirstPersonCamera      g_Camera;               <FONT COLOR="#008040">// A model viewing camera</FONT>
+  69: <FONT COLOR="#0000FF">bool</FONT>                    g_bShowHelp = <FONT COLOR="#0000FF">true</FONT>;     <FONT COLOR="#008040">// If true, it renders the UI control text</FONT>
+  70: CDXUTDialogResourceManager g_DialogResourceManager; <FONT COLOR="#008040">// manager for shared resources of dialogs</FONT>
+  71: CD3DSettingsDlg         g_SettingsDlg;          <FONT COLOR="#008040">// Device settings dialog</FONT>
+  72: CDXUTDialog             g_HUD;                  <FONT COLOR="#008040">// dialog for standard controls</FONT>
+  73: CDXUTDialog             g_SampleUI;             <FONT COLOR="#008040">// dialog for sample specific controls</FONT>
+  74: <FONT COLOR="#0000FF">bool</FONT>                    g_bPause = <FONT COLOR="#0000FF">false</FONT>;
+  75: <FONT COLOR="#008040">//bool                    g_bPause = true;</FONT>
+  76: <FONT COLOR="#0000FF">float</FONT>                   g_fPhase = D3DX_PI * <FONT COLOR="#FF0000">0.8</FONT>f;
+  77: 
+  78: VERTEX                  g_Vertex[<FONT COLOR="#FF0000">4</FONT>];
+  79: 
+  80: <FONT COLOR="#008040">// Render target</FONT>
+  81: CRenderTarget          *g_pRT_FullScreen=<FONT COLOR="#FF0000">0</FONT>;
+  82: D3DVIEWPORT9            g_ViewportFB;
+  83: CRenderTarget          *g_pRT_GaussX=<FONT COLOR="#FF0000">0</FONT>;
+  84: CRenderTarget          *g_pRT_Blur=<FONT COLOR="#FF0000">0</FONT>;
+  85: 
+  86: <FONT COLOR="#008040">// BG object</FONT>
+  87: <FONT COLOR="#0000FF">bool</FONT>                    g_bObj = <FONT COLOR="#0000FF">true</FONT>;
+  88: LPD3DXMESH              g_pObjMesh=<FONT COLOR="#FF0000">0</FONT>;
+  89: LPDIRECT3DTEXTURE9      g_pObjMeshTexture=<FONT COLOR="#FF0000">0</FONT>;
+  90: D3DXMATRIXA16           g_matObjWorld;
+  91: 
+  92: <FONT COLOR="#008040">// Map object</FONT>
+  93: <FONT COLOR="#0000FF">bool</FONT>                    g_bMap = <FONT COLOR="#0000FF">true</FONT>;
+  94: LPD3DXMESH              g_pMapMesh=<FONT COLOR="#FF0000">0</FONT>;
+  95: LPDIRECT3DTEXTURE9      g_pMapMeshTexture=<FONT COLOR="#FF0000">0</FONT>;
+  96: D3DXMATRIXA16           g_matMapWorld;
+  97: 
+  98: <FONT COLOR="#008040">// Scene management</FONT>
+  99: DWORD                   g_dwBackgroundColor;
+ 100: 
+ 101: 
+ 102: <FONT COLOR="#008040">// Effect system</FONT>
+ 103: LPD3DXEFFECT            g_pEffect;
+ 104: D3DXHANDLE              g_hWorld = NULL;
+ 105: D3DXHANDLE              g_hWorldViewProjection = NULL;
+ 106: 
+ 107: D3DXHANDLE              g_hMeshTexture = NULL;
+ 108: 
+ 109: D3DXHANDLE              g_hTechScene           = NULL;
+ 110: D3DXHANDLE              g_hTechFinal           = NULL;
+ 111: <FONT COLOR="#0000FF">float</FONT>                   g_fRadiusX = <FONT COLOR="#FF0000">2.0</FONT>f;
+ 112: <FONT COLOR="#0000FF">float</FONT>                   g_fRadiusL = <FONT COLOR="#FF0000">0.2</FONT>f;
+ 113: 
+ 114: <FONT COLOR="#008040">//--------------------------------------------------------------------------------------</FONT>
+ 115: <FONT COLOR="#008040">// Forward declarations </FONT>
+ 116: <FONT COLOR="#008040">//--------------------------------------------------------------------------------------</FONT>
+ 117: <FONT COLOR="#0000FF">bool</FONT>    CALLBACK IsDeviceAcceptable( D3DCAPS9* pCaps, D3DFORMAT AdapterFormat, D3DFORMAT BackBufferFormat, <FONT COLOR="#0000FF">bool</FONT> bWindowed, <FONT COLOR="#0000FF">void</FONT>* pUserContext );
+ 118: <FONT COLOR="#0000FF">bool</FONT>    CALLBACK ModifyDeviceSettings( DXUTDeviceSettings* pDeviceSettings, <FONT COLOR="#0000FF">const</FONT> D3DCAPS9* pCaps, <FONT COLOR="#0000FF">void</FONT>* pUserContext );
+ 119: HRESULT CALLBACK OnCreateDevice( IDirect3DDevice9* pd3dDevice, <FONT COLOR="#0000FF">const</FONT> D3DSURFACE_DESC* pBackBufferSurfaceDesc, <FONT COLOR="#0000FF">void</FONT>* pUserContext );
+ 120: HRESULT CALLBACK OnResetDevice( IDirect3DDevice9* pd3dDevice, <FONT COLOR="#0000FF">const</FONT> D3DSURFACE_DESC* pBackBufferSurfaceDesc, <FONT COLOR="#0000FF">void</FONT>* pUserContext );
+ 121: <FONT COLOR="#0000FF">void</FONT>    CALLBACK OnFrameMove( IDirect3DDevice9* pd3dDevice, <FONT COLOR="#0000FF">double</FONT> fTime, <FONT COLOR="#0000FF">float</FONT> fElapsedTime, <FONT COLOR="#0000FF">void</FONT>* pUserContext );
+ 122: <FONT COLOR="#0000FF">void</FONT>    CALLBACK OnFrameRender( IDirect3DDevice9* pd3dDevice, <FONT COLOR="#0000FF">double</FONT> fTime, <FONT COLOR="#0000FF">float</FONT> fElapsedTime, <FONT COLOR="#0000FF">void</FONT>* pUserContext );
+ 123: LRESULT CALLBACK MsgProc( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam, <FONT COLOR="#0000FF">bool</FONT>* pbNoFurtherProcessing, <FONT COLOR="#0000FF">void</FONT>* pUserContext );
+ 124: <FONT COLOR="#0000FF">void</FONT>    CALLBACK KeyboardProc( UINT nChar, <FONT COLOR="#0000FF">bool</FONT> bKeyDown, <FONT COLOR="#0000FF">bool</FONT> bAltDown, <FONT COLOR="#0000FF">void</FONT>* pUserContext );
+ 125: <FONT COLOR="#0000FF">void</FONT>    CALLBACK OnGUIEvent( UINT nEvent, <FONT COLOR="#0000FF">int</FONT> nControlID, CDXUTControl* pControl, <FONT COLOR="#0000FF">void</FONT>* pUserContext );
+ 126: <FONT COLOR="#0000FF">void</FONT>    CALLBACK OnLostDevice( <FONT COLOR="#0000FF">void</FONT>* pUserContext );
+ 127: <FONT COLOR="#0000FF">void</FONT>    CALLBACK OnDestroyDevice( <FONT COLOR="#0000FF">void</FONT>* pUserContext );
+ 128: 
+ 129: <FONT COLOR="#0000FF">void</FONT>    InitApp();
+ 130: HRESULT LoadMesh( IDirect3DDevice9* pd3dDevice, WCHAR* strFileName, ID3DXMesh** ppMesh );
+ 131: <FONT COLOR="#0000FF">void</FONT>    RenderText(<FONT COLOR="#0000FF">bool</FONT> bFast);
+ 132: <FONT COLOR="#0000FF">void</FONT>    SetupQuad( <FONT COLOR="#0000FF">const</FONT> D3DSURFACE_DESC* pBackBufferSurfaceDesc );
+ 133: 
+ 134: 
+ 135: <FONT COLOR="#0000FF">static</FONT> <FONT COLOR="#0000FF">void</FONT> SetGaussWeight(<FONT COLOR="#0000FF">float</FONT> radius=<FONT COLOR="#FF0000">1.0</FONT>)
+ 136: {
+ 137: <FONT COLOR="#008040">//	 const float dispersion = 0.3f;</FONT>
+ 138: <FONT COLOR="#008040">//	 const float dispersion = 1.f;</FONT>
+ 139: 	<FONT COLOR="#0000FF">float</FONT> dispersion = radius * radius;
+ 140: 	<FONT COLOR="#0000FF">const</FONT> <FONT COLOR="#0000FF">unsigned</FONT> <FONT COLOR="#0000FF">int</FONT> WEIGHT_MUN = <FONT COLOR="#FF0000">4</FONT>;
+ 141: 	<FONT COLOR="#0000FF">float</FONT> tbl[WEIGHT_MUN];
+ 142:     DWORD i;
+ 143:  
+ 144:     <FONT COLOR="#0000FF">for</FONT>( i=<FONT COLOR="#FF0000">0</FONT>; i&lt;WEIGHT_MUN; i++ ){
+ 145: 		<FONT COLOR="#008040">// 2テクセルまとめて処理するので２倍</FONT>
+ 146:         tbl[i] = <FONT COLOR="#FF0000">2.0</FONT>f * expf(-<FONT COLOR="#FF0000">0.5</FONT>f*((<FONT COLOR="#FF0000">2.0</FONT>f*(FLOAT)i+<FONT COLOR="#FF0000">1.5</FONT>f)*(<FONT COLOR="#FF0000">2.0</FONT>f*(FLOAT)i+<FONT COLOR="#FF0000">1.5</FONT>f))/dispersion);
+ 147:     }
+ 148:  
+ 149:     <FONT COLOR="#0000FF">if</FONT>(g_pEffect) g_pEffect-&gt;SetVector(<FONT COLOR="#FF0000">&quot;weight&quot;</FONT>, (<FONT COLOR="#0000FF">const</FONT> D3DXVECTOR4 *)tbl);
+ 150:  
+ 151: }
+ 152: 
+ 153: <FONT COLOR="#0000FF">static</FONT> <FONT COLOR="#0000FF">void</FONT> SetGaussRadius()
+ 154: {
+ 155: 	<FONT COLOR="#0000FF">const</FONT> <FONT COLOR="#0000FF">float</FONT> range = <FONT COLOR="#FF0000">1.0</FONT>;
+ 156: 	SetGaussWeight(g_fRadiusX);
+ 157: 	
+ 158:     D3DXVECTOR4  width(<FONT COLOR="#FF0000">1.5</FONT>f*range/SCREEN_WIDTH,  <FONT COLOR="#FF0000">3.5</FONT>f*range/SCREEN_WIDTH,  <FONT COLOR="#FF0000">5.5</FONT>f*range/SCREEN_WIDTH,  <FONT COLOR="#FF0000">7.5</FONT>f*range/SCREEN_WIDTH);
+ 159:     D3DXVECTOR4 height(<FONT COLOR="#FF0000">1.5</FONT>f*range/SCREEN_HEIGHT, <FONT COLOR="#FF0000">3.5</FONT>f*range/SCREEN_HEIGHT, <FONT COLOR="#FF0000">5.5</FONT>f*range/SCREEN_HEIGHT, <FONT COLOR="#FF0000">7.5</FONT>f*range/SCREEN_HEIGHT);
+ 160:     
+ 161:     <FONT COLOR="#0000FF">if</FONT>(g_pEffect)
+ 162:     {
+ 163: 		g_pEffect-&gt;SetVector(<FONT COLOR="#FF0000">&quot;vBias&quot;</FONT>,  &amp;width);
+ 164: 		g_pEffect-&gt;SetVector(<FONT COLOR="#FF0000">&quot;hBias&quot;</FONT>, &amp;height);
+ 165: 		g_pEffect-&gt;SetFloat(<FONT COLOR="#FF0000">&quot;coeff_l&quot;</FONT>, -<FONT COLOR="#FF0000">0.5</FONT>f/(g_fRadiusL*g_fRadiusL));
+ 166: 	}
+ 167: }
+ 168: 
+ 169: <FONT COLOR="#008040">//--------------------------------------------------------------------------------------</FONT>
+ 170: <FONT COLOR="#008040">// Entry point to the program. Initializes everything and goes into a message processing </FONT>
+ 171: <FONT COLOR="#008040">// loop. Idle time is used to render the scene.</FONT>
+ 172: <FONT COLOR="#008040">//--------------------------------------------------------------------------------------</FONT>
+ 173: INT WINAPI WinMain( HINSTANCE, HINSTANCE, LPSTR, <FONT COLOR="#0000FF">int</FONT> )
+ 174: {
+ 175:     <FONT COLOR="#008040">// Enable run-time memory check for debug builds.</FONT>
+ 176: <FONT COLOR="#0000FF">#if</FONT> defined(DEBUG) | defined(_DEBUG)
+ 177:     _CrtSetDbgFlag( _CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF );
+ 178: <FONT COLOR="#0000FF">#endif</FONT>
+ 179: 
+ 180:     <FONT COLOR="#008040">// Set the callback functions. These functions allow DXUT to notify</FONT>
+ 181:     <FONT COLOR="#008040">// the application about device changes, user input, and windows messages.  The </FONT>
+ 182:     <FONT COLOR="#008040">// callbacks are optional so you need only set callbacks for events you're interested </FONT>
+ 183:     <FONT COLOR="#008040">// in. However, if you don't handle the device reset/lost callbacks then the sample </FONT>
+ 184:     <FONT COLOR="#008040">// framework won't be able to reset your device since the application must first </FONT>
+ 185:     <FONT COLOR="#008040">// release all device resources before resetting.  Likewise, if you don't handle the </FONT>
+ 186:     <FONT COLOR="#008040">// device created/destroyed callbacks then DXUT won't be able to </FONT>
+ 187:     <FONT COLOR="#008040">// recreate your device resources.</FONT>
+ 188:     DXUTSetCallbackDeviceCreated( OnCreateDevice );
+ 189:     DXUTSetCallbackDeviceReset( OnResetDevice );
+ 190:     DXUTSetCallbackDeviceLost( OnLostDevice );
+ 191:     DXUTSetCallbackDeviceDestroyed( OnDestroyDevice );
+ 192:     DXUTSetCallbackMsgProc( MsgProc );
+ 193:     DXUTSetCallbackKeyboard( KeyboardProc );
+ 194:     DXUTSetCallbackFrameRender( OnFrameRender );
+ 195:     DXUTSetCallbackFrameMove( OnFrameMove );
+ 196: 
+ 197:     <FONT COLOR="#008040">// Show the cursor and clip it when in full screen</FONT>
+ 198:     DXUTSetCursorSettings( <FONT COLOR="#0000FF">true</FONT>, <FONT COLOR="#0000FF">true</FONT> );
+ 199: 
+ 200:     InitApp();
+ 201: 
+ 202:     <FONT COLOR="#008040">// Initialize DXUT and create the desired Win32 window and Direct3D </FONT>
+ 203:     <FONT COLOR="#008040">// device for the application. Calling each of these functions is optional, but they</FONT>
+ 204:     <FONT COLOR="#008040">// allow you to set several options which control the behavior of the framework.</FONT>
+ 205:     DXUTInit( <FONT COLOR="#0000FF">true</FONT>, <FONT COLOR="#0000FF">true</FONT>, <FONT COLOR="#0000FF">true</FONT> ); <FONT COLOR="#008040">// Parse the command line, handle the default hotkeys, and show msgboxes</FONT>
+ 206:     DXUTCreateWindow( L<FONT COLOR="#FF0000">&quot;Bilateral Filter&quot;</FONT> );
+ 207:     DXUTCreateDevice( D3DADAPTER_DEFAULT, <FONT COLOR="#0000FF">true</FONT>, (DWORD)SCREEN_WIDTH, (DWORD)SCREEN_HEIGHT, IsDeviceAcceptable, ModifyDeviceSettings );
+ 208: <FONT COLOR="#008040">//    DXUTCreateDevice( D3DADAPTER_DEFAULT, true, 640, 480, IsDeviceAcceptable, ModifyDeviceSettings );</FONT>
+ 209: 
+ 210:     <FONT COLOR="#008040">// Pass control to DXUT for handling the message pump and </FONT>
+ 211:     <FONT COLOR="#008040">// dispatching render calls. DXUT will call your FrameMove </FONT>
+ 212:     <FONT COLOR="#008040">// and FrameRender callback when there is idle time between handling window messages.</FONT>
+ 213:     DXUTMainLoop();
+ 214: 
+ 215:     <FONT COLOR="#008040">// Perform any application-level cleanup here. Direct3D device resources are released within the</FONT>
+ 216:     <FONT COLOR="#008040">// appropriate callback functions and therefore don't require any cleanup code here.</FONT>
+ 217: 
+ 218:     <FONT COLOR="#0000FF">return</FONT> DXUTGetExitCode();
+ 219: }
+ 220: 
+ 221: 
+ 222: <FONT COLOR="#008040">//--------------------------------------------------------------------------------------</FONT>
+ 223: <FONT COLOR="#008040">// Initialize the app </FONT>
+ 224: <FONT COLOR="#008040">//--------------------------------------------------------------------------------------</FONT>
+ 225: <FONT COLOR="#0000FF">void</FONT> InitApp()
+ 226: {
+ 227:     g_pFont = NULL;
+ 228: 
+ 229:     g_pEffect = NULL;
+ 230: 
+ 231:     g_bShowHelp = TRUE;
+ 232:     g_dwBackgroundColor = <FONT COLOR="#FF0000">0x00003F3F</FONT>;
+ 233: 
+ 234: 	<FONT COLOR="#008040">// Initialize dialogs</FONT>
+ 235:     g_SettingsDlg<FONT COLOR="#FF0000">.</FONT>Init( &amp;g_DialogResourceManager );
+ 236:     g_HUD<FONT COLOR="#FF0000">.</FONT>Init( &amp;g_DialogResourceManager );
+ 237:     g_SampleUI<FONT COLOR="#FF0000">.</FONT>Init( &amp;g_DialogResourceManager );
+ 238: 
+ 239:     g_HUD<FONT COLOR="#FF0000">.</FONT>SetCallback( OnGUIEvent ); <FONT COLOR="#0000FF">int</FONT> iY = <FONT COLOR="#FF0000">10</FONT>; 
+ 240:     g_HUD<FONT COLOR="#FF0000">.</FONT>AddButton( IDC_TOGGLEFULLSCREEN, L<FONT COLOR="#FF0000">&quot;Toggle full screen&quot;</FONT>, <FONT COLOR="#FF0000">35</FONT>, iY, <FONT COLOR="#FF0000">125</FONT>, <FONT COLOR="#FF0000">22</FONT> );
+ 241:     g_HUD<FONT COLOR="#FF0000">.</FONT>AddButton( IDC_TOGGLEREF, L<FONT COLOR="#FF0000">&quot;Toggle REF (F3)&quot;</FONT>, <FONT COLOR="#FF0000">35</FONT>, iY += <FONT COLOR="#FF0000">24</FONT>, <FONT COLOR="#FF0000">125</FONT>, <FONT COLOR="#FF0000">22</FONT> );
+ 242:     g_HUD<FONT COLOR="#FF0000">.</FONT>AddButton( IDC_CHANGEDEVICE, L<FONT COLOR="#FF0000">&quot;Change device (F2)&quot;</FONT>, <FONT COLOR="#FF0000">35</FONT>, iY += <FONT COLOR="#FF0000">24</FONT>, <FONT COLOR="#FF0000">125</FONT>, <FONT COLOR="#FF0000">22</FONT>, VK_F2 );
+ 243: 
+ 244:     g_SampleUI<FONT COLOR="#FF0000">.</FONT>SetCallback( OnGUIEvent ); iY = <FONT COLOR="#FF0000">100</FONT>; 
+ 245: 
+ 246:     WCHAR sz[<FONT COLOR="#FF0000">100</FONT>];
+ 247: 
+ 248:     g_SampleUI<FONT COLOR="#FF0000">.</FONT>AddCheckBox( IDC_PAUSE, L<FONT COLOR="#FF0000">&quot;PAUSE&quot;</FONT>, <FONT COLOR="#FF0000">50</FONT>, iY += <FONT COLOR="#FF0000">24</FONT>, <FONT COLOR="#FF0000">145</FONT>, <FONT COLOR="#FF0000">22</FONT>, g_bPause );
+ 249: <FONT COLOR="#008040">//    iY += 24;</FONT>
+ 250: 	StringCchPrintf( sz, <FONT COLOR="#FF0000">100</FONT>, L<FONT COLOR="#FF0000">&quot;Radius(Lum): %0.2f&quot;</FONT>, g_fRadiusL ); 
+ 251:     g_SampleUI<FONT COLOR="#FF0000">.</FONT>AddStatic( IDC_RADIUS_L_STATIC, sz, <FONT COLOR="#FF0000">35</FONT>, iY += <FONT COLOR="#FF0000">24</FONT>, <FONT COLOR="#FF0000">125</FONT>, <FONT COLOR="#FF0000">22</FONT> );
+ 252:     g_SampleUI<FONT COLOR="#FF0000">.</FONT>AddSlider( IDC_RADIUS_L, <FONT COLOR="#FF0000">50</FONT>, iY += <FONT COLOR="#FF0000">24</FONT>, <FONT COLOR="#FF0000">100</FONT>, <FONT COLOR="#FF0000">22</FONT>, <FONT COLOR="#FF0000">1</FONT>, <FONT COLOR="#FF0000">100</FONT>, (<FONT COLOR="#0000FF">int</FONT>) (<FONT COLOR="#FF0000">100.0</FONT>f*g_fRadiusL) );
+ 253: 
+ 254: 	StringCchPrintf( sz, <FONT COLOR="#FF0000">100</FONT>, L<FONT COLOR="#FF0000">&quot;Radius(x): %0.2f&quot;</FONT>, g_fRadiusX ); 
+ 255:     g_SampleUI<FONT COLOR="#FF0000">.</FONT>AddStatic( IDC_RADIUS_X_STATIC, sz, <FONT COLOR="#FF0000">35</FONT>, iY += <FONT COLOR="#FF0000">24</FONT>, <FONT COLOR="#FF0000">125</FONT>, <FONT COLOR="#FF0000">22</FONT> );
+ 256:     g_SampleUI<FONT COLOR="#FF0000">.</FONT>AddSlider( IDC_RADIUS_X, <FONT COLOR="#FF0000">50</FONT>, iY += <FONT COLOR="#FF0000">24</FONT>, <FONT COLOR="#FF0000">100</FONT>, <FONT COLOR="#FF0000">22</FONT>, <FONT COLOR="#FF0000">1</FONT>, <FONT COLOR="#FF0000">500</FONT>, (<FONT COLOR="#0000FF">int</FONT>) (<FONT COLOR="#FF0000">100.0</FONT>f*g_fRadiusX) );
+ 257: 
+ 258: }
+ 259: 
+ 260: 
+ 261: <FONT COLOR="#008040">//--------------------------------------------------------------------------------------</FONT>
+ 262: <FONT COLOR="#008040">// Called during device initialization, this code checks the device for some </FONT>
+ 263: <FONT COLOR="#008040">// minimum set of capabilities, and rejects those that don't pass by returning false.</FONT>
+ 264: <FONT COLOR="#008040">//--------------------------------------------------------------------------------------</FONT>
+ 265: <FONT COLOR="#0000FF">bool</FONT> CALLBACK IsDeviceAcceptable( D3DCAPS9* pCaps, D3DFORMAT AdapterFormat, 
+ 266:                                   D3DFORMAT BackBufferFormat, <FONT COLOR="#0000FF">bool</FONT> bWindowed, <FONT COLOR="#0000FF">void</FONT>* pUserContext )
+ 267: {
+ 268:     <FONT COLOR="#008040">// Skip backbuffer formats that don't support alpha blending</FONT>
+ 269:     IDirect3D9* pD3D = DXUTGetD3DObject(); 
+ 270:     <FONT COLOR="#0000FF">if</FONT>( FAILED( pD3D-&gt;CheckDeviceFormat( pCaps-&gt;AdapterOrdinal, pCaps-&gt;DeviceType,
+ 271:                     AdapterFormat, D3DUSAGE_QUERY_POSTPIXELSHADER_BLENDING, 
+ 272:                     D3DRTYPE_TEXTURE, BackBufferFormat ) ) )
+ 273:         <FONT COLOR="#0000FF">return</FONT> <FONT COLOR="#0000FF">false</FONT>;
+ 274: 
+ 275:     <FONT COLOR="#008040">// Must support pixel shader 1.1</FONT>
+ 276:     <FONT COLOR="#0000FF">if</FONT>( pCaps-&gt;PixelShaderVersion &lt; D3DPS_VERSION( <FONT COLOR="#FF0000">2</FONT>, <FONT COLOR="#FF0000">0</FONT> ) )
+ 277:         <FONT COLOR="#0000FF">return</FONT> <FONT COLOR="#0000FF">false</FONT>;
+ 278: 
+ 279:     <FONT COLOR="#0000FF">return</FONT> <FONT COLOR="#0000FF">true</FONT>;
+ 280: }
+ 281: 
+ 282: 
+ 283: <FONT COLOR="#008040">//--------------------------------------------------------------------------------------</FONT>
+ 284: <FONT COLOR="#008040">// This callback function is called immediately before a device is created to allow the </FONT>
+ 285: <FONT COLOR="#008040">// application to modify the device settings. The supplied pDeviceSettings parameter </FONT>
+ 286: <FONT COLOR="#008040">// contains the settings that the framework has selected for the new device, and the </FONT>
+ 287: <FONT COLOR="#008040">// application can make any desired changes directly to this structure.  Note however that </FONT>
+ 288: <FONT COLOR="#008040">// DXUT will not correct invalid device settings so care must be taken </FONT>
+ 289: <FONT COLOR="#008040">// to return valid device settings, otherwise IDirect3D9::CreateDevice() will fail.  </FONT>
+ 290: <FONT COLOR="#008040">//--------------------------------------------------------------------------------------</FONT>
+ 291: <FONT COLOR="#0000FF">bool</FONT> CALLBACK ModifyDeviceSettings( DXUTDeviceSettings* pDeviceSettings, <FONT COLOR="#0000FF">const</FONT> D3DCAPS9* pCaps, <FONT COLOR="#0000FF">void</FONT>* pUserContext )
+ 292: {
+ 293:     <FONT COLOR="#008040">// If device doesn't support HW T&amp;L or doesn't support 1.1 vertex shaders in HW </FONT>
+ 294:     <FONT COLOR="#008040">// then switch to SWVP.</FONT>
+ 295:     <FONT COLOR="#0000FF">if</FONT>( (pCaps-&gt;DevCaps &amp; D3DDEVCAPS_HWTRANSFORMANDLIGHT) == <FONT COLOR="#FF0000">0</FONT> ||
+ 296:          pCaps-&gt;VertexShaderVersion &lt; D3DVS_VERSION(<FONT COLOR="#FF0000">2</FONT>,<FONT COLOR="#FF0000">0</FONT>) )
+ 297:     {
+ 298:         pDeviceSettings-&gt;BehaviorFlags = D3DCREATE_SOFTWARE_VERTEXPROCESSING;
+ 299:     }
+ 300: 
+ 301:     <FONT COLOR="#008040">// Debugging vertex shaders requires either REF or software vertex processing </FONT>
+ 302:     <FONT COLOR="#008040">// and debugging pixel shaders requires REF.  </FONT>
+ 303: <FONT COLOR="#0000FF">#ifdef</FONT> DEBUG_VS
+ 304:     <FONT COLOR="#0000FF">if</FONT>( pDeviceSettings-&gt;DeviceType != D3DDEVTYPE_REF )
+ 305:     {
+ 306:         pDeviceSettings-&gt;BehaviorFlags &amp;= ~D3DCREATE_HARDWARE_VERTEXPROCESSING;
+ 307:         pDeviceSettings-&gt;BehaviorFlags &amp;= ~D3DCREATE_PUREDEVICE;                            
+ 308:         pDeviceSettings-&gt;BehaviorFlags |= D3DCREATE_SOFTWARE_VERTEXPROCESSING;
+ 309:     }
+ 310: <FONT COLOR="#0000FF">#endif</FONT>
+ 311: <FONT COLOR="#0000FF">#ifdef</FONT> DEBUG_PS
+ 312:     pDeviceSettings-&gt;DeviceType = D3DDEVTYPE_REF;
+ 313: <FONT COLOR="#0000FF">#endif</FONT>
+ 314: 
+ 315:     <FONT COLOR="#008040">// For the first device created if its a REF device, optionally display a warning dialog box</FONT>
+ 316:     <FONT COLOR="#0000FF">static</FONT> <FONT COLOR="#0000FF">bool</FONT> s_bFirstTime = <FONT COLOR="#0000FF">true</FONT>;
+ 317:     <FONT COLOR="#0000FF">if</FONT>( s_bFirstTime )
+ 318:     {
+ 319:         s_bFirstTime = <FONT COLOR="#0000FF">false</FONT>;
+ 320:         <FONT COLOR="#0000FF">if</FONT>( pDeviceSettings-&gt;DeviceType == D3DDEVTYPE_REF )
+ 321:             DXUTDisplaySwitchingToREFWarning();
+ 322:     }
+ 323: 
+ 324:     <FONT COLOR="#0000FF">return</FONT> <FONT COLOR="#0000FF">true</FONT>;
+ 325: }
+ 326: 
+ 327: 
+ 328: <FONT COLOR="#008040">//--------------------------------------------------------------------------------------</FONT>
+ 329: <FONT COLOR="#008040">// This function loads the mesh and ensures the mesh has normals; it also optimizes the </FONT>
+ 330: <FONT COLOR="#008040">// mesh for the graphics card's vertex cache, which improves performance by organizing </FONT>
+ 331: <FONT COLOR="#008040">// the internal triangle list for less cache misses.</FONT>
+ 332: <FONT COLOR="#008040">//--------------------------------------------------------------------------------------</FONT>
+ 333: HRESULT LoadMesh( IDirect3DDevice9* pd3dDevice, WCHAR* strFileName, ID3DXMesh** ppMesh )
+ 334: {
+ 335:     ID3DXMesh* pMesh = NULL;
+ 336:     WCHAR str[MAX_PATH];
+ 337:     HRESULT hr;
+ 338: 
+ 339:     <FONT COLOR="#008040">// Load the mesh with D3DX and get back a ID3DXMesh*.  For this</FONT>
+ 340:     <FONT COLOR="#008040">// sample we'll ignore the X file's embedded materials since we know </FONT>
+ 341:     <FONT COLOR="#008040">// exactly the model we're loading.  See the mesh samples such as</FONT>
+ 342:     <FONT COLOR="#008040">// &quot;OptimizedMesh&quot; for a more generic mesh loading example.</FONT>
+ 343:     V_RETURN( DXUTFindDXSDKMediaFileCch( str, MAX_PATH, strFileName ) );
+ 344: 
+ 345:     V_RETURN( D3DXLoadMeshFromX(str, D3DXMESH_MANAGED, pd3dDevice, NULL, NULL, NULL, NULL, &amp;pMesh) );
+ 346: 
+ 347:     <FONT COLOR="#008040">// Make sure there are normals which are required for lighting</FONT>
+ 348:     <FONT COLOR="#0000FF">if</FONT>( !(pMesh-&gt;GetFVF() &amp; D3DFVF_NORMAL) )
+ 349:     {
+ 350:         ID3DXMesh* pTempMesh;
+ 351:         V( pMesh-&gt;CloneMeshFVF( pMesh-&gt;GetOptions(), 
+ 352:                                   pMesh-&gt;GetFVF() | D3DFVF_NORMAL, 
+ 353:                                   pd3dDevice, &amp;pTempMesh ) );
+ 354:         V( D3DXComputeNormals( pTempMesh, NULL ) );
+ 355: 
+ 356:         SAFE_RELEASE( pMesh );
+ 357:         pMesh = pTempMesh;
+ 358:     }
+ 359: 
+ 360:     *ppMesh = pMesh;
+ 361: 
+ 362:     <FONT COLOR="#0000FF">return</FONT> S_OK;
+ 363: }
+ 364: 
+ 365: HRESULT OptimizeMesh( IDirect3DDevice9* pd3dDevice, ID3DXMesh** ppMesh )
+ 366: {
+ 367:     ID3DXMesh* pMesh = *ppMesh;
+ 368:     DWORD *rgdwAdjacency = NULL;
+ 369:     HRESULT hr;
+ 370: 
+ 371:     <FONT COLOR="#008040">// Optimize the mesh for this graphics card's vertex cache </FONT>
+ 372:     <FONT COLOR="#008040">// so when rendering the mesh's triangle list the vertices will </FONT>
+ 373:     <FONT COLOR="#008040">// cache hit more often so it won't have to re-execute the vertex shader </FONT>
+ 374:     <FONT COLOR="#008040">// on those vertices so it will improve perf.     </FONT>
+ 375:     rgdwAdjacency = <FONT COLOR="#0000FF">new</FONT> DWORD[pMesh-&gt;GetNumFaces() * <FONT COLOR="#FF0000">3</FONT>];
+ 376:     <FONT COLOR="#0000FF">if</FONT>( rgdwAdjacency == NULL )
+ 377:         <FONT COLOR="#0000FF">return</FONT> E_OUTOFMEMORY;
+ 378:     V( pMesh-&gt;GenerateAdjacency(<FONT COLOR="#FF0000">1</FONT>e-<FONT COLOR="#FF0000">6</FONT>f,rgdwAdjacency) );
+ 379:     V( pMesh-&gt;OptimizeInplace(D3DXMESHOPT_VERTEXCACHE, rgdwAdjacency, NULL, NULL, NULL) );
+ 380:     <FONT COLOR="#0000FF">delete</FONT> []rgdwAdjacency;
+ 381: 
+ 382:     *ppMesh = pMesh;
+ 383: 
+ 384:     <FONT COLOR="#0000FF">return</FONT> S_OK;
+ 385: }
+ 386: 
+ 387: 
+ 388: <FONT COLOR="#008040">//--------------------------------------------------------------------------------------</FONT>
+ 389: <FONT COLOR="#008040">// This callback function will be called immediately after the Direct3D device has been </FONT>
+ 390: <FONT COLOR="#008040">// created, which will happen during application initialization and windowed/full screen </FONT>
+ 391: <FONT COLOR="#008040">// toggles. This is the best location to create D3DPOOL_MANAGED resources since these </FONT>
+ 392: <FONT COLOR="#008040">// resources need to be reloaded whenever the device is destroyed. Resources created  </FONT>
+ 393: <FONT COLOR="#008040">// here should be released in the OnDestroyDevice callback. </FONT>
+ 394: <FONT COLOR="#008040">//--------------------------------------------------------------------------------------</FONT>
+ 395: HRESULT CALLBACK OnCreateDevice( IDirect3DDevice9* pd3dDevice, <FONT COLOR="#0000FF">const</FONT> D3DSURFACE_DESC* pBackBufferSurfaceDesc, <FONT COLOR="#0000FF">void</FONT>* pUserContext )
+ 396: {
+ 397:     WCHAR str[MAX_PATH];
+ 398:     HRESULT hr;
+ 399: 
+ 400:     V_RETURN( g_DialogResourceManager<FONT COLOR="#FF0000">.</FONT>OnCreateDevice( pd3dDevice ) );
+ 401:     V_RETURN( g_SettingsDlg<FONT COLOR="#FF0000">.</FONT>OnCreateDevice( pd3dDevice ) );
+ 402: 
+ 403:     <FONT COLOR="#008040">// Initialize the font</FONT>
+ 404:     V_RETURN( D3DXCreateFont( pd3dDevice, <FONT COLOR="#FF0000">15</FONT>, <FONT COLOR="#FF0000">0</FONT>, FW_BOLD, <FONT COLOR="#FF0000">1</FONT>, FALSE, DEFAULT_CHARSET, 
+ 405:                          OUT_DEFAULT_PRECIS, DEFAULT_QUALITY, DEFAULT_PITCH | FF_DONTCARE, 
+ 406:                          L<FONT COLOR="#FF0000">&quot;Arial&quot;</FONT>, &amp;g_pFont ) );
+ 407: 
+ 408:     <FONT COLOR="#008040">// Load meshs</FONT>
+ 409:     V_RETURN( LoadMesh( pd3dDevice, TEXT(<FONT COLOR="#FF0000">&quot;t-pot.x&quot;</FONT>), &amp;g_pObjMesh ) );
+ 410:     V_RETURN( OptimizeMesh( pd3dDevice, &amp;g_pObjMesh ) );
+ 411:     V_RETURN( LoadMesh( pd3dDevice, TEXT(<FONT COLOR="#FF0000">&quot;room.x&quot;</FONT>), &amp;g_pMapMesh ) );
+ 412:     V_RETURN( OptimizeMesh( pd3dDevice, &amp;g_pMapMesh ) );
+ 413: 
+ 414:     <FONT COLOR="#008040">// Load mesh textures</FONT>
+ 415:     V_RETURN( DXUTFindDXSDKMediaFileCch( str, MAX_PATH, TEXT(<FONT COLOR="#FF0000">&quot;t-pot.bmp&quot;</FONT>) ) );
+ 416:     V_RETURN( D3DXCreateTextureFromFile( pd3dDevice, str, &amp;g_pObjMeshTexture) );
+ 417:     V_RETURN( DXUTFindDXSDKMediaFileCch( str, MAX_PATH, TEXT(<FONT COLOR="#FF0000">&quot;room.bmp&quot;</FONT>) ) );
+ 418:     V_RETURN( D3DXCreateTextureFromFile( pd3dDevice, str, &amp;g_pMapMeshTexture) );
+ 419: 
+ 420: 
+ 421: 	<FONT COLOR="#008040">// Define DEBUG_VS and/or DEBUG_PS to debug vertex and/or pixel shaders with the </FONT>
+ 422:     <FONT COLOR="#008040">// shader debugger. Debugging vertex shaders requires either REF or software vertex </FONT>
+ 423:     <FONT COLOR="#008040">// processing, and debugging pixel shaders requires REF.  The </FONT>
+ 424:     <FONT COLOR="#008040">// D3DXSHADER_FORCE_*_SOFTWARE_NOOPT flag improves the debug experience in the </FONT>
+ 425:     <FONT COLOR="#008040">// shader debugger.  It enables source level debugging, prevents instruction </FONT>
+ 426:     <FONT COLOR="#008040">// reordering, prevents dead code elimination, and forces the compiler to compile </FONT>
+ 427:     <FONT COLOR="#008040">// against the next higher available software target, which ensures that the </FONT>
+ 428:     <FONT COLOR="#008040">// unoptimized shaders do not exceed the shader model limitations.  Setting these </FONT>
+ 429:     <FONT COLOR="#008040">// flags will cause slower rendering since the shaders will be unoptimized and </FONT>
+ 430:     <FONT COLOR="#008040">// forced into software.  See the DirectX documentation for more information about </FONT>
+ 431:     <FONT COLOR="#008040">// using the shader debugger.</FONT>
+ 432:     DWORD dwShaderFlags = D3DXFX_NOT_CLONEABLE;
+ 433:     <FONT COLOR="#0000FF">#ifdef</FONT> DEBUG_VS
+ 434:         dwShaderFlags |= D3DXSHADER_FORCE_VS_SOFTWARE_NOOPT;
+ 435:     <FONT COLOR="#0000FF">#endif</FONT>
+ 436:     <FONT COLOR="#0000FF">#ifdef</FONT> DEBUG_PS
+ 437:         dwShaderFlags |= D3DXSHADER_FORCE_PS_SOFTWARE_NOOPT;
+ 438:     <FONT COLOR="#0000FF">#endif</FONT>
+ 439: 
+ 440:     <FONT COLOR="#008040">// Read the D3DX effect file</FONT>
+ 441:     <FONT COLOR="#008040">// If this fails, there should be debug output as to </FONT>
+ 442:     <FONT COLOR="#008040">// they the .fx file failed to compile</FONT>
+ 443:     V_RETURN( DXUTFindDXSDKMediaFileCch( str, MAX_PATH, TEXT(<FONT COLOR="#FF0000">&quot;main.fx&quot;</FONT>) ) );
+ 444:     V_RETURN( D3DXCreateEffectFromFile( pd3dDevice, str, NULL, NULL, dwShaderFlags, 
+ 445:                                         NULL, &amp;g_pEffect, NULL ) );
+ 446: 
+ 447:     <FONT COLOR="#0000FF">return</FONT> S_OK;
+ 448: }
+ 449: 
+ 450: 
+ 451: 
+ 452: <FONT COLOR="#008040">//--------------------------------------------------------------------------------------</FONT>
+ 453: <FONT COLOR="#008040">// This callback function will be called immediately after the Direct3D device has </FONT>
+ 454: <FONT COLOR="#008040">// been destroyed, which generally happens as a result of application termination or </FONT>
+ 455: <FONT COLOR="#008040">// windowed/full screen toggles. Resources created in the OnCreateDevice callback </FONT>
+ 456: <FONT COLOR="#008040">// should be released here, which generally includes all D3DPOOL_MANAGED resources. </FONT>
+ 457: <FONT COLOR="#008040">//--------------------------------------------------------------------------------------</FONT>
+ 458: <FONT COLOR="#0000FF">void</FONT> CALLBACK OnDestroyDevice( <FONT COLOR="#0000FF">void</FONT>* pUserContext )
+ 459: {
+ 460:     g_DialogResourceManager<FONT COLOR="#FF0000">.</FONT>OnDestroyDevice();
+ 461:     g_SettingsDlg<FONT COLOR="#FF0000">.</FONT>OnDestroyDevice();
+ 462:     SAFE_RELEASE(g_pEffect);
+ 463:     SAFE_RELEASE(g_pFont);
+ 464: 
+ 465:     SAFE_RELEASE(g_pMapMeshTexture);
+ 466:     SAFE_RELEASE(g_pObjMeshTexture);
+ 467:     SAFE_RELEASE(g_pMapMesh);
+ 468:     SAFE_RELEASE(g_pObjMesh);
+ 469: }
+ 470: 
+ 471: 
+ 472: 
+ 473: <FONT COLOR="#008040">//--------------------------------------------------------------------------------------</FONT>
+ 474: <FONT COLOR="#008040">// This callback function will be called immediately after the Direct3D device has been </FONT>
+ 475: <FONT COLOR="#008040">// reset, which will happen after a lost device scenario. This is the best location to </FONT>
+ 476: <FONT COLOR="#008040">// create D3DPOOL_DEFAULT resources since these resources need to be reloaded whenever </FONT>
+ 477: <FONT COLOR="#008040">// the device is lost. Resources created here should be released in the OnLostDevice </FONT>
+ 478: <FONT COLOR="#008040">// callback. </FONT>
+ 479: <FONT COLOR="#008040">//--------------------------------------------------------------------------------------</FONT>
+ 480: HRESULT CALLBACK OnResetDevice( IDirect3DDevice9* pd3dDevice, 
+ 481:                                 <FONT COLOR="#0000FF">const</FONT> D3DSURFACE_DESC* pBackBufferSurfaceDesc, <FONT COLOR="#0000FF">void</FONT>* pUserContext )
+ 482: {
+ 483:     HRESULT hr;
+ 484: 
+ 485:     V_RETURN( g_DialogResourceManager<FONT COLOR="#FF0000">.</FONT>OnResetDevice() );
+ 486:     V_RETURN( g_SettingsDlg<FONT COLOR="#FF0000">.</FONT>OnResetDevice() );
+ 487: 
+ 488:     <FONT COLOR="#0000FF">if</FONT>( g_pFont )
+ 489:         V_RETURN( g_pFont-&gt;OnResetDevice() );
+ 490:     <FONT COLOR="#0000FF">if</FONT>( g_pEffect )
+ 491:         V_RETURN( g_pEffect-&gt;OnResetDevice() );
+ 492: 
+ 493: 	<FONT COLOR="#008040">// Setup the camera with view &amp; projection matrix</FONT>
+ 494:     D3DXVECTOR3 vecEye(<FONT COLOR="#FF0000">0.0</FONT>f, <FONT COLOR="#FF0000">0.0</FONT>f, <FONT COLOR="#FF0000">4.0</FONT>f);
+ 495:     D3DXVECTOR3 vecAt (<FONT COLOR="#FF0000">0.0</FONT>f, <FONT COLOR="#FF0000">0.0</FONT>f, <FONT COLOR="#FF0000">0.0</FONT>f);
+ 496:     g_Camera<FONT COLOR="#FF0000">.</FONT>SetViewParams( &amp;vecEye, &amp;vecAt );
+ 497:     g_Camera<FONT COLOR="#FF0000">.</FONT>SetProjParams( D3DXToRadian(<FONT COLOR="#FF0000">50.0</FONT>f), <FONT COLOR="#FF0000">1.0</FONT>f, Z_NEAR, Z_FAR );
+ 498:     g_Camera<FONT COLOR="#FF0000">.</FONT>SetRotateButtons( TRUE, FALSE, FALSE, FALSE );<FONT COLOR="#008040">// L M R 押しながら動かす</FONT>
+ 499: 
+ 500: 
+ 501: 	pd3dDevice-&gt;GetViewport(&amp;g_ViewportFB);
+ 502: 
+ 503:     <FONT COLOR="#008040">// Create fullscreen renders target texture</FONT>
+ 504: 	g_pRT_FullScreen = CRenderTarget::Create(pd3dDevice
+ 505: 									, (DWORD)ORIGINAL_WIDTH, (DWORD)ORIGINAL_HEIGHT
+ 506: 									, SCREEN_FORMAT);
+ 507: 	g_pRT_GaussX = CRenderTarget::Create(pd3dDevice
+ 508: 									, (DWORD)ORIGINAL_WIDTH, (DWORD)ORIGINAL_HEIGHT
+ 509: 									, SCREEN_FORMAT, RTF_NONE);
+ 510: 	g_pRT_Blur = CRenderTarget::Create(pd3dDevice
+ 511: 									, (DWORD)ORIGINAL_WIDTH, (DWORD)ORIGINAL_HEIGHT
+ 512: 									, SCREEN_FORMAT, RTF_NONE);
+ 513: 
+ 514: 
+ 515: 	SetupQuad( pBackBufferSurfaceDesc );
+ 516: 
+ 517: 	
+ 518:     <FONT COLOR="#008040">// Get D3DXHANDLEs to the parameters/techniques that are set every frame so </FONT>
+ 519:     <FONT COLOR="#008040">// D3DX doesn't spend time doing string compares.  Doing this likely won't affect</FONT>
+ 520:     <FONT COLOR="#008040">// the perf of this simple sample but it should be done in complex engine.</FONT>
+ 521:     g_hWorld                    = g_pEffect-&gt;GetParameterByName( NULL, <FONT COLOR="#FF0000">&quot;mWorld&quot;</FONT> );
+ 522:     g_hWorldViewProjection      = g_pEffect-&gt;GetParameterByName( NULL, <FONT COLOR="#FF0000">&quot;mWorldViewProjection&quot;</FONT> );
+ 523:     g_hMeshTexture              = g_pEffect-&gt;GetParameterByName( NULL, <FONT COLOR="#FF0000">&quot;MeshTexture&quot;</FONT> );
+ 524: 
+ 525: 	g_hTechScene                = g_pEffect-&gt;GetTechniqueByName(<FONT COLOR="#FF0000">&quot;TechScene&quot;</FONT>);
+ 526: 	g_hTechFinal                = g_pEffect-&gt;GetTechniqueByName(<FONT COLOR="#FF0000">&quot;TechFinal&quot;</FONT>);
+ 527: 
+ 528: 	<FONT COLOR="#008040">// Set the vars in the effect that doesn't change each frame</FONT>
+ 529: 	V_RETURN( g_pEffect-&gt;SetTexture(<FONT COLOR="#FF0000">&quot;RenderTargetTexture&quot;</FONT>, g_pRT_FullScreen-&gt;GetTexture()) );
+ 530: 
+ 531: 	SetGaussRadius();
+ 532: 
+ 533: 
+ 534: 	pd3dDevice-&gt;SetRenderState( D3DRS_ZENABLE, TRUE );
+ 535: 	pd3dDevice-&gt;SetRenderState( D3DRS_CULLMODE, D3DCULL_CCW );
+ 536: 
+ 537: 	g_HUD<FONT COLOR="#FF0000">.</FONT>SetLocation( pBackBufferSurfaceDesc-&gt;Width-<FONT COLOR="#FF0000">170</FONT>, <FONT COLOR="#FF0000">0</FONT> );
+ 538:     g_HUD<FONT COLOR="#FF0000">.</FONT>SetSize( <FONT COLOR="#FF0000">170</FONT>, <FONT COLOR="#FF0000">170</FONT> );
+ 539:     g_SampleUI<FONT COLOR="#FF0000">.</FONT>SetLocation( pBackBufferSurfaceDesc-&gt;Width-<FONT COLOR="#FF0000">170</FONT>, pBackBufferSurfaceDesc-&gt;Height-<FONT COLOR="#FF0000">300</FONT> );
+ 540:     g_SampleUI<FONT COLOR="#FF0000">.</FONT>SetSize( <FONT COLOR="#FF0000">170</FONT>, <FONT COLOR="#FF0000">250</FONT> );
+ 541: 
+ 542:     <FONT COLOR="#0000FF">return</FONT> S_OK;
+ 543: }
+ 544: 
+ 545: 
+ 546: <FONT COLOR="#008040">//--------------------------------------------------------------------------------------</FONT>
+ 547: <FONT COLOR="#008040">// This callback function will be called immediately after the Direct3D device has </FONT>
+ 548: <FONT COLOR="#008040">// entered a lost state and before IDirect3DDevice9::Reset is called. Resources created</FONT>
+ 549: <FONT COLOR="#008040">// in the OnResetDevice callback should be released here, which generally includes all </FONT>
+ 550: <FONT COLOR="#008040">// D3DPOOL_DEFAULT resources. See the &quot;Lost Devices&quot; section of the documentation for </FONT>
+ 551: <FONT COLOR="#008040">// information about lost devices.</FONT>
+ 552: <FONT COLOR="#008040">//--------------------------------------------------------------------------------------</FONT>
+ 553: <FONT COLOR="#0000FF">void</FONT> CALLBACK OnLostDevice( <FONT COLOR="#0000FF">void</FONT>* pUserContext )
+ 554: {
+ 555:     g_DialogResourceManager<FONT COLOR="#FF0000">.</FONT>OnLostDevice();
+ 556:     g_SettingsDlg<FONT COLOR="#FF0000">.</FONT>OnLostDevice();
+ 557:     <FONT COLOR="#0000FF">if</FONT>( g_pFont )
+ 558:         g_pFont-&gt;OnLostDevice();
+ 559:     <FONT COLOR="#0000FF">if</FONT>( g_pEffect )
+ 560:         g_pEffect-&gt;OnLostDevice();
+ 561:     SAFE_RELEASE(g_pTextSprite);
+ 562: 
+ 563:     SAFE_RELEASE(g_pRT_Blur);
+ 564:     SAFE_RELEASE(g_pRT_GaussX);
+ 565:     SAFE_RELEASE(g_pRT_FullScreen);
+ 566: }
+ 567: 
+ 568: 
+ 569: <FONT COLOR="#008040">//--------------------------------------------------------------------------------------</FONT>
+ 570: <FONT COLOR="#008040">// Sets up a quad to render the fullscreen render target to the backbuffer</FONT>
+ 571: <FONT COLOR="#008040">// so it can run a fullscreen pixel shader pass that blurs based</FONT>
+ 572: <FONT COLOR="#008040">// on the depth of the objects.  It set the texcoords based on the blur factor</FONT>
+ 573: <FONT COLOR="#008040">//--------------------------------------------------------------------------------------</FONT>
+ 574: <FONT COLOR="#0000FF">void</FONT> SetupQuad( <FONT COLOR="#0000FF">const</FONT> D3DSURFACE_DESC* pBackBufferSurfaceDesc )
+ 575: {
+ 576: 	FLOAT fWidth5  = pBackBufferSurfaceDesc-&gt;Width -<FONT COLOR="#FF0000">0.5</FONT>f;
+ 577: 	FLOAT fHeight5 = pBackBufferSurfaceDesc-&gt;Height-<FONT COLOR="#FF0000">0.5</FONT>f;
+ 578: 
+ 579:     FLOAT fTexWidth1  = <FONT COLOR="#FF0000">1.0</FONT>f;
+ 580:     FLOAT fTexHeight1 = <FONT COLOR="#FF0000">1.0</FONT>f;
+ 581: 
+ 582:     g_Vertex[<FONT COLOR="#FF0000">0</FONT>]<FONT COLOR="#FF0000">.</FONT>pos = D3DXVECTOR4(fWidth5, -<FONT COLOR="#FF0000">0.5</FONT>f, <FONT COLOR="#FF0000">0.0</FONT>f, <FONT COLOR="#FF0000">1.0</FONT>f);
+ 583:     g_Vertex[<FONT COLOR="#FF0000">0</FONT>]<FONT COLOR="#FF0000">.</FONT>tex1 = D3DXVECTOR2(fTexWidth1, <FONT COLOR="#FF0000">0.0</FONT>f);
+ 584: 
+ 585:     g_Vertex[<FONT COLOR="#FF0000">1</FONT>]<FONT COLOR="#FF0000">.</FONT>pos = D3DXVECTOR4(fWidth5, fHeight5, <FONT COLOR="#FF0000">0.0</FONT>f, <FONT COLOR="#FF0000">1.0</FONT>f);
+ 586:     g_Vertex[<FONT COLOR="#FF0000">1</FONT>]<FONT COLOR="#FF0000">.</FONT>tex1 = D3DXVECTOR2(fTexWidth1, fTexHeight1);
+ 587: 
+ 588:     g_Vertex[<FONT COLOR="#FF0000">2</FONT>]<FONT COLOR="#FF0000">.</FONT>pos = D3DXVECTOR4(-<FONT COLOR="#FF0000">0.5</FONT>f, -<FONT COLOR="#FF0000">0.5</FONT>f, <FONT COLOR="#FF0000">0.0</FONT>f, <FONT COLOR="#FF0000">1.0</FONT>f);
+ 589:     g_Vertex[<FONT COLOR="#FF0000">2</FONT>]<FONT COLOR="#FF0000">.</FONT>tex1 = D3DXVECTOR2(<FONT COLOR="#FF0000">0.0</FONT>f, <FONT COLOR="#FF0000">0.0</FONT>f);
+ 590: 
+ 591:     g_Vertex[<FONT COLOR="#FF0000">3</FONT>]<FONT COLOR="#FF0000">.</FONT>pos = D3DXVECTOR4(-<FONT COLOR="#FF0000">0.5</FONT>f, fHeight5, <FONT COLOR="#FF0000">0.0</FONT>f, <FONT COLOR="#FF0000">1.0</FONT>f);
+ 592:     g_Vertex[<FONT COLOR="#FF0000">3</FONT>]<FONT COLOR="#FF0000">.</FONT>tex1 = D3DXVECTOR2(<FONT COLOR="#FF0000">0.0</FONT>f, fTexHeight1);
+ 593: }
+ 594: 
+ 595: <FONT COLOR="#0000FF">void</FONT> RenderQuad(IDirect3DDevice9* pd3dDevice, D3DXHANDLE hTech)
+ 596: {
+ 597:     HRESULT hr;
+ 598: 	UINT cPasses, iPass;
+ 599: 
+ 600: 	V( g_pEffect-&gt;SetTechnique(hTech) );
+ 601: 
+ 602: 	V( pd3dDevice-&gt;SetFVF(VERTEX::FVF) );
+ 603: 
+ 604: 	<FONT COLOR="#008040">// Render the fullscreen quad on to the backbuffer</FONT>
+ 605: 	V( g_pEffect-&gt;Begin(&amp;cPasses, <FONT COLOR="#FF0000">0</FONT>) );
+ 606: 	<FONT COLOR="#0000FF">for</FONT> (iPass = <FONT COLOR="#FF0000">0</FONT>; iPass &lt; cPasses; iPass++)
+ 607: 	{
+ 608: 		V( g_pEffect-&gt;BeginPass(iPass) );
+ 609: 		V( pd3dDevice-&gt;DrawPrimitiveUP(D3DPT_TRIANGLESTRIP, <FONT COLOR="#FF0000">2</FONT>, g_Vertex, <FONT COLOR="#0000FF">sizeof</FONT>(VERTEX)) );
+ 610: 		V( g_pEffect-&gt;EndPass() );
+ 611: 	}
+ 612: 	V( g_pEffect-&gt;End() );
+ 613: }
+ 614: 
+ 615: <FONT COLOR="#008040">//--------------------------------------------------------------------------------------</FONT>
+ 616: <FONT COLOR="#008040">// This callback function will be called once at the beginning of every frame. This is the</FONT>
+ 617: <FONT COLOR="#008040">// best location for your application to handle updates to the scene, but is not </FONT>
+ 618: <FONT COLOR="#008040">// intended to contain actual rendering calls, which should instead be placed in the </FONT>
+ 619: <FONT COLOR="#008040">// OnFrameRender callback.  </FONT>
+ 620: <FONT COLOR="#008040">//--------------------------------------------------------------------------------------</FONT>
+ 621: <FONT COLOR="#0000FF">void</FONT> CALLBACK OnFrameMove( IDirect3DDevice9* pd3dDevice, <FONT COLOR="#0000FF">double</FONT> fTime, <FONT COLOR="#0000FF">float</FONT> fElapsedTime, <FONT COLOR="#0000FF">void</FONT>* pUserContext )
+ 622: {
+ 623:     <FONT COLOR="#008040">// Update the camera's position based on user input </FONT>
+ 624:     g_Camera<FONT COLOR="#FF0000">.</FONT>FrameMove( fElapsedTime );
+ 625: 
+ 626: 	<FONT COLOR="#0000FF">if</FONT>(!DXUTIsTimePaused())
+ 627: 	{
+ 628: 		<FONT COLOR="#0000FF">if</FONT>(!g_bPause)
+ 629: 		{
+ 630: 			g_fPhase += <FONT COLOR="#FF0000">2.0</FONT>f * fElapsedTime;
+ 631: 			<FONT COLOR="#0000FF">if</FONT>(<FONT COLOR="#FF0000">2.0</FONT>f * D3DX_PI &lt; g_fPhase) g_fPhase -= <FONT COLOR="#FF0000">2.0</FONT>f * D3DX_PI;
+ 632: 		}
+ 633: 	}
+ 634: 
+ 635: 
+ 636:     D3DXMATRIXA16 matTrans, matRot, matScale;
+ 637: 	D3DXMatrixScaling(&amp;matScale, <FONT COLOR="#FF0000">1.0</FONT>f, <FONT COLOR="#FF0000">1.0</FONT>f, <FONT COLOR="#FF0000">1.0</FONT>f);
+ 638:     D3DXMatrixTranslation( &amp;matTrans, <FONT COLOR="#FF0000">0.0</FONT>f,+<FONT COLOR="#FF0000">0.0</FONT>f, -<FONT COLOR="#FF0000">0.5</FONT>f );
+ 639: 	D3DXMatrixRotationY(&amp;matRot, g_fPhase);
+ 640: 	g_matObjWorld = matScale * matRot * matTrans;
+ 641: 
+ 642: 	D3DXMatrixRotationY(&amp;matRot, -D3DX_PI * <FONT COLOR="#FF0000">0.5</FONT>f);
+ 643: 	D3DXMatrixScaling(&amp;matScale, <FONT COLOR="#FF0000">3.5</FONT>f, <FONT COLOR="#FF0000">3.5</FONT>f, <FONT COLOR="#FF0000">3.5</FONT>f);
+ 644: 	g_matMapWorld = matScale * matRot;
+ 645: }
+ 646: 
+ 647: <FONT COLOR="#008040">// render map</FONT>
+ 648: <FONT COLOR="#0000FF">void</FONT> RenderBG(IDirect3DDevice9* pd3dDevice)
+ 649: {
+ 650: 	HRESULT hr;
+ 651: 	UINT iPass, cPasses;
+ 652:     D3DXMATRIXA16 matView = *g_Camera<FONT COLOR="#FF0000">.</FONT>GetViewMatrix();
+ 653:     D3DXMATRIXA16 matProj = *g_Camera<FONT COLOR="#FF0000">.</FONT>GetProjMatrix();
+ 654:     D3DXMATRIXA16 matViewProj = matView * matProj;
+ 655: 
+ 656:     <FONT COLOR="#008040">// Set world render technique</FONT>
+ 657:     V( g_pEffect-&gt;SetTechnique( g_hTechScene ) );
+ 658: 	
+ 659:     <FONT COLOR="#008040">// Update effect vars</FONT>
+ 660:     D3DXMATRIXA16 matWorldView;
+ 661:     D3DXMATRIXA16 matWorldViewProj;
+ 662: 
+ 663: 	<FONT COLOR="#0000FF">if</FONT>(g_bObj)
+ 664: 	{
+ 665: 		matWorldView     = g_matObjWorld * matView;
+ 666: 		matWorldViewProj = g_matObjWorld * matViewProj;
+ 667: 
+ 668: 		V( g_pEffect-&gt;SetMatrix( g_hWorld, &amp;g_matObjWorld) );
+ 669: 		V( g_pEffect-&gt;SetMatrix( g_hWorldViewProjection, &amp;matWorldViewProj) );
+ 670: 
+ 671: 		<FONT COLOR="#008040">// Set the mesh texture </FONT>
+ 672: 		V( g_pEffect-&gt;SetTexture( g_hMeshTexture, g_pObjMeshTexture) );
+ 673: 
+ 674: 		<FONT COLOR="#008040">// Draw the mesh on the rendertarget</FONT>
+ 675: 		V( g_pEffect-&gt;Begin(&amp;cPasses, <FONT COLOR="#FF0000">0</FONT>) );
+ 676: 		<FONT COLOR="#0000FF">for</FONT> (iPass = <FONT COLOR="#FF0000">0</FONT>; iPass &lt; cPasses; iPass++)
+ 677: 		{
+ 678: 			V( g_pEffect-&gt;BeginPass(iPass) );
+ 679: 			V( g_pObjMesh-&gt;DrawSubset(<FONT COLOR="#FF0000">0</FONT>) );
+ 680: 			V( g_pEffect-&gt;EndPass() );
+ 681: 		}
+ 682: 		V( g_pEffect-&gt;End() );
+ 683: 	}
+ 684: 
+ 685: 
+ 686: 	<FONT COLOR="#0000FF">if</FONT>(g_bMap)
+ 687: 	{
+ 688: 		matWorldView     = g_matMapWorld * matView;
+ 689: 		matWorldViewProj = g_matMapWorld * matViewProj;
+ 690: 		V( g_pEffect-&gt;SetMatrix( g_hWorld, &amp;g_matMapWorld) );
+ 691: 		V( g_pEffect-&gt;SetMatrix( g_hWorldViewProjection, &amp;matWorldViewProj) );
+ 692: 
+ 693: 		<FONT COLOR="#008040">// Set the mesh texture </FONT>
+ 694: 		V( g_pEffect-&gt;SetTexture( g_hMeshTexture, g_pMapMeshTexture) );
+ 695: 
+ 696: 		<FONT COLOR="#008040">// Draw the mesh on the rendertarget</FONT>
+ 697: 		V( g_pEffect-&gt;Begin(&amp;cPasses, <FONT COLOR="#FF0000">0</FONT>) );
+ 698: 		<FONT COLOR="#0000FF">for</FONT> (iPass = <FONT COLOR="#FF0000">0</FONT>; iPass &lt; cPasses; iPass++)
+ 699: 		{
+ 700: 			V( g_pEffect-&gt;BeginPass(iPass) );
+ 701: 			V( g_pMapMesh-&gt;DrawSubset(<FONT COLOR="#FF0000">0</FONT>) );
+ 702: 			V( g_pEffect-&gt;EndPass() );
+ 703: 		}
+ 704: 		V( g_pEffect-&gt;End() );
+ 705: 	}
+ 706: }
+ 707: 
+ 708: 
+ 709: 
+ 710: <FONT COLOR="#0000FF">void</FONT> RenderScene(IDirect3DDevice9* pd3dDevice)
+ 711: {
+ 712: 	<FONT COLOR="#0000FF">if</FONT>( SUCCEEDED( g_pRT_FullScreen-&gt;Begin(<FONT COLOR="#FF0000">0</FONT>) ) )
+ 713: 	{
+ 714: 		HRESULT hr;
+ 715: 
+ 716: 		V( pd3dDevice-&gt;Clear(<FONT COLOR="#FF0000">0</FONT>, NULL, D3DCLEAR_TARGET|D3DCLEAR_ZBUFFER, g_dwBackgroundColor, <FONT COLOR="#FF0000">1.0</FONT>f, <FONT COLOR="#FF0000">0</FONT>) );
+ 717: 
+ 718: 		RenderBG(pd3dDevice);
+ 719: 
+ 720: 		g_pRT_FullScreen-&gt;End();
+ 721: 	}
+ 722: }
+ 723: 
+ 724: <FONT COLOR="#0000FF">void</FONT> CALLBACK OnFrameRender( IDirect3DDevice9* pd3dDevice, <FONT COLOR="#0000FF">double</FONT> fTime, <FONT COLOR="#0000FF">float</FONT> fElapsedTime, <FONT COLOR="#0000FF">void</FONT>* pUserContext )
+ 725: {
+ 726: 	UINT iPass, cPasses;
+ 727:     HRESULT hr;
+ 728: 
+ 729:     <FONT COLOR="#008040">// If the settings dialog is being shown, then</FONT>
+ 730:     <FONT COLOR="#008040">// render it instead of rendering the app's scene</FONT>
+ 731:     <FONT COLOR="#0000FF">if</FONT>( g_SettingsDlg<FONT COLOR="#FF0000">.</FONT>IsActive() )
+ 732:     {
+ 733:         g_SettingsDlg<FONT COLOR="#FF0000">.</FONT>OnRender( fElapsedTime );
+ 734:         <FONT COLOR="#0000FF">return</FONT>;
+ 735:     }
+ 736: 
+ 737: 
+ 738: 	LPDIRECT3DSURFACE9 pOriginalZbuffer = <FONT COLOR="#FF0000">0</FONT>;
+ 739: 	V( pd3dDevice-&gt;GetDepthStencilSurface( &amp;pOriginalZbuffer ) );
+ 740: 
+ 741: 	<FONT COLOR="#008040">// First render the world on the rendertarget</FONT>
+ 742: 	RenderScene(pd3dDevice);
+ 743: 
+ 744: 	<FONT COLOR="#0000FF">if</FONT>( SUCCEEDED( g_pRT_GaussX-&gt;Begin() ) )
+ 745: 	{
+ 746: 		<FONT COLOR="#0000FF">static</FONT> TVERTEX Vertex[<FONT COLOR="#FF0000">4</FONT>] = {
+ 747: 			<FONT COLOR="#008040">//    x                             y         z rhw tu tv</FONT>
+ 748: 			{-<FONT COLOR="#FF0000">0.5</FONT>,                             -<FONT COLOR="#FF0000">0.5</FONT>, <FONT COLOR="#FF0000">0</FONT>, <FONT COLOR="#FF0000">1</FONT>, <FONT COLOR="#FF0000">0</FONT>, <FONT COLOR="#FF0000">0</FONT>,},
+ 749: 			{ORIGINAL_WIDTH-<FONT COLOR="#FF0000">0.5</FONT>,               -<FONT COLOR="#FF0000">0.5</FONT>, <FONT COLOR="#FF0000">0</FONT>, <FONT COLOR="#FF0000">1</FONT>, <FONT COLOR="#FF0000">1</FONT>, <FONT COLOR="#FF0000">0</FONT>,},
+ 750: 			{ORIGINAL_WIDTH-<FONT COLOR="#FF0000">0.5</FONT>, ORIGINAL_HEIGHT-<FONT COLOR="#FF0000">0.5</FONT>, <FONT COLOR="#FF0000">0</FONT>, <FONT COLOR="#FF0000">1</FONT>, <FONT COLOR="#FF0000">1</FONT>, <FONT COLOR="#FF0000">1</FONT>,},
+ 751: 			{-<FONT COLOR="#FF0000">0.5</FONT>,               ORIGINAL_HEIGHT-<FONT COLOR="#FF0000">0.5</FONT>, <FONT COLOR="#FF0000">0</FONT>, <FONT COLOR="#FF0000">1</FONT>, <FONT COLOR="#FF0000">0</FONT>, <FONT COLOR="#FF0000">1</FONT>,},
+ 752: 		};
+ 753: 		pd3dDevice-&gt;SetFVF( D3DFVF_XYZRHW | D3DFVF_TEX1 );
+ 754: 		V( g_pEffect-&gt;SetTexture(g_hMeshTexture, g_pRT_FullScreen-&gt;GetTexture()) );
+ 755: 		V( g_pEffect-&gt;SetTechnique(<FONT COLOR="#FF0000">&quot;TechGaussX&quot;</FONT>) );
+ 756: 
+ 757: 		V( g_pEffect-&gt;Begin(&amp;cPasses, <FONT COLOR="#FF0000">0</FONT>) );
+ 758: 		<FONT COLOR="#0000FF">for</FONT> (iPass = <FONT COLOR="#FF0000">0</FONT>; iPass &lt; cPasses; iPass++)
+ 759: 		{
+ 760: 			V( g_pEffect-&gt;BeginPass(iPass) );
+ 761: 			pd3dDevice-&gt;DrawPrimitiveUP( D3DPT_TRIANGLEFAN, <FONT COLOR="#FF0000">2</FONT>, Vertex, <FONT COLOR="#0000FF">sizeof</FONT>( TVERTEX ) );
+ 762: 			V( g_pEffect-&gt;EndPass() );
+ 763: 		}
+ 764: 		V( g_pEffect-&gt;End() );
+ 765: 
+ 766: 		g_pRT_GaussX-&gt;End();
+ 767: 	}
+ 768: 
+ 769: 	<FONT COLOR="#0000FF">if</FONT>( SUCCEEDED( g_pRT_Blur-&gt;Begin() ) )
+ 770: 	{
+ 771: 		<FONT COLOR="#0000FF">static</FONT> TVERTEX Vertex[<FONT COLOR="#FF0000">4</FONT>] = {
+ 772: 			<FONT COLOR="#008040">//    x                             y         z rhw tu tv</FONT>
+ 773: 			{-<FONT COLOR="#FF0000">0.5</FONT>,                             -<FONT COLOR="#FF0000">0.5</FONT>, <FONT COLOR="#FF0000">0</FONT>, <FONT COLOR="#FF0000">1</FONT>, <FONT COLOR="#FF0000">0</FONT>, <FONT COLOR="#FF0000">0</FONT>,},
+ 774: 			{ORIGINAL_WIDTH-<FONT COLOR="#FF0000">0.5</FONT>,               -<FONT COLOR="#FF0000">0.5</FONT>, <FONT COLOR="#FF0000">0</FONT>, <FONT COLOR="#FF0000">1</FONT>, <FONT COLOR="#FF0000">1</FONT>, <FONT COLOR="#FF0000">0</FONT>,},
+ 775: 			{ORIGINAL_WIDTH-<FONT COLOR="#FF0000">0.5</FONT>, ORIGINAL_HEIGHT-<FONT COLOR="#FF0000">0.5</FONT>, <FONT COLOR="#FF0000">0</FONT>, <FONT COLOR="#FF0000">1</FONT>, <FONT COLOR="#FF0000">1</FONT>, <FONT COLOR="#FF0000">1</FONT>,},
+ 776: 			{-<FONT COLOR="#FF0000">0.5</FONT>,               ORIGINAL_HEIGHT-<FONT COLOR="#FF0000">0.5</FONT>, <FONT COLOR="#FF0000">0</FONT>, <FONT COLOR="#FF0000">1</FONT>, <FONT COLOR="#FF0000">0</FONT>, <FONT COLOR="#FF0000">1</FONT>,},
+ 777: 		};
+ 778: 		pd3dDevice-&gt;SetFVF( D3DFVF_XYZRHW | D3DFVF_TEX1 );
+ 779: 		V( g_pEffect-&gt;SetTexture(g_hMeshTexture, g_pRT_GaussX-&gt;GetTexture()) );
+ 780: 		V( g_pEffect-&gt;SetTechnique(<FONT COLOR="#FF0000">&quot;TechGaussY&quot;</FONT>) );
+ 781: 
+ 782: 		V( g_pEffect-&gt;Begin(&amp;cPasses, <FONT COLOR="#FF0000">0</FONT>) );
+ 783: 		<FONT COLOR="#0000FF">for</FONT> (iPass = <FONT COLOR="#FF0000">0</FONT>; iPass &lt; cPasses; iPass++)
+ 784: 		{
+ 785: 			V( g_pEffect-&gt;BeginPass(iPass) );
+ 786: 			pd3dDevice-&gt;DrawPrimitiveUP( D3DPT_TRIANGLEFAN, <FONT COLOR="#FF0000">2</FONT>, Vertex, <FONT COLOR="#0000FF">sizeof</FONT>( TVERTEX ) );
+ 787: 			V( g_pEffect-&gt;EndPass() );
+ 788: 		}
+ 789: 		V( g_pEffect-&gt;End() );
+ 790: 
+ 791: 		g_pRT_Blur-&gt;End();
+ 792: 	}
+ 793: 
+ 794: 	V( pd3dDevice-&gt;SetDepthStencilSurface( pOriginalZbuffer ) );
+ 795: 	SAFE_RELEASE( pOriginalZbuffer );
+ 796: 
+ 797: 	<FONT COLOR="#008040">// Clear the backbuffer </FONT>
+ 798: <FONT COLOR="#008040">//    V( pd3dDevice-&gt;Clear( 0L, NULL, D3DCLEAR_TARGET, 0x00000000, 1.0f, 0L ) );</FONT>
+ 799: 
+ 800:     <FONT COLOR="#008040">// Begin the scene, rendering to the backbuffer</FONT>
+ 801:     <FONT COLOR="#0000FF">if</FONT>( SUCCEEDED( pd3dDevice-&gt;BeginScene() ) )
+ 802:     {
+ 803:         pd3dDevice-&gt;SetViewport(&amp;g_ViewportFB);
+ 804: 
+ 805: 		V( g_pEffect-&gt;SetTexture( g_hMeshTexture,  g_pRT_Blur-&gt;GetTexture()) );
+ 806: 		RenderQuad(pd3dDevice, g_hTechFinal);
+ 807: 
+ 808: <FONT COLOR="#0000FF">#ifdef</FONT> FAST_RENDERING
+ 809: 		BOOL bFastRendering = <FONT COLOR="#0000FF">true</FONT>;
+ 810: <FONT COLOR="#0000FF">#else</FONT> <FONT COLOR="#008040">// FAST_RENDERING</FONT>
+ 811: 		BOOL bFastRendering = <FONT COLOR="#0000FF">false</FONT>;
+ 812: <FONT COLOR="#0000FF">#endif</FONT> <FONT COLOR="#008040">// FAST_RENDERING</FONT>
+ 813: 
+ 814: 		<FONT COLOR="#0000FF">if</FONT>(bFastRendering)
+ 815: 		{
+ 816: 			RenderText(<FONT COLOR="#0000FF">true</FONT>);
+ 817: 		}<FONT COLOR="#0000FF">else</FONT>{
+ 818: <FONT COLOR="#0000FF">#if</FONT> <FONT COLOR="#FF0000">1</FONT>
+ 819: <FONT COLOR="#0000FF">#ifdef</FONT> _DEBUG <FONT COLOR="#008040">// Display textures when debugging, (デバッグ用にテクスチャを表示する)</FONT>
+ 820: 			{
+ 821: 			pd3dDevice-&gt;SetTextureStageState(<FONT COLOR="#FF0000">0</FONT>,D3DTSS_COLOROP,	D3DTOP_SELECTARG1);
+ 822: 			pd3dDevice-&gt;SetTextureStageState(<FONT COLOR="#FF0000">0</FONT>,D3DTSS_COLORARG1,	D3DTA_TEXTURE);
+ 823: 			pd3dDevice-&gt;SetTextureStageState(<FONT COLOR="#FF0000">1</FONT>,D3DTSS_COLOROP,    D3DTOP_DISABLE);
+ 824: 			pd3dDevice-&gt;SetSamplerState( <FONT COLOR="#FF0000">0</FONT>, D3DSAMP_MINFILTER, D3DTEXF_LINEAR );
+ 825: 			pd3dDevice-&gt;SetSamplerState( <FONT COLOR="#FF0000">0</FONT>, D3DSAMP_MAGFILTER, D3DTEXF_POINT );
+ 826: 			pd3dDevice-&gt;SetFVF( D3DFVF_XYZRHW | D3DFVF_TEX1 );
+ 827: 			<FONT COLOR="#0000FF">float</FONT> scale = <FONT COLOR="#FF0000">64.0</FONT>f;
+ 828: 			LPDIRECT3DTEXTURE9 texture_tbl[] = 
+ 829: 			{
+ 830: 				g_pRT_FullScreen-&gt;GetTexture(),
+ 831: 				g_pRT_GaussX-&gt;GetTexture(),
+ 832: 				g_pRT_Blur-&gt;GetTexture(),
+ 833: 				NULL,
+ 834: 			};
+ 835: 			<FONT COLOR="#0000FF">for</FONT>(DWORD i=<FONT COLOR="#FF0000">0</FONT>; texture_tbl[i]; i++){
+ 836: 				TVERTEX Vertex[<FONT COLOR="#FF0000">4</FONT>] = {
+ 837: 					<FONT COLOR="#008040">//    x                             y         z rhw tu tv</FONT>
+ 838: 					{(i+<FONT COLOR="#FF0000">0</FONT>)*scale, (FLOAT)g_ViewportFB<FONT COLOR="#FF0000">.</FONT>Height-scale, <FONT COLOR="#FF0000">0</FONT>, <FONT COLOR="#FF0000">1</FONT>, <FONT COLOR="#FF0000">0</FONT>, <FONT COLOR="#FF0000">0</FONT>,},
+ 839: 					{(i+<FONT COLOR="#FF0000">1</FONT>)*scale, (FLOAT)g_ViewportFB<FONT COLOR="#FF0000">.</FONT>Height-scale, <FONT COLOR="#FF0000">0</FONT>, <FONT COLOR="#FF0000">1</FONT>, <FONT COLOR="#FF0000">1</FONT>, <FONT COLOR="#FF0000">0</FONT>,},
+ 840: 					{(i+<FONT COLOR="#FF0000">1</FONT>)*scale, (FLOAT)g_ViewportFB<FONT COLOR="#FF0000">.</FONT>Height-    <FONT COLOR="#FF0000">0</FONT>, <FONT COLOR="#FF0000">0</FONT>, <FONT COLOR="#FF0000">1</FONT>, <FONT COLOR="#FF0000">1</FONT>, <FONT COLOR="#FF0000">1</FONT>,},
+ 841: 					{(i+<FONT COLOR="#FF0000">0</FONT>)*scale, (FLOAT)g_ViewportFB<FONT COLOR="#FF0000">.</FONT>Height-    <FONT COLOR="#FF0000">0</FONT>, <FONT COLOR="#FF0000">0</FONT>, <FONT COLOR="#FF0000">1</FONT>, <FONT COLOR="#FF0000">0</FONT>, <FONT COLOR="#FF0000">1</FONT>,},
+ 842: 				};
+ 843: 				pd3dDevice-&gt;SetTexture( <FONT COLOR="#FF0000">0</FONT>, texture_tbl[i] );
+ 844: 				pd3dDevice-&gt;DrawPrimitiveUP( D3DPT_TRIANGLEFAN, <FONT COLOR="#FF0000">2</FONT>, Vertex, <FONT COLOR="#0000FF">sizeof</FONT>( TVERTEX ) );
+ 845: 			}
+ 846: 			}
+ 847: <FONT COLOR="#0000FF">#endif</FONT>		
+ 848: <FONT COLOR="#0000FF">#endif</FONT>
+ 849: 			V( g_HUD<FONT COLOR="#FF0000">.</FONT>OnRender( fElapsedTime ) );
+ 850: 			V( g_SampleUI<FONT COLOR="#FF0000">.</FONT>OnRender( fElapsedTime ) );
+ 851: 
+ 852: 			<FONT COLOR="#008040">// Render the text</FONT>
+ 853: 			RenderText(<FONT COLOR="#0000FF">false</FONT>);
+ 854: 
+ 855: 		}
+ 856: 
+ 857: 		<FONT COLOR="#008040">// End the scene.</FONT>
+ 858:         pd3dDevice-&gt;EndScene();
+ 859:     }
+ 860: }
+ 861: 
+ 862: <FONT COLOR="#008040">//--------------------------------------------------------------------------------------</FONT>
+ 863: <FONT COLOR="#008040">// Render the help and statistics text. This function uses the ID3DXFont interface for </FONT>
+ 864: <FONT COLOR="#008040">// efficient text rendering.</FONT>
+ 865: <FONT COLOR="#008040">//--------------------------------------------------------------------------------------</FONT>
+ 866: <FONT COLOR="#0000FF">void</FONT> RenderText(<FONT COLOR="#0000FF">bool</FONT> bFast)
+ 867: {
+ 868: 	<FONT COLOR="#0000FF">if</FONT>(bFast)
+ 869: 	{
+ 870: 		<FONT COLOR="#008040">// なるべく負荷をかけたくないときには、</FONT>
+ 871: 		<FONT COLOR="#008040">// FPS が更新されたときだけウィンドウのタイトルを変更するシステムにする</FONT>
+ 872: 		wchar_t buf[<FONT COLOR="#FF0000">256</FONT>];
+ 873: 		<FONT COLOR="#0000FF">static</FONT> <FONT COLOR="#0000FF">float</FONT> s_fFPS_Last = -<FONT COLOR="#FF0000">1.0</FONT>f;
+ 874: 		<FONT COLOR="#0000FF">float</FONT> fFps = DXUTGetFPS();
+ 875: 		<FONT COLOR="#0000FF">if</FONT>(fFps != s_fFPS_Last)
+ 876: 		{
+ 877: 			swprintf_s(  buf, <FONT COLOR="#FF0000">256</FONT>, TEXT(<FONT COLOR="#FF0000">&quot;%0.4f&quot;</FONT>), fFps );
+ 878: 			SetWindowText(g_hWnd, buf );
+ 879: 			s_fFPS_Last = fFps;
+ 880: 		}
+ 881: 
+ 882: 		<FONT COLOR="#0000FF">return</FONT>;
+ 883: 	}
+ 884: 
+ 885:     <FONT COLOR="#008040">// The helper object simply helps keep track of text position, and color</FONT>
+ 886:     <FONT COLOR="#008040">// and then it calls pFont-&gt;DrawText( g_pSprite, strMsg, -1, &amp;rc, DT_NOCLIP, g_clr );</FONT>
+ 887:     <FONT COLOR="#008040">// If NULL is passed in as the sprite object, then it will work however the </FONT>
+ 888:     <FONT COLOR="#008040">// pFont-&gt;DrawText() will not be batched together.  Batching calls will improves performance.</FONT>
+ 889:     CDXUTTextHelper txtHelper( g_pFont, g_pTextSprite, <FONT COLOR="#FF0000">15</FONT> );
+ 890: 
+ 891:     <FONT COLOR="#008040">// Output statistics</FONT>
+ 892:     txtHelper<FONT COLOR="#FF0000">.</FONT>Begin();
+ 893:     txtHelper<FONT COLOR="#FF0000">.</FONT>SetInsertionPos( <FONT COLOR="#FF0000">5</FONT>, <FONT COLOR="#FF0000">5</FONT> );
+ 894:     txtHelper<FONT COLOR="#FF0000">.</FONT>SetForegroundColor( D3DXCOLOR( <FONT COLOR="#FF0000">1.0</FONT>f, <FONT COLOR="#FF0000">1.0</FONT>f, <FONT COLOR="#FF0000">0.0</FONT>f, <FONT COLOR="#FF0000">1.0</FONT>f ) );
+ 895:     txtHelper<FONT COLOR="#FF0000">.</FONT>DrawTextLine( DXUTGetFrameStats() );
+ 896:     txtHelper<FONT COLOR="#FF0000">.</FONT>DrawTextLine( DXUTGetDeviceStats() );
+ 897: 
+ 898:     txtHelper<FONT COLOR="#FF0000">.</FONT>SetForegroundColor( D3DXCOLOR( <FONT COLOR="#FF0000">1.0</FONT>f, <FONT COLOR="#FF0000">1.0</FONT>f, <FONT COLOR="#FF0000">1.0</FONT>f, <FONT COLOR="#FF0000">1.0</FONT>f ) );
+ 899:     txtHelper<FONT COLOR="#FF0000">.</FONT>DrawFormattedTextLine( L<FONT COLOR="#FF0000">&quot;FPS: %0.4f&quot;</FONT>, DXUTGetFPS() );
+ 900: 
+ 901: <FONT COLOR="#0000FF">#if</FONT> <FONT COLOR="#FF0000">0</FONT>
+ 902:     <FONT COLOR="#008040">// Draw help</FONT>
+ 903:     <FONT COLOR="#0000FF">if</FONT>( g_bShowHelp )
+ 904:     {
+ 905:         <FONT COLOR="#0000FF">const</FONT> D3DSURFACE_DESC* pd3dsdBackBuffer = DXUTGetBackBufferSurfaceDesc();
+ 906:         txtHelper<FONT COLOR="#FF0000">.</FONT>SetInsertionPos( <FONT COLOR="#FF0000">2</FONT>, pd3dsdBackBuffer-&gt;Height-<FONT COLOR="#FF0000">15</FONT>*<FONT COLOR="#FF0000">6</FONT> );
+ 907:         txtHelper<FONT COLOR="#FF0000">.</FONT>SetForegroundColor( D3DXCOLOR( <FONT COLOR="#FF0000">1.0</FONT>f, <FONT COLOR="#FF0000">0.75</FONT>f, <FONT COLOR="#FF0000">0.0</FONT>f, <FONT COLOR="#FF0000">1.0</FONT>f ) );
+ 908:         txtHelper<FONT COLOR="#FF0000">.</FONT>DrawTextLine( L<FONT COLOR="#FF0000">&quot;Controls (F1 to hide):&quot;</FONT> );
+ 909: 
+ 910:         txtHelper<FONT COLOR="#FF0000">.</FONT>SetInsertionPos( <FONT COLOR="#FF0000">20</FONT>, pd3dsdBackBuffer-&gt;Height-<FONT COLOR="#FF0000">15</FONT>*<FONT COLOR="#FF0000">5</FONT> );
+ 911:         txtHelper<FONT COLOR="#FF0000">.</FONT>DrawTextLine( L<FONT COLOR="#FF0000">&quot;Look: Left drag mouse\n&quot;</FONT>
+ 912:                                 L<FONT COLOR="#FF0000">&quot;Move: A,W,S,D or Arrow Keys\n&quot;</FONT>
+ 913:                                 L<FONT COLOR="#FF0000">&quot;Move up/down: Q,E or PgUp,PgDn\n&quot;</FONT>
+ 914:                                 L<FONT COLOR="#FF0000">&quot;Reset camera: Home\n&quot;</FONT> );
+ 915:     }
+ 916:     <FONT COLOR="#0000FF">else</FONT>
+ 917:     {
+ 918:         txtHelper<FONT COLOR="#FF0000">.</FONT>SetForegroundColor( D3DXCOLOR( <FONT COLOR="#FF0000">1.0</FONT>f, <FONT COLOR="#FF0000">1.0</FONT>f, <FONT COLOR="#FF0000">1.0</FONT>f, <FONT COLOR="#FF0000">1.0</FONT>f ) );
+ 919:         txtHelper<FONT COLOR="#FF0000">.</FONT>DrawTextLine( L<FONT COLOR="#FF0000">&quot;Press F1 for help&quot;</FONT> );
+ 920:     }
+ 921: <FONT COLOR="#0000FF">#endif</FONT>
+ 922:     txtHelper<FONT COLOR="#FF0000">.</FONT>End();
+ 923: }
+ 924: 
+ 925: 
+ 926: <FONT COLOR="#008040">//--------------------------------------------------------------------------------------</FONT>
+ 927: <FONT COLOR="#008040">// Before handling window messages, DXUT passes incoming windows </FONT>
+ 928: <FONT COLOR="#008040">// messages to the application through this callback function. If the application sets </FONT>
+ 929: <FONT COLOR="#008040">// *pbNoFurtherProcessing to TRUE, then DXUT will not process this message.</FONT>
+ 930: <FONT COLOR="#008040">//--------------------------------------------------------------------------------------</FONT>
+ 931: LRESULT CALLBACK MsgProc( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam, <FONT COLOR="#0000FF">bool</FONT>* pbNoFurtherProcessing, <FONT COLOR="#0000FF">void</FONT>* pUserContext )
+ 932: {
+ 933: 	g_hWnd = hWnd;
+ 934: 
+ 935:     <FONT COLOR="#008040">// Always allow dialog resource manager calls to handle global messages</FONT>
+ 936:     <FONT COLOR="#008040">// so GUI state is updated correctly</FONT>
+ 937:     *pbNoFurtherProcessing = g_DialogResourceManager<FONT COLOR="#FF0000">.</FONT>MsgProc( hWnd, uMsg, wParam, lParam );
+ 938:     <FONT COLOR="#0000FF">if</FONT>( *pbNoFurtherProcessing )
+ 939:         <FONT COLOR="#0000FF">return</FONT> <FONT COLOR="#FF0000">0</FONT>;
+ 940: 
+ 941:     <FONT COLOR="#0000FF">if</FONT>( g_SettingsDlg<FONT COLOR="#FF0000">.</FONT>IsActive() )
+ 942:     {
+ 943:         g_SettingsDlg<FONT COLOR="#FF0000">.</FONT>MsgProc( hWnd, uMsg, wParam, lParam );
+ 944:         <FONT COLOR="#0000FF">return</FONT> <FONT COLOR="#FF0000">0</FONT>;
+ 945:     }
+ 946: 
+ 947:     <FONT COLOR="#008040">// Give the dialogs a chance to handle the message first</FONT>
+ 948:     *pbNoFurtherProcessing = g_HUD<FONT COLOR="#FF0000">.</FONT>MsgProc( hWnd, uMsg, wParam, lParam );
+ 949:     <FONT COLOR="#0000FF">if</FONT>( *pbNoFurtherProcessing )
+ 950:         <FONT COLOR="#0000FF">return</FONT> <FONT COLOR="#FF0000">0</FONT>;
+ 951:     *pbNoFurtherProcessing = g_SampleUI<FONT COLOR="#FF0000">.</FONT>MsgProc( hWnd, uMsg, wParam, lParam );
+ 952:     <FONT COLOR="#0000FF">if</FONT>( *pbNoFurtherProcessing )
+ 953:         <FONT COLOR="#0000FF">return</FONT> <FONT COLOR="#FF0000">0</FONT>;
+ 954: 
+ 955:     <FONT COLOR="#008040">// Pass all remaining windows messages to camera so it can respond to user input</FONT>
+ 956:     g_Camera<FONT COLOR="#FF0000">.</FONT>HandleMessages( hWnd, uMsg, wParam, lParam );
+ 957: 
+ 958:     <FONT COLOR="#0000FF">return</FONT> <FONT COLOR="#FF0000">0</FONT>;
+ 959: }
+ 960: 
+ 961: 
+ 962: <FONT COLOR="#008040">//--------------------------------------------------------------------------------------</FONT>
+ 963: <FONT COLOR="#008040">// As a convenience, DXUT inspects the incoming windows messages for</FONT>
+ 964: <FONT COLOR="#008040">// keystroke messages and decodes the message parameters to pass relevant keyboard</FONT>
+ 965: <FONT COLOR="#008040">// messages to the application.  The framework does not remove the underlying keystroke </FONT>
+ 966: <FONT COLOR="#008040">// messages, which are still passed to the application's MsgProc callback.</FONT>
+ 967: <FONT COLOR="#008040">//--------------------------------------------------------------------------------------</FONT>
+ 968: <FONT COLOR="#0000FF">void</FONT> CALLBACK KeyboardProc( UINT nChar, <FONT COLOR="#0000FF">bool</FONT> bKeyDown, <FONT COLOR="#0000FF">bool</FONT> bAltDown, <FONT COLOR="#0000FF">void</FONT>* pUserContext )
+ 969: {
+ 970:     <FONT COLOR="#0000FF">if</FONT>( bKeyDown )
+ 971:     {
+ 972:         <FONT COLOR="#0000FF">switch</FONT>( nChar )
+ 973:         {
+ 974:             <FONT COLOR="#0000FF">case</FONT> VK_F1: g_bShowHelp = !g_bShowHelp; <FONT COLOR="#0000FF">break</FONT>;
+ 975:         }
+ 976:     }
+ 977: }
+ 978: 
+ 979: 
+ 980: <FONT COLOR="#008040">//--------------------------------------------------------------------------------------</FONT>
+ 981: <FONT COLOR="#008040">// Handles the GUI events</FONT>
+ 982: <FONT COLOR="#008040">//--------------------------------------------------------------------------------------</FONT>
+ 983: <FONT COLOR="#0000FF">void</FONT> CALLBACK OnGUIEvent( UINT nEvent, <FONT COLOR="#0000FF">int</FONT> nControlID, CDXUTControl* pControl, <FONT COLOR="#0000FF">void</FONT>* pUserContext )
+ 984: {
+ 985:     <FONT COLOR="#0000FF">switch</FONT>( nControlID )
+ 986:     {
+ 987:         <FONT COLOR="#0000FF">case</FONT> IDC_TOGGLEFULLSCREEN: DXUTToggleFullScreen(); <FONT COLOR="#0000FF">break</FONT>;
+ 988:         <FONT COLOR="#0000FF">case</FONT> IDC_TOGGLEREF:        DXUTToggleREF(); <FONT COLOR="#0000FF">break</FONT>;
+ 989:         <FONT COLOR="#0000FF">case</FONT> IDC_CHANGEDEVICE:     g_SettingsDlg<FONT COLOR="#FF0000">.</FONT>SetActive( !g_SettingsDlg<FONT COLOR="#FF0000">.</FONT>IsActive() ); <FONT COLOR="#0000FF">break</FONT>;
+ 990: 
+ 991: 		<FONT COLOR="#0000FF">case</FONT> IDC_PAUSE:
+ 992:             g_bPause = g_SampleUI<FONT COLOR="#FF0000">.</FONT>GetCheckBox( IDC_PAUSE )-&gt;GetChecked(); 
+ 993: 			<FONT COLOR="#0000FF">break</FONT>;
+ 994: 
+ 995: 		<FONT COLOR="#0000FF">case</FONT> IDC_RADIUS_L: {
+ 996: 			g_fRadiusL = <FONT COLOR="#FF0000">0.01</FONT>f*(<FONT COLOR="#0000FF">float</FONT>) (g_SampleUI<FONT COLOR="#FF0000">.</FONT>GetSlider( IDC_RADIUS_L )-&gt;GetValue());
+ 997: 
+ 998:             WCHAR sz[<FONT COLOR="#FF0000">100</FONT>];
+ 999: 			StringCchPrintf( sz, <FONT COLOR="#FF0000">100</FONT>, L<FONT COLOR="#FF0000">&quot;Radius(Lum): %0.2f&quot;</FONT>, g_fRadiusL ); 
+1000: 			g_SampleUI<FONT COLOR="#FF0000">.</FONT>GetStatic( IDC_RADIUS_L_STATIC )-&gt;SetText( sz );
+1001: 			SetGaussRadius();
+1002: 			}<FONT COLOR="#0000FF">break</FONT>;
+1003: 
+1004: 		<FONT COLOR="#0000FF">case</FONT> IDC_RADIUS_X: {
+1005: 			g_fRadiusX = <FONT COLOR="#FF0000">0.01</FONT>f*(<FONT COLOR="#0000FF">float</FONT>) (g_SampleUI<FONT COLOR="#FF0000">.</FONT>GetSlider( IDC_RADIUS_X )-&gt;GetValue());
+1006: 
+1007:             WCHAR sz[<FONT COLOR="#FF0000">100</FONT>];
+1008: 			StringCchPrintf( sz, <FONT COLOR="#FF0000">100</FONT>, L<FONT COLOR="#FF0000">&quot;Radius(x): %0.2f&quot;</FONT>, g_fRadiusX ); 
+1009: 			g_SampleUI<FONT COLOR="#FF0000">.</FONT>GetStatic( IDC_RADIUS_X_STATIC )-&gt;SetText( sz );
+1010: 			SetGaussRadius();
+1011: 			}<FONT COLOR="#0000FF">break</FONT>;
+1012: 
+1013: 		<FONT COLOR="#0000FF">default</FONT>:
+1014: 			<FONT COLOR="#0000FF">break</FONT>;
+1015: 	}
+1016: }
+1017: 
+1018: 
+</PRE>

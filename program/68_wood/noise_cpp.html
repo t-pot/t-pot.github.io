@@ -1,0 +1,129 @@
+<HTML>
+<HEAD>
+<TITLE>noise.cpp</TITLE>
+<meta name="GENERATOR" content="cpp2html 2.1 by Niisaka">
+<meta http-equiv="Content-Type" content="text/html">
+<meta http-equiv="Content-Style-Type" content="text/css">
+<STYLE TYPE="text/css">
+<!--
+SPAN.comment { color:#008000; font-weight:normal; font-style:normal;}
+SPAN.keyword { color:#0000FF; font-weight:normal; font-style:normal;}
+SPAN.string { color:#600000; font-weight:normal; font-style:normal;}
+SPAN.linenum { color:#A0A0A0; font-weight:normal; font-style:normal;}
+-->
+</STYLE>
+</HEAD>
+<BODY TEXT="#000000" BGCOLOR="#FFFFFF">
+<PRE><SPAN CLASS="linenum">0001:</SPAN> <SPAN CLASS="comment">// ----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0002:</SPAN> <SPAN CLASS="comment">//</SPAN>
+<SPAN CLASS="linenum">0003:</SPAN> <SPAN CLASS="comment">// noise.h - ノイズテクスチャの生成</SPAN>
+<SPAN CLASS="linenum">0004:</SPAN> <SPAN CLASS="comment">// </SPAN>
+<SPAN CLASS="linenum">0005:</SPAN> <SPAN CLASS="comment">// Copyright (c) 2002 今給黎 隆 (imagire@nify.com)</SPAN>
+<SPAN CLASS="linenum">0006:</SPAN> <SPAN CLASS="comment">// All Rights Reserved.</SPAN>
+<SPAN CLASS="linenum">0007:</SPAN> <SPAN CLASS="comment">//</SPAN>
+<SPAN CLASS="linenum">0008:</SPAN> <SPAN CLASS="comment">// ----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0009:</SPAN> 
+<SPAN CLASS="linenum">0010:</SPAN> <SPAN CLASS="keyword">#include</SPAN> &lt;stdlib.h&gt;
+<SPAN CLASS="linenum">0011:</SPAN> <SPAN CLASS="keyword">#include</SPAN> &lt;stdio.h&gt;
+<SPAN CLASS="linenum">0012:</SPAN> <SPAN CLASS="keyword">#include</SPAN> &lt;math.h&gt;
+<SPAN CLASS="linenum">0013:</SPAN> <SPAN CLASS="keyword">#include</SPAN> &lt;GL/glut.h&gt;
+<SPAN CLASS="linenum">0014:</SPAN> <SPAN CLASS="keyword">#include</SPAN> &lt;GL/glext.h&gt;
+<SPAN CLASS="linenum">0015:</SPAN> <SPAN CLASS="keyword">#include</SPAN> &lt;glh_extensions.h&gt;
+<SPAN CLASS="linenum">0016:</SPAN> <SPAN CLASS="keyword">#include</SPAN> "<SPAN CLASS="string">noise.h</SPAN>"
+<SPAN CLASS="linenum">0017:</SPAN> 
+<SPAN CLASS="linenum">0018:</SPAN> 
+<SPAN CLASS="linenum">0019:</SPAN> <SPAN CLASS="keyword">#define</SPAN> SAFE_DELETE_ARRAY(p) <SPAN CLASS="keyword">if</SPAN>(p)<SPAN CLASS="keyword">delete</SPAN>[] (p);(p)=NULL
+<SPAN CLASS="linenum">0020:</SPAN> 
+<SPAN CLASS="linenum">0021:</SPAN> 
+<SPAN CLASS="linenum">0022:</SPAN> <SPAN CLASS="comment">// x を a から b の間に範囲を収める</SPAN>
+<SPAN CLASS="linenum">0023:</SPAN> <SPAN CLASS="keyword">static</SPAN> <SPAN CLASS="keyword">float</SPAN> clamp(<SPAN CLASS="keyword">float</SPAN> x, <SPAN CLASS="keyword">float</SPAN> a, <SPAN CLASS="keyword">float</SPAN> b)
+<SPAN CLASS="linenum">0024:</SPAN> {
+<SPAN CLASS="linenum">0025:</SPAN>     <SPAN CLASS="keyword">return</SPAN> (x &lt; a ? a : (x &gt; b ? b : x));
+<SPAN CLASS="linenum">0026:</SPAN> }
+<SPAN CLASS="linenum">0027:</SPAN> <SPAN CLASS="comment">// ---------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0028:</SPAN> <SPAN CLASS="comment">// コンストラクタ</SPAN>
+<SPAN CLASS="linenum">0029:</SPAN> <SPAN CLASS="comment">// ---------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0030:</SPAN> CNoise::CNoise()
+<SPAN CLASS="linenum">0031:</SPAN> {
+<SPAN CLASS="linenum">0032:</SPAN>     m_pBuf = NULL;
+<SPAN CLASS="linenum">0033:</SPAN> }
+<SPAN CLASS="linenum">0034:</SPAN> <SPAN CLASS="comment">// ---------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0035:</SPAN> <SPAN CLASS="comment">// デストラクタ</SPAN>
+<SPAN CLASS="linenum">0036:</SPAN> <SPAN CLASS="comment">// ---------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0037:</SPAN> CNoise::~CNoise()
+<SPAN CLASS="linenum">0038:</SPAN> {
+<SPAN CLASS="linenum">0039:</SPAN>     SAFE_DELETE_ARRAY(m_pBuf);
+<SPAN CLASS="linenum">0040:</SPAN> }
+<SPAN CLASS="linenum">0041:</SPAN> <SPAN CLASS="comment">// ---------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0042:</SPAN> <SPAN CLASS="keyword">float</SPAN> CNoise::noise3D(<SPAN CLASS="keyword">int</SPAN> x, <SPAN CLASS="keyword">int</SPAN> y, <SPAN CLASS="keyword">int</SPAN> z)
+<SPAN CLASS="linenum">0043:</SPAN> {
+<SPAN CLASS="linenum">0044:</SPAN>     x = x &amp; (m_size[0] - 1);
+<SPAN CLASS="linenum">0045:</SPAN>     y = y &amp; (m_size[1] - 1);
+<SPAN CLASS="linenum">0046:</SPAN>     z = z &amp; (m_size[2] - 1);
+<SPAN CLASS="linenum">0047:</SPAN> 
+<SPAN CLASS="linenum">0048:</SPAN>     <SPAN CLASS="keyword">return</SPAN> m_pBuf[(z*m_size[0]*m_size[1]) + (y*m_size[0]) + x];
+<SPAN CLASS="linenum">0049:</SPAN> }
+<SPAN CLASS="linenum">0050:</SPAN> <SPAN CLASS="comment">// ---------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0051:</SPAN> <SPAN CLASS="comment">// OpenGL 3D テクスチャを作る</SPAN>
+<SPAN CLASS="linenum">0052:</SPAN> <SPAN CLASS="comment">// ---------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0053:</SPAN> GLuint CNoise::CreateNoiseTexture3D(<SPAN CLASS="keyword">int</SPAN> w, <SPAN CLASS="keyword">int</SPAN> h, <SPAN CLASS="keyword">int</SPAN> d, <SPAN CLASS="keyword">float</SPAN> scale, <SPAN CLASS="keyword">float</SPAN> amp)
+<SPAN CLASS="linenum">0054:</SPAN> {
+<SPAN CLASS="linenum">0055:</SPAN>     <SPAN CLASS="keyword">int</SPAN> i, j, k;
+<SPAN CLASS="linenum">0056:</SPAN> 
+<SPAN CLASS="linenum">0057:</SPAN>     m_size[0] = w;
+<SPAN CLASS="linenum">0058:</SPAN>     m_size[1] = h;
+<SPAN CLASS="linenum">0059:</SPAN>     m_size[2] = d;
+<SPAN CLASS="linenum">0060:</SPAN>     
+<SPAN CLASS="linenum">0061:</SPAN>     <SPAN CLASS="comment">// ノイズの種になる乱数の設定</SPAN>
+<SPAN CLASS="linenum">0062:</SPAN>     SAFE_DELETE_ARRAY(m_pBuf);<SPAN CLASS="comment">// すでに作られていたら、開放</SPAN>
+<SPAN CLASS="linenum">0063:</SPAN>     m_pBuf = <SPAN CLASS="keyword">new</SPAN> <SPAN CLASS="keyword">float</SPAN>[w * h * d];
+<SPAN CLASS="linenum">0064:</SPAN> 
+<SPAN CLASS="linenum">0065:</SPAN>     <SPAN CLASS="comment">// -1～1の範囲で３Ｄ空間全体に乱数を作る</SPAN>
+<SPAN CLASS="linenum">0066:</SPAN>     <SPAN CLASS="keyword">float</SPAN> *ptr = m_pBuf;
+<SPAN CLASS="linenum">0067:</SPAN>     <SPAN CLASS="keyword">for</SPAN>( i=0; i&lt;w*h*d ; i++ ) {
+<SPAN CLASS="linenum">0068:</SPAN>         *ptr++ = (2.0 * rand() / (<SPAN CLASS="keyword">float</SPAN>) RAND_MAX) - 1.0;
+<SPAN CLASS="linenum">0069:</SPAN>     }
+<SPAN CLASS="linenum">0070:</SPAN> 
+<SPAN CLASS="linenum">0071:</SPAN>     GLubyte *img = <SPAN CLASS="keyword">new</SPAN> GLubyte[w * h * d];
+<SPAN CLASS="linenum">0072:</SPAN> 
+<SPAN CLASS="linenum">0073:</SPAN>     GLubyte *p = img;
+<SPAN CLASS="linenum">0074:</SPAN>     <SPAN CLASS="keyword">for</SPAN>( i=0; i&lt;d; i++ ) {
+<SPAN CLASS="linenum">0075:</SPAN>         <SPAN CLASS="keyword">for</SPAN>( j=0; j&lt;h; j++ ) {
+<SPAN CLASS="linenum">0076:</SPAN>             <SPAN CLASS="keyword">for</SPAN>( k=0; k&lt;w; k++ ) {
+<SPAN CLASS="linenum">0077:</SPAN> 
+<SPAN CLASS="linenum">0078:</SPAN>                 <SPAN CLASS="keyword">float</SPAN> fx = (k / scale) - 0.5;<SPAN CLASS="comment">// 0.5 は、切捨てで問題が出ないような調整</SPAN>
+<SPAN CLASS="linenum">0079:</SPAN>                 <SPAN CLASS="keyword">float</SPAN> fy = (j / scale) - 0.5;
+<SPAN CLASS="linenum">0080:</SPAN>                 <SPAN CLASS="keyword">float</SPAN> fz = (i / scale) - 0.5;
+<SPAN CLASS="linenum">0081:</SPAN> 
+<SPAN CLASS="linenum">0082:</SPAN>                 <SPAN CLASS="keyword">float</SPAN> n;
+<SPAN CLASS="linenum">0083:</SPAN>                 n = (noise3D((<SPAN CLASS="keyword">int</SPAN>)fx, (<SPAN CLASS="keyword">int</SPAN>)fy, (<SPAN CLASS="keyword">int</SPAN>)fz) + 1.0) * 0.5;
+<SPAN CLASS="linenum">0084:</SPAN>                 n = clamp(n, 0.0, 1.0);
+<SPAN CLASS="linenum">0085:</SPAN>                 *p++ = (GLubyte) (n * amp * 0xff);
+<SPAN CLASS="linenum">0086:</SPAN>             }
+<SPAN CLASS="linenum">0087:</SPAN>         }
+<SPAN CLASS="linenum">0088:</SPAN>     }
+<SPAN CLASS="linenum">0089:</SPAN> 
+<SPAN CLASS="linenum">0090:</SPAN>     GLuint texid;
+<SPAN CLASS="linenum">0091:</SPAN>     glGenTextures(1, &amp;texid);
+<SPAN CLASS="linenum">0092:</SPAN>     glBindTexture(GL_TEXTURE_3D, texid);
+<SPAN CLASS="linenum">0093:</SPAN> 
+<SPAN CLASS="linenum">0094:</SPAN>     glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+<SPAN CLASS="linenum">0095:</SPAN>     glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+<SPAN CLASS="linenum">0096:</SPAN>     glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+<SPAN CLASS="linenum">0097:</SPAN>     glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+<SPAN CLASS="linenum">0098:</SPAN>     glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_R, GL_REPEAT);
+<SPAN CLASS="linenum">0099:</SPAN>     glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+<SPAN CLASS="linenum">0100:</SPAN> 
+<SPAN CLASS="linenum">0101:</SPAN>     PFNGLTEXIMAGE3DEXTPROC glTexImage3DEXT;
+<SPAN CLASS="linenum">0102:</SPAN>     glTexImage3DEXT = (PFNGLTEXIMAGE3DEXTPROC) wglGetProcAddress("<SPAN CLASS="string">glTexImage3DEXT</SPAN>");
+<SPAN CLASS="linenum">0103:</SPAN>     <SPAN CLASS="keyword">if</SPAN> (glTexImage3DEXT != NULL)
+<SPAN CLASS="linenum">0104:</SPAN>         glTexImage3DEXT(GL_TEXTURE_3D, 0, GL_LUMINANCE, w, h, d
+<SPAN CLASS="linenum">0105:</SPAN>                         , 0, GL_LUMINANCE, GL_UNSIGNED_BYTE, img);
+<SPAN CLASS="linenum">0106:</SPAN> 
+<SPAN CLASS="linenum">0107:</SPAN>     <SPAN CLASS="keyword">delete</SPAN> [] img;
+<SPAN CLASS="linenum">0108:</SPAN>     
+<SPAN CLASS="linenum">0109:</SPAN>     <SPAN CLASS="keyword">return</SPAN> texid;
+<SPAN CLASS="linenum">0110:</SPAN> }
+<SPAN CLASS="linenum">0111:</SPAN> </PRE>
+</BODY>
+</HTML>

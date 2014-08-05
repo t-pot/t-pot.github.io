@@ -1,0 +1,178 @@
+<head>
+	<title>t-pot 『DirectX8.0 入門:文字列の表示』</title>
+	<link rel="stylesheet" type="text/css" href="../if.css">
+</head>
+<meta http-equiv=Content-Type content="text/html; charset=shift_jis">
+<body>
+<div class="contents">
+<center>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<h1>文字列の表示</h1><br>
+<h3>～デバッグのためにも必要だよね～</h3>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+</center>
+<h2>■はじめに</h2>
+
+<p>
+fps 値 (frames per second:一秒間に画面を更新した回数) を表示するために必要なので、
+デバッグ用の文字表示として、文字列の表示を用意しました。<br>
+今回は、次のソースを使います。
+</p>
+<ul style = "LIST-STYLE-TYPE:none">
+<li><a href="font.lzh">font.lzh (フォント表示のサンプル)</a>
+</ul>
+
+<h2>■フォント表示クラス</h2>
+
+<p>
+今回は、独立性を考えて、クラス化してみました。
+文字列表示用に定義したクラスは次のとおりです。
+</p>
+<pre class="CodeBlock">
+class CMyFont{
+private:
+    LPD3DXFONT  m_lpFont;
+public:
+    CMyFont(){m_lpFont = NULL;};
+    virtual void Init(LPDIRECT3DDEVICE8 lpD3DDEV, int w, int h);               // 初期化 (DirectX の初期化の後に呼ぶ)
+    virtual void Print(char *str, int x, int y, D3DCOLOR color=0xffffffff);    // 表示
+    virtual void Clean();                                                      // オブジェクトの開放
+};
+</pre>
+<p>
+フォントの為のインターフェイスは、LPD3DXFONT です。
+このポインタを、メンバー変数として表示オブジェクトごとに用意します。<br>
+表示するときは、Print を毎フレーム使います。文字列 str と、位置 x, y を指定します。
+白以外の色で文字を表示したいときには、さらに D3DCOLOR 型で色を指定します。
+</p>
+
+<h2>■使い方</h2>
+
+<p>
+実際に使うときには、次のように使います。
+ありがちな Hello world を作ってみました。
+次の関数は、WinMain のウィンドウを作成した後です。
+</p>
+<pre class="CodeBlock">
+// Direct3D の初期化
+if(SUCCEEDED(InitD3D(hWnd))){
+    
+<Font color = orange><b>    sFont.Init(s_lpD3DDEV, 12, 24);// ★★★★★ Direct3D の初期化</b></Font>
+
+    ShowWindow(hWnd, SW_SHOW);
+    UpdateWindow(hWnd);
+
+    // メインループ
+    MSG msg;
+    while (!s_end)
+    {
+        if (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE)){
+            // メッセージの処理
+        }else{
+            // Direct3D の描画
+            // バックバッファと Z バッファをクリア
+            s_lpD3DDEV->Clear(0,NULL,D3DCLEAR_TARGET | D3DCLEAR_ZBUFFER,D3DCOLOR_XRGB(0,0,0),1.0f,0);
+            // シーン開始
+            s_lpD3DDEV->BeginScene();
+            
+            // 描画などの処理
+<Font color = orange><b>            sFont.Print("Hello world!", 0,0);// ★★★★★ フォントの描画</b></Font>
+            
+            // シーン終了
+            s_lpD3DDEV->EndScene();
+            if (FAILED(s_lpD3DDEV->Present(NULL,NULL,NULL,NULL)))
+                s_lpD3DDEV->Reset(&s_d3dpp);// バックバッファをプライマリバッファにコピー
+        }
+    }
+}
+
+// 終了
+<Font color = orange><b>sFont.Clean();    // ★★★★★ フォントの後かたずけ</b></Font>
+RELEASE(s_lpD3DDEV);
+RELEASE(s_lpD3D);
+
+return 0;
+</pre>
+<p>
+DirectX として表示するので、BeginScene と、EndScene の間で表示します。
+</p>
+
+<h2>■関数の中身</h2>
+
+<p>
+実は、初期化が一番大切です。<br>
+ここで、フォントの種類及び、サイズを指定します。
+CreateFont でフォントを設定、作成した後に、D3DXCreateFont で、DirectX で使えるように設定します。
+</p>
+
+<pre class="CodeBlock">
+void CMyFont::Init(LPDIRECT3DDEVICE8 lpD3DDEV, int w, int h)
+{
+    HDC        hTextDC = NULL;
+    HFONT    hFont = NULL, hOldFont = NULL;
+    
+    hTextDC = CreateCompatibleDC(NULL);
+    hFont = CreateFont( h, w, 0, 0,
+                      FW_REGULAR,
+                      FALSE,FALSE,FALSE,
+                      SHIFTJIS_CHARSET,
+                      OUT_DEFAULT_PRECIS,
+                      CLIP_DEFAULT_PRECIS,
+                      DEFAULT_QUALITY,
+                      DEFAULT_PITCH,
+                      "ＭＳ ゴシック"
+                      );
+    if(!hFont) return;
+    hOldFont = (HFONT)SelectObject(hTextDC, hFont);
+    
+    if( FAILED( D3DXCreateFont( lpD3DDEV, hFont, &m_lpFont ) ) ) {
+        MessageBox( 0, "D3DXCreateFontIndirect FALSE", "ok", MB_OK);
+        return;
+    }
+    SelectObject(hTextDC, hOldFont);
+    DeleteObject(hFont);
+}
+</pre>
+<p>
+表示するときには、RECT 型の長方形で、表示領域を設定して、DrawText で表示します。
+</p>
+<pre class="CodeBlock">
+void CMyFont::Print( char *str, int x, int y, D3DCOLOR color )
+{
+    RECT rect;
+    rect.left = x; 
+    rect.right = WIDTH;
+    rect.top = y;
+    rect.bottom = HEIGHT;
+
+    // デバイス上に、整形した テキストを描画する
+    m_lpFont->DrawText(str, -1, &rect
+                    ,DT_LEFT | DT_EXPANDTABS
+                    ,color
+                    );
+}
+</pre>
+<p>
+後始末は、作成したオブジェクトを開放します。
+</p>
+<pre class="CodeBlock">
+void CMyFont::Clean()
+{
+    RELEASE(m_lpFont);
+}
+</pre>
+
+
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<center>
+<hr>
+<p><a href="../index.html">もどる</a></p>
+<p><a href="mailto:imagire@gmail.com">imagire@gmail.com</a></p>
+</center>
+</body>
+</html>

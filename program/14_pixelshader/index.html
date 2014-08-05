@@ -1,0 +1,221 @@
+<head>
+	<title>t-pot 『DirectX8.0 入門:Pixel Shader 入門』</title>
+	<link rel="stylesheet" type="text/css" href="../if.css">
+</head>
+<meta http-equiv=Content-Type content="text/html; charset=shift_jis">
+<body>
+<div class="contents">
+<center>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<h1>Pixel Shader 入門</h1><br>
+<h3>～時代はここ～</h3>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+</center>
+<h2>■今回のファイルは</h2>
+
+<p>
+私は GeForce3 を持っています。せっかくなので、今回すごくなった機能を使ってみたいと思います。
+</p>
+<right><image src = "ps.jpg"></right>
+<p>
+次のソースを、ダウンロードしてください。
+<p>
+
+<ul style = "LIST-STYLE-TYPE:none">
+<li><a href="ps.lzh">ps.lzh (Pixel Shader を使用するサンプルのソース)</a>
+</ul>
+
+<p>
+ps.psh というファイルが追加されています。これが Pixel Shader のプログラムです。<br>
+今回は、白い文字が書かれたテクスチャーを赤く表示する簡単なサンプルを作ります。<br>
+3次元的にポリゴンを表示するプログラムを書き換えました。
+</p>
+
+<h2>■今回のオブジェクト</h2>
+
+<p>
+例によって、draw.cpp を見ていきます。<br>
+Pixel Shader のオブジェクトを追加しました。pD3DXBufShader と dwPixelShader が新しく追加したオブジェクトです。<br>
+</p>
+<pre class="CodeBlock">
+LPDIRECT3DVERTEXBUFFER8     pVB            = NULL; // 頂点バッファ
+LPDIRECT3DTEXTURE8          pTexture       = NULL; // テクスチャー<Font color = orange>
+LPD3DXBUFFER                pD3DXBufShader = NULL; // シェーダープログラムの情報
+DWORD                       dwPixelShader;         // シェーダーの実体</Font>
+</pre>
+<p>
+pD3DXBufShader はプログラムファイルである ps.psh の情報が入ります。<br>
+dwPixelShader は、ps.psh から内部的に使えるように加工されたオブジェクトの情報が入ります。<br>
+あとの pVB、pTexture は、すでに説明した、ポリゴンの頂点情報とテクスチャーの情報が格納されます。
+</p>
+
+<h2>■初期化</h2>
+
+<p>
+今回の追加は、CreatePixelShader() によるシェーダーの生成と、SetPixelShader() での設定です。<br>
+</p>
+
+<pre class="CodeBlock">
+HRESULT InitRender(LPDIRECT3DDEVICE8 lpD3DDEV)
+{
+    CUSTOMVERTEX vertices[] =
+    {
+        //        x        y     z                   赤    緑    青    α     tx  ty
+        {  -3.680f*0.5f, -0.5f, 0.0f, D3DCOLOR_RGBA(0xff, 0xff, 0xff, 0xff), 1.0f,1.0f,},
+        {   3.680f*0.5f, -0.5f, 0.0f, D3DCOLOR_RGBA(0xff, 0xff, 0xff, 0xff), 0.0f,1.0f, },
+        {  -3.680f*0.5f,  0.5f, 0.0f, D3DCOLOR_RGBA(0xff, 0xff, 0xff, 0xff), 1.0f,0.0f, },
+        {   3.680f*0.5f,  0.5f, 0.0f, D3DCOLOR_RGBA(0xff, 0xff, 0xff, 0xff), 0.0f,0.0f, },
+    };
+    HRESULT hr;
+    
+    hr = lpD3DDEV->CreateVertexBuffer( 4*sizeof(CUSTOMVERTEX),0,
+                    D3DFVF_CUSTOMVERTEX, D3DPOOL_DEFAULT, &pVB);
+    if(FAILED(hr)) return E_FAIL;
+
+    VOID* pVertices;
+    hr = pVB->Lock( 0, sizeof(vertices), (BYTE**)&pVertices, 0);
+    if(FAILED(hr)) return E_FAIL;
+    memcpy( pVertices, vertices, sizeof(vertices) );
+    pVB->Unlock();
+    
+    D3DXCreateTextureFromFileEx(lpD3DDEV, "if.bmp",0,0,0,0,D3DFMT_A8R8G8B8,
+                                D3DPOOL_MANAGED, D3DX_FILTER_LINEAR, D3DX_FILTER_LINEAR,
+                                0, NULL, NULL, &pTexture);
+    <Font color = orange><b>
+
+    hr = D3DXAssembleShaderFromFile( "ps.psh", 0, NULL, &pD3DXBufShader, NULL );
+    
+    hr = lpD3DDEV->CreatePixelShader( (DWORD*)pD3DXBufShader->GetBufferPointer()
+                                  , &dwPixelShader );
+    lpD3DDEV->SetPixelShader(dwPixelShader);
+    
+    // 定数レジスタの設定
+    FLOAT fPixelShaderConstants[][4] = {
+      //   赤    緑    青    α
+        { 1.0f, 0.0f, 0.0f, 1.0f, },
+    };
+    lpD3DDEV->SetPixelShaderConstant( 0                           // 送るレジスタ番号 c0
+                                    ,(VOID*)fPixelShaderConstants // 設定するデータ
+                                    ,1 );                         // 設定する個数</b></Font>
+    
+    lpD3DDEV->SetRenderState(D3DRS_CULLMODE, D3DCULL_NONE);
+    lpD3DDEV->SetRenderState(D3DRS_LIGHTING, FALSE);
+    lpD3DDEV->SetTexture( 0, pTexture);
+
+    return S_OK;
+}
+</pre>
+<p>
+D3DXAssembleShaderFromFile から後が、Pixel Shader の部分です。<br>
+D3DXAssembleShaderFromFile でファイルを読み込みます。読んだ情報が pD3DXBufShader に入ります。
+読み込んだら、CreatePixelShader でプログラムからシェーダーを生成します。
+できたシェーダーは、SetPixelShader で設定すれば、使えるようになります。
+</p>
+<p>
+今回さらに、定数レジスタを設定してみました。
+定数レジスタは、シェーダープログラム中で補助的な（読み出しのみの）数字として扱われる変数です。
+GeForce3 では 96 個あります。<br>
+fPixelShaderConstants に浮動小数点数の配列として定義します。
+赤（とα）成分が 1.0f で、後は 0.0f です。つまり、赤色を用意しました。
+それを SetPixelShaderConstant でビデオカードに送ります。<br>
+今回は、定数レジスタ c0 を1 個だけ設定しました。
+</p>
+
+<h2>■シェーダープログラム (ps.psh)</h2>
+
+<p>
+ここで、ps.psh の中身を見てみましょう。
+プログラムコードは、次のようになっています。
+</p>
+
+<pre class="CodeBlock">
+ps.1.1
+tex t0              ; 貼り付けテクスチャーのピクセルを読み込む
+mul r0, t0, c0      ; ポリゴン色 = テクスチャー色 * 定数色
+</pre>
+
+<p>
+1 行目は Pixel Shader のバージョン設定です。<br>
+2 行目で、テクスチャーを読み込みます。<br>
+3 行目で、テクスチャーの色と定数レジスタ c0 の色を掛けます。両方の色が（乗算で）混ざり合わさります。<br>
+c0 レジスタには赤色を書き込みましたので、結果的にテクスチャーの白い文字が赤く表示されます。
+</p>
+
+<h2>■描画</h2>
+
+<p>
+実は何も書くことはありません。3D ポリゴンを表示したプログラムのままです。
+y軸（鉛直方向）にくるくる回しています。<br>
+SetPixelShader で設定したシェーダーがずっと使われ、レンダリングされます。
+</p>
+
+<pre class="CodeBlock">
+void Render(LPDIRECT3DDEVICE8 lpD3DDEV)
+{
+    D3DXMATRIX mWorld, mRotY, mTrans;
+    float time = (float)timeGetTime();
+    D3DXMatrixRotationY(&mRotY, time/600.0f);
+    D3DXMatrixTranslation(&mTrans, 0,0,0.0f);
+    mWorld = mRotY * mTrans;
+    D3DXMATRIX mView, mProj;
+    D3DXMatrixLookAtLH(&mView
+                    ,&D3DXVECTOR3(0,0.0f,4.0f)  // カメラ位置
+                    ,&D3DXVECTOR3(0,0,0)        // カメラの注目点
+                    ,&D3DXVECTOR3(0,1,0)        // 上の向き
+                    );
+    D3DXMatrixPerspectiveFovLH(&mProj
+        ,60.0f*PI/180.0f                        // 視野角
+        ,1.0f                                   // アスペクト比
+        ,0.01f                                  // 最近接距離
+        ,100.0f                                 // 最遠方距離
+        );
+    lpD3DDEV->SetTransform(D3DTS_WORLD, &mWorld);
+    lpD3DDEV->SetTransform(D3DTS_VIEW,  &mView);
+    lpD3DDEV->SetTransform(D3DTS_PROJECTION, &mProj);
+
+    lpD3DDEV->SetStreamSource( 0, pVB, sizeof(CUSTOMVERTEX) );
+    lpD3DDEV->SetVertexShader( D3DFVF_CUSTOMVERTEX );
+    lpD3DDEV->DrawPrimitive( D3DPT_TRIANGLESTRIP, 0, 2 );
+}
+</pre>
+
+<h2>■後片付け</h2>
+
+<p>
+後片付けは、いつものように、pD3DXBufShader 等を開放する前に、ピクセルシェーダーを破棄します。
+</p>
+
+<pre class="CodeBlock">
+void CleanRender(LPDIRECT3DDEVICE8 lpD3DDEV)
+{
+    <Font color = orange><b>lpD3DDEV->DeletePixelShader(dwPixelShader);</b></Font>
+    <Font color = orange><b>RELEASE(pD3DXBufShader);</b></Font>
+    RELEASE(pTexture);
+    RELEASE(pVB);
+}
+</pre>
+
+<p>
+なお、後片付けに lpD3DDEV が必要だったので、引数をひとつ追加しました。
+</p>
+
+<h2>■今後</h2>
+
+<p>
+今回のものは、あくまでも Pixel Shader の雛型です。
+今後、Pixel Shader プログラムを拡張して、いろいろなエフェクトを作成していく予定です。
+</p>
+
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<center>
+<br>
+<p><a href="../index.html">もどる</a></p>
+<p><a href="mailto:imagire@gmail.com">imagire@gmail.com</a></p>
+</center>
+</body>
+</html>

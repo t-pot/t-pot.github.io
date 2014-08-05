@@ -1,0 +1,306 @@
+<head>
+	<title>t-pot『バイラテラルフィルタ』</title>
+	<link rel="stylesheet" type="text/css" href="../if.css">
+</head>
+<meta http-equiv=Content-Type content="text/html; charset=shift_jis">
+<body>
+
+
+<div class="contents">
+<center>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<h1>バイラテラルフィルタ</h1><br>
+<h3>～ Bilateral Filter ～</h3>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<image src = "title.png">
+<br>
+<hr>
+</center>
+<div>
+
+
+<h2>■はじめに</h2>
+
+
+<p>
+mdiapp さんの<a href = "http://d.hatena.ne.jp/mdiapp/20061001">「人生やりなおし機が欲しい」 </a>で、
+「バイラテラルフィルターって何？」ってのがあって、見てみると速攻で実装できそうだったので作ってみました。<br>
+<a href="http://www.geocities.jp/mailkuroiwa/bilateralfilter.html">画像処理実験室の記事</a>を参考にさせていただいています。
+</p>
+
+
+<p>
+今回のプログラムは、次のものです。
+</p>
+<ul style = "LIST-STYLE-TYPE:none">
+<li><a href="src.zip">src.zip (バイラテラルフィルタ:Microsoft DirectX 9.0 SDK (August 2006), vs_1_1, ps_2_0)</a>
+</ul>
+
+<p>
+まぁ、いつものように適当にファイルが入っています。
+大事な部分だけを抜粋すると、次のファイルだけに注目すればいいことになります。
+</p>
+<table>
+<tr><td><a href="main_cpp.html">main.cpp</a></td><td>メイン関数</td></tr>
+<tr><td><a href="main_fx.html">main.fx</a></td><td>シェーダプログラム</td></tr>
+</table>
+
+<p>
+他にも、実行ファイル、リソースファイル、プロジェクトファイルが入っています。
+</p>
+
+
+<h2>■Bilateral Filterとは？</h2>
+
+<p>
+Bilateral Filter は1988 年にTomashi とManduchi により提案されたエッジ保持平滑化フィルタで、
+画像をスムーズにしつつもエッジ部分はぼかすことのない効果を持っているらしいです。
+</p>
+<p>
+ガウスぼかしをする際に、画素間の距離で重みを決めるのではなく、
+輝度の差も見て、変化が大きいところは重みを小さくすることによってエッジを残します。
+</p>
+
+
+<p>
+式にすると、一般の場合には、ある画素iのフィルタの後の色f<sub>i</sub>は、次のように
+位置に移動する重みw<sub>x</sub>と、輝度に依存する重みw<sub>d</sub>で合成する感じになります。
+</p>
+<image src = "eq1.png" width="480">
+<p>
+ぼかしの重みにガウス分布を用いると。それぞれの重みは次のようになります。
+</p>
+<image src = "eq2.png" width="480">
+<p>
+まぁ、exp の前の係数は、分母で割ることを考えるといらないけどね。
+</p>
+<p>
+分散（の平方根）であるσ<sub>x</sub>やσ<sub>d</sub>は、ぼかす幅を決定するパラメータで、
+距離や輝度差がσ<sub>x</sub>やσ<sub>d</sub>の時に、重みは exp(-0.5) = 0.60653066 と、元の値の半分ぐらいになるので、
+重みの大体の幅を決めるものと考えることができます。
+</p>
+
+<p>
+フィルタの幅をあらわす分散が小さいほど狭い範囲だけフィルタが係り、
+大きくなると全体的にぼけたように合成されます。
+</p>
+<p>
+x軸(横方向)にテクセルの差、y軸(奥方向)に輝度の差をとって、z軸(上方向)を合成の重みとします。<br>
+重みが大きいほうが合成結果に強く影響を及ぼします。<br>
+ガウスぼかしの時は、輝度によらず重みを合成するので、下のような感じで、輝度方向は変化しない重みになります。
+</p>
+<image src = "graph1.png" width="480">
+<p>
+バイラテラルフィルタでは、これが輝度によっても変わるので、重みのグラフは次のようになります。
+</p>
+<image src = "graph2.png" width="480">
+<p>
+エッジを強く残したいときは、輝度の差による重みの変化を大きくすれば（分散を小さくすれば）よく、次のようなグラフになります。
+</p>
+<image src = "graph3.png" width="480">
+<p>
+輝度の差の分散を大きくすれば、ガウスフィルタに近づいていきます
+（または、フィルタのテクセルの幅を小さくして少しだけぼかすとき）。<br>
+たとえば、σ<sub>x</sub>=1, σ<sub>d</sub>=2の時は下のようなグラフになります。
+</p>
+<image src = "graph4.png" width="480">
+
+<p>
+元画像がこんなだったとします。
+</p>
+<image src = "fine.jpg">
+<p>
+バイラテラルフィルタで距離の分散を大きく(σ<sub>x</sub>=5)して、輝度の分散を小さく(σ<sub>d</sub>=0.2)すると次のようになります。<br>
+ぼやけるところはぼやけていますが、境界部分などは比較的はっきりしています。
+</p>
+<image src = "02_5.jpg">
+<p>
+ちなみに全体的にぼかしたとき(σ<sub>d</sub>=1, σ<sub>x</sub>=5)は、下のようになり、
+</p>
+<image src = "1_5.jpg">
+<p>
+距離の分散を小さく(σ<sub>x</sub>=0.01)すると全体的にはっきりします(σ<sub>d</sub>=1)。
+</p>
+<image src = "1_001.jpg">
+<p>
+まぁ、でもこのサンプル画像はよくないかもね。
+</p>
+
+
+<h2>■実装</h2>
+
+<p>
+２パスで17x17テクセルのガウスぼかしのプログラムを変更することによって実装をしてみました。<br>
+中心以外のテクセルは、隣接したテクセルの平均値を使って２テクセル同時に計算しています。<br>
+１パス目で横方向にぼかします。
+</p>
+<image src = "x.jpg">
+<p>
+重みの和をアルファ成分に格納して、ぼかしの２パス目の出力時にアルファで割ることによって
+重みの正規化をしています(だから浮動小数点バッファが必要です)。<br>
+したがって、１パス目の後の画像は全体的な輝度がおかしくなっています。<br>
+２パス目の縦方向にぼかした結果が次のものです。
+</p>
+<image src = "y.jpg">
+<p>
+ガウスぼかしと違うのは、輝度の差で重みを調整しているということです。<br>
+今回は、輝度の差の２乗を使うということで、RGBの各成分の色の差を内積命令で合成して使っています。
+</p>
+<p>
+１パス目のシェーダプログラムは次のようなもんです。<br>
+この前のもと素材の生成時には、アルファ成分に１を書き込むようなレンダリングをしています。
+</p>
+<pre class="CodeBlock">
+main.fx
+ 141: float4 RenderGaussX( in float2 OriginalUV : TEXCOORD0 ) : COLOR 
+ 142: {
+ 143:      float4 Color;
+ 144:      
+ 145:      half4 t00 = tex2D( MeshTextureSampler, OriginalUV );
+ 146:      half4 t10 = tex2D( MeshTextureSampler, OriginalUV + half2(vBias<FONT COLOR="#FF0000">.</FONT>x, <FONT COLOR="#FF0000">0</FONT>));
+ 147:      half4 t11 = tex2D( MeshTextureSampler, OriginalUV - half2(vBias<FONT COLOR="#FF0000">.</FONT>x, <FONT COLOR="#FF0000">0</FONT>));
+ 148:      half4 t20 = tex2D( MeshTextureSampler, OriginalUV + half2(vBias<FONT COLOR="#FF0000">.</FONT>y, <FONT COLOR="#FF0000">0</FONT>));
+ 149:      half4 t21 = tex2D( MeshTextureSampler, OriginalUV - half2(vBias<FONT COLOR="#FF0000">.</FONT>y, <FONT COLOR="#FF0000">0</FONT>));
+ 150:      half4 t30 = tex2D( MeshTextureSampler, OriginalUV + half2(vBias<FONT COLOR="#FF0000">.</FONT>z, <FONT COLOR="#FF0000">0</FONT>));
+ 151:      half4 t31 = tex2D( MeshTextureSampler, OriginalUV - half2(vBias<FONT COLOR="#FF0000">.</FONT>z, <FONT COLOR="#FF0000">0</FONT>));
+ 152:      half4 t40 = tex2D( MeshTextureSampler, OriginalUV + half2(vBias<FONT COLOR="#FF0000">.</FONT>w, <FONT COLOR="#FF0000">0</FONT>));
+ 153:      half4 t41 = tex2D( MeshTextureSampler, OriginalUV - half2(vBias<FONT COLOR="#FF0000">.</FONT>w, <FONT COLOR="#FF0000">0</FONT>));
+ 154:      
+ 155:      <FONT COLOR="#008040">// 中心との色の差</FONT>
+ 156:      half3 d10 = t10<FONT COLOR="#FF0000">.</FONT>rgb - t00<FONT COLOR="#FF0000">.</FONT>rgb;
+ 157:      half3 d20 = t20<FONT COLOR="#FF0000">.</FONT>rgb - t00<FONT COLOR="#FF0000">.</FONT>rgb;
+ 158:      half3 d30 = t30<FONT COLOR="#FF0000">.</FONT>rgb - t00<FONT COLOR="#FF0000">.</FONT>rgb;
+ 159:      half3 d40 = t40<FONT COLOR="#FF0000">.</FONT>rgb - t00<FONT COLOR="#FF0000">.</FONT>rgb;
+ 160:      half3 d11 = t11<FONT COLOR="#FF0000">.</FONT>rgb - t00<FONT COLOR="#FF0000">.</FONT>rgb;
+ 161:      half3 d21 = t21<FONT COLOR="#FF0000">.</FONT>rgb - t00<FONT COLOR="#FF0000">.</FONT>rgb;
+ 162:      half3 d31 = t31<FONT COLOR="#FF0000">.</FONT>rgb - t00<FONT COLOR="#FF0000">.</FONT>rgb;
+ 163:      half3 d41 = t41<FONT COLOR="#FF0000">.</FONT>rgb - t00<FONT COLOR="#FF0000">.</FONT>rgb;
+ 164: 
+ 165:      <FONT COLOR="#008040">// 中心との色の強さの差の２乗</FONT>
+ 166:      half4 l0, l1;
+ 167:      l0<FONT COLOR="#FF0000">.</FONT>x = dot(d10, d10);
+ 168:      l0<FONT COLOR="#FF0000">.</FONT>y = dot(d20, d20);
+ 169:      l0<FONT COLOR="#FF0000">.</FONT>z = dot(d30, d30);
+ 170:      l0<FONT COLOR="#FF0000">.</FONT>w = dot(d40, d40);
+ 171:      l1<FONT COLOR="#FF0000">.</FONT>x = dot(d11, d11);
+ 172:      l1<FONT COLOR="#FF0000">.</FONT>y = dot(d21, d21);
+ 173:      l1<FONT COLOR="#FF0000">.</FONT>z = dot(d31, d31);
+ 174:      l1<FONT COLOR="#FF0000">.</FONT>w = dot(d41, d41);
+ 175:      
+ 176:      l0 = weight * exp(coeff_l * l0);
+ 177:      l1 = weight * exp(coeff_l * l1);
+ 178: 
+ 179:      Color  = t00;
+ 180:      Color += l0<FONT COLOR="#FF0000">.</FONT>x * t10 + l1<FONT COLOR="#FF0000">.</FONT>x * t11;
+ 181:      Color += l0<FONT COLOR="#FF0000">.</FONT>y * t20 + l1<FONT COLOR="#FF0000">.</FONT>y * t21;
+ 182:      Color += l0<FONT COLOR="#FF0000">.</FONT>z * t30 + l1<FONT COLOR="#FF0000">.</FONT>z * t31;
+ 183:      Color += l0<FONT COLOR="#FF0000">.</FONT>w * t40 + l1<FONT COLOR="#FF0000">.</FONT>w * t41;
+ 184:      
+ 185:      <FONT COLOR="#0000FF">return</FONT> Color / <FONT COLOR="#FF0000">4</FONT>;<FONT COLOR="#008040">// 全部足すと精度が足りないようなので、適当に割っとく</FONT>
+ 186: }
+</pre>
+<p>
+最初、適当に作ったら、ps 2.0に収まらなかったので、係数をベクトルにするなどの最適化をしているので、見づらくなっています。すまん(まぁ、テクスチャ座標の計算を最適化しろとの声もありますが…)。
+</p>
+<p>
+２パス目のシェーダは次です。
+</p>
+<pre class="CodeBlock">
+main.fx
+ 199: float4 RenderGaussY( in float2 OriginalUV : TEXCOORD0 ) : COLOR 
+ 200: {
+ 201:      float4 Color;
+ 202:      
+ 203:      half4 t00 = tex2D( MeshTextureSampler, OriginalUV );
+ 204:      half4 t10 = tex2D( MeshTextureSampler, OriginalUV + <FONT COLOR="#FFff00">half2(<FONT COLOR="#FF0000">0</FONT>, hBias<FONT COLOR="#FF0000">.</FONT>x)</FONT>);
+ 205:      half4 t11 = tex2D( MeshTextureSampler, OriginalUV - <FONT COLOR="#FFff00">half2(<FONT COLOR="#FF0000">0</FONT>, hBias<FONT COLOR="#FF0000">.</FONT>x)</FONT>);
+ 206:      half4 t20 = tex2D( MeshTextureSampler, OriginalUV + <FONT COLOR="#FFff00">half2(<FONT COLOR="#FF0000">0</FONT>, hBias<FONT COLOR="#FF0000">.</FONT>y)</FONT>);
+ 207:      half4 t21 = tex2D( MeshTextureSampler, OriginalUV - <FONT COLOR="#FFff00">half2(<FONT COLOR="#FF0000">0</FONT>, hBias<FONT COLOR="#FF0000">.</FONT>y)</FONT>);
+ 208:      half4 t30 = tex2D( MeshTextureSampler, OriginalUV + <FONT COLOR="#FFff00">half2(<FONT COLOR="#FF0000">0</FONT>, hBias<FONT COLOR="#FF0000">.</FONT>z)</FONT>);
+ 209:      half4 t31 = tex2D( MeshTextureSampler, OriginalUV - <FONT COLOR="#FFff00">half2(<FONT COLOR="#FF0000">0</FONT>, hBias<FONT COLOR="#FF0000">.</FONT>z)</FONT>);
+ 210:      half4 t40 = tex2D( MeshTextureSampler, OriginalUV + <FONT COLOR="#FFff00">half2(<FONT COLOR="#FF0000">0</FONT>, hBias<FONT COLOR="#FF0000">.</FONT>w)</FONT>);
+ 211:      half4 t41 = tex2D( MeshTextureSampler, OriginalUV - <FONT COLOR="#FFff00">half2(<FONT COLOR="#FF0000">0</FONT>, hBias<FONT COLOR="#FF0000">.</FONT>w)</FONT>);
+ 212:      
+ 213:      <FONT COLOR="#008040">// 中心との色の差</FONT>
+ 214:      half3 d10 = t10<FONT COLOR="#FF0000">.</FONT>rgb - t00<FONT COLOR="#FF0000">.</FONT>rgb;
+           <FONT COLOR="#FF0000">この間は１パス目と同じ</FONT>
+ 241:      Color += l0<FONT COLOR="#FF0000">.</FONT>w * t40 + l1<FONT COLOR="#FF0000">.</FONT>w * t41;
+ 242:      
+ 243:      <FONT COLOR="#0000FF">return</FONT> <FONT COLOR="#FFff00">Color/Color<FONT COLOR="#FF0000">.</FONT>a</FONT>;
+ 244: }
+</pre>
+<p>
+まぁ、exp が重いと思う人は、テーブル化するなり（区分）線形化すると良いのではないでしょうか。
+</p>
+
+
+<p>
+輝度の差に関する係数 coeff_l は、あらかじめ符号などに関して前処理をします。
+</p>
+
+<pre class="CodeBlock">
+main.cpp
+ 153: <FONT COLOR="#0000FF">static</FONT> <FONT COLOR="#0000FF">void</FONT> SetGaussRadius()
+ 154: {
+ 155: 	<FONT COLOR="#0000FF">const</FONT> <FONT COLOR="#0000FF">float</FONT> range = <FONT COLOR="#FF0000">1.0</FONT>;
+ 156: 	SetGaussWeight(g_fRadiusX);
+ 157: 	
+ 158:     D3DXVECTOR4  width(<FONT COLOR="#FF0000">1.5</FONT>f*range/SCREEN_WIDTH,  <FONT COLOR="#FF0000">3.5</FONT>f*range/SCREEN_WIDTH,  <FONT COLOR="#FF0000">5.5</FONT>f*range/SCREEN_WIDTH,  <FONT COLOR="#FF0000">7.5</FONT>f*range/SCREEN_WIDTH);
+ 159:     D3DXVECTOR4 height(<FONT COLOR="#FF0000">1.5</FONT>f*range/SCREEN_HEIGHT, <FONT COLOR="#FF0000">3.5</FONT>f*range/SCREEN_HEIGHT, <FONT COLOR="#FF0000">5.5</FONT>f*range/SCREEN_HEIGHT, <FONT COLOR="#FF0000">7.5</FONT>f*range/SCREEN_HEIGHT);
+ 160:     
+ 161:     <FONT COLOR="#0000FF">if</FONT>(g_pEffect)
+ 162:     {
+ 163: 		g_pEffect-&gt;SetVector(<FONT COLOR="#FF0000">&quot;vBias&quot;</FONT>,  &amp;width);
+ 164: 		g_pEffect-&gt;SetVector(<FONT COLOR="#FF0000">&quot;hBias&quot;</FONT>, &amp;height);
+ 165: 		g_pEffect-&gt;SetFloat(<FONT COLOR="#FF0000">&quot;coeff_l&quot;</FONT>, -<FONT COLOR="#FF0000">0.5</FONT>f/(g_fRadiusL*g_fRadiusL));
+ 166: 	}
+ 167: }
+</pre>
+<p>
+また、テクセル間の距離に関する重みは、前もって計算しておきます。
+</p>
+<pre class="CodeBlock">
+main.cpp
+ 135: <FONT COLOR="#0000FF">static</FONT> <FONT COLOR="#0000FF">void</FONT> SetGaussWeight(<FONT COLOR="#0000FF">float</FONT> radius=<FONT COLOR="#FF0000">1.0</FONT>)
+ 136: {
+ 139: 	<FONT COLOR="#0000FF">float</FONT> dispersion = radius * radius;
+ 140: 	<FONT COLOR="#0000FF">const</FONT> <FONT COLOR="#0000FF">unsigned</FONT> <FONT COLOR="#0000FF">int</FONT> WEIGHT_MUN = <FONT COLOR="#FF0000">4</FONT>;
+ 141: 	<FONT COLOR="#0000FF">float</FONT> tbl[WEIGHT_MUN];
+ 142:     DWORD i;
+ 143:  
+ 144:     <FONT COLOR="#0000FF">for</FONT>( i=<FONT COLOR="#FF0000">0</FONT>; i&lt;WEIGHT_MUN; i++ ){
+ 145: 		<FONT COLOR="#008040">// 2テクセルまとめて処理するので２倍</FONT>
+ 146:         tbl[i] = <FONT COLOR="#FF0000">2.0</FONT>f * expf(-<FONT COLOR="#FF0000">0.5</FONT>f*((<FONT COLOR="#FF0000">2.0</FONT>f*(FLOAT)i+<FONT COLOR="#FF0000">1.5</FONT>f)*(<FONT COLOR="#FF0000">2.0</FONT>f*(FLOAT)i+<FONT COLOR="#FF0000">1.5</FONT>f))/dispersion);
+ 147:     }
+ 148:  
+ 149:     <FONT COLOR="#0000FF">if</FONT>(g_pEffect) g_pEffect-&gt;SetVector(<FONT COLOR="#FF0000">&quot;weight&quot;</FONT>, (<FONT COLOR="#0000FF">const</FONT> D3DXVECTOR4 *)tbl);
+ 150:  
+ 151: }
+</pre>
+
+
+<h2>■最後に</h2>
+
+
+<p>
+はやりもののフィルタらしいですねぇ。<br>
+何度もかけるとトゥーンシェーディングになるようです。<br>
+これ自体で、云々はないのかもしれないのですが、画像処理的には使えそうな感じがします。
+</p>
+
+
+</div>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<center>
+<hr>
+<p><a href="../index.html">もどる</a></p>
+<p><a href="mailto:imagire@gmail.com">imagire@gmail.com</a></p>
+</center>
+
+</body>
+</html>

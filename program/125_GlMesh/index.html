@@ -1,0 +1,436 @@
+<head>
+	<title>t-pot『OpenGL:メッシュ表示』</title>
+	<link rel="stylesheet" type="text/css" href="../if.css">
+</head>
+<meta http-equiv=Content-Type content="text/html; charset=shift_jis">
+<body>
+
+
+<div class="contents">
+<center>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<h1>OpenGL:メッシュ表示</h1><br>
+<h3>～ OpenGL: Rendering meshes  ～</h3>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<image src = "title.png">
+<br>
+<hr>
+</center>
+<div>
+
+
+<h2>■はじめに</h2>
+
+
+<p>
+碁石の表示に glutSolidSphere を使っていたのですが、
+さすがにそれは無いだろうということで独自メッシュで表示するようにしてみました。<br>
+まぁ、シェーディングしてないので、こんなのにしたところでたいしたことはないですな
+</p>
+<p>
+今回のプログラムは、次のものです。<br>
+タイトル画面でほっぽっておくとデモモードに突入します。
+</p>
+<ul style = "LIST-STYLE-TYPE:none">
+<li><a href="hikago102.zip">hikago102.zip (飛花碁 実行ファイル:Windows, GLUT)</a>
+<li><a href="hikago102_src.zip">hikago102_src.zip (飛花碁 ソース:ツール)</a>
+</ul>
+<p>
+ソースには、いつものように大量にファイルが入っています。
+今回関係するファイルは次のものです。
+</p>
+<table>
+<tr><td><a href="te_model_h.html">src/Include/TE/te_model.h</a></td><td>アプリケーションのとのインターフェイス</td></tr>
+<tr><td><a href="te_tem_struct_h.html">src/Engine/model/te_tem_struct.h</a></td><td>メッシュデータの構造体</td></tr>
+<tr><td><a href="te_tms_h.html">src/Engine/model/te_tms.h</a></td><td>メュシュクラスのヘッダ</td></tr>
+<tr><td><a href="te_tms_cpp.html">src/Engine/model/te_tms.cpp</a></td><td>メュシュクラスの実体</td></tr>
+</table>
+
+<p>
+まだ「仕事でもこんな感じでやってるの？」とか聞いてくる人がいますが、
+家で扱いやすい手っ取り早い環境として構築しているので、
+仕事でやってることとは全然関係ないと考えてください。
+</p>
+
+
+<h2>■簡単なやつ</h2>
+
+
+<p>
+最初に一番簡単なポリゴンの描画方法をおさらいしておきましょう。<br>
+OpenGLでのポリゴンの描画は、glBegin, glEnd で囲って、その中で glVertex3f 等の関数で頂点位置を指定していきます。<br>
+glBegin で描画する種類を指定しますが、GL_TRIANGLES を使うと頂点指定３つおきにポリゴンが描画されます。<br>
+各 glVertex3f の前に、glNormal3f や、glTexCoord2f で法線ベクトルやテクスチャ座標を指定すると、それらのデータを使って描画します。
+</p>
+<pre class="CodeBlock">
+    glBegin( GL_TRIANGLES ); <font color="cyan">// 描画開始(3角形ポリゴン)</font>
+    
+    <font color="cyan">// １つ目の頂点の設定</font>
+    glNormal3f  ( 0.0, 1.0, 0.0); <font color="cyan">// 法線ベクトルの設定</font>
+    glTexCoord2f( 0.0, 0.0 ); <font color="cyan">// テクスチャ座標の設定</font>
+    glVertex3f  ( 1.0, 0.0, 0.0); <font color="cyan">// 位置座標の設定</font>
+    <font color="cyan">// ２つ目の頂点の設定</font>
+    glNormal3f  ( 0.0, 1.0, 0.0);
+    glTexCoord2f( 1.0, 0.0 );
+    glVertex3f  ( 0.0, 0.0,-1.0);
+    <font color="cyan">// ３つ目の頂点の設定</font>
+    glNormal3f  ( 0.0, 1.0, 0.0);
+    glTexCoord2f( 0.0, 1.0 );
+    glVertex3f  (-1.0, 0.0, 0.0); <font color="cyan">// このコマンドでポリゴンが描画される)</font>
+    
+    <font color="cyan">// 2つ以上のポリゴンを描画するときは、ここにコマンドを追加</font>
+    
+    glEnd();              <font color="cyan">// 描画終了</font>
+</pre>
+
+<p>
+glVertex3f の後に「v」をつけた glVertex3fv 等を使うと、浮動小数点配列をベクトルとみなして１つの引数だけで各データの設定を行うことができます。<br>
+こちらの方がシステマチックな処理をするのに向いています。
+</p>
+
+<pre class="CodeBlock">
+    const int vertex_count = 3;
+    GLfloat p[3][]={{ 1.0, 0.0, 0.0}, { 0.0, 0.0,-1.0}, {-1.0, 0.0, 0.0}}; <font color="cyan">// 位置座標</font>
+    GLfloat n[3][]={{ 0.0, 1.0, 0.0}, { 0.0, 1.0, 0.0}, { 0.0, 1.0, 0.0}}; <font color="cyan">// 法線ベクトル</font>
+    GLfloat t[2][]={{ 0.0, 0.0,    }, { 1.0, 0.0,    }, { 0.0, 1.0,    }}; <font color="cyan">// テクスチャ座標</font>
+    
+    glBegin( GL_TRIANGLES ); <font color="cyan">// 描画開始(3角形ポリゴン)</font>
+    
+    for( int i=0; i < vertex_count; i++ )
+    {
+        glNormal3fv  ( n[i] ); <font color="cyan">// 法線ベクトルの設定</font>
+        glTexCoord2fv( t[i] ); <font color="cyan">// テクスチャ座標の設定</font>
+        glVertex3fv  ( p[i] ); <font color="cyan">// 位置座標の設定(3の倍数回目のこのコマンドでポリゴンが描画される)</font>
+    } 
+    
+    glEnd();              <font color="cyan">// 描画終了</font>
+</pre>
+
+<p>
+いや、こんなのデモとか負荷に余裕がある部分で無い限りありえないでしょ。<br>
+いちいちこんな関数呼び出して設定してたらCPUの無駄使いしすぎ。<br>
+製品レベルでこんな方法使ってる人なんていないでしょ。もっといい方法ないの?<br>
+と、思って当たり前ですよね。<br>
+もっと効率的な方法がいくつもあるらしいので、ちょっとやってみましょう。
+</p>
+
+
+<h2>■ディスプレイリスト</h2>
+
+
+<p>
+OpenGLでは、gl*** といったコマンドを保存して必要なときにそれらのコマンド群を呼び出す機能があります。<br>
+静的な情報なら、コマンドを保存しておけば、（ドライバしだいで）最適化された情報が作られ、もしくはグラフィックシステムのほうにあらかじめ送っておくことができるので高速化が期待されます。
+</p>
+<p>
+ディスプレイリストの使い方は、最初に glNewList と glEndList で囲った中にOpenGLのコマンドを列挙して溜め込んでおき、描画時に glCallList でそのディスプレイリストを呼び出します。<br>
+ディスプレイリストは、複数用意することができます。それらを区別するためにユニークなIDを用意しなくてはなりませんが、それは、glGenLists で確保することができます。
+</p>
+<p>
+初期化時のプログラムは次のようになります。
+</p>
+<pre class="CodeBlock">
+te_tms.cpp
+<font color="deepskyblue">0085:</font>     const PTMS_HEADER pHeader = (const PTMS_HEADER)p;<font color="cyan">// データのヘッダ。独自形式なので気にするな</font>
+<font color="deepskyblue">0086:</font>     _nVertex = pHeader->vertex_count;<font color="cyan">// 頂点数</font>
+<font color="deepskyblue">0087:</font>     
+<font color="deepskyblue">0091:</font>     _pPosition = (const float *)(pHeader+1);<font color="cyan">// 頂点座標の配列へのポインタ</font>
+<font color="deepskyblue">0092:</font>     _pNormal   = _pPosition + 3 * _nVertex;<font color="cyan">// 法線ベクトル配列へのポインタ</font>
+<font color="deepskyblue">0093:</font>     _pTexCoord = _pNormal   + 3 * _nVertex;<font color="cyan">// テクスチャ座標配列へのポインタ</font>
+<font color="deepskyblue">0094:</font> 
+<font color="deepskyblue">0096:</font>     <font color="yellow">_iDisplayList = glGenLists(1);</font><font color="cyan">// ディスプレイ・リストを生成する（ユニークなIDの発行）</font>
+<font color="deepskyblue">0097:</font>     <font color="yellow">glNewList( _iDisplayList, GL_COMPILE );</font><font color="cyan">// ディスプレイ・リストを作成</font>
+<font color="deepskyblue">0098:</font> 
+<font color="deepskyblue">0099:</font>         <font color="cyan">// ディスプレイリストの作成</font>
+<font color="deepskyblue">0100:</font>         glBegin( GL_TRIANGLES );
+<font color="deepskyblue">0101:</font>         for( unsigned int i = 0; i < _nVertex; i++ )
+<font color="deepskyblue">0102:</font>         {
+<font color="deepskyblue">0103:</font>             glNormal3fv  (   _pNormal ); _pNormal   += 3;
+<font color="deepskyblue">0104:</font>             glTexCoord2fv( _pTexCoord ); _pTexCoord += 2;
+<font color="deepskyblue">0105:</font>             glVertex3fv  ( _pPosition ); _pPosition += 3;
+<font color="deepskyblue">0106:</font>         }
+<font color="deepskyblue">0107:</font>         glEnd();
+<font color="deepskyblue">0108:</font> 
+<font color="deepskyblue">0109:</font>     <font color="yellow">glEndList();</font><font color="cyan">// ディスプレイリストを保存する</font>
+</pre>
+<p>
+描画時は、次のように glCallList を呼び出すだけです。
+</p>
+<pre class="CodeBlock">
+te_tms.cpp
+<font color="deepskyblue">0219:</font> void CTms::Render( )
+<font color="deepskyblue">0220:</font> {
+<font color="deepskyblue">0222:</font>     <font color="yellow">glCallList( _iDisplayList );</font>
+<font color="deepskyblue">0253:</font> }
+</pre>
+<p>
+最後は、glDeleteLists で使っているメモリを開放します。
+</p>
+<pre class="CodeBlock">
+te_tms.cpp
+<font color="deepskyblue">0138:</font> CTms::~CTms( )
+<font color="deepskyblue">0139:</font> {
+<font color="deepskyblue">0141:</font>     <font color="yellow">glDeleteLists( _iDisplayList, 1 );</font>
+<font color="deepskyblue">0155:</font> }
+</pre>
+<p>
+<a href="http://www.sci.utah.edu/~bavoil/opengl/vbo/">噂</a>では、この方法が一番早いらしいので、とりあえず、この方法を身につけておけばよいでしょう。
+</p>
+
+
+<h2>■頂点配列</h2>
+
+<p>
+ディスプレイリストもいいんですが、実際問題、一個一個頂点や法線ベクトルを設定するなんてやってられないわけですよ。<br>
+それに、パフォーマンスを求められる場所は、データ化されている場合が多いのであらかじめ静的なデータを準備して、それらを処理できるようになっている方が便利になってきます。<br>
+ということかどうかは分からんですが、浮動小数点数の配列を一気に設定する機能があります。それが頂点配列です。
+</p>
+<p>
+頂点配列では、glVertex3f などの関数の代わりに glVertexPointer をつかって、データ配列の先等のポインタを指定します。そして、glDrawArraysを使って一気に描画します。なお、使うときには、glEnableClientState を使ってあらかじめ頂点配列を使うことを宣言しておく必要があります。
+</p>
+<p>
+次の例でも分かるように、頂点配列は、ディスプレイリスト化しなくても使うことができます。
+</p>
+
+<pre class="CodeBlock">
+te_tms.cpp
+<font color="deepskyblue">0216:</font> <font color="cyan">// ---------------------------------------------------------------------------</font>
+<font color="deepskyblue">0217:</font> <font color="cyan">// 描画</font>
+<font color="deepskyblue">0218:</font> <font color="cyan">// ---------------------------------------------------------------------------</font>
+<font color="deepskyblue">0219:</font> <font color="blue">void</font> CTms::Render( )
+<font color="deepskyblue">0220:</font> {
+<font color="deepskyblue">0224:</font>     <font color="cyan">// データ配列を有効にする</font>
+<font color="deepskyblue">0225:</font>     glEnableClientState( GL_VERTEX_ARRAY );
+<font color="deepskyblue">0226:</font>     glEnableClientState( GL_NORMAL_ARRAY );
+<font color="deepskyblue">0227:</font>     glEnableClientState( GL_TEXTURE_COORD_ARRAY );
+<font color="deepskyblue">0228:</font> 
+<font color="deepskyblue">0229:</font>     <font color="cyan">// データをポインタにセットする</font>
+<font color="deepskyblue">0239:</font>     {
+<font color="deepskyblue">0240:</font>         glVertexPointer( 3, GL_FLOAT, 0, _pPosition );
+<font color="deepskyblue">0241:</font>         glNormalPointer( GL_FLOAT, 0, _pNormal );
+<font color="deepskyblue">0242:</font>         glTexCoordPointer( 2, GL_FLOAT, 0, _pTexCoord );
+<font color="deepskyblue">0243:</font>     }
+<font color="deepskyblue">0244:</font>     
+<font color="deepskyblue">0245:</font>     <font color="cyan">// 描画</font>
+<font color="deepskyblue">0246:</font>     glDrawArrays( GL_TRIANGLES, 0, _nVertex );
+<font color="deepskyblue">0247:</font> 
+<font color="deepskyblue">0248:</font>     <font color="cyan">// データ配列を無効にする</font>
+<font color="deepskyblue">0249:</font>     glDisableClientState( GL_VERTEX_ARRAY );
+<font color="deepskyblue">0250:</font>     glDisableClientState( GL_NORMAL_ARRAY );
+<font color="deepskyblue">0251:</font>     glDisableClientState( GL_TEXTURE_COORD_ARRAY );
+<font color="deepskyblue">0253:</font> }
+</pre>
+
+<h2>■頂点バッファオブジェクト</h2>
+
+
+<p>
+で、OpenGL 1.5 から使えるようになったのが<a href="http://oss.sgi.com/projects/ogl-sample/registry/ARB/vertex_buffer_object.txt">「Buffer Objects」</a>というやつらしいです。これは、色々な配列をグラフィックスシステムのメモリに置くことによってパフォーマンスをあげようというものです。<br>
+なんか、<a href="http://nehe.gamedev.net/">NeHe Productionsさん</a>に<a href="http://nehe.gamedev.net/data/lessons/lesson.asp?lesson=45">いいお手本</a>があるらしいので、これをリスペクトしてみましょう。
+</p>
+<p>
+Extension を使うので、それらの関数ポインタを用意する必要があります。
+これらは適当にサンプルから拝借してきましょう。
+</p>
+<pre class="CodeBlock">
+te_tms.cpp
+<font color="deepskyblue">0015:</font> <font color="cyan">// glext.h からの VBO Extension の定義</font>
+<font color="deepskyblue">0016:</font> <font color="blue">#define</font> GL_ARRAY_BUFFER_ARB 0x8892
+<font color="deepskyblue">0017:</font> <font color="blue">#define</font> GL_STATIC_DRAW_ARB 0x88E4
+<font color="deepskyblue">0018:</font> <font color="blue">typedef</font> <font color="blue">void</font> (APIENTRY * PFNGLBINDBUFFERARBPROC)    (GLenum target, GLuint buffer);
+<font color="deepskyblue">0019:</font> <font color="blue">typedef</font> <font color="blue">void</font> (APIENTRY * PFNGLDELETEBUFFERSARBPROC) (GLsizei n, <font color="blue">const</font> GLuint *buffers);
+<font color="deepskyblue">0020:</font> <font color="blue">typedef</font> <font color="blue">void</font> (APIENTRY * PFNGLGENBUFFERSARBPROC)    (GLsizei n, GLuint *buffers);
+<font color="deepskyblue">0021:</font> <font color="blue">typedef</font> <font color="blue">void</font> (APIENTRY * PFNGLBUFFERDATAARBPROC)    (GLenum target, <font color="blue">int</font> size, <font color="blue">const</font> GLvoid *data, GLenum usage);
+<font color="deepskyblue">0022:</font> 
+<font color="deepskyblue">0023:</font> <font color="cyan">// VBO Extension 関数のポインタ</font>
+<font color="deepskyblue">0024:</font> PFNGLGENBUFFERSARBPROC glGenBuffersARB = NULL;                  <font color="cyan">// VBO 名前生成</font>
+<font color="deepskyblue">0025:</font> PFNGLBINDBUFFERARBPROC glBindBufferARB = NULL;                  <font color="cyan">// VBO 結びつけ</font>
+<font color="deepskyblue">0026:</font> PFNGLBUFFERDATAARBPROC glBufferDataARB = NULL;                  <font color="cyan">// VBO データロード</font>
+<font color="deepskyblue">0027:</font> PFNGLDELETEBUFFERSARBPROC glDeleteBuffersARB = NULL;            <font color="cyan">// VBO 削除</font>
+</pre>
+<p>
+使う関数自体は、wglGetProcAddress で所得することができます。
+</p>
+<pre class="CodeBlock">
+te_tms.cpp
+<font color="deepskyblue">0190:</font> <font color="cyan">// ---------------------------------------------------------------------------</font>
+<font color="deepskyblue">0191:</font> <font color="cyan">// 描画能力を検証する</font>
+<font color="deepskyblue">0192:</font> <font color="cyan">// ---------------------------------------------------------------------------</font>
+<font color="deepskyblue">0193:</font> <font color="blue">void</font> CTms::CheckDeviceAbility()
+<font color="deepskyblue">0194:</font> {
+<font color="deepskyblue">0200:</font>     <font color="cyan">// VBO のサポートを確認する</font>
+<font color="deepskyblue">0202:</font>     _fVBOSupported = IsExtensionSupported( "<font color="blue">GL_ARB_vertex_buffer_object</font>" );
+<font color="deepskyblue">0203:</font>     <font color="blue">if</font>( _fVBOSupported )
+<font color="deepskyblue">0204:</font>     {
+<font color="deepskyblue">0205:</font>         <font color="cyan">// GL 関数のポインタを所得する</font>
+<font color="deepskyblue">0206:</font>         glGenBuffersARB = (PFNGLGENBUFFERSARBPROC) wglGetProcAddress("<font color="blue">glGenBuffersARB</font>");
+<font color="deepskyblue">0207:</font>         glBindBufferARB = (PFNGLBINDBUFFERARBPROC) wglGetProcAddress("<font color="blue">glBindBufferARB</font>");
+<font color="deepskyblue">0208:</font>         glBufferDataARB = (PFNGLBUFFERDATAARBPROC) wglGetProcAddress("<font color="blue">glBufferDataARB</font>");
+<font color="deepskyblue">0209:</font>         glDeleteBuffersARB = (PFNGLDELETEBUFFERSARBPROC) wglGetProcAddress("<font color="blue">glDeleteBuffersARB</font>");
+<font color="deepskyblue">0210:</font>     }
+<font color="deepskyblue">0214:</font> }
+</pre>
+<p>
+その前に、Extension がサポートされているのか調べましょう。
+glGetString(GL_EXTENSIONS) で、使える Extension 一覧が所得できるので、その中で必要なものがあるか調べます。
+</p>
+<pre class="CodeBlock">
+te_tms.cpp
+<font color="deepskyblue">0157:</font> <font color="cyan">// ---------------------------------------------------------------------------</font>
+<font color="deepskyblue">0158:</font> <font color="cyan">// エクステンションのサポートを調べる</font>
+<font color="deepskyblue">0159:</font> <font color="cyan">// ---------------------------------------------------------------------------</font>
+<font color="deepskyblue">0160:</font> <font color="blue">static</font> <font color="blue">bool</font> IsExtensionSupported( <font color="blue">char</font>* szTargetExtension )
+<font color="deepskyblue">0161:</font> {
+<font color="deepskyblue">0162:</font>     <font color="blue">const</font> <font color="blue">unsigned</font> <font color="blue">char</font> *pszExtensions = NULL;
+<font color="deepskyblue">0163:</font>     <font color="blue">const</font> <font color="blue">unsigned</font> <font color="blue">char</font> *pszStart;
+<font color="deepskyblue">0164:</font>     <font color="blue">unsigned</font> <font color="blue">char</font> *pszWhere, *pszTerminator;
+<font color="deepskyblue">0165:</font> 
+<font color="deepskyblue">0166:</font>     <font color="cyan">// Extension の名前が正しいか調べる(NULLや空白が入っちゃ駄目)</font>
+<font color="deepskyblue">0167:</font>     pszWhere = (<font color="blue">unsigned</font> <font color="blue">char</font> *) strchr( szTargetExtension, '<font color="blue"> </font>' );
+<font color="deepskyblue">0168:</font>     <font color="blue">if</font>( pszWhere || *szTargetExtension == '<font color="blue">\0</font>' )
+<font color="deepskyblue">0169:</font>         <font color="blue">return</font> <font color="blue">false</font>;
+<font color="deepskyblue">0170:</font> 
+<font color="deepskyblue">0171:</font>     <font color="cyan">// Extension の文字列を所得する</font>
+<font color="deepskyblue">0172:</font>     pszExtensions = glGetString( GL_EXTENSIONS );
+<font color="deepskyblue">0173:</font> 
+<font color="deepskyblue">0174:</font>     <font color="cyan">// 文字列の中に必要な extension があるか調べる</font>
+<font color="deepskyblue">0175:</font>     pszStart = pszExtensions;
+<font color="deepskyblue">0176:</font>     <font color="blue">for</font>(;;)
+<font color="deepskyblue">0177:</font>     {
+<font color="deepskyblue">0178:</font>         pszWhere = (<font color="blue">unsigned</font> <font color="blue">char</font> *) strstr( (<font color="blue">const</font> <font color="blue">char</font> *) pszStart, szTargetExtension );
+<font color="deepskyblue">0179:</font>         <font color="blue">if</font>( !pszWhere )
+<font color="deepskyblue">0180:</font>             <font color="blue">break</font>;
+<font color="deepskyblue">0181:</font>         pszTerminator = pszWhere + strlen( szTargetExtension );
+<font color="deepskyblue">0182:</font>         <font color="blue">if</font>( pszWhere == pszStart || *( pszWhere - 1 ) == '<font color="blue"> </font>' )
+<font color="deepskyblue">0183:</font>             <font color="blue">if</font>( *pszTerminator == '<font color="blue"> </font>' || *pszTerminator == '<font color="blue">\0</font>' )
+<font color="deepskyblue">0184:</font>                 <font color="blue">return</font> <font color="blue">true</font>;
+<font color="deepskyblue">0185:</font>         pszStart = pszTerminator;
+<font color="deepskyblue">0186:</font>     }
+<font color="deepskyblue">0187:</font>     <font color="blue">return</font> <font color="blue">false</font>;
+<font color="deepskyblue">0188:</font> }
+</pre>
+<p>
+頂点バッファオブジェクトを使う時は、初期化のときに頂点バッファオブジェクトを作らなくてはなりません。<br>
+頂点バッファオブジェクトを作るには、最初に glGenBuffersARB を使ってユニークなIDを所得し、glBindBufferARB で所得したIDのバッファを有効にしてから glBufferDataARB でデータを作ります。
+</p>
+<pre class="CodeBlock">
+te_tms.cpp
+<font color="deepskyblue">0080:</font> <font color="cyan">// ---------------------------------------------------------------------------</font>
+<font color="deepskyblue">0081:</font> <font color="cyan">// コンストラクタ</font>
+<font color="deepskyblue">0082:</font> <font color="cyan">// ---------------------------------------------------------------------------</font>
+<font color="deepskyblue">0083:</font> CTms::CTms( <font color="blue">const</font> PTMS_DATA p )
+<font color="deepskyblue">0084:</font> {
+<font color="deepskyblue">0085:</font>     <font color="blue">const</font> PTMS_HEADER pHeader = (<font color="blue">const</font> PTMS_HEADER)p;
+<font color="deepskyblue">0086:</font>     _nVertex = pHeader-&gt;vertex_count;
+<font color="deepskyblue">0087:</font>     
+<font color="deepskyblue">0088:</font>     <font color="cyan">// -----------------------------------------------------------------------</font>
+<font color="deepskyblue">0089:</font>     <font color="cyan">// データ配列の所得</font>
+<font color="deepskyblue">0090:</font>     <font color="cyan">// -----------------------------------------------------------------------</font>
+<font color="deepskyblue">0091:</font>     _pPosition = (<font color="blue">const</font> <font color="blue">float</font> *)(pHeader+1);
+<font color="deepskyblue">0092:</font>     _pNormal   = _pPosition + 3 * _nVertex;
+<font color="deepskyblue">0093:</font>     _pTexCoord = _pNormal   + 3 * _nVertex;
+<font color="deepskyblue">0094:</font> 
+<font color="deepskyblue">0112:</font>     <font color="cyan">// -----------------------------------------------------------------------</font>
+<font color="deepskyblue">0113:</font>     <font color="cyan">// 頂点データをグラフィックスカードのメモリに格納する。</font>
+<font color="deepskyblue">0114:</font>     <font color="cyan">// -----------------------------------------------------------------------</font>
+<font color="deepskyblue">0115:</font>     <font color="cyan">// 位置座標バッファを生成して結びつける</font><font color="yellow">
+<font color="deepskyblue">0116:</font>     glGenBuffersARB( 1, &amp;_nVBOPosition );                           <font color="cyan">// ID を得る</font>
+<font color="deepskyblue">0117:</font>     glBindBufferARB( GL_ARRAY_BUFFER_ARB, _nVBOPosition );          <font color="cyan">// バッファを結びつける</font>
+<font color="deepskyblue">0118:</font>     glBufferDataARB( GL_ARRAY_BUFFER_ARB, _nVertex*3*<font color="blue">sizeof</font>(<font color="blue">float</font>), _pPosition, GL_STATIC_DRAW_ARB );
+<font color="deepskyblue">0119:</font> 
+<font color="deepskyblue">0120:</font>     <font color="cyan">// 法線ベクトルバッファを生成して結びつける</font>
+<font color="deepskyblue">0121:</font>     glGenBuffersARB( 1, &amp;_nVBONormal );                             <font color="cyan">// ID を得る</font>
+<font color="deepskyblue">0122:</font>     glBindBufferARB( GL_ARRAY_BUFFER_ARB, _nVBONormal );            <font color="cyan">// バッファを結びつける</font>
+<font color="deepskyblue">0123:</font>     glBufferDataARB( GL_ARRAY_BUFFER_ARB, _nVertex*3*<font color="blue">sizeof</font>(<font color="blue">float</font>), _pNormal, GL_STATIC_DRAW_ARB );
+<font color="deepskyblue">0124:</font> 
+<font color="deepskyblue">0125:</font>     <font color="cyan">// テクスチャ座標バッファを生成して結びつける</font>
+<font color="deepskyblue">0126:</font>     <font color="cyan">// Generate And Bind The Texture Coordinate Buffer</font>
+<font color="deepskyblue">0127:</font>     glGenBuffersARB( 1, &amp;_nVBOTexCoord );                           <font color="cyan">// ID を得る</font>
+<font color="deepskyblue">0128:</font>     glBindBufferARB( GL_ARRAY_BUFFER_ARB, _nVBOTexCoord );          <font color="cyan">// バッファを結びつける</font>
+<font color="deepskyblue">0129:</font>     glBufferDataARB( GL_ARRAY_BUFFER_ARB, _nVertex*2*<font color="blue">sizeof</font>(<font color="blue">float</font>), _pTexCoord, GL_STATIC_DRAW_ARB );</font>
+<font color="deepskyblue">0132:</font> }
+</pre>
+<p>
+描画する時は、glVertexPointer で頂点配列の指定をするのではなく、glBindBufferARB で頂点バッファオブジェクトを有効にしてから、glVertexPointer にヌルポを渡して設定します。
+</p>
+<pre class="CodeBlock">
+te_tms.cpp
+<font color="deepskyblue">0216:</font> <font color="cyan">// ---------------------------------------------------------------------------</font>
+<font color="deepskyblue">0217:</font> <font color="cyan">// 描画</font>
+<font color="deepskyblue">0218:</font> <font color="cyan">// ---------------------------------------------------------------------------</font>
+<font color="deepskyblue">0219:</font> <font color="blue">void</font> CTms::Render( )
+<font color="deepskyblue">0220:</font> {
+<font color="deepskyblue">0224:</font>     <font color="cyan">// データ配列を有効にする</font>
+<font color="deepskyblue">0225:</font>     glEnableClientState( GL_VERTEX_ARRAY );
+<font color="deepskyblue">0226:</font>     glEnableClientState( GL_NORMAL_ARRAY );
+<font color="deepskyblue">0227:</font>     glEnableClientState( GL_TEXTURE_COORD_ARRAY );
+<font color="deepskyblue">0228:</font> 
+<font color="deepskyblue">0229:</font>     <font color="cyan">// データをポインタにセットする</font>
+<font color="deepskyblue">0231:</font>     {
+<font color="deepskyblue">0232:</font>         <font color="yellow">glBindBufferARB( GL_ARRAY_BUFFER_ARB, _nVBOPosition );
+<font color="deepskyblue">0233:</font>         glVertexPointer( 3, GL_FLOAT, 0, (<font color="blue">char</font> *) NULL );
+<font color="deepskyblue">0234:</font>         glBindBufferARB( GL_ARRAY_BUFFER_ARB, _nVBONormal );
+<font color="deepskyblue">0235:</font>         glNormalPointer( GL_FLOAT, 0, (<font color="blue">char</font> *) NULL );
+<font color="deepskyblue">0236:</font>         glBindBufferARB( GL_ARRAY_BUFFER_ARB, _nVBOTexCoord );
+<font color="deepskyblue">0237:</font>         glTexCoordPointer( 2, GL_FLOAT, 0, (<font color="blue">char</font> *) NULL );</font>
+<font color="deepskyblue">0243:</font>     }
+<font color="deepskyblue">0244:</font>     
+<font color="deepskyblue">0245:</font>     <font color="cyan">// 描画</font>
+<font color="deepskyblue">0246:</font>     glDrawArrays( GL_TRIANGLES, 0, _nVertex );
+<font color="deepskyblue">0247:</font> 
+<font color="deepskyblue">0248:</font>     <font color="cyan">// データ配列を無効にする</font>
+<font color="deepskyblue">0249:</font>     glDisableClientState( GL_VERTEX_ARRAY );
+<font color="deepskyblue">0250:</font>     glDisableClientState( GL_NORMAL_ARRAY );
+<font color="deepskyblue">0251:</font>     glDisableClientState( GL_TEXTURE_COORD_ARRAY );
+<font color="deepskyblue">0253:</font> }
+</pre>
+<p>
+glVertexPointer の3つめの引数は異なる頂点の時のデータの幅です。<br>
+今回はこの引数は0にしてデータごとに別の配列を用意していますが、これはデータキャッシュの効率が最悪です。<br>
+本当は、頂点データの構造体を定義して、その構造体の配列としてデータを準備するような構造にしないとパフォーマンス的にダメダメでしょう。<br>
+</p>
+<p>
+あっ、最後に glDeleteBuffersARB を使って、使用した頂点バッファオブジェクトを開放しておかないといけません。
+</p>
+<pre class="CodeBlock">
+te_tms.cpp
+<font color="deepskyblue">0135:</font> <font color="cyan">// ---------------------------------------------------------------------------</font>
+<font color="deepskyblue">0136:</font> <font color="cyan">// デストラクタ</font>
+<font color="deepskyblue">0137:</font> <font color="cyan">// ---------------------------------------------------------------------------</font>
+<font color="deepskyblue">0138:</font> CTms::~CTms( )
+<font color="deepskyblue">0139:</font> {
+<font color="deepskyblue">0144:</font>     <font color="cyan">// VBO の削除</font>
+<font color="deepskyblue">0146:</font>     {
+<font color="deepskyblue">0147:</font>         <font color="blue">unsigned</font> <font color="blue">int</font> nBuffers[] = { _nVBOPosition, _nVBONormal, _nVBOTexCoord };
+<font color="deepskyblue">0148:</font>         glDeleteBuffersARB( 3, nBuffers );
+<font color="deepskyblue">0149:</font>     }
+<font color="deepskyblue">0155:</font> }
+</pre>
+<p>
+ゆくゆくは、この頂点バッファオブジェクトに最適化されるようになるのではないでしょうか。
+</p>
+
+
+<h2>■最後に</h2>
+
+
+<p>
+まだ、FPSの機能とか追加してないので速度計れないのですが、どれがいいのでしょうかねぇ
+</p>
+
+
+</div>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<center>
+<hr>
+<p><a href="../index.html">もどる</a></p>
+<p><a href="mailto:imagire@gmail.com">imagire@gmail.com</a></p>
+</center>
+
+</body>
+</html>

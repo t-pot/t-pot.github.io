@@ -1,0 +1,613 @@
+<head>
+	<title>t-pot『因数分解化 BRDF』</title>
+	<link rel="stylesheet" type="text/css" href="../if.css">
+</head>
+<meta http-equiv=Content-Type content="text/html; charset=shift_jis">
+<body>
+
+
+<div class="contents">
+<center>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<h1>因数分解化 BRDF</h1><br>
+<h3>～ Factored BRDF ～</h3>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<image src = "title.png">
+<br>
+<hr>
+<br>
+<p>
+下の画像をクリックすると、サテンのＢＲＤＦでライトが回った時のアニメーションが見られます。<br>
+<a href="anim.gif"><image src = "00.gif" width = "10%" height = "10%"></a>
+</p>
+<hr>
+</center>
+<div>
+
+
+<h2>■はじめに</h2>
+
+
+<p>
+前々から光沢反射がよくわからなかったので、いろいろと調べていたのですが、
+そんな中、CEDEC2003の開発の鉄人の<a href="http://developer.nvidia.com/docs/IO/8374/CEDEC2003_Venus_and_Vulcan-(Japanese).pdf">NVIDIAデモチームの秘密</a>における「The Time Machine のデモ」の部分で、”Dupon Cayman のラッカー”という言葉を見つけました。
+あまり聞かない単語「Cayman」と「Lacquer」で<a href="http://www.google.co.jp/custom?q=Cayman+Lacquer">ググって</a>みたら、２つ目で参考になりそうな
+<a href="http://www.cgl.uwaterloo.ca/Projects/rendering/Shading/database.html">Factored BRDF Repository</a>を見つけました。
+これらは、Waterloo 大の
+<a href="http://www.cgl.uwaterloo.ca/~mmccool/">Michael D. McCool</a>と<a href="http://www.jasonang.com/">Jason Ang</a>と<a href="http://www.student.cs.uwaterloo.ca/~a3ahmad/">Anis Ahmad</a>による論文<a href="http://www.cgl.uwaterloo.ca/%7Ejang/downloads/hfbrdf-poster.pdf">Homomorphic Factorization of BRDFs for High-Performance Rendering, SIGGAPH 2001, August 12-17, 2001.</a> 
+のデータが公開されているもので、この論文はBRDFを2次元テクスチャで表現できる形に分解しようというものです。
+<br>
+Factored BRDF Repository にあるデータを使うと、下のようなライティングが32x32の２枚のテクスチャを差し替えるだけでエナメルのような光沢から金属光沢、布地の光沢まで実現することができます。
+</p>
+<image src = "0.png">Cornell Garnet Red Duplicolor T-345 Paint<br>
+<image src = "1.png">Cornell Krylon Latex Enamel #7205, True Blue<br>
+<image src = "2.png">Cornell Cayman Blue Lacquer<br>
+<image src = "3.png">Cornell Mystique Lacquer<br>
+<image src = "4.png">CURET Velvet<br>
+<image src = "5.png">CURET Leather<br>
+<image src = "6.png">Analytic Anisotropic Poulin-Fournier 'Satin'<br>
+<p>
+今回のプログラムは、次のものです。
+</p>
+<ul style = "LIST-STYLE-TYPE:none">
+<li><a href="src.zip">src.zip (因数分解化 BRDF:DirectX9(ピクセルシェーダ1.1)</a>
+</ul>
+
+<p>
+「1」,「2」で、BRDF の種類を切り替えます。<br>
+「z」,「x」で、ズームを切り替えます。<br>
+カーソルキーでティーポットが動きます。<br>
+「SHIFT」＋カーソルキーでライトが動きます。<br>
+シェーダは1_1で作っていますが、2_0にするとちょっと変わります。
+</p>
+<p>
+まぁ、いつものように適当にファイルが入っています。<br>
+APP WIZARD から出力されるフレームワークのファイルは紹介を省かせていただきます。
+</p>
+<table>
+<tr><td><a href="hlsl_fx.html">hlsl.fx</a></td><td>シェーダの入ったエフェクトファイル</td></tr>
+<tr><td><a href="main_h.html">main.h</a></td><td>アプリケーションのヘッダ</td></tr>
+<tr><td><a href="main_cpp.html">main.cpp</a></td><td>アプリケーションのソース</td></tr>
+</table>
+
+<p>
+あと、実行ファイル、プロジェクトファイルが入っています。
+</p>
+
+
+<h2>■Factored BRDF</h2>
+
+
+<p>
+そもそも、BRDFとは何かということですが、BRDFとは物質の質感をあらわすパラメータで、物質に光が入射してきたときに、どのように反射するのか記述したものです。<b>ω</b><sub>i</sub>からの入射光を L<sub>i</sub>(<b>ω</b><sub>i</sub>)、<b>ω</b><sub>o</sub>へ反射される光をL<sub>o</sub>(<b>ω</b><sub>o</sub>)とすると、BRDFは、それらをつなぐもので、
+</p>
+<pre class="CodeBlock">
+L<sub>o</sub>(<b>ω</b><sub>o</sub>) = ∫BRDF(<b>ω</b><sub>o</sub>, <b>ω</b><sub>i</sub>) L<sub>i</sub>(<b>ω</b><sub>i</sub>) cosθ<sub>i</sub> d<b>ω</b><sub>i</sub>
+</pre>
+<p>
+とかける量です。ランバート拡散光の場合はBRDFは定数になります。<br>
+BRDFは、「時間が進んでも戻っても物理法則は変化しない」という物理学的な信念から次の性質を持たなくてはなりません（ヘルムホルツの相反定理）。
+</p>
+<pre class="CodeBlock">
+BRDF(<b>ω</b><sub>o</sub>, <b>ω</b><sub>i</sub>) = BRDF(<b>ω</b><sub>i</sub>, <b>ω</b><sub>o</sub>)
+</pre>
+<p>
+さて、このようなBRDFですが、Michael D. McCoolらは、このBRDFが多くの場合にいくつかの変数と法線ベクトルの内積の関数として書けることに気がつきました。例えば、Phongシェーディングは
+</p>
+<pre class="CodeBlock">
+BRDF(<b>ω</b><sub>o</sub>, <b>ω</b><sub>i</sub>) = (<b>H</b>.<b>N</b>)<sup>n</sup> * (1/(<b><b>ω</b><sub>i</sub></b>.<b>N</b>))
+</pre>
+<p>
+と、ハーフベクトル <b>H</b>=normalize(<b>ω</b><sub>o</sub>+<b>ω</b><sub>i</sub>)や入射ベクトルと法線ベクトルの内積で書くことができます。<br>
+特に便利なBRDFの分け方として、
+</p>
+<pre class="CodeBlock">
+BRDF(<b>ω</b><sub>o</sub>, <b>ω</b><sub>i</sub>) = P(<b>ω</b><sub>o</sub>.<b>N</b>) * Q(<b>H</b>.<b>N</b>) * P(<b>ω</b><sub>i</sub>.<b>N</b>)
+</pre>
+<p>
+が考え出されています。先ほど述べた入射ベクトルと反射ベクトルの相反性から、入射ベクトルと反射ベクトルに関する関数Pは同じものでなくてはなりません。<br>
+PやQがBRDFを特徴付ける関数です。Phong鏡面反射光の場合、PやQは、
+</p>
+<pre class="CodeBlock">
+P(x) = 1/√x
+Q(x) = x<sup>n</sup>
+</pre>
+<p>
+となります。<br>
+このように、いくつかの関数に分解されたBRDFを「Factored BRDF」と呼びます。<br>
+ちなみに、今回のプログラムで表現されているものは、ほぼ全てこの３つの分解ですが、一般的には、この分解方法に縛られません。
+</p>
+
+
+<h2>■放物変換 (Parabolic Maps)</h2>
+
+
+<p>
+さて、因数分解されたBRDFを使う方法としては、テクスチャに格納してサンプリングする方法が良く知られています。たとえば、下のようなx<sup>n</sup>に従う右側が明るいテクスチャを用意します、
+</p>
+<image src = "phong.png">
+<p>
+テクスチャ座標のｘ座標を符号化スケーリングした値にすれば、Phong 鏡面反射が実現できます。
+</p>
+<pre class="CodeBlock">
+texcoord.x = 0.5 * <b>H</b>.<b>N</b> + 0.5
+</pre>
+<p>
+ところが、この方法では、各頂点の<b>H</b>.<b>N</b>以上に大きな値にはならないので、グーローシェーディングのようになってしまい、フォンシェーディングのようにはなりません。したがって、ハイライトが出にくくなります。
+</p>
+<image src = "1d.png">一次元のテクスチャ
+<p>
+今回は、２次元のテクスチャを用意し、<b>H</b>.<b>N</b>の値が１の時にテクスチャの中心を指定し、値が小さくなるに連れて外側の値を指定するサンプリング法を採用します。
+</p>
+<image src = "sphere.png">用意するテクスチャ
+<image src = "2d.png">今回の方法
+<p>
+この方法なら、ポリゴンの割り方が大雑把で、各頂点での色の強さがハイライトの強さよりも大幅に小さくても、ハイライトが現れます。
+</p>
+<image src = "poly.png">
+
+<p>
+さて、肝心のテクスチャ座標の指定方法ですが、接ベクトルを使います。
+接ベクトル<b>T</b>と従法線ベクトル<b>B</b>を使えば、メッシュ表面でのハーフベクトルなどの法線ベクトルとのずれの角度がわかるので、その値をテクスチャ座標に使います。
+</p>
+<pre class="CodeBlock">
+texcoord.x = r * (<b>H</b>.<b>B</b>) + 0.5
+texcoord.y = r * (<b>H</b>.<b>T</b>) + 0.5
+</pre>
+<p>
+0.5は、半径 r が0のときにテクスチャの中心を指すように調整する変数です。<br>
+ここで、半径の値が問題です。Michael D. McCoolらは、次の計算方法を提唱しました。
+</p>
+<pre class="CodeBlock">
+texcoord.x = pv * ar * (<b>H</b>.<b>B</b>) + 0.5
+texcoord.y = pv * ar * (<b>H</b>.<b>T</b>) + 0.5
+     7
+pv = -
+     8
+        1
+ar = ---------
+     2(1+<b>H</b>.<b>N</b>)
+</pre>
+</p>
+この変換の式に対して、<b>H</b>.<b>N</b>を変数としたテクスチャ座標に関する中心からの距離をグラフを描くと次のようになります。
+</p>
+<image src = "plot.png">
+<p>
+ここで、グラフが反比例のような形ではなくて、２次曲線的にひねくれているのには理由があります。
+<b>H</b>.<b>N</b>と<b>H</b>.<b>B</b>及び<b>H</b>.<b>T</b>の値は独立ではありません。元のベクトルが規格化されていれば、これらのベクトルによる内積は基底の変換に他ならないので、
+</p>
+<pre class="CodeBlock">
+1 = (<b>H</b>.<b>N</b>)<sup>2</sup> + (<b>H</b>.<b>B</b>)<sup>2</sup> + (<b>H</b>.<b>T</b>)<sup>2</sup>
+</pre>
+<p>
+の関係が成り立ちます。つまり、上のグラフでプロットしたテクスチャの中心からの距離というのは、
+</p>
+<pre class="CodeBlock">
+7    1
+- ---------|(<b>H</b>.<b>B</b>)<sup>2</sup> + (<b>H</b>.<b>T</b>)<sup>2</sup>|<sup>1/2</sup>
+8 2(1+<b>H</b>.<b>N</b>)
+
+  7 (1-(<b>H</b>.<b>N</b>)<sup>2</sup>)<sup>1/2</sup>
+= - ---------
+  8 2(1+<b>H</b>.<b>N</b>)
+
+  7 1 (1-<b>H</b>.<b>N</b>)<sup>1/2</sup>
+= - - --------
+  8 2 (1+<b>H</b>.<b>N</b>)<sup>1/2</sup>
+</pre>
+<p>
+でした。この関数は、<b>H</b>.<b>N</b>が1のときに0で、<b>H</b>.<b>N</b>が-1の時に無限大に発散します。<br>
+この関数は、(-1,1)の範囲で単調減少関数なので、内積の値と距離は１対１に対応します。<br>
+なお、0.5になるのは-0.13付近で、テクスチャを使ってＢＲＤＦを表現するときには、内積の値が-0.13よりも小さな範囲は、この変換では正確には表現できません（まぁ、裏側だからあまり気にするな！）。
+</p>
+<p>
+ちなみに、今回の変換は、BRDFの値が接ベクトルや従法線ベクトルに依存するようにできるので、中心対称でないのテクスチャを使えば異方性のＢＲＤＦにすぐに移行できます。実際に Satin の BRDF は、ライトベクトル、ハーフベクトル用のテクスチャ共に中心対称ではない異方性の反射になっています。
+</p>
+
+
+<h2>■テクスチャの意味</h2>
+
+
+<p>
+これで、どのようにやっているかはわかりましたが、実際にどのようにテクスチャを用意すればよいかはわかりません。
+SIGGRAPHとかでは、実際に測定してみてBRDFを決定するのが流行ですが、そこをはずれたNPRの世界では自分でテクスチャを描く必要があります。
+テクスチャがどのように構成されているのか探ってみましょう。<br>
+「Cornell Garnet Red Duplicolor T-345 Paint」を考えて見ます。このＢＲＤＦは、下のように、定数の色と視線ベクトルV、ライトベクトルLとハーフベクトルHからテクスチャをサンプリングして合成しています。
+</p>
+<image src = "calc.png">
+<p>
+ここで、Qは、それぞれのベクトルを放物変換で２次元のテクスチャ座標へ変換する関数で、pとqは、テクスチャを使ったサンプリングを意味します。
+</p>
+<p>
+とりあえずHの項がわかりやすいでしょうか。この項は主にPhongの鏡面反射成分をあらわします。中心が1で、後は急激に値が小さくなるので、HとNがほぼ一致するときだけ明るくなる鏡面反射の光だということがわかります。
+</p>
+<p>
+次は、L及びVです。この項に関してテクスチャの中心を指すということは、ポリゴンを正面から見ていることをさします。ポリゴンを横から見るにしたがって、テクスチャの外側を指すようになるので、この項は見る（ライトの照らす）傾きを表現しているのだと理解でします。<br>
+見る傾きによって変わる効果とは何でしょうか？それはフレネル効果です。正面から見たときには、それほど反射しませんが、ほぼ横から見たときには、全反射となってライトの光は強く反射されます。
+フレネル効果からおきる有名な現象に「カラーシフト」があります。横からの光の反射では、全反射になってしまうので、物体に塗られた塗料の色は反映されずに、光の色がそのまま反射されます。pのテクスチャはこの現象を再現していて、テクスチャの中心をさす正面を向いているときには、物体の色が乗りますが、横から見たときには塗料の色は乗らず、真っ白な色として入射光をそのまま跳ね返します。
+</p>
+<p>
+すぐにわかるのはこのくらいなのですが、何らかの参考になったでしょうか？
+</p>
+
+
+<h2>■プログラム</h2>
+
+
+<p>
+ということで、今回のプログラムを紹介してきましょう。<br>
+今回は、ピクセルシェーダ、頂点シェーダ共に1_1で可能です。
+</p>
+<p>
+今回の方法は、頂点シェーダでライトベクトル、視線ベクトル及びハーフベクトルからテクスチャ座標を計算して、ピクセルシェーダでそれらテクスチャ座標からBRDFを計算して色として出力します。<br>
+頂点シェーダからピクセルシェーダに受け渡すデータは、３つのテクスチャ座標になります。
+</p>
+
+<pre class="CodeBlock">
+hlsl.fx
+<font color="deepskyblue">0053:</font> <font color="blue">struct</font> VS_OUTPUT
+<font color="deepskyblue">0054:</font> {
+<font color="deepskyblue">0055:</font>     float4 Pos          : POSITION;
+<font color="deepskyblue">0056:</font>     float2 v            : TEXCOORD0;
+<font color="deepskyblue">0057:</font>     float2 h            : TEXCOORD1;
+<font color="deepskyblue">0058:</font>     float2 w            : TEXCOORD2;
+<font color="deepskyblue">0059:</font> };
+</pre>
+
+<p>
+頂点シェーダでは、いつものように座標変換すると共に、法線ベクトルN、従法線ベクトルB、接ベクトルTを使って、視線ベクトルV、ライトベクトルW、ハーフベクトルHを２次元のテクスチャ座標に変換します。<br>
+従法線ベクトルBと接ベクトルTは、データとして持つのではなく、ローカル座標のy軸方向から頂点ごとに計算してみました。この方法は、法線ベクトルがy軸を向いていると正しく動かないので、その点は注意しましょう。
+</p>
+<pre class="CodeBlock">
+hlsl.fx
+<font color="deepskyblue">0083:</font> <font color="cyan">// -------------------------------------------------------------</font>
+<font color="deepskyblue">0084:</font> <font color="cyan">// 頂点シェーダプログラム</font>
+<font color="deepskyblue">0085:</font> <font color="cyan">// -------------------------------------------------------------</font>
+<font color="deepskyblue">0086:</font> VS_OUTPUT VS(VS_INPUT In)
+<font color="deepskyblue">0087:</font> {   
+<font color="deepskyblue">0088:</font>     VS_OUTPUT Out = (VS_OUTPUT)0;            <font color="cyan">// 出力データ</font>
+<font color="deepskyblue">0089:</font>     
+<font color="deepskyblue">0090:</font>     <font color="cyan">// 位置座標</font>
+<font color="deepskyblue">0091:</font>     Out.Pos = mul( In.Pos, mWVP );
+<font color="deepskyblue">0092:</font>     
+<font color="deepskyblue">0093:</font>     <font color="cyan">// 表面座標系の基底ベクトルを求める</font>
+<font color="deepskyblue">0094:</font>     float3 N = In.Normal;                   <font color="cyan">// 法線ベクトル</font>
+<font color="deepskyblue">0095:</font>     float3 B = float3(0,1,0);               <font color="cyan">// 従法線ベクトル</font>
+<font color="deepskyblue">0096:</font>     float3 T = normalize(cross(N,B));       <font color="cyan">// 接ベクトル</font>
+<font color="deepskyblue">0097:</font>     B = cross(T,N);
+<font color="deepskyblue">0098:</font>     
+<font color="deepskyblue">0099:</font>     <font color="cyan">// 必要なベクトルを計算する</font>
+<font color="deepskyblue">0100:</font>     float3 V = normalize(EyePos  -In.Pos.xyz);<font color="cyan">// 視点ベクトル</font>
+<font color="deepskyblue">0101:</font>     float3 W = normalize(LightPos-In.Pos.xyz);<font color="cyan">// ライトベクトル</font>
+<font color="deepskyblue">0102:</font>     float3 H = normalize(W+V);              <font color="cyan">// ハーフベクトル</font>
+<font color="deepskyblue">0103:</font> 
+<font color="deepskyblue">0104:</font>     <font color="cyan">// 各ベクトルをテクスチャ座標へ変換する</font>
+<font color="deepskyblue">0105:</font>     Out.v = Q(V, B,T,N);
+<font color="deepskyblue">0106:</font>     Out.w = Q(W, B,T,N);
+<font color="deepskyblue">0107:</font>     Out.h = Q(H, B,T,N);
+<font color="deepskyblue">0108:</font> 
+<font color="deepskyblue">0109:</font>     <font color="blue">return</font> Out;
+<font color="deepskyblue">0110:</font> }
+</pre>
+
+<p>
+テクスチャ座標の変換は、放物変換の公式どおりに座標変換をします。<br>
+今回のプログラムでは、内積の値が-1の時に発散しないように、0.000000001をつけてエラーが起きないようにしています（でもこれ、固定小数点の計算だと0にまるまるね）。
+</p>
+<pre class="CodeBlock">
+hlsl.fx
+<font color="deepskyblue">0061:</font> <font color="cyan">// -------------------------------------------------------------</font>
+<font color="deepskyblue">0062:</font> <font color="cyan">// 座標変換</font>
+<font color="deepskyblue">0063:</font> <font color="cyan">// -------------------------------------------------------------</font>
+<font color="deepskyblue">0064:</font> float2 Q(float3 In, float3 B, float3 T, float3 N)
+<font color="deepskyblue">0065:</font> {
+<font color="deepskyblue">0066:</font>     float2 Out = (float2)0;
+<font color="deepskyblue">0067:</font>     
+<font color="deepskyblue">0068:</font>     <font color="cyan">// 表面座標系へ変換</font>
+<font color="deepskyblue">0069:</font>     float3 v;
+<font color="deepskyblue">0070:</font>     v.x = dot(B,In);
+<font color="deepskyblue">0071:</font>     v.y = dot(T,In);
+<font color="deepskyblue">0072:</font>     v.z = dot(N,In);
+<font color="deepskyblue">0073:</font>     
+<font color="deepskyblue">0074:</font>     <font color="cyan">// ３次元パラメータを２次元パラメータに変換</font>
+<font color="deepskyblue">0075:</font>     <font color="blue">float</font> pv = 7.0f/8.0f;
+<font color="deepskyblue">0076:</font>     <font color="blue">float</font> ar = 1.0/(2.0*(1.000000001+v.z));
+<font color="deepskyblue">0077:</font> 
+<font color="deepskyblue">0078:</font>     Out.x = pv * ar * v.x + 0.5;
+<font color="deepskyblue">0079:</font>     Out.y = pv * ar * v.y + 0.5;
+<font color="deepskyblue">0080:</font> 
+<font color="deepskyblue">0081:</font>     <font color="blue">return</font> Out;
+<font color="deepskyblue">0082:</font> }
+</pre>
+
+<p>
+ピクセルシェーダでは、テクスチャ座標からサンプリングして全てを掛け合わせます。
+</p>
+<pre class="CodeBlock">
+hlsl.fx
+<font color="deepskyblue">0111:</font> <font color="cyan">// -------------------------------------------------------------</font>
+<font color="deepskyblue">0112:</font> <font color="cyan">// ピクセルシェーダプログラム</font>
+<font color="deepskyblue">0113:</font> <font color="cyan">// -------------------------------------------------------------</font>
+<font color="deepskyblue">0114:</font> float4 PS(VS_OUTPUT In) : COLOR
+<font color="deepskyblue">0115:</font> {   
+<font color="deepskyblue">0116:</font>     float4 v = tex2D( SampP, In.v );
+<font color="deepskyblue">0117:</font>     float4 h = tex2D( SampQ, In.h );
+<font color="deepskyblue">0118:</font>     float4 w = tex2D( SampP, In.w );
+<font color="deepskyblue">0119:</font>     
+<font color="deepskyblue">0120:</font>     <font color="blue">return</font> alpha * v * h * w;
+<font color="deepskyblue">0121:</font> }
+</pre>
+
+<p>
+ちなみに、テクスチャはバイリニアサンプリングとはみ出したときのクランプ設定を必ずしましょう。ポイントサンプリングを適応すると、テクセルの形が無残にもみえてしまいますし、はみだしたときにループしているとライトの裏面などにおかしな表示がされてしまいます。
+</p>
+
+<pre class="CodeBlock">
+hlsl.fx
+<font color="deepskyblue">0015:</font> <font color="cyan">// -------------------------------------------------------------</font>
+<font color="deepskyblue">0016:</font> <font color="cyan">// テクスチャ</font>
+<font color="deepskyblue">0017:</font> <font color="cyan">// -------------------------------------------------------------</font>
+<font color="deepskyblue">0018:</font> texture MapP;
+<font color="deepskyblue">0019:</font> sampler SampP = sampler_state
+<font color="deepskyblue">0020:</font> {
+<font color="deepskyblue">0021:</font>     Texture = &lt;MapP&gt;;
+<font color="deepskyblue">0022:</font>     <font color="orange">MinFilter = LINEAR;</font>
+<font color="deepskyblue">0023:</font>     <font color="orange">MagFilter = LINEAR;</font>
+<font color="deepskyblue">0024:</font>     MipFilter = NONE;
+<font color="deepskyblue">0025:</font> 
+<font color="deepskyblue">0026:</font>     <font color="yellow">AddressU = Clamp;</font>
+<font color="deepskyblue">0027:</font>     <font color="yellow">AddressV = Clamp;</font>
+<font color="deepskyblue">0028:</font> };
+<font color="deepskyblue">0029:</font> <font color="cyan">// -------------------------------------------------------------</font>
+<font color="deepskyblue">0030:</font> texture MapQ;
+<font color="deepskyblue">0031:</font> sampler SampQ = sampler_state
+<font color="deepskyblue">0032:</font> {
+<font color="deepskyblue">0033:</font>     Texture = &lt;MapQ&gt;;
+<font color="deepskyblue">0034:</font>     <font color="orange">MinFilter = LINEAR;</font>
+<font color="deepskyblue">0035:</font>     <font color="orange">MagFilter = LINEAR;</font>
+<font color="deepskyblue">0036:</font>     MipFilter = NONE;
+<font color="deepskyblue">0037:</font> 
+<font color="deepskyblue">0038:</font>     <font color="yellow">AddressU = Clamp;</font>
+<font color="deepskyblue">0039:</font>     <font color="yellow">AddressV = Clamp;</font>
+<font color="deepskyblue">0040:</font> };
+</pre>
+
+<p>
+アプリケーションプログラムはそんなに複雑なことはしていません。
+適当に変数とテクスチャを設定して描画します。
+</p>
+
+<pre class="CodeBlock">
+main.cpp
+<font color="deepskyblue">0392:</font>     <font color="cyan">//---------------------------------------------------------</font>
+<font color="deepskyblue">0393:</font>     <font color="cyan">// 描画</font>
+<font color="deepskyblue">0394:</font>     <font color="cyan">//---------------------------------------------------------</font>
+<font color="deepskyblue">0395:</font>     <font color="blue">if</font>( SUCCEEDED( m_pd3dDevice-&gt;BeginScene() ) )
+<font color="deepskyblue">0396:</font>     {
+<font color="deepskyblue">0397:</font>         <font color="blue">if</font>(m_pEffect){
+<font color="deepskyblue">0398:</font>             <font color="cyan">// シェーダの設定</font>
+<font color="deepskyblue">0399:</font>             m_pEffect-&gt;SetTechnique( "<font color="blue">TShader</font>" );
+<font color="deepskyblue">0400:</font>             m_pEffect-&gt;Begin( NULL, 0 );
+<font color="deepskyblue">0401:</font>             m_pEffect-&gt;Pass( 0 );
+<font color="deepskyblue">0402:</font>             
+<font color="deepskyblue">0403:</font>             <font color="cyan">// 変換行列</font>
+<font color="deepskyblue">0404:</font>             D3DXMATRIX mWVP = m_mW * m_mV * m_mP;
+<font color="deepskyblue">0405:</font>             m_pEffect-&gt;SetMatrix("<font color="blue">mWVP</font>", &amp;mWVP);
+<font color="deepskyblue">0406:</font>             
+<font color="deepskyblue">0407:</font>             <font color="cyan">// ライトの向き</font>
+<font color="deepskyblue">0408:</font>             m = m_mW;
+<font color="deepskyblue">0409:</font>             D3DXMatrixInverse( &amp;m, NULL, &amp;m );
+<font color="deepskyblue">0410:</font>             D3DXVec4Transform( &amp;v, &amp;LightPos, &amp;m );
+<font color="deepskyblue">0411:</font>             m_pEffect-&gt;SetVector("<font color="blue">LightPos</font>", &amp;v);
+<font color="deepskyblue">0412:</font>             
+<font color="deepskyblue">0413:</font>             <font color="cyan">// 視点</font>
+<font color="deepskyblue">0414:</font>             v = D3DXVECTOR4(0,0,-5,0);
+<font color="deepskyblue">0415:</font>             m = m_mW;
+<font color="deepskyblue">0416:</font>             D3DXMatrixInverse( &amp;m, NULL, &amp;m );
+<font color="deepskyblue">0417:</font>             D3DXVec4Transform( &amp;v, &amp;v, &amp;m );
+<font color="deepskyblue">0418:</font>             m_pEffect-&gt;SetVector("<font color="blue">EyePos</font>", &amp;v);
+<font color="deepskyblue">0419:</font>             
+<font color="deepskyblue">0420:</font>             <font color="cyan">// 追加する色</font>
+<font color="deepskyblue">0421:</font>             m_pEffect-&gt;SetVector("<font color="blue">alpha</font>", (D3DXVECTOR4*)&amp;BRDF_color[m_nBrdf][0]);
+<font color="deepskyblue">0422:</font>             
+<font color="deepskyblue">0423:</font>             <font color="cyan">// テクスチャ</font>
+<font color="deepskyblue">0424:</font>             m_pEffect-&gt;SetTexture("<font color="blue">MapP</font>", m_pTex[m_nBrdf][0]);
+<font color="deepskyblue">0425:</font>             m_pEffect-&gt;SetTexture("<font color="blue">MapQ</font>", m_pTex[m_nBrdf][1]);
+<font color="deepskyblue">0426:</font> 
+<font color="deepskyblue">0427:</font>             <font color="cyan">// ティーポットの表示</font>
+<font color="deepskyblue">0428:</font>             m_pD3DXMesh-&gt;DrawSubset(0);
+<font color="deepskyblue">0429:</font> 
+<font color="deepskyblue">0430:</font>             m_pEffect-&gt;End();
+<font color="deepskyblue">0431:</font>         }
+</pre>
+
+
+<h2>■最後に</h2>
+
+
+<p>
+ps_1_1でできるので、Xboxのタイトルでは使われてるんですかねぇ。<br>
+放物変換は、トゥーンなどの他の方法にも応用できるので、これから頻繁に使われていくでしょう。
+</p>
+
+
+<h2>■2003 Oct. 30追加</h2>
+
+
+<p>
+BBSで、<a href="http://home.att.ne.jp/yellow/hide_n/index.html">新坂さん</a>から
+</p>
+<pre class="CodeBlock">
+さらっと流し読みしかしてませんけど、こういう2次元テクスチャ使った手法って、
+光源と正反対の位置に特異点（と言えばいいのかな？）ができちゃいません？
+</pre>
+<p>
+というお言葉をいただきました。<br>
+たとえば、下の絵のティーポットの右側少し上の部分に奇妙な点が発生しています。
+</p>
+<image src = "before.png">
+<p>
+今までのプログラムでは、テクスチャが-1から1に切り替わる部分で、途中の補間に「0」の部分を通るので、たとえばライトが裏側に行った部分で、変な点が出ていました。<br>
+このままだと汚いので、修正しましょう。
+</p>
+<p>
+修正したプログラムは、次のものです。
+</p>
+
+<ul style = "LIST-STYLE-TYPE:none">
+<li><a href="src2.zip">src2.zip (因数分解化 BRDF 修正版:DirectX9(ピクセルシェーダ1.1)</a>
+</ul>
+<p>
+変更点はエフェクトファイルだけです。
+</p>
+<table>
+<tr><td><a href="hlsl_fx2.html">hlsl.fx</a></td><td>シェーダの入ったエフェクトファイル</td></tr>
+</table>
+
+<p>
+変更の考え方は、「裏面に光源が行ったときにおかしくなるのだから、その時の強さを０にしてしまえ」ということです。BRDF の外側が必ず黒いわけではないので危険ですが、裏に行ったときには、陰になるので問題ないでしょうという感じです。
+</p>
+<p>
+プログラム的な変更は、頂点シェーダからの出力に「裏への隠れ度」であるIntensityを追加して、普段は１、裏になった時は０になるようにプログラムで調整します。<br>
+構造体は、具体的には次のように変更します。
+</p>
+<pre class="CodeBlock">
+hlsl.fx
+<font color="deepskyblue">0050:</font> <font color="cyan">// -------------------------------------------------------------</font>
+<font color="deepskyblue">0051:</font> <font color="cyan">// 頂点シェーダからピクセルシェーダに渡すデータ</font>
+<font color="deepskyblue">0052:</font> <font color="cyan">// -------------------------------------------------------------</font>
+<font color="deepskyblue">0053:</font> <font color="blue">struct</font> VS_OUTPUT
+<font color="deepskyblue">0054:</font> {
+<font color="deepskyblue">0055:</font>     float4 Pos          : POSITION;
+<font color="deepskyblue">0056:</font>     float4 v            : TEXCOORD0;
+<font color="deepskyblue">0057:</font>     float4 h            : TEXCOORD1;
+<font color="deepskyblue">0058:</font>     float4 w            : TEXCOORD2;
+<font color="deepskyblue">0059:</font>     <font color="yellow">float4 Intensity    : COLOR0;</font>
+<font color="deepskyblue">0060:</font> };
+</pre>
+
+<p>
+ピクセルシェーダでは、その色の強さを乗算して影響させます。
+</p>
+<pre class="CodeBlock">
+hlsl.fx
+<font color="deepskyblue">0125:</font> <font color="cyan">// -------------------------------------------------------------</font>
+<font color="deepskyblue">0126:</font> <font color="cyan">// ピクセルシェーダプログラム</font>
+<font color="deepskyblue">0127:</font> <font color="cyan">// -------------------------------------------------------------</font>
+<font color="deepskyblue">0128:</font> float4 PS(VS_OUTPUT In) : COLOR
+<font color="deepskyblue">0129:</font> {   
+<font color="deepskyblue">0130:</font>     float4 v = tex2D( SampP, In.v );
+<font color="deepskyblue">0131:</font>     float4 h = tex2D( SampQ, In.h );
+<font color="deepskyblue">0132:</font>     float4 w = tex2D( SampP, In.w );
+<font color="deepskyblue">0133:</font>     
+<font color="deepskyblue">0134:</font>     <font color="blue">return</font> alpha * v * h * w<font color="yellow"> * In.Intensity</font>;
+<font color="deepskyblue">0135:</font> }
+</pre>
+
+<p>
+実際のIntensityの計算ですが、放物変換の座標変換でアルファ成分に値を設定しておいて、Intensityに出力します。<br>
+Intensityには、全てのベクトルによる陰の影響度を入れるのではなく、ライトベクトルの影響だけを反映させました。<br>
+実際問題、<b>H</b>.<b>N</b>が負になることはないですし、<b>V</b>.<b>N</b>が負になるのは面が裏を向いている時で、境界でしか影響は起きないのでほとんど効果は入りません。したがって、<b>L</b>.<b>N</b>だけを考えれば良いということになります。
+</p>
+<pre class="CodeBlock">
+hlsl.fx
+<font color="deepskyblue">0094:</font> <font color="cyan">// -------------------------------------------------------------</font>
+<font color="deepskyblue">0095:</font> <font color="cyan">// 頂点シェーダプログラム</font>
+<font color="deepskyblue">0096:</font> <font color="cyan">// -------------------------------------------------------------</font>
+<font color="deepskyblue">0097:</font> VS_OUTPUT VS(VS_INPUT In)
+<font color="deepskyblue">0098:</font> {   
+<font color="deepskyblue">0099:</font>     VS_OUTPUT Out = (VS_OUTPUT)0;            <font color="cyan">// 出力データ</font>
+<font color="deepskyblue">0100:</font>     
+<font color="deepskyblue">0101:</font>     <font color="cyan">// 位置座標</font>
+<font color="deepskyblue">0102:</font>     Out.Pos = mul( In.Pos, mWVP );
+<font color="deepskyblue">0103:</font>     
+<font color="deepskyblue">0104:</font>     <font color="cyan">// 表面座標系の基底ベクトルを求める</font>
+<font color="deepskyblue">0105:</font>     float3 N = In.Normal;                   <font color="cyan">// 法線ベクトル</font>
+<font color="deepskyblue">0106:</font>     float3 B = float3(0,1,0);               <font color="cyan">// 従法線ベクトル</font>
+<font color="deepskyblue">0107:</font>     float3 T = normalize(cross(N,B));       <font color="cyan">// 接ベクトル</font>
+<font color="deepskyblue">0108:</font>     B = cross(T,N);
+<font color="deepskyblue">0109:</font>     
+<font color="deepskyblue">0110:</font>     <font color="cyan">// 必要なベクトルを計算する</font>
+<font color="deepskyblue">0111:</font>     float3 V = normalize(EyePos  -In.Pos.xyz);<font color="cyan">// 視点ベクトル</font>
+<font color="deepskyblue">0112:</font>     float3 W = normalize(LightPos-In.Pos.xyz);<font color="cyan">// ライトベクトル</font>
+<font color="deepskyblue">0113:</font>     float3 H = normalize(W+V);              <font color="cyan">// ハーフベクトル</font>
+<font color="deepskyblue">0114:</font> 
+<font color="deepskyblue">0115:</font>     <font color="cyan">// 各ベクトルをテクスチャ座標へ変換する</font>
+<font color="deepskyblue">0116:</font>     Out.v = Q(V, B,T,N);
+<font color="deepskyblue">0117:</font>     Out.w = Q(W, B,T,N);
+<font color="deepskyblue">0118:</font>     Out.h = Q(H, B,T,N);
+<font color="deepskyblue">0119:</font>     
+<font color="deepskyblue">0120:</font>     <font color="cyan">// とりあえず、ライトに関して背面の処理を入れる</font>
+<font color="deepskyblue">0121:</font>     <font color="yellow">Out.Intensity = Out.w.a;</font>
+<font color="deepskyblue">0122:</font> 
+<font color="deepskyblue">0123:</font>     <font color="blue">return</font> Out;
+<font color="deepskyblue">0124:</font> }
+</pre>
+<p>
+実際の強さの計算ですが、0と1をいきなり切り替えると、テクスチャのサイズの小ささによるぎざぎざが目立ってしまったので、適当な場所で線形補間しています。<br>
+線形補間するのは、ちょうどテクスチャの横の端から対角の端の間までにしました。この量はいいかげんなので、好きなように調整したり、マイクロファセットを導入して、その幾何減衰率を採用したりすることも可能でしょう（ここは１次元テクスチャで問題ないはずですし）。<br>
+</p>
+<image src = "modify.png">ぎざぎざ
+<p>
+プログラムが汚くて申し訳ないのですが、強さの計算の部分は、次のようになります。
+</p>
+<pre class="CodeBlock">
+hlsl.fx
+<font color="deepskyblue">0062:</font> <font color="cyan">// -------------------------------------------------------------</font>
+<font color="deepskyblue">0063:</font> <font color="cyan">// 座標変換</font>
+<font color="deepskyblue">0064:</font> <font color="cyan">// -------------------------------------------------------------</font>
+<font color="deepskyblue">0065:</font> float4 Q(float3 In, float3 B, float3 T, float3 N)
+<font color="deepskyblue">0066:</font> {
+<font color="deepskyblue">0067:</font>     float4 Out = (float4)0;
+<font color="deepskyblue">0068:</font>     
+<font color="deepskyblue">0069:</font>     <font color="cyan">// 表面座標系へ変換</font>
+<font color="deepskyblue">0070:</font>     float3 v;
+<font color="deepskyblue">0071:</font>     v.x = dot(B,In);
+<font color="deepskyblue">0072:</font>     v.y = dot(T,In);
+<font color="deepskyblue">0073:</font>     v.z = dot(N,In);
+<font color="deepskyblue">0074:</font>     
+<font color="deepskyblue">0075:</font>     <font color="cyan">// ３次元パラメータを２次元パラメータに変換</font>
+<font color="deepskyblue">0076:</font>     <font color="blue">float</font> pv = 7.0f/8.0f;
+<font color="deepskyblue">0077:</font>     <font color="blue">float</font> ar = 1.0/(2.0*(1.000000001+v.z));
+<font color="deepskyblue">0078:</font> <font color="yellow">
+<font color="deepskyblue">0079:</font>     <font color="blue">if</font>(0.7*(8.0f/7.0f)&lt;ar){
+<font color="deepskyblue">0080:</font>         <font color="cyan">// 外に出た時は、強さを０にする</font>
+<font color="deepskyblue">0081:</font>         Out = 0;
+<font color="deepskyblue">0082:</font>     }<font color="blue">else</font> <font color="blue">if</font>(0.5*(8.0f/7.0f)&lt;ar){
+<font color="deepskyblue">0083:</font>         <font color="cyan">// 途中は線形補間</font>
+<font color="deepskyblue">0084:</font>         Out = (0.7*(8.0f/7.0f)-ar)/(0.2*(8.0f/7.0f));
+<font color="deepskyblue">0085:</font>     }<font color="blue">else</font>{
+<font color="deepskyblue">0086:</font>         Out = 1;
+<font color="deepskyblue">0087:</font>     }</font>
+<font color="deepskyblue">0088:</font>     
+<font color="deepskyblue">0089:</font>     Out.x = pv * ar * v.x + 0.5;
+<font color="deepskyblue">0090:</font>     Out.y = pv * ar * v.y + 0.5;
+<font color="deepskyblue">0091:</font>     
+<font color="deepskyblue">0092:</font>     <font color="blue">return</font> Out;
+<font color="deepskyblue">0093:</font> }
+</pre>
+
+<p>
+この変更で、先ほどの点は綺麗に消えます。
+</p>
+<image src = "after.png">
+<p>
+ただし、この方法は正確な BRDF ではなくなってしまうので、許される変更かどうかはなんともかんとも…
+</p>
+
+
+</div>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<center>
+<hr>
+<p><a href="../index.html">もどる</a></p>
+<p><a href="mailto:imagire@gmail.com">imagire@gmail.com</a></p>
+</center>
+
+</body>
+</html>

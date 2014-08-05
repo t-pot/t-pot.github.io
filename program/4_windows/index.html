@@ -1,0 +1,181 @@
+<head>
+	<title>t-pot 『DirectX8.0 入門』</title>
+	<link rel="stylesheet" type="text/css" href="../if.css">
+</head>
+<body>
+<div class="contents">
+<center>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<h1>DirectX 8.0 入門</h1><br>
+<h3>～ゲームでも作るか～</h3>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+</center>
+<h2>■はじめに</h2>
+<p>
+本来は NURBS を解説するところですが、
+このままでは何時終わるか分からないので、実際にプログラムを組む路線に変更します。
+<BR>っていうか、俺が使わないから上手く解説できん。
+</p>
+<p>
+2001年現在のゲームプログラムの主流は。DirectX であることは、疑いがないと思います。
+DirectX は、8.0 になってから、初期化が簡単になり、プログラム作りが楽になりました。
+と、いっても、初心者には、まだまだ作るのが大変です。
+とりあえず、（同人で売れるくらいの？）ゲームを一本作る程度の仕事及び、
+いろいろな Tips を目指して、作りたいと思います。
+</p>
+
+<h2>■はじめの一歩</h2>
+
+<p>
+とりあえず、下のソースをダウンしてください。Visual C++ 6.0 のプロジェクトになっています。
+</p>
+<ul style = "LIST-STYLE-TYPE:none">
+<li><a href="winbase.lzh">winbase.lzh (Windows アプリケーションの雛型のソース)</a>
+</ul>
+
+
+<p>
+かなり基本的なウィンドウズのプログラムです。ウィンドウしか表示しません<br>
+では、内容を見てみましょう。
+Windows のプログラムは WinMain から始まります。<br>
+大まかな流れは、次のようになります。
+</p>
+<pre class="CodeBlock">
+ウィンドウの作成
+  ↓←─────────────────┐
+メインループ                            │
+  ├──────┬────┐            │
+  ↓            ↓        ↓            │
+終了イベント   描画 キーなどのイベント  │
+  │            └────┴──────┘
+  ↓
+確保したメモリの開放
+  ↓
+終了
+</pre>
+
+<p>
+まず、ウィンドウを作ります。
+この処理はほとんど決まっているので、みんな一度作ったらそれをコピーして使っていると思います。<br>
+次にメインループがぐるぐる回っています。<br>
+ウィンドウズは（一度は聞いたことがあると思いますが）、イベント駆動型の取り扱いに適したOSです。
+『キーが押された』、『マウスがクリックされた』等の処理が発生したときに、『イベント』が発生するので、
+プログラマーは、それぞれのイベントに適した処理をします。<br>
+ウィンドウの左上の×ボタンを押した時は、終了のイベントが発生します。
+終了イベントの発生を監視して、プログラムで使ったメモリなどの後片付けをした後に、
+プログラムを終了します。
+この後片付けを忘れると、メモリの空き領域が減っていき、
+いき過ぎるとウィンドウズが正常に動作しないようになります。
+</p>
+<p>
+では、一気にはじめの関数である WinMain を見てみましょう。
+</p>
+<pre class="CodeBlock">
+static bool s_end;		// 終了フラグ
+
+int PASCAL WinMain(HINSTANCE hInst,HINSTANCE hPrev,char *CmdLine,int CmdShow)
+{
+    s_end = 0;
+    
+    // ★★★★★ ウインドウの作成
+    RECT    rect;
+    SetRect(&rect, 0, 0, WIDTH, HEIGHT);
+    DWORD   style = (FULLSCREEN) ? WS_POPUP : WS_CAPTION|WS_SYSMENU|WS_BORDER|WS_MINIMIZEBOX;
+    AdjustWindowRect(&rect, style, FALSE);    // ウィンドウスタイルを設定したときの、ウィンドウの大きさを調べる
+    int width  = rect.right - rect.left;
+    int height = rect.bottom - rect.top;    
+    
+    WNDCLASS wc;
+    ZeroMemory(&wc, sizeof(WNDCLASS));
+    wc.hbrBackground    = (HBRUSH)GetStockObject(BLACK_BRUSH);
+    wc.hCursor            = LoadCursor(NULL,IDC_ARROW);
+    wc.hInstance        = hInst;
+    wc.lpfnWndProc        = MsgProc;
+    wc.lpszClassName    = CAPTION;
+    if(RegisterClass(&wc) == 0) return 0; //ウィンドウ作成に使用できる新しいウィンドウクラスを作成する。
+    
+    HWND hWnd = CreateWindow(CAPTION        // 登録されているクラス名
+                            ,CAPTION        // ウィンドウ名
+                            ,style            // ウィンドウスタイル
+                            ,CW_USEDEFAULT    // ウィンドウの横方向の位置
+                            ,CW_USEDEFAULT    // ウィンドウの縦方向の位置
+                            ,width            // ウィンドウの幅
+                            ,height            // ウィンドウの高さ
+                            ,NULL            // 親ウィンドウまたはオーナーウィンドウのハンドル
+                            ,NULL            // メニューハンドルまたは子ウィンドウ ID
+                            ,hInst            // アプリケーションインスタンスのハンドル
+                            ,NULL            // ウィンドウ作成データ
+                            );
+    if(hWnd == NULL) return 0;
+    
+    ShowWindow(hWnd, SW_SHOW);
+    UpdateWindow(hWnd);
+
+    // ★★★★★ メインループ
+    MSG msg;
+    while (!s_end)
+    {
+        if (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE)){
+            // メッセージの処理
+            TranslateMessage(&msg);
+            DispatchMessage(&msg);
+        }else{
+            // メッセージが来ない時(後々、描画系の処理が入る)
+        }
+    }
+    
+    // ★★★★★ 終了
+    return 0;
+}
+</pre>
+<p>
+なお、WIDTH, HEIGHT, FULLSCREEN, CAPTION は main.h で定義しています。
+これは、今後ゲームを作ることを考えると、解像度は変化しないと考え、このような方式にしました。<br>
+ない様ですが、AdjustWindowRect で、ウィンドウのサイズを計算し、RegisterClass で、背景色などの設定をし、
+CreateWindow で、ウィンドウを作成します。<br>
+メインループでは、s_end が true になるのを待って、ループを回します。
+PeekMessage がイベントを拾う関数で、メッセージがおきたら、TranslateMessage, DispatchMessage で
+処理をします。
+実際には、その中で wc.lpfnWndProc の MsgProc が呼ばれます。
+まぁ、そんなもんだと思ってください。<br>
+MsgProc は、下の関数で、WM_CLOSE のイベント（もしくは WM_KEYDOWN のコマンド）で、
+s_end を true にして、終了を促します。<br>
+つまり、このプログラムは、×ボタンを押すか、キーボードのどこかを押すと終了します。
+</p>
+<pre class="CodeBlock">
+LRESULT CALLBACK MsgProc(HWND hWnd,UINT msg,WPARAM wParam,LPARAM lParam)
+{
+    switch (msg){
+    case WM_KEYDOWN:                // 何かキーが押された
+    case WM_CLOSE:                  // ×ボタンを押した
+        s_end = true;
+        return 1;
+        break;
+    default:
+        break;
+    }
+    return DefWindowProc(hWnd,msg,wParam,lParam);
+}
+</pre>
+<p>
+あと、今回は特にメモリの確保をしていないので、後片付けですることはありませんでした。
+</p>
+<p>
+このプログラムは、一般のウィンドウズプログラムで、Direct X はまだ出てきません。<br>
+次から、いよいよ Direct X のプログラムに入ろうと思います。
+</p>
+
+
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<center>
+<hr>
+<p><a href="../index.html">もどる</a></p>
+<p><a href="mailto:imagire@gmail.com">imagire@gmail.com</a></p>
+</center>
+</body>
+</html>

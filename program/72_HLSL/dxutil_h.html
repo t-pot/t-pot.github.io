@@ -1,0 +1,196 @@
+<HTML>
+<HEAD>
+<TITLE>dxutil.h</TITLE>
+<meta name="GENERATOR" content="cpp2html 2.1 by Niisaka">
+<meta http-equiv="Content-Type" content="text/html">
+<meta http-equiv="Content-Style-Type" content="text/css">
+<STYLE TYPE="text/css">
+<!--
+SPAN.comment { color:#008000; font-weight:normal; font-style:normal;}
+SPAN.keyword { color:#0000FF; font-weight:normal; font-style:normal;}
+SPAN.string { color:#600000; font-weight:normal; font-style:normal;}
+SPAN.linenum { color:#A0A0A0; font-weight:normal; font-style:normal;}
+-->
+</STYLE>
+</HEAD>
+<BODY TEXT="#000000" BGCOLOR="#FFFFFF">
+<PRE><SPAN CLASS="linenum">0001:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0002:</SPAN> <SPAN CLASS="comment">// File: DXUtil.h</SPAN>
+<SPAN CLASS="linenum">0003:</SPAN> <SPAN CLASS="comment">//</SPAN>
+<SPAN CLASS="linenum">0004:</SPAN> <SPAN CLASS="comment">// Desc: Helper functions and typing shortcuts for DirectX programming.</SPAN>
+<SPAN CLASS="linenum">0005:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0006:</SPAN> <SPAN CLASS="keyword">#ifndef</SPAN> DXUTIL_H
+<SPAN CLASS="linenum">0007:</SPAN> <SPAN CLASS="keyword">#define</SPAN> DXUTIL_H
+<SPAN CLASS="linenum">0008:</SPAN> 
+<SPAN CLASS="linenum">0009:</SPAN> 
+<SPAN CLASS="linenum">0010:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0011:</SPAN> <SPAN CLASS="comment">// Miscellaneous helper functions</SPAN>
+<SPAN CLASS="linenum">0012:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0013:</SPAN> <SPAN CLASS="keyword">#define</SPAN> SAFE_DELETE(p)       { <SPAN CLASS="keyword">if</SPAN>(p) { <SPAN CLASS="keyword">delete</SPAN> (p);     (p)=NULL; } }
+<SPAN CLASS="linenum">0014:</SPAN> <SPAN CLASS="keyword">#define</SPAN> SAFE_DELETE_ARRAY(p) { <SPAN CLASS="keyword">if</SPAN>(p) { <SPAN CLASS="keyword">delete</SPAN>[] (p);   (p)=NULL; } }
+<SPAN CLASS="linenum">0015:</SPAN> <SPAN CLASS="keyword">#define</SPAN> SAFE_RELEASE(p)      { <SPAN CLASS="keyword">if</SPAN>(p) { (p)-&gt;Release(); (p)=NULL; } }
+<SPAN CLASS="linenum">0016:</SPAN> 
+<SPAN CLASS="linenum">0017:</SPAN> 
+<SPAN CLASS="linenum">0018:</SPAN> <SPAN CLASS="keyword">#ifndef</SPAN> UNDER_CE
+<SPAN CLASS="linenum">0019:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0020:</SPAN> <SPAN CLASS="comment">// Name: DXUtil_GetDXSDKMediaPath() and DXUtil_FindMediaFile() </SPAN>
+<SPAN CLASS="linenum">0021:</SPAN> <SPAN CLASS="comment">// Desc: Returns the DirectX SDK path, as stored in the system registry</SPAN>
+<SPAN CLASS="linenum">0022:</SPAN> <SPAN CLASS="comment">//       during the SDK install.</SPAN>
+<SPAN CLASS="linenum">0023:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0024:</SPAN> HRESULT DXUtil_GetDXSDKMediaPathCch( TCHAR* strDest, <SPAN CLASS="keyword">int</SPAN> cchDest );
+<SPAN CLASS="linenum">0025:</SPAN> HRESULT DXUtil_GetDXSDKMediaPathCb( TCHAR* szDest, <SPAN CLASS="keyword">int</SPAN> cbDest );
+<SPAN CLASS="linenum">0026:</SPAN> HRESULT DXUtil_FindMediaFileCch( TCHAR* strDestPath, <SPAN CLASS="keyword">int</SPAN> cchDest, TCHAR* strFilename );
+<SPAN CLASS="linenum">0027:</SPAN> HRESULT DXUtil_FindMediaFileCb( TCHAR* szDestPath, <SPAN CLASS="keyword">int</SPAN> cbDest, TCHAR* strFilename );
+<SPAN CLASS="linenum">0028:</SPAN> <SPAN CLASS="keyword">#endif</SPAN> <SPAN CLASS="comment">// !UNDER_CE</SPAN>
+<SPAN CLASS="linenum">0029:</SPAN> 
+<SPAN CLASS="linenum">0030:</SPAN> 
+<SPAN CLASS="linenum">0031:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0032:</SPAN> <SPAN CLASS="comment">// Name: DXUtil_Read*RegKey() and DXUtil_Write*RegKey()</SPAN>
+<SPAN CLASS="linenum">0033:</SPAN> <SPAN CLASS="comment">// Desc: Helper functions to read/write a string registry key </SPAN>
+<SPAN CLASS="linenum">0034:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0035:</SPAN> HRESULT DXUtil_WriteStringRegKey( HKEY hKey, TCHAR* strRegName, TCHAR* strValue );
+<SPAN CLASS="linenum">0036:</SPAN> HRESULT DXUtil_WriteIntRegKey( HKEY hKey, TCHAR* strRegName, DWORD dwValue );
+<SPAN CLASS="linenum">0037:</SPAN> HRESULT DXUtil_WriteGuidRegKey( HKEY hKey, TCHAR* strRegName, GUID guidValue );
+<SPAN CLASS="linenum">0038:</SPAN> HRESULT DXUtil_WriteBoolRegKey( HKEY hKey, TCHAR* strRegName, BOOL bValue );
+<SPAN CLASS="linenum">0039:</SPAN> 
+<SPAN CLASS="linenum">0040:</SPAN> HRESULT DXUtil_ReadStringRegKeyCch( HKEY hKey, TCHAR* strRegName, TCHAR* strDest, DWORD cchDest, TCHAR* strDefault );
+<SPAN CLASS="linenum">0041:</SPAN> HRESULT DXUtil_ReadStringRegKeyCb( HKEY hKey, TCHAR* strRegName, TCHAR* strDest, DWORD cbDest, TCHAR* strDefault );
+<SPAN CLASS="linenum">0042:</SPAN> HRESULT DXUtil_ReadIntRegKey( HKEY hKey, TCHAR* strRegName, DWORD* pdwValue, DWORD dwDefault );
+<SPAN CLASS="linenum">0043:</SPAN> HRESULT DXUtil_ReadGuidRegKey( HKEY hKey, TCHAR* strRegName, GUID* pGuidValue, GUID&amp; guidDefault );
+<SPAN CLASS="linenum">0044:</SPAN> HRESULT DXUtil_ReadBoolRegKey( HKEY hKey, TCHAR* strRegName, BOOL* pbValue, BOOL bDefault );
+<SPAN CLASS="linenum">0045:</SPAN> 
+<SPAN CLASS="linenum">0046:</SPAN> 
+<SPAN CLASS="linenum">0047:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0048:</SPAN> <SPAN CLASS="comment">// Name: DXUtil_Timer()</SPAN>
+<SPAN CLASS="linenum">0049:</SPAN> <SPAN CLASS="comment">// Desc: Performs timer opertations. Use the following commands:</SPAN>
+<SPAN CLASS="linenum">0050:</SPAN> <SPAN CLASS="comment">//          TIMER_RESET           - to reset the timer</SPAN>
+<SPAN CLASS="linenum">0051:</SPAN> <SPAN CLASS="comment">//          TIMER_START           - to start the timer</SPAN>
+<SPAN CLASS="linenum">0052:</SPAN> <SPAN CLASS="comment">//          TIMER_STOP            - to stop (or pause) the timer</SPAN>
+<SPAN CLASS="linenum">0053:</SPAN> <SPAN CLASS="comment">//          TIMER_ADVANCE         - to advance the timer by 0.1 seconds</SPAN>
+<SPAN CLASS="linenum">0054:</SPAN> <SPAN CLASS="comment">//          TIMER_GETABSOLUTETIME - to get the absolute system time</SPAN>
+<SPAN CLASS="linenum">0055:</SPAN> <SPAN CLASS="comment">//          TIMER_GETAPPTIME      - to get the current time</SPAN>
+<SPAN CLASS="linenum">0056:</SPAN> <SPAN CLASS="comment">//          TIMER_GETELAPSEDTIME  - to get the time that elapsed between </SPAN>
+<SPAN CLASS="linenum">0057:</SPAN> <SPAN CLASS="comment">//                                  TIMER_GETELAPSEDTIME calls</SPAN>
+<SPAN CLASS="linenum">0058:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0059:</SPAN> <SPAN CLASS="keyword">enum</SPAN> TIMER_COMMAND { TIMER_RESET, TIMER_START, TIMER_STOP, TIMER_ADVANCE,
+<SPAN CLASS="linenum">0060:</SPAN>                      TIMER_GETABSOLUTETIME, TIMER_GETAPPTIME, TIMER_GETELAPSEDTIME };
+<SPAN CLASS="linenum">0061:</SPAN> FLOAT <SPAN CLASS="keyword">__stdcall</SPAN> DXUtil_Timer( TIMER_COMMAND command );
+<SPAN CLASS="linenum">0062:</SPAN> 
+<SPAN CLASS="linenum">0063:</SPAN> 
+<SPAN CLASS="linenum">0064:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0065:</SPAN> <SPAN CLASS="comment">// UNICODE support for converting between CHAR, TCHAR, and WCHAR strings</SPAN>
+<SPAN CLASS="linenum">0066:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0067:</SPAN> HRESULT DXUtil_ConvertAnsiStringToWideCch( WCHAR* wstrDestination, <SPAN CLASS="keyword">const</SPAN> CHAR* strSource, <SPAN CLASS="keyword">int</SPAN> cchDestChar );
+<SPAN CLASS="linenum">0068:</SPAN> HRESULT DXUtil_ConvertWideStringToAnsiCch( CHAR* strDestination, <SPAN CLASS="keyword">const</SPAN> WCHAR* wstrSource, <SPAN CLASS="keyword">int</SPAN> cchDestChar );
+<SPAN CLASS="linenum">0069:</SPAN> HRESULT DXUtil_ConvertGenericStringToAnsiCch( CHAR* strDestination, <SPAN CLASS="keyword">const</SPAN> TCHAR* tstrSource, <SPAN CLASS="keyword">int</SPAN> cchDestChar );
+<SPAN CLASS="linenum">0070:</SPAN> HRESULT DXUtil_ConvertGenericStringToWideCch( WCHAR* wstrDestination, <SPAN CLASS="keyword">const</SPAN> TCHAR* tstrSource, <SPAN CLASS="keyword">int</SPAN> cchDestChar );
+<SPAN CLASS="linenum">0071:</SPAN> HRESULT DXUtil_ConvertAnsiStringToGenericCch( TCHAR* tstrDestination, <SPAN CLASS="keyword">const</SPAN> CHAR* strSource, <SPAN CLASS="keyword">int</SPAN> cchDestChar );
+<SPAN CLASS="linenum">0072:</SPAN> HRESULT DXUtil_ConvertWideStringToGenericCch( TCHAR* tstrDestination, <SPAN CLASS="keyword">const</SPAN> WCHAR* wstrSource, <SPAN CLASS="keyword">int</SPAN> cchDestChar );
+<SPAN CLASS="linenum">0073:</SPAN> HRESULT DXUtil_ConvertAnsiStringToWideCb( WCHAR* wstrDestination, <SPAN CLASS="keyword">const</SPAN> CHAR* strSource, <SPAN CLASS="keyword">int</SPAN> cbDestChar );
+<SPAN CLASS="linenum">0074:</SPAN> HRESULT DXUtil_ConvertWideStringToAnsiCb( CHAR* strDestination, <SPAN CLASS="keyword">const</SPAN> WCHAR* wstrSource, <SPAN CLASS="keyword">int</SPAN> cbDestChar );
+<SPAN CLASS="linenum">0075:</SPAN> HRESULT DXUtil_ConvertGenericStringToAnsiCb( CHAR* strDestination, <SPAN CLASS="keyword">const</SPAN> TCHAR* tstrSource, <SPAN CLASS="keyword">int</SPAN> cbDestChar );
+<SPAN CLASS="linenum">0076:</SPAN> HRESULT DXUtil_ConvertGenericStringToWideCb( WCHAR* wstrDestination, <SPAN CLASS="keyword">const</SPAN> TCHAR* tstrSource, <SPAN CLASS="keyword">int</SPAN> cbDestChar );
+<SPAN CLASS="linenum">0077:</SPAN> HRESULT DXUtil_ConvertAnsiStringToGenericCb( TCHAR* tstrDestination, <SPAN CLASS="keyword">const</SPAN> CHAR* strSource, <SPAN CLASS="keyword">int</SPAN> cbDestChar );
+<SPAN CLASS="linenum">0078:</SPAN> HRESULT DXUtil_ConvertWideStringToGenericCb( TCHAR* tstrDestination, <SPAN CLASS="keyword">const</SPAN> WCHAR* wstrSource, <SPAN CLASS="keyword">int</SPAN> cbDestChar );
+<SPAN CLASS="linenum">0079:</SPAN> 
+<SPAN CLASS="linenum">0080:</SPAN> 
+<SPAN CLASS="linenum">0081:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0082:</SPAN> <SPAN CLASS="comment">// Readme functions</SPAN>
+<SPAN CLASS="linenum">0083:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0084:</SPAN> VOID DXUtil_LaunchReadme( HWND hWnd, TCHAR* strLoc = NULL );
+<SPAN CLASS="linenum">0085:</SPAN> 
+<SPAN CLASS="linenum">0086:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0087:</SPAN> <SPAN CLASS="comment">// GUID to String converting </SPAN>
+<SPAN CLASS="linenum">0088:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0089:</SPAN> HRESULT DXUtil_ConvertGUIDToStringCch( <SPAN CLASS="keyword">const</SPAN> GUID* pGuidSrc, TCHAR* strDest, <SPAN CLASS="keyword">int</SPAN> cchDestChar );
+<SPAN CLASS="linenum">0090:</SPAN> HRESULT DXUtil_ConvertGUIDToStringCb( <SPAN CLASS="keyword">const</SPAN> GUID* pGuidSrc, TCHAR* strDest, <SPAN CLASS="keyword">int</SPAN> cbDestChar );
+<SPAN CLASS="linenum">0091:</SPAN> HRESULT DXUtil_ConvertStringToGUID( <SPAN CLASS="keyword">const</SPAN> TCHAR* strIn, GUID* pGuidOut );
+<SPAN CLASS="linenum">0092:</SPAN> 
+<SPAN CLASS="linenum">0093:</SPAN> 
+<SPAN CLASS="linenum">0094:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0095:</SPAN> <SPAN CLASS="comment">// Debug printing support</SPAN>
+<SPAN CLASS="linenum">0096:</SPAN> <SPAN CLASS="comment">// See dxerr9.h for more debug printing support</SPAN>
+<SPAN CLASS="linenum">0097:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0098:</SPAN> VOID    DXUtil_Trace( TCHAR* strMsg, ... );
+<SPAN CLASS="linenum">0099:</SPAN> 
+<SPAN CLASS="linenum">0100:</SPAN> <SPAN CLASS="keyword">#if</SPAN> defined(DEBUG) | defined(_DEBUG)
+<SPAN CLASS="linenum">0101:</SPAN>     <SPAN CLASS="keyword">#define</SPAN> DXTRACE           DXUtil_Trace
+<SPAN CLASS="linenum">0102:</SPAN> <SPAN CLASS="keyword">#else</SPAN>
+<SPAN CLASS="linenum">0103:</SPAN>     <SPAN CLASS="keyword">#define</SPAN> DXTRACE           <SPAN CLASS="keyword">sizeof</SPAN>
+<SPAN CLASS="linenum">0104:</SPAN> <SPAN CLASS="keyword">#endif</SPAN>
+<SPAN CLASS="linenum">0105:</SPAN> 
+<SPAN CLASS="linenum">0106:</SPAN> 
+<SPAN CLASS="linenum">0107:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0108:</SPAN> <SPAN CLASS="comment">// Name: ArrayListType</SPAN>
+<SPAN CLASS="linenum">0109:</SPAN> <SPAN CLASS="comment">// Desc: Indicates how data should be stored in a CArrayList</SPAN>
+<SPAN CLASS="linenum">0110:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0111:</SPAN> <SPAN CLASS="keyword">enum</SPAN> ArrayListType
+<SPAN CLASS="linenum">0112:</SPAN> {
+<SPAN CLASS="linenum">0113:</SPAN>     AL_VALUE,       <SPAN CLASS="comment">// entry data is copied into the list</SPAN>
+<SPAN CLASS="linenum">0114:</SPAN>     AL_REFERENCE,   <SPAN CLASS="comment">// entry pointers are copied into the list</SPAN>
+<SPAN CLASS="linenum">0115:</SPAN> };
+<SPAN CLASS="linenum">0116:</SPAN> 
+<SPAN CLASS="linenum">0117:</SPAN> 
+<SPAN CLASS="linenum">0118:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0119:</SPAN> <SPAN CLASS="comment">// Name: CArrayList</SPAN>
+<SPAN CLASS="linenum">0120:</SPAN> <SPAN CLASS="comment">// Desc: A growable array</SPAN>
+<SPAN CLASS="linenum">0121:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0122:</SPAN> <SPAN CLASS="keyword">class</SPAN> CArrayList
+<SPAN CLASS="linenum">0123:</SPAN> {
+<SPAN CLASS="linenum">0124:</SPAN> <SPAN CLASS="keyword">protected</SPAN>:
+<SPAN CLASS="linenum">0125:</SPAN>     ArrayListType m_ArrayListType;
+<SPAN CLASS="linenum">0126:</SPAN>     <SPAN CLASS="keyword">void</SPAN>* m_pData;
+<SPAN CLASS="linenum">0127:</SPAN>     UINT m_BytesPerEntry;
+<SPAN CLASS="linenum">0128:</SPAN>     UINT m_NumEntries;
+<SPAN CLASS="linenum">0129:</SPAN>     UINT m_NumEntriesAllocated;
+<SPAN CLASS="linenum">0130:</SPAN> 
+<SPAN CLASS="linenum">0131:</SPAN> <SPAN CLASS="keyword">public</SPAN>:
+<SPAN CLASS="linenum">0132:</SPAN>     CArrayList( ArrayListType Type, UINT BytesPerEntry = 0 );
+<SPAN CLASS="linenum">0133:</SPAN>     ~CArrayList( <SPAN CLASS="keyword">void</SPAN> );
+<SPAN CLASS="linenum">0134:</SPAN>     HRESULT Add( <SPAN CLASS="keyword">void</SPAN>* pEntry );
+<SPAN CLASS="linenum">0135:</SPAN>     <SPAN CLASS="keyword">void</SPAN> Remove( UINT Entry );
+<SPAN CLASS="linenum">0136:</SPAN>     <SPAN CLASS="keyword">void</SPAN>* GetPtr( UINT Entry );
+<SPAN CLASS="linenum">0137:</SPAN>     UINT Count( <SPAN CLASS="keyword">void</SPAN> ) { <SPAN CLASS="keyword">return</SPAN> m_NumEntries; }
+<SPAN CLASS="linenum">0138:</SPAN>     <SPAN CLASS="keyword">bool</SPAN> Contains( <SPAN CLASS="keyword">void</SPAN>* pEntryData );
+<SPAN CLASS="linenum">0139:</SPAN>     <SPAN CLASS="keyword">void</SPAN> Clear( <SPAN CLASS="keyword">void</SPAN> ) { m_NumEntries = 0; }
+<SPAN CLASS="linenum">0140:</SPAN> };
+<SPAN CLASS="linenum">0141:</SPAN> 
+<SPAN CLASS="linenum">0142:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0143:</SPAN> <SPAN CLASS="comment">// WinCE build support</SPAN>
+<SPAN CLASS="linenum">0144:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0145:</SPAN> 
+<SPAN CLASS="linenum">0146:</SPAN> <SPAN CLASS="keyword">#ifdef</SPAN> UNDER_CE
+<SPAN CLASS="linenum">0147:</SPAN> 
+<SPAN CLASS="linenum">0148:</SPAN> <SPAN CLASS="keyword">#define</SPAN> CheckDlgButton(hdialog, id, state) ::SendMessage(::GetDlgItem(hdialog, id), BM_SETCHECK, state, 0)
+<SPAN CLASS="linenum">0149:</SPAN> <SPAN CLASS="keyword">#define</SPAN> IsDlgButtonChecked(hdialog, id) ::SendMessage(::GetDlgItem(hdialog, id), BM_GETCHECK, 0L, 0L)
+<SPAN CLASS="linenum">0150:</SPAN> <SPAN CLASS="keyword">#define</SPAN> GETTIMESTAMP GetTickCount
+<SPAN CLASS="linenum">0151:</SPAN> <SPAN CLASS="keyword">#define</SPAN> _TWINCE(x) _T(x)
+<SPAN CLASS="linenum">0152:</SPAN> 
+<SPAN CLASS="linenum">0153:</SPAN> <SPAN CLASS="keyword">__inline</SPAN> <SPAN CLASS="keyword">int</SPAN> GetScrollPos(HWND hWnd, <SPAN CLASS="keyword">int</SPAN> nBar)
+<SPAN CLASS="linenum">0154:</SPAN> {
+<SPAN CLASS="linenum">0155:</SPAN>     SCROLLINFO si;
+<SPAN CLASS="linenum">0156:</SPAN>     memset(&amp;si, 0, <SPAN CLASS="keyword">sizeof</SPAN>(si));
+<SPAN CLASS="linenum">0157:</SPAN>     si.cbSize = <SPAN CLASS="keyword">sizeof</SPAN>(si);
+<SPAN CLASS="linenum">0158:</SPAN>     si.fMask = SIF_POS;
+<SPAN CLASS="linenum">0159:</SPAN>     <SPAN CLASS="keyword">if</SPAN> (!GetScrollInfo(hWnd, nBar, &amp;si))
+<SPAN CLASS="linenum">0160:</SPAN>     {
+<SPAN CLASS="linenum">0161:</SPAN>         <SPAN CLASS="keyword">return</SPAN> 0;
+<SPAN CLASS="linenum">0162:</SPAN>     }
+<SPAN CLASS="linenum">0163:</SPAN>     <SPAN CLASS="keyword">else</SPAN>
+<SPAN CLASS="linenum">0164:</SPAN>     {
+<SPAN CLASS="linenum">0165:</SPAN>         <SPAN CLASS="keyword">return</SPAN> si.nPos;
+<SPAN CLASS="linenum">0166:</SPAN>     }
+<SPAN CLASS="linenum">0167:</SPAN> }
+<SPAN CLASS="linenum">0168:</SPAN> 
+<SPAN CLASS="linenum">0169:</SPAN> <SPAN CLASS="keyword">#else</SPAN> <SPAN CLASS="comment">// !UNDER_CE</SPAN>
+<SPAN CLASS="linenum">0170:</SPAN> 
+<SPAN CLASS="linenum">0171:</SPAN> <SPAN CLASS="keyword">#define</SPAN> GETTIMESTAMP timeGetTime
+<SPAN CLASS="linenum">0172:</SPAN> <SPAN CLASS="keyword">#define</SPAN> _TWINCE(x) x
+<SPAN CLASS="linenum">0173:</SPAN> 
+<SPAN CLASS="linenum">0174:</SPAN> <SPAN CLASS="keyword">#endif</SPAN> <SPAN CLASS="comment">// UNDER_CE</SPAN>
+<SPAN CLASS="linenum">0175:</SPAN> 
+<SPAN CLASS="linenum">0176:</SPAN> 
+<SPAN CLASS="linenum">0177:</SPAN> <SPAN CLASS="keyword">#endif</SPAN> <SPAN CLASS="comment">// DXUTIL_H</SPAN>
+<SPAN CLASS="linenum">0178:</SPAN> </PRE>
+</BODY>
+</HTML>

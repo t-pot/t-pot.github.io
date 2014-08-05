@@ -1,0 +1,145 @@
+<HTML>
+<HEAD>
+<TITLE>bg.cpp</TITLE>
+<meta name="GENERATOR" content="cpp2html 2.1 by Niisaka">
+<meta http-equiv="Content-Type" content="text/html">
+</HEAD>
+<BODY TEXT="#000000" BGCOLOR="#FFFFFF">
+<PRE><FONT COLOR="#40F628">0001:</FONT> <FONT COLOR="#008000">// ----------------------------------------------------------------------------</FONT>
+<FONT COLOR="#40F628">0002:</FONT> <FONT COLOR="#008000">//</FONT>
+<FONT COLOR="#40F628">0003:</FONT> <FONT COLOR="#008000">// bg.cpp - Back ground objects</FONT>
+<FONT COLOR="#40F628">0004:</FONT> <FONT COLOR="#008000">// </FONT>
+<FONT COLOR="#40F628">0005:</FONT> <FONT COLOR="#008000">// Copyright (c) 2002 IMAGIRE Takashi (imagire@gmail.com)</FONT>
+<FONT COLOR="#40F628">0006:</FONT> <FONT COLOR="#008000">// All Rights Reserved.</FONT>
+<FONT COLOR="#40F628">0007:</FONT> <FONT COLOR="#008000">//</FONT>
+<FONT COLOR="#40F628">0008:</FONT> <FONT COLOR="#008000">// ----------------------------------------------------------------------------</FONT>
+<FONT COLOR="#40F628">0009:</FONT> <FONT COLOR="#0000FF">#define</FONT> STRICT
+<FONT COLOR="#40F628">0010:</FONT> 
+<FONT COLOR="#40F628">0011:</FONT> <FONT COLOR="#0000FF">#include</FONT> &lt;d3dx8.h&gt;
+<FONT COLOR="#40F628">0012:</FONT> <FONT COLOR="#0000FF">#include</FONT> &lt;Cg/cgD3D.h&gt;
+<FONT COLOR="#40F628">0013:</FONT> <FONT COLOR="#0000FF">#include</FONT> "<FONT COLOR="#600000">main.h</FONT>"
+<FONT COLOR="#40F628">0014:</FONT> <FONT COLOR="#0000FF">#include</FONT> "<FONT COLOR="#600000">draw.h</FONT>"
+<FONT COLOR="#40F628">0015:</FONT> 
+<FONT COLOR="#40F628">0016:</FONT> <FONT COLOR="#0000FF">extern</FONT> cgProgramContainer *pVertexProgramContainer;
+<FONT COLOR="#40F628">0017:</FONT> <FONT COLOR="#0000FF">extern</FONT> cgProgramContainer  *pPixelProgramContainer;
+<FONT COLOR="#40F628">0018:</FONT> <FONT COLOR="#0000FF">extern</FONT> cgBindIter * vertex_mat_iter;
+<FONT COLOR="#40F628">0019:</FONT> <FONT COLOR="#0000FF">extern</FONT> cgBindIter * tex0_iter;
+<FONT COLOR="#40F628">0020:</FONT> <FONT COLOR="#0000FF">extern</FONT> cgBindIter * tex1_iter;
+<FONT COLOR="#40F628">0021:</FONT> 
+<FONT COLOR="#40F628">0022:</FONT> <FONT COLOR="#008000">// Sky</FONT>
+<FONT COLOR="#40F628">0023:</FONT> <FONT COLOR="#0000FF">#define</FONT> NUM_Y       1
+<FONT COLOR="#40F628">0024:</FONT> <FONT COLOR="#0000FF">#define</FONT> NUM_CIRCLE  32
+<FONT COLOR="#40F628">0025:</FONT> <FONT COLOR="#0000FF">#define</FONT> NUM_VERTICES            ((NUM_Y+1)*(NUM_CIRCLE+1))
+<FONT COLOR="#40F628">0026:</FONT> <FONT COLOR="#0000FF">#define</FONT> NUM_INDICES_PERFACE     (3*2)
+<FONT COLOR="#40F628">0027:</FONT> <FONT COLOR="#0000FF">#define</FONT> NUM_FACES               (NUM_Y*NUM_CIRCLE)
+<FONT COLOR="#40F628">0028:</FONT> <FONT COLOR="#0000FF">#define</FONT> NUM_VERTICES_PERFACE    4
+<FONT COLOR="#40F628">0029:</FONT> 
+<FONT COLOR="#40F628">0030:</FONT> <FONT COLOR="#008000">// ----------------------------------------------------------------------------</FONT>
+<FONT COLOR="#40F628">0031:</FONT> <FONT COLOR="#0000FF">typedef</FONT> <FONT COLOR="#0000FF">struct</FONT>{
+<FONT COLOR="#40F628">0032:</FONT>     <FONT COLOR="#0000FF">float</FONT> x,y,z,w;
+<FONT COLOR="#40F628">0033:</FONT>     <FONT COLOR="#0000FF">float</FONT> tu,tv;
+<FONT COLOR="#40F628">0034:</FONT> } MyVertex;
+<FONT COLOR="#40F628">0035:</FONT> 
+<FONT COLOR="#40F628">0036:</FONT> <FONT COLOR="#008000">// ----------------------------------------------------------------------------</FONT>
+<FONT COLOR="#40F628">0037:</FONT> <FONT COLOR="#008000">// Sky</FONT>
+<FONT COLOR="#40F628">0038:</FONT> LPDIRECT3DVERTEXBUFFER8     pCylinderVB;
+<FONT COLOR="#40F628">0039:</FONT> LPDIRECT3DINDEXBUFFER8      pCylinderIB;
+<FONT COLOR="#40F628">0040:</FONT> LPDIRECT3DTEXTURE8          pCylinderTex;
+<FONT COLOR="#40F628">0041:</FONT> 
+<FONT COLOR="#40F628">0042:</FONT> <FONT COLOR="#008000">// ----------------------------------------------------------------------------</FONT>
+<FONT COLOR="#40F628">0043:</FONT> <FONT COLOR="#008000">// Initialization of the back ground object</FONT>
+<FONT COLOR="#40F628">0044:</FONT> <FONT COLOR="#008000">// ----------------------------------------------------------------------------</FONT>
+<FONT COLOR="#40F628">0045:</FONT> <FONT COLOR="#0000FF">void</FONT> InitBg(LPDIRECT3DDEVICE8 lpD3DDev)
+<FONT COLOR="#40F628">0046:</FONT> {
+<FONT COLOR="#40F628">0047:</FONT>     <FONT COLOR="#008000">//</FONT>
+<FONT COLOR="#40F628">0048:</FONT>     <FONT COLOR="#008000">// Sky</FONT>
+<FONT COLOR="#40F628">0049:</FONT>     <FONT COLOR="#008000">//</FONT>
+<FONT COLOR="#40F628">0050:</FONT>     <FONT COLOR="#008000">// Create the vertex buffer </FONT>
+<FONT COLOR="#40F628">0051:</FONT>     MyVertex *pDest;
+<FONT COLOR="#40F628">0052:</FONT>     lpD3DDev-&gt;CreateVertexBuffer( NUM_VERTICES * <FONT COLOR="#0000FF">sizeof</FONT>(MyVertex),
+<FONT COLOR="#40F628">0053:</FONT>                                 0, 0, D3DPOOL_MANAGED, &amp;pCylinderVB );
+<FONT COLOR="#40F628">0054:</FONT> 
+<FONT COLOR="#40F628">0055:</FONT>     <FONT COLOR="#008000">// Set up vertexs</FONT>
+<FONT COLOR="#40F628">0056:</FONT>     WORD k=0;
+<FONT COLOR="#40F628">0057:</FONT>     pCylinderVB-&gt;Lock ( 0, 0, (BYTE**)&amp;pDest, 0 );
+<FONT COLOR="#40F628">0058:</FONT>     <FONT COLOR="#0000FF">float</FONT> r = 5.0f;
+<FONT COLOR="#40F628">0059:</FONT>     <FONT COLOR="#0000FF">float</FONT> h = 10.0f;
+<FONT COLOR="#40F628">0060:</FONT>     <FONT COLOR="#0000FF">for</FONT> (DWORD i = 0; i &lt;= NUM_CIRCLE; i++) {
+<FONT COLOR="#40F628">0061:</FONT>         <FONT COLOR="#0000FF">float</FONT> theta = (2*D3DX_PI*(<FONT COLOR="#0000FF">float</FONT>)i)/(<FONT COLOR="#0000FF">float</FONT>)NUM_CIRCLE;
+<FONT COLOR="#40F628">0062:</FONT>         <FONT COLOR="#0000FF">for</FONT> (DWORD j = 0; j &lt;= NUM_Y; j++) {
+<FONT COLOR="#40F628">0063:</FONT>             pDest-&gt;x = r * (<FONT COLOR="#0000FF">float</FONT>)cos(theta);
+<FONT COLOR="#40F628">0064:</FONT>             pDest-&gt;z = r * (<FONT COLOR="#0000FF">float</FONT>)sin(theta);
+<FONT COLOR="#40F628">0065:</FONT>             pDest-&gt;y = h*((<FONT COLOR="#0000FF">float</FONT>)j/(<FONT COLOR="#0000FF">float</FONT>)NUM_Y-0.0f);
+<FONT COLOR="#40F628">0066:</FONT>             pDest-&gt;w   = 1.0f;
+<FONT COLOR="#40F628">0067:</FONT>             pDest-&gt;tu = (<FONT COLOR="#0000FF">float</FONT>)i / (<FONT COLOR="#0000FF">float</FONT>)NUM_CIRCLE;
+<FONT COLOR="#40F628">0068:</FONT>             pDest-&gt;tv = 1.0f-(<FONT COLOR="#0000FF">float</FONT>)j / (<FONT COLOR="#0000FF">float</FONT>)NUM_Y;
+<FONT COLOR="#40F628">0069:</FONT>             pDest += 1;
+<FONT COLOR="#40F628">0070:</FONT>         }
+<FONT COLOR="#40F628">0071:</FONT>     }       
+<FONT COLOR="#40F628">0072:</FONT>     pCylinderVB-&gt;Unlock ();
+<FONT COLOR="#40F628">0073:</FONT> 
+<FONT COLOR="#40F628">0074:</FONT> 
+<FONT COLOR="#40F628">0075:</FONT>     <FONT COLOR="#008000">// Set up indexs</FONT>
+<FONT COLOR="#40F628">0076:</FONT>     WORD *pIndex;
+<FONT COLOR="#40F628">0077:</FONT>     lpD3DDev-&gt;CreateIndexBuffer( NUM_INDICES_PERFACE  * NUM_FACES * <FONT COLOR="#0000FF">sizeof</FONT>(WORD),
+<FONT COLOR="#40F628">0078:</FONT>                                      0 ,
+<FONT COLOR="#40F628">0079:</FONT>                                      D3DFMT_INDEX16, D3DPOOL_DEFAULT,
+<FONT COLOR="#40F628">0080:</FONT>                                      &amp;pCylinderIB );
+<FONT COLOR="#40F628">0081:</FONT>     pCylinderIB-&gt;Lock ( 0, 0, (BYTE**)&amp;pIndex, 0 );
+<FONT COLOR="#40F628">0082:</FONT>     {
+<FONT COLOR="#40F628">0083:</FONT>     <FONT COLOR="#0000FF">for</FONT> (WORD i = 0; i &lt; NUM_CIRCLE; i++) {
+<FONT COLOR="#40F628">0084:</FONT>         <FONT COLOR="#0000FF">for</FONT> (WORD j = 0; j &lt; NUM_Y; j++) {
+<FONT COLOR="#40F628">0085:</FONT>             *pIndex++ = j + 0 + (i+0) * (NUM_Y+1);
+<FONT COLOR="#40F628">0086:</FONT>             *pIndex++ = j + 0 + (i+1) * (NUM_Y+1);
+<FONT COLOR="#40F628">0087:</FONT>             *pIndex++ = j + 1 + (i+0) * (NUM_Y+1);
+<FONT COLOR="#40F628">0088:</FONT> 
+<FONT COLOR="#40F628">0089:</FONT>             *pIndex++ = j + 1 + (i+0) * (NUM_Y+1);
+<FONT COLOR="#40F628">0090:</FONT>             *pIndex++ = j + 0 + (i+1) * (NUM_Y+1);
+<FONT COLOR="#40F628">0091:</FONT>             *pIndex++ = j + 1 + (i+1) * (NUM_Y+1);
+<FONT COLOR="#40F628">0092:</FONT>         }
+<FONT COLOR="#40F628">0093:</FONT>     }
+<FONT COLOR="#40F628">0094:</FONT>     }
+<FONT COLOR="#40F628">0095:</FONT>     pCylinderIB-&gt;Unlock ();
+<FONT COLOR="#40F628">0096:</FONT> 
+<FONT COLOR="#40F628">0097:</FONT>     D3DXCreateTextureFromFileEx(lpD3DDev, "<FONT COLOR="#600000">sky.bmp</FONT>", 0,0,0,0,D3DFMT_A8R8G8B8,
+<FONT COLOR="#40F628">0098:</FONT>                                 D3DPOOL_MANAGED, D3DX_FILTER_LINEAR, D3DX_FILTER_LINEAR,
+<FONT COLOR="#40F628">0099:</FONT>                                 0, NULL, NULL, &amp;pCylinderTex);
+<FONT COLOR="#40F628">0100:</FONT> 
+<FONT COLOR="#40F628">0101:</FONT> }
+<FONT COLOR="#40F628">0102:</FONT> <FONT COLOR="#008000">// ----------------------------------------------------------------------------</FONT>
+<FONT COLOR="#40F628">0103:</FONT> <FONT COLOR="#0000FF">void</FONT> CleanBg(LPDIRECT3DDEVICE8 lpD3DDev)
+<FONT COLOR="#40F628">0104:</FONT> {
+<FONT COLOR="#40F628">0105:</FONT>     RELEASE(pCylinderTex);
+<FONT COLOR="#40F628">0106:</FONT>     RELEASE(pCylinderIB);
+<FONT COLOR="#40F628">0107:</FONT>     RELEASE(pCylinderVB);
+<FONT COLOR="#40F628">0108:</FONT> }
+<FONT COLOR="#40F628">0109:</FONT> <FONT COLOR="#008000">// ----------------------------------------------------------------------------</FONT>
+<FONT COLOR="#40F628">0110:</FONT> <FONT COLOR="#0000FF">void</FONT> DrawBg(LPDIRECT3DDEVICE8 lpD3DDev, D3DXMATRIX &amp;mVP, <FONT COLOR="#0000FF">bool</FONT> texture)
+<FONT COLOR="#40F628">0111:</FONT> {
+<FONT COLOR="#40F628">0112:</FONT>     D3DXMATRIX mWorld, m;
+<FONT COLOR="#40F628">0113:</FONT> 
+<FONT COLOR="#40F628">0114:</FONT>     D3DXMatrixTranspose( &amp;m, &amp;mVP );
+<FONT COLOR="#40F628">0115:</FONT>     pVertexProgramContainer-&gt;SetShaderConstant( vertex_mat_iter, &amp;m  );
+<FONT COLOR="#40F628">0116:</FONT> 
+<FONT COLOR="#40F628">0117:</FONT>     lpD3DDev-&gt;SetTextureStageState(0,D3DTSS_COLOROP,    D3DTOP_MODULATE);
+<FONT COLOR="#40F628">0118:</FONT>     lpD3DDev-&gt;SetTextureStageState(0,D3DTSS_COLORARG1,  D3DTA_TEXTURE);
+<FONT COLOR="#40F628">0119:</FONT>     lpD3DDev-&gt;SetTextureStageState(0,D3DTSS_COLORARG2,  D3DTA_DIFFUSE);
+<FONT COLOR="#40F628">0120:</FONT>     lpD3DDev-&gt;SetTextureStageState(1,D3DTSS_COLOROP,    D3DTOP_DISABLE);
+<FONT COLOR="#40F628">0121:</FONT>     lpD3DDev-&gt;SetTextureStageState(0, D3DTSS_MAGFILTER, D3DTEXF_LINEAR );
+<FONT COLOR="#40F628">0122:</FONT>     lpD3DDev-&gt;SetTextureStageState(0, D3DTSS_MINFILTER, D3DTEXF_LINEAR );
+<FONT COLOR="#40F628">0123:</FONT>     
+<FONT COLOR="#40F628">0124:</FONT>     <FONT COLOR="#008000">//</FONT>
+<FONT COLOR="#40F628">0125:</FONT>     <FONT COLOR="#008000">// Sky</FONT>
+<FONT COLOR="#40F628">0126:</FONT>     <FONT COLOR="#008000">//</FONT>
+<FONT COLOR="#40F628">0127:</FONT>     lpD3DDev-&gt;SetTextureStageState(0,D3DTSS_ADDRESSU,   D3DTADDRESS_WRAP);
+<FONT COLOR="#40F628">0128:</FONT>     lpD3DDev-&gt;SetTextureStageState(0,D3DTSS_ADDRESSV,   D3DTADDRESS_CLAMP);
+<FONT COLOR="#40F628">0129:</FONT> 
+<FONT COLOR="#40F628">0130:</FONT>     pPixelProgramContainer-&gt;SetTexture(tex0_iter, texture?pCylinderTex:NULL);
+<FONT COLOR="#40F628">0131:</FONT>     pPixelProgramContainer-&gt;SetTexture(tex1_iter, NULL);
+<FONT COLOR="#40F628">0132:</FONT>     lpD3DDev-&gt;SetStreamSource(0, pCylinderVB, <FONT COLOR="#0000FF">sizeof</FONT>(MyVertex));
+<FONT COLOR="#40F628">0133:</FONT>     lpD3DDev-&gt;SetIndices(pCylinderIB,0);
+<FONT COLOR="#40F628">0134:</FONT>     lpD3DDev-&gt;DrawIndexedPrimitive( D3DPT_TRIANGLELIST, 0, NUM_VERTICES, 0 , NUM_FACES*2 );
+<FONT COLOR="#40F628">0135:</FONT> }
+<FONT COLOR="#40F628">0136:</FONT> </PRE>
+</BODY>
+</HTML>

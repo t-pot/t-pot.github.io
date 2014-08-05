@@ -1,0 +1,120 @@
+<HTML>
+<HEAD>
+<TITLE>CThread.cpp</TITLE>
+<meta name="GENERATOR" content="cpp2html 2.1 by Niisaka">
+<meta http-equiv="Content-Type" content="text/html">
+<meta http-equiv="Content-Style-Type" content="text/css">
+<STYLE TYPE="text/css">
+<!--
+SPAN.comment { color:#008000; font-weight:normal; font-style:normal;}
+SPAN.keyword { color:#0000FF; font-weight:normal; font-style:normal;}
+SPAN.string { color:#600000; font-weight:normal; font-style:normal;}
+SPAN.linenum { color:#A0A0A0; font-weight:normal; font-style:normal;}
+-->
+</STYLE>
+</HEAD>
+<BODY TEXT="#000000" BGCOLOR="#FFFFFF">
+<PRE><SPAN CLASS="linenum">0001:</SPAN> <SPAN CLASS="comment">// CBitmap.cpp : スレッドを管理する</SPAN>
+<SPAN CLASS="linenum">0002:</SPAN> <SPAN CLASS="comment">//</SPAN>
+<SPAN CLASS="linenum">0003:</SPAN> 
+<SPAN CLASS="linenum">0004:</SPAN> <SPAN CLASS="keyword">#include</SPAN> "<SPAN CLASS="string">stdafx.h</SPAN>"
+<SPAN CLASS="linenum">0005:</SPAN> <SPAN CLASS="keyword">#include</SPAN> &lt;process.h&gt;
+<SPAN CLASS="linenum">0006:</SPAN> <SPAN CLASS="keyword">#include</SPAN> "<SPAN CLASS="string">CThread.h</SPAN>"
+<SPAN CLASS="linenum">0007:</SPAN> 
+<SPAN CLASS="linenum">0008:</SPAN> <SPAN CLASS="keyword">namespace</SPAN> MySystem{
+<SPAN CLASS="linenum">0009:</SPAN> 
+<SPAN CLASS="linenum">0010:</SPAN> <SPAN CLASS="comment">// ---------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0011:</SPAN> <SPAN CLASS="comment">// スレッドを初期化する</SPAN>
+<SPAN CLASS="linenum">0012:</SPAN> <SPAN CLASS="comment">// ---------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0013:</SPAN> CThreadMgr::CThreadMgr(<SPAN CLASS="keyword">unsigned</SPAN> ( <SPAN CLASS="keyword">__stdcall</SPAN> *func )( <SPAN CLASS="keyword">void</SPAN> * )
+<SPAN CLASS="linenum">0014:</SPAN>                 , <SPAN CLASS="keyword">int</SPAN> thread_max  <SPAN CLASS="comment">// 最大スレッド数（CPUの数と同じ程度）</SPAN>
+<SPAN CLASS="linenum">0015:</SPAN>                 , <SPAN CLASS="keyword">int</SPAN> work_max )  <SPAN CLASS="comment">// スレッドに流し込める仕事の数</SPAN>
+<SPAN CLASS="linenum">0016:</SPAN> {
+<SPAN CLASS="linenum">0017:</SPAN>     <SPAN CLASS="keyword">unsigned</SPAN> <SPAN CLASS="keyword">int</SPAN>  dummy;
+<SPAN CLASS="linenum">0018:</SPAN> 
+<SPAN CLASS="linenum">0019:</SPAN>     m_ThreadMax = thread_max;
+<SPAN CLASS="linenum">0020:</SPAN>     m_WorkMax   = work_max;
+<SPAN CLASS="linenum">0021:</SPAN>     
+<SPAN CLASS="linenum">0022:</SPAN>     m_hThread = <SPAN CLASS="keyword">new</SPAN> HANDLE[thread_max];
+<SPAN CLASS="linenum">0023:</SPAN>     m_pThread = <SPAN CLASS="keyword">new</SPAN> CThreadData[work_max];
+<SPAN CLASS="linenum">0024:</SPAN>     m_bThreadEnable = TRUE;
+<SPAN CLASS="linenum">0025:</SPAN> 
+<SPAN CLASS="linenum">0026:</SPAN>     <SPAN CLASS="keyword">for</SPAN>( <SPAN CLASS="keyword">int</SPAN> i = 0; i &lt; thread_max; i++ )
+<SPAN CLASS="linenum">0027:</SPAN>     {
+<SPAN CLASS="linenum">0028:</SPAN>         m_hThread[i] = (HANDLE)_beginthreadex( NULL, 0, func, <SPAN CLASS="keyword">this</SPAN>, 0, &amp;dummy );
+<SPAN CLASS="linenum">0029:</SPAN>     }
+<SPAN CLASS="linenum">0030:</SPAN> }
+<SPAN CLASS="linenum">0031:</SPAN> 
+<SPAN CLASS="linenum">0032:</SPAN> <SPAN CLASS="comment">// ---------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0033:</SPAN> <SPAN CLASS="comment">// スレッドを終了する</SPAN>
+<SPAN CLASS="linenum">0034:</SPAN> <SPAN CLASS="comment">// ---------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0035:</SPAN> CThreadMgr::~CThreadMgr()
+<SPAN CLASS="linenum">0036:</SPAN> {
+<SPAN CLASS="linenum">0037:</SPAN>     m_bThreadEnable = FALSE;
+<SPAN CLASS="linenum">0038:</SPAN> 
+<SPAN CLASS="linenum">0039:</SPAN>     <SPAN CLASS="keyword">for</SPAN>( <SPAN CLASS="keyword">int</SPAN> i = 0; i &lt; m_ThreadMax; i++ )
+<SPAN CLASS="linenum">0040:</SPAN>     {
+<SPAN CLASS="linenum">0041:</SPAN>         WaitForSingleObject( m_hThread[i], INFINITE );  <SPAN CLASS="comment">// 受信スレッド終了待ち</SPAN>
+<SPAN CLASS="linenum">0042:</SPAN>         CloseHandle( m_hThread[i] );                    <SPAN CLASS="comment">// ハンドルを閉じる</SPAN>
+<SPAN CLASS="linenum">0043:</SPAN>     }
+<SPAN CLASS="linenum">0044:</SPAN> 
+<SPAN CLASS="linenum">0045:</SPAN>     <SPAN CLASS="keyword">delete</SPAN>[] m_pThread;
+<SPAN CLASS="linenum">0046:</SPAN>     <SPAN CLASS="keyword">delete</SPAN>[] m_hThread;
+<SPAN CLASS="linenum">0047:</SPAN> }
+<SPAN CLASS="linenum">0048:</SPAN> 
+<SPAN CLASS="linenum">0049:</SPAN> 
+<SPAN CLASS="linenum">0050:</SPAN> <SPAN CLASS="comment">// ---------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0051:</SPAN> <SPAN CLASS="comment">// スレッドにデータのリクエストをする</SPAN>
+<SPAN CLASS="linenum">0052:</SPAN> <SPAN CLASS="comment">// ---------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0053:</SPAN> <SPAN CLASS="keyword">int</SPAN> CThreadMgr::Req( <SPAN CLASS="keyword">void</SPAN> *pData )
+<SPAN CLASS="linenum">0054:</SPAN> {
+<SPAN CLASS="linenum">0055:</SPAN>     <SPAN CLASS="keyword">for</SPAN>( <SPAN CLASS="keyword">int</SPAN> i = 0; i &lt; m_WorkMax; i++ )
+<SPAN CLASS="linenum">0056:</SPAN>     {
+<SPAN CLASS="linenum">0057:</SPAN>         <SPAN CLASS="keyword">if</SPAN>( THREAD_DEAD == m_pThread[i].GetState() )
+<SPAN CLASS="linenum">0058:</SPAN>         {
+<SPAN CLASS="linenum">0059:</SPAN>             m_pThread[i].SetData( pData );
+<SPAN CLASS="linenum">0060:</SPAN>             m_pThread[i].SetState( THREAD_WAIT );
+<SPAN CLASS="linenum">0061:</SPAN>             <SPAN CLASS="keyword">return</SPAN> 0;
+<SPAN CLASS="linenum">0062:</SPAN>         }
+<SPAN CLASS="linenum">0063:</SPAN>     }
+<SPAN CLASS="linenum">0064:</SPAN> 
+<SPAN CLASS="linenum">0065:</SPAN>     <SPAN CLASS="keyword">return</SPAN> -1;
+<SPAN CLASS="linenum">0066:</SPAN> }
+<SPAN CLASS="linenum">0067:</SPAN> 
+<SPAN CLASS="linenum">0068:</SPAN> 
+<SPAN CLASS="linenum">0069:</SPAN> <SPAN CLASS="comment">// ---------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0070:</SPAN> <SPAN CLASS="comment">// まだ仕事が残ってる？</SPAN>
+<SPAN CLASS="linenum">0071:</SPAN> <SPAN CLASS="comment">// ---------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0072:</SPAN> <SPAN CLASS="keyword">int</SPAN> CThreadMgr::GetLeftWork()
+<SPAN CLASS="linenum">0073:</SPAN> {
+<SPAN CLASS="linenum">0074:</SPAN>     <SPAN CLASS="keyword">int</SPAN> count = 0;
+<SPAN CLASS="linenum">0075:</SPAN> 
+<SPAN CLASS="linenum">0076:</SPAN>     <SPAN CLASS="keyword">for</SPAN>( <SPAN CLASS="keyword">int</SPAN> i = 0; i &lt; m_WorkMax; i++ )
+<SPAN CLASS="linenum">0077:</SPAN>     {
+<SPAN CLASS="linenum">0078:</SPAN>         <SPAN CLASS="keyword">if</SPAN>( THREAD_DEAD != m_pThread[i].GetState() ) count++;
+<SPAN CLASS="linenum">0079:</SPAN>     }
+<SPAN CLASS="linenum">0080:</SPAN> 
+<SPAN CLASS="linenum">0081:</SPAN>     <SPAN CLASS="keyword">return</SPAN> count;
+<SPAN CLASS="linenum">0082:</SPAN> }
+<SPAN CLASS="linenum">0083:</SPAN> 
+<SPAN CLASS="linenum">0084:</SPAN> 
+<SPAN CLASS="linenum">0085:</SPAN> <SPAN CLASS="comment">// ---------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0086:</SPAN> <SPAN CLASS="comment">// 仕事をとってくる</SPAN>
+<SPAN CLASS="linenum">0087:</SPAN> <SPAN CLASS="comment">// ---------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0088:</SPAN> CThreadData *CThreadMgr::GetWork()
+<SPAN CLASS="linenum">0089:</SPAN> {
+<SPAN CLASS="linenum">0090:</SPAN>     <SPAN CLASS="keyword">for</SPAN>( <SPAN CLASS="keyword">int</SPAN> i = 0; i &lt; m_WorkMax; i++ )
+<SPAN CLASS="linenum">0091:</SPAN>     {
+<SPAN CLASS="linenum">0092:</SPAN>         <SPAN CLASS="keyword">if</SPAN>(THREAD_WAIT == m_pThread[i].GetState())
+<SPAN CLASS="linenum">0093:</SPAN>         {
+<SPAN CLASS="linenum">0094:</SPAN>             m_pThread[i].SetState( THREAD_RUN );
+<SPAN CLASS="linenum">0095:</SPAN>             <SPAN CLASS="keyword">return</SPAN> &amp;m_pThread[i];
+<SPAN CLASS="linenum">0096:</SPAN>         }
+<SPAN CLASS="linenum">0097:</SPAN>     }
+<SPAN CLASS="linenum">0098:</SPAN> 
+<SPAN CLASS="linenum">0099:</SPAN>     <SPAN CLASS="keyword">return</SPAN> NULL;
+<SPAN CLASS="linenum">0100:</SPAN> }
+<SPAN CLASS="linenum">0101:</SPAN> }<SPAN CLASS="comment">//namespace MySystem;</SPAN>
+<SPAN CLASS="linenum">0102:</SPAN> </PRE>
+</BODY>
+</HTML>

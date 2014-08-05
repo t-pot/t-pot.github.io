@@ -1,0 +1,56 @@
+<HTML>
+<HEAD>
+<TITLE>bgvs.cg</TITLE>
+<meta name="GENERATOR" content="cpp2html 2.1 by Niisaka">
+<meta http-equiv="Content-Type" content="text/html">
+<meta http-equiv="Content-Style-Type" content="text/css">
+<STYLE TYPE="text/css">
+<!--
+SPAN.comment { color:#008000; font-weight:normal; font-style:normal;}
+SPAN.keyword { color:#0000FF; font-weight:normal; font-style:normal;}
+SPAN.string { color:#600000; font-weight:normal; font-style:normal;}
+SPAN.linenum { color:#A0A0A0; font-weight:normal; font-style:normal;}
+-->
+</STYLE>
+</HEAD>
+<BODY TEXT="#000000" BGCOLOR="#FFFFFF">
+<PRE><SPAN CLASS="linenum">0001:</SPAN> <SPAN CLASS="comment">//</SPAN>
+<SPAN CLASS="linenum">0002:</SPAN> <SPAN CLASS="comment">// テクスチャーを張る頂点シェーダープログラム</SPAN>
+<SPAN CLASS="linenum">0003:</SPAN> <SPAN CLASS="comment">//</SPAN>
+<SPAN CLASS="linenum">0004:</SPAN> 
+<SPAN CLASS="linenum">0005:</SPAN> <SPAN CLASS="comment">// ----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0006:</SPAN> <SPAN CLASS="comment">// 入力用構造体</SPAN>
+<SPAN CLASS="linenum">0007:</SPAN> <SPAN CLASS="comment">// ----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0008:</SPAN> <SPAN CLASS="keyword">struct</SPAN> appdata : application2vertex {
+<SPAN CLASS="linenum">0009:</SPAN>     float4 position;
+<SPAN CLASS="linenum">0010:</SPAN>     float2 texcoord0;
+<SPAN CLASS="linenum">0011:</SPAN> };
+<SPAN CLASS="linenum">0012:</SPAN> 
+<SPAN CLASS="linenum">0013:</SPAN> <SPAN CLASS="comment">// ----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0014:</SPAN> <SPAN CLASS="comment">// 出力用構造体</SPAN>
+<SPAN CLASS="linenum">0015:</SPAN> <SPAN CLASS="comment">// ----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0016:</SPAN> <SPAN CLASS="keyword">struct</SPAN> vfconn : vertex2fragment {
+<SPAN CLASS="linenum">0017:</SPAN>     float4 HPOS;
+<SPAN CLASS="linenum">0018:</SPAN>     float2 texcoord0;
+<SPAN CLASS="linenum">0019:</SPAN> };
+<SPAN CLASS="linenum">0020:</SPAN> <SPAN CLASS="comment">// ----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0021:</SPAN> <SPAN CLASS="comment">// 頂点シェーダープログラム</SPAN>
+<SPAN CLASS="linenum">0022:</SPAN> <SPAN CLASS="comment">// ----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0023:</SPAN> vfconn main(appdata I
+<SPAN CLASS="linenum">0024:</SPAN>         , uniform float4x4 worldviewproj_matrix
+<SPAN CLASS="linenum">0025:</SPAN> ) {
+<SPAN CLASS="linenum">0026:</SPAN>     vfconn O;
+<SPAN CLASS="linenum">0027:</SPAN>     
+<SPAN CLASS="linenum">0028:</SPAN>     <SPAN CLASS="comment">// 行列をかけて、頂点をスクリーン座標に変換する</SPAN>
+<SPAN CLASS="linenum">0029:</SPAN>     O.HPOS = mul(worldviewproj_matrix, I.position);
+<SPAN CLASS="linenum">0030:</SPAN> 
+<SPAN CLASS="linenum">0031:</SPAN>     <SPAN CLASS="comment">// テクスチャー座標はそのままコピーする</SPAN>
+<SPAN CLASS="linenum">0032:</SPAN>     O.texcoord0 = I.texcoord0;
+<SPAN CLASS="linenum">0033:</SPAN> 
+<SPAN CLASS="linenum">0034:</SPAN>     <SPAN CLASS="keyword">return</SPAN> O;
+<SPAN CLASS="linenum">0035:</SPAN> } 
+<SPAN CLASS="linenum">0036:</SPAN> 
+<SPAN CLASS="linenum">0037:</SPAN> 
+<SPAN CLASS="linenum">0038:</SPAN> </PRE>
+</BODY>
+</HTML>

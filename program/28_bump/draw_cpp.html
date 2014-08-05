@@ -1,0 +1,321 @@
+<HTML>
+<HEAD>
+<TITLE>draw.cpp</TITLE>
+<meta name="GENERATOR" content="cpp2html 2.0 by Niisaka">
+<meta http-equiv="Content-Type" content="text/html">
+<meta http-equiv="Content-Style-Type" content="text/css">
+<STYLE TYPE="text/css">
+<!--
+SPAN.comment { color:#008000; font-weight:normal; font-style:normal;}
+SPAN.keyword { color:#0000FF; font-weight:normal; font-style:normal;}
+SPAN.string { color:#600000; font-weight:normal; font-style:normal;}
+SPAN.linenum { color:#A0A0A0; font-weight:normal; font-style:normal;}
+-->
+</STYLE>
+</HEAD>
+<BODY TEXT="#000000" BGCOLOR="#FFFFFF">
+<PRE><SPAN CLASS="linenum">0001:</SPAN> <SPAN CLASS="comment">// ----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0002:</SPAN> <SPAN CLASS="comment">//</SPAN>
+<SPAN CLASS="linenum">0003:</SPAN> <SPAN CLASS="comment">// draw.cpp - 描画部分</SPAN>
+<SPAN CLASS="linenum">0004:</SPAN> <SPAN CLASS="comment">// </SPAN>
+<SPAN CLASS="linenum">0005:</SPAN> <SPAN CLASS="comment">// Copyright (c) 2001 if (if@edokko.com)</SPAN>
+<SPAN CLASS="linenum">0006:</SPAN> <SPAN CLASS="comment">// All Rights Reserved.</SPAN>
+<SPAN CLASS="linenum">0007:</SPAN> <SPAN CLASS="comment">//</SPAN>
+<SPAN CLASS="linenum">0008:</SPAN> <SPAN CLASS="comment">// ----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0009:</SPAN> <SPAN CLASS="keyword">#define</SPAN> STRICT
+<SPAN CLASS="linenum">0010:</SPAN> 
+<SPAN CLASS="linenum">0011:</SPAN> <SPAN CLASS="keyword">#include</SPAN> &lt;windows.h&gt;
+<SPAN CLASS="linenum">0012:</SPAN> <SPAN CLASS="keyword">#include</SPAN> "<SPAN CLASS="string">main.h</SPAN>"
+<SPAN CLASS="linenum">0013:</SPAN> <SPAN CLASS="keyword">#include</SPAN> "<SPAN CLASS="string">draw.h</SPAN>"
+<SPAN CLASS="linenum">0014:</SPAN> <SPAN CLASS="keyword">#include</SPAN> "<SPAN CLASS="string">load.h</SPAN>"
+<SPAN CLASS="linenum">0015:</SPAN> 
+<SPAN CLASS="linenum">0016:</SPAN> CMyMesh mesh;
+<SPAN CLASS="linenum">0017:</SPAN> CMyView view;
+<SPAN CLASS="linenum">0018:</SPAN> 
+<SPAN CLASS="linenum">0019:</SPAN> <SPAN CLASS="keyword">#define</SPAN> NUM_VS  8       <SPAN CLASS="comment">// 頂点シェーダーの種類</SPAN>
+<SPAN CLASS="linenum">0020:</SPAN> DWORD                   gVs = 0;
+<SPAN CLASS="linenum">0021:</SPAN> DWORD                   hVertexShader[NUM_VS]={
+<SPAN CLASS="linenum">0022:</SPAN>                         ~0,~0,~0,~0,~0,~0,~0,~0
+<SPAN CLASS="linenum">0023:</SPAN>                         };
+<SPAN CLASS="linenum">0024:</SPAN> DWORD                   hVsEdge=~0;
+<SPAN CLASS="linenum">0025:</SPAN> DWORD                   gEdge = 0;
+<SPAN CLASS="linenum">0026:</SPAN> LPDIRECT3DTEXTURE8      pSpecTexture  = NULL;           <SPAN CLASS="comment">// すぺきゅらのテクスチャー</SPAN>
+<SPAN CLASS="linenum">0027:</SPAN> LPDIRECT3DTEXTURE8      pMetalTexture  = NULL;          <SPAN CLASS="comment">// メタルのテクスチャー</SPAN>
+<SPAN CLASS="linenum">0028:</SPAN> LPDIRECT3DTEXTURE8      pSoftTexture  = NULL;           <SPAN CLASS="comment">// ソフトライティングのテクスチャー</SPAN>
+<SPAN CLASS="linenum">0029:</SPAN> 
+<SPAN CLASS="linenum">0030:</SPAN> D3DXVECTOR4 rot = D3DXVECTOR4(-PI/12.0f, 0.0f, 0.0f, 0.0f);
+<SPAN CLASS="linenum">0031:</SPAN> 
+<SPAN CLASS="linenum">0032:</SPAN> <SPAN CLASS="comment">// ライトの方向</SPAN>
+<SPAN CLASS="linenum">0033:</SPAN> D3DXVECTOR4 lpos;
+<SPAN CLASS="linenum">0034:</SPAN> D3DXVECTOR4 lrot = D3DXVECTOR4(PI/6.0f, PI/4.0f, 0.0f, 0.0f);
+<SPAN CLASS="linenum">0035:</SPAN> 
+<SPAN CLASS="linenum">0036:</SPAN> <SPAN CLASS="comment">// ----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0037:</SPAN> <SPAN CLASS="comment">// 外部変数</SPAN>
+<SPAN CLASS="linenum">0038:</SPAN> <SPAN CLASS="keyword">void</SPAN> SetLight(LPDIRECT3DDEVICE8 lpD3DDEV, D3DXVECTOR4 *pRot);
+<SPAN CLASS="linenum">0039:</SPAN> <SPAN CLASS="keyword">void</SPAN> InitLightEff(LPDIRECT3DDEVICE8 lpD3DDEV, D3DXVECTOR4 pos);
+<SPAN CLASS="linenum">0040:</SPAN> <SPAN CLASS="keyword">void</SPAN> DrawLightEff(LPDIRECT3DDEVICE8 lpD3DDEV, D3DXMATRIX mView, D3DXMATRIX mProj);
+<SPAN CLASS="linenum">0041:</SPAN> <SPAN CLASS="keyword">void</SPAN> CleanLightEff();
+<SPAN CLASS="linenum">0042:</SPAN> 
+<SPAN CLASS="linenum">0043:</SPAN> <SPAN CLASS="keyword">void</SPAN> InitBg(LPDIRECT3DDEVICE8 lpD3DDev);
+<SPAN CLASS="linenum">0044:</SPAN> <SPAN CLASS="keyword">void</SPAN> DrawBg(LPDIRECT3DDEVICE8 lpD3DDev, D3DXMATRIX mWorld, D3DXMATRIX mView, D3DXMATRIX mProj);
+<SPAN CLASS="linenum">0045:</SPAN> <SPAN CLASS="keyword">void</SPAN> CleanBg(LPDIRECT3DDEVICE8 lpD3DDev);
+<SPAN CLASS="linenum">0046:</SPAN> 
+<SPAN CLASS="linenum">0047:</SPAN> <SPAN CLASS="comment">// ----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0048:</SPAN> <SPAN CLASS="comment">// Name: Render()</SPAN>
+<SPAN CLASS="linenum">0049:</SPAN> <SPAN CLASS="comment">// Desc: ポリゴンの初期化</SPAN>
+<SPAN CLASS="linenum">0050:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0051:</SPAN> <SPAN CLASS="keyword">typedef</SPAN> <SPAN CLASS="keyword">struct</SPAN>{
+<SPAN CLASS="linenum">0052:</SPAN>     <SPAN CLASS="keyword">char</SPAN> *name;
+<SPAN CLASS="linenum">0053:</SPAN> }VS_INFO;
+<SPAN CLASS="linenum">0054:</SPAN> HRESULT InitRender(LPDIRECT3DDEVICE8 lpD3DDEV)
+<SPAN CLASS="linenum">0055:</SPAN> {
+<SPAN CLASS="linenum">0056:</SPAN>     HRESULT hr;
+<SPAN CLASS="linenum">0057:</SPAN> 
+<SPAN CLASS="linenum">0058:</SPAN>     hr = mesh.Load(lpD3DDEV, "<SPAN CLASS="string">nsx.x</SPAN>");
+<SPAN CLASS="linenum">0059:</SPAN>  
+<SPAN CLASS="linenum">0060:</SPAN>     <SPAN CLASS="comment">// バーテックスシェーダーを作成する</SPAN>
+<SPAN CLASS="linenum">0061:</SPAN>     <SPAN CLASS="keyword">if</SPAN> ( FAILED(CVertexShaderMgr::Load(lpD3DDEV, "<SPAN CLASS="string">edge.vsh</SPAN>", &amp;hVsEdge, dwDecl)) ) <SPAN CLASS="keyword">return</SPAN> hr;
+<SPAN CLASS="linenum">0062:</SPAN>     
+<SPAN CLASS="linenum">0063:</SPAN>     VS_INFO vs_info[] = {
+<SPAN CLASS="linenum">0064:</SPAN>         "<SPAN CLASS="string">diffuse.vsh</SPAN>",
+<SPAN CLASS="linenum">0065:</SPAN>         "<SPAN CLASS="string">specular.vsh</SPAN>",
+<SPAN CLASS="linenum">0066:</SPAN>         "<SPAN CLASS="string">texspec.vsh</SPAN>",
+<SPAN CLASS="linenum">0067:</SPAN>         "<SPAN CLASS="string">texspec.vsh</SPAN>",
+<SPAN CLASS="linenum">0068:</SPAN>         "<SPAN CLASS="string">hemisphere.vsh</SPAN>",
+<SPAN CLASS="linenum">0069:</SPAN>         "<SPAN CLASS="string">hemi_amb.vsh</SPAN>",
+<SPAN CLASS="linenum">0070:</SPAN>         "<SPAN CLASS="string">hemi_spec.vsh</SPAN>",
+<SPAN CLASS="linenum">0071:</SPAN>         "<SPAN CLASS="string">soft.vsh</SPAN>",
+<SPAN CLASS="linenum">0072:</SPAN>     };
+<SPAN CLASS="linenum">0073:</SPAN>     <SPAN CLASS="keyword">for</SPAN>(<SPAN CLASS="keyword">int</SPAN> i = 0; i &lt; NUM_VS; i++){
+<SPAN CLASS="linenum">0074:</SPAN>         <SPAN CLASS="keyword">if</SPAN> ( FAILED(CVertexShaderMgr::Load(lpD3DDEV, vs_info[i].name, &amp;hVertexShader[i], dwDecl)) ) <SPAN CLASS="keyword">return</SPAN> hr;
+<SPAN CLASS="linenum">0075:</SPAN>     }
+<SPAN CLASS="linenum">0076:</SPAN>     
+<SPAN CLASS="linenum">0077:</SPAN>     <SPAN CLASS="comment">// 演出用テクスチャーの読み込み</SPAN>
+<SPAN CLASS="linenum">0078:</SPAN>     D3DXCreateTextureFromFileEx(lpD3DDEV, "<SPAN CLASS="string">spec.bmp</SPAN>",0,0,0,0,D3DFMT_A8R8G8B8,
+<SPAN CLASS="linenum">0079:</SPAN>                                 D3DPOOL_MANAGED, D3DX_FILTER_LINEAR, D3DX_FILTER_LINEAR,
+<SPAN CLASS="linenum">0080:</SPAN>                                 0, NULL, NULL, &amp;pSpecTexture);
+<SPAN CLASS="linenum">0081:</SPAN>     
+<SPAN CLASS="linenum">0082:</SPAN>     D3DXCreateTextureFromFileEx(lpD3DDEV, "<SPAN CLASS="string">metal.bmp</SPAN>",0,0,0,0,D3DFMT_A8R8G8B8,
+<SPAN CLASS="linenum">0083:</SPAN>                                 D3DPOOL_MANAGED, D3DX_FILTER_LINEAR, D3DX_FILTER_LINEAR,
+<SPAN CLASS="linenum">0084:</SPAN>                                 0, NULL, NULL, &amp;pMetalTexture);
+<SPAN CLASS="linenum">0085:</SPAN>     
+<SPAN CLASS="linenum">0086:</SPAN>     D3DXCreateTextureFromFileEx(lpD3DDEV, "<SPAN CLASS="string">soft.bmp</SPAN>",0,0,0,0,D3DFMT_A8R8G8B8,
+<SPAN CLASS="linenum">0087:</SPAN>                                 D3DPOOL_MANAGED, D3DX_FILTER_LINEAR, D3DX_FILTER_LINEAR,
+<SPAN CLASS="linenum">0088:</SPAN>                                 0, NULL, NULL, &amp;pSoftTexture);
+<SPAN CLASS="linenum">0089:</SPAN>     
+<SPAN CLASS="linenum">0090:</SPAN>     <SPAN CLASS="comment">// レンダリングの状態の設定</SPAN>
+<SPAN CLASS="linenum">0091:</SPAN>     lpD3DDEV-&gt;SetRenderState( D3DRS_ZENABLE, TRUE);
+<SPAN CLASS="linenum">0092:</SPAN>     lpD3DDEV-&gt;SetRenderState( D3DRS_LIGHTING,  FALSE );
+<SPAN CLASS="linenum">0093:</SPAN>     SetLight(lpD3DDEV, &amp;lrot);  <SPAN CLASS="comment">// 光源の初期化</SPAN>
+<SPAN CLASS="linenum">0094:</SPAN> 
+<SPAN CLASS="linenum">0095:</SPAN>     <SPAN CLASS="comment">// 値の変わらない定数レジスタの設定</SPAN>
+<SPAN CLASS="linenum">0096:</SPAN>     lpD3DDEV-&gt;SetVertexShaderConstant(12, D3DXVECTOR4(0.0f, 0.5f, 1.0f, 2.0f), 1);
+<SPAN CLASS="linenum">0097:</SPAN>     lpD3DDEV-&gt;SetVertexShaderConstant(16, D3DXVECTOR4(0.7f, 0.6f, 0.4f, 0.0f), 1);<SPAN CLASS="comment">// ライトの色</SPAN>
+<SPAN CLASS="linenum">0098:</SPAN>     lpD3DDEV-&gt;SetVertexShaderConstant(17, D3DXVECTOR4(0.5f, 0.5f, 0.5f, 1.0f), 1);<SPAN CLASS="comment">// すぺきゅらーライトの色</SPAN>
+<SPAN CLASS="linenum">0099:</SPAN>     lpD3DDEV-&gt;SetVertexShaderConstant(18, D3DXVECTOR4(0.4f, 0.4f, 0.4f, 0.0f), 1);<SPAN CLASS="comment">// 上半球の色</SPAN>
+<SPAN CLASS="linenum">0100:</SPAN>     lpD3DDEV-&gt;SetVertexShaderConstant(19, D3DXVECTOR4(0.6f, 0.3f, 0.2f, 0.0f), 1);<SPAN CLASS="comment">// 下半球の色</SPAN>
+<SPAN CLASS="linenum">0101:</SPAN>     
+<SPAN CLASS="linenum">0102:</SPAN>     InitBg(lpD3DDEV);
+<SPAN CLASS="linenum">0103:</SPAN> 
+<SPAN CLASS="linenum">0104:</SPAN>     <SPAN CLASS="keyword">return</SPAN> S_OK;
+<SPAN CLASS="linenum">0105:</SPAN> }
+<SPAN CLASS="linenum">0106:</SPAN> <SPAN CLASS="comment">// ----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0107:</SPAN> <SPAN CLASS="comment">// Name: Render()</SPAN>
+<SPAN CLASS="linenum">0108:</SPAN> <SPAN CLASS="comment">// Desc: ポリゴンの描画</SPAN>
+<SPAN CLASS="linenum">0109:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0110:</SPAN> <SPAN CLASS="keyword">void</SPAN> Render(LPDIRECT3DDEVICE8 lpD3DDEV)
+<SPAN CLASS="linenum">0111:</SPAN> {
+<SPAN CLASS="linenum">0112:</SPAN>     <SPAN CLASS="keyword">if</SPAN>(!mesh.bActive) <SPAN CLASS="keyword">return</SPAN>;
+<SPAN CLASS="linenum">0113:</SPAN> 
+<SPAN CLASS="linenum">0114:</SPAN>     D3DXMATRIX m, mLocal, mWorld, mLW, mProj;
+<SPAN CLASS="linenum">0115:</SPAN> 
+<SPAN CLASS="linenum">0116:</SPAN>     D3DXMatrixPerspectiveFovLH(&amp;mProj
+<SPAN CLASS="linenum">0117:</SPAN>         ,60.0f*PI/180.0f                        <SPAN CLASS="comment">// 視野角</SPAN>
+<SPAN CLASS="linenum">0118:</SPAN>         ,(<SPAN CLASS="keyword">float</SPAN>)WIDTH/(<SPAN CLASS="keyword">float</SPAN>)HEIGHT             <SPAN CLASS="comment">// アスペクト比</SPAN>
+<SPAN CLASS="linenum">0119:</SPAN>         ,0.01f                                  <SPAN CLASS="comment">// 最近接距離</SPAN>
+<SPAN CLASS="linenum">0120:</SPAN>         ,100.0f                                 <SPAN CLASS="comment">// 最遠方距離</SPAN>
+<SPAN CLASS="linenum">0121:</SPAN>         );
+<SPAN CLASS="linenum">0122:</SPAN>     D3DXMatrixRotationYawPitchRoll(&amp;mWorld, rot.y, rot.x, rot.z);
+<SPAN CLASS="linenum">0123:</SPAN> 
+<SPAN CLASS="linenum">0124:</SPAN>     <SPAN CLASS="comment">// 背景描画</SPAN>
+<SPAN CLASS="linenum">0125:</SPAN>     DrawBg(lpD3DDEV, mWorld, view.Get(), mProj);
+<SPAN CLASS="linenum">0126:</SPAN> 
+<SPAN CLASS="linenum">0127:</SPAN>     <SPAN CLASS="keyword">float</SPAN> s = 1.0f / mesh.radius;
+<SPAN CLASS="linenum">0128:</SPAN>     D3DXMatrixTranslation(&amp;mLocal,-mesh.center.x,0,-mesh.center.z);
+<SPAN CLASS="linenum">0129:</SPAN>     D3DXMatrixScaling(&amp;m, s,s,s);
+<SPAN CLASS="linenum">0130:</SPAN>     mLocal = mLocal * m;
+<SPAN CLASS="linenum">0131:</SPAN>     mLW = mLocal*mWorld;
+<SPAN CLASS="linenum">0132:</SPAN>     
+<SPAN CLASS="linenum">0133:</SPAN>     <SPAN CLASS="comment">// モデル描画</SPAN>
+<SPAN CLASS="linenum">0134:</SPAN>     m = mLW * view.Get() * mProj;
+<SPAN CLASS="linenum">0135:</SPAN>     D3DXMatrixTranspose( &amp;m ,  &amp;m);
+<SPAN CLASS="linenum">0136:</SPAN>     lpD3DDEV-&gt;SetVertexShaderConstant(0,&amp;m, 4);
+<SPAN CLASS="linenum">0137:</SPAN>     D3DXMatrixTranspose( &amp;m ,  &amp;mLW);
+<SPAN CLASS="linenum">0138:</SPAN>     lpD3DDEV-&gt;SetVertexShaderConstant(4, &amp;m, 4);
+<SPAN CLASS="linenum">0139:</SPAN>     D3DXMatrixInverse( &amp;m,  NULL, &amp;mLW);
+<SPAN CLASS="linenum">0140:</SPAN>     lpD3DDEV-&gt;SetVertexShaderConstant(8, &amp;m, 4);
+<SPAN CLASS="linenum">0141:</SPAN>     
+<SPAN CLASS="linenum">0142:</SPAN>     <SPAN CLASS="comment">// ローカル座標変換行列</SPAN>
+<SPAN CLASS="linenum">0143:</SPAN>     D3DXVECTOR4 lightDir;
+<SPAN CLASS="linenum">0144:</SPAN>     D3DXMatrixInverse( &amp;m,  NULL, &amp;mLW);
+<SPAN CLASS="linenum">0145:</SPAN>     
+<SPAN CLASS="linenum">0146:</SPAN>     <SPAN CLASS="comment">// ローカル座標でのライトの方向</SPAN>
+<SPAN CLASS="linenum">0147:</SPAN>     D3DXVec4Transform(&amp;lightDir, &amp;lpos, &amp;m);
+<SPAN CLASS="linenum">0148:</SPAN>     D3DXVec4Normalize(&amp;lightDir, &amp;lightDir);
+<SPAN CLASS="linenum">0149:</SPAN>     lightDir[3] =0.3f;
+<SPAN CLASS="linenum">0150:</SPAN>     lpD3DDEV-&gt;SetVertexShaderConstant(13, &amp;lightDir, 1);
+<SPAN CLASS="linenum">0151:</SPAN>     
+<SPAN CLASS="linenum">0152:</SPAN>     <SPAN CLASS="comment">// ローカル座標での視点</SPAN>
+<SPAN CLASS="linenum">0153:</SPAN>     D3DXVECTOR4 eye_pos;
+<SPAN CLASS="linenum">0154:</SPAN>     D3DXVec4Transform(&amp;eye_pos, &amp;view.GetEye(), &amp;m);
+<SPAN CLASS="linenum">0155:</SPAN>     lpD3DDEV-&gt;SetVertexShaderConstant(14, &amp;eye_pos, 1);
+<SPAN CLASS="linenum">0156:</SPAN> 
+<SPAN CLASS="linenum">0157:</SPAN>     <SPAN CLASS="comment">// 半球ライティング用のローカル座標での垂直軸</SPAN>
+<SPAN CLASS="linenum">0158:</SPAN>     D3DXVECTOR4 axis(0.0f, 1.0f, 0.0f, 0.1f);
+<SPAN CLASS="linenum">0159:</SPAN>     D3DXVec4Transform(&amp;axis, &amp;axis, &amp;m);
+<SPAN CLASS="linenum">0160:</SPAN>     D3DXVec4Normalize(&amp;axis, &amp;axis);
+<SPAN CLASS="linenum">0161:</SPAN>     lpD3DDEV-&gt;SetVertexShaderConstant(20, &amp;axis, 1);
+<SPAN CLASS="linenum">0162:</SPAN>     
+<SPAN CLASS="linenum">0163:</SPAN>     <SPAN CLASS="comment">// 輪郭の厚さ</SPAN>
+<SPAN CLASS="linenum">0164:</SPAN>     lpD3DDEV-&gt;SetVertexShaderConstant(40
+<SPAN CLASS="linenum">0165:</SPAN>         , D3DXVECTOR4(0.015f*mesh.radius, 
+<SPAN CLASS="linenum">0166:</SPAN>                       0.015f*mesh.radius,
+<SPAN CLASS="linenum">0167:</SPAN>                       -0.0002f*mesh.radius, 0.0f), 1);
+<SPAN CLASS="linenum">0168:</SPAN>     
+<SPAN CLASS="linenum">0169:</SPAN>     lpD3DDEV-&gt;SetStreamSource(0, mesh.pVB, <SPAN CLASS="keyword">sizeof</SPAN>(D3D_CUSTOMVERTEX));
+<SPAN CLASS="linenum">0170:</SPAN>     lpD3DDEV-&gt;SetIndices(mesh.pIndex,0);
+<SPAN CLASS="linenum">0171:</SPAN>     
+<SPAN CLASS="linenum">0172:</SPAN>     <SPAN CLASS="comment">// 輪郭抽出</SPAN>
+<SPAN CLASS="linenum">0173:</SPAN>     <SPAN CLASS="keyword">if</SPAN>(gEdge){
+<SPAN CLASS="linenum">0174:</SPAN>         lpD3DDEV-&gt;SetVertexShader(hVsEdge);
+<SPAN CLASS="linenum">0175:</SPAN>         lpD3DDEV-&gt;SetTexture(0,NULL);
+<SPAN CLASS="linenum">0176:</SPAN>         lpD3DDEV-&gt;SetRenderState( D3DRS_ZWRITEENABLE, FALSE );    <SPAN CLASS="comment">// 深度バッファの書き込みを止める</SPAN>
+<SPAN CLASS="linenum">0177:</SPAN>         lpD3DDEV-&gt;SetRenderState( D3DRS_CULLMODE, D3DCULL_NONE);
+<SPAN CLASS="linenum">0178:</SPAN>         lpD3DDEV-&gt;SetTextureStageState(0,D3DTSS_COLOROP,    D3DTOP_SELECTARG2);
+<SPAN CLASS="linenum">0179:</SPAN>         lpD3DDEV-&gt;SetTextureStageState(0,D3DTSS_COLORARG2,  D3DTA_DIFFUSE);
+<SPAN CLASS="linenum">0180:</SPAN>         lpD3DDEV-&gt;SetTextureStageState(1,D3DTSS_COLOROP,    D3DTOP_DISABLE);
+<SPAN CLASS="linenum">0181:</SPAN>         <SPAN CLASS="keyword">for</SPAN>(DWORD i=0;i&lt;mesh.dwNumMaterials;i++){
+<SPAN CLASS="linenum">0182:</SPAN>             lpD3DDEV-&gt;DrawIndexedPrimitive(D3DPT_TRIANGLELIST, 
+<SPAN CLASS="linenum">0183:</SPAN>                                             mesh.pSubsetTable[i].VertexStart,
+<SPAN CLASS="linenum">0184:</SPAN>                                             mesh.pSubsetTable[i].VertexCount,
+<SPAN CLASS="linenum">0185:</SPAN>                                             mesh.pSubsetTable[i].FaceStart * 3,
+<SPAN CLASS="linenum">0186:</SPAN>                                             mesh.pSubsetTable[i].FaceCount);
+<SPAN CLASS="linenum">0187:</SPAN>         }
+<SPAN CLASS="linenum">0188:</SPAN>         lpD3DDEV-&gt;SetRenderState( D3DRS_ZWRITEENABLE, TRUE );    <SPAN CLASS="comment">// 深度バッファの書き込みを戻す</SPAN>
+<SPAN CLASS="linenum">0189:</SPAN>         lpD3DDEV-&gt;SetRenderState( D3DRS_CULLMODE, D3DCULL_CCW);
+<SPAN CLASS="linenum">0190:</SPAN>     }
+<SPAN CLASS="linenum">0191:</SPAN>     
+<SPAN CLASS="linenum">0192:</SPAN>     lpD3DDEV-&gt;SetVertexShader(hVertexShader[gVs]);
+<SPAN CLASS="linenum">0193:</SPAN>     
+<SPAN CLASS="linenum">0194:</SPAN>     <SPAN CLASS="keyword">switch</SPAN>(gVs){
+<SPAN CLASS="linenum">0195:</SPAN>     <SPAN CLASS="keyword">case</SPAN> 0:<SPAN CLASS="comment">// diffuse</SPAN>
+<SPAN CLASS="linenum">0196:</SPAN>     <SPAN CLASS="keyword">case</SPAN> 1:<SPAN CLASS="comment">// 頂点ライトスペキュラー</SPAN>
+<SPAN CLASS="linenum">0197:</SPAN>         lpD3DDEV-&gt;SetTextureStageState(0,D3DTSS_COLOROP,    D3DTOP_MODULATE);
+<SPAN CLASS="linenum">0198:</SPAN>         lpD3DDEV-&gt;SetTextureStageState(0,D3DTSS_COLORARG1,  D3DTA_TEXTURE);
+<SPAN CLASS="linenum">0199:</SPAN>         lpD3DDEV-&gt;SetTextureStageState(0,D3DTSS_COLORARG2,  D3DTA_DIFFUSE);
+<SPAN CLASS="linenum">0200:</SPAN>         lpD3DDEV-&gt;SetTextureStageState(1,D3DTSS_COLOROP,    D3DTOP_DISABLE);
+<SPAN CLASS="linenum">0201:</SPAN>         <SPAN CLASS="keyword">break</SPAN>;
+<SPAN CLASS="linenum">0202:</SPAN>     <SPAN CLASS="keyword">case</SPAN> 2:<SPAN CLASS="comment">// テクスチャースペキュラー</SPAN>
+<SPAN CLASS="linenum">0203:</SPAN>         lpD3DDEV-&gt;SetTexture(1, pSpecTexture);
+<SPAN CLASS="linenum">0204:</SPAN>     <SPAN CLASS="keyword">case</SPAN> 3:<SPAN CLASS="comment">// メタルテクスチャー</SPAN>
+<SPAN CLASS="linenum">0205:</SPAN>         <SPAN CLASS="keyword">if</SPAN>(3==gVs)lpD3DDEV-&gt;SetTexture(1, pMetalTexture);
+<SPAN CLASS="linenum">0206:</SPAN>         lpD3DDEV-&gt;SetTextureStageState(0,D3DTSS_MAGFILTER , D3DTEXF_LINEAR);
+<SPAN CLASS="linenum">0207:</SPAN>         lpD3DDEV-&gt;SetTextureStageState(0,D3DTSS_MINFILTER,  D3DTEXF_LINEAR);
+<SPAN CLASS="linenum">0208:</SPAN>         lpD3DDEV-&gt;SetTextureStageState(1,D3DTSS_MAGFILTER , D3DTEXF_LINEAR);
+<SPAN CLASS="linenum">0209:</SPAN>         lpD3DDEV-&gt;SetTextureStageState(1,D3DTSS_MINFILTER,  D3DTEXF_LINEAR);
+<SPAN CLASS="linenum">0210:</SPAN>         lpD3DDEV-&gt;SetTextureStageState(0,D3DTSS_COLOROP,    D3DTOP_MODULATE);
+<SPAN CLASS="linenum">0211:</SPAN>         lpD3DDEV-&gt;SetTextureStageState(0,D3DTSS_COLORARG1,  D3DTA_TEXTURE);
+<SPAN CLASS="linenum">0212:</SPAN>         lpD3DDEV-&gt;SetTextureStageState(0,D3DTSS_COLORARG2,  D3DTA_DIFFUSE);
+<SPAN CLASS="linenum">0213:</SPAN>         lpD3DDEV-&gt;SetTextureStageState(1,D3DTSS_COLOROP,    D3DTOP_ADD);
+<SPAN CLASS="linenum">0214:</SPAN>         lpD3DDEV-&gt;SetTextureStageState(1,D3DTSS_COLORARG1,  D3DTA_TEXTURE);
+<SPAN CLASS="linenum">0215:</SPAN>         lpD3DDEV-&gt;SetTextureStageState(1,D3DTSS_COLORARG2,  D3DTA_CURRENT);
+<SPAN CLASS="linenum">0216:</SPAN>         lpD3DDEV-&gt;SetTextureStageState(1,D3DTSS_ADDRESSU,   D3DTADDRESS_CLAMP);
+<SPAN CLASS="linenum">0217:</SPAN>         <SPAN CLASS="keyword">break</SPAN>;
+<SPAN CLASS="linenum">0218:</SPAN>     <SPAN CLASS="keyword">case</SPAN> 4:<SPAN CLASS="comment">// 半球ライティング</SPAN>
+<SPAN CLASS="linenum">0219:</SPAN>     <SPAN CLASS="keyword">case</SPAN> 5:<SPAN CLASS="comment">// 半球ライティング</SPAN>
+<SPAN CLASS="linenum">0220:</SPAN>     <SPAN CLASS="keyword">case</SPAN> 6:<SPAN CLASS="comment">// 半球ライティング</SPAN>
+<SPAN CLASS="linenum">0221:</SPAN>         lpD3DDEV-&gt;SetTextureStageState(0,D3DTSS_COLOROP,    D3DTOP_MODULATE);
+<SPAN CLASS="linenum">0222:</SPAN>         lpD3DDEV-&gt;SetTextureStageState(0,D3DTSS_COLORARG1,  D3DTA_TEXTURE);
+<SPAN CLASS="linenum">0223:</SPAN>         lpD3DDEV-&gt;SetTextureStageState(0,D3DTSS_COLORARG2,  D3DTA_DIFFUSE);
+<SPAN CLASS="linenum">0224:</SPAN>         lpD3DDEV-&gt;SetTextureStageState(1,D3DTSS_COLOROP,    D3DTOP_DISABLE);
+<SPAN CLASS="linenum">0225:</SPAN>         <SPAN CLASS="keyword">break</SPAN>;
+<SPAN CLASS="linenum">0226:</SPAN>     <SPAN CLASS="keyword">case</SPAN> 7:<SPAN CLASS="comment">// ソフトトゥーン</SPAN>
+<SPAN CLASS="linenum">0227:</SPAN>         lpD3DDEV-&gt;SetTexture(1, pSoftTexture);
+<SPAN CLASS="linenum">0228:</SPAN>         lpD3DDEV-&gt;SetTextureStageState(0,D3DTSS_MAGFILTER , D3DTEXF_LINEAR);
+<SPAN CLASS="linenum">0229:</SPAN>         lpD3DDEV-&gt;SetTextureStageState(0,D3DTSS_MINFILTER,  D3DTEXF_LINEAR);
+<SPAN CLASS="linenum">0230:</SPAN>         lpD3DDEV-&gt;SetTextureStageState(1,D3DTSS_MAGFILTER , D3DTEXF_LINEAR);
+<SPAN CLASS="linenum">0231:</SPAN>         lpD3DDEV-&gt;SetTextureStageState(1,D3DTSS_MINFILTER,  D3DTEXF_LINEAR);
+<SPAN CLASS="linenum">0232:</SPAN>         lpD3DDEV-&gt;SetTextureStageState(0,D3DTSS_COLOROP,    D3DTOP_MODULATE);
+<SPAN CLASS="linenum">0233:</SPAN>         lpD3DDEV-&gt;SetTextureStageState(0,D3DTSS_COLORARG1,  D3DTA_TEXTURE);
+<SPAN CLASS="linenum">0234:</SPAN>         lpD3DDEV-&gt;SetTextureStageState(0,D3DTSS_COLORARG2,  D3DTA_DIFFUSE);
+<SPAN CLASS="linenum">0235:</SPAN>         lpD3DDEV-&gt;SetTextureStageState(1,D3DTSS_COLOROP,    D3DTOP_MODULATE);
+<SPAN CLASS="linenum">0236:</SPAN>         lpD3DDEV-&gt;SetTextureStageState(1,D3DTSS_COLORARG1,  D3DTA_TEXTURE);
+<SPAN CLASS="linenum">0237:</SPAN>         lpD3DDEV-&gt;SetTextureStageState(1,D3DTSS_COLORARG2,  D3DTA_CURRENT);
+<SPAN CLASS="linenum">0238:</SPAN>         lpD3DDEV-&gt;SetTextureStageState(1,D3DTSS_ADDRESSU,   D3DTADDRESS_CLAMP);
+<SPAN CLASS="linenum">0239:</SPAN>         <SPAN CLASS="keyword">break</SPAN>;
+<SPAN CLASS="linenum">0240:</SPAN>     }
+<SPAN CLASS="linenum">0241:</SPAN>     
+<SPAN CLASS="linenum">0242:</SPAN>     <SPAN CLASS="comment">//メッシュの描画</SPAN>
+<SPAN CLASS="linenum">0243:</SPAN>     <SPAN CLASS="keyword">for</SPAN>(DWORD i=0;i&lt;mesh.dwNumMaterials;i++){
+<SPAN CLASS="linenum">0244:</SPAN>         <SPAN CLASS="comment">//色をセット</SPAN>
+<SPAN CLASS="linenum">0245:</SPAN>         D3DXVECTOR4 vl(
+<SPAN CLASS="linenum">0246:</SPAN> <SPAN CLASS="comment">//          0,0,0,</SPAN>
+<SPAN CLASS="linenum">0247:</SPAN>             mesh.pMaterials[i].Diffuse.r*0.7f,
+<SPAN CLASS="linenum">0248:</SPAN>             mesh.pMaterials[i].Diffuse.g*0.7f,
+<SPAN CLASS="linenum">0249:</SPAN>             mesh.pMaterials[i].Diffuse.b*0.7f,
+<SPAN CLASS="linenum">0250:</SPAN>             1.0f);
+<SPAN CLASS="linenum">0251:</SPAN>         lpD3DDEV-&gt;SetVertexShaderConstant(15,&amp;vl,1);
+<SPAN CLASS="linenum">0252:</SPAN>         <SPAN CLASS="keyword">if</SPAN>(mesh.pTextures[i]){
+<SPAN CLASS="linenum">0253:</SPAN>             lpD3DDEV-&gt;SetTextureStageState(0,D3DTSS_COLOROP, D3DTOP_MODULATE);
+<SPAN CLASS="linenum">0254:</SPAN>             lpD3DDEV-&gt;SetTexture(0, mesh.pTextures[i]);
+<SPAN CLASS="linenum">0255:</SPAN>         }<SPAN CLASS="keyword">else</SPAN>{
+<SPAN CLASS="linenum">0256:</SPAN>             lpD3DDEV-&gt;SetTextureStageState(0,D3DTSS_COLOROP, D3DTOP_SELECTARG2);
+<SPAN CLASS="linenum">0257:</SPAN>         }
+<SPAN CLASS="linenum">0258:</SPAN>         lpD3DDEV-&gt;DrawIndexedPrimitive(D3DPT_TRIANGLELIST, 
+<SPAN CLASS="linenum">0259:</SPAN>                                         mesh.pSubsetTable[i].VertexStart,
+<SPAN CLASS="linenum">0260:</SPAN>                                         mesh.pSubsetTable[i].VertexCount,
+<SPAN CLASS="linenum">0261:</SPAN>                                         mesh.pSubsetTable[i].FaceStart * 3,
+<SPAN CLASS="linenum">0262:</SPAN>                                         mesh.pSubsetTable[i].FaceCount);
+<SPAN CLASS="linenum">0263:</SPAN>     }
+<SPAN CLASS="linenum">0264:</SPAN>     lpD3DDEV-&gt;SetTexture(0,NULL);
+<SPAN CLASS="linenum">0265:</SPAN>     lpD3DDEV-&gt;SetTexture(1,NULL);
+<SPAN CLASS="linenum">0266:</SPAN>     
+<SPAN CLASS="linenum">0267:</SPAN>     <SPAN CLASS="comment">// 光源の位置を描く</SPAN>
+<SPAN CLASS="linenum">0268:</SPAN>     DrawLightEff(lpD3DDEV, view.Get(), mProj);
+<SPAN CLASS="linenum">0269:</SPAN> }
+<SPAN CLASS="linenum">0270:</SPAN> 
+<SPAN CLASS="linenum">0271:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0272:</SPAN> <SPAN CLASS="comment">// 光源の設定</SPAN>
+<SPAN CLASS="linenum">0273:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0274:</SPAN> <SPAN CLASS="keyword">void</SPAN> SetLight(LPDIRECT3DDEVICE8 lpD3DDEV, D3DXVECTOR4 *pRot)
+<SPAN CLASS="linenum">0275:</SPAN> {
+<SPAN CLASS="linenum">0276:</SPAN>     D3DXMATRIX m;
+<SPAN CLASS="linenum">0277:</SPAN>     D3DXMatrixRotationYawPitchRoll(&amp;m, pRot-&gt;y, pRot-&gt;x, pRot-&gt;z);
+<SPAN CLASS="linenum">0278:</SPAN>     D3DXVec4Transform(&amp;lpos, &amp;D3DXVECTOR4(0.0f, 0.0f,-1.0f, 0.0f), &amp;m);
+<SPAN CLASS="linenum">0279:</SPAN>     D3DXVec4Normalize(&amp;lpos, &amp;lpos);
+<SPAN CLASS="linenum">0280:</SPAN>     InitLightEff(lpD3DDEV, lpos);
+<SPAN CLASS="linenum">0281:</SPAN> }
+<SPAN CLASS="linenum">0282:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0283:</SPAN> <SPAN CLASS="comment">// Name: CleanRender()</SPAN>
+<SPAN CLASS="linenum">0284:</SPAN> <SPAN CLASS="comment">// Desc: 後始末</SPAN>
+<SPAN CLASS="linenum">0285:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0286:</SPAN> <SPAN CLASS="keyword">void</SPAN> CleanRender(LPDIRECT3DDEVICE8 lpD3DDEV)
+<SPAN CLASS="linenum">0287:</SPAN> {
+<SPAN CLASS="linenum">0288:</SPAN>     mesh.Release();
+<SPAN CLASS="linenum">0289:</SPAN>     
+<SPAN CLASS="linenum">0290:</SPAN>     RELEASE(pSoftTexture);
+<SPAN CLASS="linenum">0291:</SPAN>     RELEASE(pMetalTexture);
+<SPAN CLASS="linenum">0292:</SPAN>     RELEASE(pSpecTexture);
+<SPAN CLASS="linenum">0293:</SPAN>     
+<SPAN CLASS="linenum">0294:</SPAN>     <SPAN CLASS="comment">// 頂点シェーダーの開放</SPAN>
+<SPAN CLASS="linenum">0295:</SPAN>     CVertexShaderMgr::Release(lpD3DDEV, &amp;hVsEdge);
+<SPAN CLASS="linenum">0296:</SPAN>     <SPAN CLASS="keyword">for</SPAN>(<SPAN CLASS="keyword">int</SPAN> i = 0; i &lt; NUM_VS; i++){
+<SPAN CLASS="linenum">0297:</SPAN>         CVertexShaderMgr::Release(lpD3DDEV, &amp;hVertexShader[i]);
+<SPAN CLASS="linenum">0298:</SPAN>     }
+<SPAN CLASS="linenum">0299:</SPAN>     
+<SPAN CLASS="linenum">0300:</SPAN>     CleanBg(lpD3DDEV);
+<SPAN CLASS="linenum">0301:</SPAN>     CleanLightEff();
+<SPAN CLASS="linenum">0302:</SPAN> }
+<SPAN CLASS="linenum">0303:</SPAN> </PRE>
+</BODY>
+</HTML>

@@ -1,0 +1,218 @@
+<HTML>
+<HEAD>
+<TITLE>CBitmap.cpp</TITLE>
+<meta name="GENERATOR" content="cpp2html 2.1 by Niisaka">
+<meta http-equiv="Content-Type" content="text/html">
+<meta http-equiv="Content-Style-Type" content="text/css">
+<STYLE TYPE="text/css">
+<!--
+SPAN.comment { color:#008000; font-weight:normal; font-style:normal;}
+SPAN.keyword { color:#0000FF; font-weight:normal; font-style:normal;}
+SPAN.string { color:#600000; font-weight:normal; font-style:normal;}
+SPAN.linenum { color:#A0A0A0; font-weight:normal; font-style:normal;}
+-->
+</STYLE>
+</HEAD>
+<BODY TEXT="#000000" BGCOLOR="#FFFFFF">
+<PRE><SPAN CLASS="linenum">0001:</SPAN> 
+<SPAN CLASS="linenum">0002:</SPAN> <SPAN CLASS="keyword">#include</SPAN> &lt;GL/glut.h&gt;
+<SPAN CLASS="linenum">0003:</SPAN> <SPAN CLASS="keyword">#include</SPAN> "<SPAN CLASS="string">CBitmap.h</SPAN>"
+<SPAN CLASS="linenum">0004:</SPAN> 
+<SPAN CLASS="linenum">0005:</SPAN> 
+<SPAN CLASS="linenum">0006:</SPAN> <SPAN CLASS="comment">// ---------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0007:</SPAN> <SPAN CLASS="comment">// Bitmapヘッダチェック</SPAN>
+<SPAN CLASS="linenum">0008:</SPAN> <SPAN CLASS="comment">// ---------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0009:</SPAN> <SPAN CLASS="keyword">int</SPAN> CBitmap::_CheckHeaders (<SPAN CLASS="keyword">const</SPAN> BitmapHeader *pBH, <SPAN CLASS="keyword">const</SPAN> BitmapInfoHeader *pBIH)
+<SPAN CLASS="linenum">0010:</SPAN> {
+<SPAN CLASS="linenum">0011:</SPAN>     <SPAN CLASS="comment">//ヘッダのBMの文字</SPAN>
+<SPAN CLASS="linenum">0012:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( pBH-&gt;distinct1!='<SPAN CLASS="string">B</SPAN>' || pBH-&gt;distinct2!='<SPAN CLASS="string">M</SPAN>' )<SPAN CLASS="keyword">return</SPAN> 0;
+<SPAN CLASS="linenum">0013:</SPAN>     <SPAN CLASS="comment">//レイヤー１</SPAN>
+<SPAN CLASS="linenum">0014:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( pBIH-&gt;plane !=1 )<SPAN CLASS="keyword">return</SPAN> 0;
+<SPAN CLASS="linenum">0015:</SPAN>     <SPAN CLASS="comment">//圧縮なし</SPAN>
+<SPAN CLASS="linenum">0016:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( pBIH-&gt;compression !=0 ) <SPAN CLASS="keyword">return</SPAN> 0;
+<SPAN CLASS="linenum">0017:</SPAN>     <SPAN CLASS="comment">//色数を返す</SPAN>
+<SPAN CLASS="linenum">0018:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( pBIH-&gt;bits ==24 || pBIH-&gt;bits ==8 ) <SPAN CLASS="keyword">return</SPAN> pBIH-&gt;bits;
+<SPAN CLASS="linenum">0019:</SPAN>     
+<SPAN CLASS="linenum">0020:</SPAN>     <SPAN CLASS="keyword">return</SPAN> 0;
+<SPAN CLASS="linenum">0021:</SPAN> }
+<SPAN CLASS="linenum">0022:</SPAN> <SPAN CLASS="comment">// ---------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0023:</SPAN> <SPAN CLASS="comment">// ビットマップファイルのサイズチェック</SPAN>
+<SPAN CLASS="linenum">0024:</SPAN> <SPAN CLASS="comment">// ---------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0025:</SPAN> <SPAN CLASS="keyword">int</SPAN> CBitmap::_CheckSize(<SPAN CLASS="keyword">unsigned</SPAN> <SPAN CLASS="keyword">int</SPAN> pict_size)
+<SPAN CLASS="linenum">0026:</SPAN> {
+<SPAN CLASS="linenum">0027:</SPAN>     <SPAN CLASS="keyword">unsigned</SPAN> <SPAN CLASS="keyword">int</SPAN> i=2;
+<SPAN CLASS="linenum">0028:</SPAN>     <SPAN CLASS="keyword">const</SPAN> <SPAN CLASS="keyword">unsigned</SPAN> <SPAN CLASS="keyword">int</SPAN> TEX_SIZE = 256;
+<SPAN CLASS="linenum">0029:</SPAN>     <SPAN CLASS="keyword">unsigned</SPAN> <SPAN CLASS="keyword">int</SPAN> max_texture = TEX_SIZE*TEX_SIZE;
+<SPAN CLASS="linenum">0030:</SPAN>     
+<SPAN CLASS="linenum">0031:</SPAN>     <SPAN CLASS="comment">//サイズチェック</SPAN>
+<SPAN CLASS="linenum">0032:</SPAN>     <SPAN CLASS="keyword">for</SPAN>(i=2;i&lt;=max_texture;i*=2){
+<SPAN CLASS="linenum">0033:</SPAN>         <SPAN CLASS="keyword">if</SPAN>( i == pict_size){
+<SPAN CLASS="linenum">0034:</SPAN>             <SPAN CLASS="keyword">return</SPAN> 1;
+<SPAN CLASS="linenum">0035:</SPAN>         }
+<SPAN CLASS="linenum">0036:</SPAN>     }
+<SPAN CLASS="linenum">0037:</SPAN>     <SPAN CLASS="keyword">return</SPAN> 0;
+<SPAN CLASS="linenum">0038:</SPAN> };
+<SPAN CLASS="linenum">0039:</SPAN> <SPAN CLASS="comment">// ---------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0040:</SPAN> <SPAN CLASS="comment">// Bitmapヘッダ読み込み</SPAN>
+<SPAN CLASS="linenum">0041:</SPAN> <SPAN CLASS="comment">// ---------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0042:</SPAN> <SPAN CLASS="keyword">int</SPAN> CBitmap::_ReadHeader(BitmapHeader *header, FILE *fp)
+<SPAN CLASS="linenum">0043:</SPAN> {
+<SPAN CLASS="linenum">0044:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( fread(&amp;(header-&gt;distinct1), <SPAN CLASS="keyword">sizeof</SPAN>( <SPAN CLASS="keyword">char</SPAN>),1,fp)&lt;1 ) <SPAN CLASS="keyword">return</SPAN> 1;
+<SPAN CLASS="linenum">0045:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( fread(&amp;(header-&gt;distinct2), <SPAN CLASS="keyword">sizeof</SPAN>( <SPAN CLASS="keyword">char</SPAN>),1,fp)&lt;1 ) <SPAN CLASS="keyword">return</SPAN> 2;
+<SPAN CLASS="linenum">0046:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( fread(&amp;(header-&gt;filesize),  <SPAN CLASS="keyword">sizeof</SPAN>( <SPAN CLASS="keyword">int</SPAN> ),1,fp)&lt;1 ) <SPAN CLASS="keyword">return</SPAN> 3;
+<SPAN CLASS="linenum">0047:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( fread(&amp;(header-&gt;reserve1),  <SPAN CLASS="keyword">sizeof</SPAN>(<SPAN CLASS="keyword">short</SPAN>),1,fp)&lt;1 ) <SPAN CLASS="keyword">return</SPAN> 4;
+<SPAN CLASS="linenum">0048:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( fread(&amp;(header-&gt;reserve2),  <SPAN CLASS="keyword">sizeof</SPAN>(<SPAN CLASS="keyword">short</SPAN>),1,fp)&lt;1 ) <SPAN CLASS="keyword">return</SPAN> 5;
+<SPAN CLASS="linenum">0049:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( fread(&amp;(header-&gt;offset),    <SPAN CLASS="keyword">sizeof</SPAN>( <SPAN CLASS="keyword">int</SPAN> ),1,fp)&lt;1 ) <SPAN CLASS="keyword">return</SPAN> 6;
+<SPAN CLASS="linenum">0050:</SPAN>     
+<SPAN CLASS="linenum">0051:</SPAN>     <SPAN CLASS="keyword">return</SPAN> 0;
+<SPAN CLASS="linenum">0052:</SPAN> }
+<SPAN CLASS="linenum">0053:</SPAN> <SPAN CLASS="comment">// ---------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0054:</SPAN> <SPAN CLASS="comment">// BitmapInfoヘッダ読み込み</SPAN>
+<SPAN CLASS="linenum">0055:</SPAN> <SPAN CLASS="comment">// ---------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0056:</SPAN> <SPAN CLASS="keyword">int</SPAN> CBitmap::_ReadInfoHeader(BitmapInfoHeader *info, FILE *fp)
+<SPAN CLASS="linenum">0057:</SPAN> {
+<SPAN CLASS="linenum">0058:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( fread(&amp;(info-&gt;header),              <SPAN CLASS="keyword">sizeof</SPAN>( <SPAN CLASS="keyword">int</SPAN> ),1,fp)&lt;1) <SPAN CLASS="keyword">return</SPAN> 1;
+<SPAN CLASS="linenum">0059:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( fread(&amp;(info-&gt;width),               <SPAN CLASS="keyword">sizeof</SPAN>( <SPAN CLASS="keyword">int</SPAN> ),1,fp)&lt;1) <SPAN CLASS="keyword">return</SPAN> 2;
+<SPAN CLASS="linenum">0060:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( fread(&amp;(info-&gt;height),              <SPAN CLASS="keyword">sizeof</SPAN>( <SPAN CLASS="keyword">int</SPAN> ),1,fp)&lt;1) <SPAN CLASS="keyword">return</SPAN> 3;
+<SPAN CLASS="linenum">0061:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( fread(&amp;(info-&gt;plane),               <SPAN CLASS="keyword">sizeof</SPAN>(<SPAN CLASS="keyword">short</SPAN>),1,fp)&lt;1) <SPAN CLASS="keyword">return</SPAN> 4;
+<SPAN CLASS="linenum">0062:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( fread(&amp;(info-&gt;bits),                <SPAN CLASS="keyword">sizeof</SPAN>(<SPAN CLASS="keyword">short</SPAN>),1,fp)&lt;1) <SPAN CLASS="keyword">return</SPAN> 5;
+<SPAN CLASS="linenum">0063:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( fread(&amp;(info-&gt;compression),         <SPAN CLASS="keyword">sizeof</SPAN>( <SPAN CLASS="keyword">int</SPAN> ),1,fp)&lt;1) <SPAN CLASS="keyword">return</SPAN> 6;
+<SPAN CLASS="linenum">0064:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( fread(&amp;(info-&gt;comp_image_size),     <SPAN CLASS="keyword">sizeof</SPAN>( <SPAN CLASS="keyword">int</SPAN> ),1,fp)&lt;1) <SPAN CLASS="keyword">return</SPAN> 7;
+<SPAN CLASS="linenum">0065:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( fread(&amp;(info-&gt;x_resolution),        <SPAN CLASS="keyword">sizeof</SPAN>( <SPAN CLASS="keyword">int</SPAN> ),1,fp)&lt;1) <SPAN CLASS="keyword">return</SPAN> 8;
+<SPAN CLASS="linenum">0066:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( fread(&amp;(info-&gt;y_resolution),        <SPAN CLASS="keyword">sizeof</SPAN>( <SPAN CLASS="keyword">int</SPAN> ),1,fp)&lt;1) <SPAN CLASS="keyword">return</SPAN> 9;
+<SPAN CLASS="linenum">0067:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( fread(&amp;(info-&gt;pallet_num),          <SPAN CLASS="keyword">sizeof</SPAN>( <SPAN CLASS="keyword">int</SPAN> ),1,fp)&lt;1) <SPAN CLASS="keyword">return</SPAN> 10;
+<SPAN CLASS="linenum">0068:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( fread(&amp;(info-&gt;important_pallet_num),<SPAN CLASS="keyword">sizeof</SPAN>( <SPAN CLASS="keyword">int</SPAN> ),1,fp)&lt;1) <SPAN CLASS="keyword">return</SPAN> 11;
+<SPAN CLASS="linenum">0069:</SPAN>     
+<SPAN CLASS="linenum">0070:</SPAN>     <SPAN CLASS="keyword">return</SPAN> 0;
+<SPAN CLASS="linenum">0071:</SPAN> }
+<SPAN CLASS="linenum">0072:</SPAN> 
+<SPAN CLASS="linenum">0073:</SPAN> <SPAN CLASS="comment">// ---------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0074:</SPAN> <SPAN CLASS="comment">// 256色テクスチャの読み込み</SPAN>
+<SPAN CLASS="linenum">0075:</SPAN> <SPAN CLASS="comment">// ---------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0076:</SPAN> <SPAN CLASS="keyword">unsigned</SPAN> <SPAN CLASS="keyword">int</SPAN> CBitmap::_Analize8bit( <SPAN CLASS="keyword">const</SPAN> BitmapInfoHeader *pBIH, FILE *fp )
+<SPAN CLASS="linenum">0077:</SPAN> {
+<SPAN CLASS="linenum">0078:</SPAN>     <SPAN CLASS="keyword">unsigned</SPAN> <SPAN CLASS="keyword">int</SPAN> tex_id = 0;
+<SPAN CLASS="linenum">0079:</SPAN>     <SPAN CLASS="keyword">unsigned</SPAN> <SPAN CLASS="keyword">char</SPAN> pallete_num;
+<SPAN CLASS="linenum">0080:</SPAN>     <SPAN CLASS="keyword">unsigned</SPAN> <SPAN CLASS="keyword">char</SPAN> *color_pallete_r;
+<SPAN CLASS="linenum">0081:</SPAN>     <SPAN CLASS="keyword">unsigned</SPAN> <SPAN CLASS="keyword">char</SPAN> *color_pallete_g;
+<SPAN CLASS="linenum">0082:</SPAN>     <SPAN CLASS="keyword">unsigned</SPAN> <SPAN CLASS="keyword">char</SPAN> *color_pallete_b;
+<SPAN CLASS="linenum">0083:</SPAN>     <SPAN CLASS="keyword">unsigned</SPAN> <SPAN CLASS="keyword">char</SPAN> *color_pallete_v;
+<SPAN CLASS="linenum">0084:</SPAN>     <SPAN CLASS="keyword">unsigned</SPAN> <SPAN CLASS="keyword">char</SPAN> *bitdata;
+<SPAN CLASS="linenum">0085:</SPAN>     <SPAN CLASS="keyword">int</SPAN> i, j;
+<SPAN CLASS="linenum">0086:</SPAN>     
+<SPAN CLASS="linenum">0087:</SPAN>     <SPAN CLASS="comment">//カラーパレット読み込み</SPAN>
+<SPAN CLASS="linenum">0088:</SPAN>     <SPAN CLASS="comment">//メモリ確保</SPAN>
+<SPAN CLASS="linenum">0089:</SPAN>     color_pallete_r = (<SPAN CLASS="keyword">unsigned</SPAN> <SPAN CLASS="keyword">char</SPAN>*)malloc(256*<SPAN CLASS="keyword">sizeof</SPAN>(<SPAN CLASS="keyword">unsigned</SPAN> <SPAN CLASS="keyword">char</SPAN>));
+<SPAN CLASS="linenum">0090:</SPAN>     color_pallete_g = (<SPAN CLASS="keyword">unsigned</SPAN> <SPAN CLASS="keyword">char</SPAN>*)malloc(256*<SPAN CLASS="keyword">sizeof</SPAN>(<SPAN CLASS="keyword">unsigned</SPAN> <SPAN CLASS="keyword">char</SPAN>));
+<SPAN CLASS="linenum">0091:</SPAN>     color_pallete_b = (<SPAN CLASS="keyword">unsigned</SPAN> <SPAN CLASS="keyword">char</SPAN>*)malloc(256*<SPAN CLASS="keyword">sizeof</SPAN>(<SPAN CLASS="keyword">unsigned</SPAN> <SPAN CLASS="keyword">char</SPAN>));
+<SPAN CLASS="linenum">0092:</SPAN>     color_pallete_v = (<SPAN CLASS="keyword">unsigned</SPAN> <SPAN CLASS="keyword">char</SPAN>*)malloc(256*<SPAN CLASS="keyword">sizeof</SPAN>(<SPAN CLASS="keyword">unsigned</SPAN> <SPAN CLASS="keyword">char</SPAN>));
+<SPAN CLASS="linenum">0093:</SPAN>     <SPAN CLASS="comment">//パレット読み込み</SPAN>
+<SPAN CLASS="linenum">0094:</SPAN>     <SPAN CLASS="keyword">for</SPAN>( i=0 ; i&lt;256 ; i++){
+<SPAN CLASS="linenum">0095:</SPAN>         fread( (color_pallete_r+i), <SPAN CLASS="keyword">sizeof</SPAN>(<SPAN CLASS="keyword">unsigned</SPAN> <SPAN CLASS="keyword">char</SPAN>),1,fp);
+<SPAN CLASS="linenum">0096:</SPAN>         fread( (color_pallete_g+i), <SPAN CLASS="keyword">sizeof</SPAN>(<SPAN CLASS="keyword">unsigned</SPAN> <SPAN CLASS="keyword">char</SPAN>),1,fp);
+<SPAN CLASS="linenum">0097:</SPAN>         fread( (color_pallete_b+i), <SPAN CLASS="keyword">sizeof</SPAN>(<SPAN CLASS="keyword">unsigned</SPAN> <SPAN CLASS="keyword">char</SPAN>),1,fp);
+<SPAN CLASS="linenum">0098:</SPAN>         fread( (color_pallete_v+i), <SPAN CLASS="keyword">sizeof</SPAN>(<SPAN CLASS="keyword">unsigned</SPAN> <SPAN CLASS="keyword">char</SPAN>),1,fp);
+<SPAN CLASS="linenum">0099:</SPAN>     }
+<SPAN CLASS="linenum">0100:</SPAN>     <SPAN CLASS="comment">//ビットデータ読み込み</SPAN>
+<SPAN CLASS="linenum">0101:</SPAN>     bitdata = (<SPAN CLASS="keyword">unsigned</SPAN> <SPAN CLASS="keyword">char</SPAN>*)malloc(3*pBIH-&gt;width*pBIH-&gt;height*<SPAN CLASS="keyword">sizeof</SPAN>(<SPAN CLASS="keyword">unsigned</SPAN> <SPAN CLASS="keyword">char</SPAN>));
+<SPAN CLASS="linenum">0102:</SPAN>     <SPAN CLASS="keyword">for</SPAN>(j=(pBIH-&gt;height-1);j&gt;=0;j--){
+<SPAN CLASS="linenum">0103:</SPAN>         <SPAN CLASS="keyword">for</SPAN>(i=(pBIH-&gt;width-1);i&gt;=0;i--){
+<SPAN CLASS="linenum">0104:</SPAN>             fread( &amp;pallete_num, <SPAN CLASS="keyword">sizeof</SPAN>(<SPAN CLASS="keyword">unsigned</SPAN> <SPAN CLASS="keyword">char</SPAN>),1,fp);
+<SPAN CLASS="linenum">0105:</SPAN>             *(bitdata+3*i+3*j*pBIH-&gt;width)  = *(color_pallete_b+pallete_num); 
+<SPAN CLASS="linenum">0106:</SPAN>             *(bitdata+3*i+3*j*pBIH-&gt;width+1)= *(color_pallete_g+pallete_num); 
+<SPAN CLASS="linenum">0107:</SPAN>             *(bitdata+3*i+3*j*pBIH-&gt;width+2)= *(color_pallete_r+pallete_num); 
+<SPAN CLASS="linenum">0108:</SPAN>         }
+<SPAN CLASS="linenum">0109:</SPAN>     }
+<SPAN CLASS="linenum">0110:</SPAN>     <SPAN CLASS="comment">//カラーパレットメモリ開放</SPAN>
+<SPAN CLASS="linenum">0111:</SPAN>     free(color_pallete_r);
+<SPAN CLASS="linenum">0112:</SPAN>     free(color_pallete_g);
+<SPAN CLASS="linenum">0113:</SPAN>     free(color_pallete_b);
+<SPAN CLASS="linenum">0114:</SPAN>     free(color_pallete_v);
+<SPAN CLASS="linenum">0115:</SPAN>     <SPAN CLASS="comment">//テクスチャ作成</SPAN>
+<SPAN CLASS="linenum">0116:</SPAN>     glGenTextures(1, &amp;tex_id);
+<SPAN CLASS="linenum">0117:</SPAN>     glBindTexture(GL_TEXTURE_2D, tex_id);
+<SPAN CLASS="linenum">0118:</SPAN>     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, pBIH-&gt;width, pBIH-&gt;height
+<SPAN CLASS="linenum">0119:</SPAN>                 , 0, GL_RGB, GL_UNSIGNED_BYTE, bitdata);
+<SPAN CLASS="linenum">0120:</SPAN>     free(bitdata);
+<SPAN CLASS="linenum">0121:</SPAN>     
+<SPAN CLASS="linenum">0122:</SPAN>     <SPAN CLASS="keyword">return</SPAN> tex_id;
+<SPAN CLASS="linenum">0123:</SPAN> }
+<SPAN CLASS="linenum">0124:</SPAN> <SPAN CLASS="comment">// ---------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0125:</SPAN> <SPAN CLASS="comment">// 24bitsテクスチャの読み込み</SPAN>
+<SPAN CLASS="linenum">0126:</SPAN> <SPAN CLASS="comment">// ---------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0127:</SPAN> <SPAN CLASS="keyword">unsigned</SPAN> <SPAN CLASS="keyword">int</SPAN> CBitmap::_Analize24bit( <SPAN CLASS="keyword">const</SPAN> BitmapInfoHeader *pBIH, FILE *fp )
+<SPAN CLASS="linenum">0128:</SPAN> {
+<SPAN CLASS="linenum">0129:</SPAN>     <SPAN CLASS="keyword">unsigned</SPAN> <SPAN CLASS="keyword">int</SPAN> tex_id = 0;
+<SPAN CLASS="linenum">0130:</SPAN>     <SPAN CLASS="keyword">unsigned</SPAN> <SPAN CLASS="keyword">char</SPAN> *bitdata;
+<SPAN CLASS="linenum">0131:</SPAN>     <SPAN CLASS="keyword">unsigned</SPAN> <SPAN CLASS="keyword">char</SPAN> red,green,blue;
+<SPAN CLASS="linenum">0132:</SPAN>     <SPAN CLASS="keyword">int</SPAN> i, j;
+<SPAN CLASS="linenum">0133:</SPAN>     
+<SPAN CLASS="linenum">0134:</SPAN>     <SPAN CLASS="comment">//メモリ確保</SPAN>
+<SPAN CLASS="linenum">0135:</SPAN>     bitdata = (<SPAN CLASS="keyword">unsigned</SPAN> <SPAN CLASS="keyword">char</SPAN>*)malloc(3*pBIH-&gt;width*pBIH-&gt;height*<SPAN CLASS="keyword">sizeof</SPAN>(<SPAN CLASS="keyword">unsigned</SPAN> <SPAN CLASS="keyword">char</SPAN>));
+<SPAN CLASS="linenum">0136:</SPAN>     <SPAN CLASS="comment">//読み込み</SPAN>
+<SPAN CLASS="linenum">0137:</SPAN>     <SPAN CLASS="keyword">for</SPAN>(j=(pBIH-&gt;height-1);j&gt;=0;j--){
+<SPAN CLASS="linenum">0138:</SPAN>         <SPAN CLASS="keyword">for</SPAN>(i=(pBIH-&gt;width-1);i&gt;=0;i--){
+<SPAN CLASS="linenum">0139:</SPAN>             fread( &amp;red,   <SPAN CLASS="keyword">sizeof</SPAN>(<SPAN CLASS="keyword">unsigned</SPAN> <SPAN CLASS="keyword">char</SPAN>),1,fp);
+<SPAN CLASS="linenum">0140:</SPAN>             fread( &amp;green, <SPAN CLASS="keyword">sizeof</SPAN>(<SPAN CLASS="keyword">unsigned</SPAN> <SPAN CLASS="keyword">char</SPAN>),1,fp);
+<SPAN CLASS="linenum">0141:</SPAN>             fread( &amp;blue,  <SPAN CLASS="keyword">sizeof</SPAN>(<SPAN CLASS="keyword">unsigned</SPAN> <SPAN CLASS="keyword">char</SPAN>),1,fp);
+<SPAN CLASS="linenum">0142:</SPAN>             *(bitdata+3*i+3*j*pBIH-&gt;width)  = blue;
+<SPAN CLASS="linenum">0143:</SPAN>             *(bitdata+3*i+3*j*pBIH-&gt;width+1)= green; 
+<SPAN CLASS="linenum">0144:</SPAN>             *(bitdata+3*i+3*j*pBIH-&gt;width+2)= red;
+<SPAN CLASS="linenum">0145:</SPAN>         }
+<SPAN CLASS="linenum">0146:</SPAN>     }
+<SPAN CLASS="linenum">0147:</SPAN>     <SPAN CLASS="comment">//テクスチャ作成</SPAN>
+<SPAN CLASS="linenum">0148:</SPAN>     glGenTextures(1, &amp;tex_id);
+<SPAN CLASS="linenum">0149:</SPAN>     glBindTexture(GL_TEXTURE_2D, tex_id);
+<SPAN CLASS="linenum">0150:</SPAN>     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, pBIH-&gt;width, pBIH-&gt;height,
+<SPAN CLASS="linenum">0151:</SPAN>                 0, GL_RGB, GL_UNSIGNED_BYTE, bitdata);
+<SPAN CLASS="linenum">0152:</SPAN>     
+<SPAN CLASS="linenum">0153:</SPAN>     <SPAN CLASS="comment">//メモリ開放</SPAN>
+<SPAN CLASS="linenum">0154:</SPAN>     free(bitdata);
+<SPAN CLASS="linenum">0155:</SPAN>     
+<SPAN CLASS="linenum">0156:</SPAN>     <SPAN CLASS="keyword">return</SPAN> tex_id;
+<SPAN CLASS="linenum">0157:</SPAN> }
+<SPAN CLASS="linenum">0158:</SPAN> <SPAN CLASS="comment">// ---------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0159:</SPAN> <SPAN CLASS="comment">// テクスチャの読み込み</SPAN>
+<SPAN CLASS="linenum">0160:</SPAN> <SPAN CLASS="comment">// ---------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0161:</SPAN> <SPAN CLASS="keyword">unsigned</SPAN> <SPAN CLASS="keyword">int</SPAN> CBitmap::Load(<SPAN CLASS="keyword">const</SPAN> <SPAN CLASS="keyword">char</SPAN> *filename)
+<SPAN CLASS="linenum">0162:</SPAN> {
+<SPAN CLASS="linenum">0163:</SPAN>     <SPAN CLASS="keyword">unsigned</SPAN> <SPAN CLASS="keyword">int</SPAN> tex_id = 0;
+<SPAN CLASS="linenum">0164:</SPAN>     FILE *fp;
+<SPAN CLASS="linenum">0165:</SPAN>     <SPAN CLASS="comment">//ビットマップヘッダ</SPAN>
+<SPAN CLASS="linenum">0166:</SPAN>     BitmapHeader header;
+<SPAN CLASS="linenum">0167:</SPAN>     BitmapInfoHeader info;
+<SPAN CLASS="linenum">0168:</SPAN>     <SPAN CLASS="comment">//色数</SPAN>
+<SPAN CLASS="linenum">0169:</SPAN>     <SPAN CLASS="keyword">unsigned</SPAN> <SPAN CLASS="keyword">int</SPAN> color_bit;
+<SPAN CLASS="linenum">0170:</SPAN>     
+<SPAN CLASS="linenum">0171:</SPAN>     <SPAN CLASS="comment">// ファイルオープン</SPAN>
+<SPAN CLASS="linenum">0172:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( NULL==( fp = fopen(filename, "<SPAN CLASS="string">rb</SPAN>") ) ) <SPAN CLASS="keyword">return</SPAN> tex_id;
+<SPAN CLASS="linenum">0173:</SPAN>     
+<SPAN CLASS="linenum">0174:</SPAN>     <SPAN CLASS="comment">//ヘッダ読み込み</SPAN>
+<SPAN CLASS="linenum">0175:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( _ReadHeader(&amp;header, fp))   <SPAN CLASS="keyword">goto</SPAN> end;
+<SPAN CLASS="linenum">0176:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( _ReadInfoHeader(&amp;info, fp)) <SPAN CLASS="keyword">goto</SPAN> end;
+<SPAN CLASS="linenum">0177:</SPAN>     
+<SPAN CLASS="linenum">0178:</SPAN>     <SPAN CLASS="comment">//ヘッダチェック</SPAN>
+<SPAN CLASS="linenum">0179:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( !(color_bit = _CheckHeaders(&amp;header, &amp;info))) <SPAN CLASS="keyword">goto</SPAN> end;
+<SPAN CLASS="linenum">0180:</SPAN>     
+<SPAN CLASS="linenum">0181:</SPAN>     <SPAN CLASS="comment">//ビットマップファイルサイズチェック</SPAN>
+<SPAN CLASS="linenum">0182:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( !_CheckSize(info.width*info.height) ) <SPAN CLASS="keyword">goto</SPAN> end;
+<SPAN CLASS="linenum">0183:</SPAN>     
+<SPAN CLASS="linenum">0184:</SPAN>     <SPAN CLASS="comment">//カラービット数で処理を分ける</SPAN>
+<SPAN CLASS="linenum">0185:</SPAN>     <SPAN CLASS="keyword">switch</SPAN>(color_bit){
+<SPAN CLASS="linenum">0186:</SPAN>     <SPAN CLASS="keyword">case</SPAN> 8:
+<SPAN CLASS="linenum">0187:</SPAN>         tex_id = _Analize8bit(&amp;info, fp);
+<SPAN CLASS="linenum">0188:</SPAN>         <SPAN CLASS="keyword">break</SPAN>;
+<SPAN CLASS="linenum">0189:</SPAN>     <SPAN CLASS="keyword">case</SPAN> 24:
+<SPAN CLASS="linenum">0190:</SPAN>         tex_id = _Analize24bit(&amp;info, fp);
+<SPAN CLASS="linenum">0191:</SPAN>         <SPAN CLASS="keyword">break</SPAN>;
+<SPAN CLASS="linenum">0192:</SPAN>     }
+<SPAN CLASS="linenum">0193:</SPAN>     
+<SPAN CLASS="linenum">0194:</SPAN> end:
+<SPAN CLASS="linenum">0195:</SPAN>     <SPAN CLASS="comment">// ファイルクローズ</SPAN>
+<SPAN CLASS="linenum">0196:</SPAN>     fclose(fp);
+<SPAN CLASS="linenum">0197:</SPAN>     
+<SPAN CLASS="linenum">0198:</SPAN>     <SPAN CLASS="keyword">return</SPAN> tex_id;
+<SPAN CLASS="linenum">0199:</SPAN> }
+<SPAN CLASS="linenum">0200:</SPAN> </PRE>
+</BODY>
+</HTML>

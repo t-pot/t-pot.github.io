@@ -1,0 +1,175 @@
+<head>
+	<title>t-pot『エッジフィルター』</title>
+	<link rel="stylesheet" type="text/css" href="../if.css">
+</head>
+<meta http-equiv=Content-Type content="text/html; charset=shift_jis">
+<body>
+
+
+<div class="contents">
+<center>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<h1>エッジフィルター</h1><br>
+<h3>～リアルタイム写真屋～</h3>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<image src = "title.png">
+</center>
+
+
+<h2>■はじめに</h2>
+
+
+<p>
+今回は、レンダリングした後の画像の輪郭をとるエッジフィルターです。<br>
+このエフェクトは、<a href="http://www.bunkasha-games.com/">DOUBLE-S.T.E.A.L</a>で有名になりましたが、
+私の知り合いは、DOUBLE-S.T.E.A.Lの広告を見て、「リアルタイムフォトショップだね」といっていました。<br>
+まぁ、だからどうしたという感じですが、実装してみました。
+</p>
+<p>
+<ul style = "LIST-STYLE-TYPE:none">
+<li><a href="src.lzh">src.lzh (エッジフィルターのサンプル:DirectX8.1)</a>
+</ul>
+
+<p>
+まぁ、いつものように適当にファイルが入っています。<br>
+</p>
+<table>
+<tr><td><a href="final_vsh.html">final.vsh</a></td><td>頂点シェーダー。</td></tr>
+<tr><td><a href="final_psh.html">final.psh</a></td><td>ピクセルシェーダー。</td></tr>
+<tr><td><a href="draw_cpp.html">draw.cpp</a></td><td>メインの描画部分。</td></tr>
+<tr><td><a href="draw_h.html">draw.h</a></td><td>描画の各関数の定義。</td></tr>
+<tr><td><a href="bg_cpp.html">bg.cpp</a></td><td>背景の描画。</td></tr>
+<tr><td><a href="main_h.html">main.h</a></td><td>基本的な定数など。</td></tr>
+<tr><td><a href="main_cpp.html">main.cpp</a></td><td>描画に関係しないシステム的な部分。</td></tr>
+<tr><td><a href="load_cpp.html">load.cpp</a></td><td>ロード。</td></tr>
+<tr><td><a href="load_h.html">load.h</a></td><td>ロードのインターフェイス。</td></tr>
+</table>
+<image src = "tile_bmp.jpg" width = 64 height=64>tile.bmp (床デカール)<br>
+<image src = "sky_bmp.jpg" width = 64 height=64>sky.bmp (空デカール)<br>
+<p>
+あと、実行ファイル及び、プロジェクトファイルが入っています。
+</p>
+
+
+<h2>■加工手順</h2>
+
+
+<p>
+どのような加工をしているか順を追って説明しましょう。
+</p>
+<p>
+先ずは、元画像です。
+テクスチャーにレンダリングして、画像を作り上げます。
+</p>
+<image src = "0.png" width = 256 height=256>
+<p>
+隣のピクセルの「輝度」の差でエッジを抽出します。<br>
+輝度を
+</p>
+<pre class="CodeBlock">
+輝度 = 0.299f*赤 + 0.587f*緑 + 0.114f*青
+</pre>
+<p>
+で、計算します。
+</p>
+<image src = "1.png" width = 256 height=256>
+<p>
+次に、近くのピクセルとの輝度の差を取って、エッジを抽出します。<br>
+輝度の差をとるポイントは、対角的にとります。<br>
+中心から、前後、左右に0.5離れた４点で、対角的に差をとります。
+</p>
+<image src = "cross.png" width = 320 height=240>
+<p>
+</p>
+<image src = "2.png" width = 256 height=256>
+<p>
+差をとったピクセルですが、本当は、
+</p>
+<pre class="CodeBlock">
+差の大きさ = |ピクセルの差１|＋|ピクセルの差２|
+</pre>
+<p>
+と、絶対値でとらないと、差をとった符号によって、一部が消えてしまいます。<br>
+ただし、絶対値の計算は大変なので、近似的に符号を消すための演算である絶対値の２乗
+</p>
+<pre class="CodeBlock">
+差の大きさ = (ピクセルの差１)<sup>2</sup>＋(ピクセルの差２)<sup>2</sup>
+</pre>
+<p>
+をとって、近似します。
+</p>
+<image src = "3.png" width = 256 height=256>
+<p>
+あっ、上の絵は、色のスケーリングをして、強弱を強めています。<br>
+さて、輪郭にするために、ネガポジ変換して、輪郭を抽出します。
+</p>
+<image src = "4.png" width = 256 height=256>
+<p>
+これを、元の画像と合成（乗算）をすれば、今回の画像が求まります。
+</p>
+<image src = "title.png" width = 256 height=256>
+<p>
+以上で、出来上がりです。
+</p>
+
+<h2>■ピクセルシェーダー</h2>
+
+<p>
+さて、どのようにして、以上の手続きを実現するか、ピクセルシェーダーのプログラムを見てみましょう。
+</p>
+<pre class="CodeBlock">
+<font color="deepskyblue">0001:</font> <font color="cyan">; final.psh</font>
+<font color="deepskyblue">0002:</font> <font color="cyan">;      (c) 2002 IMAGIRE Takashi</font>
+<font color="deepskyblue">0003:</font> 
+<font color="deepskyblue">0004:</font> ps.1.0
+<font color="deepskyblue">0005:</font> 
+<font color="deepskyblue">0006:</font> def c0, 0.299f, 0.587f, 0.114f, 0.0f    <font color="cyan">; 輝度の重み</font>
+<font color="deepskyblue">0007:</font> 
+<font color="deepskyblue">0008:</font> tex t0      <font color="cyan">; 0:1 0  1:0 1  2:0 0  3:0 0</font>
+<font color="deepskyblue">0009:</font> tex t1      <font color="cyan">;   0 0    0 0    1 0    0 1</font>
+<font color="deepskyblue">0010:</font> tex t2
+<font color="deepskyblue">0011:</font> tex t3
+<font color="deepskyblue">0012:</font> 
+<font color="deepskyblue">0013:</font> dp3 r0,      t0, c0         <font color="cyan">;         rgb        a</font>
+<font color="deepskyblue">0014:</font> dp3 r0.rgb,  t1, c0         <font color="cyan">; r0 = (t0の輝度、t1の輝度)</font>
+<font color="deepskyblue">0015:</font> dp3 r1,      t3, c0         <font color="cyan">; r1 = (t3の輝度、t2の輝度)</font>
+<font color="deepskyblue">0016:</font> dp3 r1.rgb,  t2, c0
+<font color="deepskyblue">0017:</font> 
+<font color="deepskyblue">0018:</font> add_x4     r0,   r0,-r1     <font color="cyan">; r0 =  4( t3-t0の輝度,     t2-t1の輝度)</font>
+<font color="deepskyblue">0019:</font> mul_x4     r0,   r0, r0     <font color="cyan">; r0 = 64((t3-t0の輝度)^2, (t2-t1の輝度)^2)</font>
+<font color="deepskyblue">0020:</font> add_x4_sat r0, 1-r0,-r0.a   <font color="cyan">; r0 = 4*(1-64((t2-t0の輝度)^2+(t3-t1の輝度)^2))</font>
+<font color="deepskyblue">0021:</font> mul_sat    r0, r0,   t1     <font color="cyan">; 求めたエッジに色を乗せる</font>
+</pre>
+<p>
+テクスチャー座標は、あらかじめずらしておきます（頂点シェーダーで被写界深度をやった時と同じ方法です）。<br>
+そのテクスチャーをロードた後、内積命令を使って輝度を求めます。<br>
+テンポラリレジスタは２つしかないので、アルファ成分と色成分にそれぞれ違うピクセルの輝度を格納します。<br>
+次に、足し算命令を使って、引き算して、エッジをしらべます。また、強弱を強調するために、結果を４倍します。<br>
+次に、掛け算命令をして、２乗します。これで、負の値が消えます。<br>
+その後、足し算をして、（ネガポジ反転しつつ）輝度を合成します。これで、輪郭が得られました。<br>
+最後に、色をかけて出来上がりです。
+</p>
+
+
+<h2>■最後に</h2>
+
+
+<p>
+シェーダ部分しか説明しませんでしたが、それ以外は今までにやってきたことなので、すぐわかると思います。<br>
+このフィルター自体は、そんなに綺麗でもないので、使いどころは微妙ですが、
+エッジを検出できるということは、いろいろな計算ができるので、使いどころは満載でしょう。
+</p>
+
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<center>
+<p><a href="../index.html">もどる</a></p>
+<p><a href="mailto:imagire@gmail.com">imagire@gmail.com</a></p>
+</center>
+
+</body>
+</html>

@@ -1,0 +1,182 @@
+<head>
+	<title>t-pot 『DirectX8.0 入門:Xファイルの表示』</title>
+	<link rel="stylesheet" type="text/css" href="../if.css">
+</head>
+<meta http-equiv=Content-Type content="text/html; charset=shift_jis">
+<body>
+<div class="contents">
+<center>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<h1>Xファイルの表示</h1><br>
+<h3>～いちいちポリゴンでなんてやってられません ～</h3>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+</center>
+<h2>■はじめに</h2>
+
+<p>
+さて、いままでのところで、ポリゴンはあらかた表示できるようになったと思います。
+ですが、実際にゲームを作るようになると、全部ポリゴンで表示するなんてやってられません。
+実際には自分でフォーマットを作って、コンバートを作るのがいいのでしょうが、
+考えたり、作ったりに時間もかかりますし、パフォーマンスが出る方法を考えるのは大変です。
+さらに、動きが速いこの業界では、一年前にパフォーマンスがある仕様が現在では効率が悪いのはざらです。
+ということで、すでにあるフォーマットを利用します。<br>
+DirectX で有名なフォーマットは、Xファイルです。このファイルを表示します。
+</p>
+<right><image src = "xfile.gif"></right>
+
+<p>
+いつも通り、以下のファイルをダウンロードしてください。<br>
+今回は、さらに car.x というファイルが入っています。
+これが X ファイルです。<br>
+この X ファイルは、LightWave6.5 でつくったファイルを、D-STORM さんから落とした DirectX Export プラグインで出力しました。
+</p>
+<ul style = "LIST-STYLE-TYPE:none">
+<li><a href="xfile.lzh">xfile.lzh (Xファイルの表示のサンプル)</a>
+</ul>
+
+<h2>■今回のオブジェクト</h2>
+
+<p>
+さて、draw.cpp です。<br>
+今回は新しいオブジェクトだらけです。<br>
+X ファイルのモデルは、『メッシュ』で管理されます。
+メッシュ自体の情報が、pMesh に入ります。
+pMeshMaterials は、ライトに対する応答について格納されます。
+pMeshTextures は、テクスチャーの情報です。
+dwNumMaterials は、Xファイルのモデルがいくつに分かれているか収まっています。
+</p>
+<pre class="CodeBlock">
+LPD3DXMESH              pMesh           = NULL; // メッシュ
+D3DMATERIAL8            *pMeshMaterials = NULL; // メッシュの質感
+LPDIRECT3DTEXTURE8      *pMeshTextures  = NULL; // メッシュのテクスチャー
+DWORD                   dwNumMaterials  = 0L;   // マテリアルの数
+</pre>
+
+<h2>■初期化</h2>
+
+<p>
+次が初期化部分です。
+</p>
+
+<pre class="CodeBlock">
+HRESULT InitRender(LPDIRECT3DDEVICE8 lpD3DDEV)
+{
+    HRESULT hr;
+    LPD3DXBUFFER pD3DXMtrlBuffer;
+
+    // X ファイルのロード
+    hr = D3DXLoadMeshFromX( "car.x", D3DXMESH_SYSTEMMEM, 
+                                   lpD3DDEV, NULL, 
+                                   &pD3DXMtrlBuffer, &dwNumMaterials, 
+                                   &pMesh );
+    if(FAILED(hr)) return E_FAIL;
+
+    // pD3DXMtrlBuffer から、質感やテクスチャーの情報を読み取る
+    D3DXMATERIAL* d3dxMaterials = (D3DXMATERIAL*)pD3DXMtrlBuffer->GetBufferPointer();
+    pMeshMaterials = new D3DMATERIAL8[dwNumMaterials];
+    pMeshTextures  = new LPDIRECT3DTEXTURE8[dwNumMaterials];
+
+    for( DWORD i=0; i < dwNumMaterials; i++ ){
+        pMeshMaterials[i] = d3dxMaterials[i].MatD3D;// 質感のコピー
+        pMeshMaterials[i].Ambient = pMeshMaterials[i].Diffuse;// マテリアルの環境色を設定する
+     
+        hr = D3DXCreateTextureFromFile( lpD3DDEV, 
+                                        d3dxMaterials[i].pTextureFilename, 
+                                        &pMeshTextures[i] );
+        if(FAILED(hr)) pMeshTextures[i] = NULL;
+    }
+
+    RELEASE(pD3DXMtrlBuffer);
+    
+    lpD3DDEV->SetRenderState( D3DRS_ZENABLE, TRUE);
+    lpD3DDEV->SetRenderState( D3DRS_AMBIENT, 0xffffffff);
+    
+	return S_OK;
+}
+</pre>
+<p>
+D3DXLoadMeshFromX で、ファイルをロードします。
+そのあと、X ファイルの情報を元に、
+d3dxMaterials に質感の情報を設定したり、
+D3DXCreateTextureFromFile でテクスチャーをロードします。
+</p>
+<p>
+あと、Z バッファーを有効にして、アンビエントライト（環境色：周りから一様にあたるライト）を設定します。
+</p>
+
+<h2>■表示</h2>
+
+<p>
+表示です。最初のほうは、3D ポリゴンを表示したときと同じように、
+表示マトリックスの設定です。
+最後の for ループがモデルの表示です。
+マテリアルごとに、質感やテクスチャーを設定してから表示します。
+</p>
+
+<pre class="CodeBlock">
+void Render(LPDIRECT3DDEVICE8 lpD3DDEV)
+{
+    D3DXMATRIX mWorld;
+    D3DXMatrixRotationY( &mWorld, timeGetTime()/1000.0f );
+    D3DXMATRIX mView, mProj;
+    D3DXMatrixLookAtLH( &mView, &D3DXVECTOR3( 0.0f, 3.0f, 4.0f ), 
+                                &D3DXVECTOR3( 0.0f, 0.0f, 0.0f ), 
+                                &D3DXVECTOR3( 0.0f, 1.0f, 0.0f ) );
+    D3DXMatrixPerspectiveFovLH(&mProj
+        ,60.0f*PI/180.0f                        // 視野角
+        ,1.0f                                    // アスペクト比
+        ,0.01f                                    // 最近接距離
+        ,100.0f                                    // 最遠方距離
+        );
+    
+    lpD3DDEV->SetTransform(D3DTS_WORLD, &mWorld);
+    lpD3DDEV->SetTransform(D3DTS_VIEW,  &mView);
+    lpD3DDEV->SetTransform(D3DTS_PROJECTION, &mProj);
+<Font color = orange><b>
+    for( DWORD i=0; i < dwNumMaterials; i++ ){
+        lpD3DDEV->SetMaterial( &pMeshMaterials[i] );
+        lpD3DDEV->SetTexture( 0, pMeshTextures[i] );
+        pMesh->DrawSubset( i );
+    }</b></Font>
+}
+</pre>
+
+<h2>■後始末</h2>
+
+<p>
+後始末は、作成したオブジェクトを開放します。
+</p>
+<pre class="CodeBlock">
+void CleanRender()
+{
+    if( pMeshMaterials != NULL ) delete[] pMeshMaterials;
+
+    if( pMeshTextures ){
+        for( DWORD i = 0; i < dwNumMaterials; i++ ){
+            RELEASE(pMeshTextures[i]);
+        }
+        delete[] pMeshTextures;
+    }
+
+    RELEASE(pMesh);
+}
+</pre>
+
+<p>
+今回の X ファイルは、テクスチャーが張っていませんが、プログラムは、テクスチャーに対応しています。
+他の X ファイルを読み込んでも、きちんと表示できるはずです。
+</p>
+
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<center>
+<hr>
+<p><a href="../index.html">もどる</a></p>
+<p><a href="mailto:imagire@gmail.com">imagire@gmail.com</a></p>
+</center>
+</body>
+</html>

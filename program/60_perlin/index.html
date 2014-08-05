@@ -1,0 +1,308 @@
+<head>
+	<title>t-pot『Perlin ノイズ』</title>
+	<link rel="stylesheet" type="text/css" href="../if.css">
+</head>
+<meta http-equiv=Content-Type content="text/html; charset=shift_jis">
+<body>
+
+
+<div class="contents">
+<center>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<h1>Perlin ノイズ</h1><br>
+<h3>～年輪の重ね方～</h3>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<image src = "title.png">
+<br>
+<hr>
+</center>
+<div>
+
+<h2>■はじめに</h2>
+
+
+<p>
+今回はPerlin ノイズを使った年輪のテクスチャを作成します。
+Perlin ノイズはそれを題材にしたコンテストが行われたり、
+Cg のコーディングコンテストやＡＴＩのデモでリアルタイム生成が試みられていて、
+ひそかに（？）盛り上がっています。<br>
+有用なランダム関数は使い出があるので、勉強しておきましょう。
+</p>
+<ul style = "LIST-STYLE-TYPE:none">
+<li><a href="src.lzh">src.lzh (Perlin ノイズのソース＆ＥＸＥ:DirectX8.1)</a>
+</ul>
+
+<p>
+まぁ、いつものように適当にファイルが入っています。
+</p>
+<table>
+<tr><td><a href="draw_cpp.html">draw.cpp</a></td><td>メインの描画部分。</td></tr>
+<tr><td><a href="draw_h.html">draw.h</a></td><td>描画の各関数の定義。</td></tr>
+<tr><td><a href="bg_cpp.html">bg.cpp</a></td><td>背景の描画。</td></tr>
+<tr><td><a href="load_cpp.html">load.cpp</a></td><td>メッシュのロード。</td></tr>
+<tr><td><a href="load_h.html">load.h</a></td><td>ロードのインターフェイス。</td></tr>
+<tr><td><a href="main_h.html">main.h</a></td><td>基本的な定数など。</td></tr>
+<tr><td><a href="main_cpp.html">main.cpp</a></td><td>描画に関係しないシステム的な部分。</td></tr>
+</table>
+<image src = "sky_bmp.jpg" width = 64 height=64>sky.bmp (空)<br>
+<image src = "tile_bmp.jpg" width = 64 height=64>tile.bmp (地面)<br>
+<p>
+あと、モデルと実行ファイル及び、プロジェクトファイルが入っています。
+</p>
+
+
+<h2>■Perlin ノイズとは</h2>
+
+
+<p>
+Perlin ノイズとは、ニューヨーク大学の <a href="http://mrl.nyu.edu/~perlin/">Ken Perlin 氏</a>が開発したノイズです。<br>
+Ken Perlin 氏は、「T2」等で使用された 「Noise & Turblence アルゴリズム」の開発で1997年にアカデミー技術賞を受賞しているつわものです。<br>
+SIGGRAPH でも毎年のように発表されており、この分野では非常に有名な方です。
+</p>
+<image src = "perlin.jpg">
+<p>
+Perlin ノイズは、複数のノイズを合成して１つのノイズを作ります。
+</p>
+<image src = "howto.png">
+<p>
+合成するノイズは、サンプリング周波数が２のべき乗で増加します。<br>
+また、このとき乱数のゆれ（振幅）を小さくしていきます。
+この「小さくしていく度合い」を Persistance といいます。
+Persistance は、ほとんどの場合１以下の小数で、Persistance が小さいほどなだらかなノイズを作ることができます。<br>
+なだらかさは、合成するノイズの個数(オクターブ数)でも調整することができます。
+なぜ、オクターブというかは、ノイズのサンプリング周波数が２のべき乗であがるから名づけられました。
+周波数が２倍高い音は１オクターブ上の音です。
+その音楽用語との連想で、オクターブという言葉が使われています。<br>
+高いオクターブのノイズは、細かな部分を表現できるので、より細かいノイズを作ることができます。<br>
+図に出ている「Persistance 小」ないし、「オクターブ大」の画像が今回のタイトル絵で使っているノイズです。<br>
+作成したノイズを１０倍して、さらに小数部を採用してギザギザの模様を作ります。
+</p>
+<image src = "cycle.png">
+
+<p>
+なお、サンプリングする中間では、値の補間をします。
+</p>
+<image src = "erp.png">
+<p>
+今回はCatmull-Rom スプラインを。補間に用いますが、線形補間や三角関数も補間に用いられます
+（あとで気づいたのですが、三角関数はもっとなだらかにつながるように調整されます）。<br>
+計算のしやすさや結果の違いの好みで選べばいいでしょう。
+</p>
+
+<h2>■ソースファイル</h2>
+
+
+<p>
+それではプログラムを見ていきましょう。<br>
+今回は、特別なシェーダは全くありません。
+</p>
+<p>
+テクスチャーの生成は初期化時に行います。<br>
+D3DXFillTexture を使って、算出的に生成します。
+</p>
+
+<pre class="CodeBlock">
+draw.c
+<FONT COLOR=deepskyblue>0275:</FONT>     <FONT COLOR=blue>if</FONT>( FAILED(hr = lpD3DDev-&gt;CreateTexture(512, 512, 1
+<FONT COLOR=deepskyblue>0276:</FONT>                                  , D3DUSAGE_RENDERTARGET, D3DFMT_X8R8G8B8
+<FONT COLOR=deepskyblue>0277:</FONT>                                  , D3DPOOL_DEFAULT, &amp;pTexture))) <FONT COLOR=blue>return</FONT> hr;
+<FONT COLOR=deepskyblue>0278:</FONT>     <FONT COLOR=blue>if</FONT>( FAILED(hr = D3DXFillTexture(pTexture, MakTexture, NULL))) <FONT COLOR=blue>return</FONT> hr;
+</pre>
+<p>
+実際のテクスチャの生成は次のようになります。
+</p>
+<pre class="CodeBlock">
+draw.c
+<FONT COLOR=deepskyblue>0227:</FONT> <FONT COLOR=cyan>// ----------------------------------------------------------------------------</FONT>
+<FONT COLOR=deepskyblue>0228:</FONT> <FONT COLOR=cyan>// テクスチャーを作成</FONT>
+<FONT COLOR=deepskyblue>0229:</FONT> <FONT COLOR=cyan>// ----------------------------------------------------------------------------</FONT>
+<FONT COLOR=deepskyblue>0230:</FONT> VOID MakTexture(D3DXVECTOR4* pOut, D3DXVECTOR2 *pTexCoord, D3DXVECTOR2 *pTexelSize, LPVOID pData)
+<FONT COLOR=deepskyblue>0231:</FONT> {
+<FONT COLOR=deepskyblue>0232:</FONT>     <FONT COLOR=blue>const</FONT> <FONT COLOR=blue>float</FONT> PERSISTANCE = 1.0f/4;
+<FONT COLOR=deepskyblue>0233:</FONT>     <FONT COLOR=blue>const</FONT> <FONT COLOR=blue>int</FONT>   OCTAVES     = 4;
+<FONT COLOR=deepskyblue>0234:</FONT> 
+<FONT COLOR=deepskyblue>0235:</FONT>     <FONT COLOR=blue>float</FONT> shade = 0.0f;
+<FONT COLOR=deepskyblue>0236:</FONT>     
+<FONT COLOR=deepskyblue>0237:</FONT>     <FONT COLOR=cyan>// 最大の振幅の大きさ</FONT>
+<FONT COLOR=deepskyblue>0238:</FONT>     <FONT COLOR=blue>float</FONT> amplitude = 1.0f/(((<FONT COLOR=blue>float</FONT>)pow( PERSISTANCE, OCTAVES ) - 1.f)/(PERSISTANCE - 1.f));
+<FONT COLOR=deepskyblue>0239:</FONT>     <FONT COLOR=blue>float</FONT> frequency = 4.0;
+<FONT COLOR=deepskyblue>0240:</FONT> 
+<FONT COLOR=deepskyblue>0241:</FONT>     <FONT COLOR=blue>for</FONT>(<FONT COLOR=blue>int</FONT> i=0; i&lt;OCTAVES ; i++){
+<FONT COLOR=deepskyblue>0242:</FONT>         shade += amplitude * GetNoiseOctave(i, frequency, pTexCoord-&gt;x, pTexCoord-&gt;y);
+<FONT COLOR=deepskyblue>0243:</FONT> 
+<FONT COLOR=deepskyblue>0244:</FONT>         amplitude *= PERSISTANCE;   <FONT COLOR=cyan>// 振幅は小さく</FONT>
+<FONT COLOR=deepskyblue>0245:</FONT>         frequency *= 2;             <FONT COLOR=cyan>// 周波数は高くなる</FONT>
+<FONT COLOR=deepskyblue>0246:</FONT>     }
+<FONT COLOR=deepskyblue>0247:</FONT>     
+<FONT COLOR=deepskyblue>0248:</FONT>     <FONT COLOR=cyan>// 年輪ぽく加工する</FONT>
+<FONT COLOR=deepskyblue>0249:</FONT>     shade = 10*shade;           <FONT COLOR=cyan>// 10年分の輪</FONT>
+<FONT COLOR=deepskyblue>0250:</FONT>     shade = shade - (<FONT COLOR=blue>int</FONT>)shade; <FONT COLOR=cyan>// 小数部を取り出す</FONT>
+<FONT COLOR=deepskyblue>0251:</FONT> 
+<FONT COLOR=deepskyblue>0252:</FONT>     <FONT COLOR=cyan>// 色をつける</FONT>
+<FONT COLOR=deepskyblue>0253:</FONT>     pOut-&gt;x = 0.80f*shade;  <FONT COLOR=cyan>// 茶色っぽい色にする</FONT>
+<FONT COLOR=deepskyblue>0254:</FONT>     pOut-&gt;y = 0.36f*shade;
+<FONT COLOR=deepskyblue>0255:</FONT>     pOut-&gt;z = 0.08f*shade;
+<FONT COLOR=deepskyblue>0256:</FONT>     pOut-&gt;w = 1.0f;
+<FONT COLOR=deepskyblue>0257:</FONT> }
+</pre>
+<p>
+振幅の減少度を示す PERSISTANCE と、重ね合わせ回数 OCTAVES を適当に決めておきます。<br>
+オクターブの回数だけノイズを足しこんでいきます。<br>
+オクターブがあがるごとに、振幅は小さく、周波数は高くしていきます。
+</p>
+<p>
+あとは、年輪のようにするように、繰り替えしを付けます。具体的には、１０倍して、その小数部をとります。
+こうすれば、元のノイズが０から１に変化した段階で１０個の年輪ができます。<br>
+最後に色をつけて出力すれば、１つのテクセルに関する色が求まります。
+</p>
+<p>
+問題は、ノイズを与える GetNoiseOctave 関数です。この関数は、０から１の大きさで各オクターブに応じたノイズを生成します。
+</p>
+<pre class="CodeBlock">
+draw.c
+<FONT COLOR=deepskyblue>0187:</FONT> <FONT COLOR=blue>float</FONT> GetNoiseOctave(<FONT COLOR=blue>int</FONT> octave, <FONT COLOR=blue>float</FONT> frequency, <FONT COLOR=blue>float</FONT> x, <FONT COLOR=blue>float</FONT> y)
+<FONT COLOR=deepskyblue>0188:</FONT> {
+<FONT COLOR=deepskyblue>0189:</FONT>     <FONT COLOR=blue>int</FONT>  ifrequency = (<FONT COLOR=blue>int</FONT>)frequency;
+<FONT COLOR=deepskyblue>0190:</FONT>     <FONT COLOR=blue>float</FONT> t[2] = {frequency * x, frequency * y};
+<FONT COLOR=deepskyblue>0191:</FONT>     <FONT COLOR=blue>int</FONT>  no[2] = {(<FONT COLOR=blue>int</FONT>)t[0],     (<FONT COLOR=blue>int</FONT>)t[1]};
+<FONT COLOR=deepskyblue>0192:</FONT> 
+<FONT COLOR=deepskyblue>0193:</FONT>     <FONT COLOR=blue>int</FONT> cp[2][4] = {
+<FONT COLOR=deepskyblue>0194:</FONT>         { (RAND_ARRAY*((no[0]+0)%ifrequency)/ifrequency+octave)%RAND_ARRAY
+<FONT COLOR=deepskyblue>0195:</FONT>         , (RAND_ARRAY*((no[0]+1)%ifrequency)/ifrequency+octave)%RAND_ARRAY
+<FONT COLOR=deepskyblue>0196:</FONT>         , (RAND_ARRAY*((no[0]+2)%ifrequency)/ifrequency+octave)%RAND_ARRAY
+<FONT COLOR=deepskyblue>0197:</FONT>         , (RAND_ARRAY*((no[0]+3)%ifrequency)/ifrequency+octave)%RAND_ARRAY},
+<FONT COLOR=deepskyblue>0198:</FONT>         { (RAND_ARRAY*((no[1]+0)%ifrequency)/ifrequency+octave)%RAND_ARRAY
+<FONT COLOR=deepskyblue>0199:</FONT>         , (RAND_ARRAY*((no[1]+1)%ifrequency)/ifrequency+octave)%RAND_ARRAY
+<FONT COLOR=deepskyblue>0200:</FONT>         , (RAND_ARRAY*((no[1]+2)%ifrequency)/ifrequency+octave)%RAND_ARRAY
+<FONT COLOR=deepskyblue>0201:</FONT>         , (RAND_ARRAY*((no[1]+3)%ifrequency)/ifrequency+octave)%RAND_ARRAY},
+<FONT COLOR=deepskyblue>0202:</FONT>     };
+<FONT COLOR=deepskyblue>0203:</FONT> 
+<FONT COLOR=deepskyblue>0204:</FONT>     D3DXMATRIX mHeight(
+<FONT COLOR=deepskyblue>0205:</FONT>             rand_tbl[cp[0][0]][cp[1][0]],
+<FONT COLOR=deepskyblue>0206:</FONT>             rand_tbl[cp[0][1]][cp[1][0]],
+<FONT COLOR=deepskyblue>0207:</FONT>             rand_tbl[cp[0][2]][cp[1][0]],
+<FONT COLOR=deepskyblue>0208:</FONT>             rand_tbl[cp[0][3]][cp[1][0]],
+<FONT COLOR=deepskyblue>0209:</FONT> 
+<FONT COLOR=deepskyblue>0210:</FONT>             rand_tbl[cp[0][0]][cp[1][1]],
+<FONT COLOR=deepskyblue>0211:</FONT>             rand_tbl[cp[0][1]][cp[1][1]],
+<FONT COLOR=deepskyblue>0212:</FONT>             rand_tbl[cp[0][2]][cp[1][1]],
+<FONT COLOR=deepskyblue>0213:</FONT>             rand_tbl[cp[0][3]][cp[1][1]],
+<FONT COLOR=deepskyblue>0214:</FONT> 
+<FONT COLOR=deepskyblue>0215:</FONT>             rand_tbl[cp[0][0]][cp[1][2]],
+<FONT COLOR=deepskyblue>0216:</FONT>             rand_tbl[cp[0][1]][cp[1][2]],
+<FONT COLOR=deepskyblue>0217:</FONT>             rand_tbl[cp[0][2]][cp[1][2]],
+<FONT COLOR=deepskyblue>0218:</FONT>             rand_tbl[cp[0][3]][cp[1][2]],
+<FONT COLOR=deepskyblue>0219:</FONT> 
+<FONT COLOR=deepskyblue>0220:</FONT>             rand_tbl[cp[0][0]][cp[1][3]],
+<FONT COLOR=deepskyblue>0221:</FONT>             rand_tbl[cp[0][1]][cp[1][3]],
+<FONT COLOR=deepskyblue>0222:</FONT>             rand_tbl[cp[0][2]][cp[1][3]],
+<FONT COLOR=deepskyblue>0223:</FONT>             rand_tbl[cp[0][3]][cp[1][3]]);
+<FONT COLOR=deepskyblue>0224:</FONT>     
+<FONT COLOR=deepskyblue>0225:</FONT>     <FONT COLOR=blue>return</FONT> CatmullRomPatch( mHeight, t[0]-(<FONT COLOR=blue>float</FONT>)no[0], t[1]-(<FONT COLOR=blue>float</FONT>)no[1]);
+<FONT COLOR=deepskyblue>0226:</FONT> }
+</pre>
+<p>
+オクターブごとの違いを表現しましょう。<br>
+オクターブが違えば、周波数が高くなります。<br>
+周波数は、サンプリングの個数、すなわち繰り返しの回数です。
+(no[0], no[1]) は、現在の座標(x, y)が、frequency の繰り返しの中の何番目かを示します。
+</p>
+<p>
+rand_tbl は、テクセル座標に依存した（同じ座標値を与えた時に、常に同じ乱数を返すような）乱数です。<br>
+配列として乱数を用意しました。<br>
+また、乱数の値は、使いやすいように、0～1の範囲にしました。
+</p>
+<pre class="CodeBlock">
+draw.c
+<FONT COLOR=deepskyblue>0031:</FONT> <FONT COLOR=blue>const</FONT> <FONT COLOR=blue>int</FONT> RAND_ARRAY = 64;
+<FONT COLOR=deepskyblue>0032:</FONT> <FONT COLOR=blue>float</FONT> rand_tbl[RAND_ARRAY][RAND_ARRAY];
+
+<FONT COLOR=deepskyblue>0272:</FONT>     <FONT COLOR=blue>for</FONT>(i=0;i&lt;RAND_ARRAY;i++)
+<FONT COLOR=deepskyblue>0273:</FONT>         <FONT COLOR=blue>for</FONT>(j=0;j&lt;RAND_ARRAY;j++)
+<FONT COLOR=deepskyblue>0274:</FONT>             rand_tbl[i][j] = (<FONT COLOR=blue>float</FONT>)rand()/(<FONT COLOR=blue>float</FONT>)RAND_MAX;
+</pre>
+<p>
+配列の大きさは適当です。小さいと周期性が見えてしまうので、テクスチャサイズとオクターブ数で割った程度の大きさを用意します。
+</p>
+
+
+<p>
+ノイズをなだらかにする関数としては、Catmull-Rom 曲線のパッチを使いました。<br>
+引き渡すパラメータの値は、繰り返しの中での０から１の間のパラメータになります。<br>
+テクセル座標に応じて、周期的になるように乱数のコントロールポイントを決めます。<br>
+但し、オクターブが違えば別の乱数を得るように調整しています。
+</p>
+
+<image src = "oct0.png">
+
+<pre class="CodeBlock">
+draw.c
+<FONT COLOR=deepskyblue>0152:</FONT> <FONT COLOR=cyan>// ----------------------------------------------------------------------------</FONT>
+<FONT COLOR=deepskyblue>0153:</FONT> <FONT COLOR=cyan>// CatmullRom スプライン</FONT>
+<FONT COLOR=deepskyblue>0154:</FONT> <FONT COLOR=cyan>//</FONT>
+<FONT COLOR=deepskyblue>0155:</FONT> <FONT COLOR=cyan>//          1            ┌ -1  3 -3  1┐┌ Pi-1 ┐</FONT>
+<FONT COLOR=deepskyblue>0156:</FONT> <FONT COLOR=cyan>// xi(t) = ― [t3 t2 t 1]│  2 -5  4 -1││ Pi   │</FONT>
+<FONT COLOR=deepskyblue>0157:</FONT> <FONT COLOR=cyan>//          2            │ -1  0  1  0││ Pi+1 │</FONT>
+<FONT COLOR=deepskyblue>0158:</FONT> <FONT COLOR=cyan>//                       └  0  2  0  0┘└ Pi+2 ┘</FONT>
+<FONT COLOR=deepskyblue>0159:</FONT> <FONT COLOR=cyan>// ----------------------------------------------------------------------------</FONT>
+<FONT COLOR=deepskyblue>0160:</FONT> <FONT COLOR=blue>float</FONT> CatmullRom(<FONT COLOR=blue>float</FONT> x0, <FONT COLOR=blue>float</FONT> x1, <FONT COLOR=blue>float</FONT> x2, <FONT COLOR=blue>float</FONT> x3, <FONT COLOR=blue>float</FONT> t)
+<FONT COLOR=deepskyblue>0161:</FONT> {
+<FONT COLOR=deepskyblue>0162:</FONT>     <FONT COLOR=blue>const</FONT> D3DXMATRIX m(
+<FONT COLOR=deepskyblue>0163:</FONT>         -1.0f/2.0f,  3.0f/2.0f, -3.0f/2.0f,  1.0f/2.0f, 
+<FONT COLOR=deepskyblue>0164:</FONT>          2.0f/2.0f, -5.0f/2.0f,  4.0f/2.0f, -1.0f/2.0f, 
+<FONT COLOR=deepskyblue>0165:</FONT>         -1.0f/2.0f,  0.0f/2.0f,  1.0f/2.0f,  0.0f/2.0f, 
+<FONT COLOR=deepskyblue>0166:</FONT>          0.0f/2.0f,  2.0f/2.0f,  0.0f/2.0f,  0.0f/2.0f
+<FONT COLOR=deepskyblue>0167:</FONT>     );
+<FONT COLOR=deepskyblue>0168:</FONT> 
+<FONT COLOR=deepskyblue>0169:</FONT>     <FONT COLOR=blue>float</FONT> t2 = t*t;
+<FONT COLOR=deepskyblue>0170:</FONT>     D3DXVECTOR4 vt(t2*t, t2, t, 1.f);
+<FONT COLOR=deepskyblue>0171:</FONT> 
+<FONT COLOR=deepskyblue>0172:</FONT>     D3DXVec4Transform(&amp;vt, &amp;vt, &amp;m);
+<FONT COLOR=deepskyblue>0173:</FONT> 
+<FONT COLOR=deepskyblue>0174:</FONT>     <FONT COLOR=blue>return</FONT> x0 * vt.x + x1 * vt.y + x2 * vt.z + x3 * vt.w;
+<FONT COLOR=deepskyblue>0175:</FONT> }
+<FONT COLOR=deepskyblue>0176:</FONT> <FONT COLOR=cyan>// ----------------------------------------------------------------------------</FONT>
+<FONT COLOR=deepskyblue>0177:</FONT> <FONT COLOR=blue>float</FONT> CatmullRomPatch(D3DXMATRIX &amp;cp, <FONT COLOR=blue>float</FONT> s, <FONT COLOR=blue>float</FONT> t)
+<FONT COLOR=deepskyblue>0178:</FONT> {
+<FONT COLOR=deepskyblue>0179:</FONT>     <FONT COLOR=blue>return</FONT> CatmullRom(
+<FONT COLOR=deepskyblue>0180:</FONT>             CatmullRom( cp._11, cp._12, cp._13, cp._14, s),
+<FONT COLOR=deepskyblue>0181:</FONT>             CatmullRom( cp._21, cp._22, cp._23, cp._24, s),
+<FONT COLOR=deepskyblue>0182:</FONT>             CatmullRom( cp._31, cp._32, cp._33, cp._34, s),
+<FONT COLOR=deepskyblue>0183:</FONT>             CatmullRom( cp._41, cp._42, cp._43, cp._44, s),
+<FONT COLOR=deepskyblue>0184:</FONT>             t);
+<FONT COLOR=deepskyblue>0185:</FONT> }
+</pre>
+<p>
+CatmullRomPatch 関数は、Catmull-Rom 曲線を２重に使用することによって、２次元的に補間をします。<br>
+パラメータ (s,t) が０から１の間で動くと、コントロールポイントの中央の４点の値が補完されます。
+</p>
+<image src = "cp.gif">
+
+<p>
+テクスチャを実際に張るのは円柱座標を使って張っていますが、枝葉の部分なので説明は省略します。
+</p>
+
+
+<h2>■最後に</h2>
+
+
+<p>
+今回は、シェーダとは全く関係なしで、普通にテクスチャを生成しましたが、
+リアルタイムで実現していきたいですね。
+</p>
+
+</div>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<center>
+<hr>
+<p><a href="../index.html">もどる</a></p>
+<p><a href="mailto:imagire@gmail.com">imagire@gmail.com</a></p>
+</center>
+
+</body>
+</html>

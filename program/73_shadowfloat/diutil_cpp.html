@@ -1,0 +1,377 @@
+<HTML>
+<HEAD>
+<TITLE>diutil.cpp</TITLE>
+<meta name="GENERATOR" content="cpp2html 2.1 by Niisaka">
+<meta http-equiv="Content-Type" content="text/html">
+<meta http-equiv="Content-Style-Type" content="text/css">
+<STYLE TYPE="text/css">
+<!--
+SPAN.comment { color:#008000; font-weight:normal; font-style:normal;}
+SPAN.keyword { color:#0000FF; font-weight:normal; font-style:normal;}
+SPAN.string { color:#600000; font-weight:normal; font-style:normal;}
+SPAN.linenum { color:#A0A0A0; font-weight:normal; font-style:normal;}
+-->
+</STYLE>
+</HEAD>
+<BODY TEXT="#000000" BGCOLOR="#FFFFFF">
+<PRE><SPAN CLASS="linenum">0001:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0002:</SPAN> <SPAN CLASS="comment">// File: DIUtil.cpp</SPAN>
+<SPAN CLASS="linenum">0003:</SPAN> <SPAN CLASS="comment">//</SPAN>
+<SPAN CLASS="linenum">0004:</SPAN> <SPAN CLASS="comment">// Desc: DirectInput framework class using semantic mapping.  Feel free to use </SPAN>
+<SPAN CLASS="linenum">0005:</SPAN> <SPAN CLASS="comment">//       this class as a starting point for adding extra functionality.</SPAN>
+<SPAN CLASS="linenum">0006:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0007:</SPAN> <SPAN CLASS="keyword">#define</SPAN> STRICT
+<SPAN CLASS="linenum">0008:</SPAN> <SPAN CLASS="keyword">#include</SPAN> &lt;basetsd.h&gt;
+<SPAN CLASS="linenum">0009:</SPAN> <SPAN CLASS="keyword">#include</SPAN> &lt;tchar.h&gt;
+<SPAN CLASS="linenum">0010:</SPAN> <SPAN CLASS="keyword">#include</SPAN> &lt;stdio.h&gt;
+<SPAN CLASS="linenum">0011:</SPAN> <SPAN CLASS="keyword">#include</SPAN> "<SPAN CLASS="string">DIUtil.h</SPAN>"
+<SPAN CLASS="linenum">0012:</SPAN> <SPAN CLASS="keyword">#include</SPAN> "<SPAN CLASS="string">DXUtil.h</SPAN>"
+<SPAN CLASS="linenum">0013:</SPAN> 
+<SPAN CLASS="linenum">0014:</SPAN> 
+<SPAN CLASS="linenum">0015:</SPAN> 
+<SPAN CLASS="linenum">0016:</SPAN>  
+<SPAN CLASS="linenum">0017:</SPAN> 
+<SPAN CLASS="linenum">0018:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0019:</SPAN> <SPAN CLASS="comment">// Name: CInputDeviceManager()</SPAN>
+<SPAN CLASS="linenum">0020:</SPAN> <SPAN CLASS="comment">// Desc: Constructor </SPAN>
+<SPAN CLASS="linenum">0021:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0022:</SPAN> CInputDeviceManager::CInputDeviceManager()
+<SPAN CLASS="linenum">0023:</SPAN> {
+<SPAN CLASS="linenum">0024:</SPAN>     HRESULT hr = CoInitialize(NULL);
+<SPAN CLASS="linenum">0025:</SPAN>     m_bCleanupCOM = SUCCEEDED(hr);
+<SPAN CLASS="linenum">0026:</SPAN> 
+<SPAN CLASS="linenum">0027:</SPAN>     m_dwNumDevices = 0;
+<SPAN CLASS="linenum">0028:</SPAN>     m_dwMaxDevices = 10;
+<SPAN CLASS="linenum">0029:</SPAN>     m_pDI          = NULL;
+<SPAN CLASS="linenum">0030:</SPAN> 
+<SPAN CLASS="linenum">0031:</SPAN>     <SPAN CLASS="comment">// Allocate DeviceInfo structs</SPAN>
+<SPAN CLASS="linenum">0032:</SPAN>     m_pDevices = (DeviceInfo*) malloc( m_dwMaxDevices*<SPAN CLASS="keyword">sizeof</SPAN>(DeviceInfo) );
+<SPAN CLASS="linenum">0033:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( m_pDevices )
+<SPAN CLASS="linenum">0034:</SPAN>         ZeroMemory( m_pDevices, m_dwMaxDevices*<SPAN CLASS="keyword">sizeof</SPAN>(DeviceInfo) );
+<SPAN CLASS="linenum">0035:</SPAN> }
+<SPAN CLASS="linenum">0036:</SPAN> 
+<SPAN CLASS="linenum">0037:</SPAN> 
+<SPAN CLASS="linenum">0038:</SPAN> 
+<SPAN CLASS="linenum">0039:</SPAN> 
+<SPAN CLASS="linenum">0040:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0041:</SPAN> <SPAN CLASS="comment">// Name: ~CInputDeviceManager()</SPAN>
+<SPAN CLASS="linenum">0042:</SPAN> <SPAN CLASS="comment">// Desc: Destructor</SPAN>
+<SPAN CLASS="linenum">0043:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0044:</SPAN> CInputDeviceManager::~CInputDeviceManager()
+<SPAN CLASS="linenum">0045:</SPAN> {
+<SPAN CLASS="linenum">0046:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( m_pDevices )
+<SPAN CLASS="linenum">0047:</SPAN>     {
+<SPAN CLASS="linenum">0048:</SPAN>         <SPAN CLASS="comment">// Release() all devices</SPAN>
+<SPAN CLASS="linenum">0049:</SPAN>         <SPAN CLASS="keyword">for</SPAN>( DWORD i=0; i&lt;m_dwNumDevices; i++ )
+<SPAN CLASS="linenum">0050:</SPAN>         {
+<SPAN CLASS="linenum">0051:</SPAN>             <SPAN CLASS="keyword">if</SPAN>( m_pDevices[i].pdidDevice )
+<SPAN CLASS="linenum">0052:</SPAN>                 m_pDevices[i].pdidDevice-&gt;Unacquire();
+<SPAN CLASS="linenum">0053:</SPAN> 
+<SPAN CLASS="linenum">0054:</SPAN>             SAFE_RELEASE( m_pDevices[i].pdidDevice );
+<SPAN CLASS="linenum">0055:</SPAN>         }
+<SPAN CLASS="linenum">0056:</SPAN> 
+<SPAN CLASS="linenum">0057:</SPAN>         free( m_pDevices );
+<SPAN CLASS="linenum">0058:</SPAN>     }
+<SPAN CLASS="linenum">0059:</SPAN> 
+<SPAN CLASS="linenum">0060:</SPAN>     <SPAN CLASS="comment">// Release() base object</SPAN>
+<SPAN CLASS="linenum">0061:</SPAN>     SAFE_RELEASE( m_pDI );
+<SPAN CLASS="linenum">0062:</SPAN> 
+<SPAN CLASS="linenum">0063:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( m_bCleanupCOM )
+<SPAN CLASS="linenum">0064:</SPAN>         CoUninitialize();
+<SPAN CLASS="linenum">0065:</SPAN> }
+<SPAN CLASS="linenum">0066:</SPAN> 
+<SPAN CLASS="linenum">0067:</SPAN> 
+<SPAN CLASS="linenum">0068:</SPAN> 
+<SPAN CLASS="linenum">0069:</SPAN> 
+<SPAN CLASS="linenum">0070:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0071:</SPAN> <SPAN CLASS="comment">// Name: GetDevices()</SPAN>
+<SPAN CLASS="linenum">0072:</SPAN> <SPAN CLASS="comment">// Desc: Get the DeviceInfo array and number of devices</SPAN>
+<SPAN CLASS="linenum">0073:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0074:</SPAN> HRESULT CInputDeviceManager::GetDevices( DeviceInfo** ppDeviceInfo, 
+<SPAN CLASS="linenum">0075:</SPAN>                                          DWORD* pdwCount )
+<SPAN CLASS="linenum">0076:</SPAN> {
+<SPAN CLASS="linenum">0077:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( NULL==ppDeviceInfo || NULL==pdwCount )
+<SPAN CLASS="linenum">0078:</SPAN>         <SPAN CLASS="keyword">return</SPAN> E_INVALIDARG;
+<SPAN CLASS="linenum">0079:</SPAN> 
+<SPAN CLASS="linenum">0080:</SPAN>     (*ppDeviceInfo) = m_pDevices;
+<SPAN CLASS="linenum">0081:</SPAN>     (*pdwCount) = m_dwNumDevices;
+<SPAN CLASS="linenum">0082:</SPAN> 
+<SPAN CLASS="linenum">0083:</SPAN>     <SPAN CLASS="keyword">return</SPAN> S_OK;
+<SPAN CLASS="linenum">0084:</SPAN> }
+<SPAN CLASS="linenum">0085:</SPAN> 
+<SPAN CLASS="linenum">0086:</SPAN> 
+<SPAN CLASS="linenum">0087:</SPAN> 
+<SPAN CLASS="linenum">0088:</SPAN> 
+<SPAN CLASS="linenum">0089:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0090:</SPAN> <SPAN CLASS="comment">// Name: AddDevice()</SPAN>
+<SPAN CLASS="linenum">0091:</SPAN> <SPAN CLASS="comment">// Desc: Add the provided device to the list and perform initialization</SPAN>
+<SPAN CLASS="linenum">0092:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0093:</SPAN> HRESULT CInputDeviceManager::AddDevice( <SPAN CLASS="keyword">const</SPAN> DIDEVICEINSTANCE* pdidi, 
+<SPAN CLASS="linenum">0094:</SPAN>                                         <SPAN CLASS="keyword">const</SPAN> LPDIRECTINPUTDEVICE8 pdidDevice )
+<SPAN CLASS="linenum">0095:</SPAN> {
+<SPAN CLASS="linenum">0096:</SPAN>     HRESULT hr;
+<SPAN CLASS="linenum">0097:</SPAN> 
+<SPAN CLASS="linenum">0098:</SPAN>     <SPAN CLASS="comment">// Sanity check</SPAN>
+<SPAN CLASS="linenum">0099:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( NULL == pdidDevice )
+<SPAN CLASS="linenum">0100:</SPAN>         <SPAN CLASS="keyword">return</SPAN> E_INVALIDARG;
+<SPAN CLASS="linenum">0101:</SPAN> 
+<SPAN CLASS="linenum">0102:</SPAN>     pdidDevice-&gt;Unacquire();
+<SPAN CLASS="linenum">0103:</SPAN> 
+<SPAN CLASS="linenum">0104:</SPAN>     <SPAN CLASS="comment">// Set the device's coop level</SPAN>
+<SPAN CLASS="linenum">0105:</SPAN>     hr = pdidDevice-&gt;SetCooperativeLevel( m_hWnd, DISCL_NONEXCLUSIVE|DISCL_FOREGROUND );
+<SPAN CLASS="linenum">0106:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( FAILED(hr) )
+<SPAN CLASS="linenum">0107:</SPAN>         <SPAN CLASS="keyword">return</SPAN> hr;
+<SPAN CLASS="linenum">0108:</SPAN> 
+<SPAN CLASS="linenum">0109:</SPAN>     <SPAN CLASS="comment">// Enlarge the array if needed</SPAN>
+<SPAN CLASS="linenum">0110:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( m_dwNumDevices &gt;= m_dwMaxDevices )
+<SPAN CLASS="linenum">0111:</SPAN>     {
+<SPAN CLASS="linenum">0112:</SPAN>         <SPAN CLASS="comment">// Attempt to reallocate memory</SPAN>
+<SPAN CLASS="linenum">0113:</SPAN>         DWORD dwNewMax = m_dwMaxDevices + 10;
+<SPAN CLASS="linenum">0114:</SPAN>         DeviceInfo* pNewDevices = (DeviceInfo*) realloc( m_pDevices, <SPAN CLASS="keyword">sizeof</SPAN>(DeviceInfo) * dwNewMax );
+<SPAN CLASS="linenum">0115:</SPAN>         
+<SPAN CLASS="linenum">0116:</SPAN>         <SPAN CLASS="comment">// Check for out of memory condition</SPAN>
+<SPAN CLASS="linenum">0117:</SPAN>         <SPAN CLASS="keyword">if</SPAN>( NULL == pNewDevices )
+<SPAN CLASS="linenum">0118:</SPAN>             <SPAN CLASS="keyword">return</SPAN> E_OUTOFMEMORY;
+<SPAN CLASS="linenum">0119:</SPAN> 
+<SPAN CLASS="linenum">0120:</SPAN>         <SPAN CLASS="comment">// Initialize the new memory block</SPAN>
+<SPAN CLASS="linenum">0121:</SPAN>         ZeroMemory( pNewDevices + m_dwMaxDevices, <SPAN CLASS="keyword">sizeof</SPAN>(DeviceInfo) * (dwNewMax - m_dwMaxDevices) );
+<SPAN CLASS="linenum">0122:</SPAN> 
+<SPAN CLASS="linenum">0123:</SPAN>         <SPAN CLASS="comment">// Copy the new pointer and update the max device count</SPAN>
+<SPAN CLASS="linenum">0124:</SPAN>         m_pDevices = pNewDevices;
+<SPAN CLASS="linenum">0125:</SPAN>         m_dwMaxDevices = dwNewMax;
+<SPAN CLASS="linenum">0126:</SPAN>     }
+<SPAN CLASS="linenum">0127:</SPAN> 
+<SPAN CLASS="linenum">0128:</SPAN>     <SPAN CLASS="comment">// Add new device to the end of the list, but don't finalize addition until</SPAN>
+<SPAN CLASS="linenum">0129:</SPAN>     <SPAN CLASS="comment">// the end of the function. If the remaining initialization calls fail, this</SPAN>
+<SPAN CLASS="linenum">0130:</SPAN>     <SPAN CLASS="comment">// spot will be used by the next valid device.</SPAN>
+<SPAN CLASS="linenum">0131:</SPAN>     m_pDevices[m_dwNumDevices].pdidDevice = pdidDevice;
+<SPAN CLASS="linenum">0132:</SPAN>     
+<SPAN CLASS="linenum">0133:</SPAN>     <SPAN CLASS="comment">// Callback into the app so it can adjust the device and set</SPAN>
+<SPAN CLASS="linenum">0134:</SPAN>     <SPAN CLASS="comment">// the m_pDevices[dwCurrentDevice].pParam field with a device state struct</SPAN>
+<SPAN CLASS="linenum">0135:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( m_AddDeviceCallback )
+<SPAN CLASS="linenum">0136:</SPAN>     {
+<SPAN CLASS="linenum">0137:</SPAN>         hr = m_AddDeviceCallback( &amp;m_pDevices[m_dwNumDevices], pdidi, m_AddDeviceCallbackParam ); 
+<SPAN CLASS="linenum">0138:</SPAN>         <SPAN CLASS="keyword">if</SPAN>( FAILED(hr) )    
+<SPAN CLASS="linenum">0139:</SPAN>             <SPAN CLASS="keyword">return</SPAN> hr;
+<SPAN CLASS="linenum">0140:</SPAN>     }
+<SPAN CLASS="linenum">0141:</SPAN> 
+<SPAN CLASS="linenum">0142:</SPAN>     <SPAN CLASS="comment">// Build the action map</SPAN>
+<SPAN CLASS="linenum">0143:</SPAN>     hr = m_pDevices[m_dwNumDevices].pdidDevice-&gt;BuildActionMap( &amp;m_diaf, m_strUserName, 0 );
+<SPAN CLASS="linenum">0144:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( FAILED(hr) )
+<SPAN CLASS="linenum">0145:</SPAN>         <SPAN CLASS="keyword">return</SPAN> hr;
+<SPAN CLASS="linenum">0146:</SPAN> 
+<SPAN CLASS="linenum">0147:</SPAN>     <SPAN CLASS="comment">// Set the action map for the current device</SPAN>
+<SPAN CLASS="linenum">0148:</SPAN>     hr = m_pDevices[m_dwNumDevices].pdidDevice-&gt;SetActionMap( &amp;m_diaf, m_strUserName, 0 );
+<SPAN CLASS="linenum">0149:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( FAILED(hr) )
+<SPAN CLASS="linenum">0150:</SPAN>         <SPAN CLASS="keyword">return</SPAN> hr;
+<SPAN CLASS="linenum">0151:</SPAN> 
+<SPAN CLASS="linenum">0152:</SPAN>     <SPAN CLASS="comment">// Device addition succeeded. Increment reference and index.</SPAN>
+<SPAN CLASS="linenum">0153:</SPAN>     m_pDevices[m_dwNumDevices].pdidDevice-&gt;AddRef();
+<SPAN CLASS="linenum">0154:</SPAN>     m_dwNumDevices++;
+<SPAN CLASS="linenum">0155:</SPAN> 
+<SPAN CLASS="linenum">0156:</SPAN>     <SPAN CLASS="comment">// Continue enumerating suitable devices</SPAN>
+<SPAN CLASS="linenum">0157:</SPAN>     <SPAN CLASS="keyword">return</SPAN> S_OK;
+<SPAN CLASS="linenum">0158:</SPAN> }
+<SPAN CLASS="linenum">0159:</SPAN> 
+<SPAN CLASS="linenum">0160:</SPAN> 
+<SPAN CLASS="linenum">0161:</SPAN> 
+<SPAN CLASS="linenum">0162:</SPAN> 
+<SPAN CLASS="linenum">0163:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0164:</SPAN> <SPAN CLASS="comment">// Name: EnumSuitableDevicesCB()</SPAN>
+<SPAN CLASS="linenum">0165:</SPAN> <SPAN CLASS="comment">// Desc: Callback function for device enumeration. Adds all devices which</SPAN>
+<SPAN CLASS="linenum">0166:</SPAN> <SPAN CLASS="comment">//       met the search criteria</SPAN>
+<SPAN CLASS="linenum">0167:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0168:</SPAN> BOOL CALLBACK EnumSuitableDevicesCB( LPCDIDEVICEINSTANCE pdidi, 
+<SPAN CLASS="linenum">0169:</SPAN>                                      LPDIRECTINPUTDEVICE8 pdidDevice, 
+<SPAN CLASS="linenum">0170:</SPAN>                                      DWORD dwFlags, DWORD dwDeviceRemaining,
+<SPAN CLASS="linenum">0171:</SPAN>                                      VOID* pContext )
+<SPAN CLASS="linenum">0172:</SPAN> {
+<SPAN CLASS="linenum">0173:</SPAN>     UNREFERENCED_PARAMETER( dwFlags );
+<SPAN CLASS="linenum">0174:</SPAN>     UNREFERENCED_PARAMETER( dwDeviceRemaining );
+<SPAN CLASS="linenum">0175:</SPAN>     
+<SPAN CLASS="linenum">0176:</SPAN>     <SPAN CLASS="comment">// Add the device to the device manager's internal list</SPAN>
+<SPAN CLASS="linenum">0177:</SPAN>     ((CInputDeviceManager*)pContext)-&gt;AddDevice( pdidi, pdidDevice );
+<SPAN CLASS="linenum">0178:</SPAN> 
+<SPAN CLASS="linenum">0179:</SPAN>     <SPAN CLASS="comment">// Continue enumerating suitable devices</SPAN>
+<SPAN CLASS="linenum">0180:</SPAN>     <SPAN CLASS="keyword">return</SPAN> DIENUM_CONTINUE;
+<SPAN CLASS="linenum">0181:</SPAN> }
+<SPAN CLASS="linenum">0182:</SPAN> 
+<SPAN CLASS="linenum">0183:</SPAN> 
+<SPAN CLASS="linenum">0184:</SPAN> 
+<SPAN CLASS="linenum">0185:</SPAN> 
+<SPAN CLASS="linenum">0186:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0187:</SPAN> <SPAN CLASS="comment">// Name: SetActionFormat()</SPAN>
+<SPAN CLASS="linenum">0188:</SPAN> <SPAN CLASS="comment">// Desc: Set the action format to the provided DIACTIONFORMAT structure, and</SPAN>
+<SPAN CLASS="linenum">0189:</SPAN> <SPAN CLASS="comment">//       destroy and recreate device list if flagged</SPAN>
+<SPAN CLASS="linenum">0190:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0191:</SPAN> HRESULT CInputDeviceManager::SetActionFormat( DIACTIONFORMAT&amp; diaf, BOOL bReenumerate )
+<SPAN CLASS="linenum">0192:</SPAN> {
+<SPAN CLASS="linenum">0193:</SPAN>     HRESULT hr = S_OK;
+<SPAN CLASS="linenum">0194:</SPAN> 
+<SPAN CLASS="linenum">0195:</SPAN>     <SPAN CLASS="comment">// Store the new action format</SPAN>
+<SPAN CLASS="linenum">0196:</SPAN>     m_diaf = diaf;
+<SPAN CLASS="linenum">0197:</SPAN> 
+<SPAN CLASS="linenum">0198:</SPAN>     <SPAN CLASS="comment">// Only destroy and re-enumerate devices if the caller explicitly wants to. The </SPAN>
+<SPAN CLASS="linenum">0199:</SPAN>     <SPAN CLASS="comment">// device list may be used within a loop, and kicking off an enumeration while </SPAN>
+<SPAN CLASS="linenum">0200:</SPAN>     <SPAN CLASS="comment">// the device array is in use would cause problems.</SPAN>
+<SPAN CLASS="linenum">0201:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( bReenumerate )
+<SPAN CLASS="linenum">0202:</SPAN>     {
+<SPAN CLASS="linenum">0203:</SPAN>         <SPAN CLASS="comment">// Cleanup any previously enumerated devices</SPAN>
+<SPAN CLASS="linenum">0204:</SPAN>         <SPAN CLASS="keyword">for</SPAN>( DWORD i=0; i&lt;m_dwNumDevices; i++ )
+<SPAN CLASS="linenum">0205:</SPAN>         {
+<SPAN CLASS="linenum">0206:</SPAN>             <SPAN CLASS="keyword">if</SPAN>( m_pDevices[i].pdidDevice )
+<SPAN CLASS="linenum">0207:</SPAN>                 m_pDevices[i].pdidDevice-&gt;Unacquire();
+<SPAN CLASS="linenum">0208:</SPAN> 
+<SPAN CLASS="linenum">0209:</SPAN>             SAFE_RELEASE( m_pDevices[i].pdidDevice );
+<SPAN CLASS="linenum">0210:</SPAN>         }
+<SPAN CLASS="linenum">0211:</SPAN>         m_dwNumDevices = 0;
+<SPAN CLASS="linenum">0212:</SPAN> 
+<SPAN CLASS="linenum">0213:</SPAN>         <SPAN CLASS="comment">// Enumerate suitable DirectInput devices</SPAN>
+<SPAN CLASS="linenum">0214:</SPAN>         hr = m_pDI-&gt;EnumDevicesBySemantics( m_strUserName, &amp;m_diaf, 
+<SPAN CLASS="linenum">0215:</SPAN>                                             EnumSuitableDevicesCB, <SPAN CLASS="keyword">this</SPAN>, 0L );
+<SPAN CLASS="linenum">0216:</SPAN>         <SPAN CLASS="keyword">if</SPAN>( FAILED(hr) )
+<SPAN CLASS="linenum">0217:</SPAN>             <SPAN CLASS="keyword">return</SPAN> hr;
+<SPAN CLASS="linenum">0218:</SPAN>     }
+<SPAN CLASS="linenum">0219:</SPAN>     <SPAN CLASS="keyword">else</SPAN> <SPAN CLASS="comment">// Just apply the new maps.</SPAN>
+<SPAN CLASS="linenum">0220:</SPAN>     {
+<SPAN CLASS="linenum">0221:</SPAN>         <SPAN CLASS="comment">// Devices must be unacquired to have a new action map set.</SPAN>
+<SPAN CLASS="linenum">0222:</SPAN>         UnacquireDevices();
+<SPAN CLASS="linenum">0223:</SPAN> 
+<SPAN CLASS="linenum">0224:</SPAN>         <SPAN CLASS="comment">// Apply the new action map to the current devices.</SPAN>
+<SPAN CLASS="linenum">0225:</SPAN>         <SPAN CLASS="keyword">for</SPAN>( DWORD i=0; i&lt;m_dwNumDevices; i++ )
+<SPAN CLASS="linenum">0226:</SPAN>         {
+<SPAN CLASS="linenum">0227:</SPAN>             hr = m_pDevices[i].pdidDevice-&gt;BuildActionMap( &amp;m_diaf, m_strUserName, 0 );
+<SPAN CLASS="linenum">0228:</SPAN>             <SPAN CLASS="keyword">if</SPAN>( FAILED(hr) )
+<SPAN CLASS="linenum">0229:</SPAN>                 <SPAN CLASS="keyword">return</SPAN> hr;
+<SPAN CLASS="linenum">0230:</SPAN> 
+<SPAN CLASS="linenum">0231:</SPAN>             hr = m_pDevices[i].pdidDevice-&gt;SetActionMap( &amp;m_diaf, m_strUserName, 0 );
+<SPAN CLASS="linenum">0232:</SPAN>             <SPAN CLASS="keyword">if</SPAN>( FAILED(hr) )
+<SPAN CLASS="linenum">0233:</SPAN>                 <SPAN CLASS="keyword">return</SPAN> hr;
+<SPAN CLASS="linenum">0234:</SPAN>         }
+<SPAN CLASS="linenum">0235:</SPAN>     }
+<SPAN CLASS="linenum">0236:</SPAN> 
+<SPAN CLASS="linenum">0237:</SPAN>     <SPAN CLASS="keyword">return</SPAN> S_OK;
+<SPAN CLASS="linenum">0238:</SPAN> }
+<SPAN CLASS="linenum">0239:</SPAN> 
+<SPAN CLASS="linenum">0240:</SPAN> 
+<SPAN CLASS="linenum">0241:</SPAN> 
+<SPAN CLASS="linenum">0242:</SPAN> 
+<SPAN CLASS="linenum">0243:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0244:</SPAN> <SPAN CLASS="comment">// Name: Create()</SPAN>
+<SPAN CLASS="linenum">0245:</SPAN> <SPAN CLASS="comment">// Desc: Create DirectInput object and perform initialization</SPAN>
+<SPAN CLASS="linenum">0246:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0247:</SPAN> HRESULT CInputDeviceManager::Create( HWND hWnd, TCHAR* strUserName, 
+<SPAN CLASS="linenum">0248:</SPAN>                                      DIACTIONFORMAT&amp; diaf,
+<SPAN CLASS="linenum">0249:</SPAN>                                      LPDIMANAGERCALLBACK AddDeviceCallback, 
+<SPAN CLASS="linenum">0250:</SPAN>                                      LPVOID pCallbackParam )
+<SPAN CLASS="linenum">0251:</SPAN> {
+<SPAN CLASS="linenum">0252:</SPAN>     HRESULT hr;
+<SPAN CLASS="linenum">0253:</SPAN> 
+<SPAN CLASS="linenum">0254:</SPAN>     <SPAN CLASS="comment">// Store data</SPAN>
+<SPAN CLASS="linenum">0255:</SPAN>     m_hWnd        = hWnd;
+<SPAN CLASS="linenum">0256:</SPAN>     m_strUserName = strUserName;
+<SPAN CLASS="linenum">0257:</SPAN>     m_AddDeviceCallback = AddDeviceCallback;
+<SPAN CLASS="linenum">0258:</SPAN>     m_AddDeviceCallbackParam = pCallbackParam;
+<SPAN CLASS="linenum">0259:</SPAN>     
+<SPAN CLASS="linenum">0260:</SPAN>     <SPAN CLASS="comment">// Create the base DirectInput object</SPAN>
+<SPAN CLASS="linenum">0261:</SPAN>     hr = DirectInput8Create( GetModuleHandle(NULL), DIRECTINPUT_VERSION, 
+<SPAN CLASS="linenum">0262:</SPAN>                               IID_IDirectInput8, (VOID**)&amp;m_pDI, NULL );
+<SPAN CLASS="linenum">0263:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( FAILED(hr) )
+<SPAN CLASS="linenum">0264:</SPAN>         <SPAN CLASS="keyword">return</SPAN> hr;
+<SPAN CLASS="linenum">0265:</SPAN> 
+<SPAN CLASS="linenum">0266:</SPAN>     hr = SetActionFormat( diaf, TRUE );
+<SPAN CLASS="linenum">0267:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( FAILED(hr) )
+<SPAN CLASS="linenum">0268:</SPAN>         <SPAN CLASS="keyword">return</SPAN> hr;
+<SPAN CLASS="linenum">0269:</SPAN> 
+<SPAN CLASS="linenum">0270:</SPAN>     <SPAN CLASS="keyword">return</SPAN> S_OK;
+<SPAN CLASS="linenum">0271:</SPAN> }
+<SPAN CLASS="linenum">0272:</SPAN> 
+<SPAN CLASS="linenum">0273:</SPAN> 
+<SPAN CLASS="linenum">0274:</SPAN> 
+<SPAN CLASS="linenum">0275:</SPAN> 
+<SPAN CLASS="linenum">0276:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0277:</SPAN> <SPAN CLASS="comment">// Name: ConfigureDevices()</SPAN>
+<SPAN CLASS="linenum">0278:</SPAN> <SPAN CLASS="comment">// Desc: Pause input and display the device configuration UI</SPAN>
+<SPAN CLASS="linenum">0279:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0280:</SPAN> HRESULT CInputDeviceManager::ConfigureDevices( HWND hWnd, IUnknown* pSurface,
+<SPAN CLASS="linenum">0281:</SPAN>                                                VOID* ConfigureDevicesCB,
+<SPAN CLASS="linenum">0282:</SPAN>                                                DWORD dwFlags, LPVOID pvCBParam )
+<SPAN CLASS="linenum">0283:</SPAN> {
+<SPAN CLASS="linenum">0284:</SPAN>     HRESULT hr;
+<SPAN CLASS="linenum">0285:</SPAN> 
+<SPAN CLASS="linenum">0286:</SPAN>     <SPAN CLASS="comment">// Initialize all the colors here</SPAN>
+<SPAN CLASS="linenum">0287:</SPAN>     DICOLORSET dics;
+<SPAN CLASS="linenum">0288:</SPAN>     ZeroMemory(&amp;dics, <SPAN CLASS="keyword">sizeof</SPAN>(DICOLORSET));
+<SPAN CLASS="linenum">0289:</SPAN>     dics.dwSize = <SPAN CLASS="keyword">sizeof</SPAN>(DICOLORSET);
+<SPAN CLASS="linenum">0290:</SPAN> 
+<SPAN CLASS="linenum">0291:</SPAN>     <SPAN CLASS="comment">// Fill in all the params</SPAN>
+<SPAN CLASS="linenum">0292:</SPAN>     DICONFIGUREDEVICESPARAMS dicdp;
+<SPAN CLASS="linenum">0293:</SPAN>     ZeroMemory(&amp;dicdp, <SPAN CLASS="keyword">sizeof</SPAN>(dicdp));
+<SPAN CLASS="linenum">0294:</SPAN>     dicdp.dwSize = <SPAN CLASS="keyword">sizeof</SPAN>(dicdp);
+<SPAN CLASS="linenum">0295:</SPAN>     dicdp.dwcFormats     = 1;
+<SPAN CLASS="linenum">0296:</SPAN>     dicdp.lprgFormats    = &amp;m_diaf;
+<SPAN CLASS="linenum">0297:</SPAN>     dicdp.hwnd           = hWnd;
+<SPAN CLASS="linenum">0298:</SPAN>     dicdp.lpUnkDDSTarget = pSurface;
+<SPAN CLASS="linenum">0299:</SPAN> 
+<SPAN CLASS="linenum">0300:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( m_strUserName )
+<SPAN CLASS="linenum">0301:</SPAN>     {
+<SPAN CLASS="linenum">0302:</SPAN>         dicdp.dwcUsers       = 1;
+<SPAN CLASS="linenum">0303:</SPAN>         dicdp.lptszUserNames = m_strUserName;
+<SPAN CLASS="linenum">0304:</SPAN>     }
+<SPAN CLASS="linenum">0305:</SPAN> 
+<SPAN CLASS="linenum">0306:</SPAN>     <SPAN CLASS="comment">// Unacquire the devices so that mouse doesn't control the game while in control panel</SPAN>
+<SPAN CLASS="linenum">0307:</SPAN>     UnacquireDevices();
+<SPAN CLASS="linenum">0308:</SPAN> 
+<SPAN CLASS="linenum">0309:</SPAN>     hr = m_pDI-&gt;ConfigureDevices( (LPDICONFIGUREDEVICESCALLBACK)ConfigureDevicesCB, 
+<SPAN CLASS="linenum">0310:</SPAN>                                   &amp;dicdp, dwFlags, pvCBParam );
+<SPAN CLASS="linenum">0311:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( FAILED(hr) )
+<SPAN CLASS="linenum">0312:</SPAN>         <SPAN CLASS="keyword">return</SPAN> hr;
+<SPAN CLASS="linenum">0313:</SPAN> 
+<SPAN CLASS="linenum">0314:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( dwFlags &amp; DICD_EDIT )
+<SPAN CLASS="linenum">0315:</SPAN>     {
+<SPAN CLASS="linenum">0316:</SPAN>         <SPAN CLASS="comment">// Re-set up the devices</SPAN>
+<SPAN CLASS="linenum">0317:</SPAN>         hr = SetActionFormat( m_diaf, TRUE );
+<SPAN CLASS="linenum">0318:</SPAN>         <SPAN CLASS="keyword">if</SPAN>( FAILED(hr) )
+<SPAN CLASS="linenum">0319:</SPAN>             <SPAN CLASS="keyword">return</SPAN> hr;
+<SPAN CLASS="linenum">0320:</SPAN>     }
+<SPAN CLASS="linenum">0321:</SPAN> 
+<SPAN CLASS="linenum">0322:</SPAN>     <SPAN CLASS="keyword">return</SPAN> S_OK;
+<SPAN CLASS="linenum">0323:</SPAN> }
+<SPAN CLASS="linenum">0324:</SPAN> 
+<SPAN CLASS="linenum">0325:</SPAN> 
+<SPAN CLASS="linenum">0326:</SPAN> 
+<SPAN CLASS="linenum">0327:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0328:</SPAN> <SPAN CLASS="comment">// Name: UnacquireDevices()</SPAN>
+<SPAN CLASS="linenum">0329:</SPAN> <SPAN CLASS="comment">// Desc: Unacquire all devices in the member list</SPAN>
+<SPAN CLASS="linenum">0330:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0331:</SPAN> VOID CInputDeviceManager::UnacquireDevices()
+<SPAN CLASS="linenum">0332:</SPAN> {
+<SPAN CLASS="linenum">0333:</SPAN>     <SPAN CLASS="keyword">for</SPAN>( DWORD i=0; i&lt;m_dwNumDevices; i++ )
+<SPAN CLASS="linenum">0334:</SPAN>         m_pDevices[i].pdidDevice-&gt;Unacquire();
+<SPAN CLASS="linenum">0335:</SPAN> }
+<SPAN CLASS="linenum">0336:</SPAN> 
+<SPAN CLASS="linenum">0337:</SPAN> 
+<SPAN CLASS="linenum">0338:</SPAN> 
+<SPAN CLASS="linenum">0339:</SPAN> 
+<SPAN CLASS="linenum">0340:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0341:</SPAN> <SPAN CLASS="comment">// Name: SetFocus()</SPAN>
+<SPAN CLASS="linenum">0342:</SPAN> <SPAN CLASS="comment">// Desc: Sets the DirectInput focus to a new HWND</SPAN>
+<SPAN CLASS="linenum">0343:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0344:</SPAN> VOID CInputDeviceManager::SetFocus( HWND hWnd ) 
+<SPAN CLASS="linenum">0345:</SPAN> {
+<SPAN CLASS="linenum">0346:</SPAN>     m_hWnd = hWnd;
+<SPAN CLASS="linenum">0347:</SPAN> 
+<SPAN CLASS="linenum">0348:</SPAN>     UnacquireDevices();
+<SPAN CLASS="linenum">0349:</SPAN> 
+<SPAN CLASS="linenum">0350:</SPAN>     <SPAN CLASS="keyword">for</SPAN>( DWORD i=0; i&lt;m_dwNumDevices; i++ )
+<SPAN CLASS="linenum">0351:</SPAN>     {
+<SPAN CLASS="linenum">0352:</SPAN>         <SPAN CLASS="comment">// Set the device's coop level</SPAN>
+<SPAN CLASS="linenum">0353:</SPAN>         m_pDevices[i].pdidDevice-&gt;SetCooperativeLevel( m_hWnd, 
+<SPAN CLASS="linenum">0354:</SPAN>                                         DISCL_NONEXCLUSIVE|DISCL_FOREGROUND );
+<SPAN CLASS="linenum">0355:</SPAN>     }
+<SPAN CLASS="linenum">0356:</SPAN> }
+<SPAN CLASS="linenum">0357:</SPAN> 
+<SPAN CLASS="linenum">0358:</SPAN> 
+<SPAN CLASS="linenum">0359:</SPAN> </PRE>
+</BODY>
+</HTML>

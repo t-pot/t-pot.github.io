@@ -1,0 +1,120 @@
+<HTML>
+<HEAD>
+<TITLE>bg.cpp</TITLE>
+<meta name="GENERATOR" content="cpp2html 2.1 by Niisaka">
+<meta http-equiv="Content-Type" content="text/html">
+<meta http-equiv="Content-Style-Type" content="text/css">
+<STYLE TYPE="text/css">
+<!--
+SPAN.comment { color:#008000; font-weight:normal; font-style:normal;}
+SPAN.keyword { color:#0000FF; font-weight:normal; font-style:normal;}
+SPAN.string { color:#600000; font-weight:normal; font-style:normal;}
+SPAN.linenum { color:#A0A0A0; font-weight:normal; font-style:normal;}
+-->
+</STYLE>
+</HEAD>
+<BODY TEXT="#000000" BGCOLOR="#FFFFFF">
+<PRE><SPAN CLASS="linenum">0001:</SPAN> <SPAN CLASS="comment">// ----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0002:</SPAN> <SPAN CLASS="comment">// File: bg.cpp</SPAN>
+<SPAN CLASS="linenum">0003:</SPAN> <SPAN CLASS="comment">//</SPAN>
+<SPAN CLASS="linenum">0004:</SPAN> <SPAN CLASS="comment">// Desc: 四角形の描画</SPAN>
+<SPAN CLASS="linenum">0005:</SPAN> <SPAN CLASS="comment">// ----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0006:</SPAN> <SPAN CLASS="keyword">#define</SPAN> STRICT
+<SPAN CLASS="linenum">0007:</SPAN> <SPAN CLASS="keyword">#include</SPAN> &lt;windows.h&gt;
+<SPAN CLASS="linenum">0008:</SPAN> <SPAN CLASS="keyword">#include</SPAN> &lt;commctrl.h&gt;
+<SPAN CLASS="linenum">0009:</SPAN> <SPAN CLASS="keyword">#include</SPAN> &lt;commdlg.h&gt;
+<SPAN CLASS="linenum">0010:</SPAN> <SPAN CLASS="keyword">#include</SPAN> &lt;basetsd.h&gt;
+<SPAN CLASS="linenum">0011:</SPAN> <SPAN CLASS="keyword">#include</SPAN> &lt;math.h&gt;
+<SPAN CLASS="linenum">0012:</SPAN> <SPAN CLASS="keyword">#include</SPAN> &lt;stdio.h&gt;
+<SPAN CLASS="linenum">0013:</SPAN> <SPAN CLASS="keyword">#include</SPAN> &lt;d3dx9.h&gt;
+<SPAN CLASS="linenum">0014:</SPAN> <SPAN CLASS="keyword">#include</SPAN> &lt;dxerr9.h&gt;
+<SPAN CLASS="linenum">0015:</SPAN> <SPAN CLASS="keyword">#include</SPAN> &lt;tchar.h&gt;
+<SPAN CLASS="linenum">0016:</SPAN> <SPAN CLASS="keyword">#include</SPAN> "<SPAN CLASS="string">DXUtil.h</SPAN>"
+<SPAN CLASS="linenum">0017:</SPAN> <SPAN CLASS="keyword">#include</SPAN> "<SPAN CLASS="string">D3DEnumeration.h</SPAN>"
+<SPAN CLASS="linenum">0018:</SPAN> <SPAN CLASS="keyword">#include</SPAN> "<SPAN CLASS="string">D3DSettings.h</SPAN>"
+<SPAN CLASS="linenum">0019:</SPAN> <SPAN CLASS="keyword">#include</SPAN> "<SPAN CLASS="string">D3DApp.h</SPAN>"
+<SPAN CLASS="linenum">0020:</SPAN> <SPAN CLASS="keyword">#include</SPAN> "<SPAN CLASS="string">D3DFont.h</SPAN>"
+<SPAN CLASS="linenum">0021:</SPAN> <SPAN CLASS="keyword">#include</SPAN> "<SPAN CLASS="string">D3DFile.h</SPAN>"
+<SPAN CLASS="linenum">0022:</SPAN> <SPAN CLASS="keyword">#include</SPAN> "<SPAN CLASS="string">D3DUtil.h</SPAN>"
+<SPAN CLASS="linenum">0023:</SPAN> <SPAN CLASS="keyword">#include</SPAN> "<SPAN CLASS="string">resource.h</SPAN>"
+<SPAN CLASS="linenum">0024:</SPAN> <SPAN CLASS="keyword">#include</SPAN> "<SPAN CLASS="string">main.h</SPAN>"
+<SPAN CLASS="linenum">0025:</SPAN> 
+<SPAN CLASS="linenum">0026:</SPAN> 
+<SPAN CLASS="linenum">0027:</SPAN> <SPAN CLASS="comment">// 床</SPAN>
+<SPAN CLASS="linenum">0028:</SPAN> <SPAN CLASS="keyword">#define</SPAN> NUM_X   32  <SPAN CLASS="comment">// 横方向に何ポリゴン使うか</SPAN>
+<SPAN CLASS="linenum">0029:</SPAN> <SPAN CLASS="keyword">#define</SPAN> NUM_Y   32  <SPAN CLASS="comment">// 縦方向に何ポリゴン使うか</SPAN>
+<SPAN CLASS="linenum">0030:</SPAN> <SPAN CLASS="keyword">#define</SPAN> NUM_VERTICES            ((NUM_Y+1)*(NUM_X+1))
+<SPAN CLASS="linenum">0031:</SPAN> <SPAN CLASS="keyword">#define</SPAN> NUM_INDICES_PERFACE     (3*2)
+<SPAN CLASS="linenum">0032:</SPAN> <SPAN CLASS="keyword">#define</SPAN> NUM_FACES               (NUM_Y*NUM_X)
+<SPAN CLASS="linenum">0033:</SPAN> <SPAN CLASS="keyword">#define</SPAN> NUM_VERTICES_PERFACE    4
+<SPAN CLASS="linenum">0034:</SPAN> 
+<SPAN CLASS="linenum">0035:</SPAN> <SPAN CLASS="comment">// ----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0036:</SPAN> <SPAN CLASS="keyword">typedef</SPAN> <SPAN CLASS="keyword">struct</SPAN>{
+<SPAN CLASS="linenum">0037:</SPAN>     <SPAN CLASS="keyword">float</SPAN> x,y,z;
+<SPAN CLASS="linenum">0038:</SPAN> } FloorVertex;
+<SPAN CLASS="linenum">0039:</SPAN> <SPAN CLASS="keyword">#define</SPAN> FLOOR_VERTEX (D3DFVF_XYZ)
+<SPAN CLASS="linenum">0040:</SPAN> 
+<SPAN CLASS="linenum">0041:</SPAN> <SPAN CLASS="comment">// ----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0042:</SPAN> <SPAN CLASS="comment">// 床</SPAN>
+<SPAN CLASS="linenum">0043:</SPAN> 
+<SPAN CLASS="linenum">0044:</SPAN> <SPAN CLASS="comment">// ----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0045:</SPAN> <SPAN CLASS="keyword">void</SPAN> CMyD3DApplication::InitQuad( )
+<SPAN CLASS="linenum">0046:</SPAN> {
+<SPAN CLASS="linenum">0047:</SPAN>     <SPAN CLASS="comment">// 頂点バッファの作成 </SPAN>
+<SPAN CLASS="linenum">0048:</SPAN>     m_pd3dDevice-&gt;CreateVertexBuffer( NUM_VERTICES * <SPAN CLASS="keyword">sizeof</SPAN>(FloorVertex),
+<SPAN CLASS="linenum">0049:</SPAN>                                 D3DUSAGE_WRITEONLY, FLOOR_VERTEX, D3DPOOL_MANAGED,
+<SPAN CLASS="linenum">0050:</SPAN>                                 &amp;m_pVB, NULL );
+<SPAN CLASS="linenum">0051:</SPAN>     <SPAN CLASS="comment">// 頂点をセットアップ</SPAN>
+<SPAN CLASS="linenum">0052:</SPAN>     {
+<SPAN CLASS="linenum">0053:</SPAN>         FloorVertex *pDest;
+<SPAN CLASS="linenum">0054:</SPAN>         m_pVB-&gt;Lock ( 0, 0, (VOID**)&amp;pDest, 0 );
+<SPAN CLASS="linenum">0055:</SPAN>         <SPAN CLASS="keyword">for</SPAN> (DWORD i = 0; i &lt;= NUM_X; i++) {
+<SPAN CLASS="linenum">0056:</SPAN>             <SPAN CLASS="keyword">for</SPAN> (DWORD j = 0; j &lt;= NUM_Y; j++) {
+<SPAN CLASS="linenum">0057:</SPAN>                 pDest-&gt;x = ((FLOAT)i - NUM_X/2) * 2.0f / NUM_X;
+<SPAN CLASS="linenum">0058:</SPAN>                 pDest-&gt;y =-((FLOAT)j - NUM_Y/2) * 2.0f / NUM_Y;
+<SPAN CLASS="linenum">0059:</SPAN>                 pDest-&gt;z = 0.5f;
+<SPAN CLASS="linenum">0060:</SPAN>                 pDest += 1;
+<SPAN CLASS="linenum">0061:</SPAN>             }
+<SPAN CLASS="linenum">0062:</SPAN>         }       
+<SPAN CLASS="linenum">0063:</SPAN>         m_pVB-&gt;Unlock ();
+<SPAN CLASS="linenum">0064:</SPAN>     }
+<SPAN CLASS="linenum">0065:</SPAN> 
+<SPAN CLASS="linenum">0066:</SPAN>     <SPAN CLASS="comment">// インデックスをセットアップ</SPAN>
+<SPAN CLASS="linenum">0067:</SPAN>     WORD *pIndex;
+<SPAN CLASS="linenum">0068:</SPAN>     m_pd3dDevice-&gt;CreateIndexBuffer( NUM_INDICES_PERFACE  * NUM_FACES * <SPAN CLASS="keyword">sizeof</SPAN>(WORD),
+<SPAN CLASS="linenum">0069:</SPAN>                                      0 ,
+<SPAN CLASS="linenum">0070:</SPAN>                                      D3DFMT_INDEX16, D3DPOOL_DEFAULT,
+<SPAN CLASS="linenum">0071:</SPAN>                                      &amp;m_pIB,0 );
+<SPAN CLASS="linenum">0072:</SPAN>     m_pIB-&gt;Lock ( 0, 0, (VOID**)&amp;pIndex, 0 );
+<SPAN CLASS="linenum">0073:</SPAN>     {
+<SPAN CLASS="linenum">0074:</SPAN>     <SPAN CLASS="keyword">for</SPAN> (WORD i = 0; i &lt; NUM_X; i++) {
+<SPAN CLASS="linenum">0075:</SPAN>         <SPAN CLASS="keyword">for</SPAN> (WORD j = 0; j &lt; NUM_Y; j++) {
+<SPAN CLASS="linenum">0076:</SPAN>             *pIndex++ = j + 0 + (i+0) * (NUM_Y+1);
+<SPAN CLASS="linenum">0077:</SPAN>             *pIndex++ = j + 0 + (i+1) * (NUM_Y+1);
+<SPAN CLASS="linenum">0078:</SPAN>             *pIndex++ = j + 1 + (i+0) * (NUM_Y+1);
+<SPAN CLASS="linenum">0079:</SPAN> 
+<SPAN CLASS="linenum">0080:</SPAN>             *pIndex++ = j + 1 + (i+0) * (NUM_Y+1);
+<SPAN CLASS="linenum">0081:</SPAN>             *pIndex++ = j + 0 + (i+1) * (NUM_Y+1);
+<SPAN CLASS="linenum">0082:</SPAN>             *pIndex++ = j + 1 + (i+1) * (NUM_Y+1);
+<SPAN CLASS="linenum">0083:</SPAN>         }
+<SPAN CLASS="linenum">0084:</SPAN>     }
+<SPAN CLASS="linenum">0085:</SPAN>     }
+<SPAN CLASS="linenum">0086:</SPAN>     m_pIB-&gt;Unlock ();
+<SPAN CLASS="linenum">0087:</SPAN> 
+<SPAN CLASS="linenum">0088:</SPAN> }
+<SPAN CLASS="linenum">0089:</SPAN> <SPAN CLASS="comment">// ----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0090:</SPAN> <SPAN CLASS="keyword">void</SPAN> CMyD3DApplication::RenderQuad()
+<SPAN CLASS="linenum">0091:</SPAN> {
+<SPAN CLASS="linenum">0092:</SPAN>     m_pd3dDevice-&gt;SetStreamSource(0, m_pVB, 0, <SPAN CLASS="keyword">sizeof</SPAN>(FloorVertex));
+<SPAN CLASS="linenum">0093:</SPAN>     m_pd3dDevice-&gt;SetIndices( m_pIB );
+<SPAN CLASS="linenum">0094:</SPAN>     m_pd3dDevice-&gt;DrawIndexedPrimitive( D3DPT_TRIANGLELIST, 0, 0, NUM_VERTICES, 0, 2*NUM_FACES );
+<SPAN CLASS="linenum">0095:</SPAN> }
+<SPAN CLASS="linenum">0096:</SPAN> 
+<SPAN CLASS="linenum">0097:</SPAN> <SPAN CLASS="comment">// ----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0098:</SPAN> <SPAN CLASS="keyword">void</SPAN> CMyD3DApplication::DeleteQuad( )
+<SPAN CLASS="linenum">0099:</SPAN> {
+<SPAN CLASS="linenum">0100:</SPAN>     SAFE_RELEASE(m_pIB);
+<SPAN CLASS="linenum">0101:</SPAN>     SAFE_RELEASE(m_pVB);
+<SPAN CLASS="linenum">0102:</SPAN> }</PRE>
+</BODY>
+</HTML>

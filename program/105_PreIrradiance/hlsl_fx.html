@@ -1,0 +1,383 @@
+<HTML>
+<HEAD>
+<TITLE>hlsl.fx</TITLE>
+<meta name="GENERATOR" content="cpp2html 2.1 by Niisaka">
+<meta http-equiv="Content-Type" content="text/html">
+<meta http-equiv="Content-Style-Type" content="text/css">
+<STYLE TYPE="text/css">
+<!--
+SPAN.comment { color:#008000; font-weight:normal; font-style:normal;}
+SPAN.keyword { color:#0000FF; font-weight:normal; font-style:normal;}
+SPAN.string { color:#600000; font-weight:normal; font-style:normal;}
+SPAN.linenum { color:#A0A0A0; font-weight:normal; font-style:normal;}
+-->
+</STYLE>
+</HEAD>
+<BODY TEXT="#000000" BGCOLOR="#FFFFFF">
+<PRE><SPAN CLASS="linenum">0001:</SPAN> <SPAN CLASS="comment">// ------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0002:</SPAN> <SPAN CLASS="comment">// PR</SPAN>
+<SPAN CLASS="linenum">0003:</SPAN> <SPAN CLASS="comment">// </SPAN>
+<SPAN CLASS="linenum">0004:</SPAN> <SPAN CLASS="comment">// Copyright (c) 2003 IMAGIRE Takashi. All rights reserved.</SPAN>
+<SPAN CLASS="linenum">0005:</SPAN> <SPAN CLASS="comment">// ------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0006:</SPAN> 
+<SPAN CLASS="linenum">0007:</SPAN> <SPAN CLASS="comment">// ------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0008:</SPAN> <SPAN CLASS="comment">// グローバル変数</SPAN>
+<SPAN CLASS="linenum">0009:</SPAN> <SPAN CLASS="comment">// ------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0010:</SPAN> float4x4 mWVP;
+<SPAN CLASS="linenum">0011:</SPAN> 
+<SPAN CLASS="linenum">0012:</SPAN> <SPAN CLASS="comment">// ------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0013:</SPAN> <SPAN CLASS="comment">// テクスチャ</SPAN>
+<SPAN CLASS="linenum">0014:</SPAN> <SPAN CLASS="comment">// ------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0015:</SPAN> texture SrcTex;
+<SPAN CLASS="linenum">0016:</SPAN> sampler SrcSamp = sampler_state
+<SPAN CLASS="linenum">0017:</SPAN> {
+<SPAN CLASS="linenum">0018:</SPAN>     Texture = &lt;SrcTex&gt;;
+<SPAN CLASS="linenum">0019:</SPAN>     MinFilter = LINEAR;
+<SPAN CLASS="linenum">0020:</SPAN>     MagFilter = LINEAR;
+<SPAN CLASS="linenum">0021:</SPAN>     MipFilter = NONE;
+<SPAN CLASS="linenum">0022:</SPAN> 
+<SPAN CLASS="linenum">0023:</SPAN>     AddressU = Clamp;
+<SPAN CLASS="linenum">0024:</SPAN>     AddressV = Clamp;
+<SPAN CLASS="linenum">0025:</SPAN> };
+<SPAN CLASS="linenum">0026:</SPAN> <SPAN CLASS="comment">// ------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0027:</SPAN> texture RadianceTex;
+<SPAN CLASS="linenum">0028:</SPAN> sampler RadianceSamp = sampler_state
+<SPAN CLASS="linenum">0029:</SPAN> {
+<SPAN CLASS="linenum">0030:</SPAN>     Texture = &lt;RadianceTex&gt;;
+<SPAN CLASS="linenum">0031:</SPAN>     MinFilter = LINEAR;
+<SPAN CLASS="linenum">0032:</SPAN>     MagFilter = LINEAR;
+<SPAN CLASS="linenum">0033:</SPAN>     MipFilter = NONE;
+<SPAN CLASS="linenum">0034:</SPAN> 
+<SPAN CLASS="linenum">0035:</SPAN>     AddressU = Clamp;
+<SPAN CLASS="linenum">0036:</SPAN>     AddressV = Clamp;
+<SPAN CLASS="linenum">0037:</SPAN> };
+<SPAN CLASS="linenum">0038:</SPAN> <SPAN CLASS="comment">// ------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0039:</SPAN> <SPAN CLASS="comment">// 頂点シェーダからピクセルシェーダに渡すデータ</SPAN>
+<SPAN CLASS="linenum">0040:</SPAN> <SPAN CLASS="comment">// ------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0041:</SPAN> <SPAN CLASS="keyword">struct</SPAN> VS_OUTPUT
+<SPAN CLASS="linenum">0042:</SPAN> {
+<SPAN CLASS="linenum">0043:</SPAN>     float4 Pos          : POSITION;
+<SPAN CLASS="linenum">0044:</SPAN>     float4 Color        : COLOR0;
+<SPAN CLASS="linenum">0045:</SPAN>     float2 Tex0         : TEXCOORD0;
+<SPAN CLASS="linenum">0046:</SPAN> };
+<SPAN CLASS="linenum">0047:</SPAN> 
+<SPAN CLASS="linenum">0048:</SPAN> <SPAN CLASS="comment">// ------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0049:</SPAN> <SPAN CLASS="comment">// 照明計算なし頂点シェーダプログラム</SPAN>
+<SPAN CLASS="linenum">0050:</SPAN> <SPAN CLASS="comment">// ------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0051:</SPAN> VS_OUTPUT VS (
+<SPAN CLASS="linenum">0052:</SPAN>       float4 Pos    : POSITION           <SPAN CLASS="comment">// モデルの頂点</SPAN>
+<SPAN CLASS="linenum">0053:</SPAN>      ,float4 Normal : NORMAL             <SPAN CLASS="comment">// 法線ベクトル</SPAN>
+<SPAN CLASS="linenum">0054:</SPAN>      ,float4 Tex0   : TEXCOORD0          <SPAN CLASS="comment">// テクスチャ座標</SPAN>
+<SPAN CLASS="linenum">0055:</SPAN> ){
+<SPAN CLASS="linenum">0056:</SPAN>     VS_OUTPUT Out = (VS_OUTPUT)0;        <SPAN CLASS="comment">// 出力データ</SPAN>
+<SPAN CLASS="linenum">0057:</SPAN>     
+<SPAN CLASS="linenum">0058:</SPAN>     <SPAN CLASS="comment">// 位置座標</SPAN>
+<SPAN CLASS="linenum">0059:</SPAN>     Out.Pos = mul( Pos, mWVP );
+<SPAN CLASS="linenum">0060:</SPAN>     
+<SPAN CLASS="linenum">0061:</SPAN>     Out.Tex0 = Tex0;
+<SPAN CLASS="linenum">0062:</SPAN>     
+<SPAN CLASS="linenum">0063:</SPAN>     <SPAN CLASS="keyword">return</SPAN> Out;
+<SPAN CLASS="linenum">0064:</SPAN> }
+<SPAN CLASS="linenum">0065:</SPAN> <SPAN CLASS="comment">// ------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0066:</SPAN> <SPAN CLASS="comment">// 全部込みピクセルシェーダプログラム</SPAN>
+<SPAN CLASS="linenum">0067:</SPAN> <SPAN CLASS="comment">// ------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0068:</SPAN> float4 PS (VS_OUTPUT In) : COLOR
+<SPAN CLASS="linenum">0069:</SPAN> {
+<SPAN CLASS="linenum">0070:</SPAN>     float4 Out;
+<SPAN CLASS="linenum">0071:</SPAN>     
+<SPAN CLASS="linenum">0072:</SPAN>     <SPAN CLASS="comment">// 色</SPAN>
+<SPAN CLASS="linenum">0073:</SPAN>     Out = tex2D( SrcSamp, In.Tex0 ) * tex2D( RadianceSamp, In.Tex0 );
+<SPAN CLASS="linenum">0074:</SPAN>     
+<SPAN CLASS="linenum">0075:</SPAN>     <SPAN CLASS="keyword">return</SPAN> Out;
+<SPAN CLASS="linenum">0076:</SPAN> }
+<SPAN CLASS="linenum">0077:</SPAN> <SPAN CLASS="comment">// ------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0078:</SPAN> <SPAN CLASS="comment">// テクスチャなし</SPAN>
+<SPAN CLASS="linenum">0079:</SPAN> <SPAN CLASS="comment">// ------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0080:</SPAN> float4 PS_NoTex (VS_OUTPUT In) : COLOR
+<SPAN CLASS="linenum">0081:</SPAN> {
+<SPAN CLASS="linenum">0082:</SPAN>     float4 Out;
+<SPAN CLASS="linenum">0083:</SPAN>     
+<SPAN CLASS="linenum">0084:</SPAN>     <SPAN CLASS="comment">// 色</SPAN>
+<SPAN CLASS="linenum">0085:</SPAN>     Out = tex2D( RadianceSamp, In.Tex0 );
+<SPAN CLASS="linenum">0086:</SPAN>     
+<SPAN CLASS="linenum">0087:</SPAN>     <SPAN CLASS="keyword">return</SPAN> Out;
+<SPAN CLASS="linenum">0088:</SPAN> }
+<SPAN CLASS="linenum">0089:</SPAN> <SPAN CLASS="comment">// ------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0090:</SPAN> <SPAN CLASS="comment">// 照明計算なしピクセルシェーダプログラム</SPAN>
+<SPAN CLASS="linenum">0091:</SPAN> <SPAN CLASS="comment">// ------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0092:</SPAN> float4 PS_NoGI (VS_OUTPUT In) : COLOR
+<SPAN CLASS="linenum">0093:</SPAN> {
+<SPAN CLASS="linenum">0094:</SPAN>     float4 Out;
+<SPAN CLASS="linenum">0095:</SPAN>     
+<SPAN CLASS="linenum">0096:</SPAN>     <SPAN CLASS="comment">// 色</SPAN>
+<SPAN CLASS="linenum">0097:</SPAN>     Out = tex2D( SrcSamp, In.Tex0 );
+<SPAN CLASS="linenum">0098:</SPAN>     
+<SPAN CLASS="linenum">0099:</SPAN>     <SPAN CLASS="keyword">return</SPAN> Out;
+<SPAN CLASS="linenum">0100:</SPAN> }
+<SPAN CLASS="linenum">0101:</SPAN> 
+<SPAN CLASS="linenum">0102:</SPAN> 
+<SPAN CLASS="linenum">0103:</SPAN> <SPAN CLASS="comment">// ------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0104:</SPAN> <SPAN CLASS="comment">// ------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0105:</SPAN> <SPAN CLASS="comment">// 位置、法線マップの作成</SPAN>
+<SPAN CLASS="linenum">0106:</SPAN> <SPAN CLASS="comment">// ------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0107:</SPAN> <SPAN CLASS="comment">// ------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0108:</SPAN> <SPAN CLASS="keyword">struct</SPAN> VS_OUTPUT_MAP
+<SPAN CLASS="linenum">0109:</SPAN> {
+<SPAN CLASS="linenum">0110:</SPAN>     float4 Pos          : POSITION;
+<SPAN CLASS="linenum">0111:</SPAN>     float4 Position     : TEXCOORD0;
+<SPAN CLASS="linenum">0112:</SPAN>     float4 Normal       : TEXCOORD1;
+<SPAN CLASS="linenum">0113:</SPAN> };
+<SPAN CLASS="linenum">0114:</SPAN> <SPAN CLASS="keyword">struct</SPAN> PS_OUTPUT_MAP
+<SPAN CLASS="linenum">0115:</SPAN> {
+<SPAN CLASS="linenum">0116:</SPAN>     float4 Position     : COLOR0;
+<SPAN CLASS="linenum">0117:</SPAN>     float4 Normal       : COLOR1;
+<SPAN CLASS="linenum">0118:</SPAN> };
+<SPAN CLASS="linenum">0119:</SPAN> 
+<SPAN CLASS="linenum">0120:</SPAN> <SPAN CLASS="comment">// ------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0121:</SPAN> <SPAN CLASS="comment">// 頂点シェーダ</SPAN>
+<SPAN CLASS="linenum">0122:</SPAN> <SPAN CLASS="comment">// ------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0123:</SPAN> VS_OUTPUT_MAP VS_Map (
+<SPAN CLASS="linenum">0124:</SPAN>       float4 Pos    : POSITION           <SPAN CLASS="comment">// モデルの頂点</SPAN>
+<SPAN CLASS="linenum">0125:</SPAN>     , float4 Normal : NORMAL             <SPAN CLASS="comment">// 法線ベクトル</SPAN>
+<SPAN CLASS="linenum">0126:</SPAN>     , float4 Tex0   : TEXCOORD0          <SPAN CLASS="comment">// テクスチャ座標</SPAN>
+<SPAN CLASS="linenum">0127:</SPAN> ){
+<SPAN CLASS="linenum">0128:</SPAN>     <SPAN CLASS="keyword">float</SPAN> MAP_SIZE = 256;
+<SPAN CLASS="linenum">0129:</SPAN>     VS_OUTPUT_MAP Out = (VS_OUTPUT_MAP)0;        <SPAN CLASS="comment">// 出力データ</SPAN>
+<SPAN CLASS="linenum">0130:</SPAN>     
+<SPAN CLASS="linenum">0131:</SPAN>     float4 pos = mul( Pos, mWVP );
+<SPAN CLASS="linenum">0132:</SPAN>     
+<SPAN CLASS="linenum">0133:</SPAN>     <SPAN CLASS="comment">// 位置座標</SPAN>
+<SPAN CLASS="linenum">0134:</SPAN>     Out.Pos.x =  2.0 * (Tex0.x*(MAP_SIZE+1)/MAP_SIZE - 1/MAP_SIZE) - 1.0;
+<SPAN CLASS="linenum">0135:</SPAN>     Out.Pos.y = -2.0 * (Tex0.y*(MAP_SIZE+1)/MAP_SIZE - 1/MAP_SIZE) + 1.0;
+<SPAN CLASS="linenum">0136:</SPAN>     Out.Pos.z = 0.5;
+<SPAN CLASS="linenum">0137:</SPAN>     Out.Pos.w = 1;
+<SPAN CLASS="linenum">0138:</SPAN>     
+<SPAN CLASS="linenum">0139:</SPAN>     <SPAN CLASS="comment">// 色</SPAN>
+<SPAN CLASS="linenum">0140:</SPAN>     Out.Position = Pos;
+<SPAN CLASS="linenum">0141:</SPAN>     Out.Normal   = Normal;
+<SPAN CLASS="linenum">0142:</SPAN> 
+<SPAN CLASS="linenum">0143:</SPAN>     <SPAN CLASS="keyword">return</SPAN> Out;
+<SPAN CLASS="linenum">0144:</SPAN> }
+<SPAN CLASS="linenum">0145:</SPAN> 
+<SPAN CLASS="linenum">0146:</SPAN> 
+<SPAN CLASS="linenum">0147:</SPAN> <SPAN CLASS="comment">// ------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0148:</SPAN> <SPAN CLASS="comment">// ピクセルシェーダ</SPAN>
+<SPAN CLASS="linenum">0149:</SPAN> <SPAN CLASS="comment">// ------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0150:</SPAN> PS_OUTPUT_MAP PS_Map (VS_OUTPUT_MAP In)
+<SPAN CLASS="linenum">0151:</SPAN> {
+<SPAN CLASS="linenum">0152:</SPAN>     PS_OUTPUT_MAP Out;
+<SPAN CLASS="linenum">0153:</SPAN>     
+<SPAN CLASS="linenum">0154:</SPAN>     Out.Position = In.Position;
+<SPAN CLASS="linenum">0155:</SPAN>     Out.Normal   = In.Normal;
+<SPAN CLASS="linenum">0156:</SPAN> 
+<SPAN CLASS="linenum">0157:</SPAN>     <SPAN CLASS="keyword">return</SPAN> Out;
+<SPAN CLASS="linenum">0158:</SPAN> }
+<SPAN CLASS="linenum">0159:</SPAN> 
+<SPAN CLASS="linenum">0160:</SPAN> <SPAN CLASS="comment">// ------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0161:</SPAN> <SPAN CLASS="comment">// ------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0162:</SPAN> <SPAN CLASS="comment">// ラディアンスの計算</SPAN>
+<SPAN CLASS="linenum">0163:</SPAN> <SPAN CLASS="comment">// ------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0164:</SPAN> <SPAN CLASS="comment">// ------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0165:</SPAN> <SPAN CLASS="keyword">struct</SPAN> VS_OUTPUT_RADIANCE
+<SPAN CLASS="linenum">0166:</SPAN> {
+<SPAN CLASS="linenum">0167:</SPAN>     float4 Pos          : POSITION;
+<SPAN CLASS="linenum">0168:</SPAN>     float4 Color        : COLOR0;
+<SPAN CLASS="linenum">0169:</SPAN>     float4 Depth        : TEXCOORD0;
+<SPAN CLASS="linenum">0170:</SPAN> };
+<SPAN CLASS="linenum">0171:</SPAN> 
+<SPAN CLASS="linenum">0172:</SPAN> <SPAN CLASS="comment">// ------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0173:</SPAN> <SPAN CLASS="comment">// 頂点シェーダプログラム</SPAN>
+<SPAN CLASS="linenum">0174:</SPAN> <SPAN CLASS="comment">// ------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0175:</SPAN> VS_OUTPUT_RADIANCE VS_Radiance (
+<SPAN CLASS="linenum">0176:</SPAN>       float4 Pos    : POSITION           <SPAN CLASS="comment">// モデルの頂点</SPAN>
+<SPAN CLASS="linenum">0177:</SPAN>      ,float4 Normal : NORMAL             <SPAN CLASS="comment">// 法線ベクトル</SPAN>
+<SPAN CLASS="linenum">0178:</SPAN>      ,float4 Tex0   : TEXCOORD0          <SPAN CLASS="comment">// テクスチャ座標</SPAN>
+<SPAN CLASS="linenum">0179:</SPAN> ){
+<SPAN CLASS="linenum">0180:</SPAN>     VS_OUTPUT_RADIANCE Out = (VS_OUTPUT_RADIANCE)0;        <SPAN CLASS="comment">// 出力データ</SPAN>
+<SPAN CLASS="linenum">0181:</SPAN>     
+<SPAN CLASS="linenum">0182:</SPAN>     float4 pos = mul( Pos, mWVP );
+<SPAN CLASS="linenum">0183:</SPAN>     
+<SPAN CLASS="linenum">0184:</SPAN>     <SPAN CLASS="comment">// 位置座標</SPAN>
+<SPAN CLASS="linenum">0185:</SPAN>     <SPAN CLASS="keyword">float</SPAN> rlen = rsqrt(dot(pos.xyz, pos.xyz));
+<SPAN CLASS="linenum">0186:</SPAN>     pos *= rlen;
+<SPAN CLASS="linenum">0187:</SPAN>     Out.Pos = pos;
+<SPAN CLASS="linenum">0188:</SPAN>     Out.Pos.w = 1;
+<SPAN CLASS="linenum">0189:</SPAN>     
+<SPAN CLASS="linenum">0190:</SPAN>     Out.Color = 0;
+<SPAN CLASS="linenum">0191:</SPAN>     
+<SPAN CLASS="linenum">0192:</SPAN>     Out.Depth = pos.z;
+<SPAN CLASS="linenum">0193:</SPAN>     
+<SPAN CLASS="linenum">0194:</SPAN>     <SPAN CLASS="keyword">return</SPAN> Out;
+<SPAN CLASS="linenum">0195:</SPAN> }
+<SPAN CLASS="linenum">0196:</SPAN> <SPAN CLASS="comment">// ------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0197:</SPAN> <SPAN CLASS="comment">// ピクセルシェーダプログラム</SPAN>
+<SPAN CLASS="linenum">0198:</SPAN> <SPAN CLASS="comment">// ------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0199:</SPAN> float4 PS_Radiance (VS_OUTPUT_RADIANCE In) : COLOR
+<SPAN CLASS="linenum">0200:</SPAN> {
+<SPAN CLASS="linenum">0201:</SPAN>     <SPAN CLASS="comment">// （深度を見て）裏面を消去する</SPAN>
+<SPAN CLASS="linenum">0202:</SPAN>     clip(In.Depth);
+<SPAN CLASS="linenum">0203:</SPAN>     
+<SPAN CLASS="linenum">0204:</SPAN>     <SPAN CLASS="keyword">return</SPAN> In.Color;
+<SPAN CLASS="linenum">0205:</SPAN> }
+<SPAN CLASS="linenum">0206:</SPAN> 
+<SPAN CLASS="linenum">0207:</SPAN> 
+<SPAN CLASS="linenum">0208:</SPAN> 
+<SPAN CLASS="linenum">0209:</SPAN> 
+<SPAN CLASS="linenum">0210:</SPAN> <SPAN CLASS="comment">// ------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0211:</SPAN> <SPAN CLASS="comment">// ------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0212:</SPAN> <SPAN CLASS="comment">// 遮蔽マップの作成</SPAN>
+<SPAN CLASS="linenum">0213:</SPAN> <SPAN CLASS="comment">// ------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0214:</SPAN> <SPAN CLASS="comment">// ------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0215:</SPAN> 
+<SPAN CLASS="linenum">0216:</SPAN> <SPAN CLASS="comment">// ------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0217:</SPAN> <SPAN CLASS="comment">// グローバル変数</SPAN>
+<SPAN CLASS="linenum">0218:</SPAN> <SPAN CLASS="comment">// ------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0219:</SPAN> <SPAN CLASS="keyword">float</SPAN> MAP_WIDTH;
+<SPAN CLASS="linenum">0220:</SPAN> <SPAN CLASS="keyword">float</SPAN> MAP_HEIGHT;
+<SPAN CLASS="linenum">0221:</SPAN> 
+<SPAN CLASS="linenum">0222:</SPAN> <SPAN CLASS="comment">// ------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0223:</SPAN> <SPAN CLASS="comment">// テクスチャ</SPAN>
+<SPAN CLASS="linenum">0224:</SPAN> <SPAN CLASS="comment">// ------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0225:</SPAN> texture ReductionMap;
+<SPAN CLASS="linenum">0226:</SPAN> sampler ReductionSamp = sampler_state
+<SPAN CLASS="linenum">0227:</SPAN> {
+<SPAN CLASS="linenum">0228:</SPAN>     Texture = &lt;ReductionMap&gt;;
+<SPAN CLASS="linenum">0229:</SPAN>     MinFilter = LINEAR;
+<SPAN CLASS="linenum">0230:</SPAN>     MagFilter = LINEAR;
+<SPAN CLASS="linenum">0231:</SPAN>     MipFilter = NONE;
+<SPAN CLASS="linenum">0232:</SPAN> 
+<SPAN CLASS="linenum">0233:</SPAN>     AddressU = Clamp;
+<SPAN CLASS="linenum">0234:</SPAN>     AddressV = Clamp;
+<SPAN CLASS="linenum">0235:</SPAN> };
+<SPAN CLASS="linenum">0236:</SPAN> <SPAN CLASS="comment">// ------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0237:</SPAN> <SPAN CLASS="comment">// 頂点シェーダからピクセルシェーダに渡すデータ</SPAN>
+<SPAN CLASS="linenum">0238:</SPAN> <SPAN CLASS="comment">// ------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0239:</SPAN> <SPAN CLASS="keyword">struct</SPAN> VS_OUTPUT_REDUCTION
+<SPAN CLASS="linenum">0240:</SPAN> {
+<SPAN CLASS="linenum">0241:</SPAN>     float4 Pos          : POSITION;
+<SPAN CLASS="linenum">0242:</SPAN>     float2 Tex0         : TEXCOORD0;
+<SPAN CLASS="linenum">0243:</SPAN>     float2 Tex1         : TEXCOORD1;
+<SPAN CLASS="linenum">0244:</SPAN>     float2 Tex2         : TEXCOORD2;
+<SPAN CLASS="linenum">0245:</SPAN>     float2 Tex3         : TEXCOORD3;
+<SPAN CLASS="linenum">0246:</SPAN>     float2 Tex4         : TEXCOORD4;
+<SPAN CLASS="linenum">0247:</SPAN>     float2 Tex5         : TEXCOORD5;
+<SPAN CLASS="linenum">0248:</SPAN>     float2 Tex6         : TEXCOORD6;
+<SPAN CLASS="linenum">0249:</SPAN>     float2 Tex7         : TEXCOORD7;
+<SPAN CLASS="linenum">0250:</SPAN> };
+<SPAN CLASS="linenum">0251:</SPAN> 
+<SPAN CLASS="linenum">0252:</SPAN> <SPAN CLASS="comment">// ------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0253:</SPAN> <SPAN CLASS="comment">// 頂点シェーダプログラム</SPAN>
+<SPAN CLASS="linenum">0254:</SPAN> <SPAN CLASS="comment">// ------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0255:</SPAN> VS_OUTPUT_REDUCTION VS_Reduction (
+<SPAN CLASS="linenum">0256:</SPAN>       float4 Pos    : POSITION           <SPAN CLASS="comment">// モデルの頂点</SPAN>
+<SPAN CLASS="linenum">0257:</SPAN>      ,float4 Tex    : TEXCOORD0          <SPAN CLASS="comment">// テクスチャ座標</SPAN>
+<SPAN CLASS="linenum">0258:</SPAN> ){
+<SPAN CLASS="linenum">0259:</SPAN>     VS_OUTPUT_REDUCTION Out = (VS_OUTPUT_REDUCTION)0;        <SPAN CLASS="comment">// 出力データ</SPAN>
+<SPAN CLASS="linenum">0260:</SPAN>     
+<SPAN CLASS="linenum">0261:</SPAN>     <SPAN CLASS="comment">// 位置座標</SPAN>
+<SPAN CLASS="linenum">0262:</SPAN>     Out.Pos = Pos;
+<SPAN CLASS="linenum">0263:</SPAN>     
+<SPAN CLASS="linenum">0264:</SPAN>     Out.Tex0 = Tex + float2(3.0f/MAP_WIDTH, 1.0f/MAP_HEIGHT);
+<SPAN CLASS="linenum">0265:</SPAN>     Out.Tex1 = Tex + float2(3.0f/MAP_WIDTH, 3.0f/MAP_HEIGHT);
+<SPAN CLASS="linenum">0266:</SPAN>     Out.Tex2 = Tex + float2(3.0f/MAP_WIDTH, 5.0f/MAP_HEIGHT);
+<SPAN CLASS="linenum">0267:</SPAN>     Out.Tex3 = Tex + float2(3.0f/MAP_WIDTH, 7.0f/MAP_HEIGHT);
+<SPAN CLASS="linenum">0268:</SPAN>     Out.Tex4 = Tex + float2(1.0f/MAP_WIDTH, 1.0f/MAP_HEIGHT);
+<SPAN CLASS="linenum">0269:</SPAN>     Out.Tex5 = Tex + float2(1.0f/MAP_WIDTH, 3.0f/MAP_HEIGHT);
+<SPAN CLASS="linenum">0270:</SPAN>     Out.Tex6 = Tex + float2(1.0f/MAP_WIDTH, 5.0f/MAP_HEIGHT);
+<SPAN CLASS="linenum">0271:</SPAN>     Out.Tex7 = Tex + float2(1.0f/MAP_WIDTH, 7.0f/MAP_HEIGHT);
+<SPAN CLASS="linenum">0272:</SPAN>     
+<SPAN CLASS="linenum">0273:</SPAN>     <SPAN CLASS="keyword">return</SPAN> Out;
+<SPAN CLASS="linenum">0274:</SPAN> }
+<SPAN CLASS="linenum">0275:</SPAN> 
+<SPAN CLASS="linenum">0276:</SPAN> <SPAN CLASS="comment">// ------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0277:</SPAN> <SPAN CLASS="comment">// ピクセルシェーダプログラム</SPAN>
+<SPAN CLASS="linenum">0278:</SPAN> <SPAN CLASS="comment">// ------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0279:</SPAN> float4 PS_Reduction ( VS_OUTPUT_REDUCTION In ) : COLOR0
+<SPAN CLASS="linenum">0280:</SPAN> {
+<SPAN CLASS="linenum">0281:</SPAN>     float4 t0 = tex2D(ReductionSamp, In.Tex0);
+<SPAN CLASS="linenum">0282:</SPAN>     float4 t1 = tex2D(ReductionSamp, In.Tex1);
+<SPAN CLASS="linenum">0283:</SPAN>     float4 t2 = tex2D(ReductionSamp, In.Tex2);
+<SPAN CLASS="linenum">0284:</SPAN>     float4 t3 = tex2D(ReductionSamp, In.Tex3);
+<SPAN CLASS="linenum">0285:</SPAN>     
+<SPAN CLASS="linenum">0286:</SPAN>     float4 t4 = tex2D(ReductionSamp, In.Tex4);
+<SPAN CLASS="linenum">0287:</SPAN>     float4 t5 = tex2D(ReductionSamp, In.Tex5);
+<SPAN CLASS="linenum">0288:</SPAN>     float4 t6 = tex2D(ReductionSamp, In.Tex6);
+<SPAN CLASS="linenum">0289:</SPAN>     float4 t7 = tex2D(ReductionSamp, In.Tex7);
+<SPAN CLASS="linenum">0290:</SPAN>     
+<SPAN CLASS="linenum">0291:</SPAN>     float4 t8 = tex2D(ReductionSamp, In.Tex0 + float2(+4.0f/MAP_WIDTH, 0));
+<SPAN CLASS="linenum">0292:</SPAN>     float4 t9 = tex2D(ReductionSamp, In.Tex1 + float2(+4.0f/MAP_WIDTH, 0));
+<SPAN CLASS="linenum">0293:</SPAN>     float4 ta = tex2D(ReductionSamp, In.Tex2 + float2(+4.0f/MAP_WIDTH, 0));
+<SPAN CLASS="linenum">0294:</SPAN>     float4 tb = tex2D(ReductionSamp, In.Tex3 + float2(+4.0f/MAP_WIDTH, 0));
+<SPAN CLASS="linenum">0295:</SPAN>     
+<SPAN CLASS="linenum">0296:</SPAN>     float4 tc = tex2D(ReductionSamp, In.Tex4 + float2(+4.0f/MAP_WIDTH, 0));
+<SPAN CLASS="linenum">0297:</SPAN>     float4 td = tex2D(ReductionSamp, In.Tex5 + float2(+4.0f/MAP_WIDTH, 0));
+<SPAN CLASS="linenum">0298:</SPAN>     float4 te = tex2D(ReductionSamp, In.Tex6 + float2(+4.0f/MAP_WIDTH, 0));
+<SPAN CLASS="linenum">0299:</SPAN>     float4 tf = tex2D(ReductionSamp, In.Tex7 + float2(+4.0f/MAP_WIDTH, 0));
+<SPAN CLASS="linenum">0300:</SPAN>     
+<SPAN CLASS="linenum">0301:</SPAN>     <SPAN CLASS="keyword">return</SPAN> ((t0+t1+t2+t3)
+<SPAN CLASS="linenum">0302:</SPAN>            +(t4+t5+t6+t7)
+<SPAN CLASS="linenum">0303:</SPAN>            +(t8+t9+ta+tb)
+<SPAN CLASS="linenum">0304:</SPAN>            +(tc+td+te+tf))/16;
+<SPAN CLASS="linenum">0305:</SPAN> }
+<SPAN CLASS="linenum">0306:</SPAN> 
+<SPAN CLASS="linenum">0307:</SPAN> 
+<SPAN CLASS="linenum">0308:</SPAN> 
+<SPAN CLASS="linenum">0309:</SPAN> 
+<SPAN CLASS="linenum">0310:</SPAN> <SPAN CLASS="comment">// ------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0311:</SPAN> <SPAN CLASS="comment">// アルファ成分で色成分を割る</SPAN>
+<SPAN CLASS="linenum">0312:</SPAN> <SPAN CLASS="comment">// ------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0313:</SPAN> float4 PS_Div ( float4 Tex0 : TEXCOORD0 ) : COLOR0
+<SPAN CLASS="linenum">0314:</SPAN> {
+<SPAN CLASS="linenum">0315:</SPAN>     float4 samp = tex2D(SrcSamp, Tex0);
+<SPAN CLASS="linenum">0316:</SPAN>     
+<SPAN CLASS="linenum">0317:</SPAN>     <SPAN CLASS="keyword">if</SPAN>(samp.w != 0) samp /= samp.w;
+<SPAN CLASS="linenum">0318:</SPAN>     
+<SPAN CLASS="linenum">0319:</SPAN>     <SPAN CLASS="keyword">return</SPAN> samp;
+<SPAN CLASS="linenum">0320:</SPAN> }
+<SPAN CLASS="linenum">0321:</SPAN> 
+<SPAN CLASS="linenum">0322:</SPAN> 
+<SPAN CLASS="linenum">0323:</SPAN> 
+<SPAN CLASS="linenum">0324:</SPAN> 
+<SPAN CLASS="linenum">0325:</SPAN> <SPAN CLASS="comment">// ------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0326:</SPAN> <SPAN CLASS="comment">// テクニック</SPAN>
+<SPAN CLASS="linenum">0327:</SPAN> <SPAN CLASS="comment">// ------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0328:</SPAN> technique TShader
+<SPAN CLASS="linenum">0329:</SPAN> {
+<SPAN CLASS="linenum">0330:</SPAN>     pass P0 <SPAN CLASS="comment">// 位置、法線マップ</SPAN>
+<SPAN CLASS="linenum">0331:</SPAN>     {
+<SPAN CLASS="linenum">0332:</SPAN>         VertexShader = compile vs_1_1 VS_Map();
+<SPAN CLASS="linenum">0333:</SPAN>         PixelShader  = compile ps_2_0 PS_Map();
+<SPAN CLASS="linenum">0334:</SPAN>     }
+<SPAN CLASS="linenum">0335:</SPAN>     pass P1 <SPAN CLASS="comment">// ラディアンスの計算</SPAN>
+<SPAN CLASS="linenum">0336:</SPAN>     {
+<SPAN CLASS="linenum">0337:</SPAN>         VertexShader = compile vs_1_1 VS_Radiance();
+<SPAN CLASS="linenum">0338:</SPAN>         PixelShader  = compile ps_2_0 PS_Radiance();
+<SPAN CLASS="linenum">0339:</SPAN>     }
+<SPAN CLASS="linenum">0340:</SPAN>     pass P2 <SPAN CLASS="comment">// 縮小</SPAN>
+<SPAN CLASS="linenum">0341:</SPAN>     {
+<SPAN CLASS="linenum">0342:</SPAN>         VertexShader = compile vs_1_1 VS_Reduction();
+<SPAN CLASS="linenum">0343:</SPAN>         PixelShader  = compile ps_2_0 PS_Reduction();
+<SPAN CLASS="linenum">0344:</SPAN>     }
+<SPAN CLASS="linenum">0345:</SPAN>     pass P3 <SPAN CLASS="comment">// アルファ成分で色成分を割る</SPAN>
+<SPAN CLASS="linenum">0346:</SPAN>     {
+<SPAN CLASS="linenum">0347:</SPAN>         PixelShader  = compile ps_2_0 PS_Div();
+<SPAN CLASS="linenum">0348:</SPAN>     }
+<SPAN CLASS="linenum">0349:</SPAN>     pass P4 <SPAN CLASS="comment">// テクスチャなし</SPAN>
+<SPAN CLASS="linenum">0350:</SPAN>     {
+<SPAN CLASS="linenum">0351:</SPAN>         VertexShader = compile vs_1_1 VS();
+<SPAN CLASS="linenum">0352:</SPAN>         PixelShader  = compile ps_2_0 PS_NoTex();
+<SPAN CLASS="linenum">0353:</SPAN>     }
+<SPAN CLASS="linenum">0354:</SPAN>     pass P5<SPAN CLASS="comment">// GIなし</SPAN>
+<SPAN CLASS="linenum">0355:</SPAN>     {
+<SPAN CLASS="linenum">0356:</SPAN>         VertexShader = compile vs_1_1 VS();
+<SPAN CLASS="linenum">0357:</SPAN>         PixelShader  = compile ps_2_0 PS_NoGI();
+<SPAN CLASS="linenum">0358:</SPAN>     }
+<SPAN CLASS="linenum">0359:</SPAN>     pass P6
+<SPAN CLASS="linenum">0360:</SPAN>     {
+<SPAN CLASS="linenum">0361:</SPAN>         VertexShader = compile vs_1_1 VS();
+<SPAN CLASS="linenum">0362:</SPAN>         PixelShader  = compile ps_2_0 PS();
+<SPAN CLASS="linenum">0363:</SPAN>     }
+<SPAN CLASS="linenum">0364:</SPAN> }
+<SPAN CLASS="linenum">0365:</SPAN> </PRE>
+</BODY>
+</HTML>

@@ -1,0 +1,304 @@
+<head>
+	<title>t-pot『地平線マップ』</title>
+	<link rel="stylesheet" type="text/css" href="../if.css">
+</head>
+<meta http-equiv=Content-Type content="text/html; charset=shift_jis">
+<body>
+
+
+<div class="contents">
+<center>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<h1>地平線マップ</h1><br>
+<h3>～ Horizon map ～</h3>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<image src = "title.png">
+<br>
+<hr>
+<br>
+<p>
+下の画像をクリックすると、影が動くアニメーションが見られます(注意:4.92MB)。<br>
+<a href="anim.gif"><image src = "01.gif" width = "64" height = "64"></a>
+</p>
+<hr>
+</center>
+<div>
+
+
+<h2>■はじめに</h2>
+
+
+<p>
+今回は，前回のプログラムを変更して、地平線マップに取り組んでみます。<br>
+今回はセルフソフトシャドウのおまけ付きです。
+</p>
+<p>
+今回のプログラムは、次のものです。<br>
+今回も、初期化に少し時間がかかります。
+</p>
+<ul style = "LIST-STYLE-TYPE:none">
+<li><a href="src.zip">src.zip (地平線マップ:DirectX9(頂点シェーダ1.1,ピクセルシェーダ2.0)</a>
+</ul>
+
+<p>
+まぁ、いつものように適当にファイルが入っています。<br>
+APP WIZARD から出力されるフレームワークのファイルは紹介を省かせていただきます。
+</p>
+<table>
+<tr><td><a href="hlsl_fx.html">hlsl.fx</a></td><td>シェーダの入ったエフェクトファイル</td></tr>
+<tr><td><a href="main_h.html">main.h</a></td><td>アプリケーションのヘッダ</td></tr>
+<tr><td><a href="main_cpp.html">main.cpp</a></td><td>アプリケーションのソース</td></tr>
+</table>
+
+<p>
+あと、実行ファイル、モデル及び、プロジェクトファイルが入っています。
+</p>
+
+
+<h2>■何やってるの？</h2>
+
+
+<p>
+前回の遮蔽マップは、マップを作るときに見た角度からずれた角度に対するレンダリングのときに、
+２つのマップの線型補間を使って計算していたために、２つの影を合成していたことがばればれでした。<br>
+それは明らかに変なので、影が滑らかに移動する方法について取り組んでみます。<br>
+その方法が地平線マップです。これは、DirectX 8.1 からサンプルとして収められていますし、
+CEDEC2002の DirectX day でも紹介されているので、今となっては、特に目新しい技術ではありません。
+</p>
+<p>
+地平線マップと前回の遮蔽マップの違いは、マップとして格納する変数の種類が違うということです。<br>
+遮蔽マップの時には、ライトが当てられたときに、その部分が影になるかどうかを格納しました。<br>
+今回は、視線の方向について、一番高い山の山頂までの角度をマップに保存します
+（今回のプログラムでは、実際には、一番高い部分までの角度のタンジェントを格納しますが、本質的には同じ事です）。
+</p>
+<image src = "ray.png">
+<p>
+今回のマップを見ると、前回の影の形がくっきりと浮き出ていたマップとは違って、影の起きる方向に長い尾が確認できます。<br>
+これは、「視線方向に一番高い部分」ということで、１つ高い山があれば、しばらくはその山が高い部分になるからです。<br>
+今回は、影の落ちる角度とライトの角度を比較することによって、影になるか判定するので、ライトの角度、すなわち影の長さを自由に変えることができます。<br>
+高いライトなら影を短く、低いライトなら影を長くするなどの調整が簡単に行なえます。
+</p>
+<p>
+今回は、視線も３２方向に飛ばして、それぞれの方向に対する地平線マップを作成します。<br>
+１つのマップにRGBAの４成分を使って、４方向のマップを格納します。
+</p>
+<image src = "map.png">
+<p>
+この３２方向の中間にある半端な角度の場合には、２つのマップを合成して影を求めるのですが、
+今回の場合には、一番高い部分というものが補間されるので、途中の状態も滑らかなものとなります。
+</p>
+
+
+
+<h2>■地平線マップの作成</h2>
+
+
+<p>
+それでは、地平線マップを作成しましょう。<br>
+地平線マップは、前回の遮蔽マップとそれほど変わりません。<br>
+視線を飛ばして、視線の先のそれぞれのテクセルに関して、その高さと
+視点の高さを比較して、それを視線のテクセルまでの距離で割って、tan(地面の高さの仰角)を計算します。
+</p>
+
+<pre class="CodeBlock">
+hlfx.fx
+<font color="deepskyblue">0236:</font> <font color="cyan">// ------------------------------------------------------------</font>
+<font color="deepskyblue">0237:</font> <font color="cyan">// 地平線マップ作成ピクセルシェーダプログラム</font>
+<font color="deepskyblue">0238:</font> <font color="cyan">// ------------------------------------------------------------</font>
+<font color="deepskyblue">0239:</font> <font color="blue">float</font>  fRayDist;
+<font color="deepskyblue">0240:</font> float4 PS_Cover(VS_OUTPUT In) : COLOR
+<font color="deepskyblue">0241:</font> {
+<font color="deepskyblue">0242:</font>     float4 Out;
+<font color="deepskyblue">0243:</font>     
+<font color="deepskyblue">0244:</font>     float4 center = tex2D( SrcSamp, In.Tex0 );
+<font color="deepskyblue">0245:</font>     float4 offset = tex2D( SrcSamp, In.Tex1 );
+<font color="deepskyblue">0246:</font> 
+<font color="deepskyblue">0247:</font>     <font color="yellow">Out = (offset-center)/fRayDist;</font>
+<font color="deepskyblue">0248:</font>     
+<font color="deepskyblue">0249:</font>     <font color="blue">return</font> Out;
+<font color="deepskyblue">0250:</font> }
+</pre>
+
+<p>
+先ほどの計算では、一番高い場所の判定はしていません。<br>
+一番高い場所を検索するために、アルファ合成を使います。<br>
+レンダリングステートの D3DRS_BLENDOP に D3DBLENDOP_MAX というものがあります。<br>
+これは、ピクセルシェーダの出力と、すでにレンダリングされたフレームバッファの値を比較して、値の大きな方をフレームバッファに書き込むというものです。<br>
+まぁ、何のために使うんだこんなのと思っていたのですが、こんな使い道があるんですね。
+</p>
+<p>
+また、テクセルをずらした量をシェーダに引き渡すのを忘れないようにしましょう。
+</p>
+
+<pre class="CodeBlock">
+main.cpp
+<font color="deepskyblue">0030:</font> <font color="blue">#define</font> RS   m_pd3dDevice-&gt;SetRenderState
+<font color="deepskyblue">0382:</font>             <font color="cyan">//-------------------------------------------------</font>
+<font color="deepskyblue">0383:</font>             <font color="cyan">// 遮蔽マップの作成</font>
+<font color="deepskyblue">0384:</font>             <font color="cyan">//-------------------------------------------------</font>
+<font color="deepskyblue">0385:</font>             <font color="blue">typedef</font> <font color="blue">struct</font> {FLOAT p[3]; FLOAT tu, tv;} TVERTEX3;
+<font color="deepskyblue">0386:</font>             TVERTEX3 Vertex[4] = {
+<font color="deepskyblue">0387:</font>                 <font color="cyan">// x   y   z   tu tv</font>
+<font color="deepskyblue">0388:</font>                 { -1, -1, 0.1f, 0, 1,},
+<font color="deepskyblue">0389:</font>                 {  1, -1, 0.1f, 1, 1,},
+<font color="deepskyblue">0390:</font>                 {  1,  1, 0.1f, 1, 0,},
+<font color="deepskyblue">0391:</font>                 { -1,  1, 0.1f, 0, 0,},
+<font color="deepskyblue">0392:</font>             };
+<font color="deepskyblue">0393:</font>             m_pd3dDevice-&gt;SetFVF( D3DFVF_XYZ | D3DFVF_TEX1 );
+<font color="deepskyblue">0394:</font>             m_pEffect-&gt;SetTexture(m_htSrcTex, m_pHeightTex);
+<font color="deepskyblue">0395:</font>             <font color="yellow">RS(D3DRS_ALPHABLENDENABLE, TRUE);
+<font color="deepskyblue">0396:</font>             RS(D3DRS_BLENDOP, D3DBLENDOP_MAX);
+<font color="deepskyblue">0397:</font>             RS(D3DRS_SRCBLEND , D3DBLEND_ONE);
+<font color="deepskyblue">0398:</font>             RS(D3DRS_DESTBLEND , D3DBLEND_ONE);</font>
+<font color="deepskyblue">0399:</font>             m_pEffect-&gt;Pass( 1 );
+<font color="deepskyblue">0400:</font> 
+<font color="deepskyblue">0401:</font>             <font color="blue">for</font>(i=0;i&lt;4*COVER_MAPS;i++){
+<font color="deepskyblue">0402:</font>                 <font color="blue">if</font>(0==(i%4)){
+<font color="deepskyblue">0403:</font>                     m_pd3dDevice-&gt;SetRenderTarget(0, m_pCoverSurf[i/4]);
+<font color="deepskyblue">0404:</font>                     m_pd3dDevice-&gt;Clear(0L, NULL
+<font color="deepskyblue">0405:</font>                                     , D3DCLEAR_TARGET
+<font color="deepskyblue">0406:</font>                                     , 0x00000000, 1.0f, 0L);
+<font color="deepskyblue">0407:</font>                 }
+<font color="deepskyblue">0408:</font> 
+<font color="deepskyblue">0409:</font>                 RS(D3DRS_COLORWRITEENABLE,(1&lt;&lt;(i%4)));
+<font color="deepskyblue">0410:</font>                 <font color="blue">for</font>(j=1; j&lt;MAP_SIZE; j++){
+<font color="deepskyblue">0411:</font>                     <font color="cyan">// ずらした量</font>
+<font color="deepskyblue">0412:</font>                     <font color="yellow">FLOAT d = 10.0f*(FLOAT)j/MAP_SIZE + 0.0001f;</font>
+<font color="deepskyblue">0413:</font>                     m_pEffect-&gt;SetFloat("<font color="blue">fRayDist</font>", d);
+<font color="deepskyblue">0414:</font>                     <font color="cyan">// テクスチャをずらす位置</font>
+<font color="deepskyblue">0415:</font>                     D3DXVECTOR4 v = D3DXVECTOR4(
+<font color="deepskyblue">0416:</font>                             ray_dir[i][0]*j/MAP_SIZE,
+<font color="deepskyblue">0417:</font>                             ray_dir[i][1]*j/MAP_SIZE,0,0);
+<font color="deepskyblue">0418:</font>                     m_pEffect-&gt;SetVector("<font color="blue">vOffset</font>", &amp;v);
+<font color="deepskyblue">0419:</font>                     <font color="cyan">// 描画</font>
+<font color="deepskyblue">0420:</font>                     m_pd3dDevice-&gt;DrawPrimitiveUP( D3DPT_TRIANGLEFAN
+<font color="deepskyblue">0421:</font>                                 , 2, Vertex, <font color="blue">sizeof</font>( TVERTEX3 ) );
+<font color="deepskyblue">0422:</font>                 }
+<font color="deepskyblue">0423:</font>             }
+</pre>
+
+
+
+<h2>■シーンの描画</h2>
+
+
+<p>
+さて、それでは地平線マップを使って影をつけましょう。<br>
+基本的には、前回のように、それぞれのマップを読み込んで合成し、
+各ピクセルから光源方向にみた地面の高さを計算して、
+それがライトの高さ（下のプログラムでは<font color="orange">0.3</font>）と比較して、地面が高ければ日が射さない影（遮蔽量が１）になって、地面が低ければ日が射します（遮蔽量が０）。<br>
+ライトの高さを変えれば、影の長さは変わります。<br>
+あとは、この遮蔽量を使って、照明計算をします。
+</p>
+<pre class="CodeBlock">
+float4 PS (VS_OUTPUT In) : COLOR
+{
+    float4 Out;
+    
+    <font color="cyan">// 遮蔽量</font>
+    <font color="blue">float</font> Cover = dot(vWeight[0], tex2D( CoverSamp0, In.Tex0 ));
+          Cover+= dot(vWeight[1], tex2D( CoverSamp1, In.Tex0 ));
+          Cover+= dot(vWeight[2], tex2D( CoverSamp2, In.Tex0 ));
+          Cover+= dot(vWeight[3], tex2D( CoverSamp3, In.Tex0 ));
+          Cover+= dot(vWeight[4], tex2D( CoverSamp4, In.Tex0 ));
+          Cover+= dot(vWeight[5], tex2D( CoverSamp5, In.Tex0 ));
+          Cover+= dot(vWeight[6], tex2D( CoverSamp6, In.Tex0 ));
+          Cover+= dot(vWeight[7], tex2D( CoverSamp7, In.Tex0 ));
+
+    Cover = (Cover&lt;<font color="orange">0.3</font>)?1:0;
+
+    <font color="cyan">// 色</font>
+    Out = tex2D( SrcSamp, In.Tex0 ) *(Cover+0.3f);
+
+    <font color="blue">return</font> Out;
+}
+</pre>
+<p>
+さて、これだけではくっきりした影になるので、ソフトにしましょう。<br>
+ぼんやりした影にするには、光の入射する高さと山の高さが近いピクセルについて、
+影になったとしても、真っ暗にするのではなくて、少しだけ暗くするようにします。<br>
+具体的には、影に隠れたとき(光の高さ<光の方向の山の高さ)に、光が隠れた高さ(光の方向の山の高さ-光の高さ)に応じて、遮蔽量を減すことによって、影になった部分をだんだんと暗くしていきます。<br>
+また、遮蔽量が０より小さくなることはないので、0でクランプします。
+</p>
+<pre class="CodeBlock">
+hlfx.fx
+<font color="deepskyblue">0154:</font> <font color="cyan">// ------------------------------------------------------------</font>
+<font color="deepskyblue">0155:</font> <font color="cyan">// 照明計算なしピクセルシェーダプログラム</font>
+<font color="deepskyblue">0156:</font> <font color="cyan">// ------------------------------------------------------------</font>
+<font color="deepskyblue">0157:</font> float4 vWeight[8];
+<font color="deepskyblue">0158:</font> float4 PS (VS_OUTPUT In) : COLOR
+<font color="deepskyblue">0159:</font> {
+<font color="deepskyblue">0160:</font>     float4 Out;
+<font color="deepskyblue">0161:</font>     
+<font color="deepskyblue">0162:</font>     <font color="cyan">// 遮蔽量</font>
+<font color="deepskyblue">0163:</font>     <font color="blue">float</font> Cover = dot(vWeight[0], tex2D( CoverSamp0, In.Tex0 ));
+<font color="deepskyblue">0164:</font>           Cover+= dot(vWeight[1], tex2D( CoverSamp1, In.Tex0 ));
+<font color="deepskyblue">0165:</font>           Cover+= dot(vWeight[2], tex2D( CoverSamp2, In.Tex0 ));
+<font color="deepskyblue">0166:</font>           Cover+= dot(vWeight[3], tex2D( CoverSamp3, In.Tex0 ));
+<font color="deepskyblue">0167:</font>           Cover+= dot(vWeight[4], tex2D( CoverSamp4, In.Tex0 ));
+<font color="deepskyblue">0168:</font>           Cover+= dot(vWeight[5], tex2D( CoverSamp5, In.Tex0 ));
+<font color="deepskyblue">0169:</font>           Cover+= dot(vWeight[6], tex2D( CoverSamp6, In.Tex0 ));
+<font color="deepskyblue">0170:</font>           Cover+= dot(vWeight[7], tex2D( CoverSamp7, In.Tex0 ));
+<font color="deepskyblue">0171:</font> 
+<font color="deepskyblue">0172:</font>     <font color="yellow">Cover = (Cover&lt;0.3)?1:(1-5.0f*(Cover-0.3));
+<font color="deepskyblue">0173:</font>     <font color="blue">if</font>(Cover&lt;0) Cover=0;</font>
+<font color="deepskyblue">0174:</font>     
+<font color="deepskyblue">0175:</font>     <font color="cyan">// 色</font>
+<font color="deepskyblue">0176:</font>     Out = tex2D( SrcSamp, In.Tex0 ) *(Cover+0.3f);
+<font color="deepskyblue">0177:</font> 
+<font color="deepskyblue">0178:</font>     <font color="blue">return</font> Out;
+<font color="deepskyblue">0179:</font> }
+</pre>
+
+
+
+
+<h2>■マップの枚数に関する考察</h2>
+
+
+<p>
+CEDECの時には、地平線マップは、８方向からのライティングを記述する２枚のテクスチャだけで十分だという説明がなされました。<br>
+しかし、今回は、８枚のテクスチャを追加って、３２方向からのライティングを記録しています。<br>
+この枚数が少ないとどうなるのでしょうか？<br>
+ためしに、今回のプログラムでマップの枚数を１枚にしてみて、４方向からの光しか考えないと、次のアニメーションになります。</p>
+<a href="4way.gif"><image src = "01.gif" width = "64" height = "64"></a>
+<p>
+４方向しか遮蔽マップを作成しないときには、高い山の影はライトをぐるりと１週させたときに星型の軌跡を描きます。
+</p>
+<image src = "4shadow.png">
+<p>
+従って、山の高さが高いと、マップの枚数が少ないときにはおかしな影ができることがわかります。。<br>
+山の高さがそんなに高くなくて、影がさほど伸びないなら、４方向や８方向でも十分な場合はあるでしょう。
+</p>
+
+
+<h2>■最後に</h2>
+
+
+<p>
+前回と今回は、テクスチャに遮蔽情報を埋め込んでライティングをしました。<br>
+今回は、遮蔽マップを作るときと、シーンのレンダリングに同じメッシュを使いましたが、
+必ずしもそうでなければいけないわけではありません。<br>
+例えば、ポリゴン１枚使うだけでも、けっこうましな画面を作ることができます。
+</p>
+<image src="plane.png">
+<p>
+非常に遠くの景色で、詳細な情報が要らないなら、これで十分でしょう。<br>
+しかも、光源の方向によって、影を変化させることができるので、こけおどしもばっちりです。
+</p>
+
+</div>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<center>
+<hr>
+<p><a href="../index.html">もどる</a></p>
+<p><a href="mailto:imagire@gmail.com">imagire@gmail.com</a></p>
+</center>
+
+</body>
+</html>

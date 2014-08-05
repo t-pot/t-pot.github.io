@@ -1,0 +1,172 @@
+<HTML>
+<HEAD>
+<TITLE>CShadowVolume.cpp</TITLE>
+<meta name="GENERATOR" content="cpp2html 2.1 by Niisaka">
+<meta http-equiv="Content-Type" content="text/html">
+<meta http-equiv="Content-Style-Type" content="text/css">
+<STYLE TYPE="text/css">
+<!--
+SPAN.comment { color:#008000; font-weight:normal; font-style:normal;}
+SPAN.keyword { color:#0000FF; font-weight:normal; font-style:normal;}
+SPAN.string { color:#600000; font-weight:normal; font-style:normal;}
+SPAN.linenum { color:#A0A0A0; font-weight:normal; font-style:normal;}
+-->
+</STYLE>
+</HEAD>
+<BODY TEXT="#000000" BGCOLOR="#FFFFFF">
+<PRE><SPAN CLASS="linenum">0001:</SPAN> 
+<SPAN CLASS="linenum">0002:</SPAN> <SPAN CLASS="keyword">#include</SPAN> &lt;assert.h&gt;
+<SPAN CLASS="linenum">0003:</SPAN> <SPAN CLASS="keyword">#include</SPAN> "<SPAN CLASS="string">D3DFile.h</SPAN>"
+<SPAN CLASS="linenum">0004:</SPAN> <SPAN CLASS="keyword">#include</SPAN> "<SPAN CLASS="string">DXUtil.h</SPAN>"
+<SPAN CLASS="linenum">0005:</SPAN> <SPAN CLASS="keyword">#include</SPAN> "<SPAN CLASS="string">CShadowVolume.h</SPAN>"
+<SPAN CLASS="linenum">0006:</SPAN> 
+<SPAN CLASS="linenum">0007:</SPAN> <SPAN CLASS="comment">// ---------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0008:</SPAN> <SPAN CLASS="comment">// 静的オブジェクト</SPAN>
+<SPAN CLASS="linenum">0009:</SPAN> <SPAN CLASS="comment">// ---------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0010:</SPAN> <SPAN CLASS="keyword">const</SPAN> DWORD CShadowVolume::FVF = D3DFVF_XYZ | D3DFVF_NORMAL;
+<SPAN CLASS="linenum">0011:</SPAN> 
+<SPAN CLASS="linenum">0012:</SPAN> <SPAN CLASS="comment">// ---------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0013:</SPAN> CShadowVolume::CShadowVolume()
+<SPAN CLASS="linenum">0014:</SPAN> {
+<SPAN CLASS="linenum">0015:</SPAN>     m_pVertices = NULL;
+<SPAN CLASS="linenum">0016:</SPAN>     m_dwNumFaces = 0;
+<SPAN CLASS="linenum">0017:</SPAN> }
+<SPAN CLASS="linenum">0018:</SPAN> <SPAN CLASS="comment">// ---------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0019:</SPAN> CShadowVolume::~CShadowVolume()
+<SPAN CLASS="linenum">0020:</SPAN> {
+<SPAN CLASS="linenum">0021:</SPAN> }
+<SPAN CLASS="linenum">0022:</SPAN> <SPAN CLASS="comment">// ---------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0023:</SPAN> <SPAN CLASS="comment">// 描画</SPAN>
+<SPAN CLASS="linenum">0024:</SPAN> <SPAN CLASS="comment">// ---------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0025:</SPAN> VOID CShadowVolume::Render( LPDIRECT3DDEVICE9 pd3dDevice )
+<SPAN CLASS="linenum">0026:</SPAN> {
+<SPAN CLASS="linenum">0027:</SPAN>     pd3dDevice-&gt;SetFVF( CShadowVolume::FVF );
+<SPAN CLASS="linenum">0028:</SPAN> 
+<SPAN CLASS="linenum">0029:</SPAN>     pd3dDevice-&gt;DrawPrimitiveUP( D3DPT_TRIANGLELIST, m_dwNumFaces,
+<SPAN CLASS="linenum">0030:</SPAN>                                 m_pVertices, <SPAN CLASS="keyword">sizeof</SPAN>(SHADOW_VOLUME_VERTEX) );
+<SPAN CLASS="linenum">0031:</SPAN> }
+<SPAN CLASS="linenum">0032:</SPAN> <SPAN CLASS="comment">// ---------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0033:</SPAN> <SPAN CLASS="comment">// 生成</SPAN>
+<SPAN CLASS="linenum">0034:</SPAN> <SPAN CLASS="comment">// ---------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0035:</SPAN> HRESULT CShadowVolume::Create( LPDIRECT3DDEVICE9 pd3dDevice, LPD3DXMESH pSrcMesh )
+<SPAN CLASS="linenum">0036:</SPAN> {
+<SPAN CLASS="linenum">0037:</SPAN>     HRESULT ret = S_OK;
+<SPAN CLASS="linenum">0038:</SPAN>     <SPAN CLASS="keyword">struct</SPAN> MESHVERTEX { D3DXVECTOR3 p, n; };
+<SPAN CLASS="linenum">0039:</SPAN>     SHADOW_VOLUME_VERTEX* pVertices;
+<SPAN CLASS="linenum">0040:</SPAN>     WORD*       pIndices;
+<SPAN CLASS="linenum">0041:</SPAN>     DWORD i,j,k,l, face;
+<SPAN CLASS="linenum">0042:</SPAN>     LPD3DXMESH pMesh;
+<SPAN CLASS="linenum">0043:</SPAN> 
+<SPAN CLASS="linenum">0044:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( FAILED( pSrcMesh-&gt;CloneMeshFVF( D3DXMESH_SYSTEMMEM,
+<SPAN CLASS="linenum">0045:</SPAN>                                         D3DFVF_XYZ | D3DFVF_NORMAL,
+<SPAN CLASS="linenum">0046:</SPAN>                                         pd3dDevice, &amp;pMesh ) ) )
+<SPAN CLASS="linenum">0047:</SPAN>         <SPAN CLASS="keyword">return</SPAN> E_FAIL;
+<SPAN CLASS="linenum">0048:</SPAN>     DWORD dwNumFaces    = pMesh-&gt;GetNumFaces();
+<SPAN CLASS="linenum">0049:</SPAN> 
+<SPAN CLASS="linenum">0050:</SPAN>     <SPAN CLASS="comment">// 出力用のメモリの確保</SPAN>
+<SPAN CLASS="linenum">0051:</SPAN>     m_dwNumFaces = 4*dwNumFaces;
+<SPAN CLASS="linenum">0052:</SPAN>     m_pVertices = <SPAN CLASS="keyword">new</SPAN> SHADOW_VOLUME_VERTEX[3*m_dwNumFaces];
+<SPAN CLASS="linenum">0053:</SPAN> 
+<SPAN CLASS="linenum">0054:</SPAN>     <SPAN CLASS="comment">// バッファを専有</SPAN>
+<SPAN CLASS="linenum">0055:</SPAN>     pMesh-&gt;LockVertexBuffer( 0L, (LPVOID*)&amp;pVertices );
+<SPAN CLASS="linenum">0056:</SPAN>     pMesh-&gt;LockIndexBuffer ( 0L, (LPVOID*)&amp;pIndices );
+<SPAN CLASS="linenum">0057:</SPAN>     
+<SPAN CLASS="linenum">0058:</SPAN>     <SPAN CLASS="comment">// 法線保存用</SPAN>
+<SPAN CLASS="linenum">0059:</SPAN>     D3DXVECTOR3 *vNormal = <SPAN CLASS="keyword">new</SPAN> D3DXVECTOR3[dwNumFaces];
+<SPAN CLASS="linenum">0060:</SPAN>     <SPAN CLASS="keyword">if</SPAN>(NULL==vNormal){
+<SPAN CLASS="linenum">0061:</SPAN>         m_dwNumFaces = 0;
+<SPAN CLASS="linenum">0062:</SPAN>         ret = E_OUTOFMEMORY;
+<SPAN CLASS="linenum">0063:</SPAN>         <SPAN CLASS="keyword">goto</SPAN> end;
+<SPAN CLASS="linenum">0064:</SPAN>     }
+<SPAN CLASS="linenum">0065:</SPAN>     <SPAN CLASS="comment">// 通常データ製作</SPAN>
+<SPAN CLASS="linenum">0066:</SPAN>     <SPAN CLASS="keyword">for</SPAN>( i=0; i&lt;dwNumFaces; i++ )
+<SPAN CLASS="linenum">0067:</SPAN>     {
+<SPAN CLASS="linenum">0068:</SPAN>         D3DXVECTOR3 v0 = pVertices[pIndices[3*i+0]].p;
+<SPAN CLASS="linenum">0069:</SPAN>         D3DXVECTOR3 v1 = pVertices[pIndices[3*i+1]].p;
+<SPAN CLASS="linenum">0070:</SPAN>         D3DXVECTOR3 v2 = pVertices[pIndices[3*i+2]].p;
+<SPAN CLASS="linenum">0071:</SPAN> 
+<SPAN CLASS="linenum">0072:</SPAN>         D3DXVECTOR3 vCross1(v1-v0);
+<SPAN CLASS="linenum">0073:</SPAN>         D3DXVECTOR3 vCross2(v2-v1);
+<SPAN CLASS="linenum">0074:</SPAN>         D3DXVec3Cross( &amp;vNormal[i], &amp;vCross1, &amp;vCross2 );
+<SPAN CLASS="linenum">0075:</SPAN>         
+<SPAN CLASS="linenum">0076:</SPAN>         m_pVertices[3*i+0].p = v0;
+<SPAN CLASS="linenum">0077:</SPAN>         m_pVertices[3*i+1].p = v1;
+<SPAN CLASS="linenum">0078:</SPAN>         m_pVertices[3*i+2].p = v2;
+<SPAN CLASS="linenum">0079:</SPAN>         m_pVertices[3*i+0].n = vNormal[i];
+<SPAN CLASS="linenum">0080:</SPAN>         m_pVertices[3*i+1].n = vNormal[i];
+<SPAN CLASS="linenum">0081:</SPAN>         m_pVertices[3*i+2].n = vNormal[i];
+<SPAN CLASS="linenum">0082:</SPAN>     }
+<SPAN CLASS="linenum">0083:</SPAN>     
+<SPAN CLASS="linenum">0084:</SPAN>     <SPAN CLASS="comment">// 稜線に挟み込むデータ製作</SPAN>
+<SPAN CLASS="linenum">0085:</SPAN>     face = dwNumFaces;
+<SPAN CLASS="linenum">0086:</SPAN>     <SPAN CLASS="keyword">for</SPAN>( i=0  ; i&lt;dwNumFaces; i++ ){
+<SPAN CLASS="linenum">0087:</SPAN>     <SPAN CLASS="keyword">for</SPAN>( j=i+1; j&lt;dwNumFaces; j++ ){
+<SPAN CLASS="linenum">0088:</SPAN>         DWORD id[2][2];
+<SPAN CLASS="linenum">0089:</SPAN>         DWORD cnt=0;
+<SPAN CLASS="linenum">0090:</SPAN>         <SPAN CLASS="keyword">for</SPAN>(k=0;k&lt;3;k++){
+<SPAN CLASS="linenum">0091:</SPAN>         <SPAN CLASS="keyword">for</SPAN>(l=0;l&lt;3;l++){
+<SPAN CLASS="linenum">0092:</SPAN>             D3DXVECTOR3 dv;
+<SPAN CLASS="linenum">0093:</SPAN>             D3DXVec3Subtract( &amp;dv,  &amp;pVertices[pIndices[3*i+k]].p,
+<SPAN CLASS="linenum">0094:</SPAN>                                     &amp;pVertices[pIndices[3*j+l]].p);
+<SPAN CLASS="linenum">0095:</SPAN>             <SPAN CLASS="keyword">if</SPAN>( D3DXVec3LengthSq( &amp;dv ) &lt; 0.001f ){
+<SPAN CLASS="linenum">0096:</SPAN>                 <SPAN CLASS="comment">// 頂点の位置が同じデータを検索</SPAN>
+<SPAN CLASS="linenum">0097:</SPAN>                 id[cnt][0] = 3*i+k;
+<SPAN CLASS="linenum">0098:</SPAN>                 id[cnt][1] = 3*j+l;
+<SPAN CLASS="linenum">0099:</SPAN>                 cnt++;
+<SPAN CLASS="linenum">0100:</SPAN>             }
+<SPAN CLASS="linenum">0101:</SPAN>         }
+<SPAN CLASS="linenum">0102:</SPAN>         }
+<SPAN CLASS="linenum">0103:</SPAN>         <SPAN CLASS="keyword">if</SPAN>(2==cnt){
+<SPAN CLASS="linenum">0104:</SPAN>             <SPAN CLASS="comment">// 共有稜線があった</SPAN>
+<SPAN CLASS="linenum">0105:</SPAN>             <SPAN CLASS="keyword">if</SPAN>(id[1][0]-id[0][0]!=1){
+<SPAN CLASS="linenum">0106:</SPAN>                 <SPAN CLASS="comment">// ポリゴンの表向きを調整するための順番ずらし</SPAN>
+<SPAN CLASS="linenum">0107:</SPAN>                 DWORD tmp = id[0][0];
+<SPAN CLASS="linenum">0108:</SPAN>                 id[0][0] = id[1][0];
+<SPAN CLASS="linenum">0109:</SPAN>                 id[1][0] = tmp;
+<SPAN CLASS="linenum">0110:</SPAN>                 tmp = id[0][1];
+<SPAN CLASS="linenum">0111:</SPAN>                 id[0][1] = id[1][1];
+<SPAN CLASS="linenum">0112:</SPAN>                 id[1][1] = tmp;
+<SPAN CLASS="linenum">0113:</SPAN>             }
+<SPAN CLASS="linenum">0114:</SPAN>             <SPAN CLASS="comment">// 稜線にポリゴンを埋め込む</SPAN>
+<SPAN CLASS="linenum">0115:</SPAN>             m_pVertices[3*face+0].p = pVertices[pIndices[id[1][0]]].p;
+<SPAN CLASS="linenum">0116:</SPAN>             m_pVertices[3*face+2].p = pVertices[pIndices[id[0][1]]].p;
+<SPAN CLASS="linenum">0117:</SPAN>             m_pVertices[3*face+1].p = pVertices[pIndices[id[0][0]]].p;
+<SPAN CLASS="linenum">0118:</SPAN>             m_pVertices[3*face+0].n = vNormal[i];
+<SPAN CLASS="linenum">0119:</SPAN>             m_pVertices[3*face+2].n = vNormal[j];
+<SPAN CLASS="linenum">0120:</SPAN>             m_pVertices[3*face+1].n = vNormal[i];
+<SPAN CLASS="linenum">0121:</SPAN>             face++;
+<SPAN CLASS="linenum">0122:</SPAN>             m_pVertices[3*face+0].p = pVertices[pIndices[id[1][0]]].p;
+<SPAN CLASS="linenum">0123:</SPAN>             m_pVertices[3*face+2].p = pVertices[pIndices[id[1][1]]].p;
+<SPAN CLASS="linenum">0124:</SPAN>             m_pVertices[3*face+1].p = pVertices[pIndices[id[0][1]]].p;
+<SPAN CLASS="linenum">0125:</SPAN>             m_pVertices[3*face+0].n = vNormal[i];
+<SPAN CLASS="linenum">0126:</SPAN>             m_pVertices[3*face+2].n = vNormal[j];
+<SPAN CLASS="linenum">0127:</SPAN>             m_pVertices[3*face+1].n = vNormal[j];
+<SPAN CLASS="linenum">0128:</SPAN>             face++;
+<SPAN CLASS="linenum">0129:</SPAN>         }
+<SPAN CLASS="linenum">0130:</SPAN>     }
+<SPAN CLASS="linenum">0131:</SPAN>     }
+<SPAN CLASS="linenum">0132:</SPAN>     assert(face == m_dwNumFaces);
+<SPAN CLASS="linenum">0133:</SPAN> m_dwNumFaces=face;
+<SPAN CLASS="linenum">0134:</SPAN> 
+<SPAN CLASS="linenum">0135:</SPAN>     <SPAN CLASS="keyword">delete</SPAN>[] vNormal;
+<SPAN CLASS="linenum">0136:</SPAN> end:
+<SPAN CLASS="linenum">0137:</SPAN>     <SPAN CLASS="comment">// バッファの専有を解除</SPAN>
+<SPAN CLASS="linenum">0138:</SPAN>     pMesh-&gt;UnlockVertexBuffer();
+<SPAN CLASS="linenum">0139:</SPAN>     pMesh-&gt;UnlockIndexBuffer();
+<SPAN CLASS="linenum">0140:</SPAN>     
+<SPAN CLASS="linenum">0141:</SPAN>     pMesh-&gt;Release();
+<SPAN CLASS="linenum">0142:</SPAN> 
+<SPAN CLASS="linenum">0143:</SPAN>     <SPAN CLASS="keyword">return</SPAN> ret;
+<SPAN CLASS="linenum">0144:</SPAN> }
+<SPAN CLASS="linenum">0145:</SPAN> <SPAN CLASS="comment">// ---------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0146:</SPAN> <SPAN CLASS="comment">// 破棄</SPAN>
+<SPAN CLASS="linenum">0147:</SPAN> <SPAN CLASS="comment">// ---------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0148:</SPAN> VOID CShadowVolume::Destroy()
+<SPAN CLASS="linenum">0149:</SPAN> {
+<SPAN CLASS="linenum">0150:</SPAN>     SAFE_DELETE_ARRAY( m_pVertices );
+<SPAN CLASS="linenum">0151:</SPAN>     m_dwNumFaces = 0;
+<SPAN CLASS="linenum">0152:</SPAN> }
+<SPAN CLASS="linenum">0153:</SPAN> <SPAN CLASS="comment">// ---------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0154:</SPAN> </PRE>
+</BODY>
+</HTML>

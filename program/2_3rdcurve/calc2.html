@@ -1,0 +1,199 @@
+<head>
+	<title>t-pot 『3次曲線の行列要素を求める』</title>
+	<link rel="stylesheet" type="text/css" href="../if.css">
+</head>
+<body>
+<div class="contents">
+<center>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<h1>3次曲線の行列要素を求める</h1><br>
+<h3>～がんばろー～</h3>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+</center>
+<a name = "Ferguson"><h2>■Bezier 曲線の行列要素を求める？</h2></a>
+<p>
+曲線の形を決める条件である位置 <b>x</b><sub>0</sub>, <b>x</b><sub>1</sub>, 及び速度 <b>v</b><sub>0</sub>, <b>v</b><sub>1</sub>を、３次曲線の一般形</p>
+<pre class="CodeBlock">
+<b>X</b> = <b>x</b> (t) = <b>a</b>t<sup>3</sup> + <b>b</b>t<sup>2</sup> + <b>c</b>t + <b>d</b>
+</pre>
+<p>に代入して、係数<b>a</b>、<b>b</b>、<b>c</b> 及び <b>d</b> を求めます。</p>
+
+<p>位置の条件から、</p>
+<pre class="CodeBlock">
+①･･･ <b>x</b><sub>0</sub> = <b>x</b> (0) = <b>a</b>0<sup>3</sup> + <b>b</b>0<sup>2</sup> + <b>c</b>0 + <b>d</b> = <b>d</b>,
+②･･･ <b>x</b><sub>1</sub> = <b>x</b> (1) = <b>a</b>1<sup>3</sup> + <b>b</b>1<sup>2</sup> + <b>c</b>1 + <b>d</b> = <b>a</b> + <b>b</b> + <b>c</b> + <b>d</b>.
+</pre>
+
+<p>また、速度が、初期時刻、最終時刻で <b>v</b><sub>0</sub>, <b>v</b><sub>1</sub> であることから、
+時間微分としての速度の定義</p>
+<pre class="CodeBlock">
+       d<b>x</b>(t)
+<b>v</b>(t) = ―― = 3<b>a</b>t<sup>2</sup> + 2<b>b</b>t + <b>c</b>,
+        dt
+</pre>
+<p>に、条件を入れて、</p>
+<pre class="CodeBlock">
+③･･･ <b>v</b><sub>0</sub> = <b>v</b> (0) = 3<b>a</b>0<sup>2</sup> + 2<b>b</b>0 + <b>c</b> = <b>c</b>,
+④･･･ <b>v</b><sub>1</sub> = <b>v</b> (1) = 3<b>a</b>1<sup>2</sup> + 2<b>b</b>1 + <b>c</b> = 3<b>a</b> + 2<b>b</b> + <b>c</b>.
+</pre>
+
+<p>①, ③ から、</p>
+<pre class="CodeBlock">
+<b>d</b> = <b>x</b><sub>0</sub>,
+<b>c</b> = <b>v</b><sub>0</sub>.
+</pre>
+<p>④-2② に今の結果を代入して、</p>
+<pre class="CodeBlock">
+<b>v</b><sub>1</sub> - 2<b>x</b><sub>1</sub> = (3<b>a</b> + 2<b>b</b> + <b>c</b>) - 2(<b>a</b> + <b>b</b> + <b>c</b> + <b>d</b>)
+          = <b>a</b> - <b>c</b> - 2<b>d</b>,
+⇒ <b>a</b> = <b>v</b><sub>1</sub> - 2<b>x</b><sub>1</sub> + <b>v</b><sub>0</sub> + 2<b>x</b><sub>0</sub>.
+</pre>
+<p>これらの結果を②に代入すれば、</p>
+<pre class="CodeBlock">
+<b>b</b> = <b>x</b><sub>1</sub> - <b>a</b> - <b>c</b> - <b>d</b>
+  = <b>x</b><sub>1</sub> - (<b>v</b><sub>1</sub> - 2<b>x</b><sub>1</sub> + <b>v</b><sub>0</sub> + 2<b>x</b><sub>0</sub>) - <b>v</b><sub>0</sub> - <b>x</b><sub>0</sub>
+  = -3<b>x</b><sub>0</sub> + 3<b>x</b><sub>1</sub> - 2<b>v</b><sub>0</sub> - <b>v</b><sub>1</sub>,
+</pre>
+<p>と、全ての係数が求まります。以上をまとめれば、</p>
+<pre class="CodeBlock">
+<b>x</b>(t) = (<b>v</b><sub>1</sub> -2<b>x</b><sub>1</sub> + <b>v</b><sub>0</sub> +2<b>x</b><sub>0</sub>)t<sup>3</sup>
+      + (-3<b>x</b><sub>0</sub> + 3<b>x</b><sub>1</sub> - 2<b>v</b><sub>0</sub> - <b>v</b><sub>1</sub>)t<sup>2</sup>
+      + <b>v</b>0 t
+      + <b>x</b>0
+<sup>  </sup>                ┌ 2 -2  1  1┐┌ <b>x</b><sub>0</sub> ┐
+     = [t<sup>3</sup> t<sup>2</sup> t 1]│-3  3 -2 -1││ <b>x</b><sub>1</sub> │
+<sup>  </sup>                │ 0  0  1  0││ <b>v</b><sub>0</sub> │
+<sup>  </sup>                └ 1  0  0  0┘└ <b>v</b><sub>1</sub> ┘
+</pre>
+<p>となります。</p>
+
+<p>最後の表現は、単なる変形です。
+縦ベクトルと横ベクトルの積が、</p>
+<pre class="CodeBlock">
+a<sub>0</sub><b>b</b><sub>0</sub> + a<sub>1</sub><b>b</b><sub>1</sub> + a<sub>2</sub><b>b</b><sub>2</sub> + a<sub>3</sub><b>b</b><sub>3</sub>
+<sub>    </sub>                ┌ <b>b</b><sub>0</sub> ┐
+     = [a<sub>0</sub> a<sub>1</sub> a<sub>2</sub> a<sub>3</sub>]│ <b>b</b><sub>1</sub> │
+<sub>    </sub>                │ <b>b</b><sub>2</sub> │
+<sub>    </sub>                └ <b>b</b><sub>3</sub> ┘
+</pre>
+<p>と、書け、さらに行列をはさんだ場合に、</p>
+<pre class="CodeBlock">
+ a<sub>0</sub>m<sub>00</sub><b>b</b><sub>0</sub> + a<sub>0</sub>m<sub>01</sub><b>b</b><sub>1</sub> + a<sub>0</sub>m<sub>02</sub><b>b</b><sub>2</sub> + a<sub>0</sub>m<sub>03</sub><b>b</b><sub>3</sub>
++a<sub>1</sub>m<sub>00</sub><b>b</b><sub>0</sub> + a<sub>1</sub>m<sub>11</sub><b>b</b><sub>1</sub> + a<sub>2</sub>m<sub>12</sub><b>b</b><sub>2</sub> + a<sub>1</sub>m<sub>13</sub><b>b</b><sub>3</sub>
++a<sub>2</sub>m<sub>00</sub><b>b</b><sub>0</sub> + a<sub>2</sub>m<sub>21</sub><b>b</b><sub>1</sub> + a<sub>2</sub>m<sub>22</sub><b>b</b><sub>2</sub> + a<sub>2</sub>m<sub>23</sub><b>b</b><sub>3</sub>
++a<sub>3</sub>m<sub>00</sub><b>b</b><sub>0</sub> + a<sub>3</sub>m<sub>31</sub><b>b</b><sub>1</sub> + a<sub>2</sub>m<sub>32</sub><b>b</b><sub>2</sub> + a<sub>3</sub>m<sub>33</sub><b>b</b><sub>3</sub>
+<sub>    </sub>                ┌ m<sub>00</sub> m<sub>01</sub> m<sub>02</sub> m<sub>03</sub>┐┌ <b>b</b><sub>0</sub> ┐
+     = [a<sub>0</sub> a<sub>1</sub> a<sub>2</sub> a<sub>3</sub>]│ m<sub>10</sub> m<sub>11</sub> m<sub>12</sub> m<sub>13</sub>││ <b>b</b><sub>1</sub> │
+<sub>    </sub>                │ m<sub>20</sub> m<sub>21</sub> m<sub>22</sub> m<sub>23</sub>││ <b>b</b><sub>2</sub> │
+<sub>    </sub>                └ m<sub>30</sub> m<sub>31</sub> m<sub>32</sub> m<sub>33</sub>┘└ <b>b</b><sub>3</sub> ┘
+</pre>
+<p>と、書けるのを使っただけです。</p>
+
+<p><a href="prog2.html#Ferguson"><font color = white>もどる</font></a></p>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<a name = "3rdCurve"><h2>■４つの制御点を通る曲線を求める</h2></a>
+<p>Ferguson / Coons 曲線、</p>
+<pre class="CodeBlock">
+<sup>  </sup>                ┌ 2 -2  1  1┐┌ <b>x</b><sub>0</sub> ┐
+<b>x</b>(t) = [t<sup>3</sup> t<sup>2</sup> t 1]│-3  3 -2 -1││ <b>x</b><sub>1</sub> │
+<sup>  </sup>                │ 0  0  1  0││ <b>v</b><sub>0</sub> │
+<sup>  </sup>                └ 1  0  0  0┘└ <b>v</b><sub>1</sub> ┘
+</pre>
+<p>の式からはじめます。i番目の曲線として、今後 <b>x</b><sub>0</sub> を <b>x</b><sub>i</sub>, <b>x</b><sub>1</sub> を <b>x</b><sub>i+1</sub>,として取り扱います。これに、定義した制御点と、位置及び速度の関係式、</p>
+<pre class="CodeBlock">
+<b>x</b><sub>i  </sub> = <b>P</b><sub>i  </sub>,
+<b>x</b><sub>i+1</sub> = <b>P</b><sub>i+1</sub>,
+<sub> </sub>      1                        ┌ <b>x</b><sub>i  </sub> ┐   1 ┌ 0  2  0  0┐┌ <b>P</b><sub>i-1</sub> ┐
+<b>v</b><sub>i  </sub> = ― (<b>P</b><sub>i+1</sub> - <b>P</b><sub>i-1</sub>),<sub> </sub>   ⇒    │ <b>x</b><sub>i+1</sub> │= ― │ 0  0  2  0││ <b>P</b><sub>i  </sub> │
+<sub> </sub>      2                        │ <b>v</b><sub>i  </sub> │   2 │-1  0  1  0││ <b>P</b><sub>i+1</sub> │
+<sub> </sub>      1                        └ <b>v</b><sub>i+1</sub> ┘     └ 0 -1  0  1┘└ <b>P</b><sub>i+2</sub> ┘
+<b>v</b><sub>i+1</sub> = ― (<b>P</b><sub>i+2</sub> - <b>P</b><sub>i  </sub>),
+<sub> </sub>      2
+</pre>
+<p>を、代入すると、</p>
+<pre class="CodeBlock">
+<sup>   </sup>                ┌ 2 -2  1  1┐ 1 ┌ 0  2  0  0┐┌ <b>P</b><sub>i-1</sub> ┐
+<b>x</b><sub>i</sub>(t) = [t<sup>3</sup> t<sup>2</sup> t 1]│-3  3 -2 -1│― │ 0  0  2  0││ <b>P</b><sub>i  </sub> │
+<sup>   </sup>                │ 0  0  1  0│ 2 │-1  0  1  0││ <b>P</b><sub>i+1</sub> │
+<sup>   </sup>                └ 1  0  0  0┘   └ 0 -1  0  1┘└ <b>P</b><sub>i+2</sub> ┘
+
+<sup>   </sup>       1            ┌ -1  3 -3  1┐┌ <b>P</b><sub>i-1</sub> ┐
+<sub> </sub>      = ― [t<sup>3</sup> t<sup>2</sup> t 1]│  2 -5  4 -1││ <b>P</b><sub>i  </sub> │
+<sup>   </sup>       2            │ -1  0  1  0││ <b>P</b><sub>i+1</sub> │
+<sup>   </sup>                    └  0  2  0  0┘└ <b>P</b><sub>i+2</sub> ┘
+</pre>
+<p>となります。</p>
+
+<p><a href="prog2.html#3rdCurve"><font color = white>もどる</font></a></p>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<a name = "Edge"><h2>■境界での曲線の方程式を求める</h2></a>
+<p>境界以外の場合と同様に、位置及び速度と制御点の関係式、</p>
+<pre class="CodeBlock">
+<b>x</b><sub>0</sub> = <b>P</b><sub>0</sub>,
+<b>x</b><sub>1</sub> = <b>P</b><sub>1</sub>,
+<sub> </sub>     1
+<b>v</b><sub>1</sub> = ― (<b>P</b><sub>2</sub> - <b>P</b><sub>0</sub>),
+<sub> </sub>     2
+<sub> </sub>                                      1
+<b>v</b><sub>0</sub> =  2 (<b>x</b><sub>1</sub> - <b>x</b><sub>0</sub>) - <b>v</b><sub>1</sub> = 2 (<b>P</b><sub>1</sub> - <b>P</b><sub>0</sub>) - ― (<b>P</b><sub>2</sub> - <b>P</b><sub>0</sub>),
+<sub> </sub>                                      2
+</pre>
+<p>を。Ferguson / Coons 曲線の式に代入します。最後の <b>v</b><sub>0</sub> の項が、
+適当な平均速度を与える様に推測した境界の速度です。
+代入すると、
+</p>
+<pre class="CodeBlock">
+<sup>   </sup>      1            ┌ 2 -2  1  1┐ 1 ┌ 0  2  0  0┐┌<sub>  </sub>0<sub>  </sub>┐
+<b>x</b><sub>0</sub>(t) = ― [t<sup>3</sup> t<sup>2</sup> t 1]│-3  3 -2 -1│― │ 0  0  2  0││ <b>P</b><sub>0</sub> │
+<sup>   </sup>      2            │ 0  0  1  0│ 2 │ 0 -3  4 -1││ <b>P</b><sub>1</sub> │
+<sup>   </sup>                   └ 1  0  0  0┘   └ 0 -1  0  1┘└ <b>P</b><sub>2</sub> ┘
+<sup>   </sup>      1            ┌  0  0  0  0┐┌ <b>0</b><sub>   </sub> ┐
+<b> </b><sub> </sub>    = ― [t<sup>3</sup> t<sup>2</sup> t 1]│  0  1 -2  1││ <b>P</b><sub>0  </sub> │
+<sup>   </sup>      2            │  0 -3  4 -1││ <b>P</b><sub>1  </sub> │
+<sup>   </sup>                   └  0  2  0  0┘└ <b>P</b><sub>2  </sub> ┘
+</pre>
+
+<p>と、なります。</p>
+<p>同様に、最後の曲線は、</p>
+<pre class="CodeBlock">
+<b>x</b><sub>n  </sub> = <b>P</b><sub>n</sub>,
+<b>x</b><sub>n+1</sub> = <b>P</b><sub>n+1</sub>,
+<sub> </sub>     1
+<b>v</b><sub>n</sub> = ― (<b>P</b><sub>n+1</sub> - <b>P</b><sub>n-1</sub>),
+<sub> </sub>     2
+<sub>  </sub>                                          1
+<b>v</b><sub>n+1</sub> =  2 (<b>x</b><sub>n+1</sub> - <b>x</b><sub>n</sub>) - <b>v</b><sub>n</sub> = 2 (<b>P</b><sub>n+1</sub> - <b>P</b><sub>n</sub>) - ― (<b>P</b><sub>n+1</sub> - <b>P</b><sub>n-1</sub>),
+<sub>  </sub>                                          2
+</pre>
+<p>から、</p>
+<pre class="CodeBlock">
+<sup>   </sup>      1            ┌ 2 -2  1  1┐ 1 ┌ 0  2  0  0┐┌ <b>P</b><sub>n-1</sub> ┐
+<b>x</b><sub>n</sub>(t) = ― [t<sup>3</sup> t<sup>2</sup> t 1]│-3  3 -2 -1│― │ 0  0  2  0││ <b>P</b><sub>n  </sub> │
+<sup>   </sup>      2            │ 0  0  1  0│ 2 │-1  0  1  0││ <b>P</b><sub>n+1</sub> │
+<sup>   </sup>                   └ 1  0  0  0┘   └ 1 -4  3  0┘└ <b>0</b><sub>   </sub> ┘
+<sup>   </sup>      1            ┌  0  0  0  0┐┌ <b>P</b><sub>n-1</sub> ┐
+<b> </b><sub> </sub>    = ― [t<sup>3</sup> t<sup>2</sup> t 1]│  1 -2  1  0││ <b>P</b><sub>n  </sub> │
+<sup>   </sup>      2            │ -1  0  1  0││ <b>P</b><sub>n+1</sub> │
+<sup>   </sup>                   └  0  2  0  0┘└ <b>0</b><sub>   </sub> ┘
+</pre>
+<p>と、なります。</p>
+
+<p><a href="prog2.html#Edge"><font color = white>もどる</font></a></p>
+
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<center>
+<hr>
+<p><a href="index.html">もどる</a></p>
+<p><a href="mailto:imagire@gmail.com">imagire@gmail.com</A></P>
+</center>
+</body>
+</html>

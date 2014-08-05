@@ -1,0 +1,312 @@
+<HTML>
+<HEAD>
+<TITLE>draw.cpp</TITLE>
+<meta name="GENERATOR" content="cpp2html 2.1 by Niisaka">
+<meta http-equiv="Content-Type" content="text/html">
+</HEAD>
+<BODY TEXT="#000000" BGCOLOR="#FFFFFF">
+<PRE><FONT COLOR="#40F628">0001:</FONT> <FONT COLOR="#008000">// ----------------------------------------------------------------------------</FONT>
+<FONT COLOR="#40F628">0002:</FONT> <FONT COLOR="#008000">//</FONT>
+<FONT COLOR="#40F628">0003:</FONT> <FONT COLOR="#008000">// draw.cpp - 描画部分</FONT>
+<FONT COLOR="#40F628">0004:</FONT> <FONT COLOR="#008000">// </FONT>
+<FONT COLOR="#40F628">0005:</FONT> <FONT COLOR="#008000">// Copyright (c) 2001 if (if@edokko.com)</FONT>
+<FONT COLOR="#40F628">0006:</FONT> <FONT COLOR="#008000">// All Rights Reserved.</FONT>
+<FONT COLOR="#40F628">0007:</FONT> <FONT COLOR="#008000">//</FONT>
+<FONT COLOR="#40F628">0008:</FONT> <FONT COLOR="#008000">// ----------------------------------------------------------------------------</FONT>
+<FONT COLOR="#40F628">0009:</FONT> <FONT COLOR="#0000FF">#define</FONT> STRICT
+<FONT COLOR="#40F628">0010:</FONT> 
+<FONT COLOR="#40F628">0011:</FONT> <FONT COLOR="#0000FF">#include</FONT> &lt;windows.h&gt;
+<FONT COLOR="#40F628">0012:</FONT> <FONT COLOR="#0000FF">#include</FONT> "<FONT COLOR="#600000">main.h</FONT>"
+<FONT COLOR="#40F628">0013:</FONT> <FONT COLOR="#0000FF">#include</FONT> "<FONT COLOR="#600000">draw.h</FONT>"
+<FONT COLOR="#40F628">0014:</FONT> <FONT COLOR="#0000FF">#include</FONT> "<FONT COLOR="#600000">load.h</FONT>"
+<FONT COLOR="#40F628">0015:</FONT> 
+<FONT COLOR="#40F628">0016:</FONT> <FONT COLOR="#008000">// 座標変換テーブル</FONT>
+<FONT COLOR="#40F628">0017:</FONT> LPDIRECT3DTEXTURE8      pTransTexture=NULL;
+<FONT COLOR="#40F628">0018:</FONT> 
+<FONT COLOR="#40F628">0019:</FONT> <FONT COLOR="#008000">// テクスチャーレンダリングのためのオブジェクト</FONT>
+<FONT COLOR="#40F628">0020:</FONT> LPDIRECT3DSURFACE8      pBackbuffer = NULL;
+<FONT COLOR="#40F628">0021:</FONT> DWORD                   hVertexShader=~0;
+<FONT COLOR="#40F628">0022:</FONT> DWORD                   hPixelShader=~0;
+<FONT COLOR="#40F628">0023:</FONT> LPDIRECT3DVERTEXBUFFER8 pVB = NULL;
+<FONT COLOR="#40F628">0024:</FONT> LPDIRECT3DINDEXBUFFER8  pIB = NULL;
+<FONT COLOR="#40F628">0025:</FONT> 
+<FONT COLOR="#40F628">0026:</FONT> <FONT COLOR="#0000FF">const</FONT> <FONT COLOR="#0000FF">int</FONT> nTempTex = 2;
+<FONT COLOR="#40F628">0027:</FONT> LPDIRECT3DTEXTURE8      pTmpTexture[nTempTex];
+<FONT COLOR="#40F628">0028:</FONT> LPDIRECT3DSURFACE8      pTmpSurface[nTempTex];
+<FONT COLOR="#40F628">0029:</FONT> 
+<FONT COLOR="#40F628">0030:</FONT> LPDIRECT3DTEXTURE8      pInitTexture=NULL;  <FONT COLOR="#008000">// 初期化テクスチャー</FONT>
+<FONT COLOR="#40F628">0031:</FONT> 
+<FONT COLOR="#40F628">0032:</FONT> <FONT COLOR="#008000">// ----------------------------------------------------------------------------</FONT>
+<FONT COLOR="#40F628">0033:</FONT> <FONT COLOR="#008000">// 頂点の定義</FONT>
+<FONT COLOR="#40F628">0034:</FONT> <FONT COLOR="#0000FF">typedef</FONT> <FONT COLOR="#0000FF">struct</FONT> {
+<FONT COLOR="#40F628">0035:</FONT>     <FONT COLOR="#0000FF">float</FONT> x,y,z;
+<FONT COLOR="#40F628">0036:</FONT>     <FONT COLOR="#0000FF">float</FONT> tu,tv;
+<FONT COLOR="#40F628">0037:</FONT> }D3D_MY_VERTEX;
+<FONT COLOR="#40F628">0038:</FONT> <FONT COLOR="#0000FF">#define</FONT> D3DFVF_MY_VERTEX        (D3DFVF_XYZ | D3DFVF_TEX1)
+<FONT COLOR="#40F628">0039:</FONT> 
+<FONT COLOR="#40F628">0040:</FONT> DWORD dwMyDecl[] = {
+<FONT COLOR="#40F628">0041:</FONT>     D3DVSD_STREAM(0),
+<FONT COLOR="#40F628">0042:</FONT>     D3DVSD_REG(D3DVSDE_POSITION, D3DVSDT_FLOAT3 ),          <FONT COLOR="#008000">//D3DVSDE_POSITION,  0</FONT>
+<FONT COLOR="#40F628">0043:</FONT>     D3DVSD_REG(D3DVSDE_TEXCOORD0,D3DVSDT_FLOAT2 ),          <FONT COLOR="#008000">//D3DVSDE_TEXCOORD0, 7  </FONT>
+<FONT COLOR="#40F628">0044:</FONT>     D3DVSD_END()
+<FONT COLOR="#40F628">0045:</FONT> };
+<FONT COLOR="#40F628">0046:</FONT> 
+<FONT COLOR="#40F628">0047:</FONT> <FONT COLOR="#008000">//-----------------------------------------------------------------------------</FONT>
+<FONT COLOR="#40F628">0048:</FONT> <FONT COLOR="#008000">// Name: InitRenderingTexture()</FONT>
+<FONT COLOR="#40F628">0049:</FONT> <FONT COLOR="#008000">// Desc: テクスチャー描画用の下準備</FONT>
+<FONT COLOR="#40F628">0050:</FONT> <FONT COLOR="#008000">//-----------------------------------------------------------------------------</FONT>
+<FONT COLOR="#40F628">0051:</FONT> HRESULT InitRenderingTexture(LPDIRECT3DDEVICE8 lpD3DDev)
+<FONT COLOR="#40F628">0052:</FONT> {
+<FONT COLOR="#40F628">0053:</FONT>     HRESULT hr;
+<FONT COLOR="#40F628">0054:</FONT>     DWORD i;
+<FONT COLOR="#40F628">0055:</FONT>     
+<FONT COLOR="#40F628">0056:</FONT>     <FONT COLOR="#008000">// 頂点バッファの作成 </FONT>
+<FONT COLOR="#40F628">0057:</FONT>     D3D_MY_VERTEX *pBlurDest;
+<FONT COLOR="#40F628">0058:</FONT>     WORD *pIndex;
+<FONT COLOR="#40F628">0059:</FONT>     lpD3DDev-&gt;CreateVertexBuffer( 4 * <FONT COLOR="#0000FF">sizeof</FONT>(D3D_MY_VERTEX),
+<FONT COLOR="#40F628">0060:</FONT>                                 D3DUSAGE_WRITEONLY, D3DFVF_MY_VERTEX, D3DPOOL_MANAGED,
+<FONT COLOR="#40F628">0061:</FONT>                                 &amp;pVB );
+<FONT COLOR="#40F628">0062:</FONT>     <FONT COLOR="#008000">// 頂点をセットアップ</FONT>
+<FONT COLOR="#40F628">0063:</FONT>     pVB-&gt;Lock ( 0, 0, (BYTE**)&amp;pBlurDest, 0 );
+<FONT COLOR="#40F628">0064:</FONT>     <FONT COLOR="#0000FF">for</FONT> (i = 0; i &lt; 4; i++) {
+<FONT COLOR="#40F628">0065:</FONT>         pBlurDest-&gt;x   = (i == 0 || i == 1)?-1:(<FONT COLOR="#0000FF">float</FONT>)1;
+<FONT COLOR="#40F628">0066:</FONT>         pBlurDest-&gt;y   = (i == 0 || i == 2)?-1:(<FONT COLOR="#0000FF">float</FONT>)1;
+<FONT COLOR="#40F628">0067:</FONT>         pBlurDest-&gt;z   = 0.5f;
+<FONT COLOR="#40F628">0068:</FONT>         pBlurDest-&gt;tu = (i == 2 || i == 3)?1:(<FONT COLOR="#0000FF">float</FONT>)0;
+<FONT COLOR="#40F628">0069:</FONT>         pBlurDest-&gt;tv = (i == 0 || i == 2)?1:(<FONT COLOR="#0000FF">float</FONT>)0;
+<FONT COLOR="#40F628">0070:</FONT>         pBlurDest++;
+<FONT COLOR="#40F628">0071:</FONT>     }       
+<FONT COLOR="#40F628">0072:</FONT>     pVB-&gt;Unlock ();
+<FONT COLOR="#40F628">0073:</FONT>     <FONT COLOR="#008000">// インデックスをセットアップ</FONT>
+<FONT COLOR="#40F628">0074:</FONT>     lpD3DDev-&gt;CreateIndexBuffer( 6 * <FONT COLOR="#0000FF">sizeof</FONT>(WORD),
+<FONT COLOR="#40F628">0075:</FONT>                                0,
+<FONT COLOR="#40F628">0076:</FONT>                                D3DFMT_INDEX16, D3DPOOL_MANAGED,
+<FONT COLOR="#40F628">0077:</FONT>                                &amp;pIB );
+<FONT COLOR="#40F628">0078:</FONT>     pIB-&gt;Lock ( 0, 0, (BYTE**)&amp;pIndex, 0 );
+<FONT COLOR="#40F628">0079:</FONT>     pIndex[0] = 0;  pIndex[1] = 1;  pIndex[2] = 2;
+<FONT COLOR="#40F628">0080:</FONT>     pIndex[3] = 1;  pIndex[4] = 3;  pIndex[5] = 2;
+<FONT COLOR="#40F628">0081:</FONT>     pIB-&gt;Unlock ();
+<FONT COLOR="#40F628">0082:</FONT> 
+<FONT COLOR="#40F628">0083:</FONT>     <FONT COLOR="#008000">// 描画用テクスチャーを用意する</FONT>
+<FONT COLOR="#40F628">0084:</FONT>     D3DSURFACE_DESC Desc;
+<FONT COLOR="#40F628">0085:</FONT>     LPDIRECT3DSURFACE8 lpZbuffer = NULL;
+<FONT COLOR="#40F628">0086:</FONT>     <FONT COLOR="#0000FF">if</FONT>( FAILED(hr = lpD3DDev-&gt;GetRenderTarget(&amp;pBackbuffer))) <FONT COLOR="#0000FF">return</FONT> hr;
+<FONT COLOR="#40F628">0087:</FONT>     <FONT COLOR="#0000FF">if</FONT>( FAILED(hr = pBackbuffer-&gt;GetDesc( &amp;Desc ))) <FONT COLOR="#0000FF">return</FONT> hr;
+<FONT COLOR="#40F628">0088:</FONT> 
+<FONT COLOR="#40F628">0089:</FONT>     <FONT COLOR="#008000">// 深度バッファのサーフェスを確保する</FONT>
+<FONT COLOR="#40F628">0090:</FONT>     <FONT COLOR="#0000FF">if</FONT>( FAILED(hr = lpD3DDev-&gt;GetDepthStencilSurface( &amp;lpZbuffer ))) <FONT COLOR="#0000FF">return</FONT> hr;
+<FONT COLOR="#40F628">0091:</FONT>     
+<FONT COLOR="#40F628">0092:</FONT>     <FONT COLOR="#008000">// テクスチャー作成用のリソースを確保する</FONT>
+<FONT COLOR="#40F628">0093:</FONT>     <FONT COLOR="#0000FF">for</FONT> (i = 0; i &lt; nTempTex; ++i) {
+<FONT COLOR="#40F628">0094:</FONT>         <FONT COLOR="#008000">// テクスチャーの生成</FONT>
+<FONT COLOR="#40F628">0095:</FONT>         <FONT COLOR="#0000FF">if</FONT>( FAILED(hr = lpD3DDev-&gt;CreateTexture(Desc.Width, Desc.Height, 1
+<FONT COLOR="#40F628">0096:</FONT>                                 , D3DUSAGE_RENDERTARGET, Desc.Format, D3DPOOL_DEFAULT, &amp;pTmpTexture[i]))) <FONT COLOR="#0000FF">return</FONT> hr;
+<FONT COLOR="#40F628">0097:</FONT>         <FONT COLOR="#008000">// テクスチャーとサーフェスを関連づける</FONT>
+<FONT COLOR="#40F628">0098:</FONT>         <FONT COLOR="#0000FF">if</FONT>( FAILED(hr = pTmpTexture[i]-&gt;GetSurfaceLevel(0,&amp;pTmpSurface[i]))) <FONT COLOR="#0000FF">return</FONT> hr;
+<FONT COLOR="#40F628">0099:</FONT>         <FONT COLOR="#008000">// テクスチャー用の描画と深度バッファを関連付ける</FONT>
+<FONT COLOR="#40F628">0100:</FONT>         <FONT COLOR="#0000FF">if</FONT>( FAILED(hr = lpD3DDev-&gt;SetRenderTarget(pTmpSurface[i], NULL ))) <FONT COLOR="#0000FF">return</FONT> hr;
+<FONT COLOR="#40F628">0101:</FONT>     }
+<FONT COLOR="#40F628">0102:</FONT> 
+<FONT COLOR="#40F628">0103:</FONT>     <FONT COLOR="#008000">// 描画を元の画面に戻す</FONT>
+<FONT COLOR="#40F628">0104:</FONT>     lpD3DDev-&gt;SetRenderTarget(pBackbuffer, lpZbuffer );
+<FONT COLOR="#40F628">0105:</FONT>     
+<FONT COLOR="#40F628">0106:</FONT>     <FONT COLOR="#008000">// シェ－ダーのロード</FONT>
+<FONT COLOR="#40F628">0107:</FONT>     <FONT COLOR="#0000FF">if</FONT> ( FAILED(CVertexShaderMgr::Load(lpD3DDev, "<FONT COLOR="#600000">vs.vsh</FONT>",     &amp;hVertexShader, dwMyDecl)) ) <FONT COLOR="#0000FF">return</FONT> hr;
+<FONT COLOR="#40F628">0108:</FONT>     <FONT COLOR="#0000FF">if</FONT> ( FAILED( CPixelShaderMgr::Load(lpD3DDev, "<FONT COLOR="#600000">ps.psh</FONT>",    &amp;hPixelShader)) ) <FONT COLOR="#0000FF">return</FONT> hr;
+<FONT COLOR="#40F628">0109:</FONT>     
+<FONT COLOR="#40F628">0110:</FONT>     <FONT COLOR="#0000FF">return</FONT> S_OK;
+<FONT COLOR="#40F628">0111:</FONT> }
+<FONT COLOR="#40F628">0112:</FONT> <FONT COLOR="#008000">//-----------------------------------------------------------------------------</FONT>
+<FONT COLOR="#40F628">0113:</FONT> <FONT COLOR="#008000">// Name: MakeInitTexture()</FONT>
+<FONT COLOR="#40F628">0114:</FONT> <FONT COLOR="#008000">// Desc: 座標変換マップ</FONT>
+<FONT COLOR="#40F628">0115:</FONT> <FONT COLOR="#008000">//-----------------------------------------------------------------------------</FONT>
+<FONT COLOR="#40F628">0116:</FONT> VOID MakeInitTexture(D3DXVECTOR4* pOut, D3DXVECTOR2 *pTexCoord, D3DXVECTOR2 *pTexelSize, LPVOID pData)
+<FONT COLOR="#40F628">0117:</FONT> {
+<FONT COLOR="#40F628">0118:</FONT>     <FONT COLOR="#0000FF">float</FONT> x = 2*pTexCoord-&gt;x-1;
+<FONT COLOR="#40F628">0119:</FONT>     <FONT COLOR="#0000FF">float</FONT> y = 2*pTexCoord-&gt;y-1;
+<FONT COLOR="#40F628">0120:</FONT>     
+<FONT COLOR="#40F628">0121:</FONT>     <FONT COLOR="#0000FF">float</FONT> dx = 5.0f*((0&lt;x)?x:-x);
+<FONT COLOR="#40F628">0122:</FONT>     <FONT COLOR="#0000FF">float</FONT> dy = 5.0f*((0&lt;y)?y:-y);
+<FONT COLOR="#40F628">0123:</FONT>     
+<FONT COLOR="#40F628">0124:</FONT>     <FONT COLOR="#0000FF">while</FONT>(1.0f&lt;=dx)dx -= 1.0f;
+<FONT COLOR="#40F628">0125:</FONT>     <FONT COLOR="#0000FF">while</FONT>(1.0f&lt;=dy)dy -= 1.0f;
+<FONT COLOR="#40F628">0126:</FONT>     <FONT COLOR="#0000FF">float</FONT> f = max(dx,dy);
+<FONT COLOR="#40F628">0127:</FONT> 
+<FONT COLOR="#40F628">0128:</FONT>     pOut-&gt;x = (0&lt;x  )?f:0;
+<FONT COLOR="#40F628">0129:</FONT>     pOut-&gt;y = (0&lt;y  )?f:0;
+<FONT COLOR="#40F628">0130:</FONT>     pOut-&gt;z = (0&lt;x*y)?f:0;
+<FONT COLOR="#40F628">0131:</FONT>     pOut-&gt;w = 1.0f;
+<FONT COLOR="#40F628">0132:</FONT> }
+<FONT COLOR="#40F628">0133:</FONT> 
+<FONT COLOR="#40F628">0134:</FONT> <FONT COLOR="#008000">//-----------------------------------------------------------------------------</FONT>
+<FONT COLOR="#40F628">0135:</FONT> <FONT COLOR="#008000">// Name: MakeTexture()</FONT>
+<FONT COLOR="#40F628">0136:</FONT> <FONT COLOR="#008000">// Desc: 座標変換マップ</FONT>
+<FONT COLOR="#40F628">0137:</FONT> <FONT COLOR="#008000">//-----------------------------------------------------------------------------</FONT>
+<FONT COLOR="#40F628">0138:</FONT> VOID MakeTexture(D3DXVECTOR4* pOut, D3DXVECTOR2 *pTexCoord, D3DXVECTOR2 *pTexelSize, LPVOID pData)
+<FONT COLOR="#40F628">0139:</FONT> {
+<FONT COLOR="#40F628">0140:</FONT>     <FONT COLOR="#0000FF">float</FONT> x = 2*pTexCoord-&gt;x-1;
+<FONT COLOR="#40F628">0141:</FONT>     <FONT COLOR="#0000FF">float</FONT> y = 2*pTexCoord-&gt;y-1;
+<FONT COLOR="#40F628">0142:</FONT>     <FONT COLOR="#0000FF">float</FONT> Ar = 0.378f;
+<FONT COLOR="#40F628">0143:</FONT>     <FONT COLOR="#0000FF">float</FONT> Ai = 0.183f;
+<FONT COLOR="#40F628">0144:</FONT>     
+<FONT COLOR="#40F628">0145:</FONT>     <FONT COLOR="#0000FF">float</FONT> x1 = x*x-y*y+Ar;
+<FONT COLOR="#40F628">0146:</FONT>     <FONT COLOR="#0000FF">float</FONT> y1 = 2*x*y+Ai;
+<FONT COLOR="#40F628">0147:</FONT>     
+<FONT COLOR="#40F628">0148:</FONT>     min(1,max(x1,0));
+<FONT COLOR="#40F628">0149:</FONT>     min(1,max(y1,0));
+<FONT COLOR="#40F628">0150:</FONT> 
+<FONT COLOR="#40F628">0151:</FONT>     pOut-&gt;x = 0.0f;
+<FONT COLOR="#40F628">0152:</FONT>     pOut-&gt;y = 0.5f*x1+0.5f;
+<FONT COLOR="#40F628">0153:</FONT>     pOut-&gt;z = 0.5f*y1+0.5;
+<FONT COLOR="#40F628">0154:</FONT>     pOut-&gt;w = 1.0f;
+<FONT COLOR="#40F628">0155:</FONT> }
+<FONT COLOR="#40F628">0156:</FONT> 
+<FONT COLOR="#40F628">0157:</FONT> <FONT COLOR="#008000">//-----------------------------------------------------------------------------</FONT>
+<FONT COLOR="#40F628">0158:</FONT> <FONT COLOR="#008000">// Name: InitRender()</FONT>
+<FONT COLOR="#40F628">0159:</FONT> <FONT COLOR="#008000">// Desc: Load the mesh and build the material and texture arrays</FONT>
+<FONT COLOR="#40F628">0160:</FONT> <FONT COLOR="#008000">//-----------------------------------------------------------------------------</FONT>
+<FONT COLOR="#40F628">0161:</FONT> HRESULT InitRender(LPDIRECT3DDEVICE8 lpD3DDev)
+<FONT COLOR="#40F628">0162:</FONT> {
+<FONT COLOR="#40F628">0163:</FONT>     DWORD i;
+<FONT COLOR="#40F628">0164:</FONT>     HRESULT hr;
+<FONT COLOR="#40F628">0165:</FONT> 
+<FONT COLOR="#40F628">0166:</FONT>     <FONT COLOR="#008000">// 変換テクスチャー</FONT>
+<FONT COLOR="#40F628">0167:</FONT>     <FONT COLOR="#0000FF">if</FONT>( FAILED(hr = lpD3DDev-&gt;CreateTexture(512, 512, 1
+<FONT COLOR="#40F628">0168:</FONT>                                 , D3DUSAGE_RENDERTARGET, D3DFMT_X8R8G8B8
+<FONT COLOR="#40F628">0169:</FONT>                                 , D3DPOOL_DEFAULT, &amp;pTransTexture))) <FONT COLOR="#0000FF">return</FONT> hr;
+<FONT COLOR="#40F628">0170:</FONT>     <FONT COLOR="#0000FF">if</FONT>( FAILED(hr = D3DXFillTexture(pTransTexture, MakeTexture, NULL))) <FONT COLOR="#0000FF">return</FONT> hr;
+<FONT COLOR="#40F628">0171:</FONT> 
+<FONT COLOR="#40F628">0172:</FONT>     <FONT COLOR="#008000">// 初期化テクスチャー</FONT>
+<FONT COLOR="#40F628">0173:</FONT>     <FONT COLOR="#0000FF">if</FONT>( FAILED(hr = lpD3DDev-&gt;CreateTexture(512, 512, 1
+<FONT COLOR="#40F628">0174:</FONT>                                 , D3DUSAGE_RENDERTARGET, D3DFMT_X8R8G8B8
+<FONT COLOR="#40F628">0175:</FONT>                                 , D3DPOOL_DEFAULT, &amp;pInitTexture))) <FONT COLOR="#0000FF">return</FONT> hr;
+<FONT COLOR="#40F628">0176:</FONT>     <FONT COLOR="#0000FF">if</FONT>( FAILED(hr = D3DXFillTexture(pInitTexture, MakeInitTexture, NULL))) <FONT COLOR="#0000FF">return</FONT> hr;
+<FONT COLOR="#40F628">0177:</FONT> 
+<FONT COLOR="#40F628">0178:</FONT>     <FONT COLOR="#008000">// ぼけテクスチャー用の初期化</FONT>
+<FONT COLOR="#40F628">0179:</FONT>     InitRenderingTexture(lpD3DDev);
+<FONT COLOR="#40F628">0180:</FONT>     
+<FONT COLOR="#40F628">0181:</FONT>     <FONT COLOR="#008000">// 不変なレジスタの設定</FONT>
+<FONT COLOR="#40F628">0182:</FONT>     lpD3DDev-&gt;SetRenderState( D3DRS_ZENABLE, TRUE );
+<FONT COLOR="#40F628">0183:</FONT>     lpD3DDev-&gt;SetRenderState( D3DRS_LIGHTING,  FALSE );
+<FONT COLOR="#40F628">0184:</FONT>     lpD3DDev-&gt;SetTextureStageState(0, D3DTSS_COLOROP,   D3DTOP_SELECTARG1);
+<FONT COLOR="#40F628">0185:</FONT>     lpD3DDev-&gt;SetTextureStageState(0, D3DTSS_COLORARG1, D3DTA_TEXTURE);
+<FONT COLOR="#40F628">0186:</FONT>     <FONT COLOR="#0000FF">for</FONT> (i = 0; i &lt; 1; ++i) {
+<FONT COLOR="#40F628">0187:</FONT>         lpD3DDev-&gt;SetTextureStageState(i, D3DTSS_MAGFILTER, D3DTEXF_LINEAR);
+<FONT COLOR="#40F628">0188:</FONT>         lpD3DDev-&gt;SetTextureStageState(i, D3DTSS_MINFILTER, D3DTEXF_LINEAR);
+<FONT COLOR="#40F628">0189:</FONT>         lpD3DDev-&gt;SetTextureStageState(i, D3DTSS_MIPFILTER, D3DTEXF_NONE);
+<FONT COLOR="#40F628">0190:</FONT>         lpD3DDev-&gt;SetTextureStageState(i, D3DTSS_ADDRESSU,  D3DTADDRESS_CLAMP);
+<FONT COLOR="#40F628">0191:</FONT>         lpD3DDev-&gt;SetTextureStageState(i, D3DTSS_ADDRESSV,  D3DTADDRESS_CLAMP);
+<FONT COLOR="#40F628">0192:</FONT>     }
+<FONT COLOR="#40F628">0193:</FONT> 
+<FONT COLOR="#40F628">0194:</FONT> 
+<FONT COLOR="#40F628">0195:</FONT>     <FONT COLOR="#0000FF">return</FONT> S_OK;
+<FONT COLOR="#40F628">0196:</FONT> }
+<FONT COLOR="#40F628">0197:</FONT> 
+<FONT COLOR="#40F628">0198:</FONT> <FONT COLOR="#008000">//-----------------------------------------------------------------------------</FONT>
+<FONT COLOR="#40F628">0199:</FONT> <FONT COLOR="#008000">// Name: Render()</FONT>
+<FONT COLOR="#40F628">0200:</FONT> <FONT COLOR="#008000">// Desc: Draws the scene</FONT>
+<FONT COLOR="#40F628">0201:</FONT> <FONT COLOR="#008000">//-----------------------------------------------------------------------------</FONT>
+<FONT COLOR="#40F628">0202:</FONT> VOID Render(LPDIRECT3DDEVICE8 lpD3DDev)
+<FONT COLOR="#40F628">0203:</FONT> {
+<FONT COLOR="#40F628">0204:</FONT>     Sleep(50);
+<FONT COLOR="#40F628">0205:</FONT>     D3DXMATRIX mWorld, mView, mProj, m;
+<FONT COLOR="#40F628">0206:</FONT>     
+<FONT COLOR="#40F628">0207:</FONT>     <FONT COLOR="#0000FF">static</FONT> <FONT COLOR="#0000FF">int</FONT> idx = 0;
+<FONT COLOR="#40F628">0208:</FONT>     idx=1-idx;
+<FONT COLOR="#40F628">0209:</FONT> 
+<FONT COLOR="#40F628">0210:</FONT>     LPDIRECT3DSURFACE8 lpZbuffer = NULL;
+<FONT COLOR="#40F628">0211:</FONT>     lpD3DDev-&gt;GetDepthStencilSurface( &amp;lpZbuffer );
+<FONT COLOR="#40F628">0212:</FONT>     lpD3DDev-&gt;SetRenderTarget(pTmpSurface[idx], lpZbuffer);
+<FONT COLOR="#40F628">0213:</FONT>     lpD3DDev-&gt;Clear(0,NULL,D3DCLEAR_TARGET | D3DCLEAR_ZBUFFER, D3DCOLOR_XRGB(0,0,0),1.0f,0);
+<FONT COLOR="#40F628">0214:</FONT> 
+<FONT COLOR="#40F628">0215:</FONT>     lpD3DDev-&gt;SetTexture(0, pTransTexture);
+<FONT COLOR="#40F628">0216:</FONT>     lpD3DDev-&gt;SetTexture(1, pTmpTexture[1-idx]);
+<FONT COLOR="#40F628">0217:</FONT>     lpD3DDev-&gt;SetVertexShader(hVertexShader);
+<FONT COLOR="#40F628">0218:</FONT>     lpD3DDev-&gt;SetPixelShader(hPixelShader); 
+<FONT COLOR="#40F628">0219:</FONT>     lpD3DDev-&gt;SetStreamSource(0, pVB, <FONT COLOR="#0000FF">sizeof</FONT>(D3D_MY_VERTEX));
+<FONT COLOR="#40F628">0220:</FONT>     lpD3DDev-&gt;SetIndices(pIB,0);
+<FONT COLOR="#40F628">0221:</FONT>     lpD3DDev-&gt;DrawIndexedPrimitive( D3DPT_TRIANGLELIST, 0, 4, 0, 2 );
+<FONT COLOR="#40F628">0222:</FONT> 
+<FONT COLOR="#40F628">0223:</FONT>     <FONT COLOR="#0000FF">static</FONT> <FONT COLOR="#0000FF">int</FONT> init=1;
+<FONT COLOR="#40F628">0224:</FONT>     <FONT COLOR="#0000FF">if</FONT>(init){<FONT COLOR="#008000">// 初期化として、変換テクスチャーを最初の模様に設定する</FONT>
+<FONT COLOR="#40F628">0225:</FONT>         init--;
+<FONT COLOR="#40F628">0226:</FONT>         <FONT COLOR="#0000FF">struct</FONT> TLVERTEX
+<FONT COLOR="#40F628">0227:</FONT>         {
+<FONT COLOR="#40F628">0228:</FONT>             <FONT COLOR="#0000FF">float</FONT> x,y,z,rhw;
+<FONT COLOR="#40F628">0229:</FONT>             <FONT COLOR="#0000FF">float</FONT> tu,tv;
+<FONT COLOR="#40F628">0230:</FONT>         };
+<FONT COLOR="#40F628">0231:</FONT>         <FONT COLOR="#0000FF">#define</FONT> FVF_TLVERTEX (D3DFVF_XYZRHW | D3DFVF_TEX1)
+<FONT COLOR="#40F628">0232:</FONT>         <FONT COLOR="#0000FF">float</FONT> scale = 512;
+<FONT COLOR="#40F628">0233:</FONT>         TLVERTEX Vertex[4] = {
+<FONT COLOR="#40F628">0234:</FONT>             <FONT COLOR="#008000">// x       y  z rhw tu tv</FONT>
+<FONT COLOR="#40F628">0235:</FONT>             {    0,    0, 0, 1, 0, 0,},
+<FONT COLOR="#40F628">0236:</FONT>             {scale,    0, 0, 1, 1, 0,},
+<FONT COLOR="#40F628">0237:</FONT>             {scale,scale, 0, 1, 1, 1,},
+<FONT COLOR="#40F628">0238:</FONT>             {    0,scale, 0, 1, 0, 1,},
+<FONT COLOR="#40F628">0239:</FONT>         };
+<FONT COLOR="#40F628">0240:</FONT>         lpD3DDev-&gt;SetTexture( 0, pTransTexture );
+<FONT COLOR="#40F628">0241:</FONT> <FONT COLOR="#008000">//        lpD3DDev-&gt;SetTexture( 0, pInitTexture );</FONT>
+<FONT COLOR="#40F628">0242:</FONT>         lpD3DDev-&gt;SetVertexShader( FVF_TLVERTEX );
+<FONT COLOR="#40F628">0243:</FONT>         lpD3DDev-&gt;SetPixelShader(0);
+<FONT COLOR="#40F628">0244:</FONT>         lpD3DDev-&gt;DrawPrimitiveUP( D3DPT_TRIANGLEFAN, 2, Vertex, <FONT COLOR="#0000FF">sizeof</FONT>( TLVERTEX ) );
+<FONT COLOR="#40F628">0245:</FONT>     }
+<FONT COLOR="#40F628">0246:</FONT>     
+<FONT COLOR="#40F628">0247:</FONT>     <FONT COLOR="#008000">// </FONT>
+<FONT COLOR="#40F628">0248:</FONT>     <FONT COLOR="#008000">// 完成した一枚絵を描画する</FONT>
+<FONT COLOR="#40F628">0249:</FONT>     <FONT COLOR="#008000">// </FONT>
+<FONT COLOR="#40F628">0250:</FONT>     lpD3DDev-&gt;SetRenderTarget(pBackbuffer, lpZbuffer );                 <FONT COLOR="#008000">// 描画をバックバッファに戻す</FONT>
+<FONT COLOR="#40F628">0251:</FONT>     lpD3DDev-&gt;SetVertexShader(hVertexShader);
+<FONT COLOR="#40F628">0252:</FONT>     lpD3DDev-&gt;SetPixelShader(NULL);
+<FONT COLOR="#40F628">0253:</FONT>     lpD3DDev-&gt;SetTexture( 0, pTmpTexture[idx] );
+<FONT COLOR="#40F628">0254:</FONT>     lpD3DDev-&gt;SetStreamSource(0, pVB, <FONT COLOR="#0000FF">sizeof</FONT>(D3D_MY_VERTEX));
+<FONT COLOR="#40F628">0255:</FONT>     lpD3DDev-&gt;SetIndices(pIB,0);
+<FONT COLOR="#40F628">0256:</FONT>     lpD3DDev-&gt;DrawIndexedPrimitive( D3DPT_TRIANGLELIST, 0, 4, 0, 2 );
+<FONT COLOR="#40F628">0257:</FONT> 
+<FONT COLOR="#40F628">0258:</FONT> <FONT COLOR="#0000FF">#if</FONT> 1
+<FONT COLOR="#40F628">0259:</FONT>     <FONT COLOR="#008000">// 変換テクスチャーを描く</FONT>
+<FONT COLOR="#40F628">0260:</FONT>     {
+<FONT COLOR="#40F628">0261:</FONT>         <FONT COLOR="#0000FF">struct</FONT> TLVERTEX
+<FONT COLOR="#40F628">0262:</FONT>         {
+<FONT COLOR="#40F628">0263:</FONT>             <FONT COLOR="#0000FF">float</FONT> x,y,z,rhw;
+<FONT COLOR="#40F628">0264:</FONT>             <FONT COLOR="#0000FF">float</FONT> tu,tv;
+<FONT COLOR="#40F628">0265:</FONT>         };
+<FONT COLOR="#40F628">0266:</FONT>         <FONT COLOR="#0000FF">#define</FONT> FVF_TLVERTEX (D3DFVF_XYZRHW | D3DFVF_TEX1)
+<FONT COLOR="#40F628">0267:</FONT>         <FONT COLOR="#0000FF">float</FONT> scale = 128;
+<FONT COLOR="#40F628">0268:</FONT>         TLVERTEX Vertex[4] = {
+<FONT COLOR="#40F628">0269:</FONT>             <FONT COLOR="#008000">// x  y  z rhw tu tv</FONT>
+<FONT COLOR="#40F628">0270:</FONT>             {    0,    0, 0, 1, 0, 0,},
+<FONT COLOR="#40F628">0271:</FONT>             {scale,    0, 0, 1, 1, 0,},
+<FONT COLOR="#40F628">0272:</FONT>             {scale,scale, 0, 1, 1, 1,},
+<FONT COLOR="#40F628">0273:</FONT>             {    0,scale, 0, 1, 0, 1,},
+<FONT COLOR="#40F628">0274:</FONT>         };
+<FONT COLOR="#40F628">0275:</FONT>         lpD3DDev-&gt;SetTexture( 0, pTransTexture );
+<FONT COLOR="#40F628">0276:</FONT>         lpD3DDev-&gt;SetVertexShader( FVF_TLVERTEX );
+<FONT COLOR="#40F628">0277:</FONT>         lpD3DDev-&gt;SetPixelShader(0);
+<FONT COLOR="#40F628">0278:</FONT>         lpD3DDev-&gt;DrawPrimitiveUP( D3DPT_TRIANGLEFAN, 2, Vertex, <FONT COLOR="#0000FF">sizeof</FONT>( TLVERTEX ) );
+<FONT COLOR="#40F628">0279:</FONT>     }
+<FONT COLOR="#40F628">0280:</FONT> <FONT COLOR="#0000FF">#endif</FONT>
+<FONT COLOR="#40F628">0281:</FONT> }
+<FONT COLOR="#40F628">0282:</FONT> <FONT COLOR="#008000">//-----------------------------------------------------------------------------</FONT>
+<FONT COLOR="#40F628">0283:</FONT> <FONT COLOR="#008000">// Name: CleanRender()</FONT>
+<FONT COLOR="#40F628">0284:</FONT> <FONT COLOR="#008000">// Desc: 後始末</FONT>
+<FONT COLOR="#40F628">0285:</FONT> <FONT COLOR="#008000">//-----------------------------------------------------------------------------</FONT>
+<FONT COLOR="#40F628">0286:</FONT> <FONT COLOR="#0000FF">void</FONT> CleanRender(LPDIRECT3DDEVICE8 lpD3DDev)
+<FONT COLOR="#40F628">0287:</FONT> {
+<FONT COLOR="#40F628">0288:</FONT>     DWORD i;
+<FONT COLOR="#40F628">0289:</FONT> 
+<FONT COLOR="#40F628">0290:</FONT>     <FONT COLOR="#0000FF">for</FONT> (i = 0; i &lt; nTempTex; ++i) {
+<FONT COLOR="#40F628">0291:</FONT>         RELEASE(pTmpSurface[i]);
+<FONT COLOR="#40F628">0292:</FONT>         RELEASE(pTmpTexture [i]);
+<FONT COLOR="#40F628">0293:</FONT>     }
+<FONT COLOR="#40F628">0294:</FONT>     
+<FONT COLOR="#40F628">0295:</FONT>     RELEASE(pTransTexture);
+<FONT COLOR="#40F628">0296:</FONT>     RELEASE(pInitTexture);
+<FONT COLOR="#40F628">0297:</FONT>     
+<FONT COLOR="#40F628">0298:</FONT>     RELEASE(pBackbuffer);
+<FONT COLOR="#40F628">0299:</FONT>     
+<FONT COLOR="#40F628">0300:</FONT>      CPixelShaderMgr::Release(lpD3DDev, &amp;hPixelShader);
+<FONT COLOR="#40F628">0301:</FONT>     CVertexShaderMgr::Release(lpD3DDev, &amp;hVertexShader);
+<FONT COLOR="#40F628">0302:</FONT> }
+<FONT COLOR="#40F628">0303:</FONT> </PRE>
+</BODY>
+</HTML>

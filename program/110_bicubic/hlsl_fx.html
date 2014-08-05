@@ -1,0 +1,114 @@
+<HTML>
+<HEAD>
+<TITLE>hlsl.fx</TITLE>
+<meta name="GENERATOR" content="cpp2html 2.1 by Niisaka">
+<meta http-equiv="Content-Type" content="text/html">
+<meta http-equiv="Content-Style-Type" content="text/css">
+<STYLE TYPE="text/css">
+<!--
+SPAN.comment { color:#008000; font-weight:normal; font-style:normal;}
+SPAN.keyword { color:#0000FF; font-weight:normal; font-style:normal;}
+SPAN.string { color:#600000; font-weight:normal; font-style:normal;}
+SPAN.linenum { color:#A0A0A0; font-weight:normal; font-style:normal;}
+-->
+</STYLE>
+</HEAD>
+<BODY TEXT="#000000" BGCOLOR="#FFFFFF">
+<PRE><SPAN CLASS="linenum">0001:</SPAN> <SPAN CLASS="comment">// ------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0002:</SPAN> <SPAN CLASS="comment">// 双３次フィルタ</SPAN>
+<SPAN CLASS="linenum">0003:</SPAN> <SPAN CLASS="comment">// </SPAN>
+<SPAN CLASS="linenum">0004:</SPAN> <SPAN CLASS="comment">// Copyright (c) 2004 IMAGIRE Takashi. All rights reserved.</SPAN>
+<SPAN CLASS="linenum">0005:</SPAN> <SPAN CLASS="comment">// ------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0006:</SPAN> 
+<SPAN CLASS="linenum">0007:</SPAN> <SPAN CLASS="comment">// ------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0008:</SPAN> <SPAN CLASS="comment">// テクスチャ</SPAN>
+<SPAN CLASS="linenum">0009:</SPAN> <SPAN CLASS="comment">// ------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0010:</SPAN> sampler SrcSamp : <SPAN CLASS="keyword">register</SPAN>(s0);
+<SPAN CLASS="linenum">0011:</SPAN> 
+<SPAN CLASS="linenum">0012:</SPAN> float2 vSize;   <SPAN CLASS="comment">// テクスチャサイズ</SPAN>
+<SPAN CLASS="linenum">0013:</SPAN> float2 d2u;     <SPAN CLASS="comment">// U座標を２テクセルずらす</SPAN>
+<SPAN CLASS="linenum">0014:</SPAN> 
+<SPAN CLASS="linenum">0015:</SPAN> <SPAN CLASS="comment">// ------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0016:</SPAN> <SPAN CLASS="comment">// 頂点シェーダからピクセルシェーダに渡すデータ</SPAN>
+<SPAN CLASS="linenum">0017:</SPAN> <SPAN CLASS="comment">// ------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0018:</SPAN> <SPAN CLASS="keyword">struct</SPAN> VS_OUTPUT
+<SPAN CLASS="linenum">0019:</SPAN> {
+<SPAN CLASS="linenum">0020:</SPAN>     float4 Pos          : POSITION;
+<SPAN CLASS="linenum">0021:</SPAN>     float2 Tex0         : TEXCOORD0;
+<SPAN CLASS="linenum">0022:</SPAN>     float2 Tex1         : TEXCOORD1;
+<SPAN CLASS="linenum">0023:</SPAN>     float2 Tex2         : TEXCOORD2;
+<SPAN CLASS="linenum">0024:</SPAN>     float2 Tex3         : TEXCOORD3;
+<SPAN CLASS="linenum">0025:</SPAN>     float2 Tex4         : TEXCOORD4;
+<SPAN CLASS="linenum">0026:</SPAN>     float2 Tex5         : TEXCOORD5;
+<SPAN CLASS="linenum">0027:</SPAN>     float2 Tex6         : TEXCOORD6;
+<SPAN CLASS="linenum">0028:</SPAN>     float2 Tex7         : TEXCOORD7;
+<SPAN CLASS="linenum">0029:</SPAN> };
+<SPAN CLASS="linenum">0030:</SPAN> 
+<SPAN CLASS="linenum">0031:</SPAN> <SPAN CLASS="comment">// ------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0032:</SPAN> <SPAN CLASS="comment">// ピクセルシェーダプログラム</SPAN>
+<SPAN CLASS="linenum">0033:</SPAN> <SPAN CLASS="comment">// ------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0034:</SPAN> float4 PS (VS_OUTPUT In) : COLOR
+<SPAN CLASS="linenum">0035:</SPAN> {   
+<SPAN CLASS="linenum">0036:</SPAN> <SPAN CLASS="keyword">#if</SPAN> 0
+<SPAN CLASS="linenum">0037:</SPAN>     <SPAN CLASS="comment">// Catmull-Rom patch</SPAN>
+<SPAN CLASS="linenum">0038:</SPAN>     <SPAN CLASS="keyword">const</SPAN> float4 w3 = float4(-0.5, 1.5,-1.5, 0.5);
+<SPAN CLASS="linenum">0039:</SPAN>     <SPAN CLASS="keyword">const</SPAN> float4 w2 = float4( 1.0,-2.5, 2.0,-0.5);
+<SPAN CLASS="linenum">0040:</SPAN>     <SPAN CLASS="keyword">const</SPAN> float4 w1 = float4(-0.5, 0.0, 0.5, 0.0);
+<SPAN CLASS="linenum">0041:</SPAN>     <SPAN CLASS="keyword">const</SPAN> float4 w0 = float4( 0.0, 1.0, 0.0, 0.0);
+<SPAN CLASS="linenum">0042:</SPAN> <SPAN CLASS="keyword">#else</SPAN>
+<SPAN CLASS="linenum">0043:</SPAN>     <SPAN CLASS="keyword">const</SPAN> float4 w3 = float4(-1, 1,-1, 1);
+<SPAN CLASS="linenum">0044:</SPAN>     <SPAN CLASS="keyword">const</SPAN> float4 w2 = float4( 2,-2, 1,-1);
+<SPAN CLASS="linenum">0045:</SPAN>     <SPAN CLASS="keyword">const</SPAN> float4 w1 = float4(-1, 0, 1, 0);
+<SPAN CLASS="linenum">0046:</SPAN>     <SPAN CLASS="keyword">const</SPAN> float4 w0 = float4( 0, 1, 0, 0);
+<SPAN CLASS="linenum">0047:</SPAN> <SPAN CLASS="keyword">#endif</SPAN>
+<SPAN CLASS="linenum">0048:</SPAN>     
+<SPAN CLASS="linenum">0049:</SPAN>     float2 fUV = frac (In.Tex5 * vSize);    <SPAN CLASS="comment">// サブテクセルを0～1のパラメータ化</SPAN>
+<SPAN CLASS="linenum">0050:</SPAN>     float2 fUV2 = fUV * fUV;                <SPAN CLASS="comment">// fUV の２乗</SPAN>
+<SPAN CLASS="linenum">0051:</SPAN>     float2 fUV3 = fUV * fUV2;               <SPAN CLASS="comment">// fUV の３乗</SPAN>
+<SPAN CLASS="linenum">0052:</SPAN>     float4 u, v;
+<SPAN CLASS="linenum">0053:</SPAN>     u = fUV3.x * w3 + fUV2.x * w2 + fUV.x * w1 + w0;
+<SPAN CLASS="linenum">0054:</SPAN>     v = fUV3.y * w3 + fUV2.y * w2 + fUV.y * w1 + w0;
+<SPAN CLASS="linenum">0055:</SPAN>     
+<SPAN CLASS="linenum">0056:</SPAN>     <SPAN CLASS="comment">// テクスチャから少しずらしてサンプリング</SPAN>
+<SPAN CLASS="linenum">0057:</SPAN>     float4 col00 = tex2D( SrcSamp, In.Tex0 );
+<SPAN CLASS="linenum">0058:</SPAN>     float4 col01 = tex2D( SrcSamp, In.Tex1 );
+<SPAN CLASS="linenum">0059:</SPAN>     float4 col02 = tex2D( SrcSamp, In.Tex2 );
+<SPAN CLASS="linenum">0060:</SPAN>     float4 col03 = tex2D( SrcSamp, In.Tex3 );
+<SPAN CLASS="linenum">0061:</SPAN> 
+<SPAN CLASS="linenum">0062:</SPAN>     float4 col10 = tex2D( SrcSamp, In.Tex4 );
+<SPAN CLASS="linenum">0063:</SPAN>     float4 col11 = tex2D( SrcSamp, In.Tex5 );
+<SPAN CLASS="linenum">0064:</SPAN>     float4 col12 = tex2D( SrcSamp, In.Tex6 );
+<SPAN CLASS="linenum">0065:</SPAN>     float4 col13 = tex2D( SrcSamp, In.Tex7 );
+<SPAN CLASS="linenum">0066:</SPAN> 
+<SPAN CLASS="linenum">0067:</SPAN>     float4 col20 = tex2D( SrcSamp, In.Tex0 + d2u );
+<SPAN CLASS="linenum">0068:</SPAN>     float4 col21 = tex2D( SrcSamp, In.Tex1 + d2u );
+<SPAN CLASS="linenum">0069:</SPAN>     float4 col22 = tex2D( SrcSamp, In.Tex2 + d2u );
+<SPAN CLASS="linenum">0070:</SPAN>     float4 col23 = tex2D( SrcSamp, In.Tex3 + d2u );
+<SPAN CLASS="linenum">0071:</SPAN> 
+<SPAN CLASS="linenum">0072:</SPAN>     float4 col30 = tex2D( SrcSamp, In.Tex4 + d2u );
+<SPAN CLASS="linenum">0073:</SPAN>     float4 col31 = tex2D( SrcSamp, In.Tex5 + d2u );
+<SPAN CLASS="linenum">0074:</SPAN>     float4 col32 = tex2D( SrcSamp, In.Tex6 + d2u );
+<SPAN CLASS="linenum">0075:</SPAN>     float4 col33 = tex2D( SrcSamp, In.Tex7 + d2u );
+<SPAN CLASS="linenum">0076:</SPAN> 
+<SPAN CLASS="linenum">0077:</SPAN>     
+<SPAN CLASS="linenum">0078:</SPAN>     float4 col0 = u.x * col00 + u.y * col10 + u.z * col20 + u.w * col30;
+<SPAN CLASS="linenum">0079:</SPAN>     float4 col1 = u.x * col01 + u.y * col11 + u.z * col21 + u.w * col31;
+<SPAN CLASS="linenum">0080:</SPAN>     float4 col2 = u.x * col02 + u.y * col12 + u.z * col22 + u.w * col32;
+<SPAN CLASS="linenum">0081:</SPAN>     float4 col3 = u.x * col03 + u.y * col13 + u.z * col23 + u.w * col33;
+<SPAN CLASS="linenum">0082:</SPAN>     
+<SPAN CLASS="linenum">0083:</SPAN>     <SPAN CLASS="keyword">return</SPAN> v.x * col0 + v.y * col1 + v.z * col2 + v.w * col3;
+<SPAN CLASS="linenum">0084:</SPAN> }
+<SPAN CLASS="linenum">0085:</SPAN> <SPAN CLASS="comment">// ------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0086:</SPAN> <SPAN CLASS="comment">// テクニック</SPAN>
+<SPAN CLASS="linenum">0087:</SPAN> <SPAN CLASS="comment">// ------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0088:</SPAN> technique TShader
+<SPAN CLASS="linenum">0089:</SPAN> {
+<SPAN CLASS="linenum">0090:</SPAN>     pass P0
+<SPAN CLASS="linenum">0091:</SPAN>     {
+<SPAN CLASS="linenum">0092:</SPAN>         <SPAN CLASS="comment">// シェーダ</SPAN>
+<SPAN CLASS="linenum">0093:</SPAN>         PixelShader  = compile ps_2_0 PS();
+<SPAN CLASS="linenum">0094:</SPAN>     }
+<SPAN CLASS="linenum">0095:</SPAN> }
+<SPAN CLASS="linenum">0096:</SPAN> </PRE>
+</BODY>
+</HTML>

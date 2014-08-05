@@ -1,0 +1,77 @@
+<HTML>
+<HEAD>
+<TITLE>sumie.vsh</TITLE>
+<meta name="GENERATOR" content="cpp2html 2.1 by Niisaka">
+<meta http-equiv="Content-Type" content="text/html">
+</HEAD>
+<BODY TEXT="#000000" BGCOLOR="#FFFFFF">
+<PRE><FONT COLOR="#40F628">0001:</FONT> <FONT COLOR="#008000">// ----------------------------------------------------------------------------</FONT>
+<FONT COLOR="#40F628">0002:</FONT> <FONT COLOR="#008000">//</FONT>
+<FONT COLOR="#40F628">0003:</FONT> <FONT COLOR="#008000">// sumie.vsh</FONT>
+<FONT COLOR="#40F628">0004:</FONT> <FONT COLOR="#008000">//</FONT>
+<FONT COLOR="#40F628">0005:</FONT> <FONT COLOR="#008000">//    Copyright (c) 2002 imagire takashi (imagire@gmail.com) All Rights Reserved.</FONT>
+<FONT COLOR="#40F628">0006:</FONT> <FONT COLOR="#008000">//</FONT>
+<FONT COLOR="#40F628">0007:</FONT> <FONT COLOR="#008000">// ----------------------------------------------------------------------------</FONT>
+<FONT COLOR="#40F628">0008:</FONT> <FONT COLOR="#008000">//</FONT>
+<FONT COLOR="#40F628">0009:</FONT> <FONT COLOR="#008000">// ; Hand assembled shader</FONT>
+<FONT COLOR="#40F628">0010:</FONT> <FONT COLOR="#008000">// vs.1.0</FONT>
+<FONT COLOR="#40F628">0011:</FONT> <FONT COLOR="#008000">//</FONT>
+<FONT COLOR="#40F628">0012:</FONT> <FONT COLOR="#008000">// mov oPos, v0</FONT>
+<FONT COLOR="#40F628">0013:</FONT> <FONT COLOR="#008000">//</FONT>
+<FONT COLOR="#40F628">0014:</FONT> <FONT COLOR="#008000">// add oT0, v7, c20</FONT>
+<FONT COLOR="#40F628">0015:</FONT> <FONT COLOR="#008000">// add oT1, v7, c21</FONT>
+<FONT COLOR="#40F628">0016:</FONT> <FONT COLOR="#008000">// add oT2, v7, c22</FONT>
+<FONT COLOR="#40F628">0017:</FONT> <FONT COLOR="#008000">// add oT3, v7, c23</FONT>
+<FONT COLOR="#40F628">0018:</FONT> 
+<FONT COLOR="#40F628">0019:</FONT> 
+<FONT COLOR="#40F628">0020:</FONT> <FONT COLOR="#008000">// ----------------------------------------------------------------------------</FONT>
+<FONT COLOR="#40F628">0021:</FONT> <FONT COLOR="#008000">// Input</FONT>
+<FONT COLOR="#40F628">0022:</FONT> <FONT COLOR="#008000">// ----------------------------------------------------------------------------</FONT>
+<FONT COLOR="#40F628">0023:</FONT> <FONT COLOR="#0000FF">struct</FONT> appdata : application2vertex {
+<FONT COLOR="#40F628">0024:</FONT>     float4 Position;
+<FONT COLOR="#40F628">0025:</FONT>     float2 Texcoord;
+<FONT COLOR="#40F628">0026:</FONT> };
+<FONT COLOR="#40F628">0027:</FONT> 
+<FONT COLOR="#40F628">0028:</FONT> <FONT COLOR="#008000">// ----------------------------------------------------------------------------</FONT>
+<FONT COLOR="#40F628">0029:</FONT> <FONT COLOR="#008000">// Output</FONT>
+<FONT COLOR="#40F628">0030:</FONT> <FONT COLOR="#008000">// ----------------------------------------------------------------------------</FONT>
+<FONT COLOR="#40F628">0031:</FONT> <FONT COLOR="#0000FF">#pragma</FONT> bind vfconn.Position  = HPOS;
+<FONT COLOR="#40F628">0032:</FONT> <FONT COLOR="#0000FF">#pragma</FONT> bind vfconn.Texcoord0 = TEX0;
+<FONT COLOR="#40F628">0033:</FONT> <FONT COLOR="#0000FF">#pragma</FONT> bind vfconn.Texcoord1 = TEX1;
+<FONT COLOR="#40F628">0034:</FONT> <FONT COLOR="#0000FF">#pragma</FONT> bind vfconn.Texcoord2 = TEX2;
+<FONT COLOR="#40F628">0035:</FONT> <FONT COLOR="#0000FF">#pragma</FONT> bind vfconn.Texcoord3 = TEX3;
+<FONT COLOR="#40F628">0036:</FONT> 
+<FONT COLOR="#40F628">0037:</FONT> <FONT COLOR="#0000FF">struct</FONT> vfconn : vertex2fragment {
+<FONT COLOR="#40F628">0038:</FONT>     float4 Position;
+<FONT COLOR="#40F628">0039:</FONT>     float2 Texcoord0;
+<FONT COLOR="#40F628">0040:</FONT>     float2 Texcoord1;
+<FONT COLOR="#40F628">0041:</FONT>     float2 Texcoord2;
+<FONT COLOR="#40F628">0042:</FONT>     float2 Texcoord3;
+<FONT COLOR="#40F628">0043:</FONT> };
+<FONT COLOR="#40F628">0044:</FONT> <FONT COLOR="#008000">// ----------------------------------------------------------------------------</FONT>
+<FONT COLOR="#40F628">0045:</FONT> <FONT COLOR="#008000">// Vertex Shader Program</FONT>
+<FONT COLOR="#40F628">0046:</FONT> <FONT COLOR="#008000">// ----------------------------------------------------------------------------</FONT>
+<FONT COLOR="#40F628">0047:</FONT> vfconn main(appdata IN
+<FONT COLOR="#40F628">0048:</FONT>         , uniform float2 const_texcoord0
+<FONT COLOR="#40F628">0049:</FONT>         , uniform float2 const_texcoord1
+<FONT COLOR="#40F628">0050:</FONT>         , uniform float2 const_texcoord2
+<FONT COLOR="#40F628">0051:</FONT>         , uniform float2 const_texcoord3
+<FONT COLOR="#40F628">0052:</FONT> ) {
+<FONT COLOR="#40F628">0053:</FONT>     vfconn OUT;
+<FONT COLOR="#40F628">0054:</FONT> 
+<FONT COLOR="#40F628">0055:</FONT>     <FONT COLOR="#008000">/////////////////////////////////////////////////////////////////////</FONT>
+<FONT COLOR="#40F628">0056:</FONT>     <FONT COLOR="#008000">// Position</FONT>
+<FONT COLOR="#40F628">0057:</FONT>     OUT.Position = IN.Position;       <FONT COLOR="#008000">// Just copy input value</FONT>
+<FONT COLOR="#40F628">0058:</FONT> 
+<FONT COLOR="#40F628">0059:</FONT>     <FONT COLOR="#008000">/////////////////////////////////////////////////////////////////////</FONT>
+<FONT COLOR="#40F628">0060:</FONT>     <FONT COLOR="#008000">// Texture</FONT>
+<FONT COLOR="#40F628">0061:</FONT>     OUT.Texcoord0 = IN.Texcoord + const_texcoord0;   <FONT COLOR="#008000">// Copy constant value</FONT>
+<FONT COLOR="#40F628">0062:</FONT>     OUT.Texcoord1 = IN.Texcoord + const_texcoord1;   <FONT COLOR="#008000">// Copy constant value</FONT>
+<FONT COLOR="#40F628">0063:</FONT>     OUT.Texcoord2 = IN.Texcoord + const_texcoord2;   <FONT COLOR="#008000">// Copy constant value</FONT>
+<FONT COLOR="#40F628">0064:</FONT>     OUT.Texcoord3 = IN.Texcoord + const_texcoord3;   <FONT COLOR="#008000">// Copy constant value</FONT>
+<FONT COLOR="#40F628">0065:</FONT> 
+<FONT COLOR="#40F628">0066:</FONT>     <FONT COLOR="#0000FF">return</FONT> OUT;
+<FONT COLOR="#40F628">0067:</FONT> }
+<FONT COLOR="#40F628">0068:</FONT> </PRE>
+</BODY>
+</HTML>

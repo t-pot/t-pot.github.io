@@ -1,0 +1,405 @@
+<head>
+	<title>t-pot『DirectX 8.1:Cook-Torrance の照明モデル』</title>
+	<link rel="stylesheet" type="text/css" href="../if.css">
+</head>
+<meta http-equiv=Content-Type content="text/html; charset=shift_jis">
+<body text=#ffffff>
+
+<div class="contents">
+<center>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<h1>DirectX 8.1:Cook-Torrance の照明モデル</h1><br>
+<h3>～算術的テクスチャーの作り方～</h3>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+</center>
+
+<h2>■はじめに</h2>
+<p>
+今回は、DirectX8.1 で導入された D3DXFillTexture を使って、テクスチャーを作ります。<br>
+この関数は、プログラマブルにテクスチャーを生成する関数です
+(<A HREF="http://cgi3.tky.3web.ne.jp/~tkano/">Kanoさん</a>に、教えていただきました。ありがとうございました)。<br>
+これを使って何をしようか考えたのですが、フレネル項をまだ取り扱っていなかったので、Cook-Torrance の照明モデルに使ってみました。
+</p>
+
+<image src = "title.jpg">
+
+<p>
+今回のソースは、次のものです。
+</p>
+<ul style = "LIST-STYLE-TYPE:none">
+<li><a href="cooktorrance.lzh">cooktorrance.lzh (Cook-Torrance の照明モデルのサンプルのソース)</a>
+</ul>
+
+<p>
+内容は次のとおりになっています。
+</p>
+<table>
+<tr><td><a href="draw_cpp.html">draw.cpp</a></td><td>メインの描画部分。</td></tr>
+<tr><td><a href="vs_vsh.html">vs.vsh</a></td><td>頂点シェーダープログラム。平行光源ライト＋ライティングテクスチャー指定。</td></tr>
+<tr><td><a href="bg_cpp.html">bg.cpp</a></td><td>背景表示。</td></tr>
+<tr><td><a href="load_cpp.html">load.cpp</a></td><td>シェーダーやテクスチャーのロード開放</td></tr>
+<tr><td><a href="load_h.html">load.h</a></td><td>シェーダーやテクスチャーのロード開放</td></tr>
+<tr><td><a href="main_cpp.html">main.cpp</a></td><td>描画に関係しないシステム的な部分。変更が無いので、出番無し。</td></tr>
+<tr><td><a href="main_h.html">main.h</a></td><td>基本的な定数など。今回も画面サイズは512x512です。</td></tr>
+</table>
+<image src = "tile_bmp.jpg" width = 64 height=64>tile.bmp (床デカール)<br>
+<image src = "sky_bmp.jpg" width = 64 height=64>sky.bmp (空デカール)<br>
+<p>
+あと、モデルとして、nsx.xと、実行ファイルの MyBase.exe 及び、
+VC++ でコンパイルするためのプロジェクトファイル MyBase.dsw MyBase.dsp が入っています。
+</p>
+
+<h2>■Cook-Torrance の照明モデル</h2>
+
+<p>
+Cook-Torrance の照明モデルは、物理ベースの照明モデルと呼ばれるもので、熱放射論を用いて照明モデルを定式化したものです。<br>
+詳しくは、『コンピュータグラフィックス 理論と実践』等を読まれるといいでしょう（というか、今回はそこから流用しています）。
+</p>
+<p>
+さて、今までも Phone の照明モデルをやっています。<br>
+Phone の照明モデルは、ライティングの鏡面反射成分が反射ベクトル R = 2N(N.L)-L と視線ベクトル V の内積のべき乗に比例します。<br>
+近似としてのハーフベクトルと法線ベクトルの内積のべき乗の場合の照明モデルは、次の様になります。
+</p>
+<image src = "phone.jpg" width = 350 height=350>Phone の照明モデル
+<p>
+ここで、左上に出ているテクスチャーは、横軸がハーフベクトルと法線ベクトルの内積、縦軸はハーフベクトルと光源ベクトルとの内積になります。<br>
+</p>
+<image src = "tex.gif">
+<p>
+光の強さは、ハーフベクトルと法線ベクトルの内積 H･N にしか依存しないので、縦縞になります。<br>
+一方、今回使用した照明モデルのテクスチャーは次のようになります。
+</p>
+<image src = "tex.jpg" width = 256 height=256>Cook-Torrance の照明モデル
+<p>
+縦方向にも濃度変化が現れています。<br>
+具体的には、法線が光の正面を向いている場合に、光の強さが下がっています。<br>
+言い換えると、光は視線ベクトルによる反射よりも、裏面に回り込もうとします。
+</p>
+<p>
+では、解説に移りましょう。<br>
+今回使った照度方程式（反射光の強さ I<sub>r</sub> を求める式）は、
+</p>
+<pre class="CodeBlock">
+I<sub>r</sub> = I<sub>a</sub>ρ<sub>a</sub> + (N･L)k<sub>d</sub>ρ<sub>d</sub> + (N･L)k<sub>s</sub>ρ<sub>s</sub>
+   = C<sub>m</sub>(C<sub>a</sub> + (N･L)C<sub>d</sub>) + C<sub>s</sub>
+
+         I<sub>a</sub>:環境光の強さ
+        ρ<sub>a</sub>:環境光の反射率
+         k<sub>d</sub>:反射率のうち Lambert 光の占める割合
+        ρ<sub>d</sub>:Lambert 光に関する反射率
+         k<sub>s</sub>:反射率のうち 鏡面反射光の占める割合 (k<sub>d</sub>+k<sub>s</sub>=1)
+        ρ<sub>s</sub>:鏡面反射光に関する反射率
+
+         C<sub>m</sub>:メッシュ（物体）の色
+         C<sub>a</sub>:環境光の色
+         C<sub>d</sub>:Lambert 光の色
+         C<sub>s</sub>:鏡面反射光の色
+</pre>
+<p>
+です。最初の式が、入射強度や反射率の定義から求められる式で、2つ目の式がその式を元に実際に使用する時の色の強さです。<br>
+まぁ、1つ目の式はあまり気にしなくて結構です。<br>
+特徴は、メッシュの色 C<sub>m</sub> は、鏡面反射光に依存しないようにしたことです。<br>
+Lambert 光は、光が一度吸収されて、その後放射される光なのですから、そのスペクトルはほぼ決まっています。というか、まさにそのスペクトルがメッシュの色です。<br>
+また、環境色はメッシュを照らすわけです。それは、メッシュに跳ね返った光が Lambert 拡散したことに他ならないわけですから、メッシュの色がつきます。<br>
+しかし、鏡面反射光は原子に吸収されずにすぐに放出された光が、他の原子による散乱と共鳴して強く放射された光ですから、メッシュの色とは関係がありません。
+より詳しく言えば、物質の境界に関して、一方は原子があり他方は原子が無い状態が、片方（原子がない空間）への散乱を強め、鏡面散乱になります。<br>
+従って、（最低次の近似として）鏡面反射の色はメッシュの色に関係ありません。<br>
+また、C<sub>s</sub> と、定数の様に書きましたが、鏡面散乱は法線や光源ベクトル、視線ベクトルに影響します。
+</p>
+<p>
+さて、Cook-Torrance の照明モデルです。<br>
+Cook と Torrance は、鏡面反射率に次の仮定をしました。
+</p>
+<pre class="CodeBlock">
+       F    D G
+ρ<sub>s</sub> = -- ----------
+      π (N･V)(N･L)
+      
+      F:フレネル項
+      D:マイクロファセットの分布関数
+      G:幾何減衰率
+      V:視線ベクトル
+</pre>
+<p>
+従って、鏡面反射光の色は次のようにかけます。
+</p>
+<pre class="CodeBlock">
+          F D G
+C<sub>s</sub> = a<sub>s</sub> ----------
+          (N･V)
+</pre>
+<p>
+係数 a<sub>s</sub> には、入射光の色を含む定数が繰り込まれて入っています。<br>
+今回は、a<sub>s</sub> の値は、適当に決めました。<br>
+では、それぞれの効果を見てみましょう。
+</p>
+
+<p>
+□ フレネル項 F
+</p>
+<p>
+フレネル項は、フレネルの公式で与えられます(真空から屈折率 n の物質へ入射する場合)。
+</p>
+<pre class="CodeBlock">
+    1(g-c)<sup>2</sup>     [c(g+c)-1]<sup>2</sup>
+F = ------ (1 + ----------)
+    2(g+c)<sup>2</sup>     [c(g-c)+1]<sup>2</sup>
+
+    g<sup>2</sup> = n<sup>2</sup>+c<sup>2</sup>-1
+    c  = L･H
+</pre>
+<p>
+導出方は、『理論電磁気学(砂川重信著)』等を読んでください（いやん！もうあたしには、そんな難しいの読めない～）。<br>
+フレネル項だけを抽出すると、その値は次のようになります。
+</p>
+<image src = "fresnel.jpg" width = 256 height=256>
+<p>
+実は、ここで、L･H～L･N を使いました。これは、H～N の時、つまり H･N～1 の右側の部分だけで成り立ちます
+（鏡面反射は、H～N の時に強くなるので、この近似は適当であり、この後も積極的につかっていきます）。<br>
+画像を見ると、光が正面から当たっている部分が薄くなっています。<br>
+従って、この項が反射の強い部分が反射ベクトルからずれる効果を生み出しています。
+</p>
+
+<p>
+□ マイクロファセットの分布関数 D
+</p>
+<p>
+マイクロファセットとは、平面を作る微小な平面です。<br>
+物質をミクロに見ると、小さな平面の集まりであると考えます。その一つ一つがマイクロファセットです。<br>
+Cook と Torrance は、巨視的な法線に対してマイクロファセットの微視的な法線分布が Beckmann 分布関数を持つことを指摘しました。<br>
+Beckmann 分布関数は、
+</p>
+<pre class="CodeBlock">
+        1
+D = ---------exp(-tan<sup>2</sup>β/m<sup>2</sup>)
+    4m<sup>2</sup>cos<sup>4</sup>β
+    
+    cos β = N･H
+</pre>
+<p>
+で、与えられます。<br>
+この分布関数の強さは、
+</p>
+<image src = "beckmann.jpg" width = 256 height=256>
+<p>
+になります。<br>
+これは、Phone の照明モデルと同じ結果に見えます。<br>
+分布関数は、Phone の照明モデルで考えたものと同じ反射分布の広がりを与えます。
+</p>
+
+<p>
+□ 幾何減衰率 G
+</p>
+<p>
+この項は、マイクロファセットが他のマイクロファセットに陰を作る効果です。<br>
+光の方向が法線に直交しているか、視線が法線に直交している場合に、この効果は大きくなります。
+</p>
+<pre class="CodeBlock">
+            (N･H)(N･V)   (N･H)(N･L)
+g = min(1, 2----------, 2----------)
+              (V･H)        (V･H)
+
+  ～ min(1, 2(N･H) )
+</pre>
+</p>
+ということで、この強さは、
+<p>
+<image src = "attenuation.jpg" width = 256 height=256>
+</p>
+になります。分布関数の項に打ち消されて、意味がなくなっていますね。
+<p>
+
+<p>
+□ その他の項
+</p>
+<p>
+それ以外の部分は、
+</p>
+<pre class="CodeBlock">
+     1  
+ ----------
+   (N･V)
+</pre>
+<p>
+ですが、これは観測者に見える単位面積あたりのマイクロファセットの濃度だそうです。<br>
+ちなみに、
+</p>
+<image src = "cooktorrance.jpg" width = 256 height=256>
+<p>
+になります。<br>
+N･V が小さい、横から眺めた時に強さが強くなる効果が出ています。
+</p>
+
+<p>
+これらを全てかけたものが、Cook-Torrance の照明モデルになります。<br>
+総じて、縁の部分に鏡面反射が出やすいようですね。
+</p>
+
+<h2>■テクスチャーの作成</h2>
+
+<p>
+テクスチャーを作成するためには、そのための関数を用意しなくてはなりません。<br>
+関数の型は決められています。次の形でなくてはなりません。
+</p>
+<pre class="CodeBlock">
+VOID func(D3DXVECTOR4* pOut, D3DXVECTOR2 *pTexCoord, D3DXVECTOR2 *pTexelSize, LPVOID pData);
+</pre>
+<p>
+pOut は、出力する色で、x, y, z, w の各成分に r, b, g, a の値を最終的に出力します<br>
+pTexCoord は、色を書き込む座標で、0.0f～1.0fの値が入ります。<br>
+pTexelSize は、テクスチャーのサイズの逆数が入ります。ミップレベルに応じて使い分ける為のものかな？<br>
+pData は、その他のパラメータの引渡しに使います。今回は使いません。<br>
+</p>
+<p>
+ということで、先ほどまで説明していた Cook-Torrance の照明モデルを計算すると、次のようになります。
+</p>
+<pre class="CodeBlock">
+<font color = deepskyblue>0067:</font> <font color = cyan>// ----------------------------------------------------------------------------</font>
+<font color = deepskyblue>0068:</font> <font color = cyan>// テクスチャーを作成する関数</font>
+<font color = deepskyblue>0069:</font> <font color = cyan>//       近似：（分布関数の影響により）H･N～1 のところしか効かない</font>
+<font color = deepskyblue>0070:</font> <font color = cyan>//              以上の近似から L･N～V･N になる</font>
+<font color = deepskyblue>0071:</font> <font color = cyan>//       pTexCoord->x : cosθ=H･N</font>
+<font color = deepskyblue>0072:</font> <font color = cyan>//       pTexCoord->y : L･N</font>
+<font color = deepskyblue>0073:</font> VOID MakeCookTorranceTexture(D3DXVECTOR4* pOut, D3DXVECTOR2 *pTexCoord, D3DXVECTOR2 *pTexelSize, LPVOID pData)
+<font color = deepskyblue>0074:</font> {
+<font color = deepskyblue>0075:</font>     float NH = pTexCoord->x;// cosθ=H･N</font>
+<font color = deepskyblue>0076:</font>     float NL = pTexCoord->y;// L･N</font>
+<font color = deepskyblue>0077:</font>     
+<font color = deepskyblue>0078:</font>     <font color = cyan>// フレネル項</font>
+<font color = deepskyblue>0079:</font>     float n = 1.5f;
+<font color = deepskyblue>0080:</font>     float c = NL;
+<font color = deepskyblue>0081:</font>     float g = (float)sqrt(n*n+c*c-1.0f);
+<font color = deepskyblue>0082:</font>     float F = 0.5*((g-c)*(g-c)/(g+c)*(g+c))*(1.0f+((c*(g+c)-1)*(c*(g+c)-1))/((c*(g-c)+1)*(c*(g-c)+1)));
+<font color = deepskyblue>0083:</font> 
+<font color = deepskyblue>0084:</font>     <font color = cyan>// Beckmann分布関数の近似</font>
+<font color = deepskyblue>0085:</font>     float m = 0.3f;
+<font color = deepskyblue>0086:</font>     float D = (float)(exp(-(1.0f-NH*NH)/(m*m*NH*NH))/(4*m*m*NH*NH*NH*NH));
+<font color = deepskyblue>0087:</font> 
+<font color = deepskyblue>0088:</font>     <font color = cyan>// 幾何減衰率</font>
+<font color = deepskyblue>0089:</font>     float G = min(1.0f, 2.0f*NH);
+<font color = deepskyblue>0090:</font> 
+<font color = deepskyblue>0091:</font>     float rho = 1.0f*F*D*G/((NL));
+<font color = deepskyblue>0092:</font>     rho = min(1.0f, rho);
+<font color = deepskyblue>0093:</font>     rho = max(rho, 0.0f);
+<font color = deepskyblue>0094:</font> 
+<font color = deepskyblue>0095:</font>     pOut->x = rho;
+<font color = deepskyblue>0096:</font>     pOut->y = rho;
+<font color = deepskyblue>0097:</font>     pOut->z = rho;
+<font color = deepskyblue>0098:</font>     pOut->w = 1.0f;
+<font color = deepskyblue>0099:</font> }
+</pre>
+<p>
+ほとんどの変数は今までに出てきたものです。<br>
+屈折率 n=1.5, Beckmann分布関数のパラメータ m=0.3 でやっています。<br>
+最終的に0.0f～1.0fの間にクランプしています。<br>
+</p>
+<p>
+それでは、今の関数を呼び出して、テクスチャーを作ります。<br>
+初期化の段階で、テクスチャーを作ります。
+</p>
+<pre class="CodeBlock">
+<font color = deepskyblue>0218:</font> HRESULT InitRender(LPDIRECT3DDEVICE8 lpD3DDev)
+<font color = deepskyblue>0219:</font> {
+<font color = deepskyblue>0220:</font>     HRESULT hr;
+<font color = deepskyblue>0221:</font> 
+<font color = deepskyblue>0222:</font>     <font color = cyan>// モデルの読み込み</font>
+<font color = deepskyblue>0224:</font>     if ( FAILED(hr = LoadXFile("nsx.x", lpD3DDev)) ) return hr;
+<font color = deepskyblue>0225:</font>     
+<font color = deepskyblue>0226:</font>     <font color = cyan>// バーテックスシェーダーを作成する</font>
+<font color = deepskyblue>0227:</font>     if ( FAILED(hr = LoadVertexShader("vs.vsh", lpD3DDev, &hVertexShader, dwDecl)) ) return hr;
+<font color = deepskyblue>0228:</font> 
+<font color = deepskyblue>0234:</font>     <font color = cyan>// テクスチャーを作る</font>
+<font color = deepskyblue>0235:</font>     <font color = yellow>if( FAILED(hr = lpD3DDev->CreateTexture(512, 512, 1
+                                       , D3DUSAGE_RENDERTARGET, D3DFMT_X8R8G8B8
+                                       , D3DPOOL_DEFAULT, &pTexture))) return hr;</font>
+<font color = deepskyblue>0236:</font>     <font color = yellow>if( FAILED(hr = D3DXFillTexture(pTexture, MakeCookTorranceTexture, NULL))) return hr;</font>
+<font color = deepskyblue>0237:</font> 
+<font color = deepskyblue>0238:</font>     InitBg(lpD3DDev);
+<font color = deepskyblue>0239:</font> 
+<font color = deepskyblue>0240:</font>     lpD3DDev->SetRenderState(D3DRS_LIGHTING, FALSE);
+<font color = deepskyblue>0241:</font> 
+<font color = deepskyblue>0242:</font>     return S_OK;
+<font color = deepskyblue>0243:</font> }
+</pre>
+<p>
+黄色い部分がテクスチャーを作成している部分です。<br>
+CreateTexture をして、D3DXFillTexture でテクスチャーを作成するだけです。<br>
+D3DXFillTexture の第2引数で作成する関数を指定します。<br>
+すると、ピクセルの全ての座標に関して、MakeCookTorranceTexture を呼び出して、テクスチャーを作成してくれます。<br>
+あとは、普通のテクスチャーとして使えます。
+</p>
+
+<h2>■それ以外のソース</h2>
+
+<p>
+それ以外の部分は、加算合成するだけです。<br>
+頂点シェーダーは、色成分がランバート diffuseで、テクスチャーにハーフベクトルを生成してから、法線や光源との内積を取っています。
+</p>
+<pre class="CodeBlock">
+<font color = deepskyblue>0001:</font> <font color = cyan>; c0-3   -- world + ビュー + 透視変換行列</font>
+<font color = deepskyblue>0002:</font> <font color = cyan>; c12    -- {0.0, 0.5, 1.0, 2.0}    N.B. 今回出番無し</font>
+<font color = deepskyblue>0003:</font> <font color = cyan>; c13    -- ライトのベクトル (w成分は環境光の強さ)</font>
+<font color = deepskyblue>0004:</font> <font color = cyan>; c14    -- ライトの色(メッシュの色)</font>
+<font color = deepskyblue>0005:</font> <font color = cyan>; c15    -- 視線ベクトル</font>
+<font color = deepskyblue>0006:</font> <font color = cyan>;</font>
+<font color = deepskyblue>0007:</font> <font color = cyan>; v0    頂点の座標値</font>
+<font color = deepskyblue>0008:</font> <font color = cyan>; v3    法線ベクトル</font>
+<font color = deepskyblue>0009:</font> <font color = cyan>; v7    テクスチャ座標</font>
+<font color = deepskyblue>0010:</font> 
+<font color = deepskyblue>0011:</font> vs.1.0
+<font color = deepskyblue>0012:</font> 
+<font color = deepskyblue>0013:</font> <font color = cyan>;座標変換</font>
+<font color = deepskyblue>0014:</font> dp4 oPos.x, v0,   c0
+<font color = deepskyblue>0015:</font> dp4 oPos.y, v0,   c1
+<font color = deepskyblue>0016:</font> dp4 oPos.z, v0,   c2
+<font color = deepskyblue>0017:</font> dp4 oPos.w, v0,   c3
+<font color = deepskyblue>0018:</font> 
+<font color = deepskyblue>0019:</font> <font color = cyan>; ランバート diffuse</font>
+<font color = deepskyblue>0020:</font> dp4 r0.w,   v3,  c13            <font color = cyan>; l･n</font>
+<font color = deepskyblue>0021:</font> mul oD0,    c14,  r0.w          <font color = cyan>; ライトの色(メッシュの色付き)をつける</font>
+<font color = deepskyblue>0022:</font> 
+<font color = deepskyblue>0023:</font> <font color = cyan>;カメラへの向きVを計算する</font>
+<font color = deepskyblue>0024:</font> add r2, c15, -v0
+<font color = deepskyblue>0025:</font> 
+<font color = deepskyblue>0026:</font> <font color = cyan>;V の正規化</font>
+<font color = deepskyblue>0027:</font> dp3 r2.w, r2, r2
+<font color = deepskyblue>0028:</font> rsq r2.w, r2.w
+<font color = deepskyblue>0029:</font> mul r2, r2, r2.w
+<font color = deepskyblue>0030:</font> 
+<font color = deepskyblue>0031:</font> <font color = cyan>; H = (V+L)/|V+L|</font>
+<font color = deepskyblue>0032:</font> add r2, r2, c13
+<font color = deepskyblue>0033:</font> 
+<font color = deepskyblue>0034:</font> dp3 r2.w, r2, r2
+<font color = deepskyblue>0035:</font> rsq r2.w, r2.w
+<font color = deepskyblue>0036:</font> mul r2, r2, r2.w
+<font color = deepskyblue>0037:</font> 
+<font color = deepskyblue>0038:</font> <font color = cyan>; H･N</font>
+<font color = deepskyblue>0039:</font> dp3 oT0.x,   r2,   v3
+<font color = deepskyblue>0040:</font> 
+<font color = deepskyblue>0041:</font> <font color = cyan>; N･L</font>
+<font color = deepskyblue>0042:</font> dp3 oT0.y,   v3,   c13
+</pre>
+<p>
+正規化を２回もするのが、やな部分ですね。
+</p>
+
+<h2>■最後に</h2>
+
+<p>
+やらないと不自然といわれるフレネル項を実装してみました。<br>
+ちょっとは金属っぽいですが、パラメータの選び方が下手なのか、そんなにリアルに見えませんね。<br>
+やっぱり、どっからか値を引っ張ってこなきゃ駄目かな？
+</p>
+
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<center>
+<p><a href="../index.html">もどる</a></p>
+<p><a href="mailto:imagire@gmail.com">imagire@gmail.com</a></p>
+</center>
+</body>
+</html>

@@ -1,0 +1,275 @@
+<head>
+	<title>t-pot『当たり判定シェーダ』</title>
+	<link rel="stylesheet" type="text/css" href="../if.css">
+</head>
+<meta http-equiv=Content-Type content="text/html; charset=shift_jis">
+<body>
+
+
+<div class="contents">
+<center>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<h1>当たり判定シェーダ</h1><br>
+<h3>～第2回Cgコーディングコンテスト参加作品～</h3>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<image src = "title.png">
+</center>
+<br>
+<hr>
+<div>
+
+
+<h2>■2002 Oct. 16追加</h2>
+
+
+<p>
+Cg Coding Contest で画像がおかしかったので、GeForce3 で動くバージョンを作りました。<br>
+原因は、テクスチャの設定にNULLを与えた時に黒色が与えていると思い込んでいたところです。<br>
+<a href="src.lzh">src.lzh (バイナリとデータとソース:GeForce3動作確認済み)</a>
+</p>
+
+<h2>■はじめに</h2>
+
+
+<p>
+やっとCgコーディングコンテストの作品にたどり着きました。<br>
+他の人がやっていないネタとして、当たり判定をシェーダでやってみました。<br>
+弾が当ったところが、燃え広がります。
+</p>
+<p>
+今回の作品もインターラクティブ性の高いものです。<br>
+左クリックで弾を発射します。それ以外にも適当な時間間隔で弾が降ってきます。<br>
+右ドラックやホイールでカメラが動かせます。<br>
+炎だらけになったら、スペースバーで炎が消えますので、適当に楽しんでください。<br>
+</p>
+<ul style = "LIST-STYLE-TYPE:none">
+<li><a href="Collision-bin.zip">Collision-bin.zip (バイナリとデータ:DirectX8.1 & Cg言語)</a>
+<li><a href="Collision-src.zip">Collision-src.zip (ソース:DirectX8.1 & Cg言語)</a>
+</ul>
+
+<p>
+まぁ、いつものように適当にファイルが入っています。<br>
+といっても、炎を作ったときと１ファイルしか増えていません。
+</p>
+<table>
+<tr><td><a href="CollisionV_cg.html">CollisionV.cg</a></td><td>衝突マップ作成。</td></tr>
+<tr><td><a href="BurnV_cg.html">BurnV.cg</a></td><td>炎を作る。</td></tr>
+<tr><td><a href="BurnP_cg.html">BurnP.cg</a></td><td>炎を作る。</td></tr>
+<tr><td><a href="BlackV_cg.html">BlackV.cg</a></td><td>焼け跡の黒い部分を作成する。</td></tr>
+<tr><td><a href="vs_cg.html">vs.cg</a></td><td>地面の描画。</td></tr>
+<tr><td><a href="ps_cg.html">ps.cg</a></td><td>地面の描画。</td></tr>
+
+<tr><td><a href="draw_cpp.html">draw.cpp</a></td><td>メインの描画部分。</td></tr>
+<tr><td><a href="draw_h.html">draw.h</a></td><td>描画の各関数の定義。</td></tr>
+<tr><td><a href="bg_cpp.html">bg.cpp</a></td><td>空の描画。</td></tr>
+<tr><td><a href="load_cpp.html">load.cpp</a></td><td>メッシュのロード。</td></tr>
+<tr><td><a href="load_h.html">load.h</a></td><td>ロードのインターフェイス。</td></tr>
+<tr><td><a href="main_h.html">main.h</a></td><td>基本的な定数など。</td></tr>
+<tr><td><a href="main_cpp.html">main.cpp</a></td><td>描画に関係しないシステム的な部分。</td></tr>
+</table>
+<image src = "fire_bmp.png" width = 64 height=64>fire.bmp (火種の元絵)<br>
+<image src = "earth_bmp.png" width = 64 height=64>earth.bmp (燃えている場所の元絵)<br>
+<image src = "sky_bmp.jpg" width = 64 height=64>sky.bmp (空)<br>
+<image src = "map_bmp.png" width = 64 height=64>map.bmp (地面)<br>
+<p>
+あと、地面のモデルと実行ファイル及び、プロジェクトファイルや、説明文が入っています。
+</p>
+
+
+<h2>■やってること</h2>
+
+
+<p>
+影ボリュームと同じ考え方で「衝突マップ」を作成して、以降、あたった部分を炎で燃え上がらせます。<br>
+</p>
+<p>
+最初地面を下から見た画像を作成します。
+</p>
+<p>
+次に、今見たカメラアングルで弾の表面を白く描画します。<br>
+弾を描画するときに、適当な長さで弾を引き伸ばして弾が地面を通り抜けたときでも判定漏れが無いようにしています。<br>
+また、実際にはこのプロセスで弾の表面だけを表示したら判定があまくなったので、裏と表の両方の面を描画しました。
+</p>
+<p>
+その後に、弾の裏面だけを黒く塗りつぶします。<br>
+裏を塗りつぶすことによって、地面と弾が接触した部分だけが白く浮かび上がります。
+</p>
+<p>
+白く浮かび上がった「衝突マップ」をその時点までの結果に加算して更新します。
+</p>
+<image src = "explain.png">
+<p>
+弾１つに関するプロセスは以上です。後は全ての弾に関して同じ事を繰り返して、
+今までに飛んだ全ての弾の「衝突マップ」を作り上げます。<br>
+あとは、衝突のあった部分を炎で燃え上がらせています。
+</p>
+
+
+
+<h2>■ソースファイル</h2>
+
+
+<p>
+それではプログラムを見ていきましょう。<br>
+最初に深度情報をレンダリングします。<br>
+高速化も考えて、D3DRS_COLORWRITEENABLEを使って色の描画を禁止して、深度情報だけを書き出します。
+</p>
+<pre class="CodeBlock">
+draw.c
+<FONT COLOR="deepskyblue">0403:</font>     <FONT COLOR="cyan">//-----------------------------------------------------------------------------</font>
+<FONT COLOR="deepskyblue">0404:</font>     <FONT COLOR="cyan">// 衝突マップの作成</font>
+<FONT COLOR="deepskyblue">0405:</font>     <FONT COLOR="cyan">//-----------------------------------------------------------------------------</font>
+<FONT COLOR="deepskyblue">0406:</font>     lpD3DDev->SetRenderTarget(pTextureSurface, lpZbuffer);
+<FONT COLOR="deepskyblue">0407:</font>     lpD3DDev->Clear(0,NULL,D3DCLEAR_ZBUFFER, D3DCOLOR_XRGB(0,0,0),1.0f,0);
+<FONT COLOR="deepskyblue">0408:</font>     
+<FONT COLOR="deepskyblue">0409:</font>     <FONT COLOR="cyan">// 深度情報の保存</font>
+<FONT COLOR="deepskyblue">0410:</font>     D3DXVECTOR3 eye    = D3DXVECTOR3(0.0f,-10.0f,  0.0f);
+<FONT COLOR="deepskyblue">0411:</font>     D3DXVECTOR3 lookAt = D3DXVECTOR3(0.0f,  0.0f,  0.0f);
+<FONT COLOR="deepskyblue">0412:</font>     D3DXVECTOR3 up     = D3DXVECTOR3(0.0f,  0.0f,  1.0f);
+<FONT COLOR="deepskyblue">0413:</font>     D3DXMatrixLookAtLH(&mView, &eye, &lookAt, &up);
+<FONT COLOR="deepskyblue">0414:</font>     D3DXMatrixPerspectiveFovLH(&mProj
+<FONT COLOR="deepskyblue">0415:</font>         ,D3DX_PI/3.5f
+<FONT COLOR="deepskyblue">0416:</font>         ,1.0f
+<FONT COLOR="deepskyblue">0417:</font>         ,0.01f,100.0f
+<FONT COLOR="deepskyblue">0418:</font>         );
+<FONT COLOR="deepskyblue">0419:</font>     mat = mView * mProj;
+<FONT COLOR="deepskyblue">0420:</font>     lpD3DDev->SetRenderState(D3DRS_CULLMODE, D3DCULL_CW);
+<FONT COLOR="deepskyblue">0421:</font>     lpD3DDev->SetRenderState(D3DRS_COLORWRITEENABLE, 0);
+<FONT COLOR="deepskyblue">0422:</font>     pVertexProgramContainer->SetShaderActive();
+<FONT COLOR="deepskyblue">0423:</font>     pPixelProgramContainer->SetShaderActive();
+<FONT COLOR="deepskyblue">0424:</font>     DrawModel(lpD3DDev, mat, 2);
+<FONT COLOR="deepskyblue">0425:</font>     lpD3DDev->SetRenderState(D3DRS_COLORWRITEENABLE, 0xf);
+<FONT COLOR="deepskyblue">0426:</font>     lpD3DDev->SetRenderState(D3DRS_ZWRITEENABLE, FALSE);
+</pre>
+<p>
+次に弾の描画です。<br>
+表面を白、裏面を黒と順番に描いた後に、できたテクスチャを衝突マップに加算合成で追加します。<br>
+これが弾の数だけループされます。
+</p>
+<pre class="CodeBlock">
+<FONT COLOR="deepskyblue">0428:</font>     D3DXMatrixTranspose( &m, &mat );
+<FONT COLOR="deepskyblue">0429:</font>     pCollVC->SetShaderConstant( viewproj_matrix_iter, &m  );
+<FONT COLOR="deepskyblue">0430:</font> 
+<FONT COLOR="deepskyblue">0431:</font>     for(i=0;i<bullet.GetNum();i++){
+<FONT COLOR="deepskyblue">0432:</font>         if(!bullet.IsActive(i)) continue;
+<FONT COLOR="deepskyblue">0433:</font>         D3DXVECTOR4 &x = bullet.GetPosition(i);
+<FONT COLOR="deepskyblue">0434:</font>         D3DXVECTOR4 &v = bullet.GetVelosity(i);
+<FONT COLOR="deepskyblue">0435:</font> 
+<FONT COLOR="deepskyblue">0436:</font>         lpD3DDev->SetRenderTarget(pTextureSurface, lpZbuffer);
+<FONT COLOR="deepskyblue">0437:</font>         lpD3DDev->Clear(0,NULL,D3DCLEAR_TARGET, D3DCOLOR_XRGB(0,0,0),1.0f,0);
+<FONT COLOR="deepskyblue">0438:</font>         <FONT COLOR="cyan">// 表面の描画</font>
+<FONT COLOR="deepskyblue">0439:</font>         lpD3DDev->SetTextureStageState(0,D3DTSS_COLOROP,    D3DTOP_SELECTARG1);
+<FONT COLOR="deepskyblue">0440:</font>         lpD3DDev->SetTextureStageState(0,D3DTSS_COLORARG1,  D3DTA_DIFFUSE);
+<FONT COLOR="deepskyblue">0441:</font>         lpD3DDev->SetRenderState(D3DRS_CULLMODE, D3DCULL_NONE);
+<FONT COLOR="deepskyblue">0442:</font>         pCollVC->SetShaderActive();
+<FONT COLOR="deepskyblue">0443:</font>         lpD3DDev->SetPixelShader(0);
+<FONT COLOR="deepskyblue">0444:</font> 
+<FONT COLOR="deepskyblue">0445:</font>         pCollVC->SetShaderConstant( trans_iter, &x  );
+<FONT COLOR="deepskyblue">0446:</font>         pCollVC->SetShaderConstant( velocity_iter, &v  );
+<FONT COLOR="deepskyblue">0447:</font>         pCollVC->SetShaderConstant( color_iter, D3DXVECTOR4(1.0f,1.0f,1.0f,1.0f)  );
+<FONT COLOR="deepskyblue">0448:</font>         bullet.Draw(i, lpD3DDev);
+<FONT COLOR="deepskyblue">0449:</font> 
+<FONT COLOR="deepskyblue">0450:</font>        <FONT COLOR="cyan"> // 裏面の描画</font>
+<FONT COLOR="deepskyblue">0451:</font>         lpD3DDev->SetRenderState(D3DRS_CULLMODE, D3DCULL_CW);
+<FONT COLOR="deepskyblue">0452:</font>         pCollVC->SetShaderConstant( color_iter, D3DXVECTOR4(0.0f,0.0f,0.0f,1.0f)  );
+<FONT COLOR="deepskyblue">0453:</font>         bullet.Draw(i, lpD3DDev);
+<FONT COLOR="deepskyblue">0454:</font>         lpD3DDev->SetRenderState(D3DRS_CULLMODE, D3DCULL_CCW);
+<FONT COLOR="deepskyblue">0455:</font> 
+<FONT COLOR="deepskyblue">0456:</font>         <FONT COLOR="cyan">// 今までの衝突マップに加算合成 </font>
+<FONT COLOR="deepskyblue">0457:</font>         lpD3DDev->SetRenderTarget(pBurnTextureSurface, NULL );
+<FONT COLOR="deepskyblue">0458:</font>         lpD3DDev->SetTextureStageState(0,D3DTSS_COLOROP,    D3DTOP_SELECTARG1);
+<FONT COLOR="deepskyblue">0459:</font>         lpD3DDev->SetTextureStageState(0,D3DTSS_COLORARG1,  D3DTA_TEXTURE);
+<FONT COLOR="deepskyblue">0460:</font>         lpD3DDev->SetRenderState(D3DRS_ALPHABLENDENABLE, TRUE);
+<FONT COLOR="deepskyblue">0461:</font>         float size = 512.0f;
+<FONT COLOR="deepskyblue">0462:</font>         TLVERTEX Vertex[4] = {
+<FONT COLOR="deepskyblue">0463:</font>             // x    y   z rhw tu tv
+<FONT COLOR="deepskyblue">0464:</font>             {   0,    0,0, 1, 1, 0,},
+<FONT COLOR="deepskyblue">0465:</font>             {size,    0,0, 1, 0, 0,},
+<FONT COLOR="deepskyblue">0466:</font>             {size, size,0, 1, 0, 1,},
+<FONT COLOR="deepskyblue">0467:</font>             {   0, size,0, 1, 1, 1,},
+<FONT COLOR="deepskyblue">0468:</font>         };
+<FONT COLOR="deepskyblue">0469:</font>         lpD3DDev->SetTexture( 0, pTexture);
+<FONT COLOR="deepskyblue">0470:</font>         lpD3DDev->SetVertexShader( FVF_TLVERTEX );
+<FONT COLOR="deepskyblue">0471:</font>         lpD3DDev->SetPixelShader(0);
+<FONT COLOR="deepskyblue">0472:</font>         lpD3DDev->DrawPrimitiveUP( D3DPT_TRIANGLEFAN, 2, Vertex, sizeof( TLVERTEX ) );
+<FONT COLOR="deepskyblue">0473:</font>         lpD3DDev->SetRenderState(D3DRS_ALPHABLENDENABLE, FALSE);
+<FONT COLOR="deepskyblue">0474:</font>     }
+<FONT COLOR="deepskyblue">0475:</font>     lpD3DDev->SetRenderState(D3DRS_ZWRITEENABLE, TRUE);
+<FONT COLOR="deepskyblue">0476:</font>     lpD3DDev->SetRenderState(D3DRS_CULLMODE, D3DCULL_CCW);
+</pre>
+
+<p>
+あとは、弾を描画する頂点シェーダプログラムです（地面に関しては普通のレンダリングをします）。<br>
+弾のレンダリングの時に、表も裏も同じシェーダプログラムで描画します。
+</p>
+<pre class="CodeBlock">
+CollisionV.cg
+<FONT COLOR="deepskyblue">0006:</font> <FONT COLOR="cyan">// ----------------------------------------------------------------------------</font>
+<FONT COLOR="deepskyblue">0007:</font> <FONT COLOR="cyan">// 入力データ</font>
+<FONT COLOR="deepskyblue">0008:</font> <FONT COLOR="cyan">// ----------------------------------------------------------------------------</font>
+<FONT COLOR="deepskyblue">0009:</font> struct appdata  {
+<FONT COLOR="deepskyblue">0010:</font>     float4 position  : POSITION;
+<FONT COLOR="deepskyblue">0011:</font>     float4 texcoord0 : TEXCOORD0;
+<FONT COLOR="deepskyblue">0012:</font> };
+<FONT COLOR="deepskyblue">0013:</font> <FONT COLOR="cyan">// ----------------------------------------------------------------------------</font>
+<FONT COLOR="deepskyblue">0014:</font> <FONT COLOR="cyan">// 頂点シェーダプログラム</font>
+<FONT COLOR="deepskyblue">0015:</font> <FONT COLOR="cyan">// ----------------------------------------------------------------------------</font>
+<FONT COLOR="deepskyblue">0016:</font> vf20 main(appdata I
+<FONT COLOR="deepskyblue">0017:</font>         , uniform float4x4 viewproj_matrix
+<FONT COLOR="deepskyblue">0018:</font>         , uniform float4 trans
+<FONT COLOR="deepskyblue">0019:</font>         , uniform float4 velocity
+<FONT COLOR="deepskyblue">0020:</font>         , uniform float4 color
+<FONT COLOR="deepskyblue">0021:</font> ) {
+<FONT COLOR="deepskyblue">0022:</font>     vf20 O;
+<FONT COLOR="deepskyblue">0023:</font>     
+<FONT COLOR="deepskyblue">0024:</font>     <FONT COLOR="cyan">// 座標変換</font>
+<FONT COLOR="deepskyblue">0025:</font>     float4 v = (0&lt;=dot(I.position, velocity))
+<FONT COLOR="deepskyblue">0026:</font>                     ? I.position
+<FONT COLOR="deepskyblue">0027:</font>                     : (I.position-velocity);
+<FONT COLOR="deepskyblue">0028:</font>     v=v+trans;
+<FONT COLOR="deepskyblue">0029:</font>     O.HPOS = mul(viewproj_matrix, v);
+<FONT COLOR="deepskyblue">0030:</font>     
+<FONT COLOR="deepskyblue">0031:</font>     <FONT COLOR="cyan">// 頂点色は定数をコピーする</font>
+<FONT COLOR="deepskyblue">0032:</font>     O.COL0   = color;
+<FONT COLOR="deepskyblue">0033:</font> 
+<FONT COLOR="deepskyblue">0034:</font>     return O;
+<FONT COLOR="deepskyblue">0035:</font> } 
+</pre>
+<p>
+頂点座標はブラーの時と同じ考え方で引き伸ばします。
+進行方向と同じ向きの法線を持つ頂点に関してはそのまま、
+裏向きの法線を持つ頂点に関しては後ろに伸ばして座標変換します<br>
+といっても、入力データに法線情報をもたせるのが（データが増えるので）いやだったので、
+弾が玉で丸いので、ローカル座標での位置と速度方向から引き伸ばす頂点を算出しています。<br>
+一般には、法線情報をもたせて引き伸ばすと良いでしょう。<br>
+頂点色は定数として色の情報を設定しておき、定数色をそのまま出力します。
+</p>
+
+
+<h2>■最後に</h2>
+
+
+<p>
+以上で、衝突判定をシェーダで行うことができました。<br>
+キューブマップや双放物面マップを使えば、任意の凸多面体に関して衝突判定が行えるので、
+地面だけでなくもっと色々な幅が広がると思います
+（というか、時間が無くてそれらのマップを使えませんでした）。 <br>
+今回の当たり判定では判定に関する応答ができないので、弾はあたった後もまっすぐに進んでしまいます。<br>
+まあ、その辺はご愛嬌ということで…
+</p>
+
+</div>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<center>
+<hr>
+<p><a href="../index.html">もどる</a></p>
+<p><a href="mailto:imagire@gmail.com">imagire@gmail.com</a></p>
+</center>
+
+</body>
+</html>

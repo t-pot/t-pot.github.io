@@ -1,0 +1,346 @@
+<head>
+	<title>t-pot『ぼくの夏体み』</title>
+	<link rel="stylesheet" type="text/css" href="../if.css">
+</head>
+<meta http-equiv=Content-Type content="text/html; charset=shift_jis">
+<body text=#ffffff>
+<div class="contents">
+<p align="right">まるでサンシャイン2002</p>
+<center>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<h1>ぼくの夏体み</h1><br>
+<h3>～Perspective Shadow Maps～</h3>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<image src = "title.png">
+</center>
+
+
+<h2>■７月１９日 今日から夏体み</h2>
+<p>
+今日から夏体みです。<br>
+せいせきもあがったので、マリオサンシャインをかってもらいました。<br>
+<font color="tomato">成績があがってよかったね。休みでもあそんでばかりじゃいけませんよ。（先生）</font>
+</p>
+<h2>■７月２０日 マリオをしました</h2>
+<p>
+マリオがおもしろいです。<br>
+うみにスミがうかんでいるところからさきにすすめません。<br>
+<font color="tomato">先生も海に行きました。水着の女の子がかわいかったです。（先生）</font>
+</p>
+<h2>■７月２１日 マリオさいこ～です</h2>
+<p>
+今日はメカクッパにやられました。<br>
+<font color="tomato">やっぱりマリオの敵はクッパなんですか？ルイージは今回は、いますか？（先生）</font>
+</p>
+<h2>■７月２２日 よっすぃ～</h2>
+<p>
+ヨッシーのタマゴがおちています。<br>
+エサをあげただけでなつくなんてキャッシュなやつです。<br>
+とりに水をかけて虐待するのがマイブームです。<br>
+<font color="tomato">鳥に水をかけて遊んではいけません。（先生）</font>
+</p>
+<h2>■７月２３日 シャインシャインシャイン</h2>
+<p>
+３０シャインあつめました。<br>
+すんごいポンプもひろいました。<br>
+<font color="tomato">ひろいものは警察にとどけましょう。（先生）</font>
+</p>
+<h2>■７月２４日 マリオおあずけ</h2>
+<p>
+７月２４日 マリオおあずけ<br>
+マリオばっかりしていたら、パパにキューブをとりあげられました。<br>
+<font color="tomato">勉強もしましょう。（先生）</font>
+</p>
+<h2>■８月１日 自由けんきゅう</h2>
+<p>
+しゅくだいわすれてた。<br>
+自由けんきゅうもでてたけど。ネタがないよぉ。<br>
+どうしよう・・・<br>
+<font color="tomato">先生も子供のころは自由研究で悩みました。（先生）</font>
+</p>
+
+
+<h2>■ ８月２日 ネタ</h2>
+<p>
+そういえば、<a href="http://home.att.ne.jp/yellow/hide_n/">カクカクシカジカな、にいさかくん</a>が、<br>
+「シャドウマップなどのテクスチャの解像度の問題を解決する方法として、Perspective Shadow Mapsという手法があります。
+ちょっと論文の比較画像は誇張しすぎですが（Perspectiveでない方のシャドウマップが駄目過ぎ）、これは中々良いと思います。
+通常のシャドウマップでは光源とカメラが向かい合ってしまうとカメラに近くなるほど影が粗くなるという欠点がありますけど、この方法ならその問題もありませんね。
+いつか実装してみようと思っていまだにやってませんが、誰か代わりに試してください（笑」っていってたっけ。<br>
+これやってみようかな。<br>
+INRIA Sophia Antipolis の Marc Stamminger くんと George Drettakis くんで SIGGHRAPH 2002 ってイベントでやったんだって。<br>
+パパもママもこむからやだって SIGGHRAPH につれてってくれないんだよなぁ～<br>
+<font color="tomato">自由研究の内容が決まっておめでとう。遊びにつれてってくれないからって、プレッシャーをかけちゃいけないよ（先生）</font>
+</p>
+
+<h2>■８月５日 シャドウマップ</h2>
+<p>
+シャドウマップって、ライトを当てる方向から深さの絵をつくって、
+</p>
+<image src = "nmap.png">
+<p>
+その絵と本当にかきたい絵の深さのくらべて、影をつくるみたいです。<br>
+上の絵は、クルマのなかみをひっくりかえしてるみたいです。
+</p>
+<image src = "n512.png">
+<p>
+さいしょに、シロクロのえをかいたあとに、テレビにもう１かい絵をかくみたいです。
+</p>
+<pre class="CodeBlock">
+draw.c
+<font color = deepskyblue>0442:</font>     lpD3DDev->GetDepthStencilSurface( &lpZbuffer );
+<font color = deepskyblue>0443:</font>     lpD3DDev->SetRenderTarget(pTextureSurface, lpZbuffer);
+<font color = deepskyblue>0444:</font>     lpD3DDev->Clear(0,NULL,D3DCLEAR_TARGET, D3DCOLOR_XRGB(0,0,0),1.0f,0);
+<font color = deepskyblue>0445:</font> 
+<font color = deepskyblue>0446:</font>     <font color = cyan>// シャドウマップの作成</font>
+<font color = deepskyblue>0447:</font>     lpD3DDev->SetRenderState( D3DRS_ALPHABLENDENABLE, FALSE);
+<font color = deepskyblue>0448:</font>     lpD3DDev->SetVertexShader(hVertexShader);
+<font color = deepskyblue>0449:</font>     lpD3DDev->SetPixelShader(hPixelShader);
+<font color = deepskyblue>0450:</font>     DrawModel(lpD3DDev, 1, 0);
+<font color = deepskyblue>0451:</font> 
+<font color = deepskyblue>0452:</font>     <font color = cyan>// 描画をバックバッファに戻す</font>
+<font color = deepskyblue>0453:</font>     lpD3DDev->SetRenderTarget(pBackbuffer, lpZbuffer );
+<font color = deepskyblue>0454:</font>     lpD3DDev->Clear(0,NULL,D3DCLEAR_ZBUFFER, 0,1.0f,0);
+<font color = deepskyblue>0455:</font>     
+<font color = deepskyblue>0456:</font>     <font color = cyan>// 比較しながらの描画</font>
+<font color = deepskyblue>0457:</font>     lpD3DDev->SetVertexShader(hShadowVertexShader); 
+<font color = deepskyblue>0458:</font>     lpD3DDev->SetPixelShader(hShadowPixelShader);
+<font color = deepskyblue>0459:</font>     lpD3DDev->SetTexture( 1, pTexture );
+<font color = deepskyblue>0460:</font>     DrawModel(lpD3DDev, 0, 1);
+</pre>
+<p>
+おくゆきのシロクロのえをかくのは、
+</p>
+<pre class="CodeBlock">
+vs.vsh
+<font color = deepskyblue>0003:</font> <font color = cyan>; c4-7   -- world + ライトビュー + 透視変換行列</font>
+<font color = deepskyblue>0004:</font> <font color = cyan>; c15    -- 深度調整</font>
+<font color = deepskyblue>0006:</font> <font color = cyan>; v0    頂点の座標値</font>
+<font color = deepskyblue>0009:</font> vs.1.0
+<font color = deepskyblue>0014:</font> <font color = cyan>;座標変換</font>
+<font color = deepskyblue>0015:</font> m4x4 oPos, v0, c4
+<font color = deepskyblue>0017:</font> <font color = cyan>; 深度を色のw成分に入れる</font>
+<font color = deepskyblue>0018:</font> dp4 r0,     v0,   c6
+<font color = deepskyblue>0019:</font> mad oD0,    r0,   c15.x, c15.y
+</pre>
+<pre class="CodeBlock">
+ps.psh
+<font color = deepskyblue>0004:</font> ps.1.0
+<font color = deepskyblue>0010:</font> mov r0, v0.a
+</pre>
+<p>
+で、もういっかいは、
+</p>
+<pre class="CodeBlock">
+Shadow.vsh
+<font color = deepskyblue>0002:</font> <font color = cyan>; c0-3   -- world + ビュー + 透視変換行列</font>
+<font color = deepskyblue>0003:</font> <font color = cyan>; c4-7   -- world + ライトビュー + 透視変換行列</font>
+<font color = deepskyblue>0004:</font> <font color = cyan>; c13    -- ライトのベクトル (w成分は環境光の強さ)</font>
+<font color = deepskyblue>0005:</font> <font color = cyan>; c14    -- ライトの色(メッシュの色)</font>
+<font color = deepskyblue>0006:</font> <font color = cyan>; c15    -- 深度調整</font>
+<font color = deepskyblue>0008:</font> <font color = cyan>; v0    頂点の座標値</font>
+<font color = deepskyblue>0010:</font> <font color = cyan>; v7    テクスチャ座標</font>
+<font color = deepskyblue>0012:</font> vs.1.0
+<font color = deepskyblue>0014:</font> <font color = cyan>; デカールテクスチャー</font>
+<font color = deepskyblue>0015:</font> mov oT0,    v7
+<font color = deepskyblue>0017:</font> <font color = cyan>;座標変換</font>
+<font color = deepskyblue>0018:</font> m4x4 oPos, v0, c0
+<font color = deepskyblue>0020:</font> <font color = cyan>; ((l,n) + l.w)*c14 (平行光源のライティング)</font>
+<font color = deepskyblue>0021:</font> dp4 r0.w,   v3,   c13
+<font color = deepskyblue>0022:</font> mul oD0.xyz,r0.w, c14
+<font color = deepskyblue>0024:</font> <font color = cyan>; 深度を色のw成分に入れる</font>
+<font color = deepskyblue>0025:</font> dp4 r0,     v0,   c6
+<font color = deepskyblue>0026:</font> mad oD0.w,  r0,   c15.x, c15.y
+<font color = deepskyblue>0028:</font> <font color = cyan>; シャドウバッファ</font>
+<font color = deepskyblue>0029:</font> dp4 r0.x,   v0,   c4
+<font color = deepskyblue>0030:</font> dp4 r0.y,  -v0,   c5
+<font color = deepskyblue>0031:</font> dp4 r0.w,   v0,   c7
+<font color = deepskyblue>0032:</font> rcp r0.w, r0.w
+<font color = deepskyblue>0033:</font> mul r0.xy, r0, r0.w
+<font color = deepskyblue>0034:</font> mad oT1.xy, r0, c12.y, c12.y
+</pre>
+<pre class="CodeBlock">
+shadow.psh
+<font color = deepskyblue>0004:</font> ps.1.0
+<font color = deepskyblue>0006:</font> def c0, 0.0f, 0.0f, 0.0f, 0.000000000001f   <font color = cyan>; ｚ-オフセット</font>
+<font color = deepskyblue>0007:</font> def c1, 0.3f, 0.3f, 0.3f, 0.0f      <font color = cyan>; 影の濃さ</font>
+<font color = deepskyblue>0009:</font> <font color = cyan>; テクスチャーの色を引っ張ってくる</font>
+<font color = deepskyblue>0010:</font> tex t0                              <font color = cyan>; デカールテクスチャー</font>
+<font color = deepskyblue>0011:</font> tex t1                              <font color = cyan>; 深度テクスチャー</font>
+<font color = deepskyblue>0012:</font> 
+<font color = deepskyblue>0013:</font> add r1, t0, v0                      <font color = cyan>; 色＝頂点色+デカール</font>
+<font color = deepskyblue>0014:</font> 
+<font color = deepskyblue>0015:</font> <font color = cyan>; r0 = (t1.a &lt; v0.a-0.1f) ? r1 : r1-c1</font>
+<font color = deepskyblue>0016:</font> add r0, v0,  -c0
+<font color = deepskyblue>0017:</font> add r0, r0,  -t1_bias
+<font color = deepskyblue>0018:</font> cnd r0, r0.a, c1, c0
+<font color = deepskyblue>0019:</font> add r0, r1, -r0
+</pre>
+<p>
+でかきます。<br>
+<font color="tomato">めんどくさいから、影の部分は手で黒く塗ろうよ。（先生）</font>
+</p>
+
+<h2>■８月１０日 サンシャインにのぼったよ</h2>
+<p>
+今日は、いけぶくろにいきました。<br>
+<!--ＸＥＶＩＯＵＳの映画もみてきたよ。できは・・・<br>-->
+かえりにお酒をのんでくだをまいているおとなをみました。<br>
+「マ○○サンシャイン」ってさけんでいました。<br>
+おじさんたちもマリオをするのかな？<br>
+あんなおとなにはなりたくないとおもいました。<br>
+<font color="tomato">大人の世界もいろいろと大変なんだよ。（先生）</font>
+</p>
+
+<h2>■８月２０日 ぱーすぺくてぃぶしゃどうまっぷっぷ</h2>
+<p>
+Perspective Shadow Maps (以下、透視影マップ)は、影マップのぎょうれつをちがうものにします。<br>
+とおしへんかんしてから、ひしゃげたくうかんのままで、ライトのほうこうからせかいをみます。
+</p>
+<image src = "mapview.png">
+<p>
+ただ、とおくのものが小さくなったので、つかわないぶぶんがでてきます。
+</p>
+<image src = "muda.png">
+<p>
+だから、いいかんじに画面の中心をずらします。
+</p>
+<image src = "mapview2.png">
+<p>
+ざひょうをへんかんするぎょうれつは、むずかしいものになります。
+</p>
+<image src = "mat.png">
+<p>
+しゃえいへんかんをしたあとに、すけーりんぐします。<br>
+これは、とうしへんかんのあとのくうかんがひしゃげてるので、
+いい大きさになるようにちょうせいしています。<br>
+そのあとに、とうしへんかんしたざひょうを、もとのせかいの真ん中がちゅうしんになるようにうごかします。<br>
+そのときに、ビューぎょうれつをつかいます。ただし、してんがワールドのちゅうしん、みているむきはZほうこう、うえむきはうえむきです。<br>
+ただ、そのベクトルは、とうしへんかんでへんかんしたものです（そのあとに、きかくかもします）。<br>
+とうしへんかんでうつったせかいでのベクトルをつかうと、とうしへんかんしたせかいでのもとのワールドのちゅうしんがわかります。<br>
+ただ、つくったビューぎょうれつをつかったら、ｘじくとｙじくがひっくりかえっていたので、もとにもどすぎょうれつをつかいました(べつにいらないけどね)。<br>
+あと、ライトのほうこうにまわしたあとは（ライトのほうこうも、とうしへんかんしたあとのむきだよ）、とうしへんかんしてテクスチャーにかきます。
+そのとき、さいごのしんどがいいカンジになるように、しゃえいぎょうれつはせんようでつくりました。<br>
+あと、真ん中をうごかして、いいかんじの大きさにちょうせいします。
+</p>
+<image src = "mat2.png">
+<p>
+</p>
+<image src = "mat3.png">
+<p>
+できたテクスチャーは、てまえのくるまが大きくかけました。
+</p>
+<image src = "pmap.png">
+<p>
+すこし、このほうほうにぎもんをかんじます。パースをかけるぶん、さいごにひかくするときのＺちとテクスチャーのむきがかたむいているので、
+かげにならないきょうかいぶぶんのギザギザがおおきくなるきがします。<br>
+<font color="tomato">見ているだけで、クラクラしそうな絵ですね。。（先生）</font>
+</p>
+
+<h2>■８月２７日 しげんはたいせつにね</h2>
+
+<p>
+透視影マップのいいところは、てまえのかげがこまかくなるようです。<br>
+ということは、テクスチャーが小さくてもきれいということです。<br>
+透視影マップとふつうのほうほうをくらべよう。
+</p>
+<p>
+テクスチャーのサイズを512x512にしたとき、それぞれのえは、つぎのようになります<br>
+（このあと、左が透視影マップ、右がふつうのほうほうです）。
+</p>
+<image src = "p512.png" width = 512 height = 512><image src = "n512.png" width = 512 height = 512><br>
+<p>
+透視影マップの手前のクルマのりんかくが、おそろしくきれいです。<br>
+あと、このがめんできがついたのですが、透視影マップはひだりしたが（影マップが）かけているので、影がきえてます。
+</p>
+<p>
+テクスチャーのサイズを256x256にしたとき、つぎのようになります。
+</p>
+<image src = "p256.png" width = 512 height = 512><image src = "n256.png" width = 512 height = 512><br>
+<p>
+透視影マップは、おくのほうが大きなギザギザがあるのがみえます。
+</p>
+<p>
+テクスチャーのサイズを128x128にしたとき、つぎのようになります。
+</p>
+<image src = "p128.png" width = 512 height = 512><image src = "n128.png" width = 512 height = 512><br>
+<p>
+透視影マップのてまえのぶぶんが、かくじつにきれいです。<br>
+</p>
+<p>
+テクスチャーのサイズを64x64にしたとき、つぎのようになります。
+</p>
+<image src = "p064.png" width = 512 height = 512><image src = "n064.png" width = 512 height = 512><br>
+<p>
+どっちもギザギザ。<br>
+でも、透視影マップのほうは、てまえの影がきれいですね。
+</p>
+<p>
+テクスチャーのサイズを32x32にしたとき、つぎのようになります。
+</p>
+<image src = "p032.png" width = 512 height = 512><image src = "n032.png" width = 512 height = 512><br>
+<p>
+<p>
+やっぱり、透視影マップがの手前はあまりくずれません。
+</p>
+こんかいのひかくは、いままでのほうほうとのさがすくないですね。<br>
+<font color="tomato">結局、SHIGGRAPHの結果は自分の結果が有利になるように調整されていたのですか？（先生）</font>
+</p>
+
+
+<h2>■９月１日 あしたも体みにならないかな</h2>
+
+
+<p>
+やっとしゅくだいがそろいました。
+</p>
+<p>
+<ul style = "LIST-STYLE-TYPE:none">
+<li><a href="src.lzh">src.lzh (しゅくだいのていしゅつ。DirectX8.1で遊べるよ。)</a>
+</ul>
+
+<p>
+なかみは、つぎのファイルです。<br>
+</p>
+<table>
+<tr><td><a href="shadow_vsh.html">shadow.psh</a></td><td>ちょうてんシェーダー。</td></tr>
+<tr><td><a href="shadow_psh.html">shadow.psh</a></td><td>ピクセルシェーダー。</td></tr>
+<tr><td><a href="vs_vsh.html">vs.vsh</a></td><td>ちょうてんシェーダー。かげマップをつくるよ。</td></tr>
+<tr><td><a href="ps_psh.html">ps.psh</a></td><td>ピクセルシェーダー。かげマップをつくるよ。</td></tr>
+<tr><td><a href="draw_cpp.html">draw.cpp</a></td><td>テレビをかくんだ。</td></tr>
+<tr><td><a href="draw_h.html">draw.h</a></td><td>テレビをかくんだ。</td></tr>
+<tr><td><a href="bg_cpp.html">bg.cpp</a></td><td>じめんとかかくよ。</td></tr>
+<tr><td><a href="main_h.html">main.h</a></td><td>はじめのいっぽ。</td></tr>
+<tr><td><a href="main_cpp.html">main.cpp</a></td><td>はじめのいっぽ。</td></tr>
+<tr><td><a href="load_cpp.html">load.cpp</a></td><td>えをよむんだ。</td></tr>
+<tr><td><a href="load_h.html">load.h</a></td><td>えをよむんだ。</td></tr>
+<tr><td><a href="font_cpp.html">font.cpp</a></td><td>じをかくよ。</td></tr>
+<tr><td><a href="font_h.html">font.h</a></td><td>じをかくよ。</td></tr>
+</table>
+<image src = "tile_bmp.jpg" width = 64 height=64>tile.bmp (床デカール)<br>
+<image src = "sky_bmp.jpg" width = 64 height=64>sky.bmp (空デカール)<br>
+<p>
+あと、モデルと、あそべるエグゼや、プロジェクトファイルがはいってます。
+</p>
+<p>
+きょうで、夏体みもおしまいです。あぁ～あ、あしたからも夏体みがいいな。
+</p>
+<p>
+<font color="tomato">お疲れ様でした。新学期もがんばってね。（先生）</font>
+</p>
+
+
+
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<center>
+<p><a href="../index.html">もどる</a></p>
+<p><a href="mailto:imagire@gmail.com">imagire@gmail.com</a></p>
+</center>
+
+</body>
+</html>

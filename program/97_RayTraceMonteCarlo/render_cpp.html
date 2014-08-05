@@ -1,0 +1,797 @@
+<HTML>
+<HEAD>
+<TITLE>render.cpp</TITLE>
+<meta name="GENERATOR" content="cpp2html 2.1 by Niisaka">
+<meta http-equiv="Content-Type" content="text/html">
+<meta http-equiv="Content-Style-Type" content="text/css">
+<STYLE TYPE="text/css">
+<!--
+SPAN.comment { color:#008000; font-weight:normal; font-style:normal;}
+SPAN.keyword { color:#0000FF; font-weight:normal; font-style:normal;}
+SPAN.string { color:#600000; font-weight:normal; font-style:normal;}
+SPAN.linenum { color:#A0A0A0; font-weight:normal; font-style:normal;}
+-->
+</STYLE>
+</HEAD>
+<BODY TEXT="#000000" BGCOLOR="#FFFFFF">
+<PRE><SPAN CLASS="linenum">0001:</SPAN> <SPAN CLASS="keyword">#include</SPAN> "<SPAN CLASS="string">stdafx.h</SPAN>"
+<SPAN CLASS="linenum">0002:</SPAN> <SPAN CLASS="keyword">#include</SPAN> &lt;mmsystem.h&gt;
+<SPAN CLASS="linenum">0003:</SPAN> <SPAN CLASS="keyword">#include</SPAN> "<SPAN CLASS="string">math.h</SPAN>"
+<SPAN CLASS="linenum">0004:</SPAN> <SPAN CLASS="keyword">#include</SPAN> "<SPAN CLASS="string">prim.h</SPAN>"
+<SPAN CLASS="linenum">0005:</SPAN> <SPAN CLASS="keyword">#include</SPAN> "<SPAN CLASS="string">render.h</SPAN>"
+<SPAN CLASS="linenum">0006:</SPAN> 
+<SPAN CLASS="linenum">0007:</SPAN> <SPAN CLASS="keyword">#define</SPAN> frand() ((<SPAN CLASS="keyword">float</SPAN>)rand()/(<SPAN CLASS="keyword">float</SPAN>)RAND_MAX)
+<SPAN CLASS="linenum">0008:</SPAN> 
+<SPAN CLASS="linenum">0009:</SPAN> <SPAN CLASS="keyword">namespace</SPAN> Render {
+<SPAN CLASS="linenum">0010:</SPAN> 
+<SPAN CLASS="linenum">0011:</SPAN> D3DXVECTOR3 BG_COLOR = D3DXVECTOR3(0.25f, 0.4f, 0.5f);
+<SPAN CLASS="linenum">0012:</SPAN> 
+<SPAN CLASS="linenum">0013:</SPAN> <SPAN CLASS="keyword">class</SPAN> CCamera
+<SPAN CLASS="linenum">0014:</SPAN> {
+<SPAN CLASS="linenum">0015:</SPAN> <SPAN CLASS="keyword">private</SPAN>:
+<SPAN CLASS="linenum">0016:</SPAN>     D3DXMATRIX  m_mView;
+<SPAN CLASS="linenum">0017:</SPAN>     D3DXMATRIX  m_mProj;
+<SPAN CLASS="linenum">0018:</SPAN>     D3DXMATRIX  m_mVP;
+<SPAN CLASS="linenum">0019:</SPAN>     D3DXMATRIX  m_mVP_Inv;
+<SPAN CLASS="linenum">0020:</SPAN>     D3DXMATRIX  m_mView_Inv;
+<SPAN CLASS="linenum">0021:</SPAN> 
+<SPAN CLASS="linenum">0022:</SPAN>     D3DXVECTOR3 m_vFrom;
+<SPAN CLASS="linenum">0023:</SPAN>     D3DXVECTOR3 m_vLookat;
+<SPAN CLASS="linenum">0024:</SPAN>     D3DXVECTOR3 m_vUp;
+<SPAN CLASS="linenum">0025:</SPAN> 
+<SPAN CLASS="linenum">0026:</SPAN>     <SPAN CLASS="keyword">float</SPAN>   m_fFovy;
+<SPAN CLASS="linenum">0027:</SPAN>     <SPAN CLASS="keyword">float</SPAN>   m_fAspect;
+<SPAN CLASS="linenum">0028:</SPAN>     <SPAN CLASS="keyword">float</SPAN>   m_fNear;
+<SPAN CLASS="linenum">0029:</SPAN>     <SPAN CLASS="keyword">float</SPAN>   m_fFar;
+<SPAN CLASS="linenum">0030:</SPAN> 
+<SPAN CLASS="linenum">0031:</SPAN> <SPAN CLASS="keyword">public</SPAN>:
+<SPAN CLASS="linenum">0032:</SPAN> 
+<SPAN CLASS="linenum">0033:</SPAN>     <SPAN CLASS="keyword">void</SPAN> Update();
+<SPAN CLASS="linenum">0034:</SPAN>     <SPAN CLASS="keyword">void</SPAN> SetFrom  (<SPAN CLASS="keyword">const</SPAN> D3DXVECTOR3 *p){m_vFrom  =*p;}
+<SPAN CLASS="linenum">0035:</SPAN>     <SPAN CLASS="keyword">void</SPAN> SetLookAt(<SPAN CLASS="keyword">const</SPAN> D3DXVECTOR3 *p){m_vLookat=*p;}
+<SPAN CLASS="linenum">0036:</SPAN>     <SPAN CLASS="keyword">void</SPAN> SetUp    (<SPAN CLASS="keyword">const</SPAN> D3DXVECTOR3 *p){m_vUp    =*p;}
+<SPAN CLASS="linenum">0037:</SPAN>     <SPAN CLASS="keyword">void</SPAN> SetFovY  (<SPAN CLASS="keyword">float</SPAN> val){m_fFovy   = val;}
+<SPAN CLASS="linenum">0038:</SPAN>     <SPAN CLASS="keyword">void</SPAN> SetAspect(<SPAN CLASS="keyword">float</SPAN> val){m_fAspect = val;}
+<SPAN CLASS="linenum">0039:</SPAN>     <SPAN CLASS="keyword">void</SPAN> SetNear  (<SPAN CLASS="keyword">float</SPAN> val){m_fNear   = val;}
+<SPAN CLASS="linenum">0040:</SPAN>     <SPAN CLASS="keyword">void</SPAN> SetFar   (<SPAN CLASS="keyword">float</SPAN> val){m_fFar    = val;}
+<SPAN CLASS="linenum">0041:</SPAN> 
+<SPAN CLASS="linenum">0042:</SPAN>     <SPAN CLASS="keyword">inline</SPAN> <SPAN CLASS="keyword">const</SPAN> D3DXMATRIX *GetViewInverse() <SPAN CLASS="keyword">const</SPAN> {<SPAN CLASS="keyword">return</SPAN> &amp;m_mView_Inv;}
+<SPAN CLASS="linenum">0043:</SPAN>     <SPAN CLASS="keyword">inline</SPAN> <SPAN CLASS="keyword">const</SPAN> D3DXMATRIX *GetViewProjInverse() <SPAN CLASS="keyword">const</SPAN> {<SPAN CLASS="keyword">return</SPAN> &amp;m_mVP_Inv;}
+<SPAN CLASS="linenum">0044:</SPAN>     <SPAN CLASS="keyword">inline</SPAN> <SPAN CLASS="keyword">void</SPAN> GetFrom (D3DXVECTOR3 *dest) <SPAN CLASS="keyword">const</SPAN> {*dest = m_vFrom;}
+<SPAN CLASS="linenum">0045:</SPAN> };
+<SPAN CLASS="linenum">0046:</SPAN> 
+<SPAN CLASS="linenum">0047:</SPAN> <SPAN CLASS="comment">// ---------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0048:</SPAN> <SPAN CLASS="comment">// オブジェクト</SPAN>
+<SPAN CLASS="linenum">0049:</SPAN> <SPAN CLASS="comment">// ---------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0050:</SPAN> <SPAN CLASS="keyword">char</SPAN>  s_data [4*RENDER_WIDTH*RENDER_HEIGHT];<SPAN CLASS="comment">// 仮想フレームバッファ</SPAN>
+<SPAN CLASS="linenum">0051:</SPAN> <SPAN CLASS="keyword">float</SPAN> s_total[4*RENDER_WIDTH*RENDER_HEIGHT];<SPAN CLASS="comment">// 累積フレームバッファ</SPAN>
+<SPAN CLASS="linenum">0052:</SPAN> 
+<SPAN CLASS="linenum">0053:</SPAN> CCamera camera;
+<SPAN CLASS="linenum">0054:</SPAN> 
+<SPAN CLASS="linenum">0055:</SPAN> CMesh *pRoom       = NULL;
+<SPAN CLASS="linenum">0056:</SPAN> CMesh *pBlockSmall = NULL;
+<SPAN CLASS="linenum">0057:</SPAN> CMesh *pBlockTall  = NULL;
+<SPAN CLASS="linenum">0058:</SPAN> CMesh *pShpereS    = NULL;
+<SPAN CLASS="linenum">0059:</SPAN> CMesh *pShpereT    = NULL;
+<SPAN CLASS="linenum">0060:</SPAN> 
+<SPAN CLASS="linenum">0061:</SPAN> <SPAN CLASS="keyword">static</SPAN> <SPAN CLASS="keyword">int</SPAN> s_x = 0;         <SPAN CLASS="comment">// レンダリングピクセルのｘ座標</SPAN>
+<SPAN CLASS="linenum">0062:</SPAN> <SPAN CLASS="keyword">static</SPAN> <SPAN CLASS="keyword">int</SPAN> s_y = 0;         <SPAN CLASS="comment">// レンダリングピクセルのｙ座標</SPAN>
+<SPAN CLASS="linenum">0063:</SPAN> <SPAN CLASS="keyword">static</SPAN> <SPAN CLASS="keyword">int</SPAN> s_state = 0;     <SPAN CLASS="comment">// レンダリング関数の状態</SPAN>
+<SPAN CLASS="linenum">0064:</SPAN> <SPAN CLASS="keyword">static</SPAN> <SPAN CLASS="keyword">float</SPAN> render_cnt = 0;<SPAN CLASS="comment">// 描画回数</SPAN>
+<SPAN CLASS="linenum">0065:</SPAN> <SPAN CLASS="keyword">enum</SPAN>{
+<SPAN CLASS="linenum">0066:</SPAN>     STATE_IDLE=0,           <SPAN CLASS="comment">// 処理待ち</SPAN>
+<SPAN CLASS="linenum">0067:</SPAN>     STATE_RENDER_BEGIN,     <SPAN CLASS="comment">// 初期化</SPAN>
+<SPAN CLASS="linenum">0068:</SPAN>     STATE_RENDER,           <SPAN CLASS="comment">// 描画</SPAN>
+<SPAN CLASS="linenum">0069:</SPAN>     STATE_RENDER_END,       <SPAN CLASS="comment">// 後片付け</SPAN>
+<SPAN CLASS="linenum">0070:</SPAN> };
+<SPAN CLASS="linenum">0071:</SPAN> 
+<SPAN CLASS="linenum">0072:</SPAN> OBJ_DATA sphere_data[] = {
+<SPAN CLASS="linenum">0073:</SPAN> {<SPAN CLASS="comment">// 小さいのに乗ってるほう</SPAN>
+<SPAN CLASS="linenum">0074:</SPAN>     OBJ_TYPE_SPHERE,
+<SPAN CLASS="linenum">0075:</SPAN>     {
+<SPAN CLASS="linenum">0076:</SPAN>         {0.10f, 0.100f, 0.10f},
+<SPAN CLASS="linenum">0077:</SPAN>         0.2f, 0.8f, 0.0f, 0.0f,
+<SPAN CLASS="linenum">0078:</SPAN>     },{{0,0,0},{0,0,0},{0,0,0},},{
+<SPAN CLASS="linenum">0079:</SPAN>         {125.5, 0+100,169},
+<SPAN CLASS="linenum">0080:</SPAN> <SPAN CLASS="comment">//      {185.5, 165+100,169},</SPAN>
+<SPAN CLASS="linenum">0081:</SPAN>         100.0f,
+<SPAN CLASS="linenum">0082:</SPAN>     }
+<SPAN CLASS="linenum">0083:</SPAN> },{<SPAN CLASS="comment">// 大きいのに乗ってるほう</SPAN>
+<SPAN CLASS="linenum">0084:</SPAN>     OBJ_TYPE_SPHERE,
+<SPAN CLASS="linenum">0085:</SPAN>     {
+<SPAN CLASS="linenum">0086:</SPAN>         {0.05f, 0.050f, 0.05f},
+<SPAN CLASS="linenum">0087:</SPAN>         0.80f, 0.00f, 0.20f, 0.0f,
+<SPAN CLASS="linenum">0088:</SPAN>     },{{0,0,0},{0,0,0},{0,0,0},},{
+<SPAN CLASS="linenum">0089:</SPAN>         {368.5, 330+100,351},
+<SPAN CLASS="linenum">0090:</SPAN>         100.0f,
+<SPAN CLASS="linenum">0091:</SPAN>     }
+<SPAN CLASS="linenum">0092:</SPAN> }};
+<SPAN CLASS="linenum">0093:</SPAN> OBJ_DATA room_data[14] = {
+<SPAN CLASS="linenum">0094:</SPAN> {
+<SPAN CLASS="linenum">0095:</SPAN> <SPAN CLASS="comment">// ライト１</SPAN>
+<SPAN CLASS="linenum">0096:</SPAN>     OBJ_TYPE_TRIANGLE,
+<SPAN CLASS="linenum">0097:</SPAN>     {
+<SPAN CLASS="linenum">0098:</SPAN>         {100.0f*1.00f, 100.0f*0.90f, 100.0f*0.50f},
+<SPAN CLASS="linenum">0099:</SPAN>         0.0f, 0.0f, 0.0f, 1.0f,
+<SPAN CLASS="linenum">0100:</SPAN>     },{
+<SPAN CLASS="linenum">0101:</SPAN>         {213.0, 548.799f, 227.0},
+<SPAN CLASS="linenum">0102:</SPAN>         {213.0, 548.799f, 332.0},
+<SPAN CLASS="linenum">0103:</SPAN>         {343.0, 548.799f, 227.0},
+<SPAN CLASS="linenum">0104:</SPAN>     }
+<SPAN CLASS="linenum">0105:</SPAN> },{<SPAN CLASS="comment">// ライト２</SPAN>
+<SPAN CLASS="linenum">0106:</SPAN>     OBJ_TYPE_TRIANGLE,
+<SPAN CLASS="linenum">0107:</SPAN>     {
+<SPAN CLASS="linenum">0108:</SPAN>         {100.0f*1.00f, 100.0f*0.90f, 100.0f*0.50f},
+<SPAN CLASS="linenum">0109:</SPAN>         0.0f, 0.0f, 0.0f, 1.0f,
+<SPAN CLASS="linenum">0110:</SPAN>     },{
+<SPAN CLASS="linenum">0111:</SPAN>         {343.0, 548.799f, 227.0},
+<SPAN CLASS="linenum">0112:</SPAN>         {213.0, 548.799f, 332.0},
+<SPAN CLASS="linenum">0113:</SPAN>         {343.0, 548.799f, 332.0},
+<SPAN CLASS="linenum">0114:</SPAN>     }
+<SPAN CLASS="linenum">0115:</SPAN> },{ <SPAN CLASS="comment">// 左１</SPAN>
+<SPAN CLASS="linenum">0116:</SPAN>     OBJ_TYPE_TRIANGLE,
+<SPAN CLASS="linenum">0117:</SPAN>     {
+<SPAN CLASS="linenum">0118:</SPAN>         {0.70f, 0.15f, 0.15f},
+<SPAN CLASS="linenum">0119:</SPAN>         0.0f, 0.0f, 1.0f, 0.0f,
+<SPAN CLASS="linenum">0120:</SPAN>     },{
+<SPAN CLASS="linenum">0121:</SPAN>         {552.8f,   0.0f,   0.0f},
+<SPAN CLASS="linenum">0122:</SPAN>         {556.0f, 548.8f,   0.0f},
+<SPAN CLASS="linenum">0123:</SPAN>         {549.6f,   0.0f, 559.2f},
+<SPAN CLASS="linenum">0124:</SPAN>     }
+<SPAN CLASS="linenum">0125:</SPAN> 
+<SPAN CLASS="linenum">0126:</SPAN> },{<SPAN CLASS="comment">// 左２</SPAN>
+<SPAN CLASS="linenum">0127:</SPAN>     OBJ_TYPE_TRIANGLE,
+<SPAN CLASS="linenum">0128:</SPAN>     {
+<SPAN CLASS="linenum">0129:</SPAN>         {0.70f, 0.15f, 0.15f},
+<SPAN CLASS="linenum">0130:</SPAN>         0.0f, 0.0f, 1.0f, 0.0f,
+<SPAN CLASS="linenum">0131:</SPAN>     },{
+<SPAN CLASS="linenum">0132:</SPAN>         {549.6f,   0.0f, 559.2f},
+<SPAN CLASS="linenum">0133:</SPAN>         {556.0f, 548.8f,   0.0f},
+<SPAN CLASS="linenum">0134:</SPAN>         {556.0f, 548.8f, 559.2f},
+<SPAN CLASS="linenum">0135:</SPAN>     }
+<SPAN CLASS="linenum">0136:</SPAN> 
+<SPAN CLASS="linenum">0137:</SPAN> },{<SPAN CLASS="comment">// 右１</SPAN>
+<SPAN CLASS="linenum">0138:</SPAN>     OBJ_TYPE_TRIANGLE,
+<SPAN CLASS="linenum">0139:</SPAN>     {
+<SPAN CLASS="linenum">0140:</SPAN>         {0.15f, 0.15f, 0.70f},
+<SPAN CLASS="linenum">0141:</SPAN>         0.0f, 0.0f, 1.0f, 0.0f,
+<SPAN CLASS="linenum">0142:</SPAN>     },{
+<SPAN CLASS="linenum">0143:</SPAN>         {0.0f,   0.0f,   0.0f},
+<SPAN CLASS="linenum">0144:</SPAN>         {0.0f,   0.0f, 559.2f},
+<SPAN CLASS="linenum">0145:</SPAN>         {0.0f, 548.8f,   0.0f},
+<SPAN CLASS="linenum">0146:</SPAN>     }
+<SPAN CLASS="linenum">0147:</SPAN> 
+<SPAN CLASS="linenum">0148:</SPAN> },{<SPAN CLASS="comment">// 右２</SPAN>
+<SPAN CLASS="linenum">0149:</SPAN>     OBJ_TYPE_TRIANGLE,
+<SPAN CLASS="linenum">0150:</SPAN>     {
+<SPAN CLASS="linenum">0151:</SPAN>         {0.15f, 0.15f, 0.70f},
+<SPAN CLASS="linenum">0152:</SPAN>         0.0f, 0.0f, 1.0f, 0.0f,
+<SPAN CLASS="linenum">0153:</SPAN>     },{
+<SPAN CLASS="linenum">0154:</SPAN>         {0.0f, 548.8f,   0.0f},
+<SPAN CLASS="linenum">0155:</SPAN>         {0.0f,   0.0f, 559.2f},
+<SPAN CLASS="linenum">0156:</SPAN>         {0.0f, 548.8f, 559.2f},
+<SPAN CLASS="linenum">0157:</SPAN>     }
+<SPAN CLASS="linenum">0158:</SPAN> 
+<SPAN CLASS="linenum">0159:</SPAN> },{<SPAN CLASS="comment">// 奥１</SPAN>
+<SPAN CLASS="linenum">0160:</SPAN>     OBJ_TYPE_TRIANGLE,
+<SPAN CLASS="linenum">0161:</SPAN>     {
+<SPAN CLASS="linenum">0162:</SPAN>         {0.70f, 0.70f, 0.70f},
+<SPAN CLASS="linenum">0163:</SPAN>         0.0f, 0.0f, 1.0f, 0.0f,
+<SPAN CLASS="linenum">0164:</SPAN>     },{
+<SPAN CLASS="linenum">0165:</SPAN>         {  0.0f,   0.0f, 559.2f},
+<SPAN CLASS="linenum">0166:</SPAN>         {549.6f,   0.0f, 559.2f},
+<SPAN CLASS="linenum">0167:</SPAN>         {  0.0f, 548.8f, 559.2f},
+<SPAN CLASS="linenum">0168:</SPAN>     }
+<SPAN CLASS="linenum">0169:</SPAN> 
+<SPAN CLASS="linenum">0170:</SPAN> },{<SPAN CLASS="comment">// 奥２</SPAN>
+<SPAN CLASS="linenum">0171:</SPAN>     OBJ_TYPE_TRIANGLE,
+<SPAN CLASS="linenum">0172:</SPAN>     {
+<SPAN CLASS="linenum">0173:</SPAN>         {0.70f, 0.70f, 0.70f},
+<SPAN CLASS="linenum">0174:</SPAN>         0.0f, 0.0f, 1.0f, 0.0f,
+<SPAN CLASS="linenum">0175:</SPAN>     },{
+<SPAN CLASS="linenum">0176:</SPAN>         {  0.0f, 548.8f, 559.2f},
+<SPAN CLASS="linenum">0177:</SPAN>         {549.6f,   0.0f, 559.2f},
+<SPAN CLASS="linenum">0178:</SPAN>         {556.0f, 548.8f, 559.2f},
+<SPAN CLASS="linenum">0179:</SPAN>     }
+<SPAN CLASS="linenum">0180:</SPAN> 
+<SPAN CLASS="linenum">0181:</SPAN> },{<SPAN CLASS="comment">// 天井１</SPAN>
+<SPAN CLASS="linenum">0182:</SPAN>     OBJ_TYPE_TRIANGLE,
+<SPAN CLASS="linenum">0183:</SPAN>     {
+<SPAN CLASS="linenum">0184:</SPAN>         {0.70f, 0.70f, 0.70f},
+<SPAN CLASS="linenum">0185:</SPAN>         0.0f, 0.0f, 1.0f, 0.0f,
+<SPAN CLASS="linenum">0186:</SPAN>     },{
+<SPAN CLASS="linenum">0187:</SPAN>         {  0.0f, 548.8f,   0.0f},
+<SPAN CLASS="linenum">0188:</SPAN>         {  0.0f, 548.8f, 559.2f},
+<SPAN CLASS="linenum">0189:</SPAN>         {556.0f, 548.8f,   0.0f},
+<SPAN CLASS="linenum">0190:</SPAN>     }
+<SPAN CLASS="linenum">0191:</SPAN> 
+<SPAN CLASS="linenum">0192:</SPAN> },{<SPAN CLASS="comment">// 天井２</SPAN>
+<SPAN CLASS="linenum">0193:</SPAN>     OBJ_TYPE_TRIANGLE,
+<SPAN CLASS="linenum">0194:</SPAN>     {
+<SPAN CLASS="linenum">0195:</SPAN>         {0.70f, 0.70f, 0.70f},
+<SPAN CLASS="linenum">0196:</SPAN>         0.0f, 0.0f, 1.0f, 0.0f,
+<SPAN CLASS="linenum">0197:</SPAN>     },{
+<SPAN CLASS="linenum">0198:</SPAN>         {  0.0f, 548.8f, 559.2f},
+<SPAN CLASS="linenum">0199:</SPAN>         {556.0f, 548.8f, 559.2f},
+<SPAN CLASS="linenum">0200:</SPAN>         {556.0f, 548.8f,   0.0f},
+<SPAN CLASS="linenum">0201:</SPAN>     }
+<SPAN CLASS="linenum">0202:</SPAN> 
+<SPAN CLASS="linenum">0203:</SPAN> },{<SPAN CLASS="comment">// 床１</SPAN>
+<SPAN CLASS="linenum">0204:</SPAN>     OBJ_TYPE_TRIANGLE,
+<SPAN CLASS="linenum">0205:</SPAN>     {
+<SPAN CLASS="linenum">0206:</SPAN>         {0.70f, 0.70f, 0.70f},
+<SPAN CLASS="linenum">0207:</SPAN>         0.0f, 0.0f, 1.0f, 0.0f,
+<SPAN CLASS="linenum">0208:</SPAN>     },{
+<SPAN CLASS="linenum">0209:</SPAN>         {  0.0f, 0.0f,   0.0f},
+<SPAN CLASS="linenum">0210:</SPAN>         {552.8f, 0.0f,   0.0f},
+<SPAN CLASS="linenum">0211:</SPAN>         {  0.0f, 0.0f, 559.2f},
+<SPAN CLASS="linenum">0212:</SPAN>     }
+<SPAN CLASS="linenum">0213:</SPAN> },{<SPAN CLASS="comment">// 床１</SPAN>
+<SPAN CLASS="linenum">0214:</SPAN>     OBJ_TYPE_TRIANGLE,
+<SPAN CLASS="linenum">0215:</SPAN>     {
+<SPAN CLASS="linenum">0216:</SPAN>         {0.70f, 0.70f, 0.70f},
+<SPAN CLASS="linenum">0217:</SPAN>         0.0f, 0.0f, 1.0f, 0.0f,
+<SPAN CLASS="linenum">0218:</SPAN>     },{
+<SPAN CLASS="linenum">0219:</SPAN>         {  0.0f, 0.0f, 559.2f},
+<SPAN CLASS="linenum">0220:</SPAN>         {552.8f, 0.0f,   0.0f},
+<SPAN CLASS="linenum">0221:</SPAN>         {549.6f, 0.0f, 559.2f},
+<SPAN CLASS="linenum">0222:</SPAN>     }
+<SPAN CLASS="linenum">0223:</SPAN> },{<SPAN CLASS="comment">// 手前１</SPAN>
+<SPAN CLASS="linenum">0224:</SPAN>     OBJ_TYPE_TRIANGLE,
+<SPAN CLASS="linenum">0225:</SPAN>     {
+<SPAN CLASS="linenum">0226:</SPAN>         {0.70f, 0.70f, 0.70f},
+<SPAN CLASS="linenum">0227:</SPAN>         0.0f, 0.0f, 1.0f, 0.0f,
+<SPAN CLASS="linenum">0228:</SPAN>     },{
+<SPAN CLASS="linenum">0229:</SPAN>         {  0.0f,   0.0f, 0.0f},
+<SPAN CLASS="linenum">0230:</SPAN>         {  0.0f, 548.8f, 0.0f},
+<SPAN CLASS="linenum">0231:</SPAN>         {549.6f,   0.0f, 0.0f},
+<SPAN CLASS="linenum">0232:</SPAN>     }
+<SPAN CLASS="linenum">0233:</SPAN> 
+<SPAN CLASS="linenum">0234:</SPAN> },{<SPAN CLASS="comment">// 手前２</SPAN>
+<SPAN CLASS="linenum">0235:</SPAN>     OBJ_TYPE_TRIANGLE,
+<SPAN CLASS="linenum">0236:</SPAN>     {
+<SPAN CLASS="linenum">0237:</SPAN>         {0.70f, 0.70f, 0.70f},
+<SPAN CLASS="linenum">0238:</SPAN>         0.0f, 0.0f, 1.0f, 0.0f,
+<SPAN CLASS="linenum">0239:</SPAN>     },{
+<SPAN CLASS="linenum">0240:</SPAN>         {  0.0f, 548.8f, 0.0f},
+<SPAN CLASS="linenum">0241:</SPAN>         {556.0f, 548.8f, 0.0f},
+<SPAN CLASS="linenum">0242:</SPAN>         {549.6f,   0.0f, 0.0f},
+<SPAN CLASS="linenum">0243:</SPAN>     }
+<SPAN CLASS="linenum">0244:</SPAN> 
+<SPAN CLASS="linenum">0245:</SPAN> 
+<SPAN CLASS="linenum">0246:</SPAN> }};
+<SPAN CLASS="linenum">0247:</SPAN> 
+<SPAN CLASS="linenum">0248:</SPAN> 
+<SPAN CLASS="linenum">0249:</SPAN> OBJ_DATA Short_block[] = {
+<SPAN CLASS="linenum">0250:</SPAN> {
+<SPAN CLASS="linenum">0251:</SPAN>     <SPAN CLASS="comment">// 床</SPAN>
+<SPAN CLASS="linenum">0252:</SPAN>     OBJ_TYPE_TRIANGLE,
+<SPAN CLASS="linenum">0253:</SPAN>     {
+<SPAN CLASS="linenum">0254:</SPAN>         {0.70f, 0.70f, 0.70f},
+<SPAN CLASS="linenum">0255:</SPAN>         0.0f, 0.0f, 1.0f, 0.0f,
+<SPAN CLASS="linenum">0256:</SPAN>     },{
+<SPAN CLASS="linenum">0257:</SPAN>         { 82.0f, 165.0f, 225.0f},
+<SPAN CLASS="linenum">0258:</SPAN>         {130.0f, 165.0f,  65.0f},
+<SPAN CLASS="linenum">0259:</SPAN>         {240.0f, 165.0f, 272.0f},
+<SPAN CLASS="linenum">0260:</SPAN>     }
+<SPAN CLASS="linenum">0261:</SPAN> },{
+<SPAN CLASS="linenum">0262:</SPAN>     OBJ_TYPE_TRIANGLE,
+<SPAN CLASS="linenum">0263:</SPAN>     {
+<SPAN CLASS="linenum">0264:</SPAN>         {0.70f, 0.70f, 0.70f},
+<SPAN CLASS="linenum">0265:</SPAN>         0.0f, 0.0f, 1.0f, 0.0f,
+<SPAN CLASS="linenum">0266:</SPAN>     },{
+<SPAN CLASS="linenum">0267:</SPAN>         {290.0, 165.0, 114.0},
+<SPAN CLASS="linenum">0268:</SPAN>         {240.0, 165.0, 272.0},
+<SPAN CLASS="linenum">0269:</SPAN>         {130.0, 165.0,  65.0},
+<SPAN CLASS="linenum">0270:</SPAN>     }
+<SPAN CLASS="linenum">0271:</SPAN> },{<SPAN CLASS="comment">//側面</SPAN>
+<SPAN CLASS="linenum">0272:</SPAN>     OBJ_TYPE_TRIANGLE,
+<SPAN CLASS="linenum">0273:</SPAN>     {
+<SPAN CLASS="linenum">0274:</SPAN>         {0.70f, 0.70f, 0.70f},
+<SPAN CLASS="linenum">0275:</SPAN>         0.0f, 0.0f, 1.0f, 0.0f,
+<SPAN CLASS="linenum">0276:</SPAN>     },{
+<SPAN CLASS="linenum">0277:</SPAN>         {290.0, 165.0, 114.0},
+<SPAN CLASS="linenum">0278:</SPAN>         {290.0,   0.0, 114.0},
+<SPAN CLASS="linenum">0279:</SPAN>         {240.0, 165.0, 272.0},
+<SPAN CLASS="linenum">0280:</SPAN>     }
+<SPAN CLASS="linenum">0281:</SPAN> },{
+<SPAN CLASS="linenum">0282:</SPAN>     OBJ_TYPE_TRIANGLE,
+<SPAN CLASS="linenum">0283:</SPAN>     {
+<SPAN CLASS="linenum">0284:</SPAN>         {0.70f, 0.70f, 0.70f},
+<SPAN CLASS="linenum">0285:</SPAN>         0.0f, 0.0f, 1.0f, 0.0f,
+<SPAN CLASS="linenum">0286:</SPAN>     },{
+<SPAN CLASS="linenum">0287:</SPAN>         {240.0, 165.0, 272.0},
+<SPAN CLASS="linenum">0288:</SPAN>         {290.0,   0.0, 114.0},
+<SPAN CLASS="linenum">0289:</SPAN>         {240.0,   0.0, 272.0},
+<SPAN CLASS="linenum">0290:</SPAN>     }
+<SPAN CLASS="linenum">0291:</SPAN> },{<SPAN CLASS="comment">//前面</SPAN>
+<SPAN CLASS="linenum">0292:</SPAN>     OBJ_TYPE_TRIANGLE,
+<SPAN CLASS="linenum">0293:</SPAN>     {
+<SPAN CLASS="linenum">0294:</SPAN>         {0.70f, 0.70f, 0.70f},
+<SPAN CLASS="linenum">0295:</SPAN>         0.0f, 0.0f, 1.0f, 0.0f,
+<SPAN CLASS="linenum">0296:</SPAN>     },{
+<SPAN CLASS="linenum">0297:</SPAN>         {290.0,   0.0, 114.0},
+<SPAN CLASS="linenum">0298:</SPAN>         {290.0, 165.0, 114.0},
+<SPAN CLASS="linenum">0299:</SPAN>         {130.0,   0.0,  65.0},
+<SPAN CLASS="linenum">0300:</SPAN>     }
+<SPAN CLASS="linenum">0301:</SPAN> },{
+<SPAN CLASS="linenum">0302:</SPAN>     OBJ_TYPE_TRIANGLE,
+<SPAN CLASS="linenum">0303:</SPAN>     {
+<SPAN CLASS="linenum">0304:</SPAN>         {0.70f, 0.70f, 0.70f},
+<SPAN CLASS="linenum">0305:</SPAN>         0.0f, 0.0f, 1.0f, 0.0f,
+<SPAN CLASS="linenum">0306:</SPAN>     },{
+<SPAN CLASS="linenum">0307:</SPAN>         {130.0,   0.0,  65.0},
+<SPAN CLASS="linenum">0308:</SPAN>         {290.0, 165.0, 114.0},
+<SPAN CLASS="linenum">0309:</SPAN>         {130.0, 165.0,  65.0},
+<SPAN CLASS="linenum">0310:</SPAN>     }
+<SPAN CLASS="linenum">0311:</SPAN> },{<SPAN CLASS="comment">//側面</SPAN>
+<SPAN CLASS="linenum">0312:</SPAN>     OBJ_TYPE_TRIANGLE,
+<SPAN CLASS="linenum">0313:</SPAN>     {
+<SPAN CLASS="linenum">0314:</SPAN>         {0.70f, 0.70f, 0.70f},
+<SPAN CLASS="linenum">0315:</SPAN>         0.0f, 0.0f, 1.0f, 0.0f,
+<SPAN CLASS="linenum">0316:</SPAN>     },{
+<SPAN CLASS="linenum">0317:</SPAN>         { 82.0,   0.0, 225.0},
+<SPAN CLASS="linenum">0318:</SPAN>         {130.0, 165.0,  65.0},
+<SPAN CLASS="linenum">0319:</SPAN>         { 82.0, 165.0, 225.0},
+<SPAN CLASS="linenum">0320:</SPAN>     }
+<SPAN CLASS="linenum">0321:</SPAN> },{
+<SPAN CLASS="linenum">0322:</SPAN>     OBJ_TYPE_TRIANGLE,
+<SPAN CLASS="linenum">0323:</SPAN>     {
+<SPAN CLASS="linenum">0324:</SPAN>         {0.70f, 0.70f, 0.70f},
+<SPAN CLASS="linenum">0325:</SPAN>         0.0f, 0.0f, 1.0f, 0.0f,
+<SPAN CLASS="linenum">0326:</SPAN>     },{
+<SPAN CLASS="linenum">0327:</SPAN>         { 82.0,   0.0, 225.0},
+<SPAN CLASS="linenum">0328:</SPAN>         {130.0,   0.0,  65.0},
+<SPAN CLASS="linenum">0329:</SPAN>         {130.0, 165.0,  65.0},
+<SPAN CLASS="linenum">0330:</SPAN>     }
+<SPAN CLASS="linenum">0331:</SPAN> },{<SPAN CLASS="comment">//背面</SPAN>
+<SPAN CLASS="linenum">0332:</SPAN>     OBJ_TYPE_TRIANGLE,
+<SPAN CLASS="linenum">0333:</SPAN>     {
+<SPAN CLASS="linenum">0334:</SPAN>         {0.70f, 0.70f, 0.70f},
+<SPAN CLASS="linenum">0335:</SPAN>         0.0f, 0.0f, 1.0f, 0.0f,
+<SPAN CLASS="linenum">0336:</SPAN>     },{
+<SPAN CLASS="linenum">0337:</SPAN>         {240.0,   0.0, 272.0},
+<SPAN CLASS="linenum">0338:</SPAN>         { 82.0, 165.0, 225.0},
+<SPAN CLASS="linenum">0339:</SPAN>         {240.0, 165.0, 272.0},
+<SPAN CLASS="linenum">0340:</SPAN>     }
+<SPAN CLASS="linenum">0341:</SPAN> },{
+<SPAN CLASS="linenum">0342:</SPAN>     OBJ_TYPE_TRIANGLE,
+<SPAN CLASS="linenum">0343:</SPAN>     {
+<SPAN CLASS="linenum">0344:</SPAN>         {0.70f, 0.70f, 0.70f},
+<SPAN CLASS="linenum">0345:</SPAN>         0.0f, 0.0f, 1.0f, 0.0f,
+<SPAN CLASS="linenum">0346:</SPAN>     },{
+<SPAN CLASS="linenum">0347:</SPAN>         {240.0,   0.0, 272.0},
+<SPAN CLASS="linenum">0348:</SPAN>         { 82.0,   0.0, 225.0},
+<SPAN CLASS="linenum">0349:</SPAN>         { 82.0, 165.0, 225.0},
+<SPAN CLASS="linenum">0350:</SPAN>     }
+<SPAN CLASS="linenum">0351:</SPAN> }};
+<SPAN CLASS="linenum">0352:</SPAN> 
+<SPAN CLASS="linenum">0353:</SPAN> OBJ_DATA Tall_block[] = {
+<SPAN CLASS="linenum">0354:</SPAN> {
+<SPAN CLASS="linenum">0355:</SPAN>     <SPAN CLASS="comment">// 床</SPAN>
+<SPAN CLASS="linenum">0356:</SPAN>     OBJ_TYPE_TRIANGLE,
+<SPAN CLASS="linenum">0357:</SPAN>     {
+<SPAN CLASS="linenum">0358:</SPAN>         {0.70f, 0.70f, 0.70f},
+<SPAN CLASS="linenum">0359:</SPAN>         0.0f, 0.0f, 1.0f, 0.0f,
+<SPAN CLASS="linenum">0360:</SPAN>     },{
+<SPAN CLASS="linenum">0361:</SPAN>         {423.0f, 330.0f, 247.0f},
+<SPAN CLASS="linenum">0362:</SPAN>         {314.0f, 330.0f, 456.0f},
+<SPAN CLASS="linenum">0363:</SPAN>         {265.0f, 330.0f, 296.0f},
+<SPAN CLASS="linenum">0364:</SPAN>     }
+<SPAN CLASS="linenum">0365:</SPAN> },{
+<SPAN CLASS="linenum">0366:</SPAN>     OBJ_TYPE_TRIANGLE,
+<SPAN CLASS="linenum">0367:</SPAN>     {
+<SPAN CLASS="linenum">0368:</SPAN>         {0.70f, 0.70f, 0.70f},
+<SPAN CLASS="linenum">0369:</SPAN>         0.0f, 0.0f, 1.0f, 0.0f,
+<SPAN CLASS="linenum">0370:</SPAN>     },{
+<SPAN CLASS="linenum">0371:</SPAN>         {423.0f, 330.0f, 247.0f},
+<SPAN CLASS="linenum">0372:</SPAN>         {472.0f, 330.0f, 406.0f},
+<SPAN CLASS="linenum">0373:</SPAN>         {314.0f, 330.0f, 456.0f},
+<SPAN CLASS="linenum">0374:</SPAN>     }
+<SPAN CLASS="linenum">0375:</SPAN> },{<SPAN CLASS="comment">//側面</SPAN>
+<SPAN CLASS="linenum">0376:</SPAN>     OBJ_TYPE_TRIANGLE,
+<SPAN CLASS="linenum">0377:</SPAN>     {
+<SPAN CLASS="linenum">0378:</SPAN>         {0.70f, 0.70f, 0.70f},
+<SPAN CLASS="linenum">0379:</SPAN>         0.0f, 0.0f, 1.0f, 0.0f,
+<SPAN CLASS="linenum">0380:</SPAN>     },{
+<SPAN CLASS="linenum">0381:</SPAN>         {423.0f,   0.0f, 247.0f},
+<SPAN CLASS="linenum">0382:</SPAN>         {472.0f,   0.0f, 406.0f},
+<SPAN CLASS="linenum">0383:</SPAN>         {423.0f, 330.0f, 247.0f},
+<SPAN CLASS="linenum">0384:</SPAN>     }
+<SPAN CLASS="linenum">0385:</SPAN> },{
+<SPAN CLASS="linenum">0386:</SPAN>     OBJ_TYPE_TRIANGLE,
+<SPAN CLASS="linenum">0387:</SPAN>     {
+<SPAN CLASS="linenum">0388:</SPAN>         {0.70f, 0.70f, 0.70f},
+<SPAN CLASS="linenum">0389:</SPAN>         0.0f, 0.0f, 1.0f, 0.0f,
+<SPAN CLASS="linenum">0390:</SPAN>     },{
+<SPAN CLASS="linenum">0391:</SPAN>         {423.0f, 330.0f, 247.0f},
+<SPAN CLASS="linenum">0392:</SPAN>         {472.0f,   0.0f, 406.0f},
+<SPAN CLASS="linenum">0393:</SPAN>         {472.0f, 330.0f, 406.0f},
+<SPAN CLASS="linenum">0394:</SPAN>     }
+<SPAN CLASS="linenum">0395:</SPAN> },{<SPAN CLASS="comment">//背面</SPAN>
+<SPAN CLASS="linenum">0396:</SPAN>     OBJ_TYPE_TRIANGLE,
+<SPAN CLASS="linenum">0397:</SPAN>     {
+<SPAN CLASS="linenum">0398:</SPAN>         {0.70f, 0.70f, 0.70f},
+<SPAN CLASS="linenum">0399:</SPAN>         0.0f, 0.0f, 1.0f, 0.0f,
+<SPAN CLASS="linenum">0400:</SPAN>     },{
+<SPAN CLASS="linenum">0401:</SPAN>         {314.0f,   0.0f, 456.0f},
+<SPAN CLASS="linenum">0402:</SPAN>         {314.0f, 330.0f, 456.0f},
+<SPAN CLASS="linenum">0403:</SPAN>         {472.0f,   0.0f, 406.0f},
+<SPAN CLASS="linenum">0404:</SPAN>     }
+<SPAN CLASS="linenum">0405:</SPAN> },{
+<SPAN CLASS="linenum">0406:</SPAN>     OBJ_TYPE_TRIANGLE,
+<SPAN CLASS="linenum">0407:</SPAN>     {
+<SPAN CLASS="linenum">0408:</SPAN>         {0.70f, 0.70f, 0.70f},
+<SPAN CLASS="linenum">0409:</SPAN>         0.0f, 0.0f, 1.0f, 0.0f,
+<SPAN CLASS="linenum">0410:</SPAN>     },{
+<SPAN CLASS="linenum">0411:</SPAN>         {314.0f, 330.0f, 456.0f},
+<SPAN CLASS="linenum">0412:</SPAN>         {472.0f, 330.0f, 406.0f},
+<SPAN CLASS="linenum">0413:</SPAN>         {472.0f,   0.0f, 406.0f},
+<SPAN CLASS="linenum">0414:</SPAN>     }
+<SPAN CLASS="linenum">0415:</SPAN> },{<SPAN CLASS="comment">//側面</SPAN>
+<SPAN CLASS="linenum">0416:</SPAN>     OBJ_TYPE_TRIANGLE,
+<SPAN CLASS="linenum">0417:</SPAN>     {
+<SPAN CLASS="linenum">0418:</SPAN>         {0.70f, 0.70f, 0.70f},
+<SPAN CLASS="linenum">0419:</SPAN>         0.0f, 0.0f, 1.0f, 0.0f,
+<SPAN CLASS="linenum">0420:</SPAN>     },{
+<SPAN CLASS="linenum">0421:</SPAN>         {314.0f,   0.0f, 456.0f},
+<SPAN CLASS="linenum">0422:</SPAN>         {265.0f,   0.0f, 296.0f},
+<SPAN CLASS="linenum">0423:</SPAN>         {265.0f, 330.0f, 296.0f},
+<SPAN CLASS="linenum">0424:</SPAN>     }
+<SPAN CLASS="linenum">0425:</SPAN> },{
+<SPAN CLASS="linenum">0426:</SPAN>     OBJ_TYPE_TRIANGLE,
+<SPAN CLASS="linenum">0427:</SPAN>     {
+<SPAN CLASS="linenum">0428:</SPAN>         {0.70f, 0.70f, 0.70f},
+<SPAN CLASS="linenum">0429:</SPAN>         0.0f, 0.0f, 1.0f, 0.0f,
+<SPAN CLASS="linenum">0430:</SPAN>     },{
+<SPAN CLASS="linenum">0431:</SPAN>         {314.0f,   0.0f, 456.0f},
+<SPAN CLASS="linenum">0432:</SPAN>         {265.0f, 330.0f, 296.0f},
+<SPAN CLASS="linenum">0433:</SPAN>         {314.0f, 330.0f, 456.0f},
+<SPAN CLASS="linenum">0434:</SPAN>     }
+<SPAN CLASS="linenum">0435:</SPAN> },{<SPAN CLASS="comment">//前面</SPAN>
+<SPAN CLASS="linenum">0436:</SPAN>     OBJ_TYPE_TRIANGLE,
+<SPAN CLASS="linenum">0437:</SPAN>     {
+<SPAN CLASS="linenum">0438:</SPAN>         {0.70f, 0.70f, 0.70f},
+<SPAN CLASS="linenum">0439:</SPAN>         0.0f, 0.0f, 1.0f, 0.0f,
+<SPAN CLASS="linenum">0440:</SPAN>     },{
+<SPAN CLASS="linenum">0441:</SPAN>         {265.0f,   0.0f, 296.0f},
+<SPAN CLASS="linenum">0442:</SPAN>         {423.0f,   0.0f, 247.0f},
+<SPAN CLASS="linenum">0443:</SPAN>         {265.0f, 330.0f, 296.0f},
+<SPAN CLASS="linenum">0444:</SPAN>     }
+<SPAN CLASS="linenum">0445:</SPAN> },{
+<SPAN CLASS="linenum">0446:</SPAN>     OBJ_TYPE_TRIANGLE,
+<SPAN CLASS="linenum">0447:</SPAN>     {
+<SPAN CLASS="linenum">0448:</SPAN>         {0.70f, 0.70f, 0.70f},
+<SPAN CLASS="linenum">0449:</SPAN>         0.0f, 0.0f, 1.0f, 0.0f,
+<SPAN CLASS="linenum">0450:</SPAN>     },{
+<SPAN CLASS="linenum">0451:</SPAN>         {265.0f, 330.0f, 296.0f},
+<SPAN CLASS="linenum">0452:</SPAN>         {423.0f,   0.0f, 247.0f},
+<SPAN CLASS="linenum">0453:</SPAN>         {423.0f, 330.0f, 247.0f},
+<SPAN CLASS="linenum">0454:</SPAN>     }
+<SPAN CLASS="linenum">0455:</SPAN> }};
+<SPAN CLASS="linenum">0456:</SPAN> 
+<SPAN CLASS="linenum">0457:</SPAN> <SPAN CLASS="comment">// ---------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0458:</SPAN> <SPAN CLASS="comment">// 関数宣言</SPAN>
+<SPAN CLASS="linenum">0459:</SPAN> <SPAN CLASS="comment">// ---------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0460:</SPAN> D3DXVECTOR3 *GetColor(D3DXVECTOR3 *dest, <SPAN CLASS="keyword">float</SPAN> x, <SPAN CLASS="keyword">float</SPAN> y);
+<SPAN CLASS="linenum">0461:</SPAN> 
+<SPAN CLASS="linenum">0462:</SPAN> 
+<SPAN CLASS="linenum">0463:</SPAN> <SPAN CLASS="comment">// ---------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0464:</SPAN> <SPAN CLASS="comment">// カメラクラス</SPAN>
+<SPAN CLASS="linenum">0465:</SPAN> <SPAN CLASS="comment">// ---------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0466:</SPAN> <SPAN CLASS="keyword">void</SPAN> CCamera::Update()
+<SPAN CLASS="linenum">0467:</SPAN> {
+<SPAN CLASS="linenum">0468:</SPAN>     D3DXMatrixLookAtLH( &amp;m_mView, &amp;m_vFrom, &amp;m_vLookat, &amp;m_vUp );
+<SPAN CLASS="linenum">0469:</SPAN>     D3DXMatrixPerspectiveFovLH( &amp;m_mProj, m_fFovy, m_fAspect, m_fNear, m_fFar );
+<SPAN CLASS="linenum">0470:</SPAN>     m_mVP = m_mView * m_mProj;
+<SPAN CLASS="linenum">0471:</SPAN> 
+<SPAN CLASS="linenum">0472:</SPAN>     D3DXMatrixInverse( &amp;m_mView_Inv, NULL, &amp;m_mView);
+<SPAN CLASS="linenum">0473:</SPAN>     D3DXMatrixInverse( &amp;m_mVP_Inv, NULL, &amp;m_mVP);
+<SPAN CLASS="linenum">0474:</SPAN> }
+<SPAN CLASS="linenum">0475:</SPAN> 
+<SPAN CLASS="linenum">0476:</SPAN> 
+<SPAN CLASS="linenum">0477:</SPAN> <SPAN CLASS="comment">// ---------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0478:</SPAN> <SPAN CLASS="keyword">char</SPAN> *GetDataPointer()
+<SPAN CLASS="linenum">0479:</SPAN> {
+<SPAN CLASS="linenum">0480:</SPAN>     <SPAN CLASS="keyword">return</SPAN> s_data;
+<SPAN CLASS="linenum">0481:</SPAN> }
+<SPAN CLASS="linenum">0482:</SPAN> <SPAN CLASS="comment">// ---------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0483:</SPAN> <SPAN CLASS="keyword">int</SPAN> GetRenderCount()
+<SPAN CLASS="linenum">0484:</SPAN> {
+<SPAN CLASS="linenum">0485:</SPAN>     <SPAN CLASS="keyword">return</SPAN> (<SPAN CLASS="keyword">int</SPAN>)(render_cnt+0.5f);
+<SPAN CLASS="linenum">0486:</SPAN> }
+<SPAN CLASS="linenum">0487:</SPAN> <SPAN CLASS="comment">// ---------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0488:</SPAN> <SPAN CLASS="keyword">void</SPAN> Init()
+<SPAN CLASS="linenum">0489:</SPAN> {
+<SPAN CLASS="linenum">0490:</SPAN>     <SPAN CLASS="keyword">int</SPAN> i, j;
+<SPAN CLASS="linenum">0491:</SPAN> 
+<SPAN CLASS="linenum">0492:</SPAN>     camera.SetFrom  (&amp;D3DXVECTOR3(278,273,-800));
+<SPAN CLASS="linenum">0493:</SPAN>     camera.SetLookAt(&amp;D3DXVECTOR3(278,273,0));
+<SPAN CLASS="linenum">0494:</SPAN>     camera.SetUp    (&amp;D3DXVECTOR3(0,1,0));
+<SPAN CLASS="linenum">0495:</SPAN>     camera.SetFovY  (D3DX_PI/4);
+<SPAN CLASS="linenum">0496:</SPAN>     camera.SetAspect(1.0f);
+<SPAN CLASS="linenum">0497:</SPAN>     camera.SetNear  (0.01f);
+<SPAN CLASS="linenum">0498:</SPAN>     camera.SetFar   (100.0f);
+<SPAN CLASS="linenum">0499:</SPAN>     camera.Update();
+<SPAN CLASS="linenum">0500:</SPAN> 
+<SPAN CLASS="linenum">0501:</SPAN>     pRoom = <SPAN CLASS="keyword">new</SPAN> CMesh();
+<SPAN CLASS="linenum">0502:</SPAN>     pRoom-&gt;Init( room_data, 14 );
+<SPAN CLASS="linenum">0503:</SPAN>     
+<SPAN CLASS="linenum">0504:</SPAN>     pBlockSmall = <SPAN CLASS="keyword">new</SPAN> CMesh();
+<SPAN CLASS="linenum">0505:</SPAN>     pBlockSmall-&gt;Init( Short_block, 10);
+<SPAN CLASS="linenum">0506:</SPAN> 
+<SPAN CLASS="linenum">0507:</SPAN>     pBlockTall = <SPAN CLASS="keyword">new</SPAN> CMesh();
+<SPAN CLASS="linenum">0508:</SPAN>     pBlockTall-&gt;Init( Tall_block, 10);
+<SPAN CLASS="linenum">0509:</SPAN>     
+<SPAN CLASS="linenum">0510:</SPAN>     pShpereS = <SPAN CLASS="keyword">new</SPAN> CMesh();
+<SPAN CLASS="linenum">0511:</SPAN>     pShpereS-&gt;Init( sphere_data, 1);
+<SPAN CLASS="linenum">0512:</SPAN>     
+<SPAN CLASS="linenum">0513:</SPAN>     pShpereT = <SPAN CLASS="keyword">new</SPAN> CMesh();
+<SPAN CLASS="linenum">0514:</SPAN>     pShpereT-&gt;Init( sphere_data+1,1);
+<SPAN CLASS="linenum">0515:</SPAN> 
+<SPAN CLASS="linenum">0516:</SPAN>     render_cnt = 0; <SPAN CLASS="comment">// レンダリング回数</SPAN>
+<SPAN CLASS="linenum">0517:</SPAN>     <SPAN CLASS="comment">// フレームバッファの初期化</SPAN>
+<SPAN CLASS="linenum">0518:</SPAN>     <SPAN CLASS="keyword">for</SPAN>(j=0; j&lt;RENDER_HEIGHT; j++){
+<SPAN CLASS="linenum">0519:</SPAN>     <SPAN CLASS="keyword">for</SPAN>(i=0; i&lt;RENDER_WIDTH ; i++){
+<SPAN CLASS="linenum">0520:</SPAN>         s_data [4*(j*RENDER_WIDTH+i)+0]=(<SPAN CLASS="keyword">char</SPAN>)255;<SPAN CLASS="comment">// R</SPAN>
+<SPAN CLASS="linenum">0521:</SPAN>         s_data [4*(j*RENDER_WIDTH+i)+1]=(<SPAN CLASS="keyword">char</SPAN>)(i*256/RENDER_WIDTH );<SPAN CLASS="comment">// G</SPAN>
+<SPAN CLASS="linenum">0522:</SPAN>         s_data [4*(j*RENDER_WIDTH+i)+2]=(<SPAN CLASS="keyword">char</SPAN>)(j*256/RENDER_HEIGHT);<SPAN CLASS="comment">// B</SPAN>
+<SPAN CLASS="linenum">0523:</SPAN>         s_total[4*(j*RENDER_WIDTH+i)+0]=0;<SPAN CLASS="comment">// R</SPAN>
+<SPAN CLASS="linenum">0524:</SPAN>         s_total[4*(j*RENDER_WIDTH+i)+1]=0;<SPAN CLASS="comment">// G</SPAN>
+<SPAN CLASS="linenum">0525:</SPAN>         s_total[4*(j*RENDER_WIDTH+i)+2]=0;<SPAN CLASS="comment">// B</SPAN>
+<SPAN CLASS="linenum">0526:</SPAN>     }
+<SPAN CLASS="linenum">0527:</SPAN>     }
+<SPAN CLASS="linenum">0528:</SPAN> }
+<SPAN CLASS="linenum">0529:</SPAN> <SPAN CLASS="comment">// ---------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0530:</SPAN> <SPAN CLASS="keyword">void</SPAN> Delete()
+<SPAN CLASS="linenum">0531:</SPAN> {
+<SPAN CLASS="linenum">0532:</SPAN>     <SPAN CLASS="keyword">if</SPAN>(pShpereT){<SPAN CLASS="keyword">delete</SPAN> pShpereT;pShpereT=NULL;}
+<SPAN CLASS="linenum">0533:</SPAN>     <SPAN CLASS="keyword">if</SPAN>(pShpereS){<SPAN CLASS="keyword">delete</SPAN> pShpereS;pShpereS=NULL;}
+<SPAN CLASS="linenum">0534:</SPAN>     <SPAN CLASS="keyword">if</SPAN>(pBlockTall){<SPAN CLASS="keyword">delete</SPAN> pBlockTall;pBlockTall=NULL;}
+<SPAN CLASS="linenum">0535:</SPAN>     <SPAN CLASS="keyword">if</SPAN>(pBlockSmall){<SPAN CLASS="keyword">delete</SPAN> pBlockSmall;pBlockSmall=NULL;}
+<SPAN CLASS="linenum">0536:</SPAN>     <SPAN CLASS="keyword">if</SPAN>(pRoom){<SPAN CLASS="keyword">delete</SPAN> pRoom; pRoom=NULL;}
+<SPAN CLASS="linenum">0537:</SPAN> }
+<SPAN CLASS="linenum">0538:</SPAN> <SPAN CLASS="comment">// ---------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0539:</SPAN> <SPAN CLASS="keyword">void</SPAN> Begin()
+<SPAN CLASS="linenum">0540:</SPAN> {
+<SPAN CLASS="linenum">0541:</SPAN>     s_state = STATE_RENDER_BEGIN;
+<SPAN CLASS="linenum">0542:</SPAN> }
+<SPAN CLASS="linenum">0543:</SPAN> <SPAN CLASS="comment">// ---------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0544:</SPAN> <SPAN CLASS="keyword">int</SPAN> Render()
+<SPAN CLASS="linenum">0545:</SPAN> {
+<SPAN CLASS="linenum">0546:</SPAN>     <SPAN CLASS="keyword">if</SPAN>(STATE_IDLE==s_state) <SPAN CLASS="keyword">return</SPAN> 0;
+<SPAN CLASS="linenum">0547:</SPAN> 
+<SPAN CLASS="linenum">0548:</SPAN>     <SPAN CLASS="keyword">int</SPAN> i,j,no;
+<SPAN CLASS="linenum">0549:</SPAN>     D3DXVECTOR3 col;
+<SPAN CLASS="linenum">0550:</SPAN>     <SPAN CLASS="keyword">int</SPAN> ret = -1;
+<SPAN CLASS="linenum">0551:</SPAN> 
+<SPAN CLASS="linenum">0552:</SPAN>     timeBeginPeriod( 500 );<SPAN CLASS="comment">// タイマー精度の設定</SPAN>
+<SPAN CLASS="linenum">0553:</SPAN> 
+<SPAN CLASS="linenum">0554:</SPAN>     <SPAN CLASS="keyword">for</SPAN>(<SPAN CLASS="keyword">unsigned</SPAN> <SPAN CLASS="keyword">long</SPAN> t = timeGetTime()
+<SPAN CLASS="linenum">0555:</SPAN>         ; timeGetTime()-t &lt; 1000        <SPAN CLASS="comment">// 1秒たったか</SPAN>
+<SPAN CLASS="linenum">0556:</SPAN>         &amp;&amp; STATE_IDLE!=s_state;){       <SPAN CLASS="comment">// 終了したか</SPAN>
+<SPAN CLASS="linenum">0557:</SPAN> 
+<SPAN CLASS="linenum">0558:</SPAN>         <SPAN CLASS="keyword">switch</SPAN>(s_state){
+<SPAN CLASS="linenum">0559:</SPAN>         <SPAN CLASS="keyword">case</SPAN> STATE_IDLE:        <SPAN CLASS="comment">// 待機</SPAN>
+<SPAN CLASS="linenum">0560:</SPAN>             <SPAN CLASS="keyword">break</SPAN>;
+<SPAN CLASS="linenum">0561:</SPAN>         <SPAN CLASS="keyword">case</SPAN> STATE_RENDER_BEGIN:<SPAN CLASS="comment">// 初期化</SPAN>
+<SPAN CLASS="linenum">0562:</SPAN>             s_x = 0;
+<SPAN CLASS="linenum">0563:</SPAN>             s_y = 0;
+<SPAN CLASS="linenum">0564:</SPAN>             render_cnt+=1.0f;
+<SPAN CLASS="linenum">0565:</SPAN>             s_state = STATE_RENDER;
+<SPAN CLASS="linenum">0566:</SPAN>             <SPAN CLASS="keyword">break</SPAN>;
+<SPAN CLASS="linenum">0567:</SPAN>         <SPAN CLASS="keyword">case</SPAN> STATE_RENDER:      <SPAN CLASS="comment">// 画面の描画</SPAN>
+<SPAN CLASS="linenum">0568:</SPAN>             GetColor(&amp;col, ((<SPAN CLASS="keyword">float</SPAN>)s_x+frand())/(<SPAN CLASS="keyword">float</SPAN>)RENDER_WIDTH
+<SPAN CLASS="linenum">0569:</SPAN>                          , ((<SPAN CLASS="keyword">float</SPAN>)s_y+frand())/(<SPAN CLASS="keyword">float</SPAN>)RENDER_HEIGHT);
+<SPAN CLASS="linenum">0570:</SPAN>             s_total[4*(s_y*RENDER_WIDTH+s_x)+0]+=col.x;<SPAN CLASS="comment">// R</SPAN>
+<SPAN CLASS="linenum">0571:</SPAN>             s_total[4*(s_y*RENDER_WIDTH+s_x)+1]+=col.y;<SPAN CLASS="comment">// G</SPAN>
+<SPAN CLASS="linenum">0572:</SPAN>             s_total[4*(s_y*RENDER_WIDTH+s_x)+2]+=col.z;<SPAN CLASS="comment">// B</SPAN>
+<SPAN CLASS="linenum">0573:</SPAN> 
+<SPAN CLASS="linenum">0574:</SPAN>             <SPAN CLASS="comment">// 次のピクセルに移動</SPAN>
+<SPAN CLASS="linenum">0575:</SPAN>             <SPAN CLASS="keyword">if</SPAN>(RENDER_WIDTH&lt;=++s_x){
+<SPAN CLASS="linenum">0576:</SPAN>                 <SPAN CLASS="comment">// 行を変える</SPAN>
+<SPAN CLASS="linenum">0577:</SPAN>                 s_x = 0;
+<SPAN CLASS="linenum">0578:</SPAN>                 <SPAN CLASS="keyword">if</SPAN>(RENDER_HEIGHT&lt;=++s_y){
+<SPAN CLASS="linenum">0579:</SPAN>                     s_state = STATE_RENDER_END;
+<SPAN CLASS="linenum">0580:</SPAN>                     <SPAN CLASS="keyword">break</SPAN>;
+<SPAN CLASS="linenum">0581:</SPAN>                 }
+<SPAN CLASS="linenum">0582:</SPAN>             }
+<SPAN CLASS="linenum">0583:</SPAN>             <SPAN CLASS="keyword">break</SPAN>;
+<SPAN CLASS="linenum">0584:</SPAN>         <SPAN CLASS="keyword">case</SPAN> STATE_RENDER_END:  <SPAN CLASS="comment">// 描画の終了</SPAN>
+<SPAN CLASS="linenum">0585:</SPAN>             <SPAN CLASS="comment">// 画面の反映</SPAN>
+<SPAN CLASS="linenum">0586:</SPAN>             no = 0;
+<SPAN CLASS="linenum">0587:</SPAN>             <SPAN CLASS="keyword">for</SPAN>(j=0; j&lt;RENDER_HEIGHT; j++){
+<SPAN CLASS="linenum">0588:</SPAN>             <SPAN CLASS="keyword">for</SPAN>(i=0; i&lt;RENDER_WIDTH ; i++){
+<SPAN CLASS="linenum">0589:</SPAN>                 s_data [no+0]=(<SPAN CLASS="keyword">char</SPAN>)(255.9*min(1,s_total[no+0]/render_cnt));<SPAN CLASS="comment">// R</SPAN>
+<SPAN CLASS="linenum">0590:</SPAN>                 s_data [no+1]=(<SPAN CLASS="keyword">char</SPAN>)(255.9*min(1,s_total[no+1]/render_cnt));<SPAN CLASS="comment">// G</SPAN>
+<SPAN CLASS="linenum">0591:</SPAN>                 s_data [no+2]=(<SPAN CLASS="keyword">char</SPAN>)(255.9*min(1,s_total[no+2]/render_cnt));<SPAN CLASS="comment">// B</SPAN>
+<SPAN CLASS="linenum">0592:</SPAN>                 no += 4;
+<SPAN CLASS="linenum">0593:</SPAN>             }
+<SPAN CLASS="linenum">0594:</SPAN>             }
+<SPAN CLASS="linenum">0595:</SPAN>             s_state = STATE_RENDER_BEGIN;<SPAN CLASS="comment">// 無限ループ</SPAN>
+<SPAN CLASS="linenum">0596:</SPAN>             <SPAN CLASS="keyword">break</SPAN>;
+<SPAN CLASS="linenum">0597:</SPAN>         }
+<SPAN CLASS="linenum">0598:</SPAN>     }
+<SPAN CLASS="linenum">0599:</SPAN> 
+<SPAN CLASS="linenum">0600:</SPAN>     timeEndPeriod( 500 );<SPAN CLASS="comment">// タイマー精度を戻す</SPAN>
+<SPAN CLASS="linenum">0601:</SPAN> 
+<SPAN CLASS="linenum">0602:</SPAN>     <SPAN CLASS="keyword">return</SPAN> ret;
+<SPAN CLASS="linenum">0603:</SPAN> }
+<SPAN CLASS="linenum">0604:</SPAN> 
+<SPAN CLASS="linenum">0605:</SPAN> <SPAN CLASS="comment">// ---------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0606:</SPAN> <SPAN CLASS="keyword">bool</SPAN> GetColor(D3DXVECTOR3 *dest, <SPAN CLASS="keyword">const</SPAN> D3DXVECTOR4 *x, <SPAN CLASS="keyword">const</SPAN> D3DXVECTOR4 *v, <SPAN CLASS="keyword">int</SPAN> depth)
+<SPAN CLASS="linenum">0607:</SPAN> {
+<SPAN CLASS="linenum">0608:</SPAN>     D3DXVECTOR3 diffuse_color=D3DXVECTOR3(0,0,0);
+<SPAN CLASS="linenum">0609:</SPAN> 
+<SPAN CLASS="linenum">0610:</SPAN>     <SPAN CLASS="comment">// -----------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0611:</SPAN>     <SPAN CLASS="comment">// 初期化：光が屈折、反射しかしないで延々と跳ね返ったときは、光が届かない黒色</SPAN>
+<SPAN CLASS="linenum">0612:</SPAN>     <SPAN CLASS="comment">// -----------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0613:</SPAN>     <SPAN CLASS="keyword">if</SPAN>(0==depth) *dest = D3DXVECTOR3(0,0,0);
+<SPAN CLASS="linenum">0614:</SPAN> 
+<SPAN CLASS="linenum">0615:</SPAN>     <SPAN CLASS="comment">// -----------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0616:</SPAN>     <SPAN CLASS="comment">// 再帰しすぎた場合は光が届いていないものと考える</SPAN>
+<SPAN CLASS="linenum">0617:</SPAN>     <SPAN CLASS="comment">// -----------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0618:</SPAN>     <SPAN CLASS="keyword">const</SPAN> <SPAN CLASS="keyword">int</SPAN> DEPTH_MAX = 3;
+<SPAN CLASS="linenum">0619:</SPAN>     <SPAN CLASS="keyword">if</SPAN>(DEPTH_MAX &lt;= depth) { *dest=D3DXVECTOR3(0,0,0); <SPAN CLASS="keyword">return</SPAN> FALSE;}
+<SPAN CLASS="linenum">0620:</SPAN> 
+<SPAN CLASS="linenum">0621:</SPAN>     <SPAN CLASS="comment">// -----------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0622:</SPAN>     <SPAN CLASS="comment">// 視線から交点を求める</SPAN>
+<SPAN CLASS="linenum">0623:</SPAN>     <SPAN CLASS="comment">// -----------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0624:</SPAN>     <SPAN CLASS="keyword">float</SPAN> t = CPrimitive::INFINTY_DIST;
+<SPAN CLASS="linenum">0625:</SPAN>     CPrimitive *pObj = NULL;
+<SPAN CLASS="linenum">0626:</SPAN>     D3DXVECTOR4 p, n;<SPAN CLASS="comment">// 交点の位置と法線</SPAN>
+<SPAN CLASS="linenum">0627:</SPAN> 
+<SPAN CLASS="linenum">0628:</SPAN>     t = pShpereS   -&gt;IsAcross(t, &amp;n, &amp;p, &amp;pObj, x, v);
+<SPAN CLASS="linenum">0629:</SPAN>     t = pShpereT   -&gt;IsAcross(t, &amp;n, &amp;p, &amp;pObj, x, v);
+<SPAN CLASS="linenum">0630:</SPAN>     t = pRoom      -&gt;IsAcross(t, &amp;n, &amp;p, &amp;pObj, x, v);
+<SPAN CLASS="linenum">0631:</SPAN> <SPAN CLASS="comment">//  t = pBlockSmall-&gt;IsAcross(t, &amp;n, &amp;p, &amp;pObj, x, v);</SPAN>
+<SPAN CLASS="linenum">0632:</SPAN>     t = pBlockTall -&gt;IsAcross(t, &amp;n, &amp;p, &amp;pObj, x, v);
+<SPAN CLASS="linenum">0633:</SPAN> 
+<SPAN CLASS="linenum">0634:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( NULL == pObj ){
+<SPAN CLASS="linenum">0635:</SPAN>         <SPAN CLASS="comment">// 視線はオブジェクトから外れた！</SPAN>
+<SPAN CLASS="linenum">0636:</SPAN>         *dest = BG_COLOR;
+<SPAN CLASS="linenum">0637:</SPAN>         <SPAN CLASS="keyword">return</SPAN> TRUE;
+<SPAN CLASS="linenum">0638:</SPAN>     }
+<SPAN CLASS="linenum">0639:</SPAN> 
+<SPAN CLASS="linenum">0640:</SPAN>     <SPAN CLASS="comment">// -----------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0641:</SPAN>     <SPAN CLASS="comment">// 反射方向をロシアンルーレットで決める</SPAN>
+<SPAN CLASS="linenum">0642:</SPAN>     <SPAN CLASS="comment">// -----------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0643:</SPAN>     <SPAN CLASS="keyword">float</SPAN> cd = pObj-&gt;m_material.diffuse;    <SPAN CLASS="comment">// 拡散率</SPAN>
+<SPAN CLASS="linenum">0644:</SPAN>     <SPAN CLASS="keyword">float</SPAN> cr = pObj-&gt;m_material.reflection; <SPAN CLASS="comment">// 反射率</SPAN>
+<SPAN CLASS="linenum">0645:</SPAN>     <SPAN CLASS="keyword">float</SPAN> cn = pObj-&gt;m_material.refraction; <SPAN CLASS="comment">// 屈折率</SPAN>
+<SPAN CLASS="linenum">0646:</SPAN>     <SPAN CLASS="keyword">float</SPAN> ce = pObj-&gt;m_material.emmisive;   <SPAN CLASS="comment">// 放射率</SPAN>
+<SPAN CLASS="linenum">0647:</SPAN>     <SPAN CLASS="keyword">float</SPAN> total = cd+cr+cn+ce;
+<SPAN CLASS="linenum">0648:</SPAN>     <SPAN CLASS="keyword">float</SPAN> prob = total * frand();
+<SPAN CLASS="linenum">0649:</SPAN> 
+<SPAN CLASS="linenum">0650:</SPAN>     <SPAN CLASS="keyword">int</SPAN> type = 0;<SPAN CLASS="comment">// 拡散</SPAN>
+<SPAN CLASS="linenum">0651:</SPAN>     <SPAN CLASS="keyword">if</SPAN>(prob &lt; cr      ) type = 1; <SPAN CLASS="keyword">else</SPAN><SPAN CLASS="comment">// 反射</SPAN>
+<SPAN CLASS="linenum">0652:</SPAN>     <SPAN CLASS="keyword">if</SPAN>(prob &lt; cr+cn   ) type = 2; <SPAN CLASS="keyword">else</SPAN><SPAN CLASS="comment">// 屈折</SPAN>
+<SPAN CLASS="linenum">0653:</SPAN>     <SPAN CLASS="keyword">if</SPAN>(prob &lt; cr+cn+ce) type = 3;     <SPAN CLASS="comment">// 放射</SPAN>
+<SPAN CLASS="linenum">0654:</SPAN> 
+<SPAN CLASS="linenum">0655:</SPAN>     <SPAN CLASS="comment">// -----------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0656:</SPAN>     <SPAN CLASS="comment">// 交点が、影に隠れているかどうか調べて、拡散光を算出する</SPAN>
+<SPAN CLASS="linenum">0657:</SPAN>     <SPAN CLASS="comment">// -----------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0658:</SPAN>     <SPAN CLASS="keyword">if</SPAN>(0==type){
+<SPAN CLASS="linenum">0659:</SPAN>         <SPAN CLASS="keyword">if</SPAN>(++depth&lt;DEPTH_MAX){
+<SPAN CLASS="linenum">0660:</SPAN>             <SPAN CLASS="comment">// さらに奥を検索</SPAN>
+<SPAN CLASS="linenum">0661:</SPAN>             D3DXVECTOR4 dir, pos;
+<SPAN CLASS="linenum">0662:</SPAN>             
+<SPAN CLASS="linenum">0663:</SPAN>             <SPAN CLASS="comment">// 等方的にレイを飛ばす</SPAN>
+<SPAN CLASS="linenum">0664:</SPAN>             <SPAN CLASS="keyword">float</SPAN> theta =      D3DX_PI * frand();
+<SPAN CLASS="linenum">0665:</SPAN>             <SPAN CLASS="keyword">float</SPAN> phi   = 2.0f*D3DX_PI * frand();
+<SPAN CLASS="linenum">0666:</SPAN>             dir.x = sinf(theta) * cosf(phi);
+<SPAN CLASS="linenum">0667:</SPAN>             dir.y = sinf(theta) * sinf(phi);
+<SPAN CLASS="linenum">0668:</SPAN>             dir.z = cosf(theta);
+<SPAN CLASS="linenum">0669:</SPAN>             <SPAN CLASS="keyword">float</SPAN> dn = D3DXVec3Dot((D3DXVECTOR3 *)&amp;dir, (D3DXVECTOR3 *)&amp;n);
+<SPAN CLASS="linenum">0670:</SPAN>             <SPAN CLASS="keyword">if</SPAN>(dn&lt;0){
+<SPAN CLASS="linenum">0671:</SPAN>                 <SPAN CLASS="comment">// 法線と反対向きに飛ぶつもりなら、方向を反対にする</SPAN>
+<SPAN CLASS="linenum">0672:</SPAN>                 dn = -dn;
+<SPAN CLASS="linenum">0673:</SPAN>                 dir.x *= -1;
+<SPAN CLASS="linenum">0674:</SPAN>                 dir.y *= -1;
+<SPAN CLASS="linenum">0675:</SPAN>                 dir.z *= -1;
+<SPAN CLASS="linenum">0676:</SPAN>             }
+<SPAN CLASS="linenum">0677:</SPAN> 
+<SPAN CLASS="linenum">0678:</SPAN>             pos = p + 0.01f*(dir);
+<SPAN CLASS="linenum">0679:</SPAN>             GetColor(&amp;diffuse_color, &amp;pos, &amp;dir, depth);
+<SPAN CLASS="linenum">0680:</SPAN>             <SPAN CLASS="comment">// プリミティブの色や拡散光の余弦側を適用</SPAN>
+<SPAN CLASS="linenum">0681:</SPAN>             diffuse_color.x *= pObj-&gt;m_material.COLOR_DIF[0] * dn;
+<SPAN CLASS="linenum">0682:</SPAN>             diffuse_color.y *= pObj-&gt;m_material.COLOR_DIF[1] * dn;
+<SPAN CLASS="linenum">0683:</SPAN>             diffuse_color.z *= pObj-&gt;m_material.COLOR_DIF[2] * dn;
+<SPAN CLASS="linenum">0684:</SPAN>         }
+<SPAN CLASS="linenum">0685:</SPAN>     }
+<SPAN CLASS="linenum">0686:</SPAN> 
+<SPAN CLASS="linenum">0687:</SPAN>     <SPAN CLASS="comment">// -----------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0688:</SPAN>     <SPAN CLASS="comment">// 再帰的に光線を飛ばして、より高次の反射を考慮に入れる</SPAN>
+<SPAN CLASS="linenum">0689:</SPAN>     <SPAN CLASS="comment">// -----------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0690:</SPAN>     <SPAN CLASS="comment">// 反射</SPAN>
+<SPAN CLASS="linenum">0691:</SPAN>     D3DXVECTOR3 reflect_color=D3DXVECTOR3(0,0,0);
+<SPAN CLASS="linenum">0692:</SPAN>     <SPAN CLASS="keyword">if</SPAN>(1==type){
+<SPAN CLASS="linenum">0693:</SPAN>         <SPAN CLASS="comment">// 反射ベクトル</SPAN>
+<SPAN CLASS="linenum">0694:</SPAN>         D3DXVECTOR4 r = *v - 2.0f*D3DXVec3Dot((D3DXVECTOR3 *)&amp;n, (D3DXVECTOR3 *)v) * n;
+<SPAN CLASS="linenum">0695:</SPAN>         D3DXVECTOR4 pos = p + 0.01f*n;<SPAN CLASS="comment">// ちょっと浮かす</SPAN>
+<SPAN CLASS="linenum">0696:</SPAN>         <SPAN CLASS="keyword">if</SPAN>(!GetColor( &amp;reflect_color, &amp;pos, &amp;r, depth)){
+<SPAN CLASS="linenum">0697:</SPAN>             cr = 0;<SPAN CLASS="comment">// 結局、光が届かなかった</SPAN>
+<SPAN CLASS="linenum">0698:</SPAN>         }
+<SPAN CLASS="linenum">0699:</SPAN>     }
+<SPAN CLASS="linenum">0700:</SPAN> 
+<SPAN CLASS="linenum">0701:</SPAN>     <SPAN CLASS="comment">// -----------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0702:</SPAN>     <SPAN CLASS="comment">// 屈折</SPAN>
+<SPAN CLASS="linenum">0703:</SPAN>     <SPAN CLASS="comment">// -----------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0704:</SPAN>     D3DXVECTOR3 refract_color=D3DXVECTOR3(0,0,0);
+<SPAN CLASS="linenum">0705:</SPAN>     <SPAN CLASS="keyword">if</SPAN>(2==type){
+<SPAN CLASS="linenum">0706:</SPAN>         <SPAN CLASS="comment">// 屈折ベクトル</SPAN>
+<SPAN CLASS="linenum">0707:</SPAN>         D3DXVECTOR4 t, pos;
+<SPAN CLASS="linenum">0708:</SPAN>         <SPAN CLASS="keyword">float</SPAN> VN = D3DXVec3Dot((D3DXVECTOR3 *)v, (D3DXVECTOR3 *)&amp;n);
+<SPAN CLASS="linenum">0709:</SPAN>         <SPAN CLASS="keyword">float</SPAN> eta = 1.5f;
+<SPAN CLASS="linenum">0710:</SPAN>         <SPAN CLASS="keyword">if</SPAN>(VN&lt;0){
+<SPAN CLASS="linenum">0711:</SPAN>             <SPAN CLASS="comment">// 入射</SPAN>
+<SPAN CLASS="linenum">0712:</SPAN>             <SPAN CLASS="keyword">float</SPAN> D = 1-(1+VN)*(1+VN)/(eta*eta);
+<SPAN CLASS="linenum">0713:</SPAN>             <SPAN CLASS="keyword">if</SPAN>(D&lt;0){cn=0;<SPAN CLASS="keyword">goto</SPAN> no_refract;}<SPAN CLASS="comment">// 全反射</SPAN>
+<SPAN CLASS="linenum">0714:</SPAN>             t = (-VN/eta-sqrtf(D))*n+(1/eta)*(*v);
+<SPAN CLASS="linenum">0715:</SPAN>             pos = p - 0.01f*n;<SPAN CLASS="comment">// ちょっと浮かす</SPAN>
+<SPAN CLASS="linenum">0716:</SPAN>         }<SPAN CLASS="keyword">else</SPAN>{
+<SPAN CLASS="linenum">0717:</SPAN>             <SPAN CLASS="comment">// 出て行く</SPAN>
+<SPAN CLASS="linenum">0718:</SPAN>             <SPAN CLASS="keyword">float</SPAN> D = 1-(1-VN)*(1-VN)*(eta*eta);
+<SPAN CLASS="linenum">0719:</SPAN>             <SPAN CLASS="keyword">if</SPAN>(D&lt;0){cn=0;<SPAN CLASS="keyword">goto</SPAN> no_refract;}<SPAN CLASS="comment">// 全反射</SPAN>
+<SPAN CLASS="linenum">0720:</SPAN>             t = -(VN*eta-sqrtf(D))*n+eta*(*v);
+<SPAN CLASS="linenum">0721:</SPAN>             pos = p + 0.01f*n;<SPAN CLASS="comment">// ちょっと浮かす</SPAN>
+<SPAN CLASS="linenum">0722:</SPAN>         }
+<SPAN CLASS="linenum">0723:</SPAN>         D3DXVec3Normalize( (D3DXVECTOR3 *)&amp;t, (D3DXVECTOR3 *)&amp;t );
+<SPAN CLASS="linenum">0724:</SPAN>         <SPAN CLASS="keyword">if</SPAN>(!GetColor( &amp;refract_color, &amp;pos, &amp;t, depth)){
+<SPAN CLASS="linenum">0725:</SPAN>             cn = 0;<SPAN CLASS="comment">// 結局、光が届かなかった</SPAN>
+<SPAN CLASS="linenum">0726:</SPAN>         }
+<SPAN CLASS="linenum">0727:</SPAN>     }
+<SPAN CLASS="linenum">0728:</SPAN> no_refract:
+<SPAN CLASS="linenum">0729:</SPAN> 
+<SPAN CLASS="linenum">0730:</SPAN>     <SPAN CLASS="comment">// -----------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0731:</SPAN>     <SPAN CLASS="comment">// 放射</SPAN>
+<SPAN CLASS="linenum">0732:</SPAN>     <SPAN CLASS="comment">// -----------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0733:</SPAN>     D3DXVECTOR3 emmisive_color = *(D3DXVECTOR3*)&amp;pObj-&gt;m_material.COLOR_DIF;
+<SPAN CLASS="linenum">0734:</SPAN> 
+<SPAN CLASS="linenum">0735:</SPAN>     <SPAN CLASS="comment">// -----------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0736:</SPAN>     <SPAN CLASS="comment">// 色を出力する</SPAN>
+<SPAN CLASS="linenum">0737:</SPAN>     <SPAN CLASS="comment">// -----------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0738:</SPAN>     <SPAN CLASS="keyword">switch</SPAN>(type){
+<SPAN CLASS="linenum">0739:</SPAN>     <SPAN CLASS="keyword">case</SPAN> 0:<SPAN CLASS="comment">// 拡散</SPAN>
+<SPAN CLASS="linenum">0740:</SPAN>         *dest = (cd+cr+cn) * diffuse_color;
+<SPAN CLASS="linenum">0741:</SPAN>         <SPAN CLASS="keyword">break</SPAN>;
+<SPAN CLASS="linenum">0742:</SPAN>     <SPAN CLASS="keyword">case</SPAN> 1:<SPAN CLASS="comment">// 反射</SPAN>
+<SPAN CLASS="linenum">0743:</SPAN>         *dest = (cd+cr+cn) * reflect_color;     
+<SPAN CLASS="linenum">0744:</SPAN>         <SPAN CLASS="keyword">break</SPAN>;
+<SPAN CLASS="linenum">0745:</SPAN>     <SPAN CLASS="keyword">case</SPAN> 2:<SPAN CLASS="comment">// 屈折</SPAN>
+<SPAN CLASS="linenum">0746:</SPAN>         *dest = (cd+cr+cn) * refract_color;
+<SPAN CLASS="linenum">0747:</SPAN>         <SPAN CLASS="keyword">break</SPAN>;
+<SPAN CLASS="linenum">0748:</SPAN>     <SPAN CLASS="keyword">case</SPAN> 3:<SPAN CLASS="comment">// 放射</SPAN>
+<SPAN CLASS="linenum">0749:</SPAN>         *dest = ce * emmisive_color;
+<SPAN CLASS="linenum">0750:</SPAN>         <SPAN CLASS="keyword">break</SPAN>;
+<SPAN CLASS="linenum">0751:</SPAN>     }
+<SPAN CLASS="linenum">0752:</SPAN> 
+<SPAN CLASS="linenum">0753:</SPAN>     <SPAN CLASS="keyword">return</SPAN> TRUE;
+<SPAN CLASS="linenum">0754:</SPAN> }
+<SPAN CLASS="linenum">0755:</SPAN> <SPAN CLASS="comment">// ---------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0756:</SPAN> D3DXVECTOR3 *GetColor(D3DXVECTOR3 *dest, <SPAN CLASS="keyword">float</SPAN> x, <SPAN CLASS="keyword">float</SPAN> y)
+<SPAN CLASS="linenum">0757:</SPAN> {
+<SPAN CLASS="linenum">0758:</SPAN>     D3DXVECTOR4 ray_start_proj = D3DXVECTOR4(-2*x+1, -2*y+1, 0, 1);<SPAN CLASS="comment">// 前方クリップ面</SPAN>
+<SPAN CLASS="linenum">0759:</SPAN>     D3DXVECTOR4 ray_eye        = D3DXVECTOR4(0, 0, 0, 1);<SPAN CLASS="comment">// ビュー空間でのカメラの位置</SPAN>
+<SPAN CLASS="linenum">0760:</SPAN>     D3DXVECTOR4 ray_start;
+<SPAN CLASS="linenum">0761:</SPAN>     D3DXVECTOR4 ray_to;
+<SPAN CLASS="linenum">0762:</SPAN>     D3DXVECTOR4 ray_dir;
+<SPAN CLASS="linenum">0763:</SPAN>     D3DXMATRIX mInv;
+<SPAN CLASS="linenum">0764:</SPAN>     
+<SPAN CLASS="linenum">0765:</SPAN>     <SPAN CLASS="comment">// 視点を射影空間からワールド座標に変換する</SPAN>
+<SPAN CLASS="linenum">0766:</SPAN>     D3DXVec4Transform( &amp;ray_start, &amp;ray_eye,        camera.GetViewInverse() );
+<SPAN CLASS="linenum">0767:</SPAN>     D3DXVec4Transform( &amp;ray_to,    &amp;ray_start_proj, camera.GetViewProjInverse() );
+<SPAN CLASS="linenum">0768:</SPAN>     D3DXVec4Scale( &amp;ray_to,    &amp;ray_to,    1.0f/ray_to.w   );<SPAN CLASS="comment">// w=1 の射影空間に落とす</SPAN>
+<SPAN CLASS="linenum">0769:</SPAN>     <SPAN CLASS="comment">// 向きの計算</SPAN>
+<SPAN CLASS="linenum">0770:</SPAN>     ray_dir = ray_to - ray_start;
+<SPAN CLASS="linenum">0771:</SPAN>     D3DXVec4Normalize(&amp;ray_dir, &amp;ray_dir);
+<SPAN CLASS="linenum">0772:</SPAN>     
+<SPAN CLASS="linenum">0773:</SPAN>     GetColor(dest, &amp;ray_start, &amp;ray_dir, 0);
+<SPAN CLASS="linenum">0774:</SPAN> 
+<SPAN CLASS="linenum">0775:</SPAN>     <SPAN CLASS="keyword">return</SPAN> dest;
+<SPAN CLASS="linenum">0776:</SPAN> }
+<SPAN CLASS="linenum">0777:</SPAN> 
+<SPAN CLASS="linenum">0778:</SPAN> };<SPAN CLASS="comment">// namespace Render</SPAN>
+<SPAN CLASS="linenum">0779:</SPAN> </PRE>
+</BODY>
+</HTML>

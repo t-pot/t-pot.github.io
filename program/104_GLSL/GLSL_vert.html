@@ -1,0 +1,56 @@
+<HTML>
+<HEAD>
+<TITLE>GLSL.vert</TITLE>
+<meta name="GENERATOR" content="cpp2html 2.1 by Niisaka">
+<meta http-equiv="Content-Type" content="text/html">
+<meta http-equiv="Content-Style-Type" content="text/css">
+<STYLE TYPE="text/css">
+<!--
+SPAN.comment { color:#008000; font-weight:normal; font-style:normal;}
+SPAN.keyword { color:#0000FF; font-weight:normal; font-style:normal;}
+SPAN.string { color:#600000; font-weight:normal; font-style:normal;}
+SPAN.linenum { color:#A0A0A0; font-weight:normal; font-style:normal;}
+-->
+</STYLE>
+</HEAD>
+<BODY TEXT="#000000" BGCOLOR="#FFFFFF">
+<PRE><SPAN CLASS="linenum">0001:</SPAN> <SPAN CLASS="comment">// ------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0002:</SPAN> <SPAN CLASS="comment">// Phong シェーディング (slang:vertex program)</SPAN>
+<SPAN CLASS="linenum">0003:</SPAN> <SPAN CLASS="comment">// </SPAN>
+<SPAN CLASS="linenum">0004:</SPAN> <SPAN CLASS="comment">// Copyright (c) 2003 IMAGIRE Takashi. All rights reserved.</SPAN>
+<SPAN CLASS="linenum">0005:</SPAN> <SPAN CLASS="comment">// ------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0006:</SPAN> 
+<SPAN CLASS="linenum">0007:</SPAN> <SPAN CLASS="comment">// -------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0008:</SPAN> <SPAN CLASS="comment">// グローバル変数</SPAN>
+<SPAN CLASS="linenum">0009:</SPAN> <SPAN CLASS="comment">// -------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0010:</SPAN> uniform vec3 LightPos;
+<SPAN CLASS="linenum">0011:</SPAN> 
+<SPAN CLASS="linenum">0012:</SPAN> <SPAN CLASS="comment">// -------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0013:</SPAN> <SPAN CLASS="comment">// 頂点プログラムからフラグメントプログラムに渡すデータ</SPAN>
+<SPAN CLASS="linenum">0014:</SPAN> <SPAN CLASS="comment">// -------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0015:</SPAN> varying vec3 VERTEX_COLOR;  <SPAN CLASS="comment">// 頂点色</SPAN>
+<SPAN CLASS="linenum">0016:</SPAN> varying vec3 VERTEX_EYE;    <SPAN CLASS="comment">// 視線ベクトル</SPAN>
+<SPAN CLASS="linenum">0017:</SPAN> varying vec3 VERTEX_NORMAL; <SPAN CLASS="comment">// 法線ベクトル</SPAN>
+<SPAN CLASS="linenum">0018:</SPAN> varying vec3 VERTEX_LIGHT;  <SPAN CLASS="comment">// ライトベクトル</SPAN>
+<SPAN CLASS="linenum">0019:</SPAN> 
+<SPAN CLASS="linenum">0020:</SPAN> <SPAN CLASS="comment">// ------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0021:</SPAN> <SPAN CLASS="comment">// 頂点シェーダプログラム</SPAN>
+<SPAN CLASS="linenum">0022:</SPAN> <SPAN CLASS="comment">// ------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0023:</SPAN> <SPAN CLASS="keyword">void</SPAN> main(<SPAN CLASS="keyword">void</SPAN>)
+<SPAN CLASS="linenum">0024:</SPAN> {
+<SPAN CLASS="linenum">0025:</SPAN>     <SPAN CLASS="comment">// 座標変換</SPAN>
+<SPAN CLASS="linenum">0026:</SPAN>     gl_Position = gl_ModelViewProjectionMatrix * gl_Vertex;
+<SPAN CLASS="linenum">0027:</SPAN>     
+<SPAN CLASS="linenum">0028:</SPAN>     <SPAN CLASS="comment">// 色のための計算</SPAN>
+<SPAN CLASS="linenum">0029:</SPAN>     vec4 pos    = gl_ModelViewMatrix * gl_Vertex;
+<SPAN CLASS="linenum">0030:</SPAN>     vec3 L      = LightPos - vec3(pos);
+<SPAN CLASS="linenum">0031:</SPAN>     vec3 N      = gl_NormalMatrix * gl_Normal;
+<SPAN CLASS="linenum">0032:</SPAN> 
+<SPAN CLASS="linenum">0033:</SPAN>     VERTEX_COLOR = vec3(gl_Color);
+<SPAN CLASS="linenum">0034:</SPAN>     VERTEX_NORMAL = N;
+<SPAN CLASS="linenum">0035:</SPAN>     VERTEX_LIGHT  = L;
+<SPAN CLASS="linenum">0036:</SPAN>     VERTEX_EYE    = vec3(pos);
+<SPAN CLASS="linenum">0037:</SPAN> }
+<SPAN CLASS="linenum">0038:</SPAN> </PRE>
+</BODY>
+</HTML>

@@ -1,0 +1,107 @@
+<HTML>
+<HEAD>
+<TITLE>fp.cg</TITLE>
+<meta name="GENERATOR" content="cpp2html 2.1 by Niisaka">
+<meta http-equiv="Content-Type" content="text/html">
+<meta http-equiv="Content-Style-Type" content="text/css">
+<STYLE TYPE="text/css">
+<!--
+SPAN.comment { color:#008000; font-weight:normal; font-style:normal;}
+SPAN.keyword { color:#0000FF; font-weight:normal; font-style:normal;}
+SPAN.string { color:#600000; font-weight:normal; font-style:normal;}
+SPAN.linenum { color:#A0A0A0; font-weight:normal; font-style:normal;}
+-->
+</STYLE>
+</HEAD>
+<BODY TEXT="#000000" BGCOLOR="#FFFFFF">
+<PRE><SPAN CLASS="linenum">0001:</SPAN> <SPAN CLASS="comment">// ---------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0002:</SPAN> <SPAN CLASS="comment">// 頂点シェーダ出力データ</SPAN>
+<SPAN CLASS="linenum">0003:</SPAN> <SPAN CLASS="comment">// ---------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0004:</SPAN> <SPAN CLASS="keyword">struct</SPAN> vert2frag
+<SPAN CLASS="linenum">0005:</SPAN> {
+<SPAN CLASS="linenum">0006:</SPAN>     float4 hpos     : HPOS; <SPAN CLASS="comment">// 頂点座標</SPAN>
+<SPAN CLASS="linenum">0007:</SPAN>     float4 tcoords  : TEX0; <SPAN CLASS="comment">// テクスチャ座標</SPAN>
+<SPAN CLASS="linenum">0008:</SPAN>     float4 normal   : TEX1; <SPAN CLASS="comment">// 法線ベクトル</SPAN>
+<SPAN CLASS="linenum">0009:</SPAN>     float3 vlight   : TEX2; <SPAN CLASS="comment">// ビュー座標のライト</SPAN>
+<SPAN CLASS="linenum">0010:</SPAN>     float3 vhalf    : TEX3; <SPAN CLASS="comment">// ビュー座標のハーフベクトル</SPAN>
+<SPAN CLASS="linenum">0011:</SPAN> };
+<SPAN CLASS="linenum">0012:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0013:</SPAN> <SPAN CLASS="comment">// -1から1の範囲のノイズをサンプリングする</SPAN>
+<SPAN CLASS="linenum">0014:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0015:</SPAN> <SPAN CLASS="keyword">float</SPAN> myNoise(texobj3D NoiseMap, float3 TexCoords)
+<SPAN CLASS="linenum">0016:</SPAN> {
+<SPAN CLASS="linenum">0017:</SPAN>     <SPAN CLASS="keyword">return</SPAN> 2.0 * f1tex3D(NoiseMap, TexCoords) - 1.0;
+<SPAN CLASS="linenum">0018:</SPAN> }
+<SPAN CLASS="linenum">0019:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0020:</SPAN> <SPAN CLASS="comment">// 木のパターンの半径を計算する</SPAN>
+<SPAN CLASS="linenum">0021:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0022:</SPAN> <SPAN CLASS="keyword">float</SPAN> getRadius(texobj3D NoiseMap, float3 fPos)
+<SPAN CLASS="linenum">0023:</SPAN> {
+<SPAN CLASS="linenum">0024:</SPAN>     float3 fTemp = fPos;    <SPAN CLASS="comment">// 基本はテクスチャ座標</SPAN>
+<SPAN CLASS="linenum">0025:</SPAN>     
+<SPAN CLASS="linenum">0026:</SPAN>     <SPAN CLASS="comment">// XY平面にノイズを追加</SPAN>
+<SPAN CLASS="linenum">0027:</SPAN>     fTemp.x += myNoise(NoiseMap, 0.002 * fPos.xyz);
+<SPAN CLASS="linenum">0028:</SPAN>     fTemp.y += myNoise(NoiseMap, 0.002 * fPos.xyz);
+<SPAN CLASS="linenum">0029:</SPAN> 
+<SPAN CLASS="linenum">0030:</SPAN>     <SPAN CLASS="keyword">float</SPAN> r = sqrt(dot(fTemp.xy, fTemp.xy));
+<SPAN CLASS="linenum">0031:</SPAN> 
+<SPAN CLASS="linenum">0032:</SPAN>     <SPAN CLASS="comment">// 適当なノイズ</SPAN>
+<SPAN CLASS="linenum">0033:</SPAN>     r += 0.1 * myNoise(NoiseMap,         fPos.xyz);
+<SPAN CLASS="linenum">0034:</SPAN>     <SPAN CLASS="comment">// Zで決まるノイズ</SPAN>
+<SPAN CLASS="linenum">0035:</SPAN>     r += 0.5 * myNoise(NoiseMap, 0.001 * fPos.zzz);
+<SPAN CLASS="linenum">0036:</SPAN> 
+<SPAN CLASS="linenum">0037:</SPAN>     <SPAN CLASS="keyword">return</SPAN>  r;
+<SPAN CLASS="linenum">0038:</SPAN> }
+<SPAN CLASS="linenum">0039:</SPAN> 
+<SPAN CLASS="linenum">0040:</SPAN> <SPAN CLASS="comment">// ---------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0041:</SPAN> <SPAN CLASS="comment">// Perlin noise フラグメントプログラム</SPAN>
+<SPAN CLASS="linenum">0042:</SPAN> <SPAN CLASS="comment">// ---------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0043:</SPAN> fragout main(vert2frag I
+<SPAN CLASS="linenum">0044:</SPAN>             , uniform float4   fLightWood
+<SPAN CLASS="linenum">0045:</SPAN>             , uniform float4   fDarkWood
+<SPAN CLASS="linenum">0046:</SPAN>             , uniform <SPAN CLASS="keyword">float</SPAN>    fHighNoiseLevel
+<SPAN CLASS="linenum">0047:</SPAN>             , uniform <SPAN CLASS="keyword">float</SPAN>    fBaseRadiusFreq
+<SPAN CLASS="linenum">0048:</SPAN>             , uniform <SPAN CLASS="keyword">float</SPAN>    fLowPulseAmp
+<SPAN CLASS="linenum">0049:</SPAN>             , uniform texobj3D NoiseMap : texunit0
+<SPAN CLASS="linenum">0050:</SPAN>             , uniform texobj1D PulseTrainMap : texunit1
+<SPAN CLASS="linenum">0051:</SPAN>     )
+<SPAN CLASS="linenum">0052:</SPAN> {
+<SPAN CLASS="linenum">0053:</SPAN>     fragout O;
+<SPAN CLASS="linenum">0054:</SPAN> 
+<SPAN CLASS="linenum">0055:</SPAN>     float3 fvNormal  = normalize(I.normal.xyz);
+<SPAN CLASS="linenum">0056:</SPAN>     float3 fvLight   = normalize(I.vlight.xyz);
+<SPAN CLASS="linenum">0057:</SPAN>     float3 fvHalfAng = normalize(I.vhalf.xyz);
+<SPAN CLASS="linenum">0058:</SPAN> 
+<SPAN CLASS="linenum">0059:</SPAN>     <SPAN CLASS="comment">// 平行光源</SPAN>
+<SPAN CLASS="linenum">0060:</SPAN>     <SPAN CLASS="keyword">float</SPAN> fDiffuseTerm = max(dot(fvNormal, fvLight), 0);    <SPAN CLASS="comment">// ランバート</SPAN>
+<SPAN CLASS="linenum">0061:</SPAN>     fDiffuseTerm += 0.22;                                   <SPAN CLASS="comment">// 環境光</SPAN>
+<SPAN CLASS="linenum">0062:</SPAN>     fDiffuseTerm = min(fDiffuseTerm, 1);                    <SPAN CLASS="comment">// ０～１クランプ</SPAN>
+<SPAN CLASS="linenum">0063:</SPAN> 
+<SPAN CLASS="linenum">0064:</SPAN>     <SPAN CLASS="comment">// 鏡面反射</SPAN>
+<SPAN CLASS="linenum">0065:</SPAN>     <SPAN CLASS="keyword">float</SPAN> fDiffuseSpecTerm = min(fDiffuseTerm * 3, 1);      <SPAN CLASS="comment">// スペキュラーの強さ</SPAN>
+<SPAN CLASS="linenum">0066:</SPAN>     <SPAN CLASS="keyword">float</SPAN> fSpecularTerm = fDiffuseSpecTerm * pow(max(dot(fvNormal, fvHalfAng), 0), 30);
+<SPAN CLASS="linenum">0067:</SPAN> 
+<SPAN CLASS="linenum">0068:</SPAN> 
+<SPAN CLASS="linenum">0069:</SPAN>     <SPAN CLASS="comment">// 変位する大きさを決める</SPAN>
+<SPAN CLASS="linenum">0070:</SPAN>     <SPAN CLASS="keyword">float</SPAN> fRadius = getRadius(NoiseMap, I.tcoords.xyz) * fBaseRadiusFreq;
+<SPAN CLASS="linenum">0071:</SPAN> 
+<SPAN CLASS="linenum">0072:</SPAN>     <SPAN CLASS="comment">// 明るい色と暗い色を合成する合成係数</SPAN>
+<SPAN CLASS="linenum">0073:</SPAN>     <SPAN CLASS="keyword">float</SPAN> t = 0.5 * (         f1tex1D(PulseTrainMap, fRadius)           <SPAN CLASS="comment">// 普通に見える縞</SPAN>
+<SPAN CLASS="linenum">0074:</SPAN>              + fLowPulseAmp * f1tex1D(PulseTrainMap, 0.131 * fRadius)); <SPAN CLASS="comment">// グローバルな明暗</SPAN>
+<SPAN CLASS="linenum">0075:</SPAN> 
+<SPAN CLASS="linenum">0076:</SPAN>     <SPAN CLASS="comment">// 最後の計算</SPAN>
+<SPAN CLASS="linenum">0077:</SPAN>     O.col.xyz = (lerp(fLightWood, fDarkWood, t) * fDiffuseTerm).xyz     <SPAN CLASS="comment">// 拡散光</SPAN>
+<SPAN CLASS="linenum">0078:</SPAN>                 + ((1.3 - t) * fSpecularTerm).xxx                       <SPAN CLASS="comment">// 鏡面反射</SPAN>
+<SPAN CLASS="linenum">0079:</SPAN>                 + fHighNoiseLevel * myNoise(NoiseMap, I.tcoords.xyz);   <SPAN CLASS="comment">// 高周波ノイズ</SPAN>
+<SPAN CLASS="linenum">0080:</SPAN> 
+<SPAN CLASS="linenum">0081:</SPAN> <SPAN CLASS="keyword">#if</SPAN> 0<SPAN CLASS="comment">// デバッグ用。ノイズの形を見たいとき</SPAN>
+<SPAN CLASS="linenum">0082:</SPAN> O.col.x = f1tex3D(NoiseMap, 0.01 * I.tcoords.xyz);
+<SPAN CLASS="linenum">0083:</SPAN> O.col.y = f1tex3D(NoiseMap, 0.01 * I.tcoords.xyz);
+<SPAN CLASS="linenum">0084:</SPAN> O.col.z = f1tex3D(NoiseMap, 0.01 * I.tcoords.xyz);
+<SPAN CLASS="linenum">0085:</SPAN> <SPAN CLASS="keyword">#endif</SPAN>
+<SPAN CLASS="linenum">0086:</SPAN> 
+<SPAN CLASS="linenum">0087:</SPAN>     <SPAN CLASS="keyword">return</SPAN> O;
+<SPAN CLASS="linenum">0088:</SPAN> } 
+<SPAN CLASS="linenum">0089:</SPAN> </PRE>
+</BODY>
+</HTML>

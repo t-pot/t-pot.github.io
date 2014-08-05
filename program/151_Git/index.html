@@ -1,0 +1,416 @@
+<head>
+	<title>t-pot『Git入門-「TDD Boot Camp 東京 for C++」向け-』</title>
+	<link rel="stylesheet" type="text/css" href="../if.css">
+</head>
+<meta http-equiv=Content-Type content="text/html; charset=shift_jis">
+<body>
+
+
+<div class="contents">
+<center>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<h1>Git入門</h1>
+<h3>～「TDD Boot Camp 東京 for C++」向け ～</h3>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<hr>
+</center>
+<div>
+
+
+<h2>■はじめに</h2>
+
+<p>
+2011年10月8日に<a href="http://www.zusaar.com/event/agZ6dXNhYXJyDQsSBUV2ZW50GK_kBgw">「TDD(テスト駆動開発) Boot Camp 東京 for C++」向け</a>を開催させていただくこととなりました。
+<br>
+この勉強会を開かせていただいたのは、私が参加させていただいた、<a href="http://www.zusaar.com/event/agZ6dXNhYXJyDQsSBUV2ZW50GPGlAww">「TDD Boot Camp 東京 1.6」</a>が大変に面白く、ゲームの開発でももっと広く実践してほしいという気持ちがあったからです。
+<br>
+もちろん、TDD(テスト駆動開発)は、専用のデバイスや画面表示を行うゲーム開発では難しいところも多いのですが、
+モデルの部分には十分に適応でき、行っていれば出ないバグもあったなぁと、感じます。
+<br>
+ということで、今回の勉強会でも、それ以外でも、一度はTDDを体験していただいて、確実性を増す開発スタイルについて考えてみるきっかけとなればと思います。
+</p>
+
+<p>
+さて、私がTDDBCを受けた前日に<a href="http://kokucheese.com/event/index/13468/">「SCM Boot Camp in Tokyo」</a>という勉強会にも参加しました。この勉強会は、分散バージョン管理システムの概念・思想・パターンを勉強する会で、私はGitについてまながせていただきました。<br>
+バージョン管理システムは、多くの現場で使われていると思いますが、その中でも分散バージョン管理システムは容易にブランチを作成することができ、細かい単位でソフトウェアを作り上げるのに適しています。
+これはTDDに合っていると思いますし、分散バージョン管理システムを使うことで、よりアジャイルな開発が実現できるものと考えています。
+</p>
+<p>
+ということで、TDDBC 東京 for C++では、Gitで進行を管理することにチャレンジしようと考えました。<br>
+といっても、コンフリクトが起きるような状況も発生しませんし、うまくいかなくても、
+GitHubから普通にダウンロードして作業できる設計にしました。
+</p>
+
+
+<hr>
+
+
+<h2>■Gitとは</h2>
+
+<p>
+Gitはリーナス・トーバルズによって開発された分散型バージョン管理システムです。Linuxのカーネルを始め、多くのプロジェクトで使われています。<br>
+GitHubはgit のプロジェクトホスティングサービスで、railsの管理などで使われています。
+オープンなプロジェクトなら無料で300MBのディスクスペースをもらうことができます。
+</p>
+
+
+<hr>
+
+
+<h2>■Gitのインストール</h2>
+
+<p>
+GitHubを使うには、ローカルにGitの環境を用意する必要があります。<br>
+Windowsの場合は、msysgitというオールインワンのパッケージがありますので、これをインストールするのが楽でしょう。<br>
+<a href="http://code.google.com/p/msysgit/">msysgitのプロジェクトページ(http://code.google.com/p/msysgit/)</a>から、
+ダウンロードページに行きます。
+</p>
+<center><img src="setup1.png" width = "80%"></center><br>
+<p>
+ダウンロードページから最新のインストーラーをダウンロードして実行します。
+</p>
+<center><img src="setup2.png" width = "80%"></center><br>
+<p>
+インストーラーを起動すると、いつものいろいろな「次へ」ボタンを押す項目の後に、コンポーネントの選択画面になります。<br>
+この項目は対して重要ではないので、問題がなければディフォルトのままで、クリーンな環境が良ければなるべく外してインストールしましょう。
+</p>
+<center><img src="setup3.png"></center><br>
+<p>
+また、その後にコマンドプロンプトなどでもGitを使うかという質問が来ますが、一番上にするのがシンプルでしょう。
+</p>
+<center><img src="setup4.png"></center><br>
+<p>
+その後、改行コードをどうするか聞いてきます。
+GitHubでは、改行コードにLFを使うので、一番上を指定しておくのが面倒が少ないのではないでしょうか。
+</p>
+<center><img src="setup5.png"></center><br>
+<p>
+以上がインストール時の気になるポイントかと思います。
+無事にインストールはできたでしょうか？<br>
+うまくインストールできれば、プログラムメニューからGit Bashを立ち上げれば次のようなウィンドウが開くと思います。
+</p>
+<center><img src="setup10.png"></center><br>
+
+<p>
+Git Bashが立ち上がったら、上記でも入力されている通り、
+Gitの管理で使われる名前とメールアドレスを下記のように設定してください。
+</p>
+<pre class="CodeBlock">
+git config --global user.name <font color="yellow">"名前"</font>
+git config --global user.email <font color="yellow">"メールアドレス"</font>
+</pre>
+
+<p>
+お疲れ様でした。
+</p>
+
+
+<hr>
+<h2>■GitHubのアカウント作成</h2>
+
+<p>
+GitHubに上がっているファイルをダウンロードするには、アカウントを作成しなくてもよいのですが、
+バージョン管理にチャレンジするにはアカウントを取得しましょう。<br>
+<a href="http://github.com/">GitHubのページ(http://github.com/)</a>に行って、「Plans, Pricing and Signup」のボタンからアカウント作成に入ります。
+</p>
+<center><img src="setup6.png" width = "80%"></center><br>
+<p>
+ページに入ったら、有料プランを横目に見ながら「Create a free account」ボタンを押します。
+</p>
+<center><img src="setup7.png" width = "80%"></center><br>
+<p>
+すると、「ユーザー名」、「Emailアドレス」、「パスワード」、「パスワードの確認」の入力をします。<br>
+「ユーザー名」、「Emailアドレス」は、すでに使われていたら、駄目と言われます。<br>
+パスワードは、1文字以上は小文字と数字を含んだ、7文字以上のものを用意して下さい。
+</p>
+<center><img src="setup8.png" width = "80%"></center><br>
+<p>
+無事に登録できれば、Login/Log outタブからGitHubに出入りできます。
+</p>
+<center><img src="setup9.png" width = "80%"></center><br>
+
+<p>
+なお、GitHubのチュートリアルをみると、GitにGitHubの設定を登録するようにすすめられているので、
+Git Bashから打ち込んでおきましょう。
+</p>
+<pre class="CodeBlock">
+git config --global github.user <font color="yellow">"GitHubのアカウント名"</font>
+git config --global github.token <font color="yellow">"GitHubのAccount AdminにあるAPIトークン"</font>
+</pre>
+
+<p>
+「TDD Boot Camp 東京 for C++」では、ここまでのアカウントの作成が終了しましたら、
+Imagireにユーザー名を連絡いただけたらと思います。今回のプロジェクトの共同開発者に登録させていただきます。
+</p>
+
+
+<hr>
+<h3>■公開鍵暗号の作成・登録</h3>
+
+<p>
+さて、Git BashからGitHubに安全にアクセスするには、SSHを使ってアクセスします。
+GitHubでは公開鍵暗号のRSA暗号を使ってSSHでアクセスするようになっています。
+</p>
+<p>
+公開鍵はGit Bashから「ssh-keygen」と入力して作成することができます。
+この時、ファイルの保存場所を聞かれた後に、パスフレーズ（パスワード）を聞かれます。<br>
+ファイルの保存場所は自分のユーザーディレクトリ以下の「.ssh」というフォルダがディフォルトの場所になります。
+とくに何もなければそのままでよいでしょう。<br>
+パスフレーズは、SSHでアクセスする使うときに聞かれるパスワードで、GitHubのパスワードと違っていて大丈夫です。
+</p>
+<p>
+ssh-keygenがちゃんと終わると、.sshフォルダに秘密鍵「id_rsa」と公開鍵「id_rsa.pub」が作られます。<br>
+秘密鍵「id_rsa」は、誰にも中身を見られないように厳重にファイルを管理してください。
+</p>
+<center><img src="setup11.png"></center><br>
+<p>
+この公開鍵の情報をGitHubに登録します。<br>
+GitHubのページから、「Account Settings」タブを指定して、その後「SSG Public Keys」を選択してください。
+</p>
+<center><img src="setup12.png" width = "80%"></center><br>
+<p>
+その後、「Add another public key」で、公開鍵を登録します。
+</p>
+<center><img src="setup13.png" width = "80%"></center><br>
+<p>
+この登録には、.sshフォルダのid_rsa.<b>pub</b>をテキストエディタやメモ帳で開きます。
+</p>
+<center><img src="setup14.png" width = "80%"></center><br>
+<p>
+id_rsa.pubの中身を登録画面の「Key」の項目にコピペします。<br>
+「Title」の項目には、作業しているPCを識別する名前を入力します。<br>
+入力したら、「Add key」で鍵を登録してください。
+</p>
+<center><img src="setup15.png" width = "80%"></center><br>
+<p>
+登録されたら、追加した名前の項目が表示されていると思います。<br>
+この鍵が登録された状態になると、SSHを使ってプロジェクトにアクセスできるようになります。
+</p>
+<center><img src="setup16.png" width = "80%"></center><br>
+
+<hr>
+<h3>■自動パスフレーズの設定</h3>
+
+<p>
+この後、Githubに頻繁にアクセスするようになるのですが、この際にファイルの変更などのアクセスでパスフレーズが求められます。<br>
+いちいちパスフレーズを入力するのは面倒なので、自動でパスフレーズを入力する設定をしましょう。
+</p>
+<p>
+ホームディレクトリ（c:\Users\「ユーザー名」）に、「_netrc」というファイルを作成します。<br>
+「_netrc」の内容は、次のようにして下さい(パスフレーズが平文で書かれるので、他の人に見られないように注意してください)。
+</p>
+<pre class="CodeBlock">
+machine github.com
+login <font color="yellow">GitHubのアカウント名</font>
+password <font color="yellow">SSHのパスフレーズ</font>
+</pre>
+
+<p>
+お疲れ様でした。
+</p>
+
+
+<hr>
+<h2>■プロジェクトの初期化</h2>
+
+<p>
+それでは、いよいよソースコードを取り寄せましょう。<br>
+Git Bash を立ち上げると、ホームディレクトリで立ち上がるので、
+プロジェクトのソースコードを置くフォルダ（"My Documents"など）に移ります。<br>
+プロジェクト名のフォルダはのちほど掘られるので、ここではその上位となるフォルダに移動してください。
+</p>
+<p>
+その後、「git clone」命令を使って、ファイルを引っ張ってきます。<br>
+複雑ですが、下の図のコマンドのように入力してください。
+</p>
+
+<center><img src="setup17.png"></center><br>
+
+<p>
+GitHubでプロジェクトを持ってくるときは、持ってくるプロジェクトの「Source」ページにリポジトリのアドレスが書かれています。<br>
+しかし、先ほど「_netrc」でパスフレーズを登録したために、アドレスに書かれている自分のユーザー名は省略してcloneすることができます。
+</p>
+
+<center><img src="setup17_2.png" width="80%"></center><br>
+
+
+<p>
+ちなみに、cloneに失敗する場合は、共同開発者に登録されていないので、TDDBCではスタッフにお声掛けください。
+</p>
+<p>
+成功すれば、プロジェクトフォルダが作成され、その中にVCのソリューションやソースコードが格納されます。
+</p>
+<center><img src="setup18.png"></center><br>
+<p>
+ここで、ディレクトリ名の後に、「(master)」と書かれているのが見えるかと思います。
+「master」というのは、現在の作業のブランチ名で、
+Gitで管理されているフォルダをGit Bashで見ると現在作業をしているブランチの名前を見ることができます。
+</p>
+
+
+<h3>■チームのブランチの作成</h3>
+
+<p>
+さて、ここは「TDDBC 東京 C++」だけの話題です。<br>
+今、「git clone」で持ってきたファイルは、今からのTDDの雛型となります。
+このプロジェクトを自分で書き換えて課題をクリアーしていくことになります。<br>
+したがって、その結果は各チームごとに異なります。そのチームの結果を保存しておく場所として、
+チーム専用のブランチを切りましょう。
+</p>
+<p>
+Gitでプランチを切る（プロジェクトファイルを分岐させて、他の人に迷惑かけずに自分達の新たな作業スペースを確保する）には、
+「git branch」コマンドを作成します。<br>
+「git branch master***」で、自分達のブランチを元のmasterブランチから分岐して作成してください。
+(「master***」は「master」の後に自分達のチーム名を被らないように入れてください。)
+</p>
+<center><img src="setup19.png"></center><br>
+<p>
+次に、「git checkout "チームのマスター名"」で、ブランチを切り替えます。<br>
+ディレクトリ名の後のブランチ名を確認してください。
+</p>
+<p>
+その後、「git push origin "チームのマスター名"」と入力してください。<br>
+これで、作成したブランチがGitHubの方に登録されます。
+これで、この後の作業を、今後、いつでも見ることができるようになります。<br>
+ちなみに、「origin」は、GitHub上のリポジトリ（Gitで管理されているプロジェクト）を指します。
+</p>
+<p>
+うまくいった場合には、GitHubのプロジェクトに新しいブランチが作成されたことが表示されます。
+<a href="https://github.com/imagire/TDD-Boot-Camp-Tokyo-for-CPP/network">https://github.com/imagire/TDD-Boot-Camp-Tokyo-for-CPP/network</a>
+</p>
+<center><img src="setup20.png" width = "80%"></center><br>
+
+<hr>
+<h2>■作業のブランチの作成</h2>
+
+<p>
+Gitで作業するときの作業パターンの１つをここで紹介させていただきます。
+</p>
+<p>
+Gitを使って作業するときには、masterのリポジトリ（チームのマスターでも）では、作業をしません。<br>
+developmentなどの別のプランチを作成して、そちらで新しい実装をして、
+それをmasterでマージした後に大本のoriginを更新します。<br>
+このmasterでmergeする直前には、originから最新の状態を取りこんでからdevelopmentの更新をするようにします。<br>
+こうすることで、originでコンフリクトを発生させることなく（他の人に迷惑をかけることなく）、
+masterの時点でmergeによるコンフリクトを発見できます
+（mergeでコンフリクトが起きればdevelopmentに戻って、コンフリクトが起きないように修正できます）。
+</p>
+<p>
+mergeした後は、developmentに移って、development側でもmergeして、originの結果を取りこんでからdevelopmentの作業を続けます。
+</p>
+
+
+<center><img src="setup21.png" width = "80%"></center><br>
+
+<p>
+実際にこれを行うには、先ほどと同じようにして、「development」ブランチを作成します。<br>
+その後、チェックアウトして、「development」ブランチに移行した後、作業開始です。
+</p>
+<center><img src="setup22.png"></center><br>
+
+<p>
+なお、ここで説明した方法は、１つの開発ポリシーにしかすぎず、
+他の（もっと進んだ）運営の仕方をしているチームはたくさんあると思いますので、
+今後、いろいろと調べていっていただければと思います。
+</p>
+
+<hr>
+<h2>■実装プロセス</h2>
+
+<p>
+さて、ここでプログラミングです。<br>
+TDDですから、テストから実装を始めていきましょう！
+</p>
+<p>
+たとえば、引き算関数を作るなら、期待されるテストを書きます
+（下の青く選択された部分が、今、追記した部分です）。
+</p>
+<center><img src="setup23.png" width = "80%"></center><br>
+<p>
+これではビルドが通らないので、引き算関数を作成しましょう。<br>
+中身は、まずはビルドが通るでたらめを書きます。
+</p>
+<p>
+そしたら、main関数の最後にブレークポイントを設定して
+（下の図で赤丸が付いているように、そのポイントをクリックして、プログラムがそこで止まるようにします）、
+プログラムを実行します。
+</p>
+<center><img src="setup24.png" width = "80%"></center><br>
+<p>
+うまくいけば、テストが赤く失敗するので、実装の中身を書く準備が整ったことになります。
+</p>
+<center><img src="setup25.png"></center><br>
+<p>
+さて、sub関数の中身も追加して、切りが良いところまで実装したら（TDDなら、[テスト作成]-[コード実装]-[リファクタリング]のループが終わったところがよいでしょう）、更新をGitに格納します。
+</p>
+<p>
+具体的には、Gitで「add」コマンドを使用して更新ファイルを伝えて、「commit」コマンドで更新内容を記録します。<br>
+このタイミングでは、更新情報はdevelopmentブランチのみに格納され、masterやoriginには記録されません。
+</p>
+<center><img src="setup26.png"></center><br>
+<p>
+なお、「add」コマンドを使うときには、下記にあるように、ファイル名として「.」を指定して、更新した全てのファイルをGitに伝えることが多く行われます。
+今回の場合には、自動更新されるファイルもいろいろとあるので、あえてファイル名を指定しました。
+</p>
+<pre class="CodeBlock">
+git add .
+</pre>
+
+<hr>
+<h2>■GitHubを更新する</h2>
+<p>
+さて、何度かのコミットをへて、作業が一通り終了したら（ストーリーが一つ完了したら）、GitHubにあげましょう。<br>
+以下のようなコマンドを入力して、GitHubに更新を反映させます。
+</p>
+<center><img src="setup27.png"></center><br>
+<p>
+最初に、「checkout」コマンドで、作業場所をマスターに移します。
+</p>
+<pre class="CodeBlock">
+git checkout <font color="yellow">master名</font>
+</pre>
+<p>
+マスターに移ったところで、「pull」コマンドでGitHubの最新のソースを持ってきます。<br>
+次に、「merge」コマンドで、作りこんだ修正をGitHubのコードと統合します。
+ここで、エラーが起きたら、developmentに移ってうまくmergeできるように修正しましょう。<br>
+うまく統合できたら、「push」コマンドでGitHubのリポジトリを更新します。
+</p>
+
+</p>
+<pre class="CodeBlock">
+git pull origin <font color="yellow">master名</font>
+git merge development
+git push
+</pre>
+<p>
+その後は、再びdevelopmentブランチに戻って、マスターの内容を取りこんでから作業を進めましょう。
+（といっも、今回は他のチームの人が触ることはないでしょうから、マージする内容はありませんが…）
+</p>
+<pre class="CodeBlock">
+git checkout development
+git merge master名
+</pre>
+<p>
+以上のサイクルが終了すると、GitHubのサイトでは、作業が更新したことが見て取れます。
+</p>
+<center><img src="setup28.png" width = "80%"></center><br>
+
+
+<hr>
+<h2>■最後に</h2>
+
+<p>
+以上で、かなりはしょったものになりますが、Gitでの一連の作業の流れを説明させていただきました。<br>
+Gitには、まだまだ多くの機能があります。今回の説明をきっかけにGitに興味を持っていただいて、
+使いこなしてもらえれば嬉しいです。
+</div>
+<hr>
+<p><a href="../index.html">もどる</a></p>
+<p><a href="mailto:imagire@gmail.com">imagire@gmail.com</a></p>
+</center>
+
+</body>
+</html>

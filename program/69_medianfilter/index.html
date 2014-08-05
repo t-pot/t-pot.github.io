@@ -1,0 +1,519 @@
+<head>
+	<title>t-pot『中央値フィルタ』</title>
+	<link rel="stylesheet" type="text/css" href="../if.css">
+</head>
+<meta http-equiv=Content-Type content="text/html; charset=shift_jis">
+<body>
+
+
+<div class="contents">
+<center>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<h1>中央値フィルタ</h1><br>
+<h3>～ Median filter ～</h3>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<image src = "title.jpg">
+<br>
+<hr>
+</center>
+<div>
+
+
+<h2>■はじめに</h2>
+
+
+<p>
+GeForce FX 用の、オリジナルのネタを考えてみました。<br>
+上の図の、左側が元の絵で、右側が中央値フィルタを掛けた画像です。<br>
+中央値フィルタは、点々としたポイントノイズを除去する効果があります（完全にではありませんが）。
+</p>
+<p>
+下のファイルがソースと実行ファイルです。
+</p>
+<ul style = "LIST-STYLE-TYPE:none">
+<li><a href="src.lzh">src.lzh (中央値フィルタのサンプル:OpenGL & Cg言語)</a>
+</ul>
+
+<p>
+まぁ、いつものように適当にファイルが入っています。<br>
+今回は、天球を半球にしてみました。
+</p>
+<table>
+<tr><td><a href="fp_cg.html">fp.cg</a></td><td>フラグメントプログラム。</td></tr>
+<tr><td><a href="main_cpp.html">main.cpp</a></td><td>メインループ。</td></tr>
+<tr><td><a href="CBitmap_h.html">CBitmap.h</a></td><td>ビットマップファイルの読み込み。</td></tr>
+<tr><td><a href="CBitmap_cpp.html">CBitmap.cpp</a></td><td>ビットマップファイルの読み込み。</td></tr>
+</table>
+<image src = "test_bmp.jpg">test.bmp
+<p>
+あと、実行ファイル及び、プロジェクトファイルが入っています。
+</p>
+
+
+<h2>■中央値フィルタとは</h2>
+
+
+<p>
+中央値フィルタとは、局所的な領域での濃淡の中央の値を持つ色を出力するフィルタです。
+</p>
+<image src = "how2.png">
+<p>
+特徴としては、一番上の絵のようなごま塩状のノイズを取り除くことができます。
+ただし、完璧に取り除けるのは白か黒のノイズの時のみで、ノイズの色が中間の色の時には、その色が残ります。
+例えば、下の絵では一部のノイズが残ってしまいました。
+</p>
+<image src = "title.png">
+<p>
+また、比較的、元の形を残すフィルタです。
+</p>
+<p>
+単純なサンプリングではなく、真中の値を決める計算が必要とのことで、
+いままでのシェーダではできませんでした。
+</p>
+
+<h2>■ビットマップファイルの読み込み</h2>
+
+
+<p>
+今回は、ビットマップファイルを読み込んで、テクスチャとして張り込んでいます。<br>
+ビットマップファイルの読み込みをどうしようかとネットで探したら、
+<a href="http://www.geocities.jp/yuichiy2001/">sonson</a>さんのサイトにそのままずばりのプログラムがあったので、そのプログラムを参考にしました。
+</p>
+<p>
+読み込みの手順は次のようになります。
+基本的には、ファイルをオープンしてヘッダなどを読み込んだ後に、フォーマット等をチェックして
+データ種別ごとに読み込みます。<br>
+私は基本的に「goto大好き<s>っ娘</s>」なので、エラーが起きた後は最後の行までジャンプして処理するようにしています。
+別にgotoなど使わなくても書けるのですが、このほうがバグがでないと思いませんか？
+</p>
+<pre class="CodeBlock">
+CBitmap.cpp
+<font color="deepskyblue">0161:</font> <font color="blue">unsigned</font> <font color="blue">int</font> CBitmap::Load(<font color="blue">const</font> <font color="blue">char</font> *filename)
+<font color="deepskyblue">0162:</font> {
+<font color="deepskyblue">0163:</font>     <font color="blue">unsigned</font> <font color="blue">int</font> tex_id = 0;
+<font color="deepskyblue">0164:</font>     FILE *fp;
+<font color="deepskyblue">0165:</font>     <font color="cyan">//ビットマップヘッダ</font>
+<font color="deepskyblue">0166:</font>     BitmapHeader header;
+<font color="deepskyblue">0167:</font>     BitmapInfoHeader info;
+<font color="deepskyblue">0168:</font>     <font color="cyan">//色数</font>
+<font color="deepskyblue">0169:</font>     <font color="blue">unsigned</font> <font color="blue">int</font> color_bit;
+<font color="deepskyblue">0170:</font>     
+<font color="deepskyblue">0171:</font>     <font color="cyan">// ファイルオープン</font>
+<font color="deepskyblue">0172:</font>     <font color="blue">if</font>( NULL==( fp = fopen(filename, "<font color="blue">rb</font>") ) ) <font color="blue">return</font> tex_id;
+<font color="deepskyblue">0173:</font>     
+<font color="deepskyblue">0174:</font>     <font color="cyan">//ヘッダ読み込み</font>
+<font color="deepskyblue">0175:</font>     <font color="blue">if</font>( _ReadHeader(&amp;header, fp))   <font color="blue">goto</font> end;
+<font color="deepskyblue">0176:</font>     <font color="blue">if</font>( _ReadInfoHeader(&amp;info, fp)) <font color="blue">goto</font> end;
+<font color="deepskyblue">0177:</font>     
+<font color="deepskyblue">0178:</font>     <font color="cyan">//ヘッダチェック</font>
+<font color="deepskyblue">0179:</font>     <font color="blue">if</font>( !(color_bit = _CheckHeaders(&amp;header, &amp;info))) <font color="blue">goto</font> end;
+<font color="deepskyblue">0180:</font>     
+<font color="deepskyblue">0181:</font>     <font color="cyan">//ビットマップファイルサイズチェック</font>
+<font color="deepskyblue">0182:</font>     <font color="blue">if</font>( !_CheckSize(info.width*info.height) ) <font color="blue">goto</font> end;
+<font color="deepskyblue">0183:</font>     
+<font color="deepskyblue">0184:</font>     <font color="cyan">//カラービット数で処理を分ける</font>
+<font color="deepskyblue">0185:</font>     <font color="blue">switch</font>(color_bit){
+<font color="deepskyblue">0186:</font>     <font color="blue">case</font> 8:
+<font color="deepskyblue">0187:</font>         tex_id = _Analize8bit(&amp;info, fp);
+<font color="deepskyblue">0188:</font>         <font color="blue">break</font>;
+<font color="deepskyblue">0189:</font>     <font color="blue">case</font> 24:
+<font color="deepskyblue">0190:</font>         tex_id = _Analize24bit(&amp;info, fp);
+<font color="deepskyblue">0191:</font>         <font color="blue">break</font>;
+<font color="deepskyblue">0192:</font>     }
+<font color="deepskyblue">0193:</font>     
+<font color="deepskyblue">0194:</font> end:
+<font color="deepskyblue">0195:</font>     <font color="cyan">// ファイルクローズ</font>
+<font color="deepskyblue">0196:</font>     fclose(fp);
+<font color="deepskyblue">0197:</font>     
+<font color="deepskyblue">0198:</font>     <font color="blue">return</font> tex_id;
+<font color="deepskyblue">0199:</font> }
+</pre>
+<p>
+さて、フォーマットのチェックで何をするかということですが、
+「ビットマップファイルの先頭は「BM」で始まっている」等の規約がありますので、
+それらをチェックします。<br>
+この辺は、仕様で決まっているので、さらに深く知りたい方は、フォーマットの仕様をチェックしましょう。
+</p>
+<pre class="CodeBlock">
+CBitmap.cpp
+<font color="deepskyblue">0006:</font> <font color="cyan">// ---------------------------------------------------------------------------</font>
+<font color="deepskyblue">0007:</font> <font color="cyan">// Bitmapヘッダチェック</font>
+<font color="deepskyblue">0008:</font> <font color="cyan">// ---------------------------------------------------------------------------</font>
+<font color="deepskyblue">0009:</font> <font color="blue">int</font> CBitmap::_CheckHeaders (<font color="blue">const</font> BitmapHeader *pBH, <font color="blue">const</font> BitmapInfoHeader *pBIH)
+<font color="deepskyblue">0010:</font> {
+<font color="deepskyblue">0011:</font>     <font color="cyan">//ヘッダのBMの文字</font>
+<font color="deepskyblue">0012:</font>     <font color="blue">if</font>( pBH-&gt;distinct1!='<font color="blue">B</font>' || pBH-&gt;distinct2!='<font color="blue">M</font>' )<font color="blue">return</font> 0;
+<font color="deepskyblue">0013:</font>     <font color="cyan">//レイヤー１</font>
+<font color="deepskyblue">0014:</font>     <font color="blue">if</font>( pBIH-&gt;plane !=1 )<font color="blue">return</font> 0;
+<font color="deepskyblue">0015:</font>     <font color="cyan">//圧縮なし</font>
+<font color="deepskyblue">0016:</font>     <font color="blue">if</font>( pBIH-&gt;compression !=0 ) <font color="blue">return</font> 0;
+<font color="deepskyblue">0017:</font>     <font color="cyan">//色数を返す</font>
+<font color="deepskyblue">0018:</font>     <font color="blue">if</font>( pBIH-&gt;bits ==24 || pBIH-&gt;bits ==8 ) <font color="blue">return</font> pBIH-&gt;bits;
+<font color="deepskyblue">0019:</font>     
+<font color="deepskyblue">0020:</font>     <font color="blue">return</font> 0;
+<font color="deepskyblue">0021:</font> }
+</pre>
+<p>
+今回は、無圧縮256色か24bit色のファイルだけを取り扱います。
+</p>
+<p>
+あと、OpenGLの仕様として、「テクスチャの幅xテクスチャの高さ=2^n」である必要があるので、
+このチェックもします。<br>
+ということで、読み込めるテクスチャにはこの制限が付きますので注意してください。
+</p>
+<pre class="CodeBlock">
+CBitmap.cpp
+<font color="deepskyblue">0022:</font> <font color="cyan">// ---------------------------------------------------------------------------</font>
+<font color="deepskyblue">0023:</font> <font color="cyan">// ビットマップファイルのサイズチェック</font>
+<font color="deepskyblue">0024:</font> <font color="cyan">// ---------------------------------------------------------------------------</font>
+<font color="deepskyblue">0025:</font> <font color="blue">int</font> CBitmap::_CheckSize(<font color="blue">unsigned</font> <font color="blue">int</font> pict_size)
+<font color="deepskyblue">0026:</font> {
+<font color="deepskyblue">0027:</font>     <font color="blue">unsigned</font> <font color="blue">int</font> i=2;
+<font color="deepskyblue">0028:</font>     <font color="blue">const</font> <font color="blue">unsigned</font> <font color="blue">int</font> TEX_SIZE = 256;
+<font color="deepskyblue">0029:</font>     <font color="blue">unsigned</font> <font color="blue">int</font> max_texture = TEX_SIZE*TEX_SIZE;
+<font color="deepskyblue">0030:</font>     
+<font color="deepskyblue">0031:</font>     <font color="cyan">//サイズチェック</font>
+<font color="deepskyblue">0032:</font>     <font color="blue">for</font>(i=2;i&lt;=max_texture;i*=2){
+<font color="deepskyblue">0033:</font>         <font color="blue">if</font>( i == pict_size){
+<font color="deepskyblue">0034:</font>             <font color="blue">return</font> 1;
+<font color="deepskyblue">0035:</font>         }
+<font color="deepskyblue">0036:</font>     }
+<font color="deepskyblue">0037:</font>     <font color="blue">return</font> 0;
+<font color="deepskyblue">0038:</font> };
+</pre>
+<p>
+フォーマットが分かったら実際にデータを読み込んで、テクスチャとして設定します。<br>
+24bitsの時は中身がべたで入っているので、そのまま読み込んでイメージとしてからテクスチャにします。<br>
+但し、データの中身の順序が逆なので読み込むときに御尻から読み込む必要があります。
+</p>
+<pre class="CodeBlock">
+CBitmap.cpp
+<font color="deepskyblue">0124:</font> <font color="cyan">// ---------------------------------------------------------------------------</font>
+<font color="deepskyblue">0125:</font> <font color="cyan">// 24bitsテクスチャの読み込み</font>
+<font color="deepskyblue">0126:</font> <font color="cyan">// ---------------------------------------------------------------------------</font>
+<font color="deepskyblue">0127:</font> <font color="blue">unsigned</font> <font color="blue">int</font> CBitmap::_Analize24bit( <font color="blue">const</font> BitmapInfoHeader *pBIH, FILE *fp )
+<font color="deepskyblue">0128:</font> {
+<font color="deepskyblue">0129:</font>     <font color="blue">unsigned</font> <font color="blue">int</font> tex_id = 0;
+<font color="deepskyblue">0130:</font>     <font color="blue">unsigned</font> <font color="blue">char</font> *bitdata;
+<font color="deepskyblue">0131:</font>     <font color="blue">unsigned</font> <font color="blue">char</font> red,green,blue;
+<font color="deepskyblue">0132:</font>     <font color="blue">int</font> i, j;
+<font color="deepskyblue">0133:</font>     
+<font color="deepskyblue">0134:</font>     <font color="cyan">//メモリ確保</font>
+<font color="deepskyblue">0135:</font>     bitdata = (<font color="blue">unsigned</font> <font color="blue">char</font>*)malloc(3*pBIH-&gt;width*pBIH-&gt;height*<font color="blue">sizeof</font>(<font color="blue">unsigned</font> <font color="blue">char</font>));
+<font color="deepskyblue">0136:</font>     <font color="cyan">//読み込み</font>
+<font color="deepskyblue">0137:</font>     <font color="blue">for</font>(j=(pBIH-&gt;height-1);j&gt;=0;j--){
+<font color="deepskyblue">0138:</font>         <font color="blue">for</font>(i=(pBIH-&gt;width-1);i&gt;=0;i--){
+<font color="deepskyblue">0139:</font>             fread( &amp;red,   <font color="blue">sizeof</font>(<font color="blue">unsigned</font> <font color="blue">char</font>),1,fp);
+<font color="deepskyblue">0140:</font>             fread( &amp;green, <font color="blue">sizeof</font>(<font color="blue">unsigned</font> <font color="blue">char</font>),1,fp);
+<font color="deepskyblue">0141:</font>             fread( &amp;blue,  <font color="blue">sizeof</font>(<font color="blue">unsigned</font> <font color="blue">char</font>),1,fp);
+<font color="deepskyblue">0142:</font>             *(bitdata+3*i+3*j*pBIH-&gt;width)  = blue;
+<font color="deepskyblue">0143:</font>             *(bitdata+3*i+3*j*pBIH-&gt;width+1)= green; 
+<font color="deepskyblue">0144:</font>             *(bitdata+3*i+3*j*pBIH-&gt;width+2)= red;
+<font color="deepskyblue">0145:</font>         }
+<font color="deepskyblue">0146:</font>     }
+<font color="deepskyblue">0147:</font>     <font color="cyan">//テクスチャ作成</font>
+<font color="deepskyblue">0148:</font>     glGenTextures(1, &amp;tex_id);
+<font color="deepskyblue">0149:</font>     glBindTexture(GL_TEXTURE_2D, tex_id);
+<font color="deepskyblue">0150:</font>     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, pBIH-&gt;width, pBIH-&gt;height,
+<font color="deepskyblue">0151:</font>                 0, GL_RGB, GL_UNSIGNED_BYTE, bitdata);
+<font color="deepskyblue">0152:</font>     
+<font color="deepskyblue">0153:</font>     <font color="cyan">//メモリ開放</font>
+<font color="deepskyblue">0154:</font>     free(bitdata);
+<font color="deepskyblue">0155:</font>     
+<font color="deepskyblue">0156:</font>     <font color="blue">return</font> tex_id;
+<font color="deepskyblue">0157:</font> }
+</pre>
+<p>
+テクスチャを読み込むときは、ロードして、適当な属性を設定します。
+</p>
+<pre class="CodeBlock">
+main.cpp
+<font color="deepskyblue">0167:</font>     <font color="cyan">//テクスチャの生成</font>
+<font color="deepskyblue">0168:</font>     tex = CBitmap::Load("<SPAN CLASS="string">test.bmp</font>");
+<font color="deepskyblue">0169:</font>     glBindTexture(GL_TEXTURE_2D, tex);
+<font color="deepskyblue">0170:</font>     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
+<font color="deepskyblue">0171:</font>     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
+<font color="deepskyblue">0172:</font>     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+<font color="deepskyblue">0173:</font>     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+<font color="deepskyblue">0174:</font>     glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_DECAL);
+</pre>
+<p>
+以上でテクスチャを読み込むことができます。<br>
+この辺は、D3DXのような標準のペルパーライブラリを作ってもらいたいものです。
+</p>
+
+<h2>■フラグメントプログラム</h2>
+
+
+<p>
+さて、肝心かなめのフラグメントプログラムです。<br>
+今回は頂点プログラムはありません。
+入力された頂点が座標変換されて、フラグメントプログラムへデータが入力されます。
+</p>
+<pre class="CodeBlock">
+fp.cg
+<font color="deepskyblue">0001:</font> <font color="cyan">// ---------------------------------------------------------------------------</font>
+<font color="deepskyblue">0002:</font> <font color="cyan">// 頂点プログラム出力データ</font>
+<font color="deepskyblue">0003:</font> <font color="cyan">// ---------------------------------------------------------------------------</font>
+<font color="deepskyblue">0004:</font> <font color="blue">struct</font> vert2frag
+<font color="deepskyblue">0005:</font> {
+<font color="deepskyblue">0006:</font>     float4 hpos     : HPOS; <font color="cyan">// 頂点座標</font>
+<font color="deepskyblue">0007:</font>     float4 tcoords  : TEX0; <font color="cyan">// テクスチャ座標</font>
+<font color="deepskyblue">0008:</font> };
+</pre>
+<p>
+今回入力されるデータはテクスチャ座標です。<br>
+ポリゴンにあわせてテクスチャが張られるように座標を調整します。
+</p>
+
+<p>
+フラグメントプログラムでは、最初にテクセル中心とその周りの４テクセルの色をサンプリングします。<br>
+GeForce FX 世代では、１つのテクスチャから５回サンプリングするなんてできるので、
+テクスチャ座標を少しずつずらしながら、読み込みます。<br>
+中心の座標はテクセル中心に合わせるために、(0.5, 0.5)にしています。
+</p>
+<pre class="CodeBlock">
+fp.cg
+<font color="deepskyblue">0009:</font> <font color="cyan">// ---------------------------------------------------------------------------</font>
+<font color="deepskyblue">0010:</font> <font color="cyan">// Median filter フラグメントプログラム</font>
+<font color="deepskyblue">0011:</font> <font color="cyan">// ---------------------------------------------------------------------------</font>
+<font color="deepskyblue">0012:</font> fragout main(vert2frag I
+<font color="deepskyblue">0013:</font>             , uniform texobj2D SrcMap : texunit0
+<font color="deepskyblue">0014:</font>     )
+<font color="deepskyblue">0015:</font> {
+<font color="deepskyblue">0016:</font>     fragout O;
+<font color="deepskyblue">0017:</font>     
+<font color="deepskyblue">0020:</font>     float2 shift00 = { 0.5f/256.0f, 0.5f/256.0f};   <font color="cyan">// 上下左右中心５つからサンプリング</font>
+<font color="deepskyblue">0021:</font>     float2 shift01 = { 0.5f/256.0f, 1.5f/256.0f};   <font color="cyan">// 00  01  10  0N  N0 </font>
+<font color="deepskyblue">0022:</font>     float2 shift10 = { 1.5f/256.0f, 0.5f/256.0f};   <font color="cyan">//  x   x   x   o   x  </font>
+<font color="deepskyblue">0023:</font>     float2 shift0N = { 0.5f/256.0f,-0.5f/256.0f};   <font color="cyan">// xox xxx xxo xxx oxx </font>
+<font color="deepskyblue">0024:</font>     float2 shiftN0 = {-0.5f/256.0f, 0.5f/256.0f};   <font color="cyan">//  x   o   x   x   x  </font>
+<font color="deepskyblue">0025:</font>     
+<font color="deepskyblue">0026:</font>     <font color="cyan">// テクスチャから少しずらしてサンプリング</font>
+<font color="deepskyblue">0027:</font>     float3 col0 = f3tex2D( SrcMap, I.tcoords.xy + shift00 );
+<font color="deepskyblue">0028:</font>     float3 col1 = f3tex2D( SrcMap, I.tcoords.xy + shift01 );
+<font color="deepskyblue">0029:</font>     float3 col2 = f3tex2D( SrcMap, I.tcoords.xy + shift10 );
+<font color="deepskyblue">0030:</font>     float3 col3 = f3tex2D( SrcMap, I.tcoords.xy + shift0N );
+<font color="deepskyblue">0031:</font>     float3 col4 = f3tex2D( SrcMap, I.tcoords.xy + shiftN0 );
+</pre>
+<p>
+次に、テクセルの色の強さを求めます。<br>
+色の強さは、内積計算だけで求められます。
+</p>
+<pre class="CodeBlock">
+fp.cg
+<font color="deepskyblue">0018:</font>     float3 rgb2lum = {0.299, 0.587, 0.114};         <font color="cyan">// RGB から、色の強さを求める定数</font>
+<font color="deepskyblue">0032:</font>     
+<font color="deepskyblue">0033:</font>     <font color="cyan">// 色の強さを求める</font>
+<font color="deepskyblue">0034:</font>     <font color="blue">float</font> b0 = dot( col0, rgb2lum );
+<font color="deepskyblue">0035:</font>     <font color="blue">float</font> b1 = dot( col1, rgb2lum );
+<font color="deepskyblue">0036:</font>     <font color="blue">float</font> b2 = dot( col2, rgb2lum );
+<font color="deepskyblue">0037:</font>     <font color="blue">float</font> b3 = dot( col3, rgb2lum );
+<font color="deepskyblue">0038:</font>     <font color="blue">float</font> b4 = dot( col4, rgb2lum );
+</pre>
+<p>
+さて、今得られた色の強さの真ん中の値をピクセルの色にします。<br>
+この「真ん中」を得る方法が問題です。<br>
+フラグメントプログラムでは、さすがにソートは使えないので、
+別の方法を考えなくてはなりません。<br>
+今回行う方法は、各テクセルの色の強さが上から数えて何番目かを数えて、
+３番目に強い色をピクセルの色に採用します。<br>
+色の順番 flag* が２の時に３番目の色になりますが、
+浮動小数点数計算をするので厳密に「２」の値を見れないので、
+±0.5の範囲を調べて「２」の値を持つテクセルがどれか調べます。<br>
+また、色が同じ時にも優先をつけるために、比較する時に等号をどちらか付けて「２」の値が２つ以上でないように気をつけました
+（左辺の番号が右辺の番号よりも大きいときに等号を付けました）。
+</p>
+<pre class="CodeBlock">
+fp.cg
+<font color="deepskyblue">0040:</font>     <font color="cyan">// 色の順番を求める（「4-値」の並びの位置にいる）</font>
+<font color="deepskyblue">0041:</font>     <font color="blue">float</font> flag0 = ((b0&lt; b1)?1.0:0.0) + ((b0&lt; b2)?1.0:0.0) + ((b0&lt; b3)?1.0:0.0) + ((b0&lt; b4)?1.0:0.0);
+<font color="deepskyblue">0042:</font>     <font color="blue">float</font> flag1 = ((b1&lt;=b0)?1.0:0.0) + ((b1&lt; b2)?1.0:0.0) + ((b1&lt; b3)?1.0:0.0) + ((b1&lt; b4)?1.0:0.0);
+<font color="deepskyblue">0043:</font>     <font color="blue">float</font> flag2 = ((b2&lt;=b0)?1.0:0.0) + ((b2&lt;=b1)?1.0:0.0) + ((b2&lt; b3)?1.0:0.0) + ((b2&lt; b4)?1.0:0.0);
+<font color="deepskyblue">0044:</font>     <font color="blue">float</font> flag3 = ((b3&lt;=b0)?1.0:0.0) + ((b3&lt;=b1)?1.0:0.0) + ((b3&lt;=b2)?1.0:0.0) + ((b3&lt; b4)?1.0:0.0);
+<font color="deepskyblue">0045:</font> 
+<font color="deepskyblue">0046:</font>     <font color="cyan">// 中心の色をメディアンとして採用</font>
+<font color="deepskyblue">0047:</font>     O.col.xyz =  ( 1.5f&lt;flag0 &amp;&amp; flag0&lt;2.5f ) ? col0 : 
+<font color="deepskyblue">0048:</font>                 (( 1.5f&lt;flag1 &amp;&amp; flag1&lt;2.5f ) ? col1 :
+<font color="deepskyblue">0049:</font>                 (( 1.5f&lt;flag2 &amp;&amp; flag2&lt;2.5f ) ? col2 :
+<font color="deepskyblue">0050:</font>                 (( 1.5f&lt;flag3 &amp;&amp; flag3&lt;2.5f ) ? col3 : col4 )));
+<font color="deepskyblue">0051:</font> 
+<font color="deepskyblue">0052:</font>     <font color="blue">return</font> O;
+<font color="deepskyblue">0053:</font> } 
+</pre>
+</pre>
+<p>
+某<a href = "http://suzuna.jp/">suzunaさん</a>との飲み会のときに<a href="http://www.dodgson.org/~omo/">ミキタさん</a>から、
+「Cg使い物になるん？」聞かれたので、ためしに今回のアセンブラを表示してみると下のようになります。<br>
+ざっと112命令あります。こんなのを手で書く気にはなれません。
+これだけでも非常に有用であることがわかるかと思います。<br>
+欠点としては、リソースが豊富にあるので最適化をあまり考えなくなってしまうことですね。<br>
+今回も、比較処理の部分等でアルゴリズム的により軽い処理も考えれられるのですが、命令数が目では見えないので、どうもやる気がしなくなります。
+</p>
+<pre class="CodeBlock">
+!!FP1.0
+<font color="cyan"># NV_fragment_program generated by NVIDIA Cg compiler
+# cgc version 1.5.0001, build date Sep 12 2002  15:50:03
+# command line args: fp.cg -o C:\cgt168A.tmp -l C:\cgt168B.tmp -q -profile fp30
+#vendor NVIDIA Corporation
+#version 1.0.1
+#profile fp30
+#program main
+#semantic main.SrcMap : texunit0
+#var float4 I.tcoords : $vin.TEX0 : TEX0 : 0 : 1
+#var texobj2D SrcMap : texunit0 : texunit 0 : 1 : 1
+#var half4 col : $vout.COL : COL : -1 : 1
+#var float depth : $vout.DEPR : DEPR : -1 : 1</font>
+ADDR  R0.xy, f[TEX0].xyyy, {-0.001953125, 0.001953125}.xyyy;
+TEX  R0.xyz, R0.xyyy, TEX0, 2D;
+ADDR  R1.xy, f[TEX0].xyyy, {0.001953125, -0.001953125}.xyyy;
+TEX  R9.xyz, R1.xyyy, TEX0, 2D;
+MOVR  R11.x, {0}.x;
+DP3R  R4.x, R0.xyzz, {0.29899999, 0.58700001, 0.114}.xyzz;
+DP3R  R5.x, R9.xyzz, {0.29899999, 0.58700001, 0.114}.xyzz;
+SLTR  H2.x, R5.x, R4.x;
+MOVXC HC.x, H2.x;
+MOVR  R11.x(GT.x), {1}.x;
+MOVR  R12.x, {0}.x;
+ADDR  R1.xy, f[TEX0].xyyy, {0.005859375, 0.001953125}.xyyy;
+TEX  R8.xyz, R1.xyyy, TEX0, 2D;
+DP3R  R2.x, R8.xyzz, {0.29899999, 0.58700001, 0.114}.xyzz;
+SLER  H2.x, R5.x, R2.x;
+MOVXC HC.x, H2.x;
+MOVR  R12.x(GT.x), {1}.x;
+MOVR  R13.x, {0}.x;
+ADDR  R1.xy, f[TEX0].xyyy, {0.001953125, 0.005859375}.xyyy;
+TEX  R3.xyz, R1.xyyy, TEX0, 2D;
+DP3R  R7.x, R3.xyzz, {0.29899999, 0.58700001, 0.114}.xyzz;
+SLER  H2.x, R5.x, R7.x;
+MOVXC HC.x, H2.x;
+MOVR  R13.x(GT.x), {1}.x;
+MOVR  R10.x, {0}.x;
+ADDR  R1.xy, f[TEX0].xyyy, {0.001953125, 0.001953125}.xyyy;
+TEX  R1.xyz, R1.xyyy, TEX0, 2D;
+DP3R  R6.x, R1.xyzz, {0.29899999, 0.58700001, 0.114}.xyzz;
+SLER  H28.x, R5.x, R6.x;
+MOVXC HC.x, H28.x;
+MOVR  R10.x(GT.x), {1}.x;
+ADDR  R10.x, R10.x, R13.x;
+ADDR  R10.x, R10.x, R12.x;
+ADDR  R11.x, R10.x, R11.x;
+SLTR  H21.x, R11.x, {2.5}.x;
+SLTR  H20.x, {1.5}.x, R11.x;
+MULX  H20.x, H20.x, H21.x;
+MOVXC HC.x, H20.x;
+MOVR  R0.xyz(GT.xxxx), R9.xyzz;
+MOVR  R10.x, {0}.x;
+SLTR  H18.x, R2.x, R4.x;
+MOVXC HC.x, H18.x;
+MOVR  R10.x(GT.x), {1}.x;
+MOVR  R11.x, {0}.x;
+SLTR  H18.x, R2.x, R5.x;
+MOVXC HC.x, H18.x;
+MOVR  R11.x(GT.x), {1}.x;
+MOVR  R12.x, {0}.x;
+SLER  H18.x, R2.x, R7.x;
+MOVXC HC.x, H18.x;
+MOVR  R12.x(GT.x), {1}.x;
+MOVR  R9.x, {0}.x;
+SLER  H26.x, R2.x, R6.x;
+MOVXC HC.x, H26.x;
+MOVR  R9.x(GT.x), {1}.x;
+ADDR  R9.x, R9.x, R12.x;
+ADDR  R9.x, R9.x, R11.x;
+ADDR  R10.x, R9.x, R10.x;
+SLTR  H19.x, R10.x, {2.5}.x;
+SLTR  H18.x, {1.5}.x, R10.x;
+MULX  H18.x, H18.x, H19.x;
+MOVXC HC.x, H18.x;
+MOVR  R0.xyz(GT.xxxx), R8.xyzz;
+MOVR  R9.x, {0}.x;
+SLTR  H16.x, R7.x, R4.x;
+MOVXC HC.x, H16.x;
+MOVR  R9.x(GT.x), {1}.x;
+MOVR  R10.x, {0}.x;
+SLTR  H16.x, R7.x, R5.x;
+MOVXC HC.x, H16.x;
+MOVR  R10.x(GT.x), {1}.x;
+MOVR  R11.x, {0}.x;
+SLTR  H16.x, R7.x, R2.x;
+MOVXC HC.x, H16.x;
+MOVR  R11.x(GT.x), {1}.x;
+MOVR  R8.x, {0}.x;
+SLER  H24.x, R7.x, R6.x;
+MOVXC HC.x, H24.x;
+MOVR  R8.x(GT.x), {1}.x;
+ADDR  R8.x, R8.x, R11.x;
+ADDR  R8.x, R8.x, R10.x;
+ADDR  R9.x, R8.x, R9.x;
+SLTR  H17.x, R9.x, {2.5}.x;
+SLTR  H16.x, {1.5}.x, R9.x;
+MULX  H16.x, H16.x, H17.x;
+MOVXC HC.x, H16.x;
+MOVR  R0.xyz(GT.xxxx), R3.xyzz;
+MOVR  R3.x, {0}.x;
+SLTR  H8.x, R6.x, R4.x;
+MOVXC HC.x, H8.x;
+MOVR  R3.x(GT.x), {1}.x;
+MOVR  R4.x, {0}.x;
+SLTR  H10.x, R6.x, R5.x;
+MOVXC HC.x, H10.x;
+MOVR  R4.x(GT.x), {1}.x;
+MOVR  R5.x, {0}.x;
+SLTR  H4.x, R6.x, R2.x;
+MOVXC HC.x, H4.x;
+MOVR  R5.x(GT.x), {1}.x;
+MOVR  R2.x, {0}.x;
+SLTR  H12.x, R6.x, R7.x;
+MOVXC HC.x, H12.x;
+MOVR  R2.x(GT.x), {1}.x;
+ADDR  R2.x, R2.x, R5.x;
+ADDR  R2.x, R2.x, R4.x;
+ADDR  R3.x, R2.x, R3.x;
+SLTR  H5.x, R3.x, {2.5}.x;
+SLTR  H4.x, {1.5}.x, R3.x;
+MULX  H4.x, H4.x, H5.x;
+MOVXC HC.x, H4.x;
+MOVR  R0.xyz(GT.xxxx), R1.xyzz;
+MOVH  o[COLH].xyz, R0.xyzz;
+END
+</pre>
+
+<h2>■最後に</h2>
+
+<p>
+メディアンフィルタは、ノイズリダクションフィルタなので、
+フォトンマップの画像に使えるかなぁと考えていました。<br>
+ためしに、フォトンマップの画像にかけると、次のようになります（<a href="http://www.radiumsoftware.com/">^c さん</a>、勝手に使ってごめんなさい）。
+</p>
+<image src = "ball.png">
+
+<p>
+同じく右がフィルタを掛けた画像です。<br>
+あまり綺麗にノイズが取れなかったので、ちょっと残念でした。<br>
+まぁ、それ以前に、<a href="http://members.jcom.home.ne.jp/himatsubushi/">Bee さん</a>に「わざわざフォトントレースをしたのに、
+フィルタをかけて誤魔化すのは本末転倒だ」といわれたことがあるので、
+これ以上、このネタには言及するのは止めましょう。
+</p>
+<p>
+今回は４近傍と中心のピクセルを取ったのですが、
+８近傍を考えるとよりノイズを取る効果が出ると思います。
+ところが、そのまま組むと、シェーダの命令数だかレジスタ数だかをオーバーしてしまうようで、
+今回は断念しました。
+</p>
+
+</div>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<center>
+<hr>
+<p><a href="../index.html">もどる</a></p>
+<p><a href="mailto:imagire@gmail.com">imagire@gmail.com</a></p>
+</center>
+
+</body>
+</html>

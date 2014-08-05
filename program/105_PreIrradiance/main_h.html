@@ -1,0 +1,127 @@
+<HTML>
+<HEAD>
+<TITLE>main.h</TITLE>
+<meta name="GENERATOR" content="cpp2html 2.1 by Niisaka">
+<meta http-equiv="Content-Type" content="text/html">
+<meta http-equiv="Content-Style-Type" content="text/css">
+<STYLE TYPE="text/css">
+<!--
+SPAN.comment { color:#008000; font-weight:normal; font-style:normal;}
+SPAN.keyword { color:#0000FF; font-weight:normal; font-style:normal;}
+SPAN.string { color:#600000; font-weight:normal; font-style:normal;}
+SPAN.linenum { color:#A0A0A0; font-weight:normal; font-style:normal;}
+-->
+</STYLE>
+</HEAD>
+<BODY TEXT="#000000" BGCOLOR="#FFFFFF">
+<PRE><SPAN CLASS="linenum">0001:</SPAN> <SPAN CLASS="comment">//-------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0002:</SPAN> <SPAN CLASS="comment">// File: main.h</SPAN>
+<SPAN CLASS="linenum">0003:</SPAN> <SPAN CLASS="comment">//</SPAN>
+<SPAN CLASS="linenum">0004:</SPAN> <SPAN CLASS="comment">// Desc: PR</SPAN>
+<SPAN CLASS="linenum">0005:</SPAN> <SPAN CLASS="comment">//-------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0006:</SPAN> <SPAN CLASS="keyword">#pragma</SPAN> once
+<SPAN CLASS="linenum">0007:</SPAN> 
+<SPAN CLASS="linenum">0008:</SPAN> <SPAN CLASS="keyword">#define</SPAN> REDUCTION_MAPS 2
+<SPAN CLASS="linenum">0009:</SPAN> 
+<SPAN CLASS="linenum">0010:</SPAN> <SPAN CLASS="comment">//-------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0011:</SPAN> <SPAN CLASS="comment">// 定義や定数</SPAN>
+<SPAN CLASS="linenum">0012:</SPAN> <SPAN CLASS="comment">//-------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0013:</SPAN> <SPAN CLASS="comment">// 現在の入力データを保存する構造体</SPAN>
+<SPAN CLASS="linenum">0014:</SPAN> <SPAN CLASS="keyword">struct</SPAN> UserInput
+<SPAN CLASS="linenum">0015:</SPAN> {
+<SPAN CLASS="linenum">0016:</SPAN>     BOOL bRotateUp;
+<SPAN CLASS="linenum">0017:</SPAN>     BOOL bRotateDown;
+<SPAN CLASS="linenum">0018:</SPAN>     BOOL bRotateLeft;
+<SPAN CLASS="linenum">0019:</SPAN>     BOOL bRotateRight;
+<SPAN CLASS="linenum">0020:</SPAN>     BOOL bZoomIn;
+<SPAN CLASS="linenum">0021:</SPAN>     BOOL bZoomOut;
+<SPAN CLASS="linenum">0022:</SPAN>     BOOL bChangeShader;
+<SPAN CLASS="linenum">0023:</SPAN> };
+<SPAN CLASS="linenum">0024:</SPAN> 
+<SPAN CLASS="linenum">0025:</SPAN> 
+<SPAN CLASS="linenum">0026:</SPAN> 
+<SPAN CLASS="linenum">0027:</SPAN> 
+<SPAN CLASS="linenum">0028:</SPAN> <SPAN CLASS="comment">//-------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0029:</SPAN> <SPAN CLASS="comment">// Name: class CMyD3DApplication</SPAN>
+<SPAN CLASS="linenum">0030:</SPAN> <SPAN CLASS="comment">// Desc: アプリケーションのクラス</SPAN>
+<SPAN CLASS="linenum">0031:</SPAN> <SPAN CLASS="comment">//-------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0032:</SPAN> <SPAN CLASS="keyword">class</SPAN> CMyD3DApplication : <SPAN CLASS="keyword">public</SPAN> CD3DApplication
+<SPAN CLASS="linenum">0033:</SPAN> {
+<SPAN CLASS="linenum">0034:</SPAN>     <SPAN CLASS="keyword">int</SPAN>                     m_iState;       <SPAN CLASS="comment">// 状態変数</SPAN>
+<SPAN CLASS="linenum">0035:</SPAN>     <SPAN CLASS="keyword">int</SPAN>                     m_iChangeState; <SPAN CLASS="comment">// 状態変数</SPAN>
+<SPAN CLASS="linenum">0036:</SPAN>     <SPAN CLASS="keyword">int</SPAN>                     m_iCount;       <SPAN CLASS="comment">// 状態変数管理用時間変数</SPAN>
+<SPAN CLASS="linenum">0037:</SPAN> 
+<SPAN CLASS="linenum">0038:</SPAN>     <SPAN CLASS="keyword">int</SPAN>                     m_Shader;
+<SPAN CLASS="linenum">0039:</SPAN> 
+<SPAN CLASS="linenum">0040:</SPAN>     CD3DMesh                *m_pMeshBg;
+<SPAN CLASS="linenum">0041:</SPAN>             
+<SPAN CLASS="linenum">0042:</SPAN>     <SPAN CLASS="comment">// シェーダ</SPAN>
+<SPAN CLASS="linenum">0043:</SPAN>     LPD3DXEFFECT            m_pEffect;      <SPAN CLASS="comment">// エフェクト</SPAN>
+<SPAN CLASS="linenum">0044:</SPAN>     D3DXHANDLE              m_hTechnique;   <SPAN CLASS="comment">// テクニック</SPAN>
+<SPAN CLASS="linenum">0045:</SPAN>     D3DXHANDLE              m_hmWVP;        <SPAN CLASS="comment">// 変換行列</SPAN>
+<SPAN CLASS="linenum">0046:</SPAN>     D3DXHANDLE              m_htSrcTex;     <SPAN CLASS="comment">// テクスチャ</SPAN>
+<SPAN CLASS="linenum">0047:</SPAN> 
+<SPAN CLASS="linenum">0048:</SPAN>     <SPAN CLASS="comment">// レンダリングターゲット</SPAN>
+<SPAN CLASS="linenum">0049:</SPAN>     LPDIRECT3DSURFACE9      m_pMapZ;        <SPAN CLASS="comment">// 深度バッファ</SPAN>
+<SPAN CLASS="linenum">0050:</SPAN>     LPDIRECT3DTEXTURE9      m_pPosTex;  <SPAN CLASS="comment">// 高さマップ</SPAN>
+<SPAN CLASS="linenum">0051:</SPAN>     LPDIRECT3DSURFACE9      m_pPosSurf; <SPAN CLASS="comment">// </SPAN>
+<SPAN CLASS="linenum">0052:</SPAN>     LPDIRECT3DTEXTURE9      m_pPosLockTex;  <SPAN CLASS="comment">// </SPAN>
+<SPAN CLASS="linenum">0053:</SPAN>     LPDIRECT3DSURFACE9      m_pPosLockSurf; <SPAN CLASS="comment">// </SPAN>
+<SPAN CLASS="linenum">0054:</SPAN>     LPDIRECT3DTEXTURE9      m_pNormalTex;   <SPAN CLASS="comment">// 法線マップ</SPAN>
+<SPAN CLASS="linenum">0055:</SPAN>     LPDIRECT3DSURFACE9      m_pNormalSurf;  <SPAN CLASS="comment">// </SPAN>
+<SPAN CLASS="linenum">0056:</SPAN>     LPDIRECT3DTEXTURE9      m_pNormalLockTex;   <SPAN CLASS="comment">// </SPAN>
+<SPAN CLASS="linenum">0057:</SPAN>     LPDIRECT3DSURFACE9      m_pNormalLockSurf;  <SPAN CLASS="comment">// </SPAN>
+<SPAN CLASS="linenum">0058:</SPAN>     LPDIRECT3DTEXTURE9      m_pDiffuseTex;      <SPAN CLASS="comment">// 拡散マップ</SPAN>
+<SPAN CLASS="linenum">0059:</SPAN>     LPDIRECT3DSURFACE9      m_pDiffuseSurf;     <SPAN CLASS="comment">// 拡散マップ</SPAN>
+<SPAN CLASS="linenum">0060:</SPAN>     LPDIRECT3DTEXTURE9      m_pFinalTex;
+<SPAN CLASS="linenum">0061:</SPAN>     LPDIRECT3DSURFACE9      m_pFinalSurf;
+<SPAN CLASS="linenum">0062:</SPAN>     LPDIRECT3DTEXTURE9      m_pReductionTex [REDUCTION_MAPS];       <SPAN CLASS="comment">// 縮小バッファ</SPAN>
+<SPAN CLASS="linenum">0063:</SPAN>     LPDIRECT3DSURFACE9      m_pReductionSurf[REDUCTION_MAPS];       <SPAN CLASS="comment">// 縮小バッファ</SPAN>
+<SPAN CLASS="linenum">0064:</SPAN>     LPDIRECT3DTEXTURE9      m_pMaskTex;         <SPAN CLASS="comment">// 係数計算</SPAN>
+<SPAN CLASS="linenum">0065:</SPAN> 
+<SPAN CLASS="linenum">0066:</SPAN> 
+<SPAN CLASS="linenum">0067:</SPAN>     <SPAN CLASS="comment">// 通常の座標変換行列</SPAN>
+<SPAN CLASS="linenum">0068:</SPAN>     D3DXMATRIX              m_mWorld;
+<SPAN CLASS="linenum">0069:</SPAN>     D3DXMATRIX              m_mView;
+<SPAN CLASS="linenum">0070:</SPAN>     D3DXMATRIX              m_mProj;
+<SPAN CLASS="linenum">0071:</SPAN> 
+<SPAN CLASS="linenum">0072:</SPAN>     D3DXVECTOR3             m_LighPos;      <SPAN CLASS="comment">// 光源の方向</SPAN>
+<SPAN CLASS="linenum">0073:</SPAN> 
+<SPAN CLASS="linenum">0074:</SPAN>     BOOL                    m_bLoadingApp;  <SPAN CLASS="comment">// ロード中？</SPAN>
+<SPAN CLASS="linenum">0075:</SPAN>     CD3DFont*               m_pFont;        <SPAN CLASS="comment">// フォント</SPAN>
+<SPAN CLASS="linenum">0076:</SPAN>     UserInput               m_UserInput;    <SPAN CLASS="comment">// 入力データ</SPAN>
+<SPAN CLASS="linenum">0077:</SPAN> 
+<SPAN CLASS="linenum">0078:</SPAN>     FLOAT                   m_fWorldRotX;   <SPAN CLASS="comment">// Ｘ軸回転</SPAN>
+<SPAN CLASS="linenum">0079:</SPAN>     FLOAT                   m_fWorldRotY;   <SPAN CLASS="comment">// Ｙ軸回転</SPAN>
+<SPAN CLASS="linenum">0080:</SPAN>     FLOAT                   m_fViewZoom;    <SPAN CLASS="comment">// 視点の距離</SPAN>
+<SPAN CLASS="linenum">0081:</SPAN> 
+<SPAN CLASS="linenum">0082:</SPAN> <SPAN CLASS="keyword">protected</SPAN>:
+<SPAN CLASS="linenum">0083:</SPAN>     <SPAN CLASS="keyword">virtual</SPAN> HRESULT OneTimeSceneInit();
+<SPAN CLASS="linenum">0084:</SPAN>     <SPAN CLASS="keyword">virtual</SPAN> HRESULT InitDeviceObjects();
+<SPAN CLASS="linenum">0085:</SPAN>     <SPAN CLASS="keyword">virtual</SPAN> HRESULT RestoreDeviceObjects();
+<SPAN CLASS="linenum">0086:</SPAN>     <SPAN CLASS="keyword">virtual</SPAN> HRESULT InvalidateDeviceObjects();
+<SPAN CLASS="linenum">0087:</SPAN>     <SPAN CLASS="keyword">virtual</SPAN> HRESULT DeleteDeviceObjects();
+<SPAN CLASS="linenum">0088:</SPAN>     <SPAN CLASS="keyword">virtual</SPAN> HRESULT Render();
+<SPAN CLASS="linenum">0089:</SPAN>     <SPAN CLASS="keyword">virtual</SPAN> HRESULT FrameMove();
+<SPAN CLASS="linenum">0090:</SPAN>     <SPAN CLASS="keyword">virtual</SPAN> HRESULT FinalCleanup();
+<SPAN CLASS="linenum">0091:</SPAN>     <SPAN CLASS="keyword">virtual</SPAN> HRESULT ConfirmDevice( D3DCAPS9*, DWORD, D3DFORMAT );
+<SPAN CLASS="linenum">0092:</SPAN> 
+<SPAN CLASS="linenum">0093:</SPAN>     <SPAN CLASS="comment">// 位置、法線マップを作る</SPAN>
+<SPAN CLASS="linenum">0094:</SPAN>     <SPAN CLASS="keyword">virtual</SPAN> <SPAN CLASS="keyword">int</SPAN> FrameMoveCreateMap();
+<SPAN CLASS="linenum">0095:</SPAN>     <SPAN CLASS="keyword">virtual</SPAN> <SPAN CLASS="keyword">void</SPAN> RenderCreateMap();
+<SPAN CLASS="linenum">0096:</SPAN>     <SPAN CLASS="comment">// 拡散光の計算をする</SPAN>
+<SPAN CLASS="linenum">0097:</SPAN>     <SPAN CLASS="keyword">virtual</SPAN> <SPAN CLASS="keyword">int</SPAN> FrameMoveFinalGathering();
+<SPAN CLASS="linenum">0098:</SPAN>     <SPAN CLASS="keyword">virtual</SPAN> <SPAN CLASS="keyword">void</SPAN> RenderFinalGathering();
+<SPAN CLASS="linenum">0099:</SPAN> 
+<SPAN CLASS="linenum">0100:</SPAN>     HRESULT RenderText();
+<SPAN CLASS="linenum">0101:</SPAN> 
+<SPAN CLASS="linenum">0102:</SPAN>     <SPAN CLASS="keyword">void</SPAN>    UpdateInput( UserInput* pUserInput );
+<SPAN CLASS="linenum">0103:</SPAN> <SPAN CLASS="keyword">public</SPAN>:
+<SPAN CLASS="linenum">0104:</SPAN>     LRESULT MsgProc( HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam );
+<SPAN CLASS="linenum">0105:</SPAN>     CMyD3DApplication();
+<SPAN CLASS="linenum">0106:</SPAN>     <SPAN CLASS="keyword">virtual</SPAN> ~CMyD3DApplication();
+<SPAN CLASS="linenum">0107:</SPAN> };
+<SPAN CLASS="linenum">0108:</SPAN> 
+<SPAN CLASS="linenum">0109:</SPAN> </PRE>
+</BODY>
+</HTML>

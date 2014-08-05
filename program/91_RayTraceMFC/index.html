@@ -1,0 +1,257 @@
+<head>
+	<title>t-pot『Ray Tracing : MFC』</title>
+	<link rel="stylesheet" type="text/css" href="../if.css">
+</head>
+<meta http-equiv=Content-Type content="text/html; charset=shift_jis">
+<body>
+
+
+<div class="contents">
+<center>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<h1>レイトレース：MFC</h1><br>
+<h3>～ Ray Tracing : MFC ～</h3>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<image src = "title.png">
+<br>
+<br>
+<hr>
+</center>
+<div>
+
+
+<h2>■はじめに</h2>
+
+
+<p>
+いいかげん、レイトレを勉強しようかなぁと思っていたところ、急に盛り上がってしまったので、適当に実装して見ました。<br>
+古典的なレイトレは、DirectXを使わないので、自分で画面に表示する必要があります。<br>
+今回は、FCを使って、ダイアログに画像を表示するプログラムを組みました。
+</p>
+<p>
+今回のプログラムは、次のものです。
+</p>
+<ul style = "LIST-STYLE-TYPE:none">
+<li><a href="src.zip">src.zip (ダイアログに描画する:MFC)</a>
+</ul>
+
+<p>
+まぁ、いつものように適当にファイルが入っています。<br>
+APP WIZARD から出力されるフレームワークのファイルは紹介を省かせていただきます。
+</p>
+<table>
+<tr><td><a href="mainDlg_cpp.html">mainDlg.cpp</a></td><td>ダイアログを管理するクラスのメソッドが書かれたファイル（これ大事）</td></tr>
+<tr><td><a href="mainDlg_h.html">mainDlg.h</a></td><td>ダイアログを管理するクラスのヘッダ</td></tr>
+<tr><td><a href="main_h.html">main.h</a></td><td>アプリケーションの基本クラス（アプリケーションウィザードが勝手に作ったファイル）</td></tr>
+<tr><td><a href="main_cpp.html">main.cpp</a></td><td>アプリケーションの基本クラス（アプリケーションウィザードが勝手に作ったファイル）</td></tr>
+<tr><td><a href="StdAfx_h.html">StdAfx.h</a></td><td>ほとんどのファイルがインクルードするファイル（アプリケーションウィザードが勝手に作ったファイル）</td></tr>
+<tr><td><a href="StdAfx_cpp.html">StdAfx.cpp</a></td><td>何もありません（アプリケーションウィザードが勝手に作ったファイル）</td></tr>
+<tr><td><a href="resource_h.html">resource.h</a></td><td>リソースの管理IDが収められたヘッダ（アプリケーションウィザードが勝手に作ったファイル）</td></tr>
+</table>
+
+<p>
+あと、実行ファイル、リソースファイル、プロジェクトファイルが入っています。
+</p>
+
+
+
+<h2>■はじめの一歩</h2>
+
+
+<p>
+DirectX を使わないプログラムというと、標準的な Windows プログラムになるのですが、
+今回は、MFCを使って、画像を表示します。
+</p>
+<p>
+MFCのプログラムを作るのにも、アプリケーションウィザードを使って、手を抜きましょう。<br>
+[ファイル]-[新規作成]-[プロジェクト]を選択して、アプリケーションウィザードを立ち上げます。<br>
+立ち上げたら、「MFC AppWizard(exe)」を指定して、プロジェクト名やファイルを作る場所を指定してください。
+</p>
+<image src = "step0.png">
+<p>
+次に、ダイアログベースにするか、メモ帳のようなSDIタイプにするかを指定します。<br>
+ここでは、ダイアログベースを選びます。
+</p>
+<image src = "step1.png">
+<p>
+次に、どの程度の機能を自動的にソースに埋め込むのかを選択します。<br>
+特に何もいらないので、適用にいらないものをはずします。
+</p>
+<image src = "step2.png">
+<p>
+次は、コメントを自動的につけるかどうかの選択です。<br>
+あったほうが、どこを修正すればいいのかが明確になるので、つけておきましょう。
+</p>
+<image src = "step3.png">
+<p>
+あとは、どんなファイルが生成されるかを説明してくれるので、
+「終了」を押して、ファイルを実際に作成してもらいます。
+</p>
+<image src = "step4.png">
+<p>
+基本的には、これだけでプログラムは完成です。実行すれば、ダイアログが表示されるでしょう。
+</p>
+<image src = "exe1.png">
+
+
+<h2>■画像の描画</h2>
+
+
+<p>
+さて、プログラムが動いたら、次はダイアログに直接画像を描画してみましょう。<br>
+ダイアログに点を打つには、デバイスコンテキストと呼ばれるオブジェクトを所得して、デバイスコンテキストの点を打つメソッド「CDC::SetPixel(x,y,色)」を呼び出します。<br>
+デバイスコンテキストは、ダイアログプログラムならダイアログクラスのメンバーに含まれているので、GetDC()を使って所得することができます。<br>
+たとえば、画面の左上から100x100の大きさに黒い点を打つなら次のようになります。
+</p>
+
+<pre class="CodeBlock">
+CDC *pCdc= <font color="blue">this</font>-&gt;GetDC();<font color="cyan">// デバイスコンテキスト</font>
+
+<font color="blue">for</font>(<font color="blue">int</font> j=0;j&lt;100;j++){
+    <font color="blue">for</font>(<font color="blue">int</font> i=0;i&lt;100;i++){
+        pCdc-&gt;SetPixel(i,j,RGB(0,0,0);
+    }
+}
+
+ReleaseDC(pCdc);<font color="cyan">// デバイスコンテキストは使い終わったら開放する</font>
+</pre>
+
+
+<p>
+実際の MFC のプログラムでは、ダイアログの描画メソッド「CMainDlg::OnPaint()」に独自に描画する部分を追加します。
+</p>
+
+<pre class="CodeBlock">
+mainDlg.cpp 
+<font color="deepskyblue">0139:</font> <font color="blue">const</font> <font color="blue">int</font> RENDER_WIDTH  = 512;
+<font color="deepskyblue">0140:</font> <font color="blue">const</font> <font color="blue">int</font> RENDER_HEIGHT = 512;
+<font color="deepskyblue">0141:</font> <font color="blue">char</font> s_data[4*RENDER_WIDTH*RENDER_HEIGHT];<font color="cyan">// 仮想フレームバッファ</font>
+<font color="deepskyblue">0142:</font> 
+<font color="deepskyblue">0143:</font> <font color="blue">void</font> CMainDlg::OnPaint() 
+<font color="deepskyblue">0144:</font> {
+<font color="deepskyblue">0145:</font>     <font color="blue">if</font> (IsIconic())
+<font color="deepskyblue">0146:</font>     {
+              中略
+<font color="deepskyblue">0161:</font>     }
+<font color="deepskyblue">0162:</font>     <font color="blue">else</font>
+<font color="deepskyblue">0163:</font>     {
+<font color="deepskyblue">0164:</font>         CDialog::OnPaint();
+<font color="deepskyblue">0165:</font> <font color = "yellow">
+<font color="deepskyblue">0166:</font>         RECT r;
+<font color="deepskyblue">0167:</font>         <font color="blue">int</font> offset = 10;<font color="cyan">//上下左の余白</font>
+<font color="deepskyblue">0168:</font>         <font color="blue">int</font> x = 120;
+<font color="deepskyblue">0169:</font>         CDC *pCdc= <font color="blue">this</font>-&gt;GetDC();<font color="cyan">//デバイスコンテキストの所得</font>
+<font color="deepskyblue">0170:</font>         <font color="blue">this</font>-&gt;GetClientRect(&amp;r);<font color="cyan">//表示領域の大きさを調べる</font>
+<font color="deepskyblue">0171:</font>         <font color="blue">int</font> h = r.bottom-r.top - 2*offset;<font color="cyan">//高さの決定</font>
+<font color="deepskyblue">0172:</font>         <font color="blue">int</font> w = r.right-r.left - offset - x;<font color="cyan">//幅の決定</font>
+<font color="deepskyblue">0173:</font>         <font color="blue">if</font>(h&lt;0)h=0;<font color="cyan">//高さが負にならないように</font>
+<font color="deepskyblue">0174:</font>         <font color="blue">if</font>(w&lt;0)w=0;<font color="cyan">//幅が負にならないように</font>
+<font color="deepskyblue">0175:</font>         <font color="blue">if</font>(h&lt;w)w=h;<font color="blue">else</font> h=w;<font color="cyan">//正方形に表示する</font>
+<font color="deepskyblue">0176:</font> 
+<font color="deepskyblue">0177:</font>         <font color="blue">for</font>(<font color="blue">int</font> j=0;j&lt;h;j++){
+<font color="deepskyblue">0178:</font>         <font color="blue">for</font>(<font color="blue">int</font> i=0;i&lt;w;i++){
+<font color="deepskyblue">0179:</font>             <font color="blue">int</font> no = (j*RENDER_HEIGHT/h)*RENDER_WIDTH
+<font color="deepskyblue">0180:</font>                     + i*RENDER_WIDTH/w;
+                  <font color="cyan">//点を打つ</font>
+<font color="deepskyblue">0181:</font>             pCdc-&gt;SetPixel(i+x,j+offset,RGB(
+<font color="deepskyblue">0182:</font>                 s_data[4*no+0],<font color="cyan">//赤</font>
+<font color="deepskyblue">0183:</font>                 s_data[4*no+1],<font color="cyan">//緑</font>
+<font color="deepskyblue">0184:</font>                 s_data[4*no+2],<font color="cyan">//青</font>
+<font color="deepskyblue">0185:</font>             ));
+<font color="deepskyblue">0186:</font>         }
+<font color="deepskyblue">0187:</font>         }
+<font color="deepskyblue">0188:</font>         ReleaseDC(pCdc);</font>
+<font color="deepskyblue">0189:</font>     }
+<font color="deepskyblue">0190:</font> }
+</pre>
+<p>
+本番では、もう少し複雑に「s_data」というRENDER_WIDTH x RENDER_HEIGHTのサイズの２次元の画像イメージを連想させる配列を用意して、s_data を対応するピクセルに描画しました。<br>
+ただし、描画する大きさは、ダイアログの大きさによって変化するように作ったので、
+</p>
+<pre class="CodeBlock">
+<font color="deepskyblue">0179:</font>             <font color="blue">int</font> no = (j*RENDER_HEIGHT/h)*RENDER_WIDTH
+<font color="deepskyblue">0180:</font>                     + i*RENDER_WIDTH/w;
+</pre>
+<p>
+の式を使って、描画するピクセルから配列の位置への変換を行っています。<br>
+ちなみに、今回の方法は完全ではなく、ダイアログのサイズを小さくしたときにはごみが残ってしまいますが、お許しください。
+</p>
+<image src = "exe2.png">
+
+
+<h2>■ボタンの追加</h2>
+
+
+<p>
+次に、レンダリングの開始をユーザーが決められるように、ボタンを追加してみましょう。<br>
+リソースファイル(.rc)を編集しようとするとダイアログの見た目等のリソースを編集する画面になります。<br>
+ここで、「Dialog」フォルダのIDD_MAIN_DIALOGをクリックすると、ダイアログを編集できるようになります。<br>
+右の方を見るとツールボックスが見えます。<br>
+このツールボックスのボタンをクリックして、次にダイアログ上で再びクリックすると、ボタンがダイアログに追加されます。
+</p>
+<image src = "step5.png">
+<p>
+このボタンをドラッグしたり、ボタンの上で右クリックするとでるポップアップメニューの「プロパティ」からボタンの名前を編集すると、次のように見た目を整えることができるでしょう。<br>
+(「TODO: ダイアログのコントロールをここに配置」のスタティックテキストも消しましょう)
+</p>
+<image src = "step6.png">
+<p>
+次に、ボタンを押したときの振る舞いをプログラムします。<br>
+ダイアログのボタンをダブルクリックしてください。<br>
+「メンバ関数の追加」ダイアログが表示されるので、いい感じの名前に変更して、関数を追加します（ここでは、OnButtonRenderにしました）。すると、mainDlg.cpp 等に自動的にメソッドが追加されます。
+</p>
+<image src = "step7.png">
+<p>
+このメソッドがクリックされたときに呼ばれるメソッドなので、
+押されたときの振る舞いを適当に記述します。<br>
+今回は、画像イメージ「s_data」を適当なグラデーションで塗りつぶしました。<br>
+なお、配列を更新した後に、OnPaint()を呼ばないと、画面に反映されません。
+</p>
+<pre class="CodeBlock">
+mainDlg.cpp 
+<font color="deepskyblue">0199:</font> <font color="blue">void</font> CMainDlg::OnButtonRender() 
+<font color="deepskyblue">0200:</font> {
+<font color="deepskyblue">0201:</font>     <font color="cyan">// フレームバッファの初期化</font>
+<font color="deepskyblue">0202:</font>     <font color="blue">for</font>(<font color="blue">int</font> j=0;j&lt;RENDER_HEIGHT;j++){
+<font color="deepskyblue">0203:</font>     <font color="blue">for</font>(<font color="blue">int</font> i=0;i&lt;RENDER_WIDTH ;i++){
+<font color="deepskyblue">0204:</font>         s_data[4*(j*RENDER_WIDTH+i)+0]=(<font color="blue">char</font>)255;<font color="cyan">// R</font>
+<font color="deepskyblue">0205:</font>         s_data[4*(j*RENDER_WIDTH+i)+1]=(<font color="blue">char</font>)(i*256/RENDER_WIDTH );<font color="cyan">// G</font>
+<font color="deepskyblue">0206:</font>         s_data[4*(j*RENDER_WIDTH+i)+2]=(<font color="blue">char</font>)(j*256/RENDER_HEIGHT);<font color="cyan">// B</font>
+<font color="deepskyblue">0207:</font>     }
+<font color="deepskyblue">0208:</font>     }
+<font color="deepskyblue">0209:</font> 
+<font color="deepskyblue">0210:</font> 
+<font color="deepskyblue">0211:</font>     <font color="blue">this</font>-&gt;OnPaint();
+<font color="deepskyblue">0212:</font> }
+</pre>
+<p>
+これで、とりあえずはボタンを押したときに画面に絵（次以降はレンダリングの結果）が表示されるようなプログラムが完成しました。
+</p>
+<image src = "title.png">
+
+
+<h2>■最後に</h2>
+
+
+<p>
+以外と、こういうところで手間取るんですよね。<br>
+今回の方法は、レイトレに限らず、ダイアログに絵を描くときに一般的に使えるので、
+押さえておくと便利ですね。
+</p>
+
+
+</div>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<center>
+<hr>
+<p><a href="../index.html">もどる</a></p>
+<p><a href="mailto:imagire@gmail.com">imagire@gmail.com</a></p>
+</center>
+
+</body>
+</html>

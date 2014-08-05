@@ -1,0 +1,52 @@
+<HTML>
+<HEAD>
+<TITLE>dof.psh</TITLE>
+<meta name="GENERATOR" content="vsh2html 1.0 by Niisaka">
+<meta http-equiv="Content-Type" content="text/html">
+<meta http-equiv="Content-Style-Type" content="text/css">
+<STYLE TYPE="text/css">
+<!--
+SPAN.comment { color:#008000; font-weight:normal; font-style:normal;}
+SPAN.linenum { color:#A0A0A0; font-weight:normal; font-style:normal;}
+-->
+</STYLE>
+</HEAD>
+<BODY TEXT="#000000" BGCOLOR="#FFFFFF">
+<PRE><SPAN CLASS="linenum">0001:</SPAN> <SPAN CLASS="comment">; focus.psh</SPAN>
+<SPAN CLASS="linenum">0002:</SPAN> <SPAN CLASS="comment">;</SPAN>
+<SPAN CLASS="linenum">0003:</SPAN> 
+<SPAN CLASS="linenum">0004:</SPAN> ps.1.1
+<SPAN CLASS="linenum">0005:</SPAN> 
+<SPAN CLASS="linenum">0006:</SPAN> def c0, 0.0f, 0.0f, 0.0f, 0.5f
+<SPAN CLASS="linenum">0007:</SPAN> 
+<SPAN CLASS="linenum">0008:</SPAN> <SPAN CLASS="comment">; テクスチャーの色を引っ張ってくる</SPAN>
+<SPAN CLASS="linenum">0009:</SPAN> tex t0                              <SPAN CLASS="comment">; 元テクスチャー</SPAN>
+<SPAN CLASS="linenum">0010:</SPAN> tex t1                              <SPAN CLASS="comment">; ボケテクスチャー</SPAN>
+<SPAN CLASS="linenum">0011:</SPAN> tex t2                              <SPAN CLASS="comment">; 大ボケテクスチャー</SPAN>
+<SPAN CLASS="linenum">0012:</SPAN> 
+<SPAN CLASS="linenum">0013:</SPAN> <SPAN CLASS="comment">; いい感じの深度を引っ張る</SPAN>
+<SPAN CLASS="linenum">0014:</SPAN> lrp         r0.a,   c0, t0, t2      <SPAN CLASS="comment">; 深度ははっきりしたものと、大ボケのものの平均を取る</SPAN>
+<SPAN CLASS="linenum">0015:</SPAN> cnd_x4_sat  r0.a, r0.a, 1-r0.a, r0.a<SPAN CLASS="comment">; 0.5 の時にはっきりなるようにする</SPAN>
+<SPAN CLASS="linenum">0016:</SPAN> 
+<SPAN CLASS="linenum">0017:</SPAN> <SPAN CLASS="comment">; 0.0→0.5 の成分を作る</SPAN>
+<SPAN CLASS="linenum">0018:</SPAN> mov_x2_sat  r1.a,   r0.a            <SPAN CLASS="comment">; t0.a  : 0.0→0.5→1.0</SPAN>
+<SPAN CLASS="linenum">0019:</SPAN>                                     <SPAN CLASS="comment">; r1.a  : 0.0→1.0→1.0 (r0.a が 0.0 から 0.5 の下半分が、0.0 から 1.0 になる)</SPAN>
+<SPAN CLASS="linenum">0020:</SPAN> lrp         r1.rgb, r1.a, t1, t2    <SPAN CLASS="comment">; t0.a  : 0.0→0.5→1.0</SPAN>
+<SPAN CLASS="linenum">0021:</SPAN>                                     <SPAN CLASS="comment">; r1.rgb: t2 →t1 →t1  (r0.a が 0.0 から 0.5 の下半分が、 t2 から  t1 になる)</SPAN>
+<SPAN CLASS="linenum">0022:</SPAN> 
+<SPAN CLASS="linenum">0023:</SPAN> <SPAN CLASS="comment">; 0.5→1.0 の成分を作る</SPAN>
+<SPAN CLASS="linenum">0024:</SPAN> mov_sat     r1.a,   r0_bx2.a        <SPAN CLASS="comment">; t0.a  : 0.0→0.5→1.0</SPAN>
+<SPAN CLASS="linenum">0025:</SPAN>                                     <SPAN CLASS="comment">; r1.a  : 0.0→0.0→1.0 (r0.a が 0.5 から 1.0 の上半分が、0.0 から 1.0 になる)</SPAN>
+<SPAN CLASS="linenum">0026:</SPAN> lrp         r0.rgb, r1.a, t0, t1    <SPAN CLASS="comment">; t0.a  : 0.0→0.5→1.0</SPAN>
+<SPAN CLASS="linenum">0027:</SPAN>                                     <SPAN CLASS="comment">; r0.rgb: t1 →t1 →t0  (r0.a が 0.5 から 1.0 の上半分が、 t1 から  t0 になる)</SPAN>
+<SPAN CLASS="linenum">0028:</SPAN> 
+<SPAN CLASS="linenum">0029:</SPAN> <SPAN CLASS="comment">; 二つを上手く混ぜる</SPAN>
+<SPAN CLASS="linenum">0030:</SPAN> cnd         r0.rgb, r0.a, r0, r1    <SPAN CLASS="comment">; r0.rgb = (0.5 &lt; r0.a) ? r0 : r1</SPAN>
+<SPAN CLASS="linenum">0031:</SPAN>                                     <SPAN CLASS="comment">; t0.a  : 0.0→0.5→1.0</SPAN>
+<SPAN CLASS="linenum">0032:</SPAN>                                     <SPAN CLASS="comment">; r0.rgb: t2 →t1 →t0  ( 0.0 から 0.5 は r1、0.5 から 1.0 は r0 を取る)</SPAN>
+<SPAN CLASS="linenum">0033:</SPAN> 
+<SPAN CLASS="linenum">0034:</SPAN> 
+<SPAN CLASS="linenum">0035:</SPAN> <SPAN CLASS="comment">;mov r0,    r0.a                    ; 深度を見たいときはこちらを有効にする</SPAN>
+<SPAN CLASS="linenum">0036:</SPAN> </PRE>
+</BODY>
+</HTML>

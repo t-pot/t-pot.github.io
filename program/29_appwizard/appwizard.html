@@ -1,0 +1,326 @@
+<head>
+	<title>t-pot 『DirectX 8.1 入門:AppWizard』</title>
+	<link rel="stylesheet" type="text/css" href="../if.css">
+</head>
+<meta http-equiv=Content-Type content="text/html; charset=shift_jis">
+<body text=#ffffff>
+
+<div class="contents">
+<center>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<h1>DirectX 8.1 入門:AppWizard</h1><br>
+<h3>～新しい機能をとりあえず使ってみた～</h3>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+</center>
+
+<h2>■はじめに</h2>
+
+<p>
+DirectX 8.1 が公開されました。<br>
+仮にもチュートリアルページ？試さないわけにはいきません。<br>
+今回は新しい機能の一つである AppWizard にチャレンジです。<br>
+</p>
+<p>
+くそ～、一度 DirectX をアンインストールしないと GeForce3 の HAL が有効にならなかったぞ!!<br>
+なんだこりゃ～
+</p>
+
+<p>
+さて、今回のソースは、次のものです。
+</p>
+<ul style = "LIST-STYLE-TYPE:none">
+<li><a href="appwizard.lzh">appwizard.lzh (AppWizardのソース)</a>
+</ul>
+
+<p>
+今回は、DirectX が作ったものをそのまま載せています。
+</p>
+<table>
+<tr><td><a href="sample_cpp.html">sample.cpp</a></td><td>ユーザーが触るであろうファイル。</td></tr>
+<tr><td><a href="sample_h.html">sample.h</a></td><td>sample.cpp のヘッダー。</td></tr>
+<tr><td>　</td></tr>
+<tr><td><a href="d3dapp_h.html">d3dapp.h</a></td><td>気にするな。</td></tr>
+<tr><td><a href="d3dapp_cpp.html">d3dapp.cpp</a></td><td>気にするな。</td></tr>
+<tr><td><a href="d3dfile_h.html">d3dfile.h</a></td><td>気にするな。</td></tr>
+<tr><td><a href="d3dfile_cpp.html">d3dfile.cpp</a></td><td>気にするな。</td></tr>
+<tr><td><a href="d3dfont_cpp.html">d3dfont.h</a></td><td>気にするな。</td></tr>
+<tr><td><a href="d3dfont_h.html">d3dfont.cpp</a></td><td>気にするな。</td></tr>
+<tr><td><a href="d3dutil_h.html">d3dutil.cpp</a></td><td>気にするな。</td></tr>
+<tr><td><a href="d3dutil_cpp.html">d3dutil.cpp</a></td><td>気にするな。</td></tr>
+<tr><td><a href="dxutil_h.html">dxutil.h</a></td><td>気にするな。</td></tr>
+<tr><td><a href="dxutil_cpp.html">dxutil.cpp</a></td><td>気にするな。</td></tr>
+<tr><td><a href="d3dres_h.html">d3dres.h</a></td><td>リソース管理。</td></tr>
+<tr><td><a href="resource_h.html">resource.h</a></td><td>リソース管理。</td></tr>
+</table>
+<p>
+あと、いつもの様に、実行ファイルと、プロジェクトファイル、それにアイコンファイルが入っています。<br>
+多くの気にしなくて良いファイルがあります。<br>
+見ておくほうがいいと思いますが、知らなくてもプログラムはできます。<br>
+暇を見てが解読しておきましょう。
+</p>
+
+<h2>■AppWizard の手順く</h2>
+
+<p>
+では、手順を１から説明します。<br>
+VC++ を立ち上げてください。<br>
+新規作成を選択します。
+</p>
+<image src = "new1.jpg">
+<p>
+新規作成ダイアログだ出ます。<br>
+『DirectX AppWizard』を選択して、プロジェクト名に適当な名前を入れます。
+</p>
+<image src = "new2.gif">
+<p>
+まぁ、ＭＦＣなんか使わないので、Single document window を選択して、Direct??? のうち、使うものを選択します(普通に表示するだけなら、Direct3Dだけで十分です)。
+</p>
+<image src = "new3.gif">
+<p>
+次に自動的に表示してくれるオブジェクトを選択します。<br>
+最初は Teapot(茶瓶)から初めて、慣れたら何もない Blank にするのがいいでしょう。
+</p>
+<image src = "new4.gif">
+<p>
+これで、終了です。<br>
+実行すると、コンパイルしてくれて、ティーポットが表示されます。<br>
+FPS 表示もあっていたせりつくせりです。
+</p>
+<image src = "new5.gif">
+
+<h2>■どうなってるの？</h2>
+
+<p>
+では、ソースファイルの中身はどうなっているのでしょうか？<br>
+ここでは、d3d??? の名前がついていない sample.cpp の中身を見てみましょう。
+</p>
+<p>
+ほとんどが、CMyD3DApplication のメソッドになっています。<Br>
+初期化は、HRESULT CMyD3DApplication::InitDeviceObjects() です。
+</p>
+<pre class="CodeBlock">
+<Font color = cyan>//-----------------------------------------------------------------------------
+// Name: InitDeviceObjects()
+// Desc: Initialize scene objects.
+//-----------------------------------------------------------------------------</Font>
+HRESULT CMyD3DApplication::InitDeviceObjects()
+{
+    <Font color = cyan>// TODO: create device objects</Font>
+
+    HRESULT hr;
+
+    <Font color = cyan>// Init the font (フォントの初期化)</Font>
+    m_pFont->InitDeviceObjects( m_pd3dDevice );
+
+    <Font color = cyan>// Create a teapot mesh using D3DX (ティーポットの初期化)</Font>
+    if( FAILED( hr = D3DXCreateTeapot( m_pd3dDevice, &m_pD3DXMesh, NULL ) ) )
+        return DXTRACE_ERR_NOMSGBOX( "D3DXCreateTeapot", hr );
+
+    return S_OK;
+}
+</pre>
+<p>
+フォントと、ティーポットのそれぞれの初期化をしています。<br>
+それ以外にも自分でオブジェクトを追加していくときは、ここに記述します。
+</p>
+
+<p>
+また、レンダリング状態等の設定をする CMyD3DApplication::RestoreDeviceObjects() が、最初に呼ばれます。
+</p>
+<pre class="CodeBlock">
+<Font color = cyan>//-----------------------------------------------------------------------------
+// Name: RestoreDeviceObjects()
+// Desc: Restores scene objects.
+//-----------------------------------------------------------------------------</Font>
+HRESULT CMyD3DApplication::RestoreDeviceObjects()
+{
+    <Font color = cyan>// TODO: setup render states</Font>
+
+    <Font color = cyan>// Setup a material</Font>
+    D3DMATERIAL8 mtrl;
+    D3DUtil_InitMaterial( mtrl, 1.0f, 0.0f, 0.0f );
+    m_pd3dDevice->SetMaterial( &mtrl );
+
+    <Font color = cyan>// Set up the textures（頂点色がついたテクスチャー）</Font>
+    m_pd3dDevice->SetTextureStageState( 0, D3DTSS_COLOROP,   D3DTOP_MODULATE );
+    m_pd3dDevice->SetTextureStageState( 0, D3DTSS_COLORARG1, D3DTA_TEXTURE );
+    m_pd3dDevice->SetTextureStageState( 0, D3DTSS_COLORARG2, D3DTA_DIFFUSE );
+    m_pd3dDevice->SetTextureStageState( 0, D3DTSS_MINFILTER, D3DTEXF_LINEAR );
+    m_pd3dDevice->SetTextureStageState( 0, D3DTSS_MAGFILTER, D3DTEXF_LINEAR );
+
+    <Font color = cyan>// Set miscellaneous render states（バッファなどの設定）</Font>
+    m_pd3dDevice->SetRenderState( D3DRS_DITHERENABLE,   FALSE );
+    m_pd3dDevice->SetRenderState( D3DRS_SPECULARENABLE, FALSE );
+    m_pd3dDevice->SetRenderState( D3DRS_ZENABLE,        TRUE );
+    m_pd3dDevice->SetRenderState( D3DRS_AMBIENT,        0x000F0F0F );
+
+    <Font color = cyan>// Set the world matrix（ワールド行列の設定）</Font>
+    D3DXMATRIX matIdentity;
+    D3DXMatrixIdentity( &matIdentity );
+    m_pd3dDevice->SetTransform( D3DTS_WORLD,  &matIdentity );
+
+    <Font color = cyan>// Set up our view matrix. A view matrix can be defined given an eye point,
+    // a point to lookat, and a direction for which way is up. Here, we set the
+    // eye five units back along the z-axis and up three units, look at the
+    // origin, and define "up" to be in the y-direction.（ビュー行列の設定）</Font>
+    D3DXMATRIX matView;
+    D3DXVECTOR3 vFromPt   = D3DXVECTOR3( 0.0f, 0.0f, -5.0f );
+    D3DXVECTOR3 vLookatPt = D3DXVECTOR3( 0.0f, 0.0f, 0.0f );
+    D3DXVECTOR3 vUpVec    = D3DXVECTOR3( 0.0f, 1.0f, 0.0f );
+    D3DXMatrixLookAtLH( &matView, &vFromPt, &vLookatPt, &vUpVec );
+    m_pd3dDevice->SetTransform( D3DTS_VIEW, &matView );
+
+    <Font color = cyan>// Set the projection matrix（射影行列の設定）</Font>
+    D3DXMATRIX matProj;
+    FLOAT fAspect = ((FLOAT)m_d3dsdBackBuffer.Width) / m_d3dsdBackBuffer.Height;
+    D3DXMatrixPerspectiveFovLH( &matProj, D3DX_PI/4, fAspect, 1.0f, 100.0f );
+    m_pd3dDevice->SetTransform( D3DTS_PROJECTION, &matProj );
+
+    <Font color = cyan>// Set up lighting states（光源の設定）</Font>
+    D3DLIGHT8 light;
+    D3DUtil_InitLight( light, D3DLIGHT_DIRECTIONAL, -1.0f, -1.0f, 2.0f );
+    m_pd3dDevice->SetLight( 0, &light );
+    m_pd3dDevice->LightEnable( 0, TRUE );
+    m_pd3dDevice->SetRenderState( D3DRS_LIGHTING, TRUE );
+
+    <Font color = cyan>// Restore the font（フォントのほうの設定）</Font>
+    m_pFont->RestoreDeviceObjects();
+
+    return S_OK;
+}
+</pre>
+
+<p>
+深度バッファや、テクスチャーステートの設定に、各種変換行列を設定します。<br>
+値が変わらないものは、ここで設定するといいと思います。
+</p>
+
+<p>
+描画部分は CMyD3DApplication::Render() です。<br>
+実際には、いつもと同じように BeginScene() と EndScene() の間で描画します（その部分を黄色で塗りました）。
+</p>
+<pre class="CodeBlock">
+<Font color = cyan>//-----------------------------------------------------------------------------
+// Name: Render()
+// Desc: Called once per frame, the call is the entry point for 3d
+//       rendering. This function sets up render states, clears the
+//       viewport, and renders the scene.
+//-----------------------------------------------------------------------------</Font>
+HRESULT CMyD3DApplication::Render()
+{
+    <Font color = cyan>// Clear the viewport</Font>
+    m_pd3dDevice->Clear( 0L, NULL, D3DCLEAR_TARGET|D3DCLEAR_ZBUFFER,
+                         0x000000ff, 1.0f, 0L );
+
+    <Font color = cyan>// Begin the scene（描画開始）</Font>
+    if( SUCCEEDED( m_pd3dDevice->BeginScene() ) )
+    {
+        <Font color = cyan>// TODO: render world</Font>
+        
+        <Font color = cyan>// Render the teapot mesh（ティーポットの描画）</Font>
+        <Font color = yellow>m_pD3DXMesh->DrawSubset(0);</Font>
+
+        <Font color = cyan>// Render stats and help text（ＨＥＬＰの文字描画）</Font>
+        <Font color = yellow>RenderText();</Font>
+
+        <Font color = cyan>// End the scene.（描画終わり）</Font>
+        m_pd3dDevice->EndScene();
+    }
+
+    return S_OK;
+}
+</pre>
+<p>
+なお、キーが押されたことによる変更は CMyD3DApplication::FrameMove() で行われます（実際のキーのチェックはUpdateInput()です）。
+</p>
+
+<pre class="CodeBlock">
+<Font color = cyan>//-----------------------------------------------------------------------------
+// Name: FrameMove()
+// Desc: Called once per frame, the call is the entry point for animating
+//       the scene.
+//-----------------------------------------------------------------------------</Font>
+HRESULT CMyD3DApplication::FrameMove()
+{
+    <Font color = cyan>// TODO: update world(全体の更新)</Font>
+
+    <Font color = cyan>// Update user input state(キー入力を調べる)</Font>
+    UpdateInput( &m_UserInput );
+
+    <Font color = cyan>// Update the world state according to user input(入力を見て、ワールド行列を変更する)</Font>
+    D3DXMATRIX matWorld;
+    D3DXMATRIX matRotY;
+    D3DXMATRIX matRotX;
+
+    if( m_UserInput.bRotateLeft && !m_UserInput.bRotateRight )
+        m_fWorldRotY += m_fElapsedTime;
+    else if( m_UserInput.bRotateRight && !m_UserInput.bRotateLeft )
+        m_fWorldRotY -= m_fElapsedTime;
+
+    if( m_UserInput.bRotateUp && !m_UserInput.bRotateDown )
+        m_fWorldRotX += m_fElapsedTime;
+    else if( m_UserInput.bRotateDown && !m_UserInput.bRotateUp )
+        m_fWorldRotX -= m_fElapsedTime;
+
+    D3DXMatrixRotationX( &matRotX, m_fWorldRotX );
+    D3DXMatrixRotationY( &matRotY, m_fWorldRotY );
+
+    D3DXMatrixMultiply( &matWorld, &matRotX, &matRotY );
+    m_pd3dDevice->SetTransform( D3DTS_WORLD, &matWorld );
+
+    return S_OK;
+}
+</pre>
+<p>
+bRotateLeft 等をみて、回転角度を追加したりしています。<br>
+基本的には、ワールド行列を変更するだけです。<br>
+余分な負荷をかけないために、最小の更新にとどめているのだと思います。
+</p>
+
+<p>
+後は、後始末です。CMyD3DApplication::DeleteDeviceObjects() で行います。
+</p>
+<pre class="CodeBlock">
+<Font color = cyan>//-----------------------------------------------------------------------------
+// Name: DeleteDeviceObjects()
+// Desc: Called when the app is exiting, or the device is being changed,
+//       this function deletes any device dependent objects.  
+//-----------------------------------------------------------------------------</Font>
+HRESULT CMyD3DApplication::DeleteDeviceObjects()
+{
+    <Font color = cyan>// TODO: Cleanup any objects created in InitDeviceObjects()(InitDeviceObjects()で作成したオブジェクトを開放する)</Font>
+    m_pFont->DeleteDeviceObjects();
+    SAFE_RELEASE( m_pD3DXMesh );
+
+    return S_OK;
+}
+</pre>
+<p>
+自分でオブジェクトを追加したときは、ここで削除します。
+</p>
+
+<h2>■最後に</h2>
+
+<p>
+DirectX 8.1 で追加された機能の一つの AppWizard を試してみました。<br>
+d3dapp.cpp 等を使うので、ファイルが多くなるので全てを把握するのは大変ですが、
+Microsoft のお墨付きの処理なので、確実な処理かもしれません。<br>
+サンプルをいじれば DirectX が何かがわかるので、初心者がなれるのにはいいと思います。
+</p>
+<p>
+自分が使うかといえば・・・・<br>
+ちゃんとしたサンプルを作るときには使うかもしれません。
+</p>
+
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<center>
+<p><a href="../index.html">もどる</a></p>
+<p><a href="mailto:imagire@gmail.com">imagire@gmail.com</a></p>
+</center>
+</body>
+</html>

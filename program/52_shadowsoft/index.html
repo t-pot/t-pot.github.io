@@ -1,0 +1,414 @@
+<head>
+	<title>t-pot『ソフトシャドウ』</title>
+	<link rel="stylesheet" type="text/css" href="../if.css">
+</head>
+<meta http-equiv=Content-Type content="text/html; charset=shift_jis">
+<body>
+
+
+<div class="contents">
+<center>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<h1>ソフトシャドウ</h1><br>
+<h3>～やわらかい影は好きですか？～</h3>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<image src = "title.png">
+</center>
+
+
+<h2>■はじめに</h2>
+
+
+<p>
+掲示板でタコスケさんから「ソフトシャドウできんの？」って挑戦状を叩き付けられたので考えてみました。
+</p>
+<p>
+<ul style = "LIST-STYLE-TYPE:none">
+<li><a href="src.lzh">src.lzh (ソフトシャドウのサンプル:DirectX8.1)</a>
+</ul>
+
+<p>
+まぁ、いつものように適当にファイルが入っています。<br>
+</p>
+<table>
+<tr><td><a href="vs_vsh.html">vs.vsh</a></td><td>深度描画の頂点シェーダー。</td></tr>
+<tr><td><a href="ps_psh.html">ps.psh</a></td><td>深度描画のピクセルシェーダー。</td></tr>
+<tr><td><a href="edge_vsh.html">edge.vsh</a></td><td>深度エッジの頂点シェーダー。</td></tr>
+<tr><td><a href="edge_psh.html">edge.psh</a></td><td>深度エッジのピクセルシェーダー。</td></tr>
+<tr><td><a href="bokashi_vsh.html">bokashi.vsh</a></td><td>深度ぼかしの頂点シェーダー。</td></tr>
+<tr><td><a href="bokashi_psh.html">bokashi.psh</a></td><td>深度ぼかしのピクセルシェーダー。</td></tr>
+<tr><td><a href="final_vsh.html">final.vsh</a></td><td>影作成の頂点シェーダー。</td></tr>
+<tr><td><a href="final_psh.html">final.psh</a></td><td>影作成のピクセルシェーダー。</td></tr>
+<tr><td><a href="draw_cpp.html">draw.cpp</a></td><td>メインの描画部分。</td></tr>
+<tr><td><a href="draw_h.html">draw.h</a></td><td>描画の各関数の定義。</td></tr>
+<tr><td><a href="bg_cpp.html">bg.cpp</a></td><td>背景の描画。</td></tr>
+<tr><td><a href="main_h.html">main.h</a></td><td>基本的な定数など。</td></tr>
+<tr><td><a href="main_cpp.html">main.cpp</a></td><td>描画に関係しないシステム的な部分。</td></tr>
+<tr><td><a href="load_cpp.html">load.cpp</a></td><td>ロード。</td></tr>
+<tr><td><a href="load_h.html">load.h</a></td><td>ロードのインターフェイス。</td></tr>
+</table>
+<image src = "tile_bmp.jpg" width = 64 height=64>tile.bmp (床デカール)<br>
+<image src = "sky_bmp.jpg" width = 64 height=64>sky.bmp (空デカール)<br>
+<p>
+あと、モデルのファイル、実行ファイル及び、プロジェクトファイルが入っています。
+</p>
+
+
+<h2>■方法</h2>
+
+
+<p>
+今回も4パス使ってます。<br>
+それぞれのパスでは次の手順を踏んでます。
+</p>
+
+<table>
+<tr><td>パス１</td><td>深度をレンダリング</td></tr>
+<tr><td>パス２</td><td>深度のエッジを作る</td></tr>
+<tr><td>パス３</td><td>エッジをぼかす</td></tr>
+<tr><td>パス４</td><td>深度と１パス目のテクスチャーの深度を比較し影の部分を算出し、ぼかしたエッジを掛けて影をぼかす</td></tr>
+</table>
+
+
+<h2>■パス１：深度をレンダリング</h2>
+
+<p>
+最初に深度をテクスチャーにレンダリングします。<br>
+今回も、透視影マップのゆがんだ画面です。
+</p>
+<image src = "z.png">
+<p>
+幾何学的には位置ベクトルに行列を掛けてライト方向からの透視変換した後の座標を計算します。<br>
+色の成分は、深度
+</p>
+<pre class="CodeBlock">
+    Z<sub>far</sub>(Z<sub>   </sub>-Z<sub>near</sub>)      Z<sub>far</sub>       1  Z<sub>far</sub> Z<sub>near</sub>
+z = ― ――――― = ――――― - ― ――――
+    Z<sub>   </sub>(Z<sub>far</sub>-Z<sub>near</sub>)  (Z<sub>far</sub>-Z<sub>near</sub>)    Z (Z<sub>far</sub>-Z<sub>near</sub>)
+</pre>
+<p>
+を使います。
+</p>
+<pre class="CodeBlock">
+vs.vsh
+<font color="deepskyblue">0002:</font> <font color="cyan">; c4-7   -- world + ビュー + 透視変換行列</font>
+<font color="deepskyblue">0003:</font> <font color="cyan">; c15    -- 深度調整</font>
+<font color="deepskyblue">0005:</font> <font color="cyan">; v0    頂点の座標値</font>
+<font color="deepskyblue">0006:</font> <font color="cyan">; v7    テクスチャ座標</font>
+<font color="deepskyblue">0008:</font> vs.1.0
+<font color="deepskyblue">0009:</font> 
+<font color="deepskyblue">0013:</font> <font color="cyan">;座標変換</font>
+<font color="deepskyblue">0014:</font> m4x4 oPos,  v0,     c4
+<font color="deepskyblue">0015:</font> 
+<font color="deepskyblue">0016:</font> <font color="cyan">; 深度を色に入れる</font>
+<font color="deepskyblue">0017:</font> dp4 r0,     v0,     c7
+<font color="deepskyblue">0018:</font> rcp r0,     r0
+<font color="deepskyblue">0019:</font> mad oD0,    r0,   c15.x, c15.y
+</pre>
+<p>
+ピクセルシェーダーとしては、その色を与えれば十分です。
+</p>
+<pre class="CodeBlock">
+ps.psh
+<font color="deepskyblue">0004:</font> ps.1.0
+<font color="deepskyblue">0008:</font> mov r0, v0
+</pre>
+<p>
+c言語の部分は、テクスチャーにレンダリングする設定をしてから、画面をクリアしてからモデルを描画します。
+</p>
+<pre class="CodeBlock">
+draw.cpp
+<font color="deepskyblue">0512:</font>     <font color="cyan">// -----------------------------------------------------</font>
+<font color="deepskyblue">0513:</font>     <font color="cyan">// 深度と色の作成</font>
+<font color="deepskyblue">0514:</font>     <font color="cyan">// -----------------------------------------------------</font>
+<font color="deepskyblue">0515:</font>     <font color="cyan">// テクスチャーに描画</font>
+<font color="deepskyblue">0516:</font>     lpD3DDev->SetRenderTarget(pTextureSurface, lpZbuffer);
+<font color="deepskyblue">0517:</font>     lpD3DDev->Clear(0,NULL, D3DCLEAR_TARGET|D3DCLEAR_ZBUFFER, D3DCOLOR_XRGB(0,0,0),1.0f,0);
+<font color="deepskyblue">0518:</font>     lpD3DDev->SetTextureStageState(0,D3DTSS_COLOROP,    D3DTOP_MODULATE);
+<font color="deepskyblue">0519:</font>     lpD3DDev->SetTextureStageState(0,D3DTSS_COLORARG1,  D3DTA_TEXTURE);
+<font color="deepskyblue">0520:</font>     lpD3DDev->SetTextureStageState(0,D3DTSS_COLORARG2,  D3DTA_DIFFUSE);
+<font color="deepskyblue">0521:</font>     lpD3DDev->SetTextureStageState(1,D3DTSS_COLOROP,    D3DTOP_DISABLE);
+<font color="deepskyblue">0522:</font>     lpD3DDev->SetVertexShader(hVertexShader);
+<font color="deepskyblue">0523:</font>     lpD3DDev->SetPixelShader(hPixelShader);
+<font color="deepskyblue">0524:</font>     bShadowMap = TRUE;
+<font color="deepskyblue">0525:</font>     bBg = FALSE;
+<font color="deepskyblue">0526:</font>     DrawModel(lpD3DDev, bShadowMap, bBg);
+</pre>
+
+<h2>■パス２：深度のエッジを作る</h2>
+
+
+<p>
+次は、深度に関するエッジを取ります。<br>
+具体的には、ピクセルの対角的な成分の差をとって、和をとります。
+</p>
+<image src = "edge.png">
+<p>
+頂点シェーダーは隣り合うピクセルの中心座標を取るようにテクスチャー座標をずらします。
+</p>
+<image src = "edge_tl.png">
+
+<pre class="CodeBlock">
+edge.vsh
+<font color="deepskyblue">0002:</font> <font color="cyan">; c20-23   -- テクスチャーをずらすオフセット</font>
+<font color="deepskyblue">0003:</font> <font color="cyan">;             (0,0), (1,0), (0,1), (1,1)</font>
+<font color="deepskyblue">0004:</font> <font color="cyan">; v0    頂点の座標値</font>
+<font color="deepskyblue">0005:</font> <font color="cyan">; v7    テクスチャ座標</font>
+<font color="deepskyblue">0006:</font> 
+<font color="deepskyblue">0007:</font> vs.1.0
+<font color="deepskyblue">0008:</font> 
+<font color="deepskyblue">0009:</font> <font color="cyan">; 座標を代入</font>
+<font color="deepskyblue">0010:</font> mov oPos, v0
+<font color="deepskyblue">0011:</font> 
+<font color="deepskyblue">0012:</font> <font color="cyan">; それぞれテクスチャーの位置をずらして出力</font>
+<font color="deepskyblue">0013:</font> add oT0, v7, c20
+<font color="deepskyblue">0014:</font> add oT1, v7, c21
+<font color="deepskyblue">0015:</font> add oT2, v7, c22
+<font color="deepskyblue">0016:</font> add oT3, v7, c23
+</pre>
+<p>
+ピクセルシェーダーでは、差の値を大きくしながらピクセル差をとります。
+</p>
+<pre class="CodeBlock">
+edge.psh
+<font color="deepskyblue">0004:</font> ps.1.0
+<font color="deepskyblue">0005:</font> 
+<font color="deepskyblue">0006:</font> tex t0      <font color="cyan">; 0:1 0  1:0 1  2:0 0  3:0 0</font>
+<font color="deepskyblue">0007:</font> tex t1      <font color="cyan">;   0 0    0 0    1 0    0 1</font>
+<font color="deepskyblue">0008:</font> tex t2
+<font color="deepskyblue">0009:</font> tex t3
+<font color="deepskyblue">0010:</font> 
+<font color="deepskyblue">0011:</font> mov         r0, t3.a
+<font color="deepskyblue">0012:</font> mov         r1, t2.a
+<font color="deepskyblue">0013:</font> add_x4      r0, r0, -t0.a   <font color="cyan">; r0 =  4(t3.a-t0.a</font>)
+<font color="deepskyblue">0014:</font> add_x4      r1, r1, -t1.a   <font color="cyan">; r1 =  4(t2.a-t1.a)</font>
+<font color="deepskyblue">0015:</font> mul_x4      r0, r0, r0      <font color="cyan">; r0 = 64(t3.a-t0.a)^2</font>
+<font color="deepskyblue">0016:</font> mul_x4      r1, r1, r1      <font color="cyan">; r1 = 64(t2.a-t1.a)^2</font>
+<font color="deepskyblue">0017:</font> add_x4_sat  r0, 1-r0.a,-r1.a<font color="cyan">; r0 = 4(1-64((t3.a-t0.a)^2+(t2.a-t1.a)^2))</font>
+</pre>
+<p>
+レンダリング対象は、先ほどとは違うテクスチャーにレンダリングします。<br>
+使うテクスチャーは深度を描き込んだテクスチャーです。
+</p>
+<pre class="CodeBlock">
+draw.cpp
+<font color="deepskyblue">0527:</font>     <font color="cyan">// -----------------------------------------------------</font>
+<font color="deepskyblue">0528:</font>     <font color="cyan">// 深度エッジの作成</font>
+<font color="deepskyblue">0529:</font>     <font color="cyan">// -----------------------------------------------------</font>
+<font color="deepskyblue">0530:</font>     lpD3DDev->SetRenderTarget(pTextureSurfaceEdge, NULL );
+<font color="deepskyblue">0531:</font>     for (i = 0; i &lt; 4; i++) {
+<font color="deepskyblue">0532:</font>         lpD3DDev->SetTextureStageState(i, D3DTSS_ADDRESSU,  D3DTADDRESS_CLAMP);
+<font color="deepskyblue">0533:</font>         lpD3DDev->SetTextureStageState(i, D3DTSS_ADDRESSV,  D3DTADDRESS_CLAMP);
+<font color="deepskyblue">0534:</font>         lpD3DDev->SetTextureStageState(i, D3DTSS_COLOROP,   D3DTOP_SELECTARG1);
+<font color="deepskyblue">0535:</font>         lpD3DDev->SetTextureStageState(i, D3DTSS_COLORARG1, D3DTA_TEXTURE);
+<font color="deepskyblue">0536:</font>         lpD3DDev->SetTexture( i, pTexture );                    <font color="cyan">// テクスチャー</font>
+<font color="deepskyblue">0537:</font>     }
+<font color="deepskyblue">0538:</font>     lpD3DDev->SetVertexShader(hVertexShaderEdge);
+<font color="deepskyblue">0539:</font>     lpD3DDev->SetPixelShader(hPixelShaderEdge);
+<font color="deepskyblue">0540:</font>     lpD3DDev->SetStreamSource( 0, pFinalVB, sizeof(D3D_FINAL_VERTEX) );
+<font color="deepskyblue">0541:</font>     lpD3DDev->SetIndices(pFinalIB,0);
+<font color="deepskyblue">0542:</font>     lpD3DDev->DrawIndexedPrimitive( D3DPT_TRIANGLELIST, 0, 4, 0, 2 );
+</pre>
+
+
+<h2>■パス３：エッジをぼかす</h2>
+
+
+<p>
+次に、作成した深度エッジをぼかします。
+</p>
+<image src = "bokashi.png">
+<p>
+ぼかす方法は１６サンプルボックスフィルターです。<br>
+エッジを取ったときよりも一回り大きいテクセル座標でテクスチャー座標をずらします。
+</p>
+<image src = "bokashi_tl.png">
+<pre class="CodeBlock">
+bokashi.vsh
+<font color="deepskyblue">0002:</font> <font color="cyan">; c30-33   -- テクスチャーをずらすオフセット</font>
+<font color="deepskyblue">0003:</font> <font color="cyan">;             (0,0), (2,0), (0,2), (2,2)</font>
+<font color="deepskyblue">0004:</font> <font color="cyan">; v0    頂点の座標値</font>
+<font color="deepskyblue">0005:</font> <font color="cyan">; v7    テクスチャ座標</font>
+<font color="deepskyblue">0006:</font> 
+<font color="deepskyblue">0007:</font> vs.1.0
+<font color="deepskyblue">0008:</font> 
+<font color="deepskyblue">0009:</font> <font color="cyan">; 座標を代入</font>
+<font color="deepskyblue">0010:</font> mov oPos, v0
+<font color="deepskyblue">0011:</font> 
+<font color="deepskyblue">0012:</font> <font color="cyan">; それぞれテクスチャーの位置をずらして出力</font>
+<font color="deepskyblue">0013:</font> add oT0, v7, c30
+<font color="deepskyblue">0014:</font> add oT1, v7, c31
+<font color="deepskyblue">0015:</font> add oT2, v7, c32
+<font color="deepskyblue">0016:</font> add oT3, v7, c33
+</pre>
+<p>
+ピクセルシェーダーでは、それぞれのテクセルの平均を取ります。
+</p>
+<pre class="CodeBlock">
+bokashi.psh
+<font color="deepskyblue">0004:</font> ps.1.0
+<font color="deepskyblue">0005:</font> 
+<font color="deepskyblue">0006:</font> def c0, 0.5f, 0.5f, 0.5f, 0.5f
+<font color="deepskyblue">0007:</font> 
+<font color="deepskyblue">0008:</font> tex t0      <font color="cyan">; 0:1 0  1:0 1  2:0 0  3:0 0</font>
+<font color="deepskyblue">0009:</font> tex t1      <font color="cyan">;   0 0    0 0    1 0    0 1</font>
+<font color="deepskyblue">0010:</font> tex t2
+<font color="deepskyblue">0011:</font> tex t3
+<font color="deepskyblue">0012:</font> 
+<font color="deepskyblue">0013:</font> mul r0, t0, c0
+<font color="deepskyblue">0014:</font> mul r1, t1, c0
+<font color="deepskyblue">0015:</font> mad r0, t2, c0, r0
+<font color="deepskyblue">0016:</font> mad r1, t3, c0, r1
+<font color="deepskyblue">0017:</font> lrp r0, c0, r0_bx2, r1_bx2
+</pre>
+<p>
+今度もまた、別のテクスチャーにレンダリングします。<br>
+ビデオメモリを節約する方法として、深度のテクスチャーのRGBもしくはα成分に埋め込む手がありますがそれはお好みでどうぞ。
+</p>
+<pre class="CodeBlock">
+draw.cpp
+<font color="deepskyblue">0543:</font>     <font color="cyan">// -----------------------------------------------------</font>
+<font color="deepskyblue">0544:</font>     <font color="cyan">// 深度エッジをぼかす</font>
+<font color="deepskyblue">0545:</font>     <font color="cyan">// -----------------------------------------------------</font>
+<font color="deepskyblue">0546:</font>     lpD3DDev->SetRenderTarget(pTextureSurfaceBokashi, NULL );
+<font color="deepskyblue">0547:</font>     for (i = 0; i &lt; 4; i++) {
+<font color="deepskyblue">0548:</font>         lpD3DDev->SetTexture( i, pTextureEdge );                    <font color="cyan">// テクスチャー</font>
+<font color="deepskyblue">0549:</font>     }
+<font color="deepskyblue">0550:</font>     lpD3DDev->SetVertexShader(hVertexShaderBokashi);
+<font color="deepskyblue">0551:</font>     lpD3DDev->SetPixelShader(hPixelShaderBokashi);
+<font color="deepskyblue">0552:</font>     lpD3DDev->SetStreamSource( 0, pFinalVB, sizeof(D3D_FINAL_VERTEX) );
+<font color="deepskyblue">0553:</font>     lpD3DDev->SetIndices(pFinalIB,0);
+<font color="deepskyblue">0554:</font>     lpD3DDev->DrawIndexedPrimitive( D3DPT_TRIANGLELIST, 0, 4, 0, 2 );
+</pre>
+
+
+<h2>■パス４：影を作る</h2>
+
+
+<p>
+最後が影を作る部分です。<br>
+色の成分にやはり深度を入れます。<br>
+また、oT1, oT2 の２つのテクスチャー座標にライト方向からのスクリーン座標を入れます。
+</p>
+<image src = "title.png">
+<p>
+</p>
+<pre class="CodeBlock">
+final.vsh
+<font color="deepskyblue">0002:</font> <font color="cyan">; c0-3   -- world + ビュー + 透視変換行列</font>
+<font color="deepskyblue">0003:</font> <font color="cyan">; c4-7   -- world + ライトビュー + 透視変換行列</font>
+<font color="deepskyblue">0004:</font> <font color="cyan">; c13    -- ライトのベクトル (w成分は環境光の強さ)</font>
+<font color="deepskyblue">0005:</font> <font color="cyan">; c14    -- ライトの色(メッシュの色)</font>
+<font color="deepskyblue">0006:</font> <font color="cyan">; c15    -- 深度調整</font>
+<font color="deepskyblue">0007:</font> <font color="cyan">;</font>
+<font color="deepskyblue">0008:</font> <font color="cyan">; v0    頂点の座標値</font>
+<font color="deepskyblue">0009:</font> <font color="cyan">; v3    法線ベクトル (w成分は1.0f)</font>
+<font color="deepskyblue">0010:</font> <font color="cyan">; v7    テクスチャ座標</font>
+<font color="deepskyblue">0011:</font> 
+<font color="deepskyblue">0012:</font> vs.1.0
+<font color="deepskyblue">0013:</font> 
+<font color="deepskyblue">0014:</font> <font color="cyan">; デカールテクスチャー</font>
+<font color="deepskyblue">0015:</font> mov oT0,    v7
+<font color="deepskyblue">0016:</font> 
+<font color="deepskyblue">0017:</font> <font color="cyan">;座標変換</font>
+<font color="deepskyblue">0018:</font> m4x4 oPos, v0, c0
+<font color="deepskyblue">0019:</font> 
+<font color="deepskyblue">0020:</font> <font color="cyan">; ((l,n) + l.w)*c14 (平行光源のライティング)</font>
+<font color="deepskyblue">0021:</font> dp4 r0.w,   v3,   c13
+<font color="deepskyblue">0022:</font> mul oD0.xyz,r0.w, c14
+<font color="deepskyblue">0023:</font> 
+<font color="deepskyblue">0024:</font> <font color="cyan">; 深度を色のw成分に入れる</font>
+<font color="deepskyblue">0025:</font> dp4 r0.w,   v0,     c7
+<font color="deepskyblue">0026:</font> rcp r0.w,   r0.w
+<font color="deepskyblue">0027:</font> mad oD0.w,  r0.w,   c15.x, c15.y
+<font color="deepskyblue">0028:</font> 
+<font color="deepskyblue">0029:</font> <font color="cyan">; シャドウバッファ</font>
+<font color="deepskyblue">0030:</font> dp4 r0.x,   v0,   c4
+<font color="deepskyblue">0031:</font> dp4 r0.y,  -v0,   c5
+<font color="deepskyblue">0032:</font> mul r0.xy, r0, r0.w
+<font color="deepskyblue">0033:</font> mad oT1.xy, r0, c12.y, c12.y
+<font color="deepskyblue">0034:</font> mad oT2.xy, r0, c12.y, c12.y
+</pre>
+<p>
+ピクセルシェーダーでは、ぼかしたテクスチャ―を定数に掛けて、影の部分の色を調整します。<br>
+ちょうどエッジになっている部分がぼかしの中心で、黒くなっているので、
+その部分は減算されず明るいままで、中に行くに従って減算する量は大きくなります。
+</p>
+<pre class="CodeBlock">
+final.psh
+<font color="deepskyblue">0004:</font> ps.1.0
+<font color="deepskyblue">0005:</font> 
+<font color="deepskyblue">0006:</font> def c0, 0.0f, 0.0f, 0.0f, 0.000000000001f   <font color="cyan">; ｚ-オフセット</font>
+<font color="deepskyblue">0007:</font> def c1, 0.3f, 0.3f, 0.3f, 0.0f      <font color="cyan">; 影の濃さ</font>
+<font color="deepskyblue">0008:</font> 
+<font color="deepskyblue">0009:</font> <font color="cyan">; テクスチャーの色を引っ張ってくる</font>
+<font color="deepskyblue">0010:</font> tex t0                              <font color="cyan">; デカールテクスチャー</font>
+<font color="deepskyblue">0011:</font> tex t1                              <font color="cyan">; 深度テクスチャー</font>
+<font color="deepskyblue">0012:</font> tex t2                              <font color="cyan">; ぼかした深度エッジ</font>
+<font color="deepskyblue">0013:</font> 
+<font color="deepskyblue">0014:</font> add r1, t0, v0                      <font color="cyan">; 色＝頂点色+デカール</font>
+<font color="deepskyblue">0015:</font> mul r0, c1, t2                      <font color="cyan">; r0 = c1*t2 ; 影として減算する量</font>
+<font color="deepskyblue">0016:</font> 
+<font color="deepskyblue">0017:</font> <font color="cyan">; r0 = (t1.a < v0.a-0.1f) ? r1 : r1-t2*c1</font>
+<font color="deepskyblue">0018:</font> add r0.a, v0,  -c0
+<font color="deepskyblue">0019:</font> add r0.a, r0,  -t1_bias
+<font color="deepskyblue">0020:</font> cnd r0, r0.a, r0, c0
+<font color="deepskyblue">0021:</font> add r0, r1, -r0
+</pre>
+<p>
+今度は、レンダリングする場所をバックバッファに移して、レンダリングです。<br>
+ぼかしのテクスチャーと深度比較のために深度のテクスチャーをセットします。
+</p>
+<pre class="CodeBlock">
+draw.cpp
+<font color="deepskyblue">0555:</font>     <font color="cyan">// -----------------------------------------------------</font>
+<font color="deepskyblue">0556:</font>     <font color="cyan">// 影の作成</font>
+<font color="deepskyblue">0557:</font>     <font color="cyan">// -----------------------------------------------------</font>
+<font color="deepskyblue">0558:</font>     <font color="cyan">// 描画をバックバッファに戻す</font>
+<font color="deepskyblue">0559:</font>     lpD3DDev->SetRenderTarget(pBackbuffer, lpZbuffer );
+<font color="deepskyblue">0560:</font>     lpD3DDev->Clear(0,NULL,D3DCLEAR_ZBUFFER, 0,1.0f,0);
+<font color="deepskyblue">0561:</font>     lpD3DDev->SetVertexShader(hFinalVertexShader);
+<font color="deepskyblue">0562:</font>     lpD3DDev->SetPixelShader(hFinalPixelShader);
+<font color="deepskyblue">0563:</font>     lpD3DDev->SetTexture( 1, pTexture );                    <font color="cyan">// 元テクスチャー   </font>
+<font color="deepskyblue">0564:</font>     lpD3DDev->SetTexture( 2, pTextureBokashi );             <font color="cyan">// ぼかしたエッジテクスチャー</font>
+<font color="deepskyblue">0565:</font>     lpD3DDev->SetTexture( 3, NULL);
+<font color="deepskyblue">0566:</font>     bShadowMap = FALSE;
+<font color="deepskyblue">0567:</font>     bBg = TRUE;
+<font color="deepskyblue">0568:</font>     DrawModel(lpD3DDev, bShadowMap, bBg);
+</pre>
+
+
+
+<h2>■最後に</h2>
+
+
+<p>
+地面はぼけたんですが、車体に落ちる影がぼけていないのでそこが残念です。<br>
+エッジが取れていない奥の部分もぼけていませんが、これは調整で何とかできそうです。<br>
+あと、ぼけかたが一様なので、エッジを取るときやぼかすときに調整したほうがよさそうですね。<br>
+この画像では目だちませんが、ぼかした結果、一部の影が消える現象が出ます。
+例えば、奥の車のバックミラー周辺の影が消えすぎていたりしています。
+少し改良が必要ですね。
+</p>
+<p>
+今回は、影の境界をぼかす方法をとりましたが、ライトの位置をずらして何回かレンダリングする方法も考えられますね。
+まぁ、それも加工しないと綺麗にならないと思うので、調整が大変ですが…
+</p>
+<p>
+ソフトシャドウを実現する方法は調べていないので、どのような方法があるか知らないのですが、
+今回のも一つの方法としていいのではないのでしょうか。
+</p>
+
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<center>
+<p><a href="../index.html">もどる</a></p>
+<p><a href="mailto:imagire@gmail.com">imagire@gmail.com</a></p>
+</center>
+
+</body>
+</html>

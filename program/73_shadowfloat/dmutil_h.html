@@ -1,0 +1,190 @@
+<HTML>
+<HEAD>
+<TITLE>dmutil.h</TITLE>
+<meta name="GENERATOR" content="cpp2html 2.1 by Niisaka">
+<meta http-equiv="Content-Type" content="text/html">
+<meta http-equiv="Content-Style-Type" content="text/css">
+<STYLE TYPE="text/css">
+<!--
+SPAN.comment { color:#008000; font-weight:normal; font-style:normal;}
+SPAN.keyword { color:#0000FF; font-weight:normal; font-style:normal;}
+SPAN.string { color:#600000; font-weight:normal; font-style:normal;}
+SPAN.linenum { color:#A0A0A0; font-weight:normal; font-style:normal;}
+-->
+</STYLE>
+</HEAD>
+<BODY TEXT="#000000" BGCOLOR="#FFFFFF">
+<PRE><SPAN CLASS="linenum">0001:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0002:</SPAN> <SPAN CLASS="comment">// File: DMUtil.h</SPAN>
+<SPAN CLASS="linenum">0003:</SPAN> <SPAN CLASS="comment">//</SPAN>
+<SPAN CLASS="linenum">0004:</SPAN> <SPAN CLASS="comment">// Desc: DirectMusic framework classes for playing DirectMusic segments and</SPAN>
+<SPAN CLASS="linenum">0005:</SPAN> <SPAN CLASS="comment">//       DirectMusic scripts. Feel free to use this class as a starting point </SPAN>
+<SPAN CLASS="linenum">0006:</SPAN> <SPAN CLASS="comment">//       for adding extra functionality.</SPAN>
+<SPAN CLASS="linenum">0007:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0008:</SPAN> <SPAN CLASS="keyword">#ifndef</SPAN> DMUTIL_H
+<SPAN CLASS="linenum">0009:</SPAN> <SPAN CLASS="keyword">#define</SPAN> DMUTIL_H
+<SPAN CLASS="linenum">0010:</SPAN> 
+<SPAN CLASS="linenum">0011:</SPAN> <SPAN CLASS="keyword">#include</SPAN> &lt;dmusicc.h&gt;
+<SPAN CLASS="linenum">0012:</SPAN> <SPAN CLASS="keyword">#include</SPAN> &lt;dmusici.h&gt;
+<SPAN CLASS="linenum">0013:</SPAN> <SPAN CLASS="keyword">#include</SPAN> &lt;dsound.h&gt;
+<SPAN CLASS="linenum">0014:</SPAN> 
+<SPAN CLASS="linenum">0015:</SPAN> 
+<SPAN CLASS="linenum">0016:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0017:</SPAN> <SPAN CLASS="comment">// Classes used by this header</SPAN>
+<SPAN CLASS="linenum">0018:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0019:</SPAN> <SPAN CLASS="keyword">class</SPAN> CMusicManager;
+<SPAN CLASS="linenum">0020:</SPAN> <SPAN CLASS="keyword">class</SPAN> CMusicSegment;
+<SPAN CLASS="linenum">0021:</SPAN> <SPAN CLASS="keyword">class</SPAN> C3DMusicSegment;
+<SPAN CLASS="linenum">0022:</SPAN> <SPAN CLASS="keyword">class</SPAN> CMusicScript;
+<SPAN CLASS="linenum">0023:</SPAN> 
+<SPAN CLASS="linenum">0024:</SPAN> 
+<SPAN CLASS="linenum">0025:</SPAN> 
+<SPAN CLASS="linenum">0026:</SPAN> 
+<SPAN CLASS="linenum">0027:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0028:</SPAN> <SPAN CLASS="comment">// Name: class CMusicManager</SPAN>
+<SPAN CLASS="linenum">0029:</SPAN> <SPAN CLASS="comment">// Desc: </SPAN>
+<SPAN CLASS="linenum">0030:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0031:</SPAN> <SPAN CLASS="keyword">class</SPAN> CMusicManager
+<SPAN CLASS="linenum">0032:</SPAN> {
+<SPAN CLASS="linenum">0033:</SPAN> <SPAN CLASS="keyword">protected</SPAN>:
+<SPAN CLASS="linenum">0034:</SPAN>     BOOL                      m_bCleanupCOM;
+<SPAN CLASS="linenum">0035:</SPAN>     IDirectMusicLoader8*      m_pLoader;
+<SPAN CLASS="linenum">0036:</SPAN>     IDirectMusicPerformance8* m_pPerformance;
+<SPAN CLASS="linenum">0037:</SPAN>     IDirectSound3DListener*   m_pDSListener;
+<SPAN CLASS="linenum">0038:</SPAN>     DS3DLISTENER              m_dsListenerParams;                <SPAN CLASS="comment">// Listener properties</SPAN>
+<SPAN CLASS="linenum">0039:</SPAN> 
+<SPAN CLASS="linenum">0040:</SPAN> <SPAN CLASS="keyword">public</SPAN>:
+<SPAN CLASS="linenum">0041:</SPAN>     CMusicManager();
+<SPAN CLASS="linenum">0042:</SPAN>     ~CMusicManager();
+<SPAN CLASS="linenum">0043:</SPAN> 
+<SPAN CLASS="linenum">0044:</SPAN>     <SPAN CLASS="keyword">inline</SPAN> IDirectMusicLoader8*      GetLoader()      { <SPAN CLASS="keyword">return</SPAN> m_pLoader; }
+<SPAN CLASS="linenum">0045:</SPAN>     <SPAN CLASS="keyword">inline</SPAN> IDirectMusicPerformance8* GetPerformance() { <SPAN CLASS="keyword">return</SPAN> m_pPerformance; }
+<SPAN CLASS="linenum">0046:</SPAN>     <SPAN CLASS="keyword">inline</SPAN> IDirectSound3DListener*   GetListener()    { <SPAN CLASS="keyword">return</SPAN> m_pDSListener; }
+<SPAN CLASS="linenum">0047:</SPAN> 
+<SPAN CLASS="linenum">0048:</SPAN>     IDirectMusicAudioPath8* GetDefaultAudioPath();
+<SPAN CLASS="linenum">0049:</SPAN> 
+<SPAN CLASS="linenum">0050:</SPAN>     HRESULT Initialize( HWND hWnd, DWORD dwPChannels = 128, DWORD dwDefaultPathType = DMUS_APATH_DYNAMIC_STEREO, LPDIRECTSOUND pDS = NULL  );
+<SPAN CLASS="linenum">0051:</SPAN> 
+<SPAN CLASS="linenum">0052:</SPAN>     HRESULT SetSearchDirectory( <SPAN CLASS="keyword">const</SPAN> TCHAR* strMediaPath );
+<SPAN CLASS="linenum">0053:</SPAN>     VOID    CollectGarbage();
+<SPAN CLASS="linenum">0054:</SPAN>     VOID    StopAll();
+<SPAN CLASS="linenum">0055:</SPAN> 
+<SPAN CLASS="linenum">0056:</SPAN>     HRESULT CreateSegmentFromFile( CMusicSegment** ppSegment, TCHAR* strFileName, 
+<SPAN CLASS="linenum">0057:</SPAN>                                    BOOL bDownloadNow = TRUE, BOOL bIsMidiFile = FALSE );
+<SPAN CLASS="linenum">0058:</SPAN>     HRESULT Create3DSegmentFromFile( C3DMusicSegment** ppSegment, TCHAR* strFileName, 
+<SPAN CLASS="linenum">0059:</SPAN>                                    BOOL bDownloadNow = TRUE, BOOL bIsMidiFile = FALSE, 
+<SPAN CLASS="linenum">0060:</SPAN>                                    IDirectMusicAudioPath8* p3DAudioPath = NULL );
+<SPAN CLASS="linenum">0061:</SPAN>     HRESULT CreateScriptFromFile( CMusicScript** ppScript, TCHAR* strFileName );
+<SPAN CLASS="linenum">0062:</SPAN> 
+<SPAN CLASS="linenum">0063:</SPAN>     HRESULT CreateChordMapFromFile( IDirectMusicChordMap8** ppChordMap, TCHAR* strFileName );
+<SPAN CLASS="linenum">0064:</SPAN>     HRESULT CreateStyleFromFile( IDirectMusicStyle8** ppStyle, TCHAR* strFileName );
+<SPAN CLASS="linenum">0065:</SPAN>     HRESULT GetMotifFromStyle( IDirectMusicSegment8** ppMotif, TCHAR* strStyle, TCHAR* wstrMotif );
+<SPAN CLASS="linenum">0066:</SPAN> 
+<SPAN CLASS="linenum">0067:</SPAN>     HRESULT CreateSegmentFromResource( CMusicSegment** ppSegment, TCHAR* strResource, TCHAR* strResourceType, 
+<SPAN CLASS="linenum">0068:</SPAN>                                    BOOL bDownloadNow = TRUE, BOOL bIsMidiFile = FALSE );
+<SPAN CLASS="linenum">0069:</SPAN> 
+<SPAN CLASS="linenum">0070:</SPAN>     VOID Set3DParameters( FLOAT fDistanceFactor, FLOAT fDopplerFactor, FLOAT fRolloffFactor );
+<SPAN CLASS="linenum">0071:</SPAN> };
+<SPAN CLASS="linenum">0072:</SPAN> 
+<SPAN CLASS="linenum">0073:</SPAN> 
+<SPAN CLASS="linenum">0074:</SPAN> 
+<SPAN CLASS="linenum">0075:</SPAN> 
+<SPAN CLASS="linenum">0076:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0077:</SPAN> <SPAN CLASS="comment">// Name: class CMusicSegment</SPAN>
+<SPAN CLASS="linenum">0078:</SPAN> <SPAN CLASS="comment">// Desc: Encapsulates functionality of an IDirectMusicSegment</SPAN>
+<SPAN CLASS="linenum">0079:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0080:</SPAN> <SPAN CLASS="keyword">class</SPAN> CMusicSegment
+<SPAN CLASS="linenum">0081:</SPAN> {
+<SPAN CLASS="linenum">0082:</SPAN> <SPAN CLASS="keyword">protected</SPAN>:
+<SPAN CLASS="linenum">0083:</SPAN>     IDirectMusicSegment8*     m_pSegment;
+<SPAN CLASS="linenum">0084:</SPAN>     IDirectMusicLoader8*      m_pLoader;
+<SPAN CLASS="linenum">0085:</SPAN>     IDirectMusicPerformance8* m_pPerformance;
+<SPAN CLASS="linenum">0086:</SPAN>     IDirectMusicAudioPath8*   m_pEmbeddedAudioPath;
+<SPAN CLASS="linenum">0087:</SPAN>     BOOL                      m_bDownloaded;
+<SPAN CLASS="linenum">0088:</SPAN> 
+<SPAN CLASS="linenum">0089:</SPAN> <SPAN CLASS="keyword">public</SPAN>:
+<SPAN CLASS="linenum">0090:</SPAN>     CMusicSegment( IDirectMusicPerformance8* pPerformance, 
+<SPAN CLASS="linenum">0091:</SPAN>                    IDirectMusicLoader8* pLoader,
+<SPAN CLASS="linenum">0092:</SPAN>                    IDirectMusicSegment8* pSegment );
+<SPAN CLASS="linenum">0093:</SPAN>     <SPAN CLASS="keyword">virtual</SPAN> ~CMusicSegment();
+<SPAN CLASS="linenum">0094:</SPAN> 
+<SPAN CLASS="linenum">0095:</SPAN>     <SPAN CLASS="keyword">inline</SPAN>  IDirectMusicSegment8* GetSegment() { <SPAN CLASS="keyword">return</SPAN> m_pSegment; }
+<SPAN CLASS="linenum">0096:</SPAN>     HRESULT GetStyle( IDirectMusicStyle8** ppStyle, DWORD dwStyleIndex = 0 );
+<SPAN CLASS="linenum">0097:</SPAN> 
+<SPAN CLASS="linenum">0098:</SPAN>     HRESULT SetRepeats( DWORD dwRepeats );
+<SPAN CLASS="linenum">0099:</SPAN>     <SPAN CLASS="keyword">virtual</SPAN> HRESULT Play( DWORD dwFlags = DMUS_SEGF_SECONDARY, IDirectMusicAudioPath8* pAudioPath = NULL );
+<SPAN CLASS="linenum">0100:</SPAN>     HRESULT Stop( DWORD dwFlags = 0 );
+<SPAN CLASS="linenum">0101:</SPAN>     HRESULT Download( IDirectMusicAudioPath8* pAudioPath = NULL );
+<SPAN CLASS="linenum">0102:</SPAN>     HRESULT Unload( IDirectMusicAudioPath8* pAudioPath = NULL );
+<SPAN CLASS="linenum">0103:</SPAN> 
+<SPAN CLASS="linenum">0104:</SPAN>     BOOL    IsPlaying();
+<SPAN CLASS="linenum">0105:</SPAN> };
+<SPAN CLASS="linenum">0106:</SPAN> 
+<SPAN CLASS="linenum">0107:</SPAN> 
+<SPAN CLASS="linenum">0108:</SPAN> 
+<SPAN CLASS="linenum">0109:</SPAN> 
+<SPAN CLASS="linenum">0110:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0111:</SPAN> <SPAN CLASS="comment">// Name: class CMusicSegment</SPAN>
+<SPAN CLASS="linenum">0112:</SPAN> <SPAN CLASS="comment">// Desc: Encapsulates functionality of an IDirectMusicSegment</SPAN>
+<SPAN CLASS="linenum">0113:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0114:</SPAN> <SPAN CLASS="keyword">class</SPAN> C3DMusicSegment : <SPAN CLASS="keyword">public</SPAN> CMusicSegment
+<SPAN CLASS="linenum">0115:</SPAN> {
+<SPAN CLASS="linenum">0116:</SPAN> <SPAN CLASS="keyword">protected</SPAN>:
+<SPAN CLASS="linenum">0117:</SPAN>     IDirectMusicAudioPath8* m_p3DAudioPath;
+<SPAN CLASS="linenum">0118:</SPAN>     IDirectSound3DBuffer*   m_pDS3DBuffer;
+<SPAN CLASS="linenum">0119:</SPAN> 
+<SPAN CLASS="linenum">0120:</SPAN>     DS3DBUFFER              m_dsBufferParams;                  <SPAN CLASS="comment">// 3D buffer properties</SPAN>
+<SPAN CLASS="linenum">0121:</SPAN>     BOOL                    m_bDeferSettings;
+<SPAN CLASS="linenum">0122:</SPAN>     BOOL                    m_bCleanupAudioPath;
+<SPAN CLASS="linenum">0123:</SPAN> 
+<SPAN CLASS="linenum">0124:</SPAN> <SPAN CLASS="keyword">public</SPAN>:
+<SPAN CLASS="linenum">0125:</SPAN>     C3DMusicSegment( IDirectMusicPerformance8* pPerformance, 
+<SPAN CLASS="linenum">0126:</SPAN>                    IDirectMusicLoader8* pLoader,
+<SPAN CLASS="linenum">0127:</SPAN>                    IDirectMusicSegment8* pSegment,
+<SPAN CLASS="linenum">0128:</SPAN>                    IDirectMusicAudioPath8* pAudioPath );
+<SPAN CLASS="linenum">0129:</SPAN>     <SPAN CLASS="keyword">virtual</SPAN> ~C3DMusicSegment();
+<SPAN CLASS="linenum">0130:</SPAN> 
+<SPAN CLASS="linenum">0131:</SPAN>     HRESULT Init();
+<SPAN CLASS="linenum">0132:</SPAN>     IDirectMusicAudioPath8* GetAudioPath() { <SPAN CLASS="keyword">return</SPAN> m_p3DAudioPath; }
+<SPAN CLASS="linenum">0133:</SPAN>     HRESULT Play( DWORD dwFlags = DMUS_SEGF_SECONDARY, IDirectMusicAudioPath8* pAudioPath = NULL );
+<SPAN CLASS="linenum">0134:</SPAN> 
+<SPAN CLASS="linenum">0135:</SPAN>     VOID Set3DParameters( FLOAT fMinDistance,   FLOAT fMaxDistance );
+<SPAN CLASS="linenum">0136:</SPAN>     VOID SetObjectProperties( D3DVECTOR* pvPosition, D3DVECTOR* pvVelocity );
+<SPAN CLASS="linenum">0137:</SPAN> };
+<SPAN CLASS="linenum">0138:</SPAN> 
+<SPAN CLASS="linenum">0139:</SPAN> 
+<SPAN CLASS="linenum">0140:</SPAN> 
+<SPAN CLASS="linenum">0141:</SPAN> 
+<SPAN CLASS="linenum">0142:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0143:</SPAN> <SPAN CLASS="comment">// Name: class CMusicScript</SPAN>
+<SPAN CLASS="linenum">0144:</SPAN> <SPAN CLASS="comment">// Desc: Encapsulates functionality of an IDirectMusicScript</SPAN>
+<SPAN CLASS="linenum">0145:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0146:</SPAN> <SPAN CLASS="keyword">class</SPAN> CMusicScript
+<SPAN CLASS="linenum">0147:</SPAN> {
+<SPAN CLASS="linenum">0148:</SPAN> <SPAN CLASS="keyword">protected</SPAN>:
+<SPAN CLASS="linenum">0149:</SPAN>     IDirectMusicScript8*      m_pScript;
+<SPAN CLASS="linenum">0150:</SPAN>     IDirectMusicLoader8*      m_pLoader;
+<SPAN CLASS="linenum">0151:</SPAN>     IDirectMusicPerformance8* m_pPerformance;
+<SPAN CLASS="linenum">0152:</SPAN> 
+<SPAN CLASS="linenum">0153:</SPAN> <SPAN CLASS="keyword">public</SPAN>:
+<SPAN CLASS="linenum">0154:</SPAN>     CMusicScript( IDirectMusicPerformance8* pPerformance, 
+<SPAN CLASS="linenum">0155:</SPAN>                   IDirectMusicLoader8* pLoader,
+<SPAN CLASS="linenum">0156:</SPAN>                   IDirectMusicScript8* pScript );
+<SPAN CLASS="linenum">0157:</SPAN>     <SPAN CLASS="keyword">virtual</SPAN> ~CMusicScript();
+<SPAN CLASS="linenum">0158:</SPAN> 
+<SPAN CLASS="linenum">0159:</SPAN>     <SPAN CLASS="keyword">inline</SPAN>  IDirectMusicScript8* GetScript() { <SPAN CLASS="keyword">return</SPAN> m_pScript; }
+<SPAN CLASS="linenum">0160:</SPAN> 
+<SPAN CLASS="linenum">0161:</SPAN>     HRESULT CallRoutine( TCHAR* strRoutine );
+<SPAN CLASS="linenum">0162:</SPAN>     HRESULT SetVariableNumber( TCHAR* strVariable, LONG lValue );
+<SPAN CLASS="linenum">0163:</SPAN>     HRESULT GetVariableNumber( TCHAR* strVariable, LONG* plValue );
+<SPAN CLASS="linenum">0164:</SPAN>     HRESULT SetVariableObject( TCHAR* strVariable, IUnknown *punkValue);
+<SPAN CLASS="linenum">0165:</SPAN>     HRESULT GetVariableObject( TCHAR* strVariable, REFIID riid, LPVOID FAR *ppv);
+<SPAN CLASS="linenum">0166:</SPAN> };
+<SPAN CLASS="linenum">0167:</SPAN> 
+<SPAN CLASS="linenum">0168:</SPAN> 
+<SPAN CLASS="linenum">0169:</SPAN> 
+<SPAN CLASS="linenum">0170:</SPAN> 
+<SPAN CLASS="linenum">0171:</SPAN> <SPAN CLASS="keyword">#endif</SPAN> <SPAN CLASS="comment">// DMUTIL_H</SPAN>
+<SPAN CLASS="linenum">0172:</SPAN> </PRE>
+</BODY>
+</HTML>

@@ -1,0 +1,97 @@
+<HTML>
+<HEAD>
+<TITLE>load.h</TITLE>
+<meta name="GENERATOR" content="cpp2html 2.1 by Niisaka">
+<meta http-equiv="Content-Type" content="text/html">
+</HEAD>
+<BODY TEXT="#000000" BGCOLOR="#FFFFFF">
+<PRE><FONT COLOR="#40F628">0001:</FONT> <FONT COLOR="#008000">// ----------------------------------------------------------------------------</FONT>
+<FONT COLOR="#40F628">0002:</FONT> <FONT COLOR="#008000">//</FONT>
+<FONT COLOR="#40F628">0003:</FONT> <FONT COLOR="#008000">// load.h - 全体的な定義</FONT>
+<FONT COLOR="#40F628">0004:</FONT> <FONT COLOR="#008000">// </FONT>
+<FONT COLOR="#40F628">0005:</FONT> <FONT COLOR="#008000">// Copyright (c) 2001 IF (if@kun-desu.ne.jp)</FONT>
+<FONT COLOR="#40F628">0006:</FONT> <FONT COLOR="#008000">// All Rights Reserved.</FONT>
+<FONT COLOR="#40F628">0007:</FONT> <FONT COLOR="#008000">//</FONT>
+<FONT COLOR="#40F628">0008:</FONT> <FONT COLOR="#008000">// ----------------------------------------------------------------------------</FONT>
+<FONT COLOR="#40F628">0009:</FONT> <FONT COLOR="#0000FF">#ifndef</FONT> _LOAD_H
+<FONT COLOR="#40F628">0010:</FONT> <FONT COLOR="#0000FF">#define</FONT> _LOAD_H
+<FONT COLOR="#40F628">0011:</FONT> 
+<FONT COLOR="#40F628">0012:</FONT> <FONT COLOR="#0000FF">#include</FONT> &lt;d3d8.h&gt;
+<FONT COLOR="#40F628">0013:</FONT> <FONT COLOR="#0000FF">#include</FONT> &lt;d3dx8.h&gt;
+<FONT COLOR="#40F628">0014:</FONT> 
+<FONT COLOR="#40F628">0015:</FONT> <FONT COLOR="#008000">// ----------------------------------------------------------------------------</FONT>
+<FONT COLOR="#40F628">0016:</FONT> <FONT COLOR="#008000">// モデル</FONT>
+<FONT COLOR="#40F628">0017:</FONT> <FONT COLOR="#008000">// ----------------------------------------------------------------------------</FONT>
+<FONT COLOR="#40F628">0018:</FONT> 
+<FONT COLOR="#40F628">0019:</FONT> <FONT COLOR="#008000">// ----------------------------------------------------------------------------</FONT>
+<FONT COLOR="#40F628">0020:</FONT> <FONT COLOR="#008000">// 頂点の定義</FONT>
+<FONT COLOR="#40F628">0021:</FONT> <FONT COLOR="#008000">// ----------------------------------------------------------------------------</FONT>
+<FONT COLOR="#40F628">0022:</FONT> <FONT COLOR="#0000FF">typedef</FONT> <FONT COLOR="#0000FF">struct</FONT> {
+<FONT COLOR="#40F628">0023:</FONT>     <FONT COLOR="#0000FF">float</FONT> x,y,z;
+<FONT COLOR="#40F628">0024:</FONT>     <FONT COLOR="#0000FF">float</FONT> nx,ny,nz;
+<FONT COLOR="#40F628">0025:</FONT>     <FONT COLOR="#0000FF">float</FONT> tu0,tv0;
+<FONT COLOR="#40F628">0026:</FONT> <FONT COLOR="#008000">//  float tu1,tv1;</FONT>
+<FONT COLOR="#40F628">0027:</FONT> }D3D_CUSTOMVERTEX;
+<FONT COLOR="#40F628">0028:</FONT> <FONT COLOR="#0000FF">#define</FONT> D3DFVF_CUSTOMVERTEX (D3DFVF_XYZ | D3DFVF_NORMAL | D3DFVF_TEX1<FONT COLOR="#008000">/* | D3DFVF_TEX2*/</FONT>)
+<FONT COLOR="#40F628">0029:</FONT> 
+<FONT COLOR="#40F628">0030:</FONT> <FONT COLOR="#0000FF">extern</FONT> DWORD dwDecl[];
+<FONT COLOR="#40F628">0031:</FONT> 
+<FONT COLOR="#40F628">0032:</FONT> <FONT COLOR="#0000FF">class</FONT> CMyMesh{
+<FONT COLOR="#40F628">0033:</FONT> <FONT COLOR="#0000FF">public</FONT>:
+<FONT COLOR="#40F628">0034:</FONT>     CMyMesh(){
+<FONT COLOR="#40F628">0035:</FONT>         bActive = <FONT COLOR="#0000FF">false</FONT>;
+<FONT COLOR="#40F628">0036:</FONT>         pVB = NULL;
+<FONT COLOR="#40F628">0037:</FONT>         pIndex = NULL;
+<FONT COLOR="#40F628">0038:</FONT>         pSubsetTable = NULL;
+<FONT COLOR="#40F628">0039:</FONT>         pTextures = NULL;
+<FONT COLOR="#40F628">0040:</FONT>         pMaterials = NULL;
+<FONT COLOR="#40F628">0041:</FONT>         nFaces = nVertices = dwNumMaterials = 0;
+<FONT COLOR="#40F628">0042:</FONT>         rot.x = rot.y = rot.z = 0;
+<FONT COLOR="#40F628">0043:</FONT>     }
+<FONT COLOR="#40F628">0044:</FONT>     <FONT COLOR="#0000FF">bool</FONT>                    bActive;
+<FONT COLOR="#40F628">0045:</FONT>     <FONT COLOR="#0000FF">float</FONT>                   radius;     <FONT COLOR="#008000">// 大きさ</FONT>
+<FONT COLOR="#40F628">0046:</FONT>     D3DXVECTOR3             center;     <FONT COLOR="#008000">// 中心位置</FONT>
+<FONT COLOR="#40F628">0047:</FONT>     D3DXVECTOR3             rot;
+<FONT COLOR="#40F628">0048:</FONT> 
+<FONT COLOR="#40F628">0049:</FONT>     LPDIRECT3DVERTEXBUFFER8 pVB;
+<FONT COLOR="#40F628">0050:</FONT>     LPDIRECT3DINDEXBUFFER8  pIndex;
+<FONT COLOR="#40F628">0051:</FONT>     D3DXATTRIBUTERANGE      *pSubsetTable;
+<FONT COLOR="#40F628">0052:</FONT>     DWORD                   nFaces;
+<FONT COLOR="#40F628">0053:</FONT>     DWORD                   nVertices;
+<FONT COLOR="#40F628">0054:</FONT>     D3DMATERIAL8            *pMaterials;        <FONT COLOR="#008000">// メッシュの質感</FONT>
+<FONT COLOR="#40F628">0055:</FONT>     LPDIRECT3DTEXTURE8      *pTextures;     <FONT COLOR="#008000">// メッシュのテクスチャー</FONT>
+<FONT COLOR="#40F628">0056:</FONT>     DWORD                   dwNumMaterials; <FONT COLOR="#008000">// マテリアルの数</FONT>
+<FONT COLOR="#40F628">0057:</FONT> 
+<FONT COLOR="#40F628">0058:</FONT>     HRESULT Load(LPDIRECT3DDEVICE8 lpD3DDev, <FONT COLOR="#0000FF">char</FONT> *filename);
+<FONT COLOR="#40F628">0059:</FONT>     <FONT COLOR="#0000FF">void</FONT> Release();
+<FONT COLOR="#40F628">0060:</FONT> };
+<FONT COLOR="#40F628">0061:</FONT> <FONT COLOR="#008000">// ----------------------------------------------------------------------------</FONT>
+<FONT COLOR="#40F628">0062:</FONT> <FONT COLOR="#008000">// テクスチャー</FONT>
+<FONT COLOR="#40F628">0063:</FONT> <FONT COLOR="#008000">// ----------------------------------------------------------------------------</FONT>
+<FONT COLOR="#40F628">0064:</FONT> <FONT COLOR="#0000FF">class</FONT> CTextureMgr{
+<FONT COLOR="#40F628">0065:</FONT> <FONT COLOR="#0000FF">public</FONT>:
+<FONT COLOR="#40F628">0066:</FONT>     <FONT COLOR="#0000FF">static</FONT> HRESULT Load(LPDIRECT3DDEVICE8 lpD3DDev, <FONT COLOR="#0000FF">const</FONT> <FONT COLOR="#0000FF">char</FONT> *filename, LPDIRECT3DTEXTURE8 *ppTexture);
+<FONT COLOR="#40F628">0067:</FONT>     <FONT COLOR="#0000FF">static</FONT> <FONT COLOR="#0000FF">void</FONT> Release(LPDIRECT3DTEXTURE8 pTexture);
+<FONT COLOR="#40F628">0068:</FONT> };
+<FONT COLOR="#40F628">0069:</FONT> <FONT COLOR="#008000">// ----------------------------------------------------------------------------</FONT>
+<FONT COLOR="#40F628">0070:</FONT> <FONT COLOR="#008000">// 頂点シェーダー</FONT>
+<FONT COLOR="#40F628">0071:</FONT> <FONT COLOR="#008000">// ----------------------------------------------------------------------------</FONT>
+<FONT COLOR="#40F628">0072:</FONT> <FONT COLOR="#0000FF">class</FONT> CVertexShaderMgr{
+<FONT COLOR="#40F628">0073:</FONT> <FONT COLOR="#0000FF">public</FONT>:
+<FONT COLOR="#40F628">0074:</FONT>     <FONT COLOR="#0000FF">static</FONT> HRESULT Load(LPDIRECT3DDEVICE8 lpD3DDev, <FONT COLOR="#0000FF">const</FONT> <FONT COLOR="#0000FF">char</FONT> *filename, DWORD *phVertexShader, <FONT COLOR="#0000FF">const</FONT> DWORD dwDecl[]);
+<FONT COLOR="#40F628">0075:</FONT>     <FONT COLOR="#0000FF">static</FONT> <FONT COLOR="#0000FF">void</FONT> Release(LPDIRECT3DDEVICE8 lpD3DDev, DWORD *phVertexShader);
+<FONT COLOR="#40F628">0076:</FONT> };
+<FONT COLOR="#40F628">0077:</FONT> <FONT COLOR="#008000">// ----------------------------------------------------------------------------</FONT>
+<FONT COLOR="#40F628">0078:</FONT> <FONT COLOR="#008000">// ピクセルシェーダー</FONT>
+<FONT COLOR="#40F628">0079:</FONT> <FONT COLOR="#008000">// ----------------------------------------------------------------------------</FONT>
+<FONT COLOR="#40F628">0080:</FONT> <FONT COLOR="#0000FF">class</FONT> CPixelShaderMgr{
+<FONT COLOR="#40F628">0081:</FONT> <FONT COLOR="#0000FF">public</FONT>:
+<FONT COLOR="#40F628">0082:</FONT>     <FONT COLOR="#0000FF">static</FONT> HRESULT Load(LPDIRECT3DDEVICE8 lpD3DDev, <FONT COLOR="#0000FF">const</FONT> <FONT COLOR="#0000FF">char</FONT> *filename, DWORD *phPixelShader);
+<FONT COLOR="#40F628">0083:</FONT>     <FONT COLOR="#0000FF">static</FONT> <FONT COLOR="#0000FF">void</FONT> Release(LPDIRECT3DDEVICE8 lpD3DDev, DWORD *phPixelShader);
+<FONT COLOR="#40F628">0084:</FONT> };
+<FONT COLOR="#40F628">0085:</FONT> 
+<FONT COLOR="#40F628">0086:</FONT> 
+<FONT COLOR="#40F628">0087:</FONT> <FONT COLOR="#0000FF">#endif</FONT> <FONT COLOR="#008000">/* !_LOAD_H */</FONT>
+<FONT COLOR="#40F628">0088:</FONT> </PRE>
+</BODY>
+</HTML>

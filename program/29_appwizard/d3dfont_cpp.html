@@ -1,0 +1,691 @@
+<HTML>
+<HEAD>
+<TITLE>d3dfont.cpp</TITLE>
+<meta name="GENERATOR" content="cpp2html 2.0 by Niisaka">
+<meta http-equiv="Content-Type" content="text/html">
+<meta http-equiv="Content-Style-Type" content="text/css">
+<STYLE TYPE="text/css">
+<!--
+SPAN.comment { color:#008000; font-weight:normal; font-style:normal;}
+SPAN.keyword { color:#0000FF; font-weight:normal; font-style:normal;}
+SPAN.string { color:#600000; font-weight:normal; font-style:normal;}
+SPAN.linenum { color:#A0A0A0; font-weight:normal; font-style:normal;}
+-->
+</STYLE>
+</HEAD>
+<BODY TEXT="#000000" BGCOLOR="#FFFFFF">
+<PRE><SPAN CLASS="linenum">0001:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0002:</SPAN> <SPAN CLASS="comment">// File: D3DFont.cpp</SPAN>
+<SPAN CLASS="linenum">0003:</SPAN> <SPAN CLASS="comment">//</SPAN>
+<SPAN CLASS="linenum">0004:</SPAN> <SPAN CLASS="comment">// Desc: Texture-based font class</SPAN>
+<SPAN CLASS="linenum">0005:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0006:</SPAN> <SPAN CLASS="keyword">#define</SPAN> STRICT
+<SPAN CLASS="linenum">0007:</SPAN> <SPAN CLASS="keyword">#include</SPAN> &lt;stdio.h&gt;
+<SPAN CLASS="linenum">0008:</SPAN> <SPAN CLASS="keyword">#include</SPAN> &lt;tchar.h&gt;
+<SPAN CLASS="linenum">0009:</SPAN> <SPAN CLASS="keyword">#include</SPAN> &lt;D3DX8.h&gt;
+<SPAN CLASS="linenum">0010:</SPAN> <SPAN CLASS="keyword">#include</SPAN> "<SPAN CLASS="string">D3DFont.h</SPAN>"
+<SPAN CLASS="linenum">0011:</SPAN> <SPAN CLASS="keyword">#include</SPAN> "<SPAN CLASS="string">D3DUtil.h</SPAN>"
+<SPAN CLASS="linenum">0012:</SPAN> <SPAN CLASS="keyword">#include</SPAN> "<SPAN CLASS="string">DXUtil.h</SPAN>"
+<SPAN CLASS="linenum">0013:</SPAN> 
+<SPAN CLASS="linenum">0014:</SPAN> 
+<SPAN CLASS="linenum">0015:</SPAN> 
+<SPAN CLASS="linenum">0016:</SPAN> 
+<SPAN CLASS="linenum">0017:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0018:</SPAN> <SPAN CLASS="comment">// Custom vertex types for rendering text</SPAN>
+<SPAN CLASS="linenum">0019:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0020:</SPAN> <SPAN CLASS="keyword">#define</SPAN> MAX_NUM_VERTICES 50*6
+<SPAN CLASS="linenum">0021:</SPAN> 
+<SPAN CLASS="linenum">0022:</SPAN> <SPAN CLASS="keyword">struct</SPAN> FONT2DVERTEX { D3DXVECTOR4 p;   DWORD color;     FLOAT tu, tv; };
+<SPAN CLASS="linenum">0023:</SPAN> <SPAN CLASS="keyword">struct</SPAN> FONT3DVERTEX { D3DXVECTOR3 p;   D3DXVECTOR3 n;   FLOAT tu, tv; };
+<SPAN CLASS="linenum">0024:</SPAN> 
+<SPAN CLASS="linenum">0025:</SPAN> <SPAN CLASS="keyword">#define</SPAN> D3DFVF_FONT2DVERTEX (D3DFVF_XYZRHW|D3DFVF_DIFFUSE|D3DFVF_TEX1)
+<SPAN CLASS="linenum">0026:</SPAN> <SPAN CLASS="keyword">#define</SPAN> D3DFVF_FONT3DVERTEX (D3DFVF_XYZ|D3DFVF_NORMAL|D3DFVF_TEX1)
+<SPAN CLASS="linenum">0027:</SPAN> 
+<SPAN CLASS="linenum">0028:</SPAN> <SPAN CLASS="keyword">inline</SPAN> FONT2DVERTEX InitFont2DVertex( <SPAN CLASS="keyword">const</SPAN> D3DXVECTOR4&amp; p, D3DCOLOR color,
+<SPAN CLASS="linenum">0029:</SPAN>                                       FLOAT tu, FLOAT tv )
+<SPAN CLASS="linenum">0030:</SPAN> {
+<SPAN CLASS="linenum">0031:</SPAN>     FONT2DVERTEX v;   v.p = p;   v.color = color;   v.tu = tu;   v.tv = tv;
+<SPAN CLASS="linenum">0032:</SPAN>     <SPAN CLASS="keyword">return</SPAN> v;
+<SPAN CLASS="linenum">0033:</SPAN> }
+<SPAN CLASS="linenum">0034:</SPAN> 
+<SPAN CLASS="linenum">0035:</SPAN> <SPAN CLASS="keyword">inline</SPAN> FONT3DVERTEX InitFont3DVertex( <SPAN CLASS="keyword">const</SPAN> D3DXVECTOR3&amp; p, <SPAN CLASS="keyword">const</SPAN> D3DXVECTOR3&amp; n,
+<SPAN CLASS="linenum">0036:</SPAN>                                       FLOAT tu, FLOAT tv )
+<SPAN CLASS="linenum">0037:</SPAN> {
+<SPAN CLASS="linenum">0038:</SPAN>     FONT3DVERTEX v;   v.p = p;   v.n = n;   v.tu = tu;   v.tv = tv;
+<SPAN CLASS="linenum">0039:</SPAN>     <SPAN CLASS="keyword">return</SPAN> v;
+<SPAN CLASS="linenum">0040:</SPAN> }
+<SPAN CLASS="linenum">0041:</SPAN> 
+<SPAN CLASS="linenum">0042:</SPAN> 
+<SPAN CLASS="linenum">0043:</SPAN> 
+<SPAN CLASS="linenum">0044:</SPAN> 
+<SPAN CLASS="linenum">0045:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0046:</SPAN> <SPAN CLASS="comment">// Name: CD3DFont()</SPAN>
+<SPAN CLASS="linenum">0047:</SPAN> <SPAN CLASS="comment">// Desc: Font class constructor</SPAN>
+<SPAN CLASS="linenum">0048:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0049:</SPAN> CD3DFont::CD3DFont( TCHAR* strFontName, DWORD dwHeight, DWORD dwFlags )
+<SPAN CLASS="linenum">0050:</SPAN> {
+<SPAN CLASS="linenum">0051:</SPAN>     _tcscpy( m_strFontName, strFontName );
+<SPAN CLASS="linenum">0052:</SPAN>     m_dwFontHeight         = dwHeight;
+<SPAN CLASS="linenum">0053:</SPAN>     m_dwFontFlags          = dwFlags;
+<SPAN CLASS="linenum">0054:</SPAN> 
+<SPAN CLASS="linenum">0055:</SPAN>     m_pd3dDevice           = NULL;
+<SPAN CLASS="linenum">0056:</SPAN>     m_pTexture             = NULL;
+<SPAN CLASS="linenum">0057:</SPAN>     m_pVB                  = NULL;
+<SPAN CLASS="linenum">0058:</SPAN> 
+<SPAN CLASS="linenum">0059:</SPAN>     m_dwSavedStateBlock    = 0L;
+<SPAN CLASS="linenum">0060:</SPAN>     m_dwDrawTextStateBlock = 0L;
+<SPAN CLASS="linenum">0061:</SPAN> }
+<SPAN CLASS="linenum">0062:</SPAN> 
+<SPAN CLASS="linenum">0063:</SPAN> 
+<SPAN CLASS="linenum">0064:</SPAN> 
+<SPAN CLASS="linenum">0065:</SPAN> 
+<SPAN CLASS="linenum">0066:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0067:</SPAN> <SPAN CLASS="comment">// Name: ~CD3DFont()</SPAN>
+<SPAN CLASS="linenum">0068:</SPAN> <SPAN CLASS="comment">// Desc: Font class destructor</SPAN>
+<SPAN CLASS="linenum">0069:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0070:</SPAN> CD3DFont::~CD3DFont()
+<SPAN CLASS="linenum">0071:</SPAN> {
+<SPAN CLASS="linenum">0072:</SPAN>     InvalidateDeviceObjects();
+<SPAN CLASS="linenum">0073:</SPAN>     DeleteDeviceObjects();
+<SPAN CLASS="linenum">0074:</SPAN> }
+<SPAN CLASS="linenum">0075:</SPAN> 
+<SPAN CLASS="linenum">0076:</SPAN> 
+<SPAN CLASS="linenum">0077:</SPAN> 
+<SPAN CLASS="linenum">0078:</SPAN> 
+<SPAN CLASS="linenum">0079:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0080:</SPAN> <SPAN CLASS="comment">// Name: InitDeviceObjects()</SPAN>
+<SPAN CLASS="linenum">0081:</SPAN> <SPAN CLASS="comment">// Desc: Initializes device-dependent objects, including the vertex buffer used</SPAN>
+<SPAN CLASS="linenum">0082:</SPAN> <SPAN CLASS="comment">//       for rendering text and the texture map which stores the font image.</SPAN>
+<SPAN CLASS="linenum">0083:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0084:</SPAN> HRESULT CD3DFont::InitDeviceObjects( LPDIRECT3DDEVICE8 pd3dDevice )
+<SPAN CLASS="linenum">0085:</SPAN> {
+<SPAN CLASS="linenum">0086:</SPAN>     HRESULT hr;
+<SPAN CLASS="linenum">0087:</SPAN> 
+<SPAN CLASS="linenum">0088:</SPAN>     <SPAN CLASS="comment">// Keep a local copy of the device</SPAN>
+<SPAN CLASS="linenum">0089:</SPAN>     m_pd3dDevice = pd3dDevice;
+<SPAN CLASS="linenum">0090:</SPAN> 
+<SPAN CLASS="linenum">0091:</SPAN>     <SPAN CLASS="comment">// Establish the font and texture size</SPAN>
+<SPAN CLASS="linenum">0092:</SPAN>     m_fTextScale  = 1.0f; <SPAN CLASS="comment">// Draw fonts into texture without scaling</SPAN>
+<SPAN CLASS="linenum">0093:</SPAN> 
+<SPAN CLASS="linenum">0094:</SPAN>     <SPAN CLASS="comment">// Large fonts need larger textures</SPAN>
+<SPAN CLASS="linenum">0095:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( m_dwFontHeight &gt; 40 )
+<SPAN CLASS="linenum">0096:</SPAN>         m_dwTexWidth = m_dwTexHeight = 1024;
+<SPAN CLASS="linenum">0097:</SPAN>     <SPAN CLASS="keyword">else</SPAN> <SPAN CLASS="keyword">if</SPAN>( m_dwFontHeight &gt; 20 )
+<SPAN CLASS="linenum">0098:</SPAN>         m_dwTexWidth = m_dwTexHeight = 512;
+<SPAN CLASS="linenum">0099:</SPAN>     <SPAN CLASS="keyword">else</SPAN>
+<SPAN CLASS="linenum">0100:</SPAN>         m_dwTexWidth  = m_dwTexHeight = 256;
+<SPAN CLASS="linenum">0101:</SPAN> 
+<SPAN CLASS="linenum">0102:</SPAN>     <SPAN CLASS="comment">// If requested texture is too big, use a smaller texture and smaller font,</SPAN>
+<SPAN CLASS="linenum">0103:</SPAN>     <SPAN CLASS="comment">// and scale up when rendering.</SPAN>
+<SPAN CLASS="linenum">0104:</SPAN>     D3DCAPS8 d3dCaps;
+<SPAN CLASS="linenum">0105:</SPAN>     m_pd3dDevice-&gt;GetDeviceCaps( &amp;d3dCaps );
+<SPAN CLASS="linenum">0106:</SPAN> 
+<SPAN CLASS="linenum">0107:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( m_dwTexWidth &gt; d3dCaps.MaxTextureWidth )
+<SPAN CLASS="linenum">0108:</SPAN>     {
+<SPAN CLASS="linenum">0109:</SPAN>         m_fTextScale = (FLOAT)d3dCaps.MaxTextureWidth / (FLOAT)m_dwTexWidth;
+<SPAN CLASS="linenum">0110:</SPAN>         m_dwTexWidth = m_dwTexHeight = d3dCaps.MaxTextureWidth;
+<SPAN CLASS="linenum">0111:</SPAN>     }
+<SPAN CLASS="linenum">0112:</SPAN> 
+<SPAN CLASS="linenum">0113:</SPAN>     <SPAN CLASS="comment">// Create a new texture for the font</SPAN>
+<SPAN CLASS="linenum">0114:</SPAN>     hr = m_pd3dDevice-&gt;CreateTexture( m_dwTexWidth, m_dwTexHeight, 1,
+<SPAN CLASS="linenum">0115:</SPAN>                                       0, D3DFMT_A4R4G4B4,
+<SPAN CLASS="linenum">0116:</SPAN>                                       D3DPOOL_MANAGED, &amp;m_pTexture );
+<SPAN CLASS="linenum">0117:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( FAILED(hr) )
+<SPAN CLASS="linenum">0118:</SPAN>         <SPAN CLASS="keyword">return</SPAN> hr;
+<SPAN CLASS="linenum">0119:</SPAN> 
+<SPAN CLASS="linenum">0120:</SPAN>     <SPAN CLASS="comment">// Prepare to create a bitmap</SPAN>
+<SPAN CLASS="linenum">0121:</SPAN>     DWORD*      pBitmapBits;
+<SPAN CLASS="linenum">0122:</SPAN>     BITMAPINFO bmi;
+<SPAN CLASS="linenum">0123:</SPAN>     ZeroMemory( &amp;bmi.bmiHeader,  <SPAN CLASS="keyword">sizeof</SPAN>(BITMAPINFOHEADER) );
+<SPAN CLASS="linenum">0124:</SPAN>     bmi.bmiHeader.biSize        = <SPAN CLASS="keyword">sizeof</SPAN>(BITMAPINFOHEADER);
+<SPAN CLASS="linenum">0125:</SPAN>     bmi.bmiHeader.biWidth       =  (<SPAN CLASS="keyword">int</SPAN>)m_dwTexWidth;
+<SPAN CLASS="linenum">0126:</SPAN>     bmi.bmiHeader.biHeight      = -(<SPAN CLASS="keyword">int</SPAN>)m_dwTexHeight;
+<SPAN CLASS="linenum">0127:</SPAN>     bmi.bmiHeader.biPlanes      = 1;
+<SPAN CLASS="linenum">0128:</SPAN>     bmi.bmiHeader.biCompression = BI_RGB;
+<SPAN CLASS="linenum">0129:</SPAN>     bmi.bmiHeader.biBitCount    = 32;
+<SPAN CLASS="linenum">0130:</SPAN> 
+<SPAN CLASS="linenum">0131:</SPAN>     <SPAN CLASS="comment">// Create a DC and a bitmap for the font</SPAN>
+<SPAN CLASS="linenum">0132:</SPAN>     HDC     hDC       = CreateCompatibleDC( NULL );
+<SPAN CLASS="linenum">0133:</SPAN>     HBITMAP hbmBitmap = CreateDIBSection( hDC, &amp;bmi, DIB_RGB_COLORS,
+<SPAN CLASS="linenum">0134:</SPAN>                                           (VOID**)&amp;pBitmapBits, NULL, 0 );
+<SPAN CLASS="linenum">0135:</SPAN>     SetMapMode( hDC, MM_TEXT );
+<SPAN CLASS="linenum">0136:</SPAN> 
+<SPAN CLASS="linenum">0137:</SPAN>     <SPAN CLASS="comment">// Create a font.  By specifying ANTIALIASED_QUALITY, we might get an</SPAN>
+<SPAN CLASS="linenum">0138:</SPAN>     <SPAN CLASS="comment">// antialiased font, but this is not guaranteed.</SPAN>
+<SPAN CLASS="linenum">0139:</SPAN>     INT nHeight    = -MulDiv( m_dwFontHeight, 
+<SPAN CLASS="linenum">0140:</SPAN>         (INT)(GetDeviceCaps(hDC, LOGPIXELSY) * m_fTextScale), 72 );
+<SPAN CLASS="linenum">0141:</SPAN>     DWORD dwBold   = (m_dwFontFlags&amp;D3DFONT_BOLD)   ? FW_BOLD : FW_NORMAL;
+<SPAN CLASS="linenum">0142:</SPAN>     DWORD dwItalic = (m_dwFontFlags&amp;D3DFONT_ITALIC) ? TRUE    : FALSE;
+<SPAN CLASS="linenum">0143:</SPAN>     HFONT hFont    = CreateFont( nHeight, 0, 0, 0, dwBold, dwItalic,
+<SPAN CLASS="linenum">0144:</SPAN>                           FALSE, FALSE, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS,
+<SPAN CLASS="linenum">0145:</SPAN>                           CLIP_DEFAULT_PRECIS, ANTIALIASED_QUALITY,
+<SPAN CLASS="linenum">0146:</SPAN>                           VARIABLE_PITCH, m_strFontName );
+<SPAN CLASS="linenum">0147:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( NULL==hFont )
+<SPAN CLASS="linenum">0148:</SPAN>         <SPAN CLASS="keyword">return</SPAN> E_FAIL;
+<SPAN CLASS="linenum">0149:</SPAN> 
+<SPAN CLASS="linenum">0150:</SPAN>     SelectObject( hDC, hbmBitmap );
+<SPAN CLASS="linenum">0151:</SPAN>     SelectObject( hDC, hFont );
+<SPAN CLASS="linenum">0152:</SPAN> 
+<SPAN CLASS="linenum">0153:</SPAN>     <SPAN CLASS="comment">// Set text properties</SPAN>
+<SPAN CLASS="linenum">0154:</SPAN>     SetTextColor( hDC, RGB(255,255,255) );
+<SPAN CLASS="linenum">0155:</SPAN>     SetBkColor(   hDC, 0x00000000 );
+<SPAN CLASS="linenum">0156:</SPAN>     SetTextAlign( hDC, TA_TOP );
+<SPAN CLASS="linenum">0157:</SPAN> 
+<SPAN CLASS="linenum">0158:</SPAN>     <SPAN CLASS="comment">// Loop through all printable character and output them to the bitmap..</SPAN>
+<SPAN CLASS="linenum">0159:</SPAN>     <SPAN CLASS="comment">// Meanwhile, keep track of the corresponding tex coords for each character.</SPAN>
+<SPAN CLASS="linenum">0160:</SPAN>     DWORD x = 0;
+<SPAN CLASS="linenum">0161:</SPAN>     DWORD y = 0;
+<SPAN CLASS="linenum">0162:</SPAN>     TCHAR str[2] = _T("<SPAN CLASS="string">x</SPAN>");
+<SPAN CLASS="linenum">0163:</SPAN>     SIZE size;
+<SPAN CLASS="linenum">0164:</SPAN> 
+<SPAN CLASS="linenum">0165:</SPAN>     <SPAN CLASS="keyword">for</SPAN>( TCHAR c=32; c&lt;127; c++ )
+<SPAN CLASS="linenum">0166:</SPAN>     {
+<SPAN CLASS="linenum">0167:</SPAN>         str[0] = c;
+<SPAN CLASS="linenum">0168:</SPAN>         GetTextExtentPoint32( hDC, str, 1, &amp;size );
+<SPAN CLASS="linenum">0169:</SPAN> 
+<SPAN CLASS="linenum">0170:</SPAN>         <SPAN CLASS="keyword">if</SPAN>( (DWORD)(x+size.cx+1) &gt; m_dwTexWidth )
+<SPAN CLASS="linenum">0171:</SPAN>         {
+<SPAN CLASS="linenum">0172:</SPAN>             x  = 0;
+<SPAN CLASS="linenum">0173:</SPAN>             y += size.cy+1;
+<SPAN CLASS="linenum">0174:</SPAN>         }
+<SPAN CLASS="linenum">0175:</SPAN> 
+<SPAN CLASS="linenum">0176:</SPAN>         ExtTextOut( hDC, x+0, y+0, ETO_OPAQUE, NULL, str, 1, NULL );
+<SPAN CLASS="linenum">0177:</SPAN> 
+<SPAN CLASS="linenum">0178:</SPAN>         m_fTexCoords[c-32][0] = ((FLOAT)(x+0))/m_dwTexWidth;
+<SPAN CLASS="linenum">0179:</SPAN>         m_fTexCoords[c-32][1] = ((FLOAT)(y+0))/m_dwTexHeight;
+<SPAN CLASS="linenum">0180:</SPAN>         m_fTexCoords[c-32][2] = ((FLOAT)(x+0+size.cx))/m_dwTexWidth;
+<SPAN CLASS="linenum">0181:</SPAN>         m_fTexCoords[c-32][3] = ((FLOAT)(y+0+size.cy))/m_dwTexHeight;
+<SPAN CLASS="linenum">0182:</SPAN> 
+<SPAN CLASS="linenum">0183:</SPAN>         x += size.cx+1;
+<SPAN CLASS="linenum">0184:</SPAN>     }
+<SPAN CLASS="linenum">0185:</SPAN> 
+<SPAN CLASS="linenum">0186:</SPAN>     <SPAN CLASS="comment">// Lock the surface and write the alpha values for the set pixels</SPAN>
+<SPAN CLASS="linenum">0187:</SPAN>     D3DLOCKED_RECT d3dlr;
+<SPAN CLASS="linenum">0188:</SPAN>     m_pTexture-&gt;LockRect( 0, &amp;d3dlr, 0, 0 );
+<SPAN CLASS="linenum">0189:</SPAN>     BYTE* pDstRow = (BYTE*)d3dlr.pBits;
+<SPAN CLASS="linenum">0190:</SPAN>     WORD* pDst16;
+<SPAN CLASS="linenum">0191:</SPAN>     BYTE bAlpha; <SPAN CLASS="comment">// 4-bit measure of pixel intensity</SPAN>
+<SPAN CLASS="linenum">0192:</SPAN> 
+<SPAN CLASS="linenum">0193:</SPAN>     <SPAN CLASS="keyword">for</SPAN>( y=0; y &lt; m_dwTexHeight; y++ )
+<SPAN CLASS="linenum">0194:</SPAN>     {
+<SPAN CLASS="linenum">0195:</SPAN>         pDst16 = (WORD*)pDstRow;
+<SPAN CLASS="linenum">0196:</SPAN>         <SPAN CLASS="keyword">for</SPAN>( x=0; x &lt; m_dwTexWidth; x++ )
+<SPAN CLASS="linenum">0197:</SPAN>         {
+<SPAN CLASS="linenum">0198:</SPAN>             bAlpha = (BYTE)((pBitmapBits[m_dwTexWidth*y + x] &amp; 0xff) &gt;&gt; 4);
+<SPAN CLASS="linenum">0199:</SPAN>             <SPAN CLASS="keyword">if</SPAN> (bAlpha &gt; 0)
+<SPAN CLASS="linenum">0200:</SPAN>             {
+<SPAN CLASS="linenum">0201:</SPAN>                 *pDst16++ = (bAlpha &lt;&lt; 12) | 0x0fff;
+<SPAN CLASS="linenum">0202:</SPAN>             }
+<SPAN CLASS="linenum">0203:</SPAN>             <SPAN CLASS="keyword">else</SPAN>
+<SPAN CLASS="linenum">0204:</SPAN>             {
+<SPAN CLASS="linenum">0205:</SPAN>                 *pDst16++ = 0x0000;
+<SPAN CLASS="linenum">0206:</SPAN>             }
+<SPAN CLASS="linenum">0207:</SPAN>         }
+<SPAN CLASS="linenum">0208:</SPAN>         pDstRow += d3dlr.Pitch;
+<SPAN CLASS="linenum">0209:</SPAN>     }
+<SPAN CLASS="linenum">0210:</SPAN> 
+<SPAN CLASS="linenum">0211:</SPAN>     <SPAN CLASS="comment">// Done updating texture, so clean up used objects</SPAN>
+<SPAN CLASS="linenum">0212:</SPAN>     m_pTexture-&gt;UnlockRect(0);
+<SPAN CLASS="linenum">0213:</SPAN>     DeleteObject( hbmBitmap );
+<SPAN CLASS="linenum">0214:</SPAN>     DeleteDC( hDC );
+<SPAN CLASS="linenum">0215:</SPAN>     DeleteObject( hFont );
+<SPAN CLASS="linenum">0216:</SPAN> 
+<SPAN CLASS="linenum">0217:</SPAN>     <SPAN CLASS="keyword">return</SPAN> S_OK;
+<SPAN CLASS="linenum">0218:</SPAN> }
+<SPAN CLASS="linenum">0219:</SPAN> 
+<SPAN CLASS="linenum">0220:</SPAN> 
+<SPAN CLASS="linenum">0221:</SPAN> 
+<SPAN CLASS="linenum">0222:</SPAN> 
+<SPAN CLASS="linenum">0223:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0224:</SPAN> <SPAN CLASS="comment">// Name: RestoreDeviceObjects()</SPAN>
+<SPAN CLASS="linenum">0225:</SPAN> <SPAN CLASS="comment">// Desc:</SPAN>
+<SPAN CLASS="linenum">0226:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0227:</SPAN> HRESULT CD3DFont::RestoreDeviceObjects()
+<SPAN CLASS="linenum">0228:</SPAN> {
+<SPAN CLASS="linenum">0229:</SPAN>     HRESULT hr;
+<SPAN CLASS="linenum">0230:</SPAN> 
+<SPAN CLASS="linenum">0231:</SPAN>     <SPAN CLASS="comment">// Create vertex buffer for the letters</SPAN>
+<SPAN CLASS="linenum">0232:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( FAILED( hr = m_pd3dDevice-&gt;CreateVertexBuffer( MAX_NUM_VERTICES*<SPAN CLASS="keyword">sizeof</SPAN>(FONT2DVERTEX),
+<SPAN CLASS="linenum">0233:</SPAN>                                                        D3DUSAGE_WRITEONLY | D3DUSAGE_DYNAMIC, 0,
+<SPAN CLASS="linenum">0234:</SPAN>                                                        D3DPOOL_DEFAULT, &amp;m_pVB ) ) )
+<SPAN CLASS="linenum">0235:</SPAN>     {
+<SPAN CLASS="linenum">0236:</SPAN>         <SPAN CLASS="keyword">return</SPAN> hr;
+<SPAN CLASS="linenum">0237:</SPAN>     }
+<SPAN CLASS="linenum">0238:</SPAN> 
+<SPAN CLASS="linenum">0239:</SPAN>     <SPAN CLASS="comment">// Create the state blocks for rendering text</SPAN>
+<SPAN CLASS="linenum">0240:</SPAN>     <SPAN CLASS="keyword">for</SPAN>( UINT which=0; which&lt;2; which++ )
+<SPAN CLASS="linenum">0241:</SPAN>     {
+<SPAN CLASS="linenum">0242:</SPAN>         m_pd3dDevice-&gt;BeginStateBlock();
+<SPAN CLASS="linenum">0243:</SPAN>         m_pd3dDevice-&gt;SetTexture( 0, m_pTexture );
+<SPAN CLASS="linenum">0244:</SPAN> 
+<SPAN CLASS="linenum">0245:</SPAN>         <SPAN CLASS="keyword">if</SPAN> ( D3DFONT_ZENABLE &amp; m_dwFontFlags )
+<SPAN CLASS="linenum">0246:</SPAN>             m_pd3dDevice-&gt;SetRenderState( D3DRS_ZENABLE, TRUE );
+<SPAN CLASS="linenum">0247:</SPAN>         <SPAN CLASS="keyword">else</SPAN>
+<SPAN CLASS="linenum">0248:</SPAN>             m_pd3dDevice-&gt;SetRenderState( D3DRS_ZENABLE, FALSE );
+<SPAN CLASS="linenum">0249:</SPAN> 
+<SPAN CLASS="linenum">0250:</SPAN>         m_pd3dDevice-&gt;SetRenderState( D3DRS_ALPHABLENDENABLE, TRUE );
+<SPAN CLASS="linenum">0251:</SPAN>         m_pd3dDevice-&gt;SetRenderState( D3DRS_SRCBLEND,   D3DBLEND_SRCALPHA );
+<SPAN CLASS="linenum">0252:</SPAN>         m_pd3dDevice-&gt;SetRenderState( D3DRS_DESTBLEND,  D3DBLEND_INVSRCALPHA );
+<SPAN CLASS="linenum">0253:</SPAN>         m_pd3dDevice-&gt;SetRenderState( D3DRS_ALPHATESTENABLE,  TRUE );
+<SPAN CLASS="linenum">0254:</SPAN>         m_pd3dDevice-&gt;SetRenderState( D3DRS_ALPHAREF,         0x08 );
+<SPAN CLASS="linenum">0255:</SPAN>         m_pd3dDevice-&gt;SetRenderState( D3DRS_ALPHAFUNC,  D3DCMP_GREATEREQUAL );
+<SPAN CLASS="linenum">0256:</SPAN>         m_pd3dDevice-&gt;SetRenderState( D3DRS_FILLMODE,   D3DFILL_SOLID );
+<SPAN CLASS="linenum">0257:</SPAN>         m_pd3dDevice-&gt;SetRenderState( D3DRS_CULLMODE,   D3DCULL_CCW );
+<SPAN CLASS="linenum">0258:</SPAN>         m_pd3dDevice-&gt;SetRenderState( D3DRS_STENCILENABLE,    FALSE );
+<SPAN CLASS="linenum">0259:</SPAN>         m_pd3dDevice-&gt;SetRenderState( D3DRS_CLIPPING,         TRUE );
+<SPAN CLASS="linenum">0260:</SPAN>         m_pd3dDevice-&gt;SetRenderState( D3DRS_EDGEANTIALIAS,    FALSE );
+<SPAN CLASS="linenum">0261:</SPAN>         m_pd3dDevice-&gt;SetRenderState( D3DRS_CLIPPLANEENABLE,  FALSE );
+<SPAN CLASS="linenum">0262:</SPAN>         m_pd3dDevice-&gt;SetRenderState( D3DRS_VERTEXBLEND,      FALSE );
+<SPAN CLASS="linenum">0263:</SPAN>         m_pd3dDevice-&gt;SetRenderState( D3DRS_INDEXEDVERTEXBLENDENABLE, FALSE );
+<SPAN CLASS="linenum">0264:</SPAN>         m_pd3dDevice-&gt;SetRenderState( D3DRS_FOGENABLE,        FALSE );
+<SPAN CLASS="linenum">0265:</SPAN>         m_pd3dDevice-&gt;SetTextureStageState( 0, D3DTSS_COLOROP,   D3DTOP_MODULATE );
+<SPAN CLASS="linenum">0266:</SPAN>         m_pd3dDevice-&gt;SetTextureStageState( 0, D3DTSS_COLORARG1, D3DTA_TEXTURE );
+<SPAN CLASS="linenum">0267:</SPAN>         m_pd3dDevice-&gt;SetTextureStageState( 0, D3DTSS_COLORARG2, D3DTA_DIFFUSE );
+<SPAN CLASS="linenum">0268:</SPAN>         m_pd3dDevice-&gt;SetTextureStageState( 0, D3DTSS_ALPHAOP,   D3DTOP_MODULATE );
+<SPAN CLASS="linenum">0269:</SPAN>         m_pd3dDevice-&gt;SetTextureStageState( 0, D3DTSS_ALPHAARG1, D3DTA_TEXTURE );
+<SPAN CLASS="linenum">0270:</SPAN>         m_pd3dDevice-&gt;SetTextureStageState( 0, D3DTSS_ALPHAARG2, D3DTA_DIFFUSE );
+<SPAN CLASS="linenum">0271:</SPAN>         m_pd3dDevice-&gt;SetTextureStageState( 0, D3DTSS_MINFILTER, D3DTEXF_POINT );
+<SPAN CLASS="linenum">0272:</SPAN>         m_pd3dDevice-&gt;SetTextureStageState( 0, D3DTSS_MAGFILTER, D3DTEXF_POINT );
+<SPAN CLASS="linenum">0273:</SPAN>         m_pd3dDevice-&gt;SetTextureStageState( 0, D3DTSS_MIPFILTER, D3DTEXF_NONE );
+<SPAN CLASS="linenum">0274:</SPAN>         m_pd3dDevice-&gt;SetTextureStageState( 0, D3DTSS_TEXCOORDINDEX, 0 );
+<SPAN CLASS="linenum">0275:</SPAN>         m_pd3dDevice-&gt;SetTextureStageState( 0, D3DTSS_TEXTURETRANSFORMFLAGS, D3DTTFF_DISABLE );
+<SPAN CLASS="linenum">0276:</SPAN>         m_pd3dDevice-&gt;SetTextureStageState( 1, D3DTSS_COLOROP,   D3DTOP_DISABLE );
+<SPAN CLASS="linenum">0277:</SPAN>         m_pd3dDevice-&gt;SetTextureStageState( 1, D3DTSS_ALPHAOP,   D3DTOP_DISABLE );
+<SPAN CLASS="linenum">0278:</SPAN> 
+<SPAN CLASS="linenum">0279:</SPAN>         <SPAN CLASS="keyword">if</SPAN>( which==0 )
+<SPAN CLASS="linenum">0280:</SPAN>             m_pd3dDevice-&gt;EndStateBlock( &amp;m_dwSavedStateBlock );
+<SPAN CLASS="linenum">0281:</SPAN>         <SPAN CLASS="keyword">else</SPAN>
+<SPAN CLASS="linenum">0282:</SPAN>             m_pd3dDevice-&gt;EndStateBlock( &amp;m_dwDrawTextStateBlock );
+<SPAN CLASS="linenum">0283:</SPAN>     }
+<SPAN CLASS="linenum">0284:</SPAN> 
+<SPAN CLASS="linenum">0285:</SPAN>     <SPAN CLASS="keyword">return</SPAN> S_OK;
+<SPAN CLASS="linenum">0286:</SPAN> }
+<SPAN CLASS="linenum">0287:</SPAN> 
+<SPAN CLASS="linenum">0288:</SPAN> 
+<SPAN CLASS="linenum">0289:</SPAN> 
+<SPAN CLASS="linenum">0290:</SPAN> 
+<SPAN CLASS="linenum">0291:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0292:</SPAN> <SPAN CLASS="comment">// Name: InvalidateDeviceObjects()</SPAN>
+<SPAN CLASS="linenum">0293:</SPAN> <SPAN CLASS="comment">// Desc: Destroys all device-dependent objects</SPAN>
+<SPAN CLASS="linenum">0294:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0295:</SPAN> HRESULT CD3DFont::InvalidateDeviceObjects()
+<SPAN CLASS="linenum">0296:</SPAN> {
+<SPAN CLASS="linenum">0297:</SPAN>     SAFE_RELEASE( m_pVB );
+<SPAN CLASS="linenum">0298:</SPAN> 
+<SPAN CLASS="linenum">0299:</SPAN>     <SPAN CLASS="comment">// Delete the state blocks</SPAN>
+<SPAN CLASS="linenum">0300:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( m_pd3dDevice )
+<SPAN CLASS="linenum">0301:</SPAN>     {
+<SPAN CLASS="linenum">0302:</SPAN>         <SPAN CLASS="keyword">if</SPAN>( m_dwSavedStateBlock )
+<SPAN CLASS="linenum">0303:</SPAN>             m_pd3dDevice-&gt;DeleteStateBlock( m_dwSavedStateBlock );
+<SPAN CLASS="linenum">0304:</SPAN>         <SPAN CLASS="keyword">if</SPAN>( m_dwDrawTextStateBlock )
+<SPAN CLASS="linenum">0305:</SPAN>             m_pd3dDevice-&gt;DeleteStateBlock( m_dwDrawTextStateBlock );
+<SPAN CLASS="linenum">0306:</SPAN>     }
+<SPAN CLASS="linenum">0307:</SPAN> 
+<SPAN CLASS="linenum">0308:</SPAN>     m_dwSavedStateBlock    = 0L;
+<SPAN CLASS="linenum">0309:</SPAN>     m_dwDrawTextStateBlock = 0L;
+<SPAN CLASS="linenum">0310:</SPAN> 
+<SPAN CLASS="linenum">0311:</SPAN>     <SPAN CLASS="keyword">return</SPAN> S_OK;
+<SPAN CLASS="linenum">0312:</SPAN> }
+<SPAN CLASS="linenum">0313:</SPAN> 
+<SPAN CLASS="linenum">0314:</SPAN> 
+<SPAN CLASS="linenum">0315:</SPAN> 
+<SPAN CLASS="linenum">0316:</SPAN> 
+<SPAN CLASS="linenum">0317:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0318:</SPAN> <SPAN CLASS="comment">// Name: DeleteDeviceObjects()</SPAN>
+<SPAN CLASS="linenum">0319:</SPAN> <SPAN CLASS="comment">// Desc: Destroys all device-dependent objects</SPAN>
+<SPAN CLASS="linenum">0320:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0321:</SPAN> HRESULT CD3DFont::DeleteDeviceObjects()
+<SPAN CLASS="linenum">0322:</SPAN> {
+<SPAN CLASS="linenum">0323:</SPAN>     SAFE_RELEASE( m_pTexture );
+<SPAN CLASS="linenum">0324:</SPAN>     m_pd3dDevice = NULL;
+<SPAN CLASS="linenum">0325:</SPAN> 
+<SPAN CLASS="linenum">0326:</SPAN>     <SPAN CLASS="keyword">return</SPAN> S_OK;
+<SPAN CLASS="linenum">0327:</SPAN> }
+<SPAN CLASS="linenum">0328:</SPAN> 
+<SPAN CLASS="linenum">0329:</SPAN> 
+<SPAN CLASS="linenum">0330:</SPAN> 
+<SPAN CLASS="linenum">0331:</SPAN> 
+<SPAN CLASS="linenum">0332:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0333:</SPAN> <SPAN CLASS="comment">// Name: GetTextExtent()</SPAN>
+<SPAN CLASS="linenum">0334:</SPAN> <SPAN CLASS="comment">// Desc: Get the dimensions of a text string</SPAN>
+<SPAN CLASS="linenum">0335:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0336:</SPAN> HRESULT CD3DFont::GetTextExtent( TCHAR* strText, SIZE* pSize )
+<SPAN CLASS="linenum">0337:</SPAN> {
+<SPAN CLASS="linenum">0338:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( NULL==strText || NULL==pSize )
+<SPAN CLASS="linenum">0339:</SPAN>         <SPAN CLASS="keyword">return</SPAN> E_FAIL;
+<SPAN CLASS="linenum">0340:</SPAN> 
+<SPAN CLASS="linenum">0341:</SPAN>     FLOAT fRowWidth  = 0.0f;
+<SPAN CLASS="linenum">0342:</SPAN>     FLOAT fRowHeight = (m_fTexCoords[0][3]-m_fTexCoords[0][1])*m_dwTexHeight;
+<SPAN CLASS="linenum">0343:</SPAN>     FLOAT fWidth     = 0.0f;
+<SPAN CLASS="linenum">0344:</SPAN>     FLOAT fHeight    = fRowHeight;
+<SPAN CLASS="linenum">0345:</SPAN> 
+<SPAN CLASS="linenum">0346:</SPAN>     <SPAN CLASS="keyword">while</SPAN>( *strText )
+<SPAN CLASS="linenum">0347:</SPAN>     {
+<SPAN CLASS="linenum">0348:</SPAN>         TCHAR c = *strText++;
+<SPAN CLASS="linenum">0349:</SPAN> 
+<SPAN CLASS="linenum">0350:</SPAN>         <SPAN CLASS="keyword">if</SPAN>( c == _T('<SPAN CLASS="string">\n</SPAN>') )
+<SPAN CLASS="linenum">0351:</SPAN>         {
+<SPAN CLASS="linenum">0352:</SPAN>             fRowWidth = 0.0f;
+<SPAN CLASS="linenum">0353:</SPAN>             fHeight  += fRowHeight;
+<SPAN CLASS="linenum">0354:</SPAN>         }
+<SPAN CLASS="linenum">0355:</SPAN>         <SPAN CLASS="keyword">if</SPAN>( c &lt; _T('<SPAN CLASS="string"> </SPAN>') )
+<SPAN CLASS="linenum">0356:</SPAN>             <SPAN CLASS="keyword">continue</SPAN>;
+<SPAN CLASS="linenum">0357:</SPAN> 
+<SPAN CLASS="linenum">0358:</SPAN>         FLOAT tx1 = m_fTexCoords[c-32][0];
+<SPAN CLASS="linenum">0359:</SPAN>         FLOAT tx2 = m_fTexCoords[c-32][2];
+<SPAN CLASS="linenum">0360:</SPAN> 
+<SPAN CLASS="linenum">0361:</SPAN>         fRowWidth += (tx2-tx1)*m_dwTexWidth;
+<SPAN CLASS="linenum">0362:</SPAN> 
+<SPAN CLASS="linenum">0363:</SPAN>         <SPAN CLASS="keyword">if</SPAN>( fRowWidth &gt; fWidth )
+<SPAN CLASS="linenum">0364:</SPAN>             fWidth = fRowWidth;
+<SPAN CLASS="linenum">0365:</SPAN>     }
+<SPAN CLASS="linenum">0366:</SPAN> 
+<SPAN CLASS="linenum">0367:</SPAN>     pSize-&gt;cx = (<SPAN CLASS="keyword">int</SPAN>)fWidth;
+<SPAN CLASS="linenum">0368:</SPAN>     pSize-&gt;cy = (<SPAN CLASS="keyword">int</SPAN>)fHeight;
+<SPAN CLASS="linenum">0369:</SPAN> 
+<SPAN CLASS="linenum">0370:</SPAN>     <SPAN CLASS="keyword">return</SPAN> S_OK;
+<SPAN CLASS="linenum">0371:</SPAN> }
+<SPAN CLASS="linenum">0372:</SPAN> 
+<SPAN CLASS="linenum">0373:</SPAN> 
+<SPAN CLASS="linenum">0374:</SPAN> 
+<SPAN CLASS="linenum">0375:</SPAN> 
+<SPAN CLASS="linenum">0376:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0377:</SPAN> <SPAN CLASS="comment">// Name: DrawTextScaled()</SPAN>
+<SPAN CLASS="linenum">0378:</SPAN> <SPAN CLASS="comment">// Desc: Draws scaled 2D text.  Note that x and y are in viewport coordinates</SPAN>
+<SPAN CLASS="linenum">0379:</SPAN> <SPAN CLASS="comment">//       (ranging from -1 to +1).  fXScale and fYScale are the size fraction </SPAN>
+<SPAN CLASS="linenum">0380:</SPAN> <SPAN CLASS="comment">//       relative to the entire viewport.  For example, a fXScale of 0.25 is</SPAN>
+<SPAN CLASS="linenum">0381:</SPAN> <SPAN CLASS="comment">//       1/8th of the screen width.  This allows you to output text at a fixed</SPAN>
+<SPAN CLASS="linenum">0382:</SPAN> <SPAN CLASS="comment">//       fraction of the viewport, even if the screen or window size changes.</SPAN>
+<SPAN CLASS="linenum">0383:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0384:</SPAN> HRESULT CD3DFont::DrawTextScaled( FLOAT x, FLOAT y, FLOAT z,
+<SPAN CLASS="linenum">0385:</SPAN>                                   FLOAT fXScale, FLOAT fYScale, DWORD dwColor,
+<SPAN CLASS="linenum">0386:</SPAN>                                   TCHAR* strText, DWORD dwFlags )
+<SPAN CLASS="linenum">0387:</SPAN> {
+<SPAN CLASS="linenum">0388:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( m_pd3dDevice == NULL )
+<SPAN CLASS="linenum">0389:</SPAN>         <SPAN CLASS="keyword">return</SPAN> E_FAIL;
+<SPAN CLASS="linenum">0390:</SPAN> 
+<SPAN CLASS="linenum">0391:</SPAN>     <SPAN CLASS="comment">// Set up renderstate</SPAN>
+<SPAN CLASS="linenum">0392:</SPAN>     m_pd3dDevice-&gt;CaptureStateBlock( m_dwSavedStateBlock );
+<SPAN CLASS="linenum">0393:</SPAN>     m_pd3dDevice-&gt;ApplyStateBlock( m_dwDrawTextStateBlock );
+<SPAN CLASS="linenum">0394:</SPAN>     m_pd3dDevice-&gt;SetVertexShader( D3DFVF_FONT2DVERTEX );
+<SPAN CLASS="linenum">0395:</SPAN>     m_pd3dDevice-&gt;SetPixelShader( NULL );
+<SPAN CLASS="linenum">0396:</SPAN>     m_pd3dDevice-&gt;SetStreamSource( 0, m_pVB, <SPAN CLASS="keyword">sizeof</SPAN>(FONT2DVERTEX) );
+<SPAN CLASS="linenum">0397:</SPAN> 
+<SPAN CLASS="linenum">0398:</SPAN>     <SPAN CLASS="comment">// Set filter states</SPAN>
+<SPAN CLASS="linenum">0399:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( dwFlags &amp; D3DFONT_FILTERED )
+<SPAN CLASS="linenum">0400:</SPAN>     {
+<SPAN CLASS="linenum">0401:</SPAN>         m_pd3dDevice-&gt;SetTextureStageState( 0, D3DTSS_MINFILTER, D3DTEXF_LINEAR );
+<SPAN CLASS="linenum">0402:</SPAN>         m_pd3dDevice-&gt;SetTextureStageState( 0, D3DTSS_MAGFILTER, D3DTEXF_LINEAR );
+<SPAN CLASS="linenum">0403:</SPAN>     }
+<SPAN CLASS="linenum">0404:</SPAN> 
+<SPAN CLASS="linenum">0405:</SPAN>     D3DVIEWPORT8 vp;
+<SPAN CLASS="linenum">0406:</SPAN>     m_pd3dDevice-&gt;GetViewport( &amp;vp );
+<SPAN CLASS="linenum">0407:</SPAN>     FLOAT sx  = (x+1.0f)*vp.Width/2;
+<SPAN CLASS="linenum">0408:</SPAN>     FLOAT sy  = (y-1.0f)*vp.Height/2;
+<SPAN CLASS="linenum">0409:</SPAN>     FLOAT sz  = z;
+<SPAN CLASS="linenum">0410:</SPAN>     FLOAT rhw = 1.0f;
+<SPAN CLASS="linenum">0411:</SPAN>     FLOAT fStartX = sx;
+<SPAN CLASS="linenum">0412:</SPAN> 
+<SPAN CLASS="linenum">0413:</SPAN>     FLOAT fLineHeight = ( m_fTexCoords[0][3] - m_fTexCoords[0][1] ) * m_dwTexHeight;
+<SPAN CLASS="linenum">0414:</SPAN> 
+<SPAN CLASS="linenum">0415:</SPAN>     <SPAN CLASS="comment">// Fill vertex buffer</SPAN>
+<SPAN CLASS="linenum">0416:</SPAN>     FONT2DVERTEX* pVertices;
+<SPAN CLASS="linenum">0417:</SPAN>     DWORD         dwNumTriangles = 0L;
+<SPAN CLASS="linenum">0418:</SPAN>     m_pVB-&gt;Lock( 0, 0, (BYTE**)&amp;pVertices, D3DLOCK_DISCARD );
+<SPAN CLASS="linenum">0419:</SPAN> 
+<SPAN CLASS="linenum">0420:</SPAN>     <SPAN CLASS="keyword">while</SPAN>( *strText )
+<SPAN CLASS="linenum">0421:</SPAN>     {
+<SPAN CLASS="linenum">0422:</SPAN>         TCHAR c = *strText++;
+<SPAN CLASS="linenum">0423:</SPAN> 
+<SPAN CLASS="linenum">0424:</SPAN>         <SPAN CLASS="keyword">if</SPAN>( c == _T('<SPAN CLASS="string">\n</SPAN>') )
+<SPAN CLASS="linenum">0425:</SPAN>         {
+<SPAN CLASS="linenum">0426:</SPAN>             sx  = fStartX;
+<SPAN CLASS="linenum">0427:</SPAN>             sy += fYScale*vp.Height;
+<SPAN CLASS="linenum">0428:</SPAN>         }
+<SPAN CLASS="linenum">0429:</SPAN>         <SPAN CLASS="keyword">if</SPAN>( c &lt; _T('<SPAN CLASS="string"> </SPAN>') )
+<SPAN CLASS="linenum">0430:</SPAN>             <SPAN CLASS="keyword">continue</SPAN>;
+<SPAN CLASS="linenum">0431:</SPAN> 
+<SPAN CLASS="linenum">0432:</SPAN>         FLOAT tx1 = m_fTexCoords[c-32][0];
+<SPAN CLASS="linenum">0433:</SPAN>         FLOAT ty1 = m_fTexCoords[c-32][1];
+<SPAN CLASS="linenum">0434:</SPAN>         FLOAT tx2 = m_fTexCoords[c-32][2];
+<SPAN CLASS="linenum">0435:</SPAN>         FLOAT ty2 = m_fTexCoords[c-32][3];
+<SPAN CLASS="linenum">0436:</SPAN> 
+<SPAN CLASS="linenum">0437:</SPAN>         FLOAT w = (tx2-tx1)*m_dwTexWidth;
+<SPAN CLASS="linenum">0438:</SPAN>         FLOAT h = (ty2-ty1)*m_dwTexHeight;
+<SPAN CLASS="linenum">0439:</SPAN> 
+<SPAN CLASS="linenum">0440:</SPAN>         w *= (fXScale*vp.Height)/fLineHeight;
+<SPAN CLASS="linenum">0441:</SPAN>         h *= (fYScale*vp.Height)/fLineHeight;
+<SPAN CLASS="linenum">0442:</SPAN> 
+<SPAN CLASS="linenum">0443:</SPAN>         <SPAN CLASS="keyword">if</SPAN>( c != _T('<SPAN CLASS="string"> </SPAN>') )
+<SPAN CLASS="linenum">0444:</SPAN>         {
+<SPAN CLASS="linenum">0445:</SPAN>             *pVertices++ = InitFont2DVertex( D3DXVECTOR4(sx+0-0.5f,sy+h-0.5f,sz,rhw), dwColor, tx1, ty2 );
+<SPAN CLASS="linenum">0446:</SPAN>             *pVertices++ = InitFont2DVertex( D3DXVECTOR4(sx+0-0.5f,sy+0-0.5f,sz,rhw), dwColor, tx1, ty1 );
+<SPAN CLASS="linenum">0447:</SPAN>             *pVertices++ = InitFont2DVertex( D3DXVECTOR4(sx+w-0.5f,sy+h-0.5f,sz,rhw), dwColor, tx2, ty2 );
+<SPAN CLASS="linenum">0448:</SPAN>             *pVertices++ = InitFont2DVertex( D3DXVECTOR4(sx+w-0.5f,sy+0-0.5f,sz,rhw), dwColor, tx2, ty1 );
+<SPAN CLASS="linenum">0449:</SPAN>             *pVertices++ = InitFont2DVertex( D3DXVECTOR4(sx+w-0.5f,sy+h-0.5f,sz,rhw), dwColor, tx2, ty2 );
+<SPAN CLASS="linenum">0450:</SPAN>             *pVertices++ = InitFont2DVertex( D3DXVECTOR4(sx+0-0.5f,sy+0-0.5f,sz,rhw), dwColor, tx1, ty1 );
+<SPAN CLASS="linenum">0451:</SPAN>             dwNumTriangles += 2;
+<SPAN CLASS="linenum">0452:</SPAN> 
+<SPAN CLASS="linenum">0453:</SPAN>             <SPAN CLASS="keyword">if</SPAN>( dwNumTriangles*3 &gt; (MAX_NUM_VERTICES-6) )
+<SPAN CLASS="linenum">0454:</SPAN>             {
+<SPAN CLASS="linenum">0455:</SPAN>                 <SPAN CLASS="comment">// Unlock, render, and relock the vertex buffer</SPAN>
+<SPAN CLASS="linenum">0456:</SPAN>                 m_pVB-&gt;Unlock();
+<SPAN CLASS="linenum">0457:</SPAN>                 m_pd3dDevice-&gt;DrawPrimitive( D3DPT_TRIANGLELIST, 0, dwNumTriangles );
+<SPAN CLASS="linenum">0458:</SPAN>                 m_pVB-&gt;Lock( 0, 0, (BYTE**)&amp;pVertices, D3DLOCK_DISCARD );
+<SPAN CLASS="linenum">0459:</SPAN>                 dwNumTriangles = 0L;
+<SPAN CLASS="linenum">0460:</SPAN>             }
+<SPAN CLASS="linenum">0461:</SPAN>         }
+<SPAN CLASS="linenum">0462:</SPAN> 
+<SPAN CLASS="linenum">0463:</SPAN>         sx += w;
+<SPAN CLASS="linenum">0464:</SPAN>     }
+<SPAN CLASS="linenum">0465:</SPAN> 
+<SPAN CLASS="linenum">0466:</SPAN>     <SPAN CLASS="comment">// Unlock and render the vertex buffer</SPAN>
+<SPAN CLASS="linenum">0467:</SPAN>     m_pVB-&gt;Unlock();
+<SPAN CLASS="linenum">0468:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( dwNumTriangles &gt; 0 )
+<SPAN CLASS="linenum">0469:</SPAN>         m_pd3dDevice-&gt;DrawPrimitive( D3DPT_TRIANGLELIST, 0, dwNumTriangles );
+<SPAN CLASS="linenum">0470:</SPAN> 
+<SPAN CLASS="linenum">0471:</SPAN>     <SPAN CLASS="comment">// Restore the modified renderstates</SPAN>
+<SPAN CLASS="linenum">0472:</SPAN>     m_pd3dDevice-&gt;ApplyStateBlock( m_dwSavedStateBlock );
+<SPAN CLASS="linenum">0473:</SPAN> 
+<SPAN CLASS="linenum">0474:</SPAN>     <SPAN CLASS="keyword">return</SPAN> S_OK;
+<SPAN CLASS="linenum">0475:</SPAN> }
+<SPAN CLASS="linenum">0476:</SPAN> 
+<SPAN CLASS="linenum">0477:</SPAN> 
+<SPAN CLASS="linenum">0478:</SPAN> 
+<SPAN CLASS="linenum">0479:</SPAN> 
+<SPAN CLASS="linenum">0480:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0481:</SPAN> <SPAN CLASS="comment">// Name: DrawText()</SPAN>
+<SPAN CLASS="linenum">0482:</SPAN> <SPAN CLASS="comment">// Desc: Draws 2D text</SPAN>
+<SPAN CLASS="linenum">0483:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0484:</SPAN> HRESULT CD3DFont::DrawText( FLOAT sx, FLOAT sy, DWORD dwColor,
+<SPAN CLASS="linenum">0485:</SPAN>                             TCHAR* strText, DWORD dwFlags )
+<SPAN CLASS="linenum">0486:</SPAN> {
+<SPAN CLASS="linenum">0487:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( m_pd3dDevice == NULL )
+<SPAN CLASS="linenum">0488:</SPAN>         <SPAN CLASS="keyword">return</SPAN> E_FAIL;
+<SPAN CLASS="linenum">0489:</SPAN> 
+<SPAN CLASS="linenum">0490:</SPAN>     <SPAN CLASS="comment">// Setup renderstate</SPAN>
+<SPAN CLASS="linenum">0491:</SPAN>     m_pd3dDevice-&gt;CaptureStateBlock( m_dwSavedStateBlock );
+<SPAN CLASS="linenum">0492:</SPAN>     m_pd3dDevice-&gt;ApplyStateBlock( m_dwDrawTextStateBlock );
+<SPAN CLASS="linenum">0493:</SPAN>     m_pd3dDevice-&gt;SetVertexShader( D3DFVF_FONT2DVERTEX );
+<SPAN CLASS="linenum">0494:</SPAN>     m_pd3dDevice-&gt;SetPixelShader( NULL );
+<SPAN CLASS="linenum">0495:</SPAN>     m_pd3dDevice-&gt;SetStreamSource( 0, m_pVB, <SPAN CLASS="keyword">sizeof</SPAN>(FONT2DVERTEX) );
+<SPAN CLASS="linenum">0496:</SPAN> 
+<SPAN CLASS="linenum">0497:</SPAN>     <SPAN CLASS="comment">// Set filter states</SPAN>
+<SPAN CLASS="linenum">0498:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( dwFlags &amp; D3DFONT_FILTERED )
+<SPAN CLASS="linenum">0499:</SPAN>     {
+<SPAN CLASS="linenum">0500:</SPAN>         m_pd3dDevice-&gt;SetTextureStageState( 0, D3DTSS_MINFILTER, D3DTEXF_LINEAR );
+<SPAN CLASS="linenum">0501:</SPAN>         m_pd3dDevice-&gt;SetTextureStageState( 0, D3DTSS_MAGFILTER, D3DTEXF_LINEAR );
+<SPAN CLASS="linenum">0502:</SPAN>     }
+<SPAN CLASS="linenum">0503:</SPAN> 
+<SPAN CLASS="linenum">0504:</SPAN>     FLOAT fStartX = sx;
+<SPAN CLASS="linenum">0505:</SPAN> 
+<SPAN CLASS="linenum">0506:</SPAN>     <SPAN CLASS="comment">// Fill vertex buffer</SPAN>
+<SPAN CLASS="linenum">0507:</SPAN>     FONT2DVERTEX* pVertices = NULL;
+<SPAN CLASS="linenum">0508:</SPAN>     DWORD         dwNumTriangles = 0;
+<SPAN CLASS="linenum">0509:</SPAN>     m_pVB-&gt;Lock( 0, 0, (BYTE**)&amp;pVertices, D3DLOCK_DISCARD );
+<SPAN CLASS="linenum">0510:</SPAN> 
+<SPAN CLASS="linenum">0511:</SPAN>     <SPAN CLASS="keyword">while</SPAN>( *strText )
+<SPAN CLASS="linenum">0512:</SPAN>     {
+<SPAN CLASS="linenum">0513:</SPAN>         TCHAR c = *strText++;
+<SPAN CLASS="linenum">0514:</SPAN> 
+<SPAN CLASS="linenum">0515:</SPAN>         <SPAN CLASS="keyword">if</SPAN>( c == _T('<SPAN CLASS="string">\n</SPAN>') )
+<SPAN CLASS="linenum">0516:</SPAN>         {
+<SPAN CLASS="linenum">0517:</SPAN>             sx = fStartX;
+<SPAN CLASS="linenum">0518:</SPAN>             sy += (m_fTexCoords[0][3]-m_fTexCoords[0][1])*m_dwTexHeight;
+<SPAN CLASS="linenum">0519:</SPAN>         }
+<SPAN CLASS="linenum">0520:</SPAN>         <SPAN CLASS="keyword">if</SPAN>( c &lt; _T('<SPAN CLASS="string"> </SPAN>') )
+<SPAN CLASS="linenum">0521:</SPAN>             <SPAN CLASS="keyword">continue</SPAN>;
+<SPAN CLASS="linenum">0522:</SPAN> 
+<SPAN CLASS="linenum">0523:</SPAN>         FLOAT tx1 = m_fTexCoords[c-32][0];
+<SPAN CLASS="linenum">0524:</SPAN>         FLOAT ty1 = m_fTexCoords[c-32][1];
+<SPAN CLASS="linenum">0525:</SPAN>         FLOAT tx2 = m_fTexCoords[c-32][2];
+<SPAN CLASS="linenum">0526:</SPAN>         FLOAT ty2 = m_fTexCoords[c-32][3];
+<SPAN CLASS="linenum">0527:</SPAN> 
+<SPAN CLASS="linenum">0528:</SPAN>         FLOAT w = (tx2-tx1) *  m_dwTexWidth / m_fTextScale;
+<SPAN CLASS="linenum">0529:</SPAN>         FLOAT h = (ty2-ty1) * m_dwTexHeight / m_fTextScale;
+<SPAN CLASS="linenum">0530:</SPAN> 
+<SPAN CLASS="linenum">0531:</SPAN>         <SPAN CLASS="keyword">if</SPAN>( c != _T('<SPAN CLASS="string"> </SPAN>') )
+<SPAN CLASS="linenum">0532:</SPAN>         {
+<SPAN CLASS="linenum">0533:</SPAN>             *pVertices++ = InitFont2DVertex( D3DXVECTOR4(sx+0-0.5f,sy+h-0.5f,0.9f,1.0f), dwColor, tx1, ty2 );
+<SPAN CLASS="linenum">0534:</SPAN>             *pVertices++ = InitFont2DVertex( D3DXVECTOR4(sx+0-0.5f,sy+0-0.5f,0.9f,1.0f), dwColor, tx1, ty1 );
+<SPAN CLASS="linenum">0535:</SPAN>             *pVertices++ = InitFont2DVertex( D3DXVECTOR4(sx+w-0.5f,sy+h-0.5f,0.9f,1.0f), dwColor, tx2, ty2 );
+<SPAN CLASS="linenum">0536:</SPAN>             *pVertices++ = InitFont2DVertex( D3DXVECTOR4(sx+w-0.5f,sy+0-0.5f,0.9f,1.0f), dwColor, tx2, ty1 );
+<SPAN CLASS="linenum">0537:</SPAN>             *pVertices++ = InitFont2DVertex( D3DXVECTOR4(sx+w-0.5f,sy+h-0.5f,0.9f,1.0f), dwColor, tx2, ty2 );
+<SPAN CLASS="linenum">0538:</SPAN>             *pVertices++ = InitFont2DVertex( D3DXVECTOR4(sx+0-0.5f,sy+0-0.5f,0.9f,1.0f), dwColor, tx1, ty1 );
+<SPAN CLASS="linenum">0539:</SPAN>             dwNumTriangles += 2;
+<SPAN CLASS="linenum">0540:</SPAN> 
+<SPAN CLASS="linenum">0541:</SPAN>             <SPAN CLASS="keyword">if</SPAN>( dwNumTriangles*3 &gt; (MAX_NUM_VERTICES-6) )
+<SPAN CLASS="linenum">0542:</SPAN>             {
+<SPAN CLASS="linenum">0543:</SPAN>                 <SPAN CLASS="comment">// Unlock, render, and relock the vertex buffer</SPAN>
+<SPAN CLASS="linenum">0544:</SPAN>                 m_pVB-&gt;Unlock();
+<SPAN CLASS="linenum">0545:</SPAN>                 m_pd3dDevice-&gt;DrawPrimitive( D3DPT_TRIANGLELIST, 0, dwNumTriangles );
+<SPAN CLASS="linenum">0546:</SPAN>                 pVertices = NULL;
+<SPAN CLASS="linenum">0547:</SPAN>                 m_pVB-&gt;Lock( 0, 0, (BYTE**)&amp;pVertices, D3DLOCK_DISCARD );
+<SPAN CLASS="linenum">0548:</SPAN>                 dwNumTriangles = 0L;
+<SPAN CLASS="linenum">0549:</SPAN>             }
+<SPAN CLASS="linenum">0550:</SPAN>         }
+<SPAN CLASS="linenum">0551:</SPAN> 
+<SPAN CLASS="linenum">0552:</SPAN>         sx += w;
+<SPAN CLASS="linenum">0553:</SPAN>     }
+<SPAN CLASS="linenum">0554:</SPAN> 
+<SPAN CLASS="linenum">0555:</SPAN>     <SPAN CLASS="comment">// Unlock and render the vertex buffer</SPAN>
+<SPAN CLASS="linenum">0556:</SPAN>     m_pVB-&gt;Unlock();
+<SPAN CLASS="linenum">0557:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( dwNumTriangles &gt; 0 )
+<SPAN CLASS="linenum">0558:</SPAN>         m_pd3dDevice-&gt;DrawPrimitive( D3DPT_TRIANGLELIST, 0, dwNumTriangles );
+<SPAN CLASS="linenum">0559:</SPAN> 
+<SPAN CLASS="linenum">0560:</SPAN>     <SPAN CLASS="comment">// Restore the modified renderstates</SPAN>
+<SPAN CLASS="linenum">0561:</SPAN>     m_pd3dDevice-&gt;ApplyStateBlock( m_dwSavedStateBlock );
+<SPAN CLASS="linenum">0562:</SPAN> 
+<SPAN CLASS="linenum">0563:</SPAN>     <SPAN CLASS="keyword">return</SPAN> S_OK;
+<SPAN CLASS="linenum">0564:</SPAN> }
+<SPAN CLASS="linenum">0565:</SPAN> 
+<SPAN CLASS="linenum">0566:</SPAN> 
+<SPAN CLASS="linenum">0567:</SPAN> 
+<SPAN CLASS="linenum">0568:</SPAN> 
+<SPAN CLASS="linenum">0569:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0570:</SPAN> <SPAN CLASS="comment">// Name: Render3DText()</SPAN>
+<SPAN CLASS="linenum">0571:</SPAN> <SPAN CLASS="comment">// Desc: Renders 3D text</SPAN>
+<SPAN CLASS="linenum">0572:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0573:</SPAN> HRESULT CD3DFont::Render3DText( TCHAR* strText, DWORD dwFlags )
+<SPAN CLASS="linenum">0574:</SPAN> {
+<SPAN CLASS="linenum">0575:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( m_pd3dDevice == NULL )
+<SPAN CLASS="linenum">0576:</SPAN>         <SPAN CLASS="keyword">return</SPAN> E_FAIL;
+<SPAN CLASS="linenum">0577:</SPAN> 
+<SPAN CLASS="linenum">0578:</SPAN>     <SPAN CLASS="comment">// Setup renderstate</SPAN>
+<SPAN CLASS="linenum">0579:</SPAN>     m_pd3dDevice-&gt;CaptureStateBlock( m_dwSavedStateBlock );
+<SPAN CLASS="linenum">0580:</SPAN>     m_pd3dDevice-&gt;ApplyStateBlock( m_dwDrawTextStateBlock );
+<SPAN CLASS="linenum">0581:</SPAN>     m_pd3dDevice-&gt;SetVertexShader( D3DFVF_FONT3DVERTEX );
+<SPAN CLASS="linenum">0582:</SPAN>     m_pd3dDevice-&gt;SetPixelShader( NULL );
+<SPAN CLASS="linenum">0583:</SPAN>     m_pd3dDevice-&gt;SetStreamSource( 0, m_pVB, <SPAN CLASS="keyword">sizeof</SPAN>(FONT3DVERTEX) );
+<SPAN CLASS="linenum">0584:</SPAN> 
+<SPAN CLASS="linenum">0585:</SPAN>     <SPAN CLASS="comment">// Set filter states</SPAN>
+<SPAN CLASS="linenum">0586:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( dwFlags &amp; D3DFONT_FILTERED )
+<SPAN CLASS="linenum">0587:</SPAN>     {
+<SPAN CLASS="linenum">0588:</SPAN>         m_pd3dDevice-&gt;SetTextureStageState( 0, D3DTSS_MINFILTER, D3DTEXF_LINEAR );
+<SPAN CLASS="linenum">0589:</SPAN>         m_pd3dDevice-&gt;SetTextureStageState( 0, D3DTSS_MAGFILTER, D3DTEXF_LINEAR );
+<SPAN CLASS="linenum">0590:</SPAN>     }
+<SPAN CLASS="linenum">0591:</SPAN> 
+<SPAN CLASS="linenum">0592:</SPAN>     <SPAN CLASS="comment">// Position for each text element</SPAN>
+<SPAN CLASS="linenum">0593:</SPAN>     FLOAT x = 0.0f;
+<SPAN CLASS="linenum">0594:</SPAN>     FLOAT y = 0.0f;
+<SPAN CLASS="linenum">0595:</SPAN> 
+<SPAN CLASS="linenum">0596:</SPAN>     <SPAN CLASS="comment">// Center the text block at the origin</SPAN>
+<SPAN CLASS="linenum">0597:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( dwFlags &amp; D3DFONT_CENTERED )
+<SPAN CLASS="linenum">0598:</SPAN>     {
+<SPAN CLASS="linenum">0599:</SPAN>         SIZE sz;
+<SPAN CLASS="linenum">0600:</SPAN>         GetTextExtent( strText, &amp;sz );
+<SPAN CLASS="linenum">0601:</SPAN>         x = -(((FLOAT)sz.cx)/10.0f)/2.0f;
+<SPAN CLASS="linenum">0602:</SPAN>         y = -(((FLOAT)sz.cy)/10.0f)/2.0f;
+<SPAN CLASS="linenum">0603:</SPAN>     }
+<SPAN CLASS="linenum">0604:</SPAN> 
+<SPAN CLASS="linenum">0605:</SPAN>     <SPAN CLASS="comment">// Turn off culling for two-sided text</SPAN>
+<SPAN CLASS="linenum">0606:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( dwFlags &amp; D3DFONT_TWOSIDED )
+<SPAN CLASS="linenum">0607:</SPAN>         m_pd3dDevice-&gt;SetRenderState( D3DRS_CULLMODE, D3DCULL_NONE );
+<SPAN CLASS="linenum">0608:</SPAN> 
+<SPAN CLASS="linenum">0609:</SPAN>     FLOAT fStartX = x;
+<SPAN CLASS="linenum">0610:</SPAN>     TCHAR c;
+<SPAN CLASS="linenum">0611:</SPAN> 
+<SPAN CLASS="linenum">0612:</SPAN>     <SPAN CLASS="comment">// Fill vertex buffer</SPAN>
+<SPAN CLASS="linenum">0613:</SPAN>     FONT3DVERTEX* pVertices;
+<SPAN CLASS="linenum">0614:</SPAN>     DWORD         dwVertex       = 0L;
+<SPAN CLASS="linenum">0615:</SPAN>     DWORD         dwNumTriangles = 0L;
+<SPAN CLASS="linenum">0616:</SPAN>     m_pVB-&gt;Lock( 0, 0, (BYTE**)&amp;pVertices, D3DLOCK_DISCARD );
+<SPAN CLASS="linenum">0617:</SPAN> 
+<SPAN CLASS="linenum">0618:</SPAN>     <SPAN CLASS="keyword">while</SPAN>( c = *strText++ )
+<SPAN CLASS="linenum">0619:</SPAN>     {
+<SPAN CLASS="linenum">0620:</SPAN>         <SPAN CLASS="keyword">if</SPAN>( c == '<SPAN CLASS="string">\n</SPAN>' )
+<SPAN CLASS="linenum">0621:</SPAN>         {
+<SPAN CLASS="linenum">0622:</SPAN>             x = fStartX;
+<SPAN CLASS="linenum">0623:</SPAN>             y -= (m_fTexCoords[0][3]-m_fTexCoords[0][1])*m_dwTexHeight/10.0f;
+<SPAN CLASS="linenum">0624:</SPAN>         }
+<SPAN CLASS="linenum">0625:</SPAN>         <SPAN CLASS="keyword">if</SPAN>( c &lt; 32 )
+<SPAN CLASS="linenum">0626:</SPAN>             <SPAN CLASS="keyword">continue</SPAN>;
+<SPAN CLASS="linenum">0627:</SPAN> 
+<SPAN CLASS="linenum">0628:</SPAN>         FLOAT tx1 = m_fTexCoords[c-32][0];
+<SPAN CLASS="linenum">0629:</SPAN>         FLOAT ty1 = m_fTexCoords[c-32][1];
+<SPAN CLASS="linenum">0630:</SPAN>         FLOAT tx2 = m_fTexCoords[c-32][2];
+<SPAN CLASS="linenum">0631:</SPAN>         FLOAT ty2 = m_fTexCoords[c-32][3];
+<SPAN CLASS="linenum">0632:</SPAN> 
+<SPAN CLASS="linenum">0633:</SPAN>         FLOAT w = (tx2-tx1) * m_dwTexWidth  / ( 10.0f * m_fTextScale );
+<SPAN CLASS="linenum">0634:</SPAN>         FLOAT h = (ty2-ty1) * m_dwTexHeight / ( 10.0f * m_fTextScale );
+<SPAN CLASS="linenum">0635:</SPAN> 
+<SPAN CLASS="linenum">0636:</SPAN>         <SPAN CLASS="keyword">if</SPAN>( c != _T('<SPAN CLASS="string"> </SPAN>') )
+<SPAN CLASS="linenum">0637:</SPAN>         {
+<SPAN CLASS="linenum">0638:</SPAN>             *pVertices++ = InitFont3DVertex( D3DXVECTOR3(x+0,y+0,0), D3DXVECTOR3(0,0,-1), tx1, ty2 );
+<SPAN CLASS="linenum">0639:</SPAN>             *pVertices++ = InitFont3DVertex( D3DXVECTOR3(x+0,y+h,0), D3DXVECTOR3(0,0,-1), tx1, ty1 );
+<SPAN CLASS="linenum">0640:</SPAN>             *pVertices++ = InitFont3DVertex( D3DXVECTOR3(x+w,y+0,0), D3DXVECTOR3(0,0,-1), tx2, ty2 );
+<SPAN CLASS="linenum">0641:</SPAN>             *pVertices++ = InitFont3DVertex( D3DXVECTOR3(x+w,y+h,0), D3DXVECTOR3(0,0,-1), tx2, ty1 );
+<SPAN CLASS="linenum">0642:</SPAN>             *pVertices++ = InitFont3DVertex( D3DXVECTOR3(x+w,y+0,0), D3DXVECTOR3(0,0,-1), tx2, ty2 );
+<SPAN CLASS="linenum">0643:</SPAN>             *pVertices++ = InitFont3DVertex( D3DXVECTOR3(x+0,y+h,0), D3DXVECTOR3(0,0,-1), tx1, ty1 );
+<SPAN CLASS="linenum">0644:</SPAN>             dwNumTriangles += 2;
+<SPAN CLASS="linenum">0645:</SPAN> 
+<SPAN CLASS="linenum">0646:</SPAN>             <SPAN CLASS="keyword">if</SPAN>( dwNumTriangles*3 &gt; (MAX_NUM_VERTICES-6) )
+<SPAN CLASS="linenum">0647:</SPAN>             {
+<SPAN CLASS="linenum">0648:</SPAN>                 <SPAN CLASS="comment">// Unlock, render, and relock the vertex buffer</SPAN>
+<SPAN CLASS="linenum">0649:</SPAN>                 m_pVB-&gt;Unlock();
+<SPAN CLASS="linenum">0650:</SPAN>                 m_pd3dDevice-&gt;DrawPrimitive( D3DPT_TRIANGLELIST, 0, dwNumTriangles );
+<SPAN CLASS="linenum">0651:</SPAN>                 m_pVB-&gt;Lock( 0, 0, (BYTE**)&amp;pVertices, D3DLOCK_DISCARD );
+<SPAN CLASS="linenum">0652:</SPAN>                 dwNumTriangles = 0L;
+<SPAN CLASS="linenum">0653:</SPAN>             }
+<SPAN CLASS="linenum">0654:</SPAN>         }
+<SPAN CLASS="linenum">0655:</SPAN> 
+<SPAN CLASS="linenum">0656:</SPAN>         x += w;
+<SPAN CLASS="linenum">0657:</SPAN>     }
+<SPAN CLASS="linenum">0658:</SPAN> 
+<SPAN CLASS="linenum">0659:</SPAN>     <SPAN CLASS="comment">// Unlock and render the vertex buffer</SPAN>
+<SPAN CLASS="linenum">0660:</SPAN>     m_pVB-&gt;Unlock();
+<SPAN CLASS="linenum">0661:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( dwNumTriangles &gt; 0 )
+<SPAN CLASS="linenum">0662:</SPAN>         m_pd3dDevice-&gt;DrawPrimitive( D3DPT_TRIANGLELIST, 0, dwNumTriangles );
+<SPAN CLASS="linenum">0663:</SPAN> 
+<SPAN CLASS="linenum">0664:</SPAN>     <SPAN CLASS="comment">// Restore the modified renderstates</SPAN>
+<SPAN CLASS="linenum">0665:</SPAN>     m_pd3dDevice-&gt;ApplyStateBlock( m_dwSavedStateBlock );
+<SPAN CLASS="linenum">0666:</SPAN> 
+<SPAN CLASS="linenum">0667:</SPAN>     <SPAN CLASS="keyword">return</SPAN> S_OK;
+<SPAN CLASS="linenum">0668:</SPAN> }
+<SPAN CLASS="linenum">0669:</SPAN> 
+<SPAN CLASS="linenum">0670:</SPAN> 
+<SPAN CLASS="linenum">0671:</SPAN> 
+<SPAN CLASS="linenum">0672:</SPAN> 
+<SPAN CLASS="linenum">0673:</SPAN> </PRE>
+</BODY>
+</HTML>

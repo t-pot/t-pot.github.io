@@ -1,0 +1,39 @@
+<HTML>
+<HEAD>
+<TITLE>ps.psh</TITLE>
+<meta name="GENERATOR" content="vsh2html 1.0 by Niisaka">
+<meta http-equiv="Content-Type" content="text/html">
+<meta http-equiv="Content-Style-Type" content="text/css">
+<STYLE TYPE="text/css">
+<!--
+SPAN.comment { color:#008000; font-weight:normal; font-style:normal;}
+SPAN.linenum { color:#A0A0A0; font-weight:normal; font-style:normal;}
+-->
+</STYLE>
+</HEAD>
+<BODY TEXT="#000000" BGCOLOR="#FFFFFF">
+<PRE><SPAN CLASS="linenum">0001:</SPAN> <SPAN CLASS="comment">; focus.psh</SPAN>
+<SPAN CLASS="linenum">0002:</SPAN> <SPAN CLASS="comment">;</SPAN>
+<SPAN CLASS="linenum">0003:</SPAN> 
+<SPAN CLASS="linenum">0004:</SPAN> ps.1.0
+<SPAN CLASS="linenum">0005:</SPAN> 
+<SPAN CLASS="linenum">0006:</SPAN> def c0, 0.0f,   0.0f,   0.0f,   0.2f
+<SPAN CLASS="linenum">0007:</SPAN> def c1, 0.299f, 0.587f, 0.114f,1.000f  <SPAN CLASS="comment">; v = 0.299*R + 0.587*G + 0.114*G</SPAN>
+<SPAN CLASS="linenum">0008:</SPAN> 
+<SPAN CLASS="linenum">0009:</SPAN> <SPAN CLASS="comment">; テクスチャーの色を引っ張ってくる</SPAN>
+<SPAN CLASS="linenum">0010:</SPAN> tex t0                              <SPAN CLASS="comment">; ツゥーンテクスチャー</SPAN>
+<SPAN CLASS="linenum">0011:</SPAN> tex t1                              <SPAN CLASS="comment">; トーンテクスチャー</SPAN>
+<SPAN CLASS="linenum">0012:</SPAN> 
+<SPAN CLASS="linenum">0013:</SPAN> mul r1, t0, v0                      <SPAN CLASS="comment">; ツゥーンシェーディング</SPAN>
+<SPAN CLASS="linenum">0014:</SPAN> 
+<SPAN CLASS="linenum">0015:</SPAN> dp3 r0.rgba, t0, c1
+<SPAN CLASS="linenum">0016:</SPAN> mov r0.rgb,  t1
+<SPAN CLASS="linenum">0017:</SPAN> 
+<SPAN CLASS="linenum">0018:</SPAN> add r0.a, r0, -c0                   <SPAN CLASS="comment">; 切断色を調整する</SPAN>
+<SPAN CLASS="linenum">0019:</SPAN> 
+<SPAN CLASS="linenum">0020:</SPAN> cnd r0, r0.a, c1.aaa, r0            <SPAN CLASS="comment">; (0.5 &lt; 色の強さ-c12.a) ? 1 ? トーンテクスチャー</SPAN>
+<SPAN CLASS="linenum">0021:</SPAN> 
+<SPAN CLASS="linenum">0022:</SPAN> mul r0, r0, r1
+<SPAN CLASS="linenum">0023:</SPAN> </PRE>
+</BODY>
+</HTML>

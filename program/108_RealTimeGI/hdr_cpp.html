@@ -1,0 +1,495 @@
+<HTML>
+<HEAD>
+<TITLE>hdr.cpp</TITLE>
+<meta name="GENERATOR" content="cpp2html 2.1 by Niisaka">
+<meta http-equiv="Content-Type" content="text/html">
+<meta http-equiv="Content-Style-Type" content="text/css">
+<STYLE TYPE="text/css">
+<!--
+SPAN.comment { color:#008000; font-weight:normal; font-style:normal;}
+SPAN.keyword { color:#0000FF; font-weight:normal; font-style:normal;}
+SPAN.string { color:#600000; font-weight:normal; font-style:normal;}
+SPAN.linenum { color:#A0A0A0; font-weight:normal; font-style:normal;}
+-->
+</STYLE>
+</HEAD>
+<BODY TEXT="#000000" BGCOLOR="#FFFFFF">
+<PRE><SPAN CLASS="linenum">0001:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0002:</SPAN> <SPAN CLASS="comment">// File: main.cpp</SPAN>
+<SPAN CLASS="linenum">0003:</SPAN> <SPAN CLASS="comment">//</SPAN>
+<SPAN CLASS="linenum">0004:</SPAN> <SPAN CLASS="comment">// Desc: RADIANCE Picture File Format の読み込み</SPAN>
+<SPAN CLASS="linenum">0005:</SPAN> <SPAN CLASS="comment">// Copyright (c) 2003 IMAGIRE Takashi. All rights reserved.</SPAN>
+<SPAN CLASS="linenum">0006:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0007:</SPAN> <SPAN CLASS="keyword">#define</SPAN> STRICT
+<SPAN CLASS="linenum">0008:</SPAN> <SPAN CLASS="keyword">#include</SPAN> &lt;stdio.h&gt;
+<SPAN CLASS="linenum">0009:</SPAN> <SPAN CLASS="keyword">#include</SPAN> "<SPAN CLASS="string">hdr.h</SPAN>"
+<SPAN CLASS="linenum">0010:</SPAN> 
+<SPAN CLASS="linenum">0011:</SPAN> 
+<SPAN CLASS="linenum">0012:</SPAN> 
+<SPAN CLASS="linenum">0013:</SPAN> <SPAN CLASS="keyword">namespace</SPAN> HDR{
+<SPAN CLASS="linenum">0014:</SPAN> 
+<SPAN CLASS="linenum">0015:</SPAN> <SPAN CLASS="keyword">#define</SPAN>  COLXS      128     <SPAN CLASS="comment">// 指数の基準値(指数がこの値の時にはRGBの色そのもの)</SPAN>
+<SPAN CLASS="linenum">0016:</SPAN> <SPAN CLASS="keyword">#define</SPAN> MAXGSHIFT   31      <SPAN CLASS="comment">// ガンマテーブルのための最大シフト</SPAN>
+<SPAN CLASS="linenum">0017:</SPAN> <SPAN CLASS="keyword">static</SPAN> BYTE *g_mant = NULL, *g_nexp = NULL;
+<SPAN CLASS="linenum">0018:</SPAN> <SPAN CLASS="keyword">static</SPAN> BYTE (*g_bval)[256] = NULL;
+<SPAN CLASS="linenum">0019:</SPAN> 
+<SPAN CLASS="linenum">0020:</SPAN> 
+<SPAN CLASS="linenum">0021:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0022:</SPAN> <SPAN CLASS="comment">// 色情報</SPAN>
+<SPAN CLASS="linenum">0023:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0024:</SPAN> <SPAN CLASS="keyword">typedef</SPAN> BYTE  COLR[4];      <SPAN CLASS="comment">/* RGBE */</SPAN>
+<SPAN CLASS="linenum">0025:</SPAN> <SPAN CLASS="keyword">#define</SPAN>  RED        0
+<SPAN CLASS="linenum">0026:</SPAN> <SPAN CLASS="keyword">#define</SPAN>  GRN        1
+<SPAN CLASS="linenum">0027:</SPAN> <SPAN CLASS="keyword">#define</SPAN>  BLU        2
+<SPAN CLASS="linenum">0028:</SPAN> <SPAN CLASS="keyword">#define</SPAN>  EXP        3
+<SPAN CLASS="linenum">0029:</SPAN> 
+<SPAN CLASS="linenum">0030:</SPAN> 
+<SPAN CLASS="linenum">0031:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0032:</SPAN> <SPAN CLASS="comment">// ヘッダから読み取る情報</SPAN>
+<SPAN CLASS="linenum">0033:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0034:</SPAN> <SPAN CLASS="keyword">typedef</SPAN> <SPAN CLASS="keyword">struct</SPAN>{
+<SPAN CLASS="linenum">0035:</SPAN>     <SPAN CLASS="keyword">char</SPAN>    mn[64]; <SPAN CLASS="comment">// magic number (#?の後、"RADIANCE"にのみ対応)</SPAN>
+<SPAN CLASS="linenum">0036:</SPAN>     <SPAN CLASS="keyword">char</SPAN>    fs[64]; <SPAN CLASS="comment">// フォーマット</SPAN>
+<SPAN CLASS="linenum">0037:</SPAN>     <SPAN CLASS="keyword">double</SPAN>  xp;     <SPAN CLASS="comment">// 露光時間</SPAN>
+<SPAN CLASS="linenum">0038:</SPAN>     <SPAN CLASS="keyword">int</SPAN>     x;      <SPAN CLASS="comment">// 幅</SPAN>
+<SPAN CLASS="linenum">0039:</SPAN>     <SPAN CLASS="keyword">int</SPAN>     y;      <SPAN CLASS="comment">// 高さ</SPAN>
+<SPAN CLASS="linenum">0040:</SPAN>     <SPAN CLASS="keyword">unsigned</SPAN> <SPAN CLASS="keyword">char</SPAN> or;<SPAN CLASS="comment">// フラグ</SPAN>
+<SPAN CLASS="linenum">0041:</SPAN>     <SPAN CLASS="keyword">int</SPAN>     sl;     <SPAN CLASS="comment">// スキャンライン長さ</SPAN>
+<SPAN CLASS="linenum">0042:</SPAN>     <SPAN CLASS="keyword">int</SPAN>     ns;     <SPAN CLASS="comment">// スキャンライン幅</SPAN>
+<SPAN CLASS="linenum">0043:</SPAN> }Info;
+<SPAN CLASS="linenum">0044:</SPAN> 
+<SPAN CLASS="linenum">0045:</SPAN> <SPAN CLASS="comment">// スキャンラインの順番のためのフラグ</SPAN>
+<SPAN CLASS="linenum">0046:</SPAN> <SPAN CLASS="keyword">#define</SPAN>  XDECR          1   <SPAN CLASS="comment">// 負の方向に伸びるかどうか</SPAN>
+<SPAN CLASS="linenum">0047:</SPAN> <SPAN CLASS="keyword">#define</SPAN>  YDECR          2   <SPAN CLASS="comment">// 負の方向に伸びるかどうか </SPAN>
+<SPAN CLASS="linenum">0048:</SPAN> <SPAN CLASS="keyword">#define</SPAN>  YMAJOR         4   <SPAN CLASS="comment">// 列と行のどちらが優先か</SPAN>
+<SPAN CLASS="linenum">0049:</SPAN> 
+<SPAN CLASS="linenum">0050:</SPAN> <SPAN CLASS="keyword">#define</SPAN>  MINELEN    8       <SPAN CLASS="comment">// 最小画像解像度</SPAN>
+<SPAN CLASS="linenum">0051:</SPAN> <SPAN CLASS="keyword">#define</SPAN>  MAXELEN    0x7fff  <SPAN CLASS="comment">// 最大画像解像度</SPAN>
+<SPAN CLASS="linenum">0052:</SPAN> 
+<SPAN CLASS="linenum">0053:</SPAN> <SPAN CLASS="comment">// 標準的な並び順</SPAN>
+<SPAN CLASS="linenum">0054:</SPAN> <SPAN CLASS="keyword">#define</SPAN>  PIXSTANDARD        (YMAJOR|YDECR)
+<SPAN CLASS="linenum">0055:</SPAN> <SPAN CLASS="keyword">#define</SPAN>  PIXSTDFMT      "<SPAN CLASS="string">-Y %d +X %d\n</SPAN>"
+<SPAN CLASS="linenum">0056:</SPAN> 
+<SPAN CLASS="linenum">0057:</SPAN> 
+<SPAN CLASS="linenum">0058:</SPAN> 
+<SPAN CLASS="linenum">0059:</SPAN> 
+<SPAN CLASS="linenum">0060:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0061:</SPAN> <SPAN CLASS="comment">// Name: s_RemoveCRCF()</SPAN>
+<SPAN CLASS="linenum">0062:</SPAN> <SPAN CLASS="comment">// Desc: 余分な改行を取り除く</SPAN>
+<SPAN CLASS="linenum">0063:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0064:</SPAN> <SPAN CLASS="keyword">void</SPAN> s_RemoveCRCF(<SPAN CLASS="keyword">char</SPAN> *p)
+<SPAN CLASS="linenum">0065:</SPAN> {
+<SPAN CLASS="linenum">0066:</SPAN>     <SPAN CLASS="keyword">int</SPAN> len;
+<SPAN CLASS="linenum">0067:</SPAN> 
+<SPAN CLASS="linenum">0068:</SPAN>     <SPAN CLASS="keyword">for</SPAN>(len = strlen(p)-1; 0&lt;=len; len--)
+<SPAN CLASS="linenum">0069:</SPAN>     {
+<SPAN CLASS="linenum">0070:</SPAN>         <SPAN CLASS="keyword">if</SPAN>( p[len]!='<SPAN CLASS="string">\r</SPAN>' &amp;&amp; p[len]!='<SPAN CLASS="string">\n</SPAN>' ) <SPAN CLASS="keyword">break</SPAN>;
+<SPAN CLASS="linenum">0071:</SPAN>         p[len] = '<SPAN CLASS="string">\0</SPAN>';
+<SPAN CLASS="linenum">0072:</SPAN>     }
+<SPAN CLASS="linenum">0073:</SPAN> }
+<SPAN CLASS="linenum">0074:</SPAN> 
+<SPAN CLASS="linenum">0075:</SPAN> 
+<SPAN CLASS="linenum">0076:</SPAN> 
+<SPAN CLASS="linenum">0077:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0078:</SPAN> <SPAN CLASS="comment">// Name: s_ValData()</SPAN>
+<SPAN CLASS="linenum">0079:</SPAN> <SPAN CLASS="comment">// Desc: データの評価</SPAN>
+<SPAN CLASS="linenum">0080:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0081:</SPAN> <SPAN CLASS="keyword">void</SPAN> s_ValData(Info *r, <SPAN CLASS="keyword">const</SPAN> <SPAN CLASS="keyword">char</SPAN>  *s)
+<SPAN CLASS="linenum">0082:</SPAN> {
+<SPAN CLASS="linenum">0083:</SPAN>     <SPAN CLASS="keyword">if</SPAN>(0 == strncmp(s, "<SPAN CLASS="string">#?</SPAN>", 2))
+<SPAN CLASS="linenum">0084:</SPAN>     {<SPAN CLASS="comment">// マジックナンバー</SPAN>
+<SPAN CLASS="linenum">0085:</SPAN>         strcat(r-&gt;mn, s+2);
+<SPAN CLASS="linenum">0086:</SPAN>         s_RemoveCRCF(r-&gt;mn);
+<SPAN CLASS="linenum">0087:</SPAN>     }
+<SPAN CLASS="linenum">0088:</SPAN>     <SPAN CLASS="keyword">else</SPAN> <SPAN CLASS="keyword">if</SPAN>(0 == strncmp(s, "<SPAN CLASS="string">FORMAT=</SPAN>", 7))
+<SPAN CLASS="linenum">0089:</SPAN>     {<SPAN CLASS="comment">// フォーマット</SPAN>
+<SPAN CLASS="linenum">0090:</SPAN>         strcat(r-&gt;fs, s+7);
+<SPAN CLASS="linenum">0091:</SPAN>         s_RemoveCRCF(r-&gt;fs);
+<SPAN CLASS="linenum">0092:</SPAN>     }
+<SPAN CLASS="linenum">0093:</SPAN> }
+<SPAN CLASS="linenum">0094:</SPAN> 
+<SPAN CLASS="linenum">0095:</SPAN> 
+<SPAN CLASS="linenum">0096:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0097:</SPAN> <SPAN CLASS="comment">// Name: s_GetHeader()</SPAN>
+<SPAN CLASS="linenum">0098:</SPAN> <SPAN CLASS="comment">// Desc: ヘッダの読み込み</SPAN>
+<SPAN CLASS="linenum">0099:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0100:</SPAN> <SPAN CLASS="keyword">int</SPAN> s_GetHeader(FILE  *fp, Info *cp)
+<SPAN CLASS="linenum">0101:</SPAN> {
+<SPAN CLASS="linenum">0102:</SPAN>     <SPAN CLASS="keyword">const</SPAN> <SPAN CLASS="keyword">int</SPAN> MAXLINE = 512;
+<SPAN CLASS="linenum">0103:</SPAN>     <SPAN CLASS="keyword">char</SPAN>  buf[MAXLINE];
+<SPAN CLASS="linenum">0104:</SPAN> 
+<SPAN CLASS="linenum">0105:</SPAN>     <SPAN CLASS="keyword">for</SPAN> ( ; ; ) {
+<SPAN CLASS="linenum">0106:</SPAN>         buf[MAXLINE-2] = '<SPAN CLASS="string">\n</SPAN>';
+<SPAN CLASS="linenum">0107:</SPAN>         <SPAN CLASS="keyword">if</SPAN> (fgets(buf, MAXLINE, fp) == NULL) <SPAN CLASS="keyword">return</SPAN>(-1);
+<SPAN CLASS="linenum">0108:</SPAN> 
+<SPAN CLASS="linenum">0109:</SPAN>         <SPAN CLASS="keyword">if</SPAN> (buf[0] == '<SPAN CLASS="string">\n</SPAN>') <SPAN CLASS="keyword">return</SPAN>(0);
+<SPAN CLASS="linenum">0110:</SPAN>         <SPAN CLASS="keyword">if</SPAN> (buf[0] == '<SPAN CLASS="string">\r</SPAN>' &amp;&amp; buf[1] == '<SPAN CLASS="string">\n</SPAN>') <SPAN CLASS="keyword">return</SPAN>(0);
+<SPAN CLASS="linenum">0111:</SPAN> 
+<SPAN CLASS="linenum">0112:</SPAN>         <SPAN CLASS="keyword">if</SPAN> (buf[MAXLINE-2] != '<SPAN CLASS="string">\n</SPAN>') {
+<SPAN CLASS="linenum">0113:</SPAN>             <SPAN CLASS="comment">// バイナリデータになったときには、元に戻す</SPAN>
+<SPAN CLASS="linenum">0114:</SPAN>             buf[MAXLINE-2] = '<SPAN CLASS="string">\0</SPAN>';
+<SPAN CLASS="linenum">0115:</SPAN>         }
+<SPAN CLASS="linenum">0116:</SPAN>         s_ValData(cp, buf);
+<SPAN CLASS="linenum">0117:</SPAN>     }
+<SPAN CLASS="linenum">0118:</SPAN> }
+<SPAN CLASS="linenum">0119:</SPAN> 
+<SPAN CLASS="linenum">0120:</SPAN> 
+<SPAN CLASS="linenum">0121:</SPAN> 
+<SPAN CLASS="linenum">0122:</SPAN> 
+<SPAN CLASS="linenum">0123:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0124:</SPAN> <SPAN CLASS="comment">// Name: s_Str2Resolu()</SPAN>
+<SPAN CLASS="linenum">0125:</SPAN> <SPAN CLASS="comment">// Desc: 文字列 s から解像度を抽出する</SPAN>
+<SPAN CLASS="linenum">0126:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0127:</SPAN> <SPAN CLASS="keyword">int</SPAN> s_Str2Resolu( Info *r, <SPAN CLASS="keyword">const</SPAN> <SPAN CLASS="keyword">char</SPAN> *s )
+<SPAN CLASS="linenum">0128:</SPAN> {
+<SPAN CLASS="linenum">0129:</SPAN>     <SPAN CLASS="keyword">const</SPAN> <SPAN CLASS="keyword">char</SPAN>  *xndx = NULL; <SPAN CLASS="comment">// 'X' の値が始まる場所</SPAN>
+<SPAN CLASS="linenum">0130:</SPAN>     <SPAN CLASS="keyword">const</SPAN> <SPAN CLASS="keyword">char</SPAN>  *yndx = NULL; <SPAN CLASS="comment">// 'Y' の値が始まる場所</SPAN>
+<SPAN CLASS="linenum">0131:</SPAN>     <SPAN CLASS="keyword">const</SPAN> <SPAN CLASS="keyword">char</SPAN>  *cp;
+<SPAN CLASS="linenum">0132:</SPAN> 
+<SPAN CLASS="linenum">0133:</SPAN>     <SPAN CLASS="keyword">if</SPAN> (s == NULL) <SPAN CLASS="keyword">return</SPAN>(0);
+<SPAN CLASS="linenum">0134:</SPAN> 
+<SPAN CLASS="linenum">0135:</SPAN>     <SPAN CLASS="comment">// X や Y の始まる位置を調べる</SPAN>
+<SPAN CLASS="linenum">0136:</SPAN>     <SPAN CLASS="keyword">for</SPAN> (cp = s; *cp; cp++){
+<SPAN CLASS="linenum">0137:</SPAN>         <SPAN CLASS="keyword">if</SPAN> (*cp == '<SPAN CLASS="string">X</SPAN>'){
+<SPAN CLASS="linenum">0138:</SPAN>             xndx = cp;
+<SPAN CLASS="linenum">0139:</SPAN>         }<SPAN CLASS="keyword">else</SPAN> <SPAN CLASS="keyword">if</SPAN> (*cp == '<SPAN CLASS="string">Y</SPAN>'){
+<SPAN CLASS="linenum">0140:</SPAN>             yndx = cp;
+<SPAN CLASS="linenum">0141:</SPAN>         }
+<SPAN CLASS="linenum">0142:</SPAN>     }
+<SPAN CLASS="linenum">0143:</SPAN>     
+<SPAN CLASS="linenum">0144:</SPAN>     <SPAN CLASS="comment">// 両方の文字列が入っていないと正しいものではない。</SPAN>
+<SPAN CLASS="linenum">0145:</SPAN>     <SPAN CLASS="keyword">if</SPAN> (xndx == NULL || yndx == NULL) <SPAN CLASS="keyword">return</SPAN>(0);
+<SPAN CLASS="linenum">0146:</SPAN>     
+<SPAN CLASS="linenum">0147:</SPAN>     <SPAN CLASS="comment">// フラグの確認</SPAN>
+<SPAN CLASS="linenum">0148:</SPAN>     r-&gt;or = 0;
+<SPAN CLASS="linenum">0149:</SPAN>     <SPAN CLASS="keyword">if</SPAN> (xndx &gt; yndx) r-&gt;or |= YMAJOR;
+<SPAN CLASS="linenum">0150:</SPAN>     <SPAN CLASS="keyword">if</SPAN> (xndx[-1] == '<SPAN CLASS="string">-</SPAN>') r-&gt;or |= XDECR;
+<SPAN CLASS="linenum">0151:</SPAN>     <SPAN CLASS="keyword">if</SPAN> (yndx[-1] == '<SPAN CLASS="string">-</SPAN>') r-&gt;or |= YDECR;
+<SPAN CLASS="linenum">0152:</SPAN> 
+<SPAN CLASS="linenum">0153:</SPAN>     <SPAN CLASS="comment">// 値の所得</SPAN>
+<SPAN CLASS="linenum">0154:</SPAN>     <SPAN CLASS="keyword">if</SPAN> ((r-&gt;x = atoi(xndx+1)) &lt;= 0) <SPAN CLASS="keyword">return</SPAN>(0);
+<SPAN CLASS="linenum">0155:</SPAN>     <SPAN CLASS="keyword">if</SPAN> ((r-&gt;y = atoi(yndx+1)) &lt;= 0) <SPAN CLASS="keyword">return</SPAN>(0);
+<SPAN CLASS="linenum">0156:</SPAN> 
+<SPAN CLASS="linenum">0157:</SPAN>     <SPAN CLASS="keyword">return</SPAN>(1);
+<SPAN CLASS="linenum">0158:</SPAN> }
+<SPAN CLASS="linenum">0159:</SPAN> 
+<SPAN CLASS="linenum">0160:</SPAN> 
+<SPAN CLASS="linenum">0161:</SPAN> 
+<SPAN CLASS="linenum">0162:</SPAN> 
+<SPAN CLASS="linenum">0163:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0164:</SPAN> <SPAN CLASS="comment">// Name: s_GetResolution()</SPAN>
+<SPAN CLASS="linenum">0165:</SPAN> <SPAN CLASS="comment">// Desc: サイズの読み込み</SPAN>
+<SPAN CLASS="linenum">0166:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0167:</SPAN> <SPAN CLASS="keyword">int</SPAN> s_GetResolution(FILE  *fp, Info *cp)
+<SPAN CLASS="linenum">0168:</SPAN> {
+<SPAN CLASS="linenum">0169:</SPAN>     <SPAN CLASS="keyword">const</SPAN> <SPAN CLASS="keyword">int</SPAN> MAXLINE = 512;
+<SPAN CLASS="linenum">0170:</SPAN>     <SPAN CLASS="keyword">char</SPAN>  buf[MAXLINE];
+<SPAN CLASS="linenum">0171:</SPAN> 
+<SPAN CLASS="linenum">0172:</SPAN>     buf[MAXLINE-2] = '<SPAN CLASS="string">\n</SPAN>';
+<SPAN CLASS="linenum">0173:</SPAN>     <SPAN CLASS="keyword">if</SPAN> (fgets(buf, MAXLINE, fp) == NULL) <SPAN CLASS="keyword">return</SPAN>(-1);
+<SPAN CLASS="linenum">0174:</SPAN> 
+<SPAN CLASS="linenum">0175:</SPAN>     s_Str2Resolu(cp, buf);
+<SPAN CLASS="linenum">0176:</SPAN> 
+<SPAN CLASS="linenum">0177:</SPAN>     <SPAN CLASS="keyword">return</SPAN> (0);
+<SPAN CLASS="linenum">0178:</SPAN> }
+<SPAN CLASS="linenum">0179:</SPAN> 
+<SPAN CLASS="linenum">0180:</SPAN> 
+<SPAN CLASS="linenum">0181:</SPAN> 
+<SPAN CLASS="linenum">0182:</SPAN> 
+<SPAN CLASS="linenum">0183:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0184:</SPAN> <SPAN CLASS="comment">// Name: s_GetResolu()</SPAN>
+<SPAN CLASS="linenum">0185:</SPAN> <SPAN CLASS="comment">// Desc: scanline の length と numberを得る</SPAN>
+<SPAN CLASS="linenum">0186:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0187:</SPAN> <SPAN CLASS="keyword">int</SPAN> s_GetResolu(Info *p)
+<SPAN CLASS="linenum">0188:</SPAN> {
+<SPAN CLASS="linenum">0189:</SPAN>     <SPAN CLASS="keyword">if</SPAN> (p-&gt;or &amp; YMAJOR) {
+<SPAN CLASS="linenum">0190:</SPAN>         p-&gt;sl = p-&gt;x;
+<SPAN CLASS="linenum">0191:</SPAN>         p-&gt;ns = p-&gt;y;
+<SPAN CLASS="linenum">0192:</SPAN>     } <SPAN CLASS="keyword">else</SPAN> {
+<SPAN CLASS="linenum">0193:</SPAN>         p-&gt;sl = p-&gt;y;
+<SPAN CLASS="linenum">0194:</SPAN>         p-&gt;ns = p-&gt;x;
+<SPAN CLASS="linenum">0195:</SPAN>     }
+<SPAN CLASS="linenum">0196:</SPAN> 
+<SPAN CLASS="linenum">0197:</SPAN>     <SPAN CLASS="keyword">return</SPAN>(0);
+<SPAN CLASS="linenum">0198:</SPAN> }
+<SPAN CLASS="linenum">0199:</SPAN> 
+<SPAN CLASS="linenum">0200:</SPAN> 
+<SPAN CLASS="linenum">0201:</SPAN> 
+<SPAN CLASS="linenum">0202:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0203:</SPAN> <SPAN CLASS="comment">// Name: s_CheckHeader()</SPAN>
+<SPAN CLASS="linenum">0204:</SPAN> <SPAN CLASS="comment">// Desc: HDR ファイルの読み込み（返り値が１の時に、フォーマットが正しかった）</SPAN>
+<SPAN CLASS="linenum">0205:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0206:</SPAN> <SPAN CLASS="keyword">int</SPAN> s_CheckHeader(FILE  *fin, Info *pInfo)
+<SPAN CLASS="linenum">0207:</SPAN> {
+<SPAN CLASS="linenum">0208:</SPAN>     <SPAN CLASS="comment">// データの初期化</SPAN>
+<SPAN CLASS="linenum">0209:</SPAN>     pInfo-&gt;mn[0] = '<SPAN CLASS="string">\0</SPAN>';
+<SPAN CLASS="linenum">0210:</SPAN>     pInfo-&gt;fs[0] = '<SPAN CLASS="string">\0</SPAN>';
+<SPAN CLASS="linenum">0211:</SPAN>     pInfo-&gt;xp = 1.0000000000000;
+<SPAN CLASS="linenum">0212:</SPAN>     pInfo-&gt;x = 0;
+<SPAN CLASS="linenum">0213:</SPAN>     pInfo-&gt;y = 0;
+<SPAN CLASS="linenum">0214:</SPAN>     pInfo-&gt;or = 0;
+<SPAN CLASS="linenum">0215:</SPAN>     pInfo-&gt;sl = 0;
+<SPAN CLASS="linenum">0216:</SPAN>     pInfo-&gt;ns = 0;
+<SPAN CLASS="linenum">0217:</SPAN> 
+<SPAN CLASS="linenum">0218:</SPAN>     <SPAN CLASS="comment">// ヘッダの所得</SPAN>
+<SPAN CLASS="linenum">0219:</SPAN>     <SPAN CLASS="keyword">if</SPAN> (s_GetHeader(fin, pInfo) &lt; 0) <SPAN CLASS="keyword">return</SPAN>(-1);
+<SPAN CLASS="linenum">0220:</SPAN>     
+<SPAN CLASS="linenum">0221:</SPAN>     <SPAN CLASS="comment">// ヘッダ情報チェック</SPAN>
+<SPAN CLASS="linenum">0222:</SPAN>     <SPAN CLASS="keyword">if</SPAN> (pInfo-&gt;mn[0]=='<SPAN CLASS="string">\0</SPAN>' || strcmp("<SPAN CLASS="string">RADIANCE</SPAN>", pInfo-&gt;mn) ) <SPAN CLASS="keyword">return</SPAN> -1;
+<SPAN CLASS="linenum">0223:</SPAN> 
+<SPAN CLASS="linenum">0224:</SPAN>     <SPAN CLASS="comment">// フォーマットチェック</SPAN>
+<SPAN CLASS="linenum">0225:</SPAN>     <SPAN CLASS="keyword">if</SPAN> (pInfo-&gt;fs[0]=='<SPAN CLASS="string">\0</SPAN>' || strcmp("<SPAN CLASS="string">32-bit_rle_rgbe</SPAN>", pInfo-&gt;fs) ) <SPAN CLASS="keyword">return</SPAN> -1;
+<SPAN CLASS="linenum">0226:</SPAN> 
+<SPAN CLASS="linenum">0227:</SPAN>     <SPAN CLASS="comment">// サイズチェック</SPAN>
+<SPAN CLASS="linenum">0228:</SPAN>     <SPAN CLASS="keyword">if</SPAN> (s_GetResolution(fin, pInfo) &lt; 0) <SPAN CLASS="keyword">return</SPAN>(-1);
+<SPAN CLASS="linenum">0229:</SPAN>     <SPAN CLASS="keyword">if</SPAN> (pInfo-&gt;x &lt;= 0 || pInfo-&gt;y &lt;= 0) <SPAN CLASS="keyword">return</SPAN> -1;
+<SPAN CLASS="linenum">0230:</SPAN>     s_GetResolu(pInfo);<SPAN CLASS="comment">// 画像のスキャンラインの計算をする</SPAN>
+<SPAN CLASS="linenum">0231:</SPAN> 
+<SPAN CLASS="linenum">0232:</SPAN>     <SPAN CLASS="comment">// 正しいデータ</SPAN>
+<SPAN CLASS="linenum">0233:</SPAN>     <SPAN CLASS="keyword">return</SPAN> 1;
+<SPAN CLASS="linenum">0234:</SPAN> }
+<SPAN CLASS="linenum">0235:</SPAN> 
+<SPAN CLASS="linenum">0236:</SPAN> 
+<SPAN CLASS="linenum">0237:</SPAN> 
+<SPAN CLASS="linenum">0238:</SPAN> 
+<SPAN CLASS="linenum">0239:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0240:</SPAN> <SPAN CLASS="comment">// Name: s_OldReadColors()</SPAN>
+<SPAN CLASS="linenum">0241:</SPAN> <SPAN CLASS="comment">// Desc: 符号化された色情報を読み込む(古い版)</SPAN>
+<SPAN CLASS="linenum">0242:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0243:</SPAN> <SPAN CLASS="keyword">int</SPAN> s_OldReadColors(COLR *scanline, <SPAN CLASS="keyword">int</SPAN> len, FILE *fp)
+<SPAN CLASS="linenum">0244:</SPAN> {
+<SPAN CLASS="linenum">0245:</SPAN>     <SPAN CLASS="keyword">int</SPAN>  rshift;
+<SPAN CLASS="linenum">0246:</SPAN>     <SPAN CLASS="keyword">register</SPAN> <SPAN CLASS="keyword">int</SPAN>  i;
+<SPAN CLASS="linenum">0247:</SPAN>     
+<SPAN CLASS="linenum">0248:</SPAN>     rshift = 0;
+<SPAN CLASS="linenum">0249:</SPAN>     
+<SPAN CLASS="linenum">0250:</SPAN>     <SPAN CLASS="keyword">while</SPAN> (0 &lt; len) {
+<SPAN CLASS="linenum">0251:</SPAN>         scanline[0][RED] = getc(fp);
+<SPAN CLASS="linenum">0252:</SPAN>         scanline[0][GRN] = getc(fp);
+<SPAN CLASS="linenum">0253:</SPAN>         scanline[0][BLU] = getc(fp);
+<SPAN CLASS="linenum">0254:</SPAN>         scanline[0][EXP] = getc(fp);
+<SPAN CLASS="linenum">0255:</SPAN>         <SPAN CLASS="comment">// データがなかったりエラーで終了</SPAN>
+<SPAN CLASS="linenum">0256:</SPAN>         <SPAN CLASS="keyword">if</SPAN> (feof(fp) || ferror(fp)) <SPAN CLASS="keyword">return</SPAN>(-1);
+<SPAN CLASS="linenum">0257:</SPAN> 
+<SPAN CLASS="linenum">0258:</SPAN>         <SPAN CLASS="keyword">if</SPAN> (scanline[0][RED] == 1 &amp;&amp;
+<SPAN CLASS="linenum">0259:</SPAN>             scanline[0][GRN] == 1 &amp;&amp;
+<SPAN CLASS="linenum">0260:</SPAN>             scanline[0][BLU] == 1)
+<SPAN CLASS="linenum">0261:</SPAN>         {
+<SPAN CLASS="linenum">0262:</SPAN>             <SPAN CLASS="comment">// R=G=B=1 のときは、指数分だけ同じデータを続ける</SPAN>
+<SPAN CLASS="linenum">0263:</SPAN>             <SPAN CLASS="comment">// そのデータがさらに続くなら、長さを２倍にして続ける</SPAN>
+<SPAN CLASS="linenum">0264:</SPAN>             <SPAN CLASS="keyword">for</SPAN> (i = scanline[0][EXP] &lt;&lt; rshift; i &gt; 0; i--) {
+<SPAN CLASS="linenum">0265:</SPAN>                 scanline[0][0]=scanline[-1][0];
+<SPAN CLASS="linenum">0266:</SPAN>                 scanline[0][1]=scanline[-1][1];
+<SPAN CLASS="linenum">0267:</SPAN>                 scanline[0][2]=scanline[-1][2];
+<SPAN CLASS="linenum">0268:</SPAN>                 scanline[0][3]=scanline[-1][3];
+<SPAN CLASS="linenum">0269:</SPAN>                 scanline++;
+<SPAN CLASS="linenum">0270:</SPAN>                 len--;
+<SPAN CLASS="linenum">0271:</SPAN>             }
+<SPAN CLASS="linenum">0272:</SPAN>             rshift += 8;
+<SPAN CLASS="linenum">0273:</SPAN>         } <SPAN CLASS="keyword">else</SPAN> {
+<SPAN CLASS="linenum">0274:</SPAN>             scanline++;
+<SPAN CLASS="linenum">0275:</SPAN>             len--;
+<SPAN CLASS="linenum">0276:</SPAN>             rshift = 0;
+<SPAN CLASS="linenum">0277:</SPAN>         }
+<SPAN CLASS="linenum">0278:</SPAN>     }
+<SPAN CLASS="linenum">0279:</SPAN>     <SPAN CLASS="keyword">return</SPAN>(0);
+<SPAN CLASS="linenum">0280:</SPAN> }
+<SPAN CLASS="linenum">0281:</SPAN> 
+<SPAN CLASS="linenum">0282:</SPAN> 
+<SPAN CLASS="linenum">0283:</SPAN> 
+<SPAN CLASS="linenum">0284:</SPAN> 
+<SPAN CLASS="linenum">0285:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0286:</SPAN> <SPAN CLASS="comment">// Name: CreateTextureFromHdrFile()</SPAN>
+<SPAN CLASS="linenum">0287:</SPAN> <SPAN CLASS="comment">// Desc: 符号化された色情報を読み込む</SPAN>
+<SPAN CLASS="linenum">0288:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0289:</SPAN> <SPAN CLASS="keyword">int</SPAN> s_ReadColor (COLR *scanline, <SPAN CLASS="keyword">int</SPAN> len, FILE *fp)
+<SPAN CLASS="linenum">0290:</SPAN> {
+<SPAN CLASS="linenum">0291:</SPAN>     <SPAN CLASS="keyword">int</SPAN>  i, j;
+<SPAN CLASS="linenum">0292:</SPAN>     <SPAN CLASS="keyword">int</SPAN>  code, val;
+<SPAN CLASS="linenum">0293:</SPAN> 
+<SPAN CLASS="linenum">0294:</SPAN>     <SPAN CLASS="comment">// 読み込みのタイプを決める</SPAN>
+<SPAN CLASS="linenum">0295:</SPAN>     <SPAN CLASS="comment">// 最新のものならば、最初の４つの成分が</SPAN>
+<SPAN CLASS="linenum">0296:</SPAN>     <SPAN CLASS="comment">// [ 2 | 2 | 画像サイズの上位７ビット|画像サイズの下位８ビット ]</SPAN>
+<SPAN CLASS="linenum">0297:</SPAN>     <SPAN CLASS="comment">// になっているはず</SPAN>
+<SPAN CLASS="linenum">0298:</SPAN>     <SPAN CLASS="keyword">if</SPAN> (len &lt; MINELEN || MAXELEN &lt; len ){
+<SPAN CLASS="linenum">0299:</SPAN>         <SPAN CLASS="comment">// 古いタイプ</SPAN>
+<SPAN CLASS="linenum">0300:</SPAN>         <SPAN CLASS="keyword">return</SPAN>(s_OldReadColors(scanline, len, fp));
+<SPAN CLASS="linenum">0301:</SPAN>     }
+<SPAN CLASS="linenum">0302:</SPAN> 
+<SPAN CLASS="linenum">0303:</SPAN>     i = getc(fp);
+<SPAN CLASS="linenum">0304:</SPAN>     <SPAN CLASS="keyword">if</SPAN> (i == EOF) <SPAN CLASS="keyword">return</SPAN>(-1);<SPAN CLASS="comment">// データがない</SPAN>
+<SPAN CLASS="linenum">0305:</SPAN> 
+<SPAN CLASS="linenum">0306:</SPAN>     <SPAN CLASS="keyword">if</SPAN> (i != 2) {
+<SPAN CLASS="linenum">0307:</SPAN>         <SPAN CLASS="comment">// 最初は２でないものは古いタイプ</SPAN>
+<SPAN CLASS="linenum">0308:</SPAN>         ungetc(i, fp);
+<SPAN CLASS="linenum">0309:</SPAN>         <SPAN CLASS="keyword">return</SPAN>(s_OldReadColors(scanline, len, fp));
+<SPAN CLASS="linenum">0310:</SPAN>     }
+<SPAN CLASS="linenum">0311:</SPAN>     <SPAN CLASS="comment">// 最低４つのデータが必要</SPAN>
+<SPAN CLASS="linenum">0312:</SPAN>     scanline[0][GRN] = getc(fp);
+<SPAN CLASS="linenum">0313:</SPAN>     scanline[0][BLU] = getc(fp);
+<SPAN CLASS="linenum">0314:</SPAN>     <SPAN CLASS="keyword">if</SPAN> ((i = getc(fp)) == EOF) <SPAN CLASS="keyword">return</SPAN>(-1);
+<SPAN CLASS="linenum">0315:</SPAN>     
+<SPAN CLASS="linenum">0316:</SPAN>     <SPAN CLASS="comment">// 最初のデータが"22"とかになっていなかったり、</SPAN>
+<SPAN CLASS="linenum">0317:</SPAN>     <SPAN CLASS="comment">// ３バイト目のデータについて最大数を超えているかのチェック</SPAN>
+<SPAN CLASS="linenum">0318:</SPAN>     <SPAN CLASS="keyword">if</SPAN> (scanline[0][GRN] != 2 || scanline[0][BLU] &amp; 128) {
+<SPAN CLASS="linenum">0319:</SPAN>         scanline[0][RED] = 2;
+<SPAN CLASS="linenum">0320:</SPAN>         scanline[0][EXP] = i;
+<SPAN CLASS="linenum">0321:</SPAN>         <SPAN CLASS="keyword">return</SPAN>(s_OldReadColors(scanline+1, len-1, fp));
+<SPAN CLASS="linenum">0322:</SPAN>     }
+<SPAN CLASS="linenum">0323:</SPAN> 
+<SPAN CLASS="linenum">0324:</SPAN>     <SPAN CLASS="comment">// 長さ情報の確認</SPAN>
+<SPAN CLASS="linenum">0325:</SPAN>     <SPAN CLASS="keyword">if</SPAN> ((scanline[0][BLU]&lt;&lt;8 | i) != len) <SPAN CLASS="keyword">return</SPAN>(-1);
+<SPAN CLASS="linenum">0326:</SPAN> 
+<SPAN CLASS="linenum">0327:</SPAN>     <SPAN CLASS="comment">// 各成分を読み込む</SPAN>
+<SPAN CLASS="linenum">0328:</SPAN>     <SPAN CLASS="keyword">for</SPAN> (i = 0; i &lt; 4; i++)
+<SPAN CLASS="linenum">0329:</SPAN>     {
+<SPAN CLASS="linenum">0330:</SPAN>         <SPAN CLASS="keyword">for</SPAN> (j = 0; j &lt; len; )
+<SPAN CLASS="linenum">0331:</SPAN>         {
+<SPAN CLASS="linenum">0332:</SPAN>             <SPAN CLASS="comment">// データが途中でなくなった？</SPAN>
+<SPAN CLASS="linenum">0333:</SPAN>             <SPAN CLASS="keyword">if</SPAN> ((code = getc(fp)) == EOF) <SPAN CLASS="keyword">return</SPAN>(-1);
+<SPAN CLASS="linenum">0334:</SPAN> 
+<SPAN CLASS="linenum">0335:</SPAN>             <SPAN CLASS="keyword">if</SPAN> (128 &lt; code) {
+<SPAN CLASS="linenum">0336:</SPAN>                 <SPAN CLASS="comment">// 長さ+値のランレングス</SPAN>
+<SPAN CLASS="linenum">0337:</SPAN>                 code &amp;= 127;
+<SPAN CLASS="linenum">0338:</SPAN>                 val = getc(fp);
+<SPAN CLASS="linenum">0339:</SPAN>                 <SPAN CLASS="keyword">while</SPAN> (code--) scanline[j++][i] = val;
+<SPAN CLASS="linenum">0340:</SPAN>             } <SPAN CLASS="keyword">else</SPAN> {
+<SPAN CLASS="linenum">0341:</SPAN>                 <SPAN CLASS="comment">// ランレングスでないものがcode個続く</SPAN>
+<SPAN CLASS="linenum">0342:</SPAN>                 <SPAN CLASS="keyword">while</SPAN> (code--) scanline[j++][i] = getc(fp);
+<SPAN CLASS="linenum">0343:</SPAN>             }
+<SPAN CLASS="linenum">0344:</SPAN>         }
+<SPAN CLASS="linenum">0345:</SPAN>     }
+<SPAN CLASS="linenum">0346:</SPAN>     
+<SPAN CLASS="linenum">0347:</SPAN>     <SPAN CLASS="comment">// 終端に達していたか確認</SPAN>
+<SPAN CLASS="linenum">0348:</SPAN>     <SPAN CLASS="keyword">return</SPAN>(feof(fp) ? -1 : 0);
+<SPAN CLASS="linenum">0349:</SPAN> }
+<SPAN CLASS="linenum">0350:</SPAN> 
+<SPAN CLASS="linenum">0351:</SPAN> 
+<SPAN CLASS="linenum">0352:</SPAN> 
+<SPAN CLASS="linenum">0353:</SPAN> 
+<SPAN CLASS="linenum">0354:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0355:</SPAN> <SPAN CLASS="comment">// Name: CreateTextureFromHdrFile()</SPAN>
+<SPAN CLASS="linenum">0356:</SPAN> <SPAN CLASS="comment">// Desc: Radiance スキャンラインフォーマットをRGBEに変換する</SPAN>
+<SPAN CLASS="linenum">0357:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0358:</SPAN> <SPAN CLASS="keyword">int</SPAN> Ra2Skel(FILE *fp, <SPAN CLASS="keyword">int</SPAN> sl, <SPAN CLASS="keyword">int</SPAN> nl, LPCTSTR *pErr, LPDIRECT3DTEXTURE9 pTexture)
+<SPAN CLASS="linenum">0359:</SPAN> {
+<SPAN CLASS="linenum">0360:</SPAN>     <SPAN CLASS="keyword">int</SPAN> ret=0;
+<SPAN CLASS="linenum">0361:</SPAN>     COLR    *scanin;
+<SPAN CLASS="linenum">0362:</SPAN>     <SPAN CLASS="keyword">register</SPAN> <SPAN CLASS="keyword">int</SPAN>    x;
+<SPAN CLASS="linenum">0363:</SPAN>     <SPAN CLASS="keyword">int</SPAN> y;
+<SPAN CLASS="linenum">0364:</SPAN> 
+<SPAN CLASS="linenum">0365:</SPAN>     <SPAN CLASS="comment">// メモリの確保</SPAN>
+<SPAN CLASS="linenum">0366:</SPAN>     <SPAN CLASS="keyword">if</SPAN> ((scanin = (COLR *) malloc(sl*<SPAN CLASS="keyword">sizeof</SPAN>(COLR))) == NULL)
+<SPAN CLASS="linenum">0367:</SPAN>     {
+<SPAN CLASS="linenum">0368:</SPAN>         <SPAN CLASS="keyword">static</SPAN> LPCTSTR ErrMsg = "<SPAN CLASS="string">Out of memory.</SPAN>";
+<SPAN CLASS="linenum">0369:</SPAN>         <SPAN CLASS="keyword">if</SPAN>(pErr) *pErr = ErrMsg;
+<SPAN CLASS="linenum">0370:</SPAN>         <SPAN CLASS="keyword">return</SPAN> -1;
+<SPAN CLASS="linenum">0371:</SPAN>     }
+<SPAN CLASS="linenum">0372:</SPAN> 
+<SPAN CLASS="linenum">0373:</SPAN>     <SPAN CLASS="comment">// テクスチャのロック</SPAN>
+<SPAN CLASS="linenum">0374:</SPAN>     D3DLOCKED_RECT d3dlr;
+<SPAN CLASS="linenum">0375:</SPAN>     <SPAN CLASS="keyword">if</SPAN>(FAILED(pTexture-&gt;LockRect(0, &amp;d3dlr, NULL, 0)))
+<SPAN CLASS="linenum">0376:</SPAN>     {
+<SPAN CLASS="linenum">0377:</SPAN>         <SPAN CLASS="keyword">static</SPAN> LPCTSTR ErrMsg = "<SPAN CLASS="string">error to lock texture.</SPAN>";
+<SPAN CLASS="linenum">0378:</SPAN>         <SPAN CLASS="keyword">if</SPAN>(pErr) *pErr = ErrMsg;
+<SPAN CLASS="linenum">0379:</SPAN>         ret = -1;
+<SPAN CLASS="linenum">0380:</SPAN>         <SPAN CLASS="keyword">goto</SPAN> err1_end;
+<SPAN CLASS="linenum">0381:</SPAN>     }
+<SPAN CLASS="linenum">0382:</SPAN> 
+<SPAN CLASS="linenum">0383:</SPAN>     <SPAN CLASS="comment">// 画像の変換</SPAN>
+<SPAN CLASS="linenum">0384:</SPAN>     BYTE* pDstRow = (BYTE*)d3dlr.pBits;
+<SPAN CLASS="linenum">0385:</SPAN>     <SPAN CLASS="keyword">for</SPAN> (y = nl-1; y &gt;= 0; y--) {
+<SPAN CLASS="linenum">0386:</SPAN>         <SPAN CLASS="keyword">if</SPAN> (s_ReadColor(scanin, sl, fp) &lt; 0)
+<SPAN CLASS="linenum">0387:</SPAN>         {
+<SPAN CLASS="linenum">0388:</SPAN>             <SPAN CLASS="keyword">static</SPAN> LPCTSTR ErrMsg = "<SPAN CLASS="string">error reading Radiance picture.</SPAN>";
+<SPAN CLASS="linenum">0389:</SPAN>             <SPAN CLASS="keyword">if</SPAN>(pErr) *pErr = ErrMsg;
+<SPAN CLASS="linenum">0390:</SPAN>             ret = -1;
+<SPAN CLASS="linenum">0391:</SPAN>             <SPAN CLASS="keyword">goto</SPAN> err2_end;
+<SPAN CLASS="linenum">0392:</SPAN>         }
+<SPAN CLASS="linenum">0393:</SPAN> 
+<SPAN CLASS="linenum">0394:</SPAN>         BYTE* pDst = pDstRow;
+<SPAN CLASS="linenum">0395:</SPAN>         <SPAN CLASS="keyword">for</SPAN> (x = 0; x &lt; sl; x++) {
+<SPAN CLASS="linenum">0396:</SPAN>             pDst[0] = scanin[x][BLU];
+<SPAN CLASS="linenum">0397:</SPAN>             pDst[1] = scanin[x][GRN];
+<SPAN CLASS="linenum">0398:</SPAN>             pDst[2] = scanin[x][RED];
+<SPAN CLASS="linenum">0399:</SPAN>             pDst[3] = scanin[x][EXP];
+<SPAN CLASS="linenum">0400:</SPAN>             pDst += 4;
+<SPAN CLASS="linenum">0401:</SPAN>         }
+<SPAN CLASS="linenum">0402:</SPAN>         pDstRow += d3dlr.Pitch;
+<SPAN CLASS="linenum">0403:</SPAN>     }
+<SPAN CLASS="linenum">0404:</SPAN> err2_end:
+<SPAN CLASS="linenum">0405:</SPAN> 
+<SPAN CLASS="linenum">0406:</SPAN>     pTexture-&gt;UnlockRect(0);
+<SPAN CLASS="linenum">0407:</SPAN> 
+<SPAN CLASS="linenum">0408:</SPAN> err1_end:
+<SPAN CLASS="linenum">0409:</SPAN> 
+<SPAN CLASS="linenum">0410:</SPAN>     <SPAN CLASS="comment">// メモリの開放</SPAN>
+<SPAN CLASS="linenum">0411:</SPAN>     free((<SPAN CLASS="keyword">char</SPAN> *)scanin);
+<SPAN CLASS="linenum">0412:</SPAN> 
+<SPAN CLASS="linenum">0413:</SPAN>     <SPAN CLASS="keyword">return</SPAN> ret;
+<SPAN CLASS="linenum">0414:</SPAN> }
+<SPAN CLASS="linenum">0415:</SPAN> 
+<SPAN CLASS="linenum">0416:</SPAN> 
+<SPAN CLASS="linenum">0417:</SPAN> 
+<SPAN CLASS="linenum">0418:</SPAN> 
+<SPAN CLASS="linenum">0419:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0420:</SPAN> <SPAN CLASS="comment">// Name: CreateTextureFromHdrFile()</SPAN>
+<SPAN CLASS="linenum">0421:</SPAN> <SPAN CLASS="comment">// Desc: HDR ファイルの読み込み</SPAN>
+<SPAN CLASS="linenum">0422:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0423:</SPAN> HRESULT CreateTextureFromFile(
+<SPAN CLASS="linenum">0424:</SPAN>         LPDIRECT3DDEVICE9 pDevice,
+<SPAN CLASS="linenum">0425:</SPAN>         LPCTSTR pSrcFile,
+<SPAN CLASS="linenum">0426:</SPAN>         LPCTSTR *pErr,
+<SPAN CLASS="linenum">0427:</SPAN>         LPDIRECT3DTEXTURE9 *pTexture)
+<SPAN CLASS="linenum">0428:</SPAN> {
+<SPAN CLASS="linenum">0429:</SPAN>     HRESULT hr = S_OK;
+<SPAN CLASS="linenum">0430:</SPAN>     Info info;
+<SPAN CLASS="linenum">0431:</SPAN> 
+<SPAN CLASS="linenum">0432:</SPAN>     FILE *fd;
+<SPAN CLASS="linenum">0433:</SPAN>     
+<SPAN CLASS="linenum">0434:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( (fd = fopen( pSrcFile,"<SPAN CLASS="string">rb</SPAN>" )) == NULL )
+<SPAN CLASS="linenum">0435:</SPAN>     {<SPAN CLASS="comment">// ファイルのオープンの失敗</SPAN>
+<SPAN CLASS="linenum">0436:</SPAN>         <SPAN CLASS="keyword">static</SPAN> LPCTSTR ErrMsg = "<SPAN CLASS="string">Can't open input file.</SPAN>";
+<SPAN CLASS="linenum">0437:</SPAN>         <SPAN CLASS="keyword">if</SPAN>(pErr) *pErr = ErrMsg;
+<SPAN CLASS="linenum">0438:</SPAN>         hr = -1;
+<SPAN CLASS="linenum">0439:</SPAN>         <SPAN CLASS="keyword">return</SPAN> -1;
+<SPAN CLASS="linenum">0440:</SPAN>     }
+<SPAN CLASS="linenum">0441:</SPAN> 
+<SPAN CLASS="linenum">0442:</SPAN>     <SPAN CLASS="comment">// ヘッダーを調べる</SPAN>
+<SPAN CLASS="linenum">0443:</SPAN>     <SPAN CLASS="keyword">if</SPAN> (s_CheckHeader(fd, &amp;info) &lt; 0)
+<SPAN CLASS="linenum">0444:</SPAN>     {
+<SPAN CLASS="linenum">0445:</SPAN>         <SPAN CLASS="keyword">static</SPAN> LPCTSTR ErrMsg = "<SPAN CLASS="string">Bad picture format.</SPAN>";
+<SPAN CLASS="linenum">0446:</SPAN>         <SPAN CLASS="keyword">if</SPAN>(pErr) *pErr = ErrMsg;
+<SPAN CLASS="linenum">0447:</SPAN>         hr = -1;
+<SPAN CLASS="linenum">0448:</SPAN>         <SPAN CLASS="keyword">goto</SPAN> err_data;<SPAN CLASS="comment">// フォーマットがおかしい</SPAN>
+<SPAN CLASS="linenum">0449:</SPAN>     }
+<SPAN CLASS="linenum">0450:</SPAN> 
+<SPAN CLASS="linenum">0451:</SPAN>     <SPAN CLASS="comment">// テクスチャを確保する</SPAN>
+<SPAN CLASS="linenum">0452:</SPAN>     <SPAN CLASS="keyword">if</SPAN>(FAILED(hr=D3DXCreateTexture(pDevice, info.x, info.y
+<SPAN CLASS="linenum">0453:</SPAN>                     , 1, 0, D3DFMT_A8R8G8B8
+<SPAN CLASS="linenum">0454:</SPAN>                     , D3DPOOL_MANAGED, pTexture)))
+<SPAN CLASS="linenum">0455:</SPAN>     {
+<SPAN CLASS="linenum">0456:</SPAN>         <SPAN CLASS="keyword">static</SPAN> LPCTSTR ErrMsg = "<SPAN CLASS="string">Failed to create texture.</SPAN>";
+<SPAN CLASS="linenum">0457:</SPAN>         <SPAN CLASS="keyword">if</SPAN>(pErr) *pErr = ErrMsg;
+<SPAN CLASS="linenum">0458:</SPAN>         <SPAN CLASS="keyword">goto</SPAN> err_data;<SPAN CLASS="comment">// フォーマットがおかしい</SPAN>
+<SPAN CLASS="linenum">0459:</SPAN>     }
+<SPAN CLASS="linenum">0460:</SPAN> 
+<SPAN CLASS="linenum">0461:</SPAN>     <SPAN CLASS="comment">// コンバートする</SPAN>
+<SPAN CLASS="linenum">0462:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( Ra2Skel(fd, info.sl, info.ns, pErr, *pTexture) &lt; 0)
+<SPAN CLASS="linenum">0463:</SPAN>     {
+<SPAN CLASS="linenum">0464:</SPAN>         hr = -1;
+<SPAN CLASS="linenum">0465:</SPAN>     }
+<SPAN CLASS="linenum">0466:</SPAN> 
+<SPAN CLASS="linenum">0467:</SPAN> err_data:
+<SPAN CLASS="linenum">0468:</SPAN>     <SPAN CLASS="comment">// ファイルを閉じる</SPAN>
+<SPAN CLASS="linenum">0469:</SPAN>     fclose( fd );
+<SPAN CLASS="linenum">0470:</SPAN> 
+<SPAN CLASS="linenum">0471:</SPAN>     <SPAN CLASS="keyword">return</SPAN> hr;
+<SPAN CLASS="linenum">0472:</SPAN> }
+<SPAN CLASS="linenum">0473:</SPAN> 
+<SPAN CLASS="linenum">0474:</SPAN> }<SPAN CLASS="comment">// namespace HDR</SPAN>
+<SPAN CLASS="linenum">0475:</SPAN> 
+<SPAN CLASS="linenum">0476:</SPAN> 
+<SPAN CLASS="linenum">0477:</SPAN> </PRE>
+</BODY>
+</HTML>

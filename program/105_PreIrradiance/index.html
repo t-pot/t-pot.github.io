@@ -1,0 +1,860 @@
+<head>
+	<title>t-pot『前計算イラディアンス』</title>
+	<link rel="stylesheet" type="text/css" href="../if.css">
+</head>
+<meta http-equiv=Content-Type content="text/html; charset=shift_jis">
+<body>
+
+
+<div class="contents">
+<center>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<h1>前計算イラディアンス</h1><br>
+<h3>～ Precomputed Irradiance ～</h3>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<image src = "title.png">
+<br>
+<hr>
+</center>
+<div>
+
+
+<h2>■はじめに</h2>
+
+
+<p>
+さて、最近、周りを見渡すと、そこかしこでSH(球面調和関数)、SHという声が聞こえます。<br>
+「ここでも早く紹介しなきゃなぁ～」と思っているのですが、やろうとすると結構面倒なので、２の足を踏んでいます。<br>
+ということで、その下準備として、モデルの各点に入射するイラディアンスを計算してみました。
+</p>
+<p>
+で、いつものようにプログラムです。<br>
+</p>
+<ul style = "LIST-STYLE-TYPE:none">
+<li><a href="src2.zip">src2.zip (修正版：2003 Dec. 26)</a>
+<li><a href="src.zip">src.zip (前計算イラディアンス:DirectX9)</a>
+</ul>
+<p>
+
+</p>
+<p>
+ソースには、いつものように適当にファイルが入っています。<br>
+今回は、PS_2_0とMRT（Multi rendering target）を使うので、ほとんどRADEON9***専用です。
+</p>
+<table>
+<tr><td><a href="main_h.html">main.h</a></td><td>アプリケーションのヘッダ</td></tr>
+<tr><td><a href="main_cpp.html">main.cpp</a></td><td>アプリケーションのソース</td></tr>
+<tr><td><a href="hlsl_fx.html">hlsl.fx</a></td><td>シェーダプログラム</td></tr>
+</table>
+<p>
+カーソルキーで、カメラが回って、zやxでズームが変えられるのは今までのとおりですが、
+今回は、aキーで「イラディアンスのみ」、「デカールのみ」、「デカール*イラディアンス」の切り替えができます。
+</p>
+<p>
+なお、実行すると、Athron 2000+ と RADEON 9700 Proの環境で下の様な画像で１分半ぐらい待たされると思います。これが前計算のイラディアンスを計算してる部分です。<br>
+実際のアプリケーションを組む場合には、あらかじめ処理しておいてテクスチャとして持つのがよいでしょう。
+</p>
+<image src = "phase1.png">
+
+
+<h2>■概要</h2>
+
+
+<p>
+さて、今回の方法はどのようなプロセスを経ているのでしょうか？<br>
+ちょっとややこしいので、下の絵を見てください。
+</p>
+<image src = "p2.png">
+<p>
+最初にメッシュに張られたテクスチャ座標をレンダリング先の座標として、法線マップと位置座標のマップを作成します。ただし、このときの法線マップは普通の接空間を基本とした法線マップではなくて、ローカル座標系での法線マップにしました。<br>
+次は、作成した法線マップと位置座標のマップから、テクセルの各点においてメッシュに張られた位置から見たイラディアンスを計算します。
+求め方は、各テクセルから３次元の位置を計算して、そこから法線方向に見た画像をレンダリングします。ただし、レンダリングする座標変換は真横がレンダリングターゲットの端になるような曲面の座標変換で、空が見えれば白、地面が覆われるなら黒でレンダリングします。その後は、ミップマップの要領で画像を１テクセルまで平均化しテクセルの色を算出します。<br>
+後は、地面が平らだったときに真っ白になるように色の強さを調整して完成です。
+</p>
+
+
+<h2>■法線マップ、位置座標マップの作成</h2>
+
+
+<p>
+最初のステップは、法線マップと位置座標のマップの作成です。<br>
+２つのマップを同時に作成するので、ピクセルシェーダの出力先となる構造体を定義します。
+</p>
+
+<pre class="CodeBlock">
+hlsl.fx
+<font color="deepskyblue">0103:</font> <font color="cyan">// ------------------------------------------------------------</font>
+<font color="deepskyblue">0104:</font> <font color="cyan">// ------------------------------------------------------------</font>
+<font color="deepskyblue">0105:</font> <font color="cyan">// 位置、法線マップの作成</font>
+<font color="deepskyblue">0106:</font> <font color="cyan">// ------------------------------------------------------------</font>
+<font color="deepskyblue">0107:</font> <font color="cyan">// ------------------------------------------------------------</font>
+<font color="deepskyblue">0108:</font> <font color="blue">struct</font> VS_OUTPUT_MAP
+<font color="deepskyblue">0109:</font> {
+<font color="deepskyblue">0110:</font>     float4 Pos          : POSITION;
+<font color="deepskyblue">0111:</font>     float4 Position     : TEXCOORD0;
+<font color="deepskyblue">0112:</font>     float4 Normal       : TEXCOORD1;
+<font color="deepskyblue">0113:</font> };
+<font color="deepskyblue">0114:</font> <font color="blue">struct</font> PS_OUTPUT_MAP
+<font color="deepskyblue">0115:</font> {
+<font color="deepskyblue">0116:</font>     float4 Position     : COLOR0;
+<font color="deepskyblue">0117:</font>     float4 Normal       : COLOR1;
+<font color="deepskyblue">0118:</font> };
+</pre>
+<p>
+頂点シェーダでは、テクスチャ座標を元に位置座標を計算し（(0,0)-(1,1)の範囲を(-1,1)-(1,-1)にする（微調整つき））、あとは出力する２つの値をピクセルシェーダに適当に放り込みます。
+</p>
+<pre class="CodeBlock">
+hlsl.fx
+<font color="deepskyblue">0120:</font> <font color="cyan">// ------------------------------------------------------------</font>
+<font color="deepskyblue">0121:</font> <font color="cyan">// 頂点シェーダ</font>
+<font color="deepskyblue">0122:</font> <font color="cyan">// ------------------------------------------------------------</font>
+<font color="deepskyblue">0123:</font> VS_OUTPUT_MAP VS_Map (
+<font color="deepskyblue">0124:</font>       float4 Pos    : POSITION           <font color="cyan">// モデルの頂点</font>
+<font color="deepskyblue">0125:</font>     , float4 Normal : NORMAL             <font color="cyan">// 法線ベクトル</font>
+<font color="deepskyblue">0126:</font>     , float4 Tex0   : TEXCOORD0          <font color="cyan">// テクスチャ座標</font>
+<font color="deepskyblue">0127:</font> ){
+<font color="deepskyblue">0128:</font>     <font color="blue">float</font> MAP_SIZE = 256;
+<font color="deepskyblue">0129:</font>     VS_OUTPUT_MAP Out = (VS_OUTPUT_MAP)0;        <font color="cyan">// 出力データ</font>
+<font color="deepskyblue">0130:</font>     
+<font color="deepskyblue">0131:</font>     float4 pos = mul( Pos, mWVP );
+<font color="deepskyblue">0132:</font>     
+<font color="deepskyblue">0133:</font>     <font color="cyan">// 位置座標</font>
+<font color="deepskyblue">0134:</font>     Out.Pos.x =  2.0 * (Tex0.x*(MAP_SIZE+1)/MAP_SIZE - 1/MAP_SIZE) - 1.0;
+<font color="deepskyblue">0135:</font>     Out.Pos.y = -2.0 * (Tex0.y*(MAP_SIZE+1)/MAP_SIZE - 1/MAP_SIZE) + 1.0;
+<font color="deepskyblue">0136:</font>     Out.Pos.z = 0.5;
+<font color="deepskyblue">0137:</font>     Out.Pos.w = 1;
+<font color="deepskyblue">0138:</font>     
+<font color="deepskyblue">0139:</font>     <font color="cyan">// 色</font>
+<font color="deepskyblue">0140:</font>     Out.Position = Pos;
+<font color="deepskyblue">0141:</font>     Out.Normal   = Normal;
+<font color="deepskyblue">0142:</font> 
+<font color="deepskyblue">0143:</font>     <font color="blue">return</font> Out;
+<font color="deepskyblue">0144:</font> }
+</pre>
+<p>
+ピクセルシェーダでは、頂点シェーダから受け取った値を無難に出力します。
+</p>
+<pre class="CodeBlock">
+hlsl.fx
+<font color="deepskyblue">0147:</font> <font color="cyan">// ------------------------------------------------------------</font>
+<font color="deepskyblue">0148:</font> <font color="cyan">// ピクセルシェーダ</font>
+<font color="deepskyblue">0149:</font> <font color="cyan">// ------------------------------------------------------------</font>
+<font color="deepskyblue">0150:</font> PS_OUTPUT_MAP PS_Map (VS_OUTPUT_MAP In)
+<font color="deepskyblue">0151:</font> {
+<font color="deepskyblue">0152:</font>     PS_OUTPUT_MAP Out;
+<font color="deepskyblue">0153:</font>     
+<font color="deepskyblue">0154:</font>     Out.Position = In.Position;
+<font color="deepskyblue">0155:</font>     Out.Normal   = In.Normal;
+<font color="deepskyblue">0156:</font> 
+<font color="deepskyblue">0157:</font>     <font color="blue">return</font> Out;
+<font color="deepskyblue">0158:</font> }
+</pre>
+<p>
+アプリケーションプログラムでは、レンダリングターゲットの２つのテクスチャに結びつけられたサーフェスを設定して、以上のシェーダを使って描画します。<br>
+なお、深度テストとカリングを切っておくと、向きなどを気にしなくてよく穴が開かないので、何も考えずに幸せになれるでしょう。
+</p>
+
+<pre class="CodeBlock">
+main.cpp
+<font color="deepskyblue">0381:</font>         <font color="cyan">//-------------------------------------------------</font>
+<font color="deepskyblue">0382:</font>         <font color="cyan">// レンダリングターゲットの変更</font>
+<font color="deepskyblue">0383:</font>         <font color="cyan">//-------------------------------------------------</font>
+<font color="deepskyblue">0384:</font>         m_pd3dDevice-&gt;SetRenderTarget(0, m_pPosSurf);
+<font color="deepskyblue">0385:</font>         m_pd3dDevice-&gt;SetRenderTarget(1, m_pNormalSurf);
+<font color="deepskyblue">0386:</font>         m_pd3dDevice-&gt;SetDepthStencilSurface(NULL);
+<font color="deepskyblue">0387:</font>         <font color="cyan">// ビューポートの変更</font>
+<font color="deepskyblue">0388:</font>         D3DVIEWPORT9 viewport_height = {0,0      <font color="cyan">// 左上の座標</font>
+<font color="deepskyblue">0389:</font>                         , MAP_SIZE  <font color="cyan">// 幅</font>
+<font color="deepskyblue">0390:</font>                         , MAP_SIZE <font color="cyan">// 高さ</font>
+<font color="deepskyblue">0391:</font>                         , 0.0f,1.0f};     <font color="cyan">// 前面、後面</font>
+<font color="deepskyblue">0392:</font>         m_pd3dDevice-&gt;SetViewport(&amp;viewport_height);
+<font color="deepskyblue">0393:</font> 
+<font color="deepskyblue">0394:</font>         <font color="cyan">//-------------------------------------------------</font>
+<font color="deepskyblue">0395:</font>         <font color="cyan">// フレームバッファのクリア</font>
+<font color="deepskyblue">0396:</font>         <font color="cyan">//-------------------------------------------------</font>
+<font color="deepskyblue">0397:</font>         m_pd3dDevice-&gt;Clear(0L, NULL
+<font color="deepskyblue">0398:</font>                         , D3DCLEAR_TARGET
+<font color="deepskyblue">0399:</font>                         , 0x00000000, 1.0f, 0L);
+<font color="deepskyblue">0400:</font> 
+<font color="deepskyblue">0401:</font>         <font color="blue">if</font>( m_pEffect != NULL ) 
+<font color="deepskyblue">0402:</font>         {
+<font color="deepskyblue">0403:</font>             <font color="cyan">//-------------------------------------------------</font>
+<font color="deepskyblue">0404:</font>             <font color="cyan">// シェーダの設定</font>
+<font color="deepskyblue">0405:</font>             <font color="cyan">//-------------------------------------------------</font>
+<font color="deepskyblue">0406:</font>             m_pEffect-&gt;SetTechnique( m_hTechnique );
+<font color="deepskyblue">0407:</font>             m_pEffect-&gt;Begin( NULL, 0 );
+<font color="deepskyblue">0408:</font>             m_pEffect-&gt;Pass( 0 );
+<font color="deepskyblue">0409:</font> 
+<font color="deepskyblue">0410:</font>             RS( D3DRS_ZENABLE, FALSE );
+<font color="deepskyblue">0411:</font>             RS( D3DRS_CULLMODE, D3DCULL_NONE );
+<font color="deepskyblue">0412:</font> 
+<font color="deepskyblue">0413:</font>             <font color="cyan">//-------------------------------------------------</font>
+<font color="deepskyblue">0414:</font>             <font color="cyan">// 背景の描画</font>
+<font color="deepskyblue">0415:</font>             <font color="cyan">//-------------------------------------------------</font>
+<font color="deepskyblue">0416:</font>             m_pMeshBg-&gt;Render(m_pd3dDevice);
+<font color="deepskyblue">0417:</font> 
+<font color="deepskyblue">0418:</font>             RS( D3DRS_ZENABLE, TRUE );
+<font color="deepskyblue">0419:</font>             RS( D3DRS_CULLMODE, D3DCULL_CCW );
+<font color="deepskyblue">0420:</font> 
+<font color="deepskyblue">0421:</font>             m_pEffect-&gt;End();
+<font color="deepskyblue">0422:</font>         }
+</pre>
+
+
+<h2>■レンダリングターゲットのテクセル値を拾う</h2>
+
+<p>
+さて、レンダリングした情報を元にラディアンスを計算するのですが、レンダリングした結果を拾ってこなくてはなりません（VS_3_0世代になったら全てGPUでできそうですが…）。<br>
+そのための手順はちょっと面倒です。普段レンダリングターゲットとして使うテクスチャは「D3DPOOL_DEFAULT」で作成すると思うのですが、CPUから参照するためのテクスチャは「D3DPOOL_SYSTEMMEM」で作らないといけません。<br>
+ということで、法線マップ、位置マップ共に、同じサイズとフォーマットの別のテクスチャを用意して、そこに一度データをコピーすることによってＣＰＵでレンダリングしたテクスチャを参照します。<br>
+コピー先のテクスチャは次のようにレンダリングターゲットと同じタイミングで作成します。
+</p>
+
+<pre class="CodeBlock">
+main.cpp
+<font color="deepskyblue">0290:</font>     <font color="cyan">// レンダリングターゲットの生成</font>
+<font color="deepskyblue">0294:</font>     <font color="cyan">// 位置マップ</font>
+<font color="deepskyblue">0295:</font>     <font color="blue">if</font> (FAILED(m_pd3dDevice-&gt;CreateTexture(MAP_SIZE, MAP_SIZE, 1, 
+<font color="deepskyblue">0296:</font>         D3DUSAGE_RENDERTARGET, D3DFMT_A32B32G32R32F, D3DPOOL_DEFAULT, &amp;m_pPosTex, NULL)))
+<font color="deepskyblue">0297:</font>         <font color="blue">return</font> E_FAIL;
+<font color="deepskyblue">0298:</font>     <font color="blue">if</font> (FAILED(m_pPosTex-&gt;GetSurfaceLevel(0, &amp;m_pPosSurf)))
+<font color="deepskyblue">0299:</font>         <font color="blue">return</font> E_FAIL;
+<font color="deepskyblue">0300:</font><font color="yellow">     <font color="blue">if</font> (FAILED(m_pd3dDevice-&gt;CreateTexture(MAP_SIZE, MAP_SIZE, 1, 
+<font color="deepskyblue">0301:</font>         0, D3DFMT_A32B32G32R32F, D3DPOOL_SYSTEMMEM , &amp;m_pPosLockTex, NULL)))
+<font color="deepskyblue">0302:</font>         <font color="blue">return</font> E_FAIL;
+<font color="deepskyblue">0303:</font>     <font color="blue">if</font> (FAILED(m_pPosLockTex-&gt;GetSurfaceLevel(0, &amp;m_pPosLockSurf)))
+<font color="deepskyblue">0304:</font>         <font color="blue">return</font> E_FAIL;</font>
+<font color="deepskyblue">0305:</font>     <font color="cyan">// 法線マップ</font>
+<font color="deepskyblue">0306:</font>     <font color="blue">if</font> (FAILED(m_pd3dDevice-&gt;CreateTexture(MAP_SIZE, MAP_SIZE, 1, 
+<font color="deepskyblue">0307:</font>         D3DUSAGE_RENDERTARGET, D3DFMT_A32B32G32R32F, D3DPOOL_DEFAULT, &amp;m_pNormalTex, NULL)))
+<font color="deepskyblue">0308:</font>         <font color="blue">return</font> E_FAIL;
+<font color="deepskyblue">0309:</font>     <font color="blue">if</font> (FAILED(m_pNormalTex-&gt;GetSurfaceLevel(0, &amp;m_pNormalSurf)))
+<font color="deepskyblue">0310:</font>         <font color="blue">return</font> E_FAIL;
+<font color="deepskyblue">0311:</font><font color="yellow">     <font color="blue">if</font> (FAILED(m_pd3dDevice-&gt;CreateTexture(MAP_SIZE, MAP_SIZE, 1, 
+<font color="deepskyblue">0312:</font>         0, D3DFMT_A32B32G32R32F, D3DPOOL_SYSTEMMEM , &amp;m_pNormalLockTex, NULL)))
+<font color="deepskyblue">0313:</font>         <font color="blue">return</font> E_FAIL;
+<font color="deepskyblue">0314:</font>     <font color="blue">if</font> (FAILED(m_pNormalLockTex-&gt;GetSurfaceLevel(0, &amp;m_pNormalLockSurf)))
+<font color="deepskyblue">0315:</font>         <font color="blue">return</font> E_FAIL;</font>
+</pre>
+<p>
+すると、「GetRenderTargetData」を使えばサーフェスとしてコピーできるので、後はロックして読み込みます。<br>
+配列pos[x][y][3]、normal[x][y][3]にデータを読み込みました。<br>
+今回は、浮動小数点フォーマットを使って、そのまま浮動小数点数として読み込みました(halfはこれができないから、パフォーマンスが悪くても32Fの浮動小数点数を使わざるを得ませんでした…)。
+</p>
+
+<pre class="CodeBlock">
+main.cpp
+<font color="deepskyblue">0446:</font> <font color="cyan">//-------------------------------------------------------------</font>
+<font color="deepskyblue">0447:</font> <font color="cyan">// Name: FrameMoveCreateMap()</font>
+<font color="deepskyblue">0448:</font> <font color="cyan">// Desc: 位置、法線マップを作成する。</font>
+<font color="deepskyblue">0449:</font> <font color="cyan">//-------------------------------------------------------------</font>
+<font color="deepskyblue">0450:</font> <font color="blue">static</font> <font color="blue">int</font> ix=0;
+<font color="deepskyblue">0451:</font> <font color="blue">static</font> <font color="blue">int</font> iy=0;
+<font color="deepskyblue">0452:</font> <font color="blue">static</font> <font color="blue">float</font> pos[MAP_SIZE][MAP_SIZE][3];
+<font color="deepskyblue">0453:</font> <font color="blue">static</font> <font color="blue">float</font> normal[MAP_SIZE][MAP_SIZE][3];
+<font color="deepskyblue">0454:</font> <font color="blue">int</font> CMyD3DApplication::FrameMoveFinalGathering()
+<font color="deepskyblue">0455:</font> {
+<font color="deepskyblue">0456:</font>     ix = <font color="blue">this</font>-&gt;m_iCount % MAP_SIZE;
+<font color="deepskyblue">0457:</font>     iy = <font color="blue">this</font>-&gt;m_iCount / MAP_SIZE;
+<font color="deepskyblue">0458:</font>     
+<font color="deepskyblue">0459:</font>     <font color="blue">if</font>(0==<font color="blue">this</font>-&gt;m_iCount){
+<font color="deepskyblue">0460:</font>         D3DLOCKED_RECT d3dlr;
+<font color="deepskyblue">0461:</font>         <font color="blue">float</font> *p;
+<font color="deepskyblue">0462:</font>         <font color="yellow">m_pd3dDevice-&gt;GetRenderTargetData(m_pPosSurf,m_pPosLockSurf);</font>
+<font color="deepskyblue">0463:</font>         m_pPosLockSurf-&gt;LockRect(&amp;d3dlr,NULL,D3DLOCK_READONLY); <font color="cyan">//サーフェイス上の矩形をロック    </font>
+<font color="deepskyblue">0464:</font>         p = (<font color="blue">float</font> *)d3dlr.pBits;
+<font color="deepskyblue">0465:</font>         <font color="blue">for</font>(<font color="blue">int</font> y=0;y&lt;MAP_SIZE;y++){
+<font color="deepskyblue">0466:</font>         <font color="blue">for</font>(<font color="blue">int</font> x=0;x&lt;MAP_SIZE;x++){
+<font color="deepskyblue">0467:</font>             pos[x][y][0]=p[0];
+<font color="deepskyblue">0468:</font>             pos[x][y][1]=p[1];
+<font color="deepskyblue">0469:</font>             pos[x][y][2]=p[2];
+<font color="deepskyblue">0470:</font>             p+=4;
+<font color="deepskyblue">0471:</font>         }
+<font color="deepskyblue">0472:</font>         }
+<font color="deepskyblue">0473:</font>         m_pPosLockSurf-&gt;UnlockRect();
+<font color="deepskyblue">0474:</font> 
+<font color="deepskyblue">0475:</font>         <font color="yellow">m_pd3dDevice-&gt;GetRenderTargetData(m_pNormalSurf,m_pNormalLockSurf);</font>
+<font color="deepskyblue">0476:</font>         m_pNormalLockSurf-&gt;LockRect(&amp;d3dlr,NULL,D3DLOCK_READONLY); <font color="cyan">//サーフェイス上の矩形をロック    </font>
+<font color="deepskyblue">0477:</font>         p = (<font color="blue">float</font> *)d3dlr.pBits;        
+<font color="deepskyblue">0478:</font>         <font color="blue">for</font>(<font color="blue">int</font> y=0;y&lt;MAP_SIZE;y++){
+<font color="deepskyblue">0479:</font>         <font color="blue">for</font>(<font color="blue">int</font> x=0;x&lt;MAP_SIZE;x++){
+<font color="deepskyblue">0480:</font>             normal[x][y][0]=p[0];
+<font color="deepskyblue">0481:</font>             normal[x][y][1]=p[1];
+<font color="deepskyblue">0482:</font>             normal[x][y][2]=p[2];
+<font color="deepskyblue">0483:</font>             p+=4;
+<font color="deepskyblue">0484:</font>         }
+<font color="deepskyblue">0485:</font>         }
+<font color="deepskyblue">0486:</font>         m_pNormalLockSurf-&gt;UnlockRect();
+<font color="deepskyblue">0487:</font>     }
+<font color="deepskyblue">0488:</font> 
+<font color="deepskyblue">0489:</font>     <font color="cyan">// 終了条件</font>
+<font color="deepskyblue">0490:</font>     <font color="blue">if</font>(MAP_SIZE-1==ix &amp;&amp; MAP_SIZE-1==iy) <font color="blue">return</font> 1;
+<font color="deepskyblue">0491:</font> 
+<font color="deepskyblue">0492:</font>     <font color="blue">return</font> 0;
+<font color="deepskyblue">0493:</font> }
+</pre>
+<p>
+</p>
+
+
+
+<h2>■マスク</h2>
+
+
+<p>
+それが終わったら、ラディアンスを計算するのですが、その際にも少し手順があります。<br>
+最初に光が届かない、法線ベクトルと反対を向いている光の成分を０に落とします。これは、レンダリングターゲットを最初に適当な値でマスクすることによって実現します。つまり、最初に白丸を描いて円の外側の寄与が0になるようにしておいてから周りの背景を描画します。
+</p>
+<image src = "p4.png">
+<p>
+これを行うには、丸いテクスチャを張り付けるだけです。<br>
+ただし、今回は色成分だけでなく、アルファ成分にも同じ値を書き込みます。
+</p>
+<pre class="CodeBlock">
+main.cpp
+<font color="deepskyblue">0527:</font>         <font color="cyan">//-------------------------------------------------</font>
+<font color="deepskyblue">0528:</font>         <font color="cyan">// レンダリングターゲットの変更</font>
+<font color="deepskyblue">0529:</font>         <font color="cyan">//-------------------------------------------------</font>
+<font color="deepskyblue">0530:</font>         m_pd3dDevice-&gt;SetRenderTarget(0, m_pReductionSurf[0]);
+<font color="deepskyblue">0531:</font>         m_pd3dDevice-&gt;SetDepthStencilSurface(NULL);
+<font color="deepskyblue">0532:</font>         <font color="cyan">// ビューポートの変更</font>
+<font color="deepskyblue">0533:</font>         m_pReductionSurf[0]-&gt;GetDesc(&amp;d3dsd);
+<font color="deepskyblue">0534:</font>         viewport.Height = d3dsd.Width;
+<font color="deepskyblue">0535:</font>         viewport.Width  = d3dsd.Height;
+<font color="deepskyblue">0536:</font>         m_pd3dDevice-&gt;SetViewport(&amp;viewport);
+<font color="deepskyblue">0537:</font> 
+<font color="deepskyblue">0538:</font>         <font color="cyan">//-------------------------------------------------</font>
+<font color="deepskyblue">0539:</font>         <font color="cyan">// 重みを持つ半球の部分だけ描画</font>
+<font color="deepskyblue">0540:</font>         <font color="cyan">//-------------------------------------------------</font>
+<font color="deepskyblue">0541:</font>         {
+<font color="deepskyblue">0542:</font>         m_pd3dDevice-&gt;SetTextureStageState(0,D3DTSS_COLOROP,    D3DTOP_SELECTARG1);
+<font color="deepskyblue">0543:</font>         m_pd3dDevice-&gt;SetTextureStageState(0,D3DTSS_COLORARG1,  D3DTA_TEXTURE);
+<font color="deepskyblue">0544:</font>         m_pd3dDevice-&gt;SetTextureStageState(1,D3DTSS_COLOROP,    D3DTOP_DISABLE);
+<font color="deepskyblue">0545:</font>         m_pd3dDevice-&gt;SetTextureStageState(0,D3DTSS_ALPHAOP,    D3DTOP_SELECTARG1);
+<font color="deepskyblue">0546:</font>         m_pd3dDevice-&gt;SetTextureStageState(0,D3DTSS_ALPHAARG1,  D3DTA_TEXTURE);
+<font color="deepskyblue">0547:</font>         m_pd3dDevice-&gt;SetTextureStageState(1,D3DTSS_ALPHAOP,    D3DTOP_DISABLE);
+<font color="deepskyblue">0548:</font>         m_pd3dDevice-&gt;SetVertexShader(NULL);
+<font color="deepskyblue">0549:</font>         m_pd3dDevice-&gt;SetPixelShader(0);
+<font color="deepskyblue">0550:</font>         m_pd3dDevice-&gt;SetFVF( D3DFVF_XYZRHW | D3DFVF_TEX1 );
+<font color="deepskyblue">0551:</font>         TVERTEX Vertex[4] = {
+<font color="deepskyblue">0552:</font>             <font color="cyan">// x  y  z rhw tu tv</font>
+<font color="deepskyblue">0553:</font>             {          0,           0,0, 1, 0, 0,},
+<font color="deepskyblue">0554:</font>             {d3dsd.Width,           0,0, 1, 1, 0,},
+<font color="deepskyblue">0555:</font>             {d3dsd.Width,d3dsd.Height,0, 1, 1, 1,},
+<font color="deepskyblue">0556:</font>             {          0,d3dsd.Height,0, 1, 0, 1,},
+<font color="deepskyblue">0557:</font>         };
+<font color="deepskyblue">0558:</font>         m_pd3dDevice-&gt;SetTexture( 0, m_pMaskTex );
+<font color="deepskyblue">0559:</font>         m_pd3dDevice-&gt;DrawPrimitiveUP( D3DPT_TRIANGLEFAN, 2, Vertex, <font color="blue">sizeof</font>( TVERTEX ) );
+<font color="deepskyblue">0560:</font>         }
+</pre>
+<p>
+書き込むテクスチャは、手続き的に作成します。<br>
+中心とテクセルの位置を計算して、その距離がテクスチャの大きさの半分よりも小さければ白に、大きければ黒く出力します。<br>
+なお、実際にはちょっと余裕をとって、２テクセルほど小さくしています。
+</p>
+<pre class="CodeBlock">
+main.cpp
+<font color="deepskyblue">0222:</font> <font color="cyan">//-------------------------------------------------------------</font>
+<font color="deepskyblue">0223:</font> <font color="cyan">// 真ん中が白い絵を作る</font>
+<font color="deepskyblue">0224:</font> <font color="cyan">//-------------------------------------------------------------</font>
+<font color="deepskyblue">0225:</font> VOID WINAPI FillTex (D3DXVECTOR4* pOut, CONST D3DXVECTOR2* pTexCoord, 
+<font color="deepskyblue">0226:</font> CONST D3DXVECTOR2* pTexelSize, LPVOID pData)
+<font color="deepskyblue">0227:</font> {
+<font color="deepskyblue">0228:</font>     FLOAT x = 2.0f*(pTexCoord-&gt;x-0.5f);
+<font color="deepskyblue">0229:</font>     FLOAT y = 2.0f*(pTexCoord-&gt;y-0.5f);
+<font color="deepskyblue">0230:</font>     FLOAT col = (x*x+y*y&lt;(1.0f-2.0f/DIFFUSE_SIZE)*(1.0f-2.0f/DIFFUSE_SIZE))
+<font color="deepskyblue">0231:</font>                 ? 1.0f : 0.0f;
+<font color="deepskyblue">0232:</font>     
+<font color="deepskyblue">0233:</font>     pOut-&gt;x = pOut-&gt;y = pOut-&gt;z = pOut-&gt;w = col;
+<font color="deepskyblue">0234:</font> }
+
+<font color="deepskyblue">0338:</font>     <font color="cyan">// マスク用のテクスチャの生成</font>
+<font color="deepskyblue">0339:</font>     <font color="blue">if</font>( FAILED(m_pd3dDevice-&gt;CreateTexture(DIFFUSE_SIZE, DIFFUSE_SIZE, 1
+<font color="deepskyblue">0340:</font>                           , D3DUSAGE_RENDERTARGET, D3DFMT_A8R8G8B8
+<font color="deepskyblue">0341:</font>                           , D3DPOOL_DEFAULT, &amp;m_pMaskTex, NULL)))
+<font color="deepskyblue">0342:</font>         <font color="blue">return</font> E_FAIL;
+<font color="deepskyblue">0343:</font>     <font color="blue">if</font>( FAILED(D3DXFillTexture(m_pMaskTex, FillTex, NULL)))
+<font color="deepskyblue">0344:</font>         <font color="blue">return</font> E_FAIL;
+</pre>
+
+<h2>■ラディアンスの計算</h2>
+
+<p>
+いよいよ入射するラディアンスを計算します。<br>
+自分自身を魚眼レンズのようにレンダリングして遮蔽項を計算します。<br>
+どのように座標変換すればよいでしょうか？ここでランバートの余弦則を思い出しましょう。入射する光は、法線ベクトルの向きとの余弦の強さでラディアンスに寄与します。ということは、レンダリングされる面積が法線ベクトルの向きの余弦に比例すればよいということになります。ということで、レンダリングターゲットからの距離rが法線ベクトルと位置ベクトルのなす角の正弦になるようにレンダリングをします。
+</p>
+<image src = "p6.png">
+<p>
+で、まぁどうするかということですが、３次元の位置座標を半径１の単位球に射影してそのx,y座標を（適用にスケーリングして）スクリーンの座標にします。これは、単位球に射影した点を平行投影したことになります。深度値は、単位円に射影した場所でのｚ値を用いれば正しい結果が得られます（今回は前後関係は使わないので関係ないのですが…）。
+</p>
+<image src = "p3.png">
+<p>
+シェーダプログラムは次のようになります。<br>
+頂点シェーダでは、ビュー空間に射影した後に単位球に落として座標を計算します（mWVPなんて行列を使っていますが、これはビュー座標系への変換行列だけになっています）。
+</p>
+
+<pre class="CodeBlock">
+hlsl.fx
+<font color="deepskyblue">0160:</font> <font color="cyan">// ------------------------------------------------------------</font>
+<font color="deepskyblue">0161:</font> <font color="cyan">// ------------------------------------------------------------</font>
+<font color="deepskyblue">0162:</font> <font color="cyan">// ラディアンスの計算</font>
+<font color="deepskyblue">0163:</font> <font color="cyan">// ------------------------------------------------------------</font>
+<font color="deepskyblue">0164:</font> <font color="cyan">// ------------------------------------------------------------</font>
+<font color="deepskyblue">0165:</font> <font color="blue">struct</font> VS_OUTPUT_RADIANCE
+<font color="deepskyblue">0166:</font> {
+<font color="deepskyblue">0167:</font>     float4 Pos          : POSITION;
+<font color="deepskyblue">0168:</font>     float4 Color        : COLOR0;
+<font color="deepskyblue">0169:</font>     float4 Depth        : TEXCOORD0;
+<font color="deepskyblue">0170:</font> };
+<font color="deepskyblue">0171:</font> 
+<font color="deepskyblue">0172:</font> <font color="cyan">// ------------------------------------------------------------</font>
+<font color="deepskyblue">0173:</font> <font color="cyan">// 頂点シェーダプログラム</font>
+<font color="deepskyblue">0174:</font> <font color="cyan">// ------------------------------------------------------------</font>
+<font color="deepskyblue">0175:</font> VS_OUTPUT_RADIANCE VS_Radiance (
+<font color="deepskyblue">0176:</font>       float4 Pos    : POSITION           <font color="cyan">// モデルの頂点</font>
+<font color="deepskyblue">0177:</font>      ,float4 Normal : NORMAL             <font color="cyan">// 法線ベクトル</font>
+<font color="deepskyblue">0178:</font>      ,float4 Tex0   : TEXCOORD0          <font color="cyan">// テクスチャ座標</font>
+<font color="deepskyblue">0179:</font> ){
+<font color="deepskyblue">0180:</font>     VS_OUTPUT_RADIANCE Out = (VS_OUTPUT_RADIANCE)0;        <font color="cyan">// 出力データ</font>
+<font color="deepskyblue">0181:</font>     
+<font color="deepskyblue">0182:</font>     float4 pos = mul( Pos, mWVP );
+<font color="deepskyblue">0183:</font>     
+<font color="deepskyblue">0184:</font>     <font color="cyan">// 位置座標</font>
+<font color="deepskyblue">0185:</font>     <font color="blue">float</font> rlen = rsqrt(dot(pos.xyz, pos.xyz));
+<font color="deepskyblue">0186:</font>     pos *= rlen;
+<font color="deepskyblue">0187:</font>     Out.Pos = pos;
+<font color="deepskyblue">0188:</font>     Out.Pos.w = 1;
+<font color="deepskyblue">0189:</font>     
+<font color="deepskyblue">0190:</font>     Out.Color = 0;
+<font color="deepskyblue">0191:</font>     
+<font color="deepskyblue">0192:</font>     Out.Depth = pos.z;
+<font color="deepskyblue">0193:</font>     
+<font color="deepskyblue">0194:</font>     <font color="blue">return</font> Out;
+<font color="deepskyblue">0195:</font> }
+<font color="deepskyblue">0196:</font> <font color="cyan">// ------------------------------------------------------------</font>
+<font color="deepskyblue">0197:</font> <font color="cyan">// ピクセルシェーダプログラム</font>
+<font color="deepskyblue">0198:</font> <font color="cyan">// ------------------------------------------------------------</font>
+<font color="deepskyblue">0199:</font> float4 PS_Radiance (VS_OUTPUT_RADIANCE In) : COLOR
+<font color="deepskyblue">0200:</font> {
+<font color="deepskyblue">0201:</font>     <font color="cyan">// （深度を見て）裏面を消去する</font>
+<font color="deepskyblue">0202:</font>     clip(In.Depth);
+<font color="deepskyblue">0203:</font>     
+<font color="deepskyblue">0204:</font>     <font color="blue">return</font> In.Color;
+<font color="deepskyblue">0205:</font> }
+</pre>
+<p>
+ピクセルシェーダでは、z値が負の場所は描画しないようにclip命令で削除します。こうすると後ろに回りこんだ不適切なピクセルの描画を抑止することができます。
+</p>
+<p>
+なお、今回はオブジェクトを黒く描画しましたが、ここに色をつけると、より高次のラディアンスの効果を取り入れることができます。
+</p>
+<p>
+さて、撮影するビュー座標系ですが、カメラの位置をメッシュの表面にして、カメラの向きを法線方向にします。<br>
+これは、最初に求めた法線ベクトルと位置座標マップを利用して、テクセルの位置座標マップの点から見て、見る先を法線マップによる法線ベクトルから求めてビュー行列を作ります。
+</p>
+<image src = "p7.png">
+<p>
+なお、実際にはカメラの位置は位置座標マップの値から法線ベクトルの方向に「少し浮かせて」います。
+</p>
+<pre class="CodeBlock">
+main.cpp
+<font color="deepskyblue">0562:</font>         <font color="blue">if</font>( m_pEffect != NULL ) 
+<font color="deepskyblue">0563:</font>         {
+<font color="deepskyblue">0564:</font>             <font color="cyan">//-------------------------------------------------</font>
+<font color="deepskyblue">0565:</font>             <font color="cyan">// シェーダの設定</font>
+<font color="deepskyblue">0566:</font>             <font color="cyan">//-------------------------------------------------</font>
+<font color="deepskyblue">0567:</font>             m_pEffect-&gt;SetTechnique( m_hTechnique );
+<font color="deepskyblue">0568:</font>             m_pEffect-&gt;Begin( NULL, 0 );
+<font color="deepskyblue">0569:</font>             m_pEffect-&gt;Pass( 1 );
+<font color="deepskyblue">0570:</font>             
+<font color="deepskyblue">0571:</font>             <font color="cyan">// アルファは書き込まない</font>
+<font color="deepskyblue">0572:</font>             RS(D3DRS_COLORWRITEENABLE, D3DCOLORWRITEENABLE_RED |D3DCOLORWRITEENABLE_GREEN |D3DCOLORWRITEENABLE_BLUE );
+<font color="deepskyblue">0573:</font> 
+<font color="deepskyblue">0574:</font>             <font color="cyan">//-------------------------------------------------</font>
+<font color="deepskyblue">0575:</font>             <font color="cyan">// 背景の描画</font>
+<font color="deepskyblue">0576:</font>             <font color="cyan">//-------------------------------------------------</font>
+<font color="deepskyblue">0577:</font>             <font color="blue">float</font> x[3] = {pos[ix][iy][0], pos[ix][iy][1], pos[ix][iy][2]};
+<font color="deepskyblue">0578:</font>             <font color="blue">float</font> n[3] = {normal[ix][iy][0], normal[ix][iy][1], normal[ix][iy][2]};<font color="yellow">
+<font color="deepskyblue">0579:</font>             D3DXVECTOR3 vFromPt   = D3DXVECTOR3( x[0], x[1], x[2] ) + 0.05f*D3DXVECTOR3( n[0], n[1], n[2] );
+<font color="deepskyblue">0580:</font>             D3DXVECTOR3 vLookatPt = D3DXVECTOR3( n[0], n[1], n[2] ) + vFromPt;
+<font color="deepskyblue">0581:</font>             D3DXVECTOR3 vUpVec    = D3DXVECTOR3( 0.0f, 1.0f, 0.0f );
+<font color="deepskyblue">0582:</font>             D3DXMatrixLookAtLH( &amp;mView, &amp;vFromPt, &amp;vLookatPt, &amp;vUpVec );</font>
+<font color="deepskyblue">0583:</font> 
+<font color="deepskyblue">0584:</font>             m_pEffect-&gt;SetMatrix( m_hmWVP, &amp;mView );
+<font color="deepskyblue">0585:</font> 
+<font color="deepskyblue">0586:</font>             m_pMeshBg-&gt;Render(m_pd3dDevice);
+<font color="deepskyblue">0587:</font> 
+<font color="deepskyblue">0588:</font> 
+<font color="deepskyblue">0589:</font>             RS(D3DRS_COLORWRITEENABLE, 0xf );
+<font color="deepskyblue">0590:</font>             m_pEffect-&gt;End();
+<font color="deepskyblue">0591:</font>         }
+</pre>
+<p>
+なお、今回の方法では、下の図のオレンジ色の部分のように、一部塗りつぶされない部分が出てきます。
+</p>
+<image src = "bad.png">
+<p>
+これは、一部の頂点が裏側に回りこむことによって、本来描画されるべき（下の図で灰色の）部分が描画されないからです。（結果敵に赤色の部分だけが描画されます）。
+とりあえず、今回は目立たなかったので、そのままにしておきましたが、本当の結果よりも明るくなっているはずなので対策が必要です。
+なお、前述したカメラを地表から離す距離も、この欠ける面積の広さに依存して調整しています。
+</p>
+<image src = "p8.png">
+
+
+<h2>■この問題の解決法（追加 2003 Dec. 26）</h2>
+
+<p>
+以上の問題を解決する方法を思いつきました。<br>
+シャドウボリュームの作成法において、縮退四角形の変わりにトライアングルファンを用いて、その一頂点は光源の位置にし、さらにw=0にする方法が知られています。<br>
+この方法を利用して、裏側に回りこむ頂点はw=0にします。こうするとw=0にした頂点の分は射影座標系の外側に広がっていくので、隙間の無い画像が得られます。
+</p>
+
+<pre class="CodeBlock">
+hlsl.fx
+<font color="deepskyblue">0172:</font> <font color="cyan">// ------------------------------------------------------------</font>
+<font color="deepskyblue">0173:</font> <font color="cyan">// 頂点シェーダプログラム</font>
+<font color="deepskyblue">0174:</font> <font color="cyan">// ------------------------------------------------------------</font>
+<font color="deepskyblue">0175:</font> VS_OUTPUT_RADIANCE VS_Radiance (
+<font color="deepskyblue">0176:</font>       float4 Pos    : POSITION           <font color="cyan">// モデルの頂点</font>
+<font color="deepskyblue">0177:</font>      ,float4 Normal : NORMAL             <font color="cyan">// 法線ベクトル</font>
+<font color="deepskyblue">0178:</font>      ,float4 Tex0   : TEXCOORD0          <font color="cyan">// テクスチャ座標</font>
+<font color="deepskyblue">0179:</font> ){
+<font color="deepskyblue">0180:</font>     VS_OUTPUT_RADIANCE Out = (VS_OUTPUT_RADIANCE)0;        <font color="cyan">// 出力データ</font>
+<font color="deepskyblue">0181:</font>     
+<font color="deepskyblue">0182:</font>     float4 pos = mul( Pos, mWVP );
+<font color="deepskyblue">0183:</font>     
+<font color="deepskyblue">0184:</font>     <font color="cyan">// 位置座標</font>
+<font color="deepskyblue">0185:</font>     <font color="blue">float</font> rlen = rsqrt(dot(pos.xyz, pos.xyz));
+<font color="deepskyblue">0186:</font>     pos *= rlen;
+<font color="deepskyblue">0187:</font>     Out.Pos = pos;
+<font color="deepskyblue">0188:</font>     Out.Pos.w = 1;
+<font color="deepskyblue">0189:</font>     <font color="yellow"><font color="blue">if</font>(pos.z&lt;0){
+<font color="deepskyblue">0190:</font>         Out.Pos.w = 0;
+<font color="deepskyblue">0191:</font>     }</font>
+<font color="deepskyblue">0192:</font>     
+<font color="deepskyblue">0193:</font>     Out.Color = 0;
+<font color="deepskyblue">0194:</font>     
+<font color="deepskyblue">0197:</font>     <font color="blue">return</font> Out;
+<font color="deepskyblue">0198:</font> }
+</pre>
+
+<h2>■ラディアンスからイラディアンスへ</h2>
+
+<p>
+次に、レンダリングした結果を平均して１つの色に落としこんでイラディアンスとします。<br>
+平均するのは、６４ボックスサンプリングしました。１パスで１６テクセルサンプリングすることによって、8x8の６４の領域を平均化します。
+</p>
+<image src = "p5.png">
+<p>
+やっていることは、頂点シェーダからピクセルシェーダへ出力できる８つのテクスチャ座標を利用してピクセルシェーダで一様にずらすことによって、１６テクセルのサンプリングをし、最終的に１６で割って平均化します。
+</p>
+
+<pre class="CodeBlock">
+hlsl.fx
+<font color="deepskyblue">0216:</font> <font color="cyan">// ------------------------------------------------------------</font>
+<font color="deepskyblue">0217:</font> <font color="cyan">// グローバル変数</font>
+<font color="deepskyblue">0218:</font> <font color="cyan">// ------------------------------------------------------------</font>
+<font color="deepskyblue">0219:</font> <font color="blue">float</font> MAP_WIDTH;
+<font color="deepskyblue">0220:</font> <font color="blue">float</font> MAP_HEIGHT;
+<font color="deepskyblue">0221:</font> 
+<font color="deepskyblue">0222:</font> <font color="cyan">// ------------------------------------------------------------</font>
+<font color="deepskyblue">0223:</font> <font color="cyan">// テクスチャ</font>
+<font color="deepskyblue">0224:</font> <font color="cyan">// ------------------------------------------------------------</font>
+<font color="deepskyblue">0225:</font> texture ReductionMap;
+<font color="deepskyblue">0226:</font> sampler ReductionSamp = sampler_state
+<font color="deepskyblue">0227:</font> {
+<font color="deepskyblue">0228:</font>     Texture = &lt;ReductionMap&gt;;
+<font color="deepskyblue">0229:</font>     MinFilter = LINEAR;
+<font color="deepskyblue">0230:</font>     MagFilter = LINEAR;
+<font color="deepskyblue">0231:</font>     MipFilter = NONE;
+<font color="deepskyblue">0232:</font> 
+<font color="deepskyblue">0233:</font>     AddressU = Clamp;
+<font color="deepskyblue">0234:</font>     AddressV = Clamp;
+<font color="deepskyblue">0235:</font> };
+<font color="deepskyblue">0236:</font> <font color="cyan">// ------------------------------------------------------------</font>
+<font color="deepskyblue">0237:</font> <font color="cyan">// 頂点シェーダからピクセルシェーダに渡すデータ</font>
+<font color="deepskyblue">0238:</font> <font color="cyan">// ------------------------------------------------------------</font>
+<font color="deepskyblue">0239:</font> <font color="blue">struct</font> VS_OUTPUT_REDUCTION
+<font color="deepskyblue">0240:</font> {
+<font color="deepskyblue">0241:</font>     float4 Pos          : POSITION;
+<font color="deepskyblue">0242:</font>     float2 Tex0         : TEXCOORD0;
+<font color="deepskyblue">0243:</font>     float2 Tex1         : TEXCOORD1;
+<font color="deepskyblue">0244:</font>     float2 Tex2         : TEXCOORD2;
+<font color="deepskyblue">0245:</font>     float2 Tex3         : TEXCOORD3;
+<font color="deepskyblue">0246:</font>     float2 Tex4         : TEXCOORD4;
+<font color="deepskyblue">0247:</font>     float2 Tex5         : TEXCOORD5;
+<font color="deepskyblue">0248:</font>     float2 Tex6         : TEXCOORD6;
+<font color="deepskyblue">0249:</font>     float2 Tex7         : TEXCOORD7;
+<font color="deepskyblue">0250:</font> };
+<font color="deepskyblue">0251:</font> 
+<font color="deepskyblue">0252:</font> <font color="cyan">// ------------------------------------------------------------</font>
+<font color="deepskyblue">0253:</font> <font color="cyan">// 頂点シェーダプログラム</font>
+<font color="deepskyblue">0254:</font> <font color="cyan">// ------------------------------------------------------------</font>
+<font color="deepskyblue">0255:</font> VS_OUTPUT_REDUCTION VS_Reduction (
+<font color="deepskyblue">0256:</font>       float4 Pos    : POSITION           <font color="cyan">// モデルの頂点</font>
+<font color="deepskyblue">0257:</font>      ,float4 Tex    : TEXCOORD0          <font color="cyan">// テクスチャ座標</font>
+<font color="deepskyblue">0258:</font> ){
+<font color="deepskyblue">0259:</font>     VS_OUTPUT_REDUCTION Out = (VS_OUTPUT_REDUCTION)0;        <font color="cyan">// 出力データ</font>
+<font color="deepskyblue">0260:</font>     
+<font color="deepskyblue">0261:</font>     <font color="cyan">// 位置座標</font>
+<font color="deepskyblue">0262:</font>     Out.Pos = Pos;
+<font color="deepskyblue">0263:</font>     
+<font color="deepskyblue">0264:</font>     Out.Tex0 = Tex + float2(3.0f/MAP_WIDTH, 1.0f/MAP_HEIGHT);
+<font color="deepskyblue">0265:</font>     Out.Tex1 = Tex + float2(3.0f/MAP_WIDTH, 3.0f/MAP_HEIGHT);
+<font color="deepskyblue">0266:</font>     Out.Tex2 = Tex + float2(3.0f/MAP_WIDTH, 5.0f/MAP_HEIGHT);
+<font color="deepskyblue">0267:</font>     Out.Tex3 = Tex + float2(3.0f/MAP_WIDTH, 7.0f/MAP_HEIGHT);
+<font color="deepskyblue">0268:</font>     Out.Tex4 = Tex + float2(1.0f/MAP_WIDTH, 1.0f/MAP_HEIGHT);
+<font color="deepskyblue">0269:</font>     Out.Tex5 = Tex + float2(1.0f/MAP_WIDTH, 3.0f/MAP_HEIGHT);
+<font color="deepskyblue">0270:</font>     Out.Tex6 = Tex + float2(1.0f/MAP_WIDTH, 5.0f/MAP_HEIGHT);
+<font color="deepskyblue">0271:</font>     Out.Tex7 = Tex + float2(1.0f/MAP_WIDTH, 7.0f/MAP_HEIGHT);
+<font color="deepskyblue">0272:</font>     
+<font color="deepskyblue">0273:</font>     <font color="blue">return</font> Out;
+<font color="deepskyblue">0274:</font> }
+<font color="deepskyblue">0275:</font> 
+<font color="deepskyblue">0276:</font> <font color="cyan">// ------------------------------------------------------------</font>
+<font color="deepskyblue">0277:</font> <font color="cyan">// ピクセルシェーダプログラム</font>
+<font color="deepskyblue">0278:</font> <font color="cyan">// ------------------------------------------------------------</font>
+<font color="deepskyblue">0279:</font> float4 PS_Reduction ( VS_OUTPUT_REDUCTION In ) : COLOR0
+<font color="deepskyblue">0280:</font> {
+<font color="deepskyblue">0281:</font>     float4 t0 = tex2D(ReductionSamp, In.Tex0);
+<font color="deepskyblue">0282:</font>     float4 t1 = tex2D(ReductionSamp, In.Tex1);
+<font color="deepskyblue">0283:</font>     float4 t2 = tex2D(ReductionSamp, In.Tex2);
+<font color="deepskyblue">0284:</font>     float4 t3 = tex2D(ReductionSamp, In.Tex3);
+<font color="deepskyblue">0285:</font>     
+<font color="deepskyblue">0286:</font>     float4 t4 = tex2D(ReductionSamp, In.Tex4);
+<font color="deepskyblue">0287:</font>     float4 t5 = tex2D(ReductionSamp, In.Tex5);
+<font color="deepskyblue">0288:</font>     float4 t6 = tex2D(ReductionSamp, In.Tex6);
+<font color="deepskyblue">0289:</font>     float4 t7 = tex2D(ReductionSamp, In.Tex7);
+<font color="deepskyblue">0290:</font>     
+<font color="deepskyblue">0291:</font>     float4 t8 = tex2D(ReductionSamp, In.Tex0 + float2(+4.0f/MAP_WIDTH, 0));
+<font color="deepskyblue">0292:</font>     float4 t9 = tex2D(ReductionSamp, In.Tex1 + float2(+4.0f/MAP_WIDTH, 0));
+<font color="deepskyblue">0293:</font>     float4 ta = tex2D(ReductionSamp, In.Tex2 + float2(+4.0f/MAP_WIDTH, 0));
+<font color="deepskyblue">0294:</font>     float4 tb = tex2D(ReductionSamp, In.Tex3 + float2(+4.0f/MAP_WIDTH, 0));
+<font color="deepskyblue">0295:</font>     
+<font color="deepskyblue">0296:</font>     float4 tc = tex2D(ReductionSamp, In.Tex4 + float2(+4.0f/MAP_WIDTH, 0));
+<font color="deepskyblue">0297:</font>     float4 td = tex2D(ReductionSamp, In.Tex5 + float2(+4.0f/MAP_WIDTH, 0));
+<font color="deepskyblue">0298:</font>     float4 te = tex2D(ReductionSamp, In.Tex6 + float2(+4.0f/MAP_WIDTH, 0));
+<font color="deepskyblue">0299:</font>     float4 tf = tex2D(ReductionSamp, In.Tex7 + float2(+4.0f/MAP_WIDTH, 0));
+<font color="deepskyblue">0300:</font>     
+<font color="deepskyblue">0301:</font>     <font color="blue">return</font> ((t0+t1+t2+t3)
+<font color="deepskyblue">0302:</font>            +(t4+t5+t6+t7)
+<font color="deepskyblue">0303:</font>            +(t8+t9+ta+tb)
+<font color="deepskyblue">0304:</font>            +(tc+td+te+tf))/16;
+<font color="deepskyblue">0305:</font> }
+</pre>
+<p>
+アプリケーションプログラムでは、この平均操作を２回行い、64x64の画像を１つの色に集約します。<br>
+なお、２回目の平均では、大きさを１テクセルにできるので、レンダリング先を元のテクスチャの対応する位置にしています。
+</p>
+<p>
+１回目のぼかしのプログラム
+</p>
+<pre class="CodeBlock">
+main.cpp
+<font color="deepskyblue">0592:</font>         <font color="cyan">//-------------------------------------------------</font>
+<font color="deepskyblue">0593:</font>         <font color="cyan">//-------------------------------------------------</font>
+<font color="deepskyblue">0594:</font>         <font color="cyan">// ラディアンスをミップマップの要領で小さくする</font>
+<font color="deepskyblue">0595:</font>         <font color="cyan">//-------------------------------------------------</font>
+<font color="deepskyblue">0596:</font>         <font color="cyan">//-------------------------------------------------</font>
+<font color="deepskyblue">0597:</font>         m_pd3dDevice-&gt;SetRenderTarget(0, m_pReductionSurf[1]);
+<font color="deepskyblue">0598:</font>         m_pd3dDevice-&gt;SetDepthStencilSurface(NULL);
+<font color="deepskyblue">0599:</font>         <font color="cyan">// ビューポートの変更</font>
+<font color="deepskyblue">0600:</font>         m_pReductionSurf[1]-&gt;GetDesc(&amp;d3dsd);
+<font color="deepskyblue">0601:</font>         viewport.Height = d3dsd.Width;
+<font color="deepskyblue">0602:</font>         viewport.Width  = d3dsd.Height;
+<font color="deepskyblue">0603:</font>         m_pd3dDevice-&gt;SetViewport(&amp;viewport);
+<font color="deepskyblue">0604:</font> 
+<font color="deepskyblue">0605:</font>         TSS(0,D3DTSS_COLOROP,   D3DTOP_SELECTARG1);
+<font color="deepskyblue">0606:</font>         TSS(0,D3DTSS_COLORARG1, D3DTA_TEXTURE);
+<font color="deepskyblue">0607:</font>         TSS(1,D3DTSS_COLOROP,   D3DTOP_DISABLE);
+<font color="deepskyblue">0608:</font>         
+<font color="deepskyblue">0609:</font>         <font color="blue">if</font>( m_pEffect != NULL ) {
+<font color="deepskyblue">0610:</font>             <font color="cyan">//-------------------------------------------------</font>
+<font color="deepskyblue">0611:</font>             <font color="cyan">// シェーダの設定</font>
+<font color="deepskyblue">0612:</font>             <font color="cyan">//-------------------------------------------------</font>
+<font color="deepskyblue">0613:</font>             m_pEffect-&gt;SetTechnique( m_hTechnique );
+<font color="deepskyblue">0614:</font>             m_pEffect-&gt;Begin( NULL, 0 );
+<font color="deepskyblue">0615:</font>             m_pEffect-&gt;Pass( 2 );
+<font color="deepskyblue">0616:</font> 
+<font color="deepskyblue">0617:</font>             m_pEffect-&gt;SetFloat("<font color="blue">MAP_WIDTH</font>",  DIFFUSE_SIZE);
+<font color="deepskyblue">0618:</font>             m_pEffect-&gt;SetFloat("<font color="blue">MAP_HEIGHT</font>", DIFFUSE_SIZE);
+<font color="deepskyblue">0619:</font> 
+<font color="deepskyblue">0620:</font>             <font color="cyan">//-------------------------------------------------</font>
+<font color="deepskyblue">0621:</font>             <font color="cyan">// フィルタリング</font>
+<font color="deepskyblue">0622:</font>             <font color="cyan">//-------------------------------------------------</font>
+<font color="deepskyblue">0623:</font>             TVERTEX Vertex1[4] = {
+<font color="deepskyblue">0624:</font>                 <font color="cyan">//   x    y     z    tu tv</font>
+<font color="deepskyblue">0625:</font>                 {-1.0f, +1.0f, 0.1f,  0, 0},
+<font color="deepskyblue">0626:</font>                 {+1.0f, +1.0f, 0.1f,  1, 0},
+<font color="deepskyblue">0627:</font>                 {+1.0f, -1.0f, 0.1f,  1, 1},
+<font color="deepskyblue">0628:</font>                 {-1.0f, -1.0f, 0.1f,  0, 1},
+<font color="deepskyblue">0629:</font>             };
+<font color="deepskyblue">0630:</font>             m_pd3dDevice-&gt;SetFVF( D3DFVF_XYZ | D3DFVF_TEX1 );
+<font color="deepskyblue">0631:</font>             m_pEffect-&gt;SetTexture("<font color="blue">ReductionMap</font>", m_pReductionTex[0]);
+<font color="deepskyblue">0632:</font>             m_pd3dDevice-&gt;DrawPrimitiveUP( D3DPT_TRIANGLEFAN
+<font color="deepskyblue">0633:</font>                             , 2, Vertex1, <font color="blue">sizeof</font>( TVERTEX ) );
+<font color="deepskyblue">0634:</font> 
+<font color="deepskyblue">0635:</font>             m_pEffect-&gt;End();
+<font color="deepskyblue">0636:</font>         }
+</pre>
+<p>
+２回目のぼかしのプログラム
+</p>
+<pre class="CodeBlock">
+main.cpp
+<font color="deepskyblue">0638:</font>         <font color="cyan">//-------------------------------------------------</font>
+<font color="deepskyblue">0639:</font>         <font color="cyan">//-------------------------------------------------</font>
+<font color="deepskyblue">0640:</font>         <font color="cyan">// ラディアンスをテクスチャの対応する位置に張る</font>
+<font color="deepskyblue">0641:</font>         <font color="cyan">//-------------------------------------------------</font>
+<font color="deepskyblue">0642:</font>         <font color="cyan">//-------------------------------------------------</font>
+<font color="deepskyblue">0643:</font>         m_pd3dDevice-&gt;SetRenderTarget(0, m_pDiffuseSurf);
+<font color="deepskyblue">0644:</font>         m_pd3dDevice-&gt;SetDepthStencilSurface(NULL);
+<font color="deepskyblue">0645:</font>         <font color="cyan">// ビューポートの変更</font>
+<font color="deepskyblue">0646:</font>         m_pDiffuseSurf-&gt;GetDesc(&amp;d3dsd);
+<font color="deepskyblue">0647:</font>         viewport.Height = d3dsd.Width;
+<font color="deepskyblue">0648:</font>         viewport.Width  = d3dsd.Height;
+<font color="deepskyblue">0649:</font>         m_pd3dDevice-&gt;SetViewport(&amp;viewport);
+<font color="deepskyblue">0650:</font>         
+<font color="deepskyblue">0651:</font>         <font color="cyan">// 確認しやすくするために、最初は赤く塗りつぶす</font>
+<font color="deepskyblue">0652:</font>         <font color="blue">if</font>(0==ix&amp;&amp;0==iy)m_pd3dDevice-&gt;Clear(0L, NULL, D3DCLEAR_TARGET, 0x00800000, 1.0f, 0L);
+<font color="deepskyblue">0653:</font> 
+<font color="deepskyblue">0654:</font>         <font color="blue">if</font>( m_pEffect != NULL ) {
+<font color="deepskyblue">0655:</font>             <font color="cyan">//-------------------------------------------------</font>
+<font color="deepskyblue">0656:</font>             <font color="cyan">// シェーダの設定</font>
+<font color="deepskyblue">0657:</font>             <font color="cyan">//-------------------------------------------------</font>
+<font color="deepskyblue">0658:</font>             m_pEffect-&gt;SetTechnique( m_hTechnique );
+<font color="deepskyblue">0659:</font>             m_pEffect-&gt;Begin( NULL, 0 );
+<font color="deepskyblue">0660:</font>             m_pEffect-&gt;Pass( 2 );
+<font color="deepskyblue">0661:</font> 
+<font color="deepskyblue">0662:</font>             m_pEffect-&gt;SetFloat("<font color="blue">MAP_WIDTH</font>",  8);
+<font color="deepskyblue">0663:</font>             m_pEffect-&gt;SetFloat("<font color="blue">MAP_HEIGHT</font>", 8);
+<font color="deepskyblue">0664:</font> 
+<font color="deepskyblue">0665:</font>             <font color="cyan">//-------------------------------------------------</font>
+<font color="deepskyblue">0666:</font>             <font color="cyan">// フィルタリング</font>
+<font color="deepskyblue">0667:</font>             <font color="cyan">//-------------------------------------------------</font>
+<font color="deepskyblue">0668:</font>             <font color="blue">float</font> x =  2.0f*((<font color="blue">float</font>)ix/(<font color="blue">float</font>)MAP_SIZE) - 1.0f;
+<font color="deepskyblue">0669:</font>             <font color="blue">float</font> y = -2.0f*((<font color="blue">float</font>)iy/(<font color="blue">float</font>)MAP_SIZE) + 1.0f;
+<font color="deepskyblue">0670:</font>             TVERTEX Vertex1[4] = {
+<font color="deepskyblue">0671:</font>                 <font color="cyan">//   x    y     z    tu tv</font>
+<font color="deepskyblue">0672:</font>                 {x,                      y,                     0.1f,  0, 0},
+<font color="deepskyblue">0673:</font>                 {x+2.0f/(<font color="blue">float</font>)MAP_SIZE, y,                     0.1f,  1, 0},
+<font color="deepskyblue">0674:</font>                 {x+2.0f/(<font color="blue">float</font>)MAP_SIZE, y-2.0f/(<font color="blue">float</font>)MAP_SIZE,0.1f,  1, 1},
+<font color="deepskyblue">0675:</font>                 {x,                      y-2.0f/(<font color="blue">float</font>)MAP_SIZE,0.1f,  0, 1},
+<font color="deepskyblue">0676:</font>             };
+<font color="deepskyblue">0677:</font>             m_pd3dDevice-&gt;SetFVF( D3DFVF_XYZ | D3DFVF_TEX1 );
+<font color="deepskyblue">0678:</font>             m_pEffect-&gt;SetTexture("<font color="blue">ReductionMap</font>", m_pReductionTex[1]);
+<font color="deepskyblue">0679:</font>             m_pd3dDevice-&gt;DrawPrimitiveUP( D3DPT_TRIANGLEFAN
+<font color="deepskyblue">0680:</font>                             , 2, Vertex1, <font color="blue">sizeof</font>( TVERTEX ) );
+<font color="deepskyblue">0681:</font> 
+<font color="deepskyblue">0682:</font>             m_pEffect-&gt;End();
+<font color="deepskyblue">0683:</font>         }
+</pre>
+
+
+<h2>■明度の調整</h2>
+
+
+<p>
+さて、最後です。モデルが平面だったらイラディアンスの強さが白になるように調整します。<br>
+つまり遮蔽されなかったときの強さで今までに求められた色を割ればいいです。<br>
+このときのために仕込んでいたものがあります。アルファ成分はマスクのテクスチャをレンダリングするときには書きこきましたが、それ以降は書き込んでいません。つまり、アルファ成分に遮蔽されなかったときの強さが格納されているので、その値で割るのです。アルファ成分に関しても平均操作は行われているので、適切にスケーリングされます。
+</p>
+
+<pre class="CodeBlock">
+hlsl.fx
+<font color="deepskyblue">0310:</font> <font color="cyan">// ------------------------------------------------------------</font>
+<font color="deepskyblue">0311:</font> <font color="cyan">// アルファ成分で色成分を割る</font>
+<font color="deepskyblue">0312:</font> <font color="cyan">// ------------------------------------------------------------</font>
+<font color="deepskyblue">0313:</font> float4 PS_Div ( float4 Tex0 : TEXCOORD0 ) : COLOR0
+<font color="deepskyblue">0314:</font> {
+<font color="deepskyblue">0315:</font>     float4 samp = tex2D(SrcSamp, Tex0);
+<font color="deepskyblue">0316:</font>     
+<font color="deepskyblue">0317:</font>     <font color="blue">if</font>(samp.w != 0) samp /= samp.w;
+<font color="deepskyblue">0318:</font>     
+<font color="deepskyblue">0319:</font>     <font color="blue">return</font> samp;
+<font color="deepskyblue">0320:</font> }
+</pre>
+<p>
+まぁ、アプリケーション側では、シェーダを指定して全画面にポリゴンを張るだけです。
+</p>
+<pre class="CodeBlock">
+main.cpp
+<font color="deepskyblue">0685:</font>         <font color="cyan">//-----------------------------------------------------</font>
+<font color="deepskyblue">0686:</font>         <font color="cyan">// 最終フレームでは、アルファ成分の値で結果を割る（正規化）</font>
+<font color="deepskyblue">0687:</font>         <font color="cyan">//-----------------------------------------------------</font>
+<font color="deepskyblue">0688:</font>         <font color="blue">if</font>(MAP_SIZE-1==ix &amp;&amp; MAP_SIZE-1==iy){
+<font color="deepskyblue">0689:</font>             m_pd3dDevice-&gt;SetRenderTarget(0, m_pFinalSurf);
+<font color="deepskyblue">0690:</font>             m_pd3dDevice-&gt;SetDepthStencilSurface(NULL);
+<font color="deepskyblue">0691:</font>             <font color="cyan">// ビューポートの変更</font>
+<font color="deepskyblue">0692:</font>             m_pFinalSurf-&gt;GetDesc(&amp;d3dsd);
+<font color="deepskyblue">0693:</font>             viewport.Height = d3dsd.Width;
+<font color="deepskyblue">0694:</font>             viewport.Width  = d3dsd.Height;
+<font color="deepskyblue">0695:</font>             m_pd3dDevice-&gt;SetViewport(&amp;viewport);
+<font color="deepskyblue">0696:</font> 
+<font color="deepskyblue">0697:</font>             <font color="blue">if</font>( m_pEffect != NULL ) {
+<font color="deepskyblue">0698:</font>                 m_pEffect-&gt;SetTechnique( m_hTechnique );
+<font color="deepskyblue">0699:</font>                 m_pEffect-&gt;Begin( NULL, 0 );
+<font color="deepskyblue">0700:</font>                 m_pEffect-&gt;Pass( 3 );
+<font color="deepskyblue">0701:</font> 
+<font color="deepskyblue">0702:</font>                 TVERTEX Vertex[4] = {
+<font color="deepskyblue">0703:</font>                     <font color="cyan">// x  y  z rhw tu tv</font>
+<font color="deepskyblue">0704:</font>                     {       0,       0,0, 1, 0+0.5f/(FLOAT)MAP_SIZE, 0+0.5f/(FLOAT)MAP_SIZE,},
+<font color="deepskyblue">0705:</font>                     {MAP_SIZE,       0,0, 1, 1+0.5f/(FLOAT)MAP_SIZE, 0+0.5f/(FLOAT)MAP_SIZE,},
+<font color="deepskyblue">0706:</font>                     {MAP_SIZE,MAP_SIZE,0, 1, 1+0.5f/(FLOAT)MAP_SIZE, 1+0.5f/(FLOAT)MAP_SIZE,},
+<font color="deepskyblue">0707:</font>                     {       0,MAP_SIZE,0, 1, 0+0.5f/(FLOAT)MAP_SIZE, 1+0.5f/(FLOAT)MAP_SIZE,},
+<font color="deepskyblue">0708:</font>                 };
+<font color="deepskyblue">0709:</font>                 m_pd3dDevice-&gt;SetFVF( D3DFVF_XYZRHW | D3DFVF_TEX1 );
+<font color="deepskyblue">0710:</font>                 m_pEffect-&gt;SetTexture(m_htSrcTex, m_pDiffuseTex);
+<font color="deepskyblue">0711:</font>                 m_pd3dDevice-&gt;DrawPrimitiveUP( D3DPT_TRIANGLEFAN
+<font color="deepskyblue">0712:</font>                                 , 2, Vertex, <font color="blue">sizeof</font>( TVERTEX ) );
+<font color="deepskyblue">0713:</font> 
+<font color="deepskyblue">0714:</font>                 m_pEffect-&gt;End();
+<font color="deepskyblue">0715:</font>             }
+</pre>
+
+
+<h2>■で、どうつかうの</h2>
+
+
+<p>
+さて、こうやって計算したイラディアンスですが、どうして使いましょうか？<br>
+そもそもイラディアンスは、各点へ入射する光の総量を計算したものです。<br>
+今回の計算では、さえぎられなかった部分を白に、さえぎられた部分を黒にする遮蔽項の計算をしているのですが、これは、２次反射が非常に弱い環境下での、天球が一様な強さの白色で覆われた場合のライティングの結果になっています。<br>
+ということで、求めたイラディアンスにデカールのテクスチャを乗算した結果は、この状況下でのライティングになります。
+</p>
+
+<image src = "p1.png">
+<p>
+この精度までくると、デカールのテクスチャをリアルなものにしないと、結果がちゃちに見えてしまいますね。<br>
+まぁ、でも、洋ゲーっぽい雰囲気といえるでしょうか（逆に言えば、洋ゲーでのテクスチャの書き込み方がイラディアンスを意識したものであったということが理解できたということでしょう）。
+</p>
+
+
+<h2>■最後に</h2>
+
+
+<p>
+今回のプログラムを応用すれば、非リアルタイムでのいろいろなことができるのではないでしょうか。<br>
+気付かれている方は気付かれていると思いますが、今回の計算は定数の係数を除いては、球面調和関数展開の最低次の計算になっています（要するにアンビエント）。マスクのためのテクスチャを変更すれば、他の球面調和関数展開の計算も可能になります。<br>
+SHかぁ～。この計算を何回もするのかと思うと気が重くなりますね。高速化も考えないと…
+</p>
+
+
+
+
+</div>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<center>
+<hr>
+<p><a href="../index.html">もどる</a></p>
+<p><a href="mailto:imagire@gmail.com">imagire@gmail.com</a></p>
+</center>
+
+</body>
+</html>

@@ -1,0 +1,285 @@
+<head>
+	<title>t-pot 『Vertex Shader 入門:薄膜シェーダー』</title>
+	<link rel="stylesheet" type="text/css" href="../if.css">
+</head>
+<meta http-equiv=Content-Type content="text/html; charset=shift_jis">
+<body>
+<div class="contents">
+<center>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<h1>薄膜シェーダー</h1><br>
+<h3>～NVIDIAのサンプルの奴です～</h3>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+</center>
+<h2>■はじめに</h2>
+
+<p>
+トゥーンシェーダーをやったので、似たようなものが無いか探してみました。
+すると、NVIDIA の  NVEffectsBrowser のサンプルに、membrane Lighting と言うのがあったのでこれを紹介します。<br>
+membrane とは、膜のことらしいです。さらに、扱っている膜が透明らしいので、ここでは、薄膜シェーダーと呼びます。
+</p>
+<right><image src = "membrane.gif"></right>
+<p>
+トゥーンシェーダーとの違いは、
+</p>
+<table>
+<tr><td>I</td><td>視線の方向と、頂点の法線をつかってテクスチャー座標を算出する</td>
+</tr>
+<tr><td>II</td><td>加算半透明で、モデルを表示する</td>
+</tr>
+</table>
+<p>
+です。I は、トゥーンの場合には、光源の方向と法線の内積でした。
+それは、照明と同じ効果を出します。
+今回の場合は、正面を向いているかどうかを表現するので、輪郭抽出のような用途に使えます。
+</p>
+<p>
+以下のファイルをダウンロードしてください。<br>
+</p>
+<ul style = "LIST-STYLE-TYPE:none">
+<li><a href="membrane.lzh">membrane.lzh (薄膜シェーダーのサンプル)</a>
+</ul>
+<p>
+今回は、PurpleGreenBright.bmp というファイルがエフェクト用に入っています。<br>
+今回のテクスチャーは、前回と異なり、内積の値が小さな場合に明るく、大きな場合に暗くなります。<br>
+結果的に、外側がぼおっとした表示になります。
+</p>
+<right><image src = "PurpleGreenBright.gif"></right>
+<p>
+また、トラでも表示してみました。
+</p>
+<right><image src = "membranetiger.gif"></right>
+<p>
+ちょっと地味でした。
+</p>
+
+<h2>■バーテックスシェーダー(vs.vsh)</h2>
+
+<p>
+バーテックスシェーダープログラムを見ます。
+</p>
+<pre class="CodeBlock">
+vs.1.0
+
+; v0	頂点の座標値
+; v3	法線ベクトル
+; v8	テクスチャ座標1
+
+;
+; c0-3   -- world + ビュー + 透視変換行列
+; c4-7   -- world 行列
+; c8-11  -- world の逆転置行列
+; c14    -- カメラの位置
+; c15    -- メッシュの色
+
+vs.1.0
+
+;座標変換
+dp4 oPos.x, v0, c0
+dp4 oPos.y, v0, c1
+dp4 oPos.z, v0, c2
+dp4 oPos.w, v0, c3
+
+;法線の変換
+dp3 r0.x, v3, c8
+dp3 r0.y, v3, c9
+dp3 r0.z, v3, c10
+
+;法線の正規化
+dp3 r0.w, r0, r0
+rsq r0.w, r0.w
+mul r0, r0, r0.w
+<Font color = orange><b>
+;ワールド座標系での頂点の位置を計算する
+dp4 r1.x, v0, c4
+dp4 r1.y, v0, c5
+dp4 r1.z, v0, c6
+dp4 r1.w, v0, c7
+
+;カメラへの向きeを計算する
+add r2, c14, -r1
+
+;e の正規化
+dp3 r2.w, r2, r2
+rsq r2.w, r2.w
+mul r2, r2, r2.w
+
+; e dot n (テクスチャー座標の算出)
+dp3 r1, r2, r0
+mov oT0.x, r1
+</b></Font>
+; メッシュのテクスチャー
+mov oT1, v8
+
+; 頂点色（(1.0, 1.0, 1.0, 1.0) を入れます）
+mov oD0, c15
+</pre>
+
+<p>
+今回、視線への方向ベクトル e を、新しく導入しました。
+視線（カメラ）の位置は、ワールド座標での位置なので、各頂点をワールド座標の行列で変換します。
+その後に、カメラの位置との差を取って、カメラの方向を算出します。<br>
+後は、法線との内積をとって、法線がどれだけ正面を向いているかを計算し、その値をテクスチャーの座標にします。<br>
+後は、元のテクスチャーを張ります。<br>
+NVIDIA のサンプルでは、元のテクスチャーは張らなかったのですが、さびしかったので、こうしました。<br>
+さらに、NVIDIA のサンプルでは、テクスチャーを流していたのですが、切れ目が汚かったので、流すのをやめました。<br>
+そして、元の色は反映させずに白色 (1.0, 1.0, 1.0, 1.0) を入れました。
+元の色で塗ると、その色がつよすぎるので、こうしました。
+</p>
+
+<h2>■初期化</h2>
+
+<p>
+では、初期化です。<br>
+トゥーンシェーダーとの違いは、加算合成を行うために、Zバッファを切っていることです。
+</p>
+
+<pre class="CodeBlock">
+HRESULT InitRender(LPDIRECT3DDEVICE8 lpD3DDEV)
+{
+    HRESULT hr;
+
+    hr = LoadXFile("car.x", lpD3DDEV);
+    if ( FAILED(hr) ) return hr;
+ 
+    // 虹色テクスチャーの読み込み
+    D3DXCreateTextureFromFileEx(lpD3DDEV, "<Font color = orange><b>PurpleGreenBright.bmp</b></Font>",0,0,0,0,D3DFMT_A8R8G8B8,
+                                D3DPOOL_MANAGED, D3DX_FILTER_LINEAR, D3DX_FILTER_LINEAR,
+                                0, NULL, NULL, &pTexture);
+
+    // バーテックスシェーダーを作成する
+    ID3DXBuffer*    pshader;
+    hr = D3DXAssembleShaderFromFile("vs.vsh", 0,NULL,&pshader,NULL);
+    if ( FAILED(hr) ) return hr;
+    hr = lpD3DDEV->CreateVertexShader( dwDecl, (DWORD*)pshader->GetBufferPointer(), &hVertexShader, 0 );
+    RELEASE(pshader);
+    if ( FAILED(hr) ) return hr;
+    
+    // レンダリングの状態の設定
+    <Font color = orange><b>lpD3DDEV->SetRenderState( D3DRS_ZENABLE, FALSE);</b></Font>
+    lpD3DDEV->SetRenderState( D3DRS_AMBIENT, 0xff808080);
+    
+    return S_OK;
+</pre>
+
+<h2>■表示</h2>
+
+<p>
+では、描画部分です。<br>
+mView のカメラの位置 eye を SetVertexShaderConstant の 14、
+定数 (1.0f, 1.0f, 1.0f, 1.0f) を 15 に入れました。<br>
+後は、加算合成になるように、α合成の設定をしました。
+一応、使い終わったら、α合成をしないように、元に戻しておきます。
+</p>
+
+<pre class="CodeBlock">
+void Render(LPDIRECT3DDEVICE8 lpD3DDEV)
+{
+    if(NULL == pMeshVB) return;
+    
+    D3DXMATRIX mWorld, mView, mProj;
+
+    D3DXMatrixRotationY( &mWorld, timeGetTime()/1000.0f );
+    
+    D3DXVECTOR3 eye, lookAt, up;
+    eye.x    = 0.0f; eye.y      = 1.5f; eye.z    = 3.0f;
+    lookAt.x = 0.0f; lookAt.y   = 0.0f; lookAt.z = 0.0f;
+    up.x     = 0.0f; up.y       = 1.0f; up.z     = 0.0f;
+    D3DXMatrixLookAtLH(&mView, &eye, &lookAt, &up);
+    
+    D3DXMatrixPerspectiveFovLH(&mProj
+        ,60.0f*PI/180.0f                        // 視野角
+        ,(float)WIDTH/(float)HEIGHT                // アスペクト比
+        ,0.01f                                    // 最近接距離
+        ,100.0f                                    // 最遠方距離
+        );
+    D3DXMATRIX  m = mWorld * mView * mProj;
+    D3DXMatrixTranspose( &m ,  &m);
+    lpD3DDEV->SetVertexShaderConstant(0,&m, 4);
+    D3DXMatrixTranspose( &m ,  &mWorld);
+    lpD3DDEV->SetVertexShaderConstant(4, &m, 4);
+    D3DXMatrixInverse( &m,  NULL, &mWorld);
+    lpD3DDEV->SetVertexShaderConstant(8, &m, 4);
+    <Font color = orange><b>lpD3DDEV->SetVertexShaderConstant(14, &eye, 1);</b></Font>
+
+    lpD3DDEV->SetVertexShader(hVertexShader);
+    <Font color = orange><b>lpD3DDEV->SetRenderState(D3DRS_ALPHABLENDENABLE, TRUE);</b></Font>
+    <Font color = orange><b>lpD3DDEV->SetRenderState(D3DRS_DESTBLEND, D3DBLEND_ONE);</b></Font>
+    <Font color = orange><b>lpD3DDEV->SetRenderState(D3DRS_SRCBLEND, D3DBLEND_SRCALPHA);</b></Font>
+    lpD3DDEV->SetTextureStageState(0,D3DTSS_COLOROP,    D3DTOP_MODULATE);
+    lpD3DDEV->SetTextureStageState(0,D3DTSS_COLORARG1,    D3DTA_TEXTURE);
+    lpD3DDEV->SetTextureStageState(0,D3DTSS_COLORARG2,    D3DTA_DIFFUSE);
+    lpD3DDEV->SetTextureStageState(0,D3DTSS_MAGFILTER,    D3DTEXF_LINEAR);
+    lpD3DDEV->SetTextureStageState(0,D3DTSS_MINFILTER,    D3DTEXF_LINEAR);
+    lpD3DDEV->SetTextureStageState(0,D3DTSS_ADDRESSU, D3DTADDRESS_CLAMP);
+    lpD3DDEV->SetTexture(0,pTexture);
+    <Font color = orange><b>lpD3DDEV->SetVertexShaderConstant(15,D3DXVECTOR4(1.0f, 1.0f, 1.0f, 1.0f),1);</b></Font>
+
+    //メッシュの描画
+    lpD3DDEV->SetStreamSource(0, pMeshVB, sizeof(D3D_CUSTOMVERTEX));
+    lpD3DDEV->SetIndices(pMeshIndex,0);
+    for(DWORD i=0;i<dwNumMaterials;i++){
+        lpD3DDEV->SetTexture(1,pMeshTextures[i]);
+        lpD3DDEV->SetTextureStageState(1,D3DTSS_COLOROP,D3DTOP_MODULATE);
+        lpD3DDEV->SetTextureStageState(1,D3DTSS_COLORARG1,D3DTA_TEXTURE);
+        lpD3DDEV->SetTextureStageState(1,D3DTSS_COLORARG2,D3DTA_CURRENT);
+        lpD3DDEV->SetTextureStageState(1,D3DTSS_MAGFILTER,D3DTEXF_LINEAR);
+        lpD3DDEV->SetTextureStageState(1,D3DTSS_MINFILTER,D3DTEXF_LINEAR);
+
+        lpD3DDEV->DrawIndexedPrimitive(D3DPT_TRIANGLELIST, 
+                                        pSubsetTable[i].VertexStart,
+                                        pSubsetTable[i].VertexCount,
+                                        pSubsetTable[i].FaceStart * 3,
+                                        pSubsetTable[i].FaceCount);
+    }
+    
+    lpD3DDEV->SetTexture(0, NULL);
+    <Font color = orange><b>lpD3DDEV->SetRenderState(D3DRS_ALPHABLENDENABLE, FALSE);</b></Font>
+}</pre>
+
+<h2>■Ｘ線レンダリング</h2>
+
+<p>
+後から、ＣＧ雑誌を読んだときに、レントゲン撮影をしたような画像をみました。<br>
+『新しく、シェーダーを書こうか』と思ったのですが、よく考えたら、薄膜シェーダーでいいかなぁと思いました。
+</p>
+<right><image src = "mem_xray.gif"></right>
+<p>
+の、内積の小さな成分を明いテクスチャーを使いました。<br>
+法線が横を向いている方が明るくなります。
+これで輪郭が抽出でき、Ｘ線で照らされたように見えると思いました。
+</p>
+<right><image src = "mem_xray_kuma.gif"></right>
+<p>
+もっとポリゴンが多くないと、それらしくみえないですかねぇ。
+</p>
+
+<h2>■最後に</h2>
+
+<p>
+今回は、トゥーンから、少しの変更で、幻想的な表示のレンダリングを行うことができました。<br>
+NVIDIA のサンプルには、他にもテクスチャーがありました。それらの一つの、
+</p>
+<right><image src = "membranInvcolors.gif"></right>
+<p>
+のテクスチャーを使えば、下のような表示になります。
+</p>
+<right><image src = "membraneInv.gif"></right>
+<p>
+金属的な表現か？<br>
+こんなきれいな画像がお手軽に表示できるなんて、すごい時代になりましたね。
+</p>
+
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<center>
+<hr>
+<p><a href="../index.html">もどる</a></p>
+<p><a href="mailto:imagire@gmail.com">imagire@gmail.com</a></p>
+</center>
+</body>
+</html>

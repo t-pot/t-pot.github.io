@@ -1,0 +1,358 @@
+<head>
+	<title>t-pot『重心抽出』</title>
+	<link rel="stylesheet" type="text/css" href="../if.css">
+</head>
+<meta http-equiv=Content-Type content="text/html; charset=shift_jis">
+<body>
+
+
+<div class="contents">
+<center>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<h1>重心抽出</h1><br>
+<h3>～ Extraction of the center of mass ～</h3>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<image src = "title.png">
+<br>
+<hr>
+</center>
+<div>
+
+
+<h2>■はじめに</h2>
+
+
+<p>
+<a href="http://www.igda.jp/modules/xfsection/article.php?articleid=40">SIG-GT2</a>の講演で<a href="http://masafumi-t.cool.ne.jp/">高橋 誠史</a>さんが<a href="http://www.jaist.ac.jp/~masa-t/publications.htm">動画像処理へのGPUの応用方法</a>という講演を行っていたのですが、
+その中で、「GPUに向かない画像処理」として、「サーフェス色の任意色の座標値の所得」をあげられていました。<br>
+個人的には、特定の色の中心を求めるのはＧＰＵがやっても差し支えないと思います。<br>
+ということで、テストプログラムを書いてみました。
+</p>
+
+<p>
+で、いつものようにプログラムです。<br>
+</p>
+<ul style = "LIST-STYLE-TYPE:none">
+<li><a href="src.zip">src.zip (重心抽出:DirectX9 [Vertex shader 1_1, Pixel shader 2_0])</a>
+</ul>
+<p>
+左ドラッグで白い線を描きます。その中心を赤いターゲットが指します。<br>
+</p>
+<p>
+ソースには、いつものように適当にファイルが入っています。
+大事なファイルは次のものです。
+</p>
+<table>
+<tr><td><a href="main_h.html">main.h</a></td><td>アプリケーションのヘッダ</td></tr>
+<tr><td><a href="main_cpp.html">main.cpp</a></td><td>アプリケーションのソース</td></tr>
+<tr><td><a href="hlsl_fx.html">hlsl.fx</a></td><td>シェーダプログラム</td></tr>
+</table>
+
+
+<h2>■何をやっているの？</h2>
+
+<p>
+さて、重心を求めます。重心とは有効な画素iの位置x<sub>i</sub>の平均
+</p>
+<pre class="CodeBlock">
+    Σ x<sub>i</sub>
+X = ----
+    Σ 1
+</pre>
+<p>
+になります。<br>
+この式を一般化すると、画素が有効なときには1、無効なときには0となるような重みw<sub>i</sub>を定義することによって、全画素の合計を取った式
+</p>
+<pre class="CodeBlock">
+    Σ w<sub>i</sub>x<sub>i</sub>
+X = ------
+     Σ w<sub>i</sub>
+</pre>
+<p>
+に書き直すことができます。
+なお、w<sub>i</sub>は、０と１だけではなく、その中間でもよく、その場合には、画素が有効度合いのような意味が付くでしょう。
+</p>
+<p>
+さて、この式は、w<sub>i</sub>x<sub>i</sub> と w<sub>i</sub> に関して全画素の合計をとり、その結果を割るといった処理になっています。<br>
+といっても、実際には合計をとる処理に関して一様なスケーリングをしても結果が変わらないので、「合計」をとるのでも、「平均」をとるのでもその結果はかわらないということになります。<br>
+全画素の平均を取るというのは、いわゆるブラーを最後までとることです。
+これはミップマップとしてCGでよく知られている方法で処理できます。<br>
+ということで、各画素に関してw<sub>i</sub>x<sub>i</sub> と w<sub>i</sub>を計算し、それらの平均をミップマップをすることによってもとめ、最後にその結果を割ると欲しい重心が求まります。
+</p>
+<image src = "how2.png">
+<p>
+今回のプログラムでは、r及びg成分にw<sub>i</sub>x<sub>i</sub>を、a成分にw<sub>i</sub>を格納して計算します。
+なお、w<sub>i</sub>は、重心を取りたい元画像の白黒の濃度に他なりません。
+</p>
+
+
+<h2>■元画像を使った各テクセルのxy座標の埋め込み</h2>
+
+
+<p>
+最初のステップは、基画像に座標値を掛けて、ピクセルごとに合成する基の数値を導出することです。<br>
+座標値は、左上が(0,0)、右下が(1,1)になるように、射影空間の座標値をスケーリングします。
+</p>
+<pre class="CodeBlock">
+hlsl.fx
+<font color="deepskyblue">0039:</font> <font color="blue">struct</font> FRAGMENT0
+<font color="deepskyblue">0040:</font> {
+<font color="deepskyblue">0041:</font>     float4 Pos          : POSITION;
+<font color="deepskyblue">0042:</font>     float2 Tex          : TEXCOORD0;
+<font color="deepskyblue">0043:</font>     float4 XY           : TEXCOORD1;
+<font color="deepskyblue">0044:</font> };
+<font color="deepskyblue">0045:</font> <font color="cyan">// ------------------------------------------------------------</font>
+<font color="deepskyblue">0046:</font> FRAGMENT0 VS0 (
+<font color="deepskyblue">0047:</font>       float4 Pos    : POSITION           <font color="cyan">// (モデルの頂点)</font>
+<font color="deepskyblue">0048:</font>     , float2 Tex    : TEXCOORD0          <font color="cyan">// (テクスチャ座標)</font>
+<font color="deepskyblue">0049:</font>       )
+<font color="deepskyblue">0050:</font> {
+<font color="deepskyblue">0051:</font>     FRAGMENT0 Out = (FRAGMENT0)0;
+<font color="deepskyblue">0052:</font>     
+<font color="deepskyblue">0053:</font>     <font color="cyan">// Position(位置座標)</font>
+<font color="deepskyblue">0054:</font>     Out.Pos = Pos;
+<font color="deepskyblue">0055:</font>     
+<font color="deepskyblue">0056:</font>     <font color="cyan">// [0,1]にした位置</font>
+<font color="deepskyblue">0057:</font>     Out.XY = 1;
+<font color="deepskyblue">0058:</font>     Out.XY.x = (  0.5 * Pos.x + 0.5);
+<font color="deepskyblue">0059:</font>     Out.XY.y = (- 0.5 * Pos.y + 0.5);
+<font color="deepskyblue">0060:</font>     
+<font color="deepskyblue">0061:</font>     <font color="cyan">// テクスチャ座標</font>
+<font color="deepskyblue">0062:</font>     Out.Tex = Tex;
+<font color="deepskyblue">0063:</font>     
+<font color="deepskyblue">0064:</font>     <font color="blue">return</font> Out;
+<font color="deepskyblue">0065:</font> }
+<font color="deepskyblue">0066:</font> <font color="cyan">// ------------------------------------------------------------</font>
+<font color="deepskyblue">0067:</font> float4 PS0 (FRAGMENT0 In) : COLOR
+<font color="deepskyblue">0068:</font> {
+<font color="deepskyblue">0069:</font>     float4 Out;
+<font color="deepskyblue">0070:</font>     
+<font color="deepskyblue">0071:</font>     Out = tex2D( LinearSamp, In.Tex ).x * In.XY;
+<font color="deepskyblue">0072:</font>     
+<font color="deepskyblue">0073:</font>     <font color="blue">return</font> Out;
+<font color="deepskyblue">0074:</font> }
+</pre>
+<p>
+アプリケーションプログラム側では、基画像のテクスチャを読み込みテクスチャとして、ポリゴンを全画面で描画します。<br>
+ちなみに、バイリニア補間を効かせるために、１テクセルだけ座標値をずらして描画します。
+</p>
+<pre class="CodeBlock">
+main.cpp
+<font color="deepskyblue">0464:</font>             m_pEffect-&gt;SetTechnique( m_hTechnique );
+<font color="deepskyblue">0465:</font>             m_pEffect-&gt;Begin( NULL, 0 );
+<font color="deepskyblue">0466:</font> 
+<font color="deepskyblue">0467:</font>             <font color="cyan">// 0 へ</font>
+<font color="deepskyblue">0468:</font>             m_pEffect-&gt;Pass( 0 );
+<font color="deepskyblue">0469:</font>             m_pd3dDevice-&gt;SetRenderTarget( 0, m_pSurf[0] );
+<font color="deepskyblue">0470:</font>             m_pd3dDevice-&gt;SetFVF( D3DFVF_XYZ | D3DFVF_TEX1 );
+<font color="deepskyblue">0471:</font>             TVERTEX Vertex[4] = {
+<font color="deepskyblue">0472:</font>                 <font color="cyan">// x   y  z      tu            tv</font>
+<font color="deepskyblue">0473:</font>                 { -1,  1, 0,  0+1.0/512.0, 0+1.0/512.0,},
+<font color="deepskyblue">0474:</font>                 {  1,  1, 0,  1+1.0/512.0, 0+1.0/512.0,},
+<font color="deepskyblue">0475:</font>                 {  1, -1, 0,  1+1.0/512.0, 1+1.0/512.0,},
+<font color="deepskyblue">0476:</font>                 { -1, -1, 0,  0+1.0/512.0, 1+1.0/512.0,},
+<font color="deepskyblue">0477:</font>             };
+<font color="deepskyblue">0478:</font>             m_pEffect-&gt;SetTexture( "<font color="blue">LinearTex</font>",  m_pBackBufferTex );
+<font color="deepskyblue">0479:</font>             m_pd3dDevice-&gt;DrawPrimitiveUP( D3DPT_TRIANGLEFAN, 2, Vertex, <font color="blue">sizeof</font>( TVERTEX ) );
+</pre>
+
+
+<h2>■ブラー</h2>
+
+
+<p>
+ミップマップの計算は、１６ボックスサンプリングで行いました。<br>
+精度の問題で、縮小バッファに浮動小数点バッファを使いました。
+RADEON9600では浮動小数点バッファにバイリニア補間が使えないので１回のサンプリングで１６テクセルの情報しか拾えません。GeForce 6800 では、１６ボックスサンプリングで６４テクセルの情報を拾うこともできるでしょう。
+</p>
+<pre class="CodeBlock">
+hlsl.fx
+<font color="deepskyblue">0081:</font> <font color="blue">struct</font> FRAGMENT1
+<font color="deepskyblue">0082:</font> {
+<font color="deepskyblue">0083:</font>     float4 Pos          : POSITION;
+<font color="deepskyblue">0084:</font>     float2 Tex0         : TEXCOORD0;
+<font color="deepskyblue">0085:</font>     float2 Tex1         : TEXCOORD1;
+<font color="deepskyblue">0086:</font>     float2 Tex2         : TEXCOORD2;
+<font color="deepskyblue">0087:</font>     float2 Tex3         : TEXCOORD3;
+<font color="deepskyblue">0088:</font>     float2 Tex4         : TEXCOORD4;
+<font color="deepskyblue">0089:</font>     float2 Tex5         : TEXCOORD5;
+<font color="deepskyblue">0090:</font>     float2 Tex6         : TEXCOORD6;
+<font color="deepskyblue">0091:</font>     float2 Tex7         : TEXCOORD7;
+<font color="deepskyblue">0092:</font> };
+<font color="deepskyblue">0093:</font> <font color="cyan">// ------------------------------------------------------------</font>
+<font color="deepskyblue">0094:</font> FRAGMENT1 VS1 (
+<font color="deepskyblue">0095:</font>       float4 Pos    : POSITION           <font color="cyan">// (モデルの頂点)</font>
+<font color="deepskyblue">0096:</font>     , float2 Tex    : TEXCOORD0          <font color="cyan">// (テクスチャ座標)</font>
+<font color="deepskyblue">0097:</font>       )
+<font color="deepskyblue">0098:</font> {
+<font color="deepskyblue">0099:</font>     FRAGMENT1 Out = (FRAGMENT1)0;
+<font color="deepskyblue">0100:</font>     
+<font color="deepskyblue">0101:</font>     <font color="cyan">// Position(位置座標)</font>
+<font color="deepskyblue">0102:</font>     Out.Pos = Pos;
+<font color="deepskyblue">0103:</font>     
+<font color="deepskyblue">0104:</font>     <font color="cyan">// テクスチャ座標</font>
+<font color="deepskyblue">0105:</font>     Out.Tex0 = Tex + float2( 0.5*inv_size, 0.5*inv_size );
+<font color="deepskyblue">0106:</font>     Out.Tex1 = Tex + float2( 1.5*inv_size, 0.5*inv_size );
+<font color="deepskyblue">0107:</font>     Out.Tex2 = Tex + float2( 2.5*inv_size, 0.5*inv_size );
+<font color="deepskyblue">0108:</font>     Out.Tex3 = Tex + float2( 3.5*inv_size, 0.5*inv_size );
+<font color="deepskyblue">0109:</font>     Out.Tex4 = Tex + float2( 0.5*inv_size, 1.5*inv_size );
+<font color="deepskyblue">0110:</font>     Out.Tex5 = Tex + float2( 1.5*inv_size, 1.5*inv_size );
+<font color="deepskyblue">0111:</font>     Out.Tex6 = Tex + float2( 2.5*inv_size, 1.5*inv_size );
+<font color="deepskyblue">0112:</font>     Out.Tex7 = Tex + float2( 3.5*inv_size, 1.5*inv_size );
+<font color="deepskyblue">0113:</font>     
+<font color="deepskyblue">0114:</font>     <font color="blue">return</font> Out;
+<font color="deepskyblue">0115:</font> }
+<font color="deepskyblue">0116:</font> <font color="cyan">// ------------------------------------------------------------</font>
+<font color="deepskyblue">0117:</font> float4 PS1 (FRAGMENT1 In) : COLOR
+<font color="deepskyblue">0118:</font> {
+<font color="deepskyblue">0119:</font>     float4 Out;
+<font color="deepskyblue">0120:</font>     
+<font color="deepskyblue">0121:</font>     Out = tex2D( PointSamp, In.Tex0 )
+<font color="deepskyblue">0122:</font>         + tex2D( PointSamp, In.Tex1 )
+<font color="deepskyblue">0123:</font>         + tex2D( PointSamp, In.Tex2 )
+<font color="deepskyblue">0124:</font>         + tex2D( PointSamp, In.Tex3 )
+<font color="deepskyblue">0125:</font>         + tex2D( PointSamp, In.Tex4 )
+<font color="deepskyblue">0126:</font>         + tex2D( PointSamp, In.Tex5 )
+<font color="deepskyblue">0127:</font>         + tex2D( PointSamp, In.Tex6 )
+<font color="deepskyblue">0128:</font>         + tex2D( PointSamp, In.Tex7 )
+<font color="deepskyblue">0129:</font>         + tex2D( PointSamp, In.Tex0 + float2( 0.0, 2.0*inv_size ) )
+<font color="deepskyblue">0130:</font>         + tex2D( PointSamp, In.Tex1 + float2( 0.0, 2.0*inv_size ) )
+<font color="deepskyblue">0131:</font>         + tex2D( PointSamp, In.Tex2 + float2( 0.0, 2.0*inv_size ) )
+<font color="deepskyblue">0132:</font>         + tex2D( PointSamp, In.Tex3 + float2( 0.0, 2.0*inv_size ) )
+<font color="deepskyblue">0133:</font>         + tex2D( PointSamp, In.Tex4 + float2( 0.0, 2.0*inv_size ) )
+<font color="deepskyblue">0134:</font>         + tex2D( PointSamp, In.Tex5 + float2( 0.0, 2.0*inv_size ) )
+<font color="deepskyblue">0135:</font>         + tex2D( PointSamp, In.Tex6 + float2( 0.0, 2.0*inv_size ) )
+<font color="deepskyblue">0136:</font>         + tex2D( PointSamp, In.Tex7 + float2( 0.0, 2.0*inv_size ) );
+<font color="deepskyblue">0137:</font>     
+<font color="deepskyblue">0138:</font>     <font color="blue">return</font> Out/16;
+<font color="deepskyblue">0139:</font> }
+</pre>
+<p>
+アプリケーションプログラム側では、レンダリングターゲットを変えてポリゴンを全画面に表示します。
+</p>
+<pre class="CodeBlock">
+main.cpp
+<font color="deepskyblue">0482:</font>             m_pEffect-&gt;Pass( 1 );
+<font color="deepskyblue">0483:</font>             <font color="blue">float</font> size = 256.0;
+<font color="deepskyblue">0484:</font>             <font color="blue">for</font>( i = 1; i &lt; 5; i++ )
+<font color="deepskyblue">0485:</font>             {
+<font color="deepskyblue">0486:</font>                 m_pEffect-&gt;SetFloat("<font color="blue">inv_size</font>", 1.0/size);
+<font color="deepskyblue">0487:</font>                 m_pd3dDevice-&gt;SetRenderTarget( 0, m_pSurf[i] );
+<font color="deepskyblue">0488:</font>                 TVERTEX Vertex[4] = {
+<font color="deepskyblue">0489:</font>                     <font color="cyan">// x   y  z   tu tv</font>
+<font color="deepskyblue">0490:</font>                     { -1,  1, 0,  0, 0,},
+<font color="deepskyblue">0491:</font>                     {  1,  1, 0,  1, 0,},
+<font color="deepskyblue">0492:</font>                     {  1, -1, 0,  1, 1,},
+<font color="deepskyblue">0493:</font>                     { -1, -1, 0,  0, 1,},
+<font color="deepskyblue">0494:</font>                 };
+<font color="deepskyblue">0495:</font>                 m_pEffect-&gt;SetTexture( "<font color="blue">PointTex</font>",  m_pTex[i-1] );
+<font color="deepskyblue">0496:</font>                 m_pd3dDevice-&gt;DrawPrimitiveUP( D3DPT_TRIANGLEFAN, 2, Vertex, <font color="blue">sizeof</font>( TVERTEX ) );
+<font color="deepskyblue">0497:</font> 
+<font color="deepskyblue">0498:</font>                 size /= 4.0;
+<font color="deepskyblue">0499:</font>             }
+</pre>
+
+
+<h2>■ターゲットスコープの表示</h2>
+
+
+<p>
+最後に、１テクセルまで落とした情報から平均の座標値を求めて、w成分(有効なテクセル数)で割ることによって、重心を計算します。<br>
+ターゲットを動かすのに、表示するターゲットのテクスチャ座標をずらす方法を採用しました。この方法では、ターゲットを表示するために、全画面のポリゴンを表示する必要があります。ただ、他の方法を採用するぐらいなら、この方法のほうが速いと感じたので、この方法を採用しました。<br>
+今回は、ターゲットの大きさが32ピクセルで、画面の大きさは512ピクセルにしました。この場合には、テクスチャ座表が512/32=16のときにターゲットは画面の端に行きます。位置座標に512/32倍しているのは、0～1の範囲で動くターゲットを画面の大きさに調整するスケーリングのためです。
+</p>
+<pre class="CodeBlock">
+hlsl.fx
+<font color="deepskyblue">0142:</font> <font color="cyan">// ------------------------------------------------------------</font>
+<font color="deepskyblue">0143:</font> <font color="cyan">// ターゲットを動かす</font>
+<font color="deepskyblue">0144:</font> <font color="cyan">// ------------------------------------------------------------</font>
+<font color="deepskyblue">0145:</font> <font color="blue">struct</font> FRAGMENT2
+<font color="deepskyblue">0146:</font> {
+<font color="deepskyblue">0147:</font>     float4 Pos          : POSITION;
+<font color="deepskyblue">0148:</font>     float2 Tex          : TEXCOORD0;
+<font color="deepskyblue">0149:</font> };
+<font color="deepskyblue">0150:</font> <font color="cyan">// ------------------------------------------------------------</font>
+<font color="deepskyblue">0151:</font> float4 PS2 (FRAGMENT2 In) : COLOR
+<font color="deepskyblue">0152:</font> {
+<font color="deepskyblue">0153:</font>     float4 Out;
+<font color="deepskyblue">0154:</font>     
+<font color="deepskyblue">0155:</font>     float4 pos =  tex2D( PointSamp, float2(0.5,0.5) );
+<font color="deepskyblue">0156:</font>     pos /= pos.w;
+<font color="deepskyblue">0157:</font>     
+<font color="deepskyblue">0158:</font>     pos *= 512/32;
+<font color="deepskyblue">0159:</font> 
+<font color="deepskyblue">0160:</font>     Out =  tex2D( LinearSamp, In.Tex - pos.xy );
+<font color="deepskyblue">0161:</font> 
+<font color="deepskyblue">0164:</font>     <font color="blue">return</font> Out;
+<font color="deepskyblue">0165:</font> }
+</pre>
+<p>
+アプリケーション側では、ターゲットの中心が原点（左上）になるように調整して、全画面にポリゴンを表示します。
+</p>
+<pre class="CodeBlock">
+main.cpp
+<font color="deepskyblue">0534:</font>         <font color="blue">if</font>( m_pEffect != NULL ) 
+<font color="deepskyblue">0535:</font>         {
+<font color="deepskyblue">0536:</font>             m_pEffect-&gt;SetTechnique( m_hTechnique );
+<font color="deepskyblue">0537:</font>             m_pEffect-&gt;Begin( NULL, 0 );
+<font color="deepskyblue">0538:</font>             m_pEffect-&gt;Pass( 2 );
+<font color="deepskyblue">0539:</font> 
+<font color="deepskyblue">0540:</font>             m_pd3dDevice-&gt;SetRenderState( D3DRS_ALPHABLENDENABLE, TRUE );
+<font color="deepskyblue">0541:</font>             m_pd3dDevice-&gt;SetRenderState( D3DRS_DESTBLEND, D3DBLEND_INVSRCALPHA );
+<font color="deepskyblue">0542:</font>             m_pd3dDevice-&gt;SetRenderState( D3DRS_SRCBLEND,  D3DBLEND_SRCALPHA );
+<font color="deepskyblue">0543:</font> 
+<font color="deepskyblue">0544:</font>             m_pd3dDevice-&gt;SetFVF( D3DFVF_XYZRHW | D3DFVF_TEX1 );
+<font color="deepskyblue">0545:</font>             TVERTEX Vertex[4] = {
+<font color="deepskyblue">0546:</font>             <font color="cyan">//                  x                                  y          z rhw tu tv</font>
+<font color="deepskyblue">0547:</font>             {                             0,                               0, 0, 1, 0.5,        0.5,},
+<font color="deepskyblue">0548:</font>             {(FLOAT)m_d3dsdBackBuffer.Width,                               0, 0, 1, 0.5+512/32, 0.5,},
+<font color="deepskyblue">0549:</font>             {(FLOAT)m_d3dsdBackBuffer.Width, (FLOAT)m_d3dsdBackBuffer.Height, 0, 1, 0.5+512/32, 0.5+512/32,},
+<font color="deepskyblue">0550:</font>             {                             0, (FLOAT)m_d3dsdBackBuffer.Height, 0, 1, 0.5,        0.5+512/32,},
+<font color="deepskyblue">0551:</font>             };
+<font color="deepskyblue">0552:</font>             m_pEffect-&gt;SetTexture( "<font color="blue">PointTex</font>",  m_pTex[4] );
+<font color="deepskyblue">0553:</font>             m_pEffect-&gt;SetTexture( "<font color="blue">LinearTex</font>", m_pTargetTex );
+<font color="deepskyblue">0554:</font>             m_pd3dDevice-&gt;DrawPrimitiveUP( D3DPT_TRIANGLEFAN, 2, Vertex, <font color="blue">sizeof</font>( TVERTEX ) );
+<font color="deepskyblue">0555:</font> 
+<font color="deepskyblue">0556:</font>             m_pEffect-&gt;End();
+<font color="deepskyblue">0557:</font>             m_pd3dDevice-&gt;SetRenderState( D3DRS_ALPHABLENDENABLE, FALSE );
+<font color="deepskyblue">0558:</font>         }
+</pre>
+
+
+<h2>■CPUで重心を使うときには？</h2>
+
+
+<p>
+さて、今回の結果をCPUで使いたいときですが、1x1テクセルまで落としたテクスチャをロックして読み込めばよいということになります。<br>
+当然、その方法にはペナルティが付くので、1x1のテクスチャは複数用意してバッファリングすべきでしょう。<br>
+リアルタイムで結果を反映させなければならないところは、今回のターゲットの表示部分のように処理すれば問題ないですね。<br>
+<br>
+ということで、平均操作ぐらいは、もはやＧＰＵで処理してもいいのではないかと思います。
+</p>
+
+
+<h2>■最後に</h2>
+
+
+<p>
+今回のネタは、ShaderX<sup>2</sup>の焼き直しだし、新しいことはなにもないね。
+</p>
+
+
+
+
+</div>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<center>
+<hr>
+<p><a href="../index.html">もどる</a></p>
+<p><a href="mailto:imagire@gmail.com">imagire@gmail.com</a></p>
+</center>
+
+</body>
+</html>

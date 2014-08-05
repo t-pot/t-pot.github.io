@@ -1,0 +1,481 @@
+<head>
+	<title>t-pot『木』</title>
+	<link rel="stylesheet" type="text/css" href="../if.css">
+</head>
+<meta http-equiv=Content-Type content="text/html; charset=shift_jis">
+<body>
+
+
+<div class="contents">
+<center>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<h1>木</h1><br>
+<h3>～ Wood ～</h3>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<image src = "title.png">
+<br>
+<hr>
+</center>
+<div>
+
+
+<h2>■はじめに</h2>
+
+
+<p>
+今回は、Perlinノイズをシェーダでやってみようと思いました。
+適当なサンプルとして、Cg coding contest の<a href="http://www.cgshaders.org/shaders/show.php?id=41">Procedural Wood</a>が、あったので見てみたところ、Perlinノイズではありませんでした。まぁ、適当なノイズなので、簡単に解析してみました。<br>
+結果的には、ボリュームテクスチャ生成のサンプルになっています。
+<br>
+</p>
+<ul style = "LIST-STYLE-TYPE:none">
+<li><a href="src.lzh">src.lzh (木のサンプル:OpenGL & Cg言語)</a>
+</ul>
+
+<p>
+まぁ、いつものように適当にファイルが入っています。<br>
+今回は、天球を半球にしてみました。
+</p>
+<table>
+<tr><td><a href="vp_cg.html">vp.cg</a></td><td>頂点プログラム。</td></tr>
+<tr><td><a href="fp_cg.html">fp.cg</a></td><td>フラグメントプログラム。</td></tr>
+<tr><td><a href="noise_h.html">noise.h</a></td><td>３次元ノイズテクスチャの作成。</td></tr>
+<tr><td><a href="noise_cpp.html">noise.cpp</a></td><td>３次元、ノイズテクスチャの作成。</td></tr>
+<tr><td><a href="main_cpp.html">main.cpp</a></td><td>メインループ。</td></tr>
+<tr><td><a href="matrix_h.html">matrix.h</a></td><td>行列計算。</td></tr>
+<tr><td><a href="matrix_cpp.html">matrix.cpp</a></td><td>行列計算。</td></tr>
+</table>
+<p>
+あと、実行ファイル及び、プロジェクトファイルが入っています。
+</p>
+
+
+<h2>■ボリュームテクスチャの作り方</h2>
+
+
+<p>
+ボリュ－ムテクスチャーを作るには、glGenTextures でテクスチャを作った後に、
+glTexImage3DEXT で、テクスチャの実態を作ります。<br>
+テクスチャのサイズやフォーマットは、glGenTextures で指定します。
+</p>
+<pre class="CodeBlock">
+noise.cpp
+<font color="deepskyblue">0090:</font>     GLuint texid;
+<font color="deepskyblue">0091:</font>     glGenTextures(1, &amp;texid);
+<font color="deepskyblue">0092:</font>     glBindTexture(GL_TEXTURE_3D, texid);
+<font color="deepskyblue">0093:</font> 
+<font color="deepskyblue">0094:</font>     glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+<font color="deepskyblue">0095:</font>     glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+<font color="deepskyblue">0096:</font>     glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+<font color="deepskyblue">0097:</font>     glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+<font color="deepskyblue">0098:</font>     glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_R, GL_REPEAT);
+<font color="deepskyblue">0099:</font>     glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+<font color="deepskyblue">0100:</font> 
+<font color="deepskyblue">0101:</font>     PFNGLTEXIMAGE3DEXTPROC glTexImage3DEXT;
+<font color="deepskyblue">0102:</font>     glTexImage3DEXT = (PFNGLTEXIMAGE3DEXTPROC) wglGetProcAddress("<font color="blue">glTexImage3DEXT</font>");
+<font color="deepskyblue">0103:</font>     <font color="blue">if</font> (glTexImage3DEXT != NULL)
+<font color="deepskyblue">0104:</font>         glTexImage3DEXT(GL_TEXTURE_3D, 0, GL_LUMINANCE, w, h, d
+<font color="deepskyblue">0105:</font>                         , 0, GL_LUMINANCE, GL_UNSIGNED_BYTE, img);
+</pre>
+<p>
+テクスチャに受け渡すテクスチャの中身は、場所に依存した乱数を放り込みました。<br>
+new float[] で、m_pBuf にテクスチャサイズ分のメモリを確保しました。<br>
+そのメモリに、一様な乱数を埋め込んだ後、ボリュームテクスチャに受け渡すメモリを生成します。
+</p>
+<pre class="CodeBlock">
+noise.cpp
+<font color="deepskyblue">0050:</font> <font color="cyan">// ---------------------------------------------------------------------------</font>
+<font color="deepskyblue">0051:</font> <font color="cyan">// OpenGL 3D テクスチャを作る</font>
+<font color="deepskyblue">0052:</font> <font color="cyan">// ---------------------------------------------------------------------------</font>
+<font color="deepskyblue">0053:</font> GLuint CNoise::CreateNoiseTexture3D(<font color="blue">int</font> w, <font color="blue">int</font> h, <font color="blue">int</font> d, <font color="blue">float</font> scale, <font color="blue">float</font> amp)
+<font color="deepskyblue">0054:</font> {
+<font color="deepskyblue">0055:</font>     <font color="blue">int</font> i, j, k;
+<font color="deepskyblue">0056:</font> 
+<font color="deepskyblue">0057:</font>     m_size[0] = w;
+<font color="deepskyblue">0058:</font>     m_size[1] = h;
+<font color="deepskyblue">0059:</font>     m_size[2] = d;
+<font color="deepskyblue">0060:</font>     
+<font color="deepskyblue">0061:</font>     <font color="cyan">// ノイズの種になる乱数の設定</font>
+<font color="deepskyblue">0062:</font>     SAFE_DELETE_ARRAY(m_pBuf);<font color="cyan">// すでに作られていたら、開放</font>
+<font color="deepskyblue">0063:</font>     m_pBuf = <font color="blue">new</font> <font color="blue">float</font>[w * h * d];
+<font color="deepskyblue">0064:</font> 
+<font color="deepskyblue">0065:</font>     <font color="cyan">// -1～1の範囲で３Ｄ空間全体に乱数を作る</font>
+<font color="deepskyblue">0066:</font>     <font color="blue">float</font> *ptr = m_pBuf;
+<font color="deepskyblue">0067:</font>     <font color="blue">for</font>( i=0; i&lt;w*h*d ; i++ ) {
+<font color="deepskyblue">0068:</font>         *ptr++ = (2.0 * rand() / (<font color="blue">float</font>) RAND_MAX) - 1.0;
+<font color="deepskyblue">0069:</font>     }
+<font color="deepskyblue">0070:</font> 
+<font color="deepskyblue">0071:</font>     GLubyte *img = <font color="blue">new</font> GLubyte[w * h * d];
+<font color="deepskyblue">0072:</font> 
+<font color="deepskyblue">0073:</font>     GLubyte *p = img;
+<font color="deepskyblue">0074:</font>     <font color="blue">for</font>( i=0; i&lt;d; i++ ) {
+<font color="deepskyblue">0075:</font>         <font color="blue">for</font>( j=0; j&lt;h; j++ ) {
+<font color="deepskyblue">0076:</font>             <font color="blue">for</font>( k=0; k&lt;w; k++ ) {
+<font color="deepskyblue">0077:</font> 
+<font color="deepskyblue">0078:</font>                 <font color="blue">float</font> fx = (k / scale) - 0.5;<font color="cyan">// 0.5 は、切捨てで問題が出ないような調整</font>
+<font color="deepskyblue">0079:</font>                 <font color="blue">float</font> fy = (j / scale) - 0.5;
+<font color="deepskyblue">0080:</font>                 <font color="blue">float</font> fz = (i / scale) - 0.5;
+<font color="deepskyblue">0081:</font> 
+<font color="deepskyblue">0082:</font>                 <font color="blue">float</font> n;
+<font color="deepskyblue">0083:</font>                 n = (noise3D((<font color="blue">int</font>)fx, (<font color="blue">int</font>)fy, (<font color="blue">int</font>)fz) + 1.0) * 0.5;
+<font color="deepskyblue">0084:</font>                 n = clamp(n, 0.0, 1.0);
+<font color="deepskyblue">0085:</font>                 *p++ = (GLubyte) (n * amp * 0xff);
+<font color="deepskyblue">0086:</font>             }
+<font color="deepskyblue">0087:</font>         }
+<font color="deepskyblue">0088:</font>     }
+</pre>
+<p>
+生成するノイズは、一様な乱数を位置に応じて設定します。<br>
+今回は、scale(ノイズの間隔)をパラメータとする乱数にしました。
+</p>
+<pre class="CodeBlock">
+noise.cpp
+<font color="deepskyblue">0041:</font> <font color="cyan">// ---------------------------------------------------------------------------</font>
+<font color="deepskyblue">0042:</font> <font color="blue">float</font> CNoise::noise3D(<font color="blue">int</font> x, <font color="blue">int</font> y, <font color="blue">int</font> z)
+<font color="deepskyblue">0043:</font> {
+<font color="deepskyblue">0044:</font>     x = x &amp; (m_size[0] - 1);
+<font color="deepskyblue">0045:</font>     y = y &amp; (m_size[1] - 1);
+<font color="deepskyblue">0046:</font>     z = z &amp; (m_size[2] - 1);
+<font color="deepskyblue">0047:</font> 
+<font color="deepskyblue">0048:</font>     <font color="blue">return</font> m_pBuf[(z*m_size[0]*m_size[1]) + (y*m_size[0]) + x];
+<font color="deepskyblue">0049:</font> }
+</pre>
+<p>
+生成したノイズ（の断面）は、次のようになります。
+</p>
+<image src = "noise.png">
+
+
+
+<h2>■頂点プログラム</h2>
+
+
+<p>
+プログラマブルシェーダを見ましょう。<br>
+頂点プログラムは、入力は位置と法線で、出力に関しては、テクスチャ座標に、ライト方向や、ハーフベクトルなどを仕込みます。
+</p>
+<pre class="CodeBlock">
+vp.cg
+<font color="deepskyblue">0001:</font> <font color="cyan">// ---------------------------------------------------------------------------</font>
+<font color="deepskyblue">0002:</font> <font color="cyan">// 頂点シェーダ入力データ</font>
+<font color="deepskyblue">0003:</font> <font color="cyan">// ---------------------------------------------------------------------------</font>
+<font color="deepskyblue">0004:</font> <font color="blue">struct</font> appdata
+<font color="deepskyblue">0005:</font> {
+<font color="deepskyblue">0006:</font>     float4 position : POSITION;
+<font color="deepskyblue">0007:</font>     float3 normal   : NORMAL;
+<font color="deepskyblue">0008:</font> };
+<font color="deepskyblue">0009:</font> <font color="cyan">// ---------------------------------------------------------------------------</font>
+<font color="deepskyblue">0010:</font> <font color="cyan">// 頂点シェーダ出力データ</font>
+<font color="deepskyblue">0011:</font> <font color="cyan">// ---------------------------------------------------------------------------</font>
+<font color="deepskyblue">0012:</font> <font color="blue">struct</font> vert2frag
+<font color="deepskyblue">0013:</font> {
+<font color="deepskyblue">0014:</font>     float4 hpos     : HPOS; <font color="cyan">// 頂点座標</font>
+<font color="deepskyblue">0015:</font>     float4 tcoords  : TEX0; <font color="cyan">// テクスチャ座標</font>
+<font color="deepskyblue">0016:</font>     float4 normal   : TEX1; <font color="cyan">// 法線ベクトル</font>
+<font color="deepskyblue">0017:</font>     float3 vlight   : TEX2; <font color="cyan">// ビュー座標のライト</font>
+<font color="deepskyblue">0018:</font>     float3 vhalf    : TEX3; <font color="cyan">// ビュー座標のハーフベクトル</font>
+<font color="deepskyblue">0019:</font> };
+</pre>
+<p>
+シェーダプログラムでは、それぞれのベクトル値を座標変換等を行って、変換します。
+</p>
+<pre class="CodeBlock">
+vp.cg
+<font color="deepskyblue">0020:</font> <font color="cyan">// ---------------------------------------------------------------------------</font>
+<font color="deepskyblue">0021:</font> <font color="cyan">// Perlin noise 頂点シェーダプログラム</font>
+<font color="deepskyblue">0022:</font> <font color="cyan">// ---------------------------------------------------------------------------</font>
+<font color="deepskyblue">0023:</font> vert2frag main(appdata IN
+<font color="deepskyblue">0024:</font>             , uniform float4    LightPosition
+<font color="deepskyblue">0025:</font>             , uniform float4x4  ModelViewProj
+<font color="deepskyblue">0026:</font>             , uniform float4x4  ModelView
+<font color="deepskyblue">0027:</font>             , uniform float4x4  ShaderMatrix
+<font color="deepskyblue">0028:</font>             , uniform float4x4  ModelViewIT
+<font color="deepskyblue">0029:</font>             )
+<font color="deepskyblue">0030:</font> {
+<font color="deepskyblue">0031:</font>     vert2frag OUT;
+<font color="deepskyblue">0032:</font> 
+<font color="deepskyblue">0033:</font>     float4 pos = IN.position.xyzw;
+<font color="deepskyblue">0034:</font>     float4 normal = IN.normal.xyzz;
+<font color="deepskyblue">0035:</font>     normal.w = 1.0;
+<font color="deepskyblue">0036:</font> 
+<font color="deepskyblue">0037:</font>     <font color="cyan">// 座標変換</font>
+<font color="deepskyblue">0038:</font>     OUT.hpos = mul(ModelViewProj, pos);
+<font color="deepskyblue">0039:</font> 
+<font color="deepskyblue">0040:</font>     <font color="cyan">// オブジェクト空間をテクスチャ座標にする</font>
+<font color="deepskyblue">0041:</font>     OUT.tcoords = mul(ShaderMatrix, pos);
+<font color="deepskyblue">0042:</font> 
+<font color="deepskyblue">0043:</font>     <font color="cyan">// 法線ベクトル</font>
+<font color="deepskyblue">0044:</font>     OUT.normal = mul(ModelViewIT, normal);
+<font color="deepskyblue">0045:</font> 
+<font color="deepskyblue">0046:</font>     <font color="cyan">// ライトベクトル</font>
+<font color="deepskyblue">0047:</font>     float4 pos_view = mul(ModelView, pos);  <font color="cyan">// ビュー空間での位置</font>
+<font color="deepskyblue">0048:</font>     float3 L = normalize(LightPosition.xyz - pos_view.xyz);
+<font color="deepskyblue">0049:</font>     OUT.vlight = L;
+<font color="deepskyblue">0050:</font> 
+<font color="deepskyblue">0051:</font>     <font color="cyan">// ハーフベクトル</font>
+<font color="deepskyblue">0052:</font>     float3 eye = float3(0.0, 0.0, 10.0) - pos_view.xyz;
+<font color="deepskyblue">0053:</font>     OUT.vhalf = normalize(eye + L);
+<font color="deepskyblue">0054:</font> 
+<font color="deepskyblue">0055:</font>     <font color="blue">return</font> OUT;
+<font color="deepskyblue">0056:</font> }
+</pre>
+
+
+<h2>■フラグメントプログラム</h2>
+
+
+<p>
+フラグメントプログラムでは、乱数のテクスチャを読み込んで模様を作ります。<br>
+法線やハーフベクトルを正規化して拡散光や鏡面反射光を求めます。<br>
+テクスチャ座標を求めるときに、２つのテクスチャを使います。
+１つは先ほど作成した乱数の３次元テクスチャNoiseMapで、もう１つは１次元の木のグラデーションを決定するためのテクスチャPulseTrainMapです。<br>
+２つのテクスチャから合成するための重みを求めて、暗い色と明るい色を合成します。
+また、鏡面反射光も暗い部分は色を抑えます。<br>
+さらに、少しだけ赤い色をランダムで混ぜて、いわゆる「ＣＧらしさ」を低減させています。
+</p>
+<pre class="CodeBlock">
+fp.cg
+<font color="deepskyblue">0040:</font> <font color="cyan">// ---------------------------------------------------------------------------</font>
+<font color="deepskyblue">0041:</font> <font color="cyan">// noise フラグメントプログラム</font>
+<font color="deepskyblue">0042:</font> <font color="cyan">// ---------------------------------------------------------------------------</font>
+<font color="deepskyblue">0043:</font> fragout main(vert2frag I
+<font color="deepskyblue">0044:</font>             , uniform float4   fLightWood
+<font color="deepskyblue">0045:</font>             , uniform float4   fDarkWood
+<font color="deepskyblue">0046:</font>             , uniform <font color="blue">float</font>    fHighNoiseLevel
+<font color="deepskyblue">0047:</font>             , uniform <font color="blue">float</font>    fBaseRadiusFreq
+<font color="deepskyblue">0048:</font>             , uniform <font color="blue">float</font>    fLowPulseAmp
+<font color="deepskyblue">0049:</font>             , uniform texobj3D NoiseMap : texunit0
+<font color="deepskyblue">0050:</font>             , uniform texobj1D PulseTrainMap : texunit1
+<font color="deepskyblue">0051:</font>     )
+<font color="deepskyblue">0052:</font> {
+<font color="deepskyblue">0053:</font>     fragout O;
+<font color="deepskyblue">0054:</font> 
+<font color="deepskyblue">0055:</font>     float3 fvNormal  = normalize(I.normal.xyz);
+<font color="deepskyblue">0056:</font>     float3 fvLight   = normalize(I.vlight.xyz);
+<font color="deepskyblue">0057:</font>     float3 fvHalfAng = normalize(I.vhalf.xyz);
+<font color="deepskyblue">0058:</font> 
+<font color="deepskyblue">0059:</font>     <font color="cyan">// 平行光源</font>
+<font color="deepskyblue">0060:</font>     <font color="blue">float</font> fDiffuseTerm = max(dot(fvNormal, fvLight), 0);    <font color="cyan">// ランバート</font>
+<font color="deepskyblue">0061:</font>     fDiffuseTerm += 0.22;                                   <font color="cyan">// 環境光</font>
+<font color="deepskyblue">0062:</font>     fDiffuseTerm = min(fDiffuseTerm, 1);                    <font color="cyan">// ０～１クランプ</font>
+<font color="deepskyblue">0063:</font> 
+<font color="deepskyblue">0064:</font>     <font color="cyan">// 鏡面反射</font>
+<font color="deepskyblue">0065:</font>     <font color="blue">float</font> fDiffuseSpecTerm = min(fDiffuseTerm * 3, 1);      <font color="cyan">// スペキュラーの強さ</font>
+<font color="deepskyblue">0066:</font>     <font color="blue">float</font> fSpecularTerm = fDiffuseSpecTerm * pow(max(dot(fvNormal, fvHalfAng), 0), 30);
+<font color="deepskyblue">0067:</font> 
+<font color="deepskyblue">0068:</font> 
+<font color="deepskyblue">0069:</font>     <font color="cyan">// 変位する大きさを決める</font>
+<font color="deepskyblue">0070:</font>     <font color="blue">float</font> fRadius = getRadius(NoiseMap, I.tcoords.xyz) * fBaseRadiusFreq;
+<font color="deepskyblue">0071:</font> 
+<font color="deepskyblue">0072:</font>     <font color="cyan">// 明るい色と暗い色を合成する合成係数</font>
+<font color="deepskyblue">0073:</font>     <font color="blue">float</font> t = 0.5 * (         f1tex1D(PulseTrainMap, fRadius)           <font color="cyan">// 普通に見える縞</font>
+<font color="deepskyblue">0074:</font>              + fLowPulseAmp * f1tex1D(PulseTrainMap, 0.131 * fRadius)); <font color="cyan">// グローバルな明暗</font>
+<font color="deepskyblue">0075:</font> 
+<font color="deepskyblue">0076:</font>     <font color="cyan">// 最後の計算</font>
+<font color="deepskyblue">0077:</font>     O.col.xyz = (lerp(fLightWood, fDarkWood, t) * fDiffuseTerm).xyz     <font color="cyan">// 拡散光</font>
+<font color="deepskyblue">0078:</font>                 + ((1.3 - t) * fSpecularTerm).xxx                       <font color="cyan">// 鏡面反射</font>
+<font color="deepskyblue">0079:</font>                 + fHighNoiseLevel * myNoise(NoiseMap, I.tcoords.xyz);   <font color="cyan">// 高周波ノイズ</font>
+<font color="deepskyblue">0086:</font> 
+<font color="deepskyblue">0087:</font>     <font color="blue">return</font> O;
+<font color="deepskyblue">0088:</font> }
+</pre>
+<p>
+縞の間隔を決定するための関数getRadiusは、次の形をしています。<br>
+大きさを変えて、複数の波長を持つノイズを合成しています。
+ここを適当なノイズの合成方法をもちいれは、Perlinノイズもできるでしょう。
+</p>
+<pre class="CodeBlock">
+fp.cg
+<font color="deepskyblue">0012:</font> <font color="cyan">//-----------------------------------------------------------------------------</font>
+<font color="deepskyblue">0013:</font> <font color="cyan">// -1から1の範囲のノイズをサンプリングする</font>
+<font color="deepskyblue">0014:</font> <font color="cyan">//-----------------------------------------------------------------------------</font>
+<font color="deepskyblue">0015:</font> <font color="blue">float</font> myNoise(texobj3D NoiseMap, float3 TexCoords)
+<font color="deepskyblue">0016:</font> {
+<font color="deepskyblue">0017:</font>     <font color="blue">return</font> 2.0 * f1tex3D(NoiseMap, TexCoords) - 1.0;
+<font color="deepskyblue">0018:</font> }
+<font color="deepskyblue">0019:</font> <font color="cyan">//-----------------------------------------------------------------------------</font>
+<font color="deepskyblue">0020:</font> <font color="cyan">// 木のパターンの半径を計算する</font>
+<font color="deepskyblue">0021:</font> <font color="cyan">//-----------------------------------------------------------------------------</font>
+<font color="deepskyblue">0022:</font> <font color="blue">float</font> getRadius(texobj3D NoiseMap, float3 fPos)
+<font color="deepskyblue">0023:</font> {
+<font color="deepskyblue">0024:</font>     float3 fTemp = fPos;    <font color="cyan">// 基本はテクスチャ座標</font>
+<font color="deepskyblue">0025:</font>     
+<font color="deepskyblue">0026:</font>     <font color="cyan">// XY平面にノイズを追加</font>
+<font color="deepskyblue">0027:</font>     fTemp.x += myNoise(NoiseMap, 0.002 * fPos.xyz);
+<font color="deepskyblue">0028:</font>     fTemp.y += myNoise(NoiseMap, 0.002 * fPos.xyz);
+<font color="deepskyblue">0029:</font> 
+<font color="deepskyblue">0030:</font>     <font color="blue">float</font> r = sqrt(dot(fTemp.xy, fTemp.xy));
+<font color="deepskyblue">0031:</font> 
+<font color="deepskyblue">0032:</font>     <font color="cyan">// 適当なノイズ</font>
+<font color="deepskyblue">0033:</font>     r += 0.1 * myNoise(NoiseMap,         fPos.xyz);
+<font color="deepskyblue">0034:</font>     <font color="cyan">// Zで決まるノイズ</font>
+<font color="deepskyblue">0035:</font>     r += 0.5 * myNoise(NoiseMap, 0.001 * fPos.zzz);
+<font color="deepskyblue">0036:</font> 
+<font color="deepskyblue">0037:</font>     <font color="blue">return</font>  r;
+<font color="deepskyblue">0038:</font> }
+</pre>
+
+
+
+<h2>■テクスチャの使用</h2>
+
+
+<p>
+さて、いままで登場しなかったのは、テクスチャの使い方です。<br>
+テクスチャを使うためには、生成したときのＩＤを持つ必要があります。<br>
+また、Cgで使うために、イテレータを準備する必要があります。
+</p>
+
+<pre class="CodeBlock">
+<font color="deepskyblue">0033:</font> <font color="blue">static</font> <font color="blue">int</font>              g_iNoiseTex;
+<font color="deepskyblue">0034:</font> <font color="blue">static</font> <font color="blue">int</font>              g_iPilseTrainTex;
+
+<SPAN CLASS="linenum">0052:</SPAN> <SPAN CLASS="keyword">static</SPAN> cgBindIter       *NoiseMapBind           = NULL;
+<SPAN CLASS="linenum">0053:</SPAN> <SPAN CLASS="keyword">static</SPAN> cgBindIter       *PulseTrainMapBind      = NULL;
+</pre>
+<p>
+準備したオブジェクトは、イテレータはcgGetBindByNameの返り値、
+テクスチャＩＤはglGenTexturesで確保したときの番号を代入します。
+</p>
+<pre class="CodeBlock">
+<SPAN CLASS="linenum">0402:</SPAN>         NoiseMapBind        = cgGetBindByName(FragmentProgramIter, "<SPAN CLASS="string">NoiseMap</SPAN>");
+<SPAN CLASS="linenum">0403:</SPAN>         PulseTrainMapBind   = cgGetBindByName(FragmentProgramIter, "<SPAN CLASS="string">PulseTrainMap</SPAN>");
+
+<font color="deepskyblue">0451:</font>     g_iNoiseTex = noise.CreateNoiseTexture3D(64,64,64,1.0,1.0);
+<font color="deepskyblue">0452:</font>     g_iPilseTrainTex = generateSmoothPulseTrain();
+</pre>
+<p>
+１次元のテクスチャを作る関数は、次のようになります。<br>
+やはり、メモリに１次元のイメージを作成してから、そのイメージを使ってテクスチャを生成します。
+</p>
+<pre class="CodeBlock">
+<font color="deepskyblue">0120:</font> <font color="cyan">// ---------------------------------------------------------------------------</font>
+<font color="deepskyblue">0121:</font> <font color="cyan">// いい感じの山になっているテクスチャを作る</font>
+<font color="deepskyblue">0122:</font> <font color="cyan">// ---------------------------------------------------------------------------</font>
+<font color="deepskyblue">0123:</font> GLint generateSmoothPulseTrain()
+<font color="deepskyblue">0124:</font> {
+<font color="deepskyblue">0125:</font>     <font color="blue">const</font> <font color="blue">int</font> iWidth = 512;
+<font color="deepskyblue">0126:</font>     <font color="blue">unsigned</font> <font color="blue">char</font>* pCharBuf = <font color="blue">new</font> <font color="blue">unsigned</font> <font color="blue">char</font>[iWidth];
+<font color="deepskyblue">0127:</font> 
+<font color="deepskyblue">0128:</font>     <font color="blue">for</font> (<font color="blue">int</font> i = 0; i &lt; iWidth; ++i) {
+<font color="deepskyblue">0129:</font>         <font color="blue">float</font> fX = <font color="blue">float</font>(i) / <font color="blue">float</font>(iWidth);
+<font color="deepskyblue">0130:</font>         <font color="blue">float</font> fVal = getSmoothStep(0.1, 0.65, fX) - getSmoothStep(0.8, 0.95, fX);
+<font color="deepskyblue">0131:</font>         pCharBuf[i] = 255 * fVal;
+<font color="deepskyblue">0132:</font>     }
+<font color="deepskyblue">0133:</font> 
+<font color="deepskyblue">0134:</font>     GLuint texid;
+<font color="deepskyblue">0135:</font>     glGenTextures(1, &amp;texid);
+<font color="deepskyblue">0136:</font>     glBindTexture(GL_TEXTURE_1D, texid);
+<font color="deepskyblue">0137:</font>     glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+<font color="deepskyblue">0138:</font>     glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_NEAREST);
+<font color="deepskyblue">0139:</font>     glTexParameteri(GL_TEXTURE_1D, GL_GENERATE_MIPMAP_SGIS, GL_TRUE);
+<font color="deepskyblue">0140:</font>     glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+<font color="deepskyblue">0141:</font>     glTexImage1D(GL_TEXTURE_1D, 0, GL_LUMINANCE, iWidth, 0, GL_LUMINANCE, GL_UNSIGNED_BYTE, pCharBuf);
+<font color="deepskyblue">0142:</font> 
+<font color="deepskyblue">0143:</font>     <font color="blue">delete</font> [] pCharBuf;
+<font color="deepskyblue">0144:</font>     <font color="blue">return</font> texid;
+<font color="deepskyblue">0145:</font> }
+</pre>
+<p>
+使うときは、cgGLActiveTextureで、次に設定するイテレータを指定してから、
+glEnableでテクスチャを有効にしてから、glBindTextureで、使うテクスチャを指定します。<br>
+使い終わったら、glDisableでテクスチャを使用しないことを宣言します。
+</p>
+<pre class="CodeBlock">
+<font color="deepskyblue">0203:</font>     <font color="cyan">// -----------------------------------------------------------------------</font>
+<font color="deepskyblue">0204:</font>     <font color="cyan">// テクスチャの設定</font>
+<font color="deepskyblue">0205:</font>     <font color="cyan">// -----------------------------------------------------------------------</font>
+<font color="deepskyblue">0206:</font>     cgGLActiveTexture(NoiseMapBind);
+<font color="deepskyblue">0207:</font>     glEnable(GL_TEXTURE_3D_EXT);
+<font color="deepskyblue">0208:</font>     glBindTexture(GL_TEXTURE_3D_EXT, g_iNoiseTex); 
+<font color="deepskyblue">0209:</font> 
+<font color="deepskyblue">0210:</font>     cgGLActiveTexture(PulseTrainMapBind);
+<font color="deepskyblue">0211:</font>     glEnable(GL_TEXTURE_1D);
+<font color="deepskyblue">0212:</font>     glBindTexture(GL_TEXTURE_1D, g_iPilseTrainTex); 
+
+<font color="deepskyblue">****:</font>     描画
+
+<font color="deepskyblue">0264:</font>     <font color="cyan">// -----------------------------------------------------------------------</font>
+<font color="deepskyblue">0265:</font>     <font color="cyan">// 描画の終了</font>
+<font color="deepskyblue">0266:</font>     <font color="cyan">// -----------------------------------------------------------------------</font>
+<font color="deepskyblue">0267:</font>     <font color="cyan">// テクスチャの無効化</font>
+<font color="deepskyblue">0268:</font>     cgGLActiveTexture(NoiseMapBind);        glDisable(GL_TEXTURE_3D_EXT);
+<font color="deepskyblue">0269:</font>     cgGLActiveTexture(PulseTrainMapBind);   glDisable(GL_TEXTURE_1D);
+</pre>
+
+
+<h2>■描画</h2>
+
+
+<p>
+描画するには、それぞれの定数に適当な値を入れます。
+これらの定数を入れ替えれば、見た目が大幅に変わります。
+</p>
+<pre class="CodeBlock">
+0235:     cgGLBindUniform4f(FragmentProgramIter, fLightWoodColorBind, 0.76, 0.54, 0.32, 0.0);
+0236:     cgGLBindUniform4f(FragmentProgramIter, fDarkWoodColorBind,  0.62, 0.38, 0.20, 0.0);
+0237:     cgGLBindUniform4f(FragmentProgramIter, fBaseRadiusFreqBind, 1.10, 0.0, 0.0, 0.0);
+0238:     cgGLBindUniform4f(FragmentProgramIter, fHighNoiseLevelBind, 0.03, 0.0, 0.0, 0.0);
+0239:     cgGLBindUniform4f(FragmentProgramIter, fLowPulseAmpBind,     1.0, 0.0, 0.0, 0.0);   
+</pre>
+<p>
+各行列を設定するためには、cgGLModelViewProjectionMatrix等の、適当なパラメータを入れれば、
+それぞれのぎょうれつを設定することができます。
+</p>
+<pre class="CodeBlock">
+0249:     // local ⇒ proj
+0250:     cgGLBindUniformStateMatrix(VertexProgramIter, WPMatrix, 
+0251:         cgGLModelViewProjectionMatrix, cgGLMatrixIdentity);
+0252:     // local ⇒ view
+0253:     cgGLBindUniformStateMatrix(VertexProgramIter, WMatrix, 
+0254:         cgGLModelViewMatrix, cgGLMatrixIdentity);
+0255:     // view ⇒ local
+0256:     cgGLBindUniformStateMatrix(VertexProgramIter, WITMatrix, 
+0257:         cgGLModelViewMatrix, cgGLMatrixTranspose | cgGLMatrixInverse);
+</pre>
+<p>
+描画自体は、設定されているティーポットを描画しました。
+</p>
+<pre class="CodeBlock">
+0259:     // -----------------------------------------------------------------------
+0260:     // 描画
+0261:     // -----------------------------------------------------------------------
+0262:     glutSolidTeapot(1);             // ティーポットの描画
+</pre>
+
+
+<h2>■おまけ</h2>
+
+
+<p>
+パラメータを適当に変えたら、次のような絵ができました。
+</p>
+<image src = "wan.png">
+<p>
+急須の質感が出ていて、結構気に入っています。
+</p>
+
+<h2>■最後に</h2>
+
+
+<p>
+明るい部分と暗い部分で、鏡面反射率を変えているところは結構こっていますね。<br>
+GeForce FX 世代のシェーダとしては、最低限の演出であろうピクセルノイズですが、
+手始めとしては、こんなシェーダがいいのではないでしょうか。
+</p>
+
+</div>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<center>
+<hr>
+<p><a href="../index.html">もどる</a></p>
+<p><a href="mailto:imagire@gmail.com">imagire@gmail.com</a></p>
+</center>
+
+</body>
+</html>

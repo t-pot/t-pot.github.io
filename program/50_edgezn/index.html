@@ -1,0 +1,512 @@
+<head>
+	<title>t-pot『深度法線エッジによる輪郭抽出』</title>
+	<link rel="stylesheet" type="text/css" href="../if.css">
+</head>
+<meta http-equiv=Content-Type content="text/html; charset=shift_jis">
+<body>
+
+
+<div class="contents">
+<center>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<h1>深度法線エッジによる輪郭抽出</h1><br>
+<h3>～再び輪郭抽出～</h3>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<image src = "title.png">
+</center>
+
+
+<h2>■はじめに</h2>
+
+
+<p>
+エッジフィルターを利用した輪郭抽出です。<br>
+ATIの論文によく出てるやつです。<br>
+今回は4パスも使ってます。
+</p>
+<p>
+<ul style = "LIST-STYLE-TYPE:none">
+<li><a href="src.lzh">src.lzh (深度法線エッジによる輪郭抽出のサンプル:DirectX8.1)</a>
+</ul>
+
+<p>
+まぁ、いつものように適当にファイルが入っています。<br>
+</p>
+<table>
+<tr><td><a href="normal_vsh.html">normal.vsh</a></td><td>法線マップ生成頂点シェーダー。</td></tr>
+<tr><td><a href="normal_psh.html">normal.psh</a></td><td>法線マップ生成ピクセルシェーダー。</td></tr>
+<tr><td><a href="normaledge_vsh.html">normaledge.vsh</a></td><td>法線マップのエッジ生成頂点シェーダー。</td></tr>
+<tr><td><a href="normaledge_psh.html">normaledge.psh</a></td><td>法線マップのエッジ生成ピクセルシェーダー。</td></tr>
+<tr><td><a href="vs_vsh.html">vs.vsh</a></td><td>深度、通常色の頂点シェーダー。</td></tr>
+<tr><td><a href="ps_psh.html">ps.psh</a></td><td>深度、通常色のピクセルシェーダー。</td></tr>
+<tr><td><a href="final_vsh.html">final.vsh</a></td><td>深度エッジの頂点シェーダー。</td></tr>
+<tr><td><a href="final_psh.html">final.psh</a></td><td>深度エッジのピクセルシェーダー。</td></tr>
+<tr><td><a href="draw_cpp.html">draw.cpp</a></td><td>メインの描画部分。</td></tr>
+<tr><td><a href="draw_h.html">draw.h</a></td><td>描画の各関数の定義。</td></tr>
+<tr><td><a href="bg_cpp.html">bg.cpp</a></td><td>背景の描画。</td></tr>
+<tr><td><a href="main_h.html">main.h</a></td><td>基本的な定数など。</td></tr>
+<tr><td><a href="main_cpp.html">main.cpp</a></td><td>描画に関係しないシステム的な部分。</td></tr>
+<tr><td><a href="load_cpp.html">load.cpp</a></td><td>ロード。</td></tr>
+<tr><td><a href="load_h.html">load.h</a></td><td>ロードのインターフェイス。</td></tr>
+</table>
+<image src = "tile_bmp.jpg" width = 64 height=64>tile.bmp (床デカール)<br>
+<image src = "sky_bmp.jpg" width = 64 height=64>sky.bmp (空デカール)<br>
+<p>
+あと、実行ファイル及び、プロジェクトファイルが入っています。
+</p>
+
+
+<h2>■方法</h2>
+
+
+<p>
+作成した画像からエッジを作成するのに、法線に関するエッジを取ればよさそうですが、それだけでは、ほぼ同じ法線を持った面が重なった時に
+エッジが抽出できないので、深度に関するエッジも取る必要があることがよく知られています。<br>
+最近のプログラマブルシェーダーの力はそれらの処理を楽勝で行えます。<br>
+じゃぁ、どうやってやるのかという話になります。
+</p>
+<p>
+最初に、法線マップによるエッジを抽出します。<br>
+1パス使って、法線マップのテクスチャーを作ります。<br>
+2パス目で、フレームバッファに法線マップのエッジを作成します。
+</p>
+<p>
+次のパスでは、法線マップのことはすっかり忘れます。<br>
+３パス目で、テクスチャーに通常のレンダリングと、アルファ成分に深度情報を埋め込みます。<br>
+４パス目で、深度エッジを作成し、テクスチャーの色と積算して合成します。（前のスクリーン全体に関するエッジフィルターを深度値で行った様にです）。<br>
+最後に、フレームバッファへの合成時のアルファ合成を使って、乗算合成で深度エッジと乗算し、最終的なエッジを得ます。
+</p>
+<image src = "howto.png">
+
+
+<h2>■シェーダープログラム</h2>
+
+<p>
+さて、どのようにして、以上の手続きを実現するか、ピクセルシェーダーのプログラムを見てみましょう。
+</p>
+<p>
+最初は法線マップの作成です。<br>
+頂点シェーダーでは、座標変換を普通に行った後、－１から1に分布している法線の値を0～1になるよう、oD0=n/2+1/2 の計算をして色に出力します。<br>
+ピクセルシェーダーでは、色をそのまま出力します。
+</p>
+<pre class="CodeBlock">
+<font color="deepskyblue">0001:</font> <font color="cyan">;normal.vsh</font>
+<font color="deepskyblue">0002:</font> <font color="cyan">; c0-3   -- world + ビュー + 透視変換行列</font>
+<font color="deepskyblue">0003:</font> <font color="cyan">; c12    -- (0.0, 1.0, 0.5, 2.0)</font>
+<font color="deepskyblue">0004:</font> <font color="cyan">;</font>
+<font color="deepskyblue">0005:</font> <font color="cyan">; v0    頂点の座標値</font>
+<font color="deepskyblue">0006:</font> <font color="cyan">; v3    法線ベクトル</font>
+<font color="deepskyblue">0009:</font> vs.1.0
+<font color="deepskyblue">0011:</font> <font color="cyan">;座標変換</font>
+<font color="deepskyblue">0012:</font> m4x4 oPos, v0, c0
+<font color="deepskyblue">0014:</font> <font color="cyan">; 法線ベクトルを色で格納</font>
+<font color="deepskyblue">0015:</font> mad oD0,   v3,   c12.y, c12.y
+</pre>
+<pre class="CodeBlock">
+<font color="deepskyblue">0001:</font> <font color="cyan">; normal.psh</font>
+<font color="deepskyblue">0002:</font> <font color="cyan">;</font>
+<font color="deepskyblue">0004:</font> ps.1.0
+<font color="deepskyblue">0006:</font> mov r0, v0
+</pre>
+<p>
+法線エッジの抽出は、テクスチャー座標を微妙にずらした４枚のテクスチャーを用意します。<br>
+ピクセルシェーダーで対角的な差分を各色成分ごと取り、成分の２乗和をとって、適当に倍数を掛けます。
+</p>
+<pre class="CodeBlock">
+<font color="deepskyblue">0001:</font> <font color="cyan">; normaledge.vsh</font>
+<font color="deepskyblue">0002:</font> <font color="cyan">; c20-23   -- テクスチャーをずらすオフセット</font>
+<font color="deepskyblue">0003:</font> <font color="cyan">;             (0,0), (1,0), (0,1), (1,1)</font>
+<font color="deepskyblue">0004:</font> <font color="cyan">; v0    頂点の座標値</font>
+<font color="deepskyblue">0005:</font> <font color="cyan">; v7    テクスチャ座標</font>
+<font color="deepskyblue">0006:</font> 
+<font color="deepskyblue">0007:</font> vs.1.0
+<font color="deepskyblue">0008:</font> 
+<font color="deepskyblue">0009:</font> <font color="cyan">; 座標を代入</font>
+<font color="deepskyblue">0010:</font> mov oPos, v0
+<font color="deepskyblue">0011:</font> 
+<font color="deepskyblue">0012:</font> <font color="cyan">; それぞれテクスチャーの位置をずらして出力</font>
+<font color="deepskyblue">0013:</font> add oT0, v7, c20
+<font color="deepskyblue">0014:</font> add oT1, v7, c21
+<font color="deepskyblue">0015:</font> add oT2, v7, c22
+<font color="deepskyblue">0016:</font> add oT3, v7, c23
+</pre>
+<pre class="CodeBlock">
+<font color="deepskyblue">0001:</font> <font color="cyan">; normaledge.psh</font>
+<font color="deepskyblue">0004:</font> ps.1.0
+<font color="deepskyblue">0005:</font> 
+<font color="deepskyblue">0006:</font> tex t0      <font color="cyan">; 0:1 0  1:0 1  2:0 0  3:0 0</font>
+<font color="deepskyblue">0007:</font> tex t1      <font color="cyan">;   0 0    0 0    1 0    0 1</font>
+<font color="deepskyblue">0008:</font> tex t2
+<font color="deepskyblue">0009:</font> tex t3
+<font color="deepskyblue">0010:</font> 
+<font color="deepskyblue">0011:</font> mov        r0, t3
+<font color="deepskyblue">0012:</font> mov        r1, t2
+<font color="deepskyblue">0013:</font> add_x4     r0,  r0, -t0 <font color="cyan">; r0 =  4(t3-t0)</font>
+<font color="deepskyblue">0014:</font> add_x4     r1,  r1, -t1 <font color="cyan">; r1 =  4(t2-t1)</font>
+<font color="deepskyblue">0015:</font> 
+<font color="deepskyblue">0016:</font> dp3_x4     r0,  r0,  r0 <font color="cyan">; r0 = 64|t3-t0|^2</font>
+<font color="deepskyblue">0017:</font> dp3_x4     r1,  r1,  r1 <font color="cyan">; r1 = 64|t2-t1|^2</font>
+<font color="deepskyblue">0018:</font> add_x4_sat r0, 1-r0,-r1 <font color="cyan">; r0 = 4(1-64(|t3-t0|^2+|t2-t1|^2))</font>
+</pre>
+<p>
+次は、深度マップの作り方です。<br>
+今回は、「手前の解像度が相対的に大事」ということで、手前の分解能を上げる変換を使いました（いわゆる視点からの相対深度）。
+</p>
+<pre class="CodeBlock">
+    Z<sub>far</sub>(Z<sub>   </sub>-Z<sub>near</sub>)
+z = ― ―――――
+    Z<sub>   </sub>(Z<sub>far</sub>-Z<sub>near</sub>)
+</pre>
+<p>
+後は、普通にディフューズの計算です。<br>
+ピクセルシェーダーでは、色成分とアルファ成分を合成する「+」を使って、ちょっとだけ高速化を考えています。
+</p>
+<pre class="CodeBlock">
+<font color="deepskyblue">0001:</font> <font color="cyan">;vs.vsh</font>
+<font color="deepskyblue">0002:</font> <font color="cyan">; c0-3   -- world + ビュー + 透視変換行列</font>
+<font color="deepskyblue">0003:</font> <font color="cyan">; c15    -- 深度調整</font>
+<font color="deepskyblue">0004:</font> <font color="cyan">;</font>
+<font color="deepskyblue">0005:</font> <font color="cyan">; v0    頂点の座標値</font>
+<font color="deepskyblue">0006:</font> <font color="cyan">; v7    テクスチャ座標</font>
+<font color="deepskyblue">0007:</font> 
+<font color="deepskyblue">0008:</font> vs.1.0
+<font color="deepskyblue">0009:</font> 
+<font color="deepskyblue">0010:</font> <font color="cyan">; デカールテクスチャー</font>
+<font color="deepskyblue">0011:</font> mov oT0,    v7
+<font color="deepskyblue">0012:</font> 
+<font color="deepskyblue">0013:</font> <font color="cyan">;座標変換</font>
+<font color="deepskyblue">0014:</font> m4x4 oPos, v0, c0
+<font color="deepskyblue">0015:</font> 
+<font color="deepskyblue">0016:</font> <font color="cyan">; 深度を色のw成分に入れる</font>
+<font color="deepskyblue">0017:</font> dp4 r0.z,   v0,   c2
+<font color="deepskyblue">0018:</font> dp4 r0.w,   v0,   c3
+<font color="deepskyblue">0019:</font> mad r0.z,   r0.z, c15.x, c15.y
+<font color="deepskyblue">0020:</font> rcp r0.w,   r0.w
+<font color="deepskyblue">0021:</font> mul oD0,    r0.z, r0.w
+<font color="deepskyblue">0022:</font> 
+<font color="deepskyblue">0023:</font> 
+<font color="deepskyblue">0024:</font> <font color="cyan">; 色をつける</font>
+<font color="deepskyblue">0025:</font> dp4 r0.w,   v3,   c13
+<font color="deepskyblue">0026:</font> mul oD0.xyz,r0.w, c14
+</pre>
+<pre class="CodeBlock">
+<font color="deepskyblue">0001:</font> <font color="cyan">; ps.psh</font>
+<font color="deepskyblue">0003:</font> 
+<font color="deepskyblue">0004:</font> ps.1.0
+<font color="deepskyblue">0005:</font> 
+<font color="deepskyblue">0006:</font> tex t0
+<font color="deepskyblue">0007:</font> 
+<font color="deepskyblue">0008:</font> add r0.rgb, v0, t0
+<font color="deepskyblue">0009:</font> +mov r0.a, v0
+</pre>
+<p>
+深度エッジは、法線エッジを求める時とほとんど変わりません。<br>
+違いは、テクスチャーのアルファ成分の差分を計算して、最後に、エッジの結果と色を掛け合わせることです。
+</p>
+<pre class="CodeBlock">
+<font color="deepskyblue">0001:</font> <font color="cyan">; final.vsh</font>
+<font color="deepskyblue">0002:</font> <font color="cyan">; c20-23   -- テクスチャーをずらすオフセット</font>
+<font color="deepskyblue">0003:</font> <font color="cyan">;             (0,0), (1,0), (0,1), (1,1)</font>
+<font color="deepskyblue">0004:</font> <font color="cyan">; v0    頂点の座標値</font>
+<font color="deepskyblue">0005:</font> <font color="cyan">; v7    テクスチャ座標</font>
+<font color="deepskyblue">0006:</font> 
+<font color="deepskyblue">0007:</font> vs.1.0
+<font color="deepskyblue">0008:</font> 
+<font color="deepskyblue">0009:</font> <font color="cyan">; 座標を代入</font>
+<font color="deepskyblue">0010:</font> mov oPos, v0
+<font color="deepskyblue">0011:</font> 
+<font color="deepskyblue">0012:</font> <font color="cyan">; それぞれテクスチャーの位置をずらして出力</font>
+<font color="deepskyblue">0013:</font> add oT0, v7, c20
+<font color="deepskyblue">0014:</font> add oT1, v7, c21
+<font color="deepskyblue">0015:</font> add oT2, v7, c22
+<font color="deepskyblue">0016:</font> add oT3, v7, c23
+</pre>
+<pre class="CodeBlock">
+<font color="deepskyblue">0001:</font> <font color="cyan">; final.psh</font>
+<font color="deepskyblue">0004:</font> ps.1.0
+<font color="deepskyblue">0005:</font> 
+<font color="deepskyblue">0006:</font> tex t0      <font color="cyan">; 0:1 0  1:0 1  2:0 0  3:0 0</font>
+<font color="deepskyblue">0007:</font> tex t1      <font color="cyan">;   0 0    0 0    1 0    0 1</font>
+<font color="deepskyblue">0008:</font> tex t2
+<font color="deepskyblue">0009:</font> tex t3
+<font color="deepskyblue">0010:</font> 
+<font color="deepskyblue">0011:</font> mov         r0, t3.a
+<font color="deepskyblue">0012:</font> mov         r1, t2.a
+<font color="deepskyblue">0013:</font> add_x4      r0, r0, -t0.a   <font color="cyan">; r0 =  4(t3.a-t0.a)</font>
+<font color="deepskyblue">0014:</font> add_x4      r1, r1, -t1.a   <font color="cyan">; r1 =  4(t2.a-t1.a)</font>
+<font color="deepskyblue">0015:</font> mul_x4      r0, r0, r0      <font color="cyan">; r0 = 64(t3.a-t0.a)^2</font>
+<font color="deepskyblue">0016:</font> mul_x4      r1, r1, r1      <font color="cyan">; r1 = 64(t2.a-t1.a)^2</font>
+<font color="deepskyblue">0017:</font> add_x4_sat  r0, 1-r0.a,-r1.a<font color="cyan">; r0 = 4(1-64((t3.a-t0.a)^2+(t2.a-t1.a)^2))</font>
+<font color="deepskyblue">0018:</font> mul_sat     r0, r0.a, t1    <font color="cyan">; r0のエッジに色を乗せる</font>
+</pre>
+
+
+<h2>■ｃソース</h2>
+
+<p>
+呼び出しているｃプログラムですが、ほとんど同じループが２回繰り返されています(手を抜いてコピー＆ペーストしたってばらしちゃ駄目です)。<br>
+違いは、シェーダープログラムと、アルファ合成に関する SetRenderState の追加です。<br>
+この設定によって、最終的に法線エッジとそれ以外の深度エッジと通常のレンダリングの結果を合成します。
+</p>
+<pre class="CodeBlock">
+draw.cpp
+<font color="deepskyblue">0423:</font> VOID Render(LPDIRECT3DDEVICE8 lpD3DDev)
+<font color="deepskyblue">0424:</font> {
+<font color="deepskyblue">0425:</font>     DWORD i;
+<font color="deepskyblue">0426:</font> 
+<font color="deepskyblue">0427:</font>     LPDIRECT3DSURFACE8 lpZbuffer = NULL;
+<font color="deepskyblue">0428:</font> 
+<font color="deepskyblue">0429:</font>     lpD3DDev->GetDepthStencilSurface( &lpZbuffer );
+<font color="deepskyblue">0430:</font>     <font color="cyan">// -----------------------------------------------------</font>
+<font color="deepskyblue">0431:</font>     <font color="cyan">// 法線エッジの作成</font>
+<font color="deepskyblue">0432:</font>     <font color="cyan">// -----------------------------------------------------</font>
+<font color="deepskyblue">0433:</font>     <font color="cyan">// テクスチャーに描画</font>
+<font color="deepskyblue">0434:</font>     lpD3DDev->SetRenderTarget(pTextureSurface, lpZbuffer);
+<font color="deepskyblue">0435:</font>     lpD3DDev->SetTextureStageState(0,D3DTSS_COLOROP,    D3DTOP_SELECTARG1);
+<font color="deepskyblue">0436:</font>     lpD3DDev->SetTextureStageState(0,D3DTSS_COLORARG1,  D3DTA_DIFFUSE);
+<font color="deepskyblue">0437:</font>     lpD3DDev->SetTextureStageState(1,D3DTSS_COLOROP,    D3DTOP_DISABLE);
+<font color="deepskyblue">0438:</font>     lpD3DDev->SetVertexShader(hVertexShaderNormal);
+<font color="deepskyblue">0439:</font>     lpD3DDev->SetPixelShader(hPixelShaderNormal);
+<font color="deepskyblue">0440:</font>     DrawModel(lpD3DDev);
+<font color="deepskyblue">0441:</font> 
+<font color="deepskyblue">0442:</font>     <font color="cyan">// 描画をバックバッファに戻す</font>
+<font color="deepskyblue">0443:</font>     lpD3DDev->SetRenderTarget(pBackbuffer, lpZbuffer );
+<font color="deepskyblue">0444:</font>     for (i = 0; i &lt; 4; i++) {
+<font color="deepskyblue">0445:</font>         lpD3DDev->SetTextureStageState(i, D3DTSS_ADDRESSU,  D3DTADDRESS_CLAMP);
+<font color="deepskyblue">0446:</font>         lpD3DDev->SetTextureStageState(i, D3DTSS_ADDRESSV,  D3DTADDRESS_CLAMP);
+<font color="deepskyblue">0447:</font>         lpD3DDev->SetTextureStageState(i, D3DTSS_COLOROP,   D3DTOP_SELECTARG1);
+<font color="deepskyblue">0448:</font>         lpD3DDev->SetTextureStageState(i, D3DTSS_COLORARG1, D3DTA_TEXTURE);
+<font color="deepskyblue">0449:</font>         lpD3DDev->SetTexture( i, pTexture );         <font color="cyan">// テクスチャー</font>
+<font color="deepskyblue">0450:</font>     }
+<font color="deepskyblue">0451:</font> 
+<font color="deepskyblue">0452:</font>     lpD3DDev->SetVertexShader(hVertexShaderNormalEdge);
+<font color="deepskyblue">0453:</font>     lpD3DDev->SetPixelShader(hPixelShaderNormalEdge);
+<font color="deepskyblue">0454:</font>     lpD3DDev->SetStreamSource( 0, pFinalVB, sizeof(D3D_FINAL_VERTEX) );
+<font color="deepskyblue">0455:</font>     lpD3DDev->SetIndices(pFinalIB,0);
+<font color="deepskyblue">0456:</font>     lpD3DDev->DrawIndexedPrimitive( D3DPT_TRIANGLELIST, 0, 4, 0, 2 );
+<font color="deepskyblue">0457:</font>     
+<font color="deepskyblue">0458:</font>     lpD3DDev->SetTexture( 0, NULL);
+<font color="deepskyblue">0459:</font>     lpD3DDev->SetTexture( 1, NULL);
+<font color="deepskyblue">0460:</font>     lpD3DDev->SetTexture( 2, NULL);
+<font color="deepskyblue">0461:</font>     lpD3DDev->SetTexture( 3, NULL);
+<font color="deepskyblue">0462:</font> 
+<font color="deepskyblue">0463:</font>     <font color="cyan">// -----------------------------------------------------</font>
+<font color="deepskyblue">0464:</font>     <font color="cyan">// 深度エッジと色の作成</font>
+<font color="deepskyblue">0465:</font>     <font color="cyan">// -----------------------------------------------------</font>
+<font color="deepskyblue">0466:</font>     <font color="cyan">// テクスチャーに描画</font>
+<font color="deepskyblue">0467:</font>     lpD3DDev->SetRenderTarget(pTextureSurface, lpZbuffer);
+<font color="deepskyblue">0468:</font>     lpD3DDev->Clear(0,NULL, D3DCLEAR_ZBUFFER, D3DCOLOR_XRGB(0,0,0),1.0f,0);
+<font color="deepskyblue">0469:</font>     lpD3DDev->SetTextureStageState(0,D3DTSS_COLOROP,    D3DTOP_MODULATE);
+<font color="deepskyblue">0470:</font>     lpD3DDev->SetTextureStageState(0,D3DTSS_COLORARG1,  D3DTA_TEXTURE);
+<font color="deepskyblue">0471:</font>     lpD3DDev->SetTextureStageState(0,D3DTSS_COLORARG2,  D3DTA_DIFFUSE);
+<font color="deepskyblue">0472:</font>     lpD3DDev->SetTextureStageState(1,D3DTSS_COLOROP,    D3DTOP_DISABLE);
+<font color="deepskyblue">0473:</font>     lpD3DDev->SetVertexShader(hVertexShader);
+<font color="deepskyblue">0474:</font>     lpD3DDev->SetPixelShader(hPixelShader);
+<font color="deepskyblue">0475:</font>     DrawModel(lpD3DDev);
+<font color="deepskyblue">0476:</font> 
+<font color="deepskyblue">0477:</font>     <font color="cyan">// 描画をバックバッファに戻す</font>
+<font color="deepskyblue">0478:</font>     lpD3DDev->SetRenderTarget(pBackbuffer, lpZbuffer );
+<font color="deepskyblue">0479:</font>     for (i = 0; i &lt; 4; i++) {
+<font color="deepskyblue">0480:</font>         lpD3DDev->SetTextureStageState(i, D3DTSS_ADDRESSU,  D3DTADDRESS_CLAMP);
+<font color="deepskyblue">0481:</font>         lpD3DDev->SetTextureStageState(i, D3DTSS_ADDRESSV,  D3DTADDRESS_CLAMP);
+<font color="deepskyblue">0482:</font>         lpD3DDev->SetTextureStageState(i, D3DTSS_COLOROP,   D3DTOP_SELECTARG1);
+<font color="deepskyblue">0483:</font>         lpD3DDev->SetTextureStageState(i, D3DTSS_COLORARG1, D3DTA_TEXTURE);
+<font color="deepskyblue">0484:</font>         lpD3DDev->SetTexture( i, pTexture );            <font color="cyan">// テクスチャー</font>
+<font color="deepskyblue">0485:</font>     }
+<font color="deepskyblue">0486:</font>     <font color="yellow">lpD3DDev->SetRenderState(D3DRS_DESTBLEND, D3DBLEND_ZERO);</font>
+<font color="deepskyblue">0487:</font>     <font color="yellow">lpD3DDev->SetRenderState(D3DRS_SRCBLEND, D3DBLEND_DESTCOLOR);</font>
+<font color="deepskyblue">0488:</font>     <font color="yellow">lpD3DDev->SetRenderState(D3DRS_ALPHABLENDENABLE, TRUE);</font>
+<font color="deepskyblue">0489:</font> 
+<font color="deepskyblue">0490:</font>     lpD3DDev->SetVertexShader(hFinalVertexShader);
+<font color="deepskyblue">0491:</font>     lpD3DDev->SetPixelShader(hFinalPixelShader);
+<font color="deepskyblue">0492:</font>     lpD3DDev->SetStreamSource( 0, pFinalVB, sizeof(D3D_FINAL_VERTEX) );
+<font color="deepskyblue">0493:</font>     lpD3DDev->SetIndices(pFinalIB,0);
+<font color="deepskyblue">0494:</font>     lpD3DDev->DrawIndexedPrimitive( D3DPT_TRIANGLELIST, 0, 4, 0, 2 );
+<font color="deepskyblue">0495:</font> 
+<font color="deepskyblue">0496:</font>     lpD3DDev->SetPixelShader(0);
+<font color="deepskyblue">0497:</font>     lpD3DDev->SetTexture( 0, NULL);
+<font color="deepskyblue">0498:</font>     lpD3DDev->SetTexture( 1, NULL);
+<font color="deepskyblue">0499:</font>     lpD3DDev->SetTexture( 2, NULL);
+<font color="deepskyblue">0500:</font>     lpD3DDev->SetTexture( 3, NULL);
+<font color="deepskyblue">0501:</font>     <font color="yellow">lpD3DDev->SetRenderState(D3DRS_ALPHABLENDENABLE, FALSE);</font>
+<font color="deepskyblue">0529:</font> }
+</pre>
+
+
+<h2>■最後に</h2>
+
+
+<p>
+ほぼ一年くらい前から、『テクスチャーによる陰影を利用した輪郭抽出』、『裏向き外側膨らませモデル描画による輪郭抽出』、
+『フルスクリーンエッジフィルターによる輪郭抽出』と、今回の『深度、法線マップによる輪郭抽出』をやってきましたが、
+一年ぐらいでずいぶん進化しましたね。<br>
+このペースで進化しつづけるとすると、本当に映画のクオリティがリアルタイムにできるようになりそうです。
+</p>
+
+
+<h2>■追記：IDマップによるエッジの追加</h2>
+
+<center><image src = "../50_1_edgeid/title.png"></center>
+
+<p>
+掲示板で、新坂さんから、「マテリアル境界に線を引くのは必須ですね」言われました。<br>
+また、「デプス、法線、マテリアルIDの３つの中で単体で一番まともに使えるのがマテリアルIDを使った方法だと思います。」と、豪語されてしまいました。<br>
+じゃぁ、やらないわけには行かないじゃないですか。<br>
+といっても、今回の画像では、エッジを引かれた部分の色が濃いのでエッジが目立ちませんね。
+</p>
+<p>
+<ul style = "LIST-STYLE-TYPE:none">
+<li><a href="../50_1_edgeid/src.lzh">src.lzh (深度法線エッジによる輪郭抽出のサンプル:DirectX8.1)</a>
+</ul>
+
+<p>
+ファイル構成は同じです。
+</p>
+<table>
+<tr><td><a href="../50_1_edgeid/normal_vsh.html">normal.vsh</a></td><td>法線マップ生成頂点シェーダー。</td></tr>
+<tr><td><a href="../50_1_edgeid/normal_psh.html">normal.psh</a></td><td>法線マップ生成ピクセルシェーダー。</td></tr>
+<tr><td><a href="../50_1_edgeid/normaledge_vsh.html">normaledge.vsh</a></td><td>法線マップのエッジ生成頂点シェーダー。</td></tr>
+<tr><td><a href="../50_1_edgeid/normaledge_psh.html">normaledge.psh</a></td><td>法線マップのエッジ生成ピクセルシェーダー。</td></tr>
+<tr><td><a href="../50_1_edgeid/vs_vsh.html">vs.vsh</a></td><td>深度、通常色の頂点シェーダー。</td></tr>
+<tr><td><a href="../50_1_edgeid/ps_psh.html">ps.psh</a></td><td>深度、通常色のピクセルシェーダー。</td></tr>
+<tr><td><a href="../50_1_edgeid/final_vsh.html">final.vsh</a></td><td>深度エッジの頂点シェーダー。</td></tr>
+<tr><td><a href="../50_1_edgeid/final_psh.html">final.psh</a></td><td>深度エッジのピクセルシェーダー。</td></tr>
+<tr><td><a href="../50_1_edgeid/draw_cpp.html">draw.cpp</a></td><td>メインの描画部分。</td></tr>
+<tr><td><a href="../50_1_edgeid/draw_h.html">draw.h</a></td><td>描画の各関数の定義。</td></tr>
+<tr><td><a href="../50_1_edgeid/bg_cpp.html">bg.cpp</a></td><td>背景の描画。</td></tr>
+<tr><td><a href="../50_1_edgeid/main_h.html">main.h</a></td><td>基本的な定数など。</td></tr>
+<tr><td><a href="../50_1_edgeid/main_cpp.html">main.cpp</a></td><td>描画に関係しないシステム的な部分。</td></tr>
+<tr><td><a href="../50_1_edgeid/load_cpp.html">load.cpp</a></td><td>ロード。</td></tr>
+<tr><td><a href="../50_1_edgeid/load_h.html">load.h</a></td><td>ロードのインターフェイス。</td></tr>
+</table>
+
+<p>
+今回の方法は、DrawIndexedPrimitiveの単位でIDを付けて、IDマップを作ります。
+</p>
+<image src = "../50_1_edgeid/idmap.png">
+<p>
+エッジを取って、
+</p>
+<image src = "../50_1_edgeid/idedge.png">
+<p>
+法線マップのエッジ
+</p>
+<image src = "../50_1_edgeid/nedge.png" width = 256, HEIGHT = 256>
+<p>
+と合成して、IDと法線のエッジを１パスで作ってから、後は同じように合成します。
+</p>
+<image src = "../50_1_edgeid/nidedge.png" width = 256, HEIGHT = 256>
+<p>
+法線マップとIDマップの違いはマテリアルの境界にくっきりとエッジが出来るので、
+アニメっぽい線が引けることです。
+</p>
+<p>
+具体的な実装方法をしては、IDを振るクラスを作りました。
+</p>
+<pre class="CodeBlock">
+draw.h
+<font color="deepskyblue">0015:</font> class IdMgr{
+<font color="deepskyblue">0016:</font>     static float id;
+<font color="deepskyblue">0017:</font> public:
+<font color="deepskyblue">0018:</font>     static void Reset(){id=0.0f;}
+<font color="deepskyblue">0019:</font>     static float GetId() {return id+=32.0f/256.0f;}
+<font color="deepskyblue">0020:</font> };
+</pre>
+<p>
+Reset で数値をクリアして、GetId()で数値を得ると共に内部の数値を進めます。<br>
+GetId()をみて分かるとおり、8段階しかIDを触れないので、今回は車を描画するごとに数値をResetして、
+車の同じ部位に関しては同じ値になるようにしました。<br>
+ID間の値の差が小さいと、エッジを取ったときにエッジが消える可能性があるので、適当に大きな差が必要になります。<br>
+車ごとのエッジは深度エッジで取れるので、これで十分です。<br>
+これをDrawIndexedPrimitiveごとに、定数レジスタに設定しました。
+</p>
+<pre class="CodeBlock">
+draw.cpp
+<font color="deepskyblue">0407:</font>     IdMgr::Reset();
+<font color="deepskyblue">0408:</font>     for(i=0;i&lt;dwNumMaterials;i++){
+
+色の設定。略。
+
+<font color="deepskyblue">0414:</font>         <font color="yellow">lpD3DDev->SetVertexShaderConstant(16, &D3DXVECTOR4(0,0,0,IdMgr::GetId()), 1);</font>
+<font color="deepskyblue">0415:</font> 
+<font color="deepskyblue">0416:</font>         lpD3DDev->SetMaterial( &pMeshMaterials[i] );
+<font color="deepskyblue">0417:</font>         lpD3DDev->SetTexture(0,pMeshTextures[i]);
+<font color="deepskyblue">0418:</font>         lpD3DDev->DrawIndexedPrimitive(D3DPT_TRIANGLELIST, 
+<font color="deepskyblue">0419:</font>                                         pSubsetTable[i].VertexStart,
+<font color="deepskyblue">0420:</font>                                         pSubsetTable[i].VertexCount,
+<font color="deepskyblue">0421:</font>                                         pSubsetTable[i].FaceStart * 3,
+<font color="deepskyblue">0422:</font>                                         pSubsetTable[i].FaceCount);
+<font color="deepskyblue">0423:</font>     }
+</pre>
+<p>
+頂点レジスタでは、色のα成分にIDマップを作ります。
+</p>
+<pre class="CodeBlock">
+<font color="deepskyblue">0001:</font> <font color="cyan">;normal.vsh</font>
+<font color="deepskyblue">0002:</font> <font color="cyan">; c0-3   -- world + ビュー + 透視変換行列</font>
+<font color="deepskyblue">0003:</font> <font color="cyan">; c12    -- (0.0, 1.0, 0.5, 2.0)</font>
+<font color="deepskyblue">0004:</font> <font color="cyan">; c16    -- ID を示した色</font>
+<font color="deepskyblue">0005:</font> <font color="cyan">;</font>
+<font color="deepskyblue">0006:</font> <font color="cyan">; v0    頂点の座標値</font>
+<font color="deepskyblue">0007:</font> <font color="cyan">; v3    法線ベクトル</font>
+<font color="deepskyblue">0008:</font> <font color="cyan">; v7    テクスチャ座標</font>
+<font color="deepskyblue">0009:</font> 
+<font color="deepskyblue">0010:</font> vs.1.0
+<font color="deepskyblue">0011:</font> 
+<font color="deepskyblue">0012:</font> <font color="cyan">;座標変換</font>
+<font color="deepskyblue">0013:</font> m4x4 oPos, v0, c0
+<font color="deepskyblue">0014:</font> 
+<font color="deepskyblue">0015:</font> <font color="cyan">; 法線ベクトルを色で格納</font>
+<font color="deepskyblue">0016:</font> mad oD0,   v3,   c12.y, c12.y
+<font color="deepskyblue">0017:</font> <font color="yellow">mov oD0.w, c16</font>
+</pre>
+<p>
+あとは、エッジを作るピクセルシェーダーが異なります。<br>
+今回は、ps1.1 です。ps1.1は、一つの命令にテクスチャーレジスタが１つしか使えないという制限が無く、
+ｒレジスタと同じ感覚で使えるので、とても便利です<sub>と、新坂さんに教えていただきました。α成分にIDを入れるのも新坂さんに教えていただいた方法です。本当に新坂さまさまさまです</sub>。<br>
+ps1.xの少ない命令数を補うために、＋命令を使って、RGB成分とα成分を同時に別の命令を実行して命令数を稼いでいます。<br>
+内容的には、α成分の差の２乗を計算して、法線エッジのエッジに足しこんでいます。
+</p>
+<pre class="CodeBlock">
+<font color="deepskyblue">0001:</font> <font color="cyan">; normaledge.psh</font>
+<font color="deepskyblue">0002:</font> <font color="cyan">;      (c) 2002 IMAGIRE Takashi</font>
+<font color="deepskyblue">0003:</font> 
+<font color="deepskyblue">0004:</font> ps.1.1
+<font color="deepskyblue">0005:</font> 
+<font color="deepskyblue">0006:</font> tex t0      <font color="cyan">; 0:1 0  1:0 1  2:0 0  3:0 0</font>
+<font color="deepskyblue">0007:</font> tex t1      <font color="cyan">;   0 0    0 0    1 0    0 1</font>
+<font color="deepskyblue">0008:</font> tex t2
+<font color="deepskyblue">0009:</font> tex t3
+<font color="deepskyblue">0010:</font> 
+<font color="deepskyblue">0011:</font> add_x4     r0,  t3, -t0 <font color="cyan">; r0 =  4(t3-t0)</font>
+<font color="deepskyblue">0012:</font> add_x4     r1,  t2, -t1 <font color="cyan">; r1 =  4(t2-t1)</font>
+<font color="deepskyblue">0013:</font> 
+<font color="deepskyblue">0014:</font>  dp3_x4    r0.rgb,  r0,  r0     <font color="cyan">; r0 = 64|t3-t0|^2 (rgb)</font>
+<font color="deepskyblue">0015:</font> <font color="yellow">+mul_x4    r0.a,    r0,  r0</font>     <font color="cyan">; r0 = 64|t3-t0|^2 (a)</font>
+<font color="deepskyblue">0016:</font>  dp3_x4    r1.rgb,  r1,  r1     <font color="cyan">; r1 = 64|t2-t1|^2 (rgb)</font>
+<font color="deepskyblue">0017:</font> <font color="yellow">+mul_x4    r1.a,    r1,  r1</font>     <font color="cyan">; r1 = 64|t2-t1|^2 (a)</font>
+<font color="deepskyblue">0018:</font> <font color="yellow">add        r0,      r0,  r0.a</font>   <font color="cyan">; r0 = 64|t3-t0|^2 (rgba)</font>
+<font color="deepskyblue">0019:</font> <font color="yellow">add        r1,      r1,  r1.a</font>   <font color="cyan">; r1 = 64|t2-t1|^2 (rgba)</font>
+<font color="deepskyblue">0020:</font> add_x4_sat r0,      1-r0,-r1    <font color="cyan">; r0 = 4(1-64(|t3-t0|^2+|t2-t1|^2))</font>
+</pre>
+<p>
+以上が変更点です。これで、IDマップを使ったエッジが作れます。<br>
+今回は、DrawIndexedPrimitive単位でIDを振りましたが、テクスチャーに入れてデザイナーの自由に設定をすることも出来ます。
+（当然お分かりかとは思いますが、直接線をデカールとして引くこととの違いはポリゴンが傾いたときでも一定の太さの線が引けるということです）。<br>
+今回やってみた結果、IDマップは線が綺麗に出ますね。大変使えそうです。
+</p>
+
+
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<center>
+<p><a href="../index.html">もどる</a></p>
+<p><a href="mailto:imagire@gmail.com">imagire@gmail.com</a></p>
+</center>
+
+</body>
+</html>

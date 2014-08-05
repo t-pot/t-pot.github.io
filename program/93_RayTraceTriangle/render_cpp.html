@@ -1,0 +1,210 @@
+<HTML>
+<HEAD>
+<TITLE>render.cpp</TITLE>
+<meta name="GENERATOR" content="cpp2html 2.1 by Niisaka">
+<meta http-equiv="Content-Type" content="text/html">
+<meta http-equiv="Content-Style-Type" content="text/css">
+<STYLE TYPE="text/css">
+<!--
+SPAN.comment { color:#008000; font-weight:normal; font-style:normal;}
+SPAN.keyword { color:#0000FF; font-weight:normal; font-style:normal;}
+SPAN.string { color:#600000; font-weight:normal; font-style:normal;}
+SPAN.linenum { color:#A0A0A0; font-weight:normal; font-style:normal;}
+-->
+</STYLE>
+</HEAD>
+<BODY TEXT="#000000" BGCOLOR="#FFFFFF">
+<PRE><SPAN CLASS="linenum">0001:</SPAN> <SPAN CLASS="keyword">#include</SPAN> "<SPAN CLASS="string">stdafx.h</SPAN>"
+<SPAN CLASS="linenum">0002:</SPAN> <SPAN CLASS="keyword">#include</SPAN> &lt;d3d9.h&gt;
+<SPAN CLASS="linenum">0003:</SPAN> <SPAN CLASS="keyword">#include</SPAN> &lt;d3dx9.h&gt;
+<SPAN CLASS="linenum">0004:</SPAN> <SPAN CLASS="keyword">#include</SPAN> "<SPAN CLASS="string">math.h</SPAN>"
+<SPAN CLASS="linenum">0005:</SPAN> <SPAN CLASS="keyword">#include</SPAN> "<SPAN CLASS="string">render.h</SPAN>"
+<SPAN CLASS="linenum">0006:</SPAN> 
+<SPAN CLASS="linenum">0007:</SPAN> <SPAN CLASS="keyword">namespace</SPAN> Render {
+<SPAN CLASS="linenum">0008:</SPAN> 
+<SPAN CLASS="linenum">0009:</SPAN> D3DXVECTOR3 BG_COLOR = D3DXVECTOR3(0.25f, 0.4f, 0.5f);<SPAN CLASS="comment">// 背景色</SPAN>
+<SPAN CLASS="linenum">0010:</SPAN> 
+<SPAN CLASS="linenum">0011:</SPAN> <SPAN CLASS="keyword">class</SPAN> CCamera
+<SPAN CLASS="linenum">0012:</SPAN> {
+<SPAN CLASS="linenum">0013:</SPAN> <SPAN CLASS="keyword">private</SPAN>:
+<SPAN CLASS="linenum">0014:</SPAN>     D3DXMATRIX  m_mView;
+<SPAN CLASS="linenum">0015:</SPAN>     D3DXMATRIX  m_mProj;
+<SPAN CLASS="linenum">0016:</SPAN>     D3DXMATRIX  m_mVP;
+<SPAN CLASS="linenum">0017:</SPAN>     D3DXMATRIX  m_mVP_Inv;
+<SPAN CLASS="linenum">0018:</SPAN>     D3DXMATRIX  m_mView_Inv;
+<SPAN CLASS="linenum">0019:</SPAN> 
+<SPAN CLASS="linenum">0020:</SPAN>     D3DXVECTOR3 m_vFrom;
+<SPAN CLASS="linenum">0021:</SPAN>     D3DXVECTOR3 m_vLookat;
+<SPAN CLASS="linenum">0022:</SPAN>     D3DXVECTOR3 m_vUp;
+<SPAN CLASS="linenum">0023:</SPAN> 
+<SPAN CLASS="linenum">0024:</SPAN>     <SPAN CLASS="keyword">float</SPAN>   m_fFovy;
+<SPAN CLASS="linenum">0025:</SPAN>     <SPAN CLASS="keyword">float</SPAN>   m_fAspect;
+<SPAN CLASS="linenum">0026:</SPAN>     <SPAN CLASS="keyword">float</SPAN>   m_fNear;
+<SPAN CLASS="linenum">0027:</SPAN>     <SPAN CLASS="keyword">float</SPAN>   m_fFar;
+<SPAN CLASS="linenum">0028:</SPAN> 
+<SPAN CLASS="linenum">0029:</SPAN> <SPAN CLASS="keyword">public</SPAN>:
+<SPAN CLASS="linenum">0030:</SPAN> 
+<SPAN CLASS="linenum">0031:</SPAN>     <SPAN CLASS="keyword">void</SPAN> Update();
+<SPAN CLASS="linenum">0032:</SPAN>     <SPAN CLASS="keyword">void</SPAN> SetFrom  (<SPAN CLASS="keyword">const</SPAN> D3DXVECTOR3 *p){m_vFrom  =*p;}
+<SPAN CLASS="linenum">0033:</SPAN>     <SPAN CLASS="keyword">void</SPAN> SetLookAt(<SPAN CLASS="keyword">const</SPAN> D3DXVECTOR3 *p){m_vLookat=*p;}
+<SPAN CLASS="linenum">0034:</SPAN>     <SPAN CLASS="keyword">void</SPAN> SetUp    (<SPAN CLASS="keyword">const</SPAN> D3DXVECTOR3 *p){m_vUp    =*p;}
+<SPAN CLASS="linenum">0035:</SPAN>     <SPAN CLASS="keyword">void</SPAN> SetFovY  (<SPAN CLASS="keyword">float</SPAN> val){m_fFovy   = val;}
+<SPAN CLASS="linenum">0036:</SPAN>     <SPAN CLASS="keyword">void</SPAN> SetAspect(<SPAN CLASS="keyword">float</SPAN> val){m_fAspect = val;}
+<SPAN CLASS="linenum">0037:</SPAN>     <SPAN CLASS="keyword">void</SPAN> SetNear  (<SPAN CLASS="keyword">float</SPAN> val){m_fNear   = val;}
+<SPAN CLASS="linenum">0038:</SPAN>     <SPAN CLASS="keyword">void</SPAN> SetFar   (<SPAN CLASS="keyword">float</SPAN> val){m_fFar    = val;}
+<SPAN CLASS="linenum">0039:</SPAN> 
+<SPAN CLASS="linenum">0040:</SPAN>     <SPAN CLASS="keyword">inline</SPAN> <SPAN CLASS="keyword">const</SPAN> D3DXMATRIX *GetViewInverse() <SPAN CLASS="keyword">const</SPAN> {<SPAN CLASS="keyword">return</SPAN> &amp;m_mView_Inv;}
+<SPAN CLASS="linenum">0041:</SPAN>     <SPAN CLASS="keyword">inline</SPAN> <SPAN CLASS="keyword">const</SPAN> D3DXMATRIX *GetViewProjInverse() <SPAN CLASS="keyword">const</SPAN> {<SPAN CLASS="keyword">return</SPAN> &amp;m_mVP_Inv;}
+<SPAN CLASS="linenum">0042:</SPAN> };
+<SPAN CLASS="linenum">0043:</SPAN> 
+<SPAN CLASS="linenum">0044:</SPAN> <SPAN CLASS="comment">// ---------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0045:</SPAN> <SPAN CLASS="comment">// オブジェクト</SPAN>
+<SPAN CLASS="linenum">0046:</SPAN> <SPAN CLASS="comment">// ---------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0047:</SPAN> <SPAN CLASS="keyword">char</SPAN> s_data[4*RENDER_WIDTH*RENDER_HEIGHT];<SPAN CLASS="comment">// 仮想フレームバッファ</SPAN>
+<SPAN CLASS="linenum">0048:</SPAN> CCamera camera;
+<SPAN CLASS="linenum">0049:</SPAN> 
+<SPAN CLASS="linenum">0050:</SPAN> <SPAN CLASS="comment">// ---------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0051:</SPAN> <SPAN CLASS="comment">// 関数宣言</SPAN>
+<SPAN CLASS="linenum">0052:</SPAN> <SPAN CLASS="comment">// ---------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0053:</SPAN> D3DXVECTOR3 *GetColor(D3DXVECTOR3 *dest, <SPAN CLASS="keyword">float</SPAN> x, <SPAN CLASS="keyword">float</SPAN> y);
+<SPAN CLASS="linenum">0054:</SPAN> 
+<SPAN CLASS="linenum">0055:</SPAN> 
+<SPAN CLASS="linenum">0056:</SPAN> <SPAN CLASS="comment">// ---------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0057:</SPAN> <SPAN CLASS="comment">// カメラクラス</SPAN>
+<SPAN CLASS="linenum">0058:</SPAN> <SPAN CLASS="comment">// ---------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0059:</SPAN> <SPAN CLASS="keyword">void</SPAN> CCamera::Update()
+<SPAN CLASS="linenum">0060:</SPAN> {
+<SPAN CLASS="linenum">0061:</SPAN>     D3DXMatrixLookAtLH( &amp;m_mView, &amp;m_vFrom, &amp;m_vLookat, &amp;m_vUp );
+<SPAN CLASS="linenum">0062:</SPAN>     D3DXMatrixPerspectiveFovLH( &amp;m_mProj, m_fFovy, m_fAspect, m_fNear, m_fFar );
+<SPAN CLASS="linenum">0063:</SPAN>     m_mVP = m_mView * m_mProj;
+<SPAN CLASS="linenum">0064:</SPAN> 
+<SPAN CLASS="linenum">0065:</SPAN>     D3DXMatrixInverse( &amp;m_mView_Inv, NULL, &amp;m_mView);
+<SPAN CLASS="linenum">0066:</SPAN>     D3DXMatrixInverse( &amp;m_mVP_Inv, NULL, &amp;m_mVP);
+<SPAN CLASS="linenum">0067:</SPAN> }
+<SPAN CLASS="linenum">0068:</SPAN> <SPAN CLASS="comment">// ---------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0069:</SPAN> <SPAN CLASS="keyword">char</SPAN> *GetDataPointer()
+<SPAN CLASS="linenum">0070:</SPAN> {
+<SPAN CLASS="linenum">0071:</SPAN>     <SPAN CLASS="keyword">return</SPAN> s_data;
+<SPAN CLASS="linenum">0072:</SPAN> }
+<SPAN CLASS="linenum">0073:</SPAN> <SPAN CLASS="comment">// ---------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0074:</SPAN> <SPAN CLASS="keyword">void</SPAN> Init()
+<SPAN CLASS="linenum">0075:</SPAN> {
+<SPAN CLASS="linenum">0076:</SPAN>     <SPAN CLASS="comment">// フレームバッファの初期化</SPAN>
+<SPAN CLASS="linenum">0077:</SPAN>     <SPAN CLASS="keyword">for</SPAN>(<SPAN CLASS="keyword">int</SPAN> j=0;j&lt;RENDER_HEIGHT;j++){
+<SPAN CLASS="linenum">0078:</SPAN>     <SPAN CLASS="keyword">for</SPAN>(<SPAN CLASS="keyword">int</SPAN> i=0;i&lt;RENDER_WIDTH ;i++){
+<SPAN CLASS="linenum">0079:</SPAN>         s_data[4*(j*RENDER_WIDTH+i)+0]=(<SPAN CLASS="keyword">char</SPAN>)255;<SPAN CLASS="comment">// R</SPAN>
+<SPAN CLASS="linenum">0080:</SPAN>         s_data[4*(j*RENDER_WIDTH+i)+1]=(<SPAN CLASS="keyword">char</SPAN>)(i*256/RENDER_WIDTH );<SPAN CLASS="comment">// G</SPAN>
+<SPAN CLASS="linenum">0081:</SPAN>         s_data[4*(j*RENDER_WIDTH+i)+2]=(<SPAN CLASS="keyword">char</SPAN>)(j*256/RENDER_HEIGHT);<SPAN CLASS="comment">// B</SPAN>
+<SPAN CLASS="linenum">0082:</SPAN>     }
+<SPAN CLASS="linenum">0083:</SPAN>     }
+<SPAN CLASS="linenum">0084:</SPAN>     
+<SPAN CLASS="linenum">0085:</SPAN>     camera.SetFrom  (&amp;D3DXVECTOR3(0,0,3));
+<SPAN CLASS="linenum">0086:</SPAN>     camera.SetLookAt(&amp;D3DXVECTOR3(0,0,0));
+<SPAN CLASS="linenum">0087:</SPAN>     camera.SetUp    (&amp;D3DXVECTOR3(0,1,0));
+<SPAN CLASS="linenum">0088:</SPAN>     camera.SetFovY  (D3DX_PI/3);
+<SPAN CLASS="linenum">0089:</SPAN>     camera.SetAspect(1.0f);
+<SPAN CLASS="linenum">0090:</SPAN>     camera.SetNear  (0.01f);
+<SPAN CLASS="linenum">0091:</SPAN>     camera.SetFar   (100.0f);
+<SPAN CLASS="linenum">0092:</SPAN>     camera.Update();
+<SPAN CLASS="linenum">0093:</SPAN> }
+<SPAN CLASS="linenum">0094:</SPAN> <SPAN CLASS="comment">// ---------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0095:</SPAN> <SPAN CLASS="keyword">void</SPAN> Delete()
+<SPAN CLASS="linenum">0096:</SPAN> {
+<SPAN CLASS="linenum">0097:</SPAN> }
+<SPAN CLASS="linenum">0098:</SPAN> <SPAN CLASS="comment">// ---------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0099:</SPAN> <SPAN CLASS="keyword">void</SPAN> Render()
+<SPAN CLASS="linenum">0100:</SPAN> {
+<SPAN CLASS="linenum">0101:</SPAN>     <SPAN CLASS="keyword">for</SPAN>(<SPAN CLASS="keyword">int</SPAN> j=0;j&lt;RENDER_HEIGHT;j++){
+<SPAN CLASS="linenum">0102:</SPAN>     <SPAN CLASS="keyword">for</SPAN>(<SPAN CLASS="keyword">int</SPAN> i=0;i&lt;RENDER_WIDTH ;i++){
+<SPAN CLASS="linenum">0103:</SPAN>         D3DXVECTOR3 col;
+<SPAN CLASS="linenum">0104:</SPAN>         GetColor(&amp;col, ((<SPAN CLASS="keyword">float</SPAN>)i+0.5f)/(<SPAN CLASS="keyword">float</SPAN>)RENDER_WIDTH
+<SPAN CLASS="linenum">0105:</SPAN>                      , ((<SPAN CLASS="keyword">float</SPAN>)j+0.5f)/(<SPAN CLASS="keyword">float</SPAN>)RENDER_HEIGHT);
+<SPAN CLASS="linenum">0106:</SPAN>         <SPAN CLASS="comment">// 0～1の範囲の色を0～255に変換</SPAN>
+<SPAN CLASS="linenum">0107:</SPAN>         s_data[4*(j*RENDER_WIDTH+i)+0]=(<SPAN CLASS="keyword">char</SPAN>)(255.9*col.x);<SPAN CLASS="comment">// R</SPAN>
+<SPAN CLASS="linenum">0108:</SPAN>         s_data[4*(j*RENDER_WIDTH+i)+1]=(<SPAN CLASS="keyword">char</SPAN>)(255.9*col.y);<SPAN CLASS="comment">// G</SPAN>
+<SPAN CLASS="linenum">0109:</SPAN>         s_data[4*(j*RENDER_WIDTH+i)+2]=(<SPAN CLASS="keyword">char</SPAN>)(255.9*col.z);<SPAN CLASS="comment">// B</SPAN>
+<SPAN CLASS="linenum">0110:</SPAN>     }
+<SPAN CLASS="linenum">0111:</SPAN>     }
+<SPAN CLASS="linenum">0112:</SPAN> }
+<SPAN CLASS="linenum">0113:</SPAN> 
+<SPAN CLASS="linenum">0114:</SPAN> <SPAN CLASS="comment">// ---------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0115:</SPAN> D3DXVECTOR3 *GetColor(D3DXVECTOR3 *dest, D3DXVECTOR4 *x, D3DXVECTOR4 *v)
+<SPAN CLASS="linenum">0116:</SPAN> {
+<SPAN CLASS="linenum">0117:</SPAN>     D3DXVECTOR4 d0, d1;
+<SPAN CLASS="linenum">0118:</SPAN>     D3DXVECTOR3 c;
+<SPAN CLASS="linenum">0119:</SPAN>     D3DXVECTOR4 normal;
+<SPAN CLASS="linenum">0120:</SPAN> 
+<SPAN CLASS="linenum">0121:</SPAN>     <SPAN CLASS="comment">// ３角形の各頂点</SPAN>
+<SPAN CLASS="linenum">0122:</SPAN>     D3DXVECTOR4 pos[3] = {
+<SPAN CLASS="linenum">0123:</SPAN>         D3DXVECTOR4( 0.000f, 0.866f, 0.0f, 1),
+<SPAN CLASS="linenum">0124:</SPAN>         D3DXVECTOR4( 0.866f,-0.500f, 0.0f, 1),
+<SPAN CLASS="linenum">0125:</SPAN>         D3DXVECTOR4(-0.866f,-0.500f, 0.0f, 1),
+<SPAN CLASS="linenum">0126:</SPAN>     };
+<SPAN CLASS="linenum">0127:</SPAN> 
+<SPAN CLASS="linenum">0128:</SPAN>     *dest = BG_COLOR;   <SPAN CLASS="comment">// 外れたときの色</SPAN>
+<SPAN CLASS="linenum">0129:</SPAN> 
+<SPAN CLASS="linenum">0130:</SPAN>     <SPAN CLASS="comment">// 法線ベクトルの計算</SPAN>
+<SPAN CLASS="linenum">0131:</SPAN>     D3DXVECTOR4 t0 = pos[1]-pos[0];
+<SPAN CLASS="linenum">0132:</SPAN>     D3DXVECTOR4 t1 = pos[2]-pos[0];
+<SPAN CLASS="linenum">0133:</SPAN>     D3DXVec3Cross((D3DXVECTOR3*)&amp;normal, (D3DXVECTOR3*)&amp;t1, (D3DXVECTOR3*)&amp;t0);
+<SPAN CLASS="linenum">0134:</SPAN>     D3DXVec3Normalize((D3DXVECTOR3*)&amp;normal, (D3DXVECTOR3*)&amp;normal);
+<SPAN CLASS="linenum">0135:</SPAN> 
+<SPAN CLASS="linenum">0136:</SPAN> 
+<SPAN CLASS="linenum">0137:</SPAN>     <SPAN CLASS="comment">// 線分との判定</SPAN>
+<SPAN CLASS="linenum">0138:</SPAN>     D3DXVECTOR4 xp = pos[0]-(*x);
+<SPAN CLASS="linenum">0139:</SPAN>     FLOAT xpn = D3DXVec3Dot((D3DXVECTOR3 *)&amp;xp, (D3DXVECTOR3 *)&amp;normal);
+<SPAN CLASS="linenum">0140:</SPAN>     FLOAT vn  = D3DXVec3Dot((D3DXVECTOR3 *)v,   (D3DXVECTOR3 *)&amp;normal);
+<SPAN CLASS="linenum">0141:</SPAN>     
+<SPAN CLASS="linenum">0142:</SPAN>     <SPAN CLASS="keyword">if</SPAN>(-0.00001f&lt;=vn) <SPAN CLASS="keyword">return</SPAN> dest;<SPAN CLASS="comment">// カリングと発散を外す</SPAN>
+<SPAN CLASS="linenum">0143:</SPAN> 
+<SPAN CLASS="linenum">0144:</SPAN>     <SPAN CLASS="keyword">float</SPAN> t = xpn/vn;
+<SPAN CLASS="linenum">0145:</SPAN>     
+<SPAN CLASS="linenum">0146:</SPAN>     <SPAN CLASS="keyword">if</SPAN>(t&lt;0) <SPAN CLASS="keyword">return</SPAN> dest;<SPAN CLASS="comment">// 後ろ向きのレイは無効</SPAN>
+<SPAN CLASS="linenum">0147:</SPAN> 
+<SPAN CLASS="linenum">0148:</SPAN>     D3DXVECTOR4 p = (*x)+t*(*v);<SPAN CLASS="comment">// ３角形の平面への射影</SPAN>
+<SPAN CLASS="linenum">0149:</SPAN> 
+<SPAN CLASS="linenum">0150:</SPAN>     <SPAN CLASS="comment">// 射影した点が３角形の内側にあるかテスト</SPAN>
+<SPAN CLASS="linenum">0151:</SPAN>     d0 = p-pos[0];
+<SPAN CLASS="linenum">0152:</SPAN>     d1 = pos[1]-pos[0];
+<SPAN CLASS="linenum">0153:</SPAN>     D3DXVec3Cross(&amp;c, (D3DXVECTOR3*)&amp;d0, (D3DXVECTOR3*)&amp;d1);
+<SPAN CLASS="linenum">0154:</SPAN>     <SPAN CLASS="keyword">if</SPAN>(D3DXVec3Dot(&amp;c, (D3DXVECTOR3 *)&amp;normal)&lt;0) <SPAN CLASS="keyword">return</SPAN> dest;
+<SPAN CLASS="linenum">0155:</SPAN>     d0 = p-pos[1];
+<SPAN CLASS="linenum">0156:</SPAN>     d1 = pos[2]-pos[1];
+<SPAN CLASS="linenum">0157:</SPAN>     D3DXVec3Cross(&amp;c, (D3DXVECTOR3*)&amp;d0, (D3DXVECTOR3*)&amp;d1);
+<SPAN CLASS="linenum">0158:</SPAN>     <SPAN CLASS="keyword">if</SPAN>(D3DXVec3Dot(&amp;c, (D3DXVECTOR3 *)&amp;normal)&lt;0) <SPAN CLASS="keyword">return</SPAN> dest;
+<SPAN CLASS="linenum">0159:</SPAN>     d0 = p-pos[2];
+<SPAN CLASS="linenum">0160:</SPAN>     d1 = pos[0]-pos[2];
+<SPAN CLASS="linenum">0161:</SPAN>     D3DXVec3Cross(&amp;c, (D3DXVECTOR3*)&amp;d0, (D3DXVECTOR3*)&amp;d1);
+<SPAN CLASS="linenum">0162:</SPAN>     <SPAN CLASS="keyword">if</SPAN>(D3DXVec3Dot(&amp;c, (D3DXVECTOR3 *)&amp;normal)&lt;0) <SPAN CLASS="keyword">return</SPAN> dest;
+<SPAN CLASS="linenum">0163:</SPAN>     
+<SPAN CLASS="linenum">0164:</SPAN>     <SPAN CLASS="comment">// 当たったときの色</SPAN>
+<SPAN CLASS="linenum">0165:</SPAN>     *dest = D3DXVECTOR3( 1.0f, 0.9f, 0.5f );
+<SPAN CLASS="linenum">0166:</SPAN>     
+<SPAN CLASS="linenum">0167:</SPAN>     <SPAN CLASS="keyword">return</SPAN> dest;
+<SPAN CLASS="linenum">0168:</SPAN> }
+<SPAN CLASS="linenum">0169:</SPAN> <SPAN CLASS="comment">// ---------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0170:</SPAN> D3DXVECTOR3 *GetColor(D3DXVECTOR3 *dest, <SPAN CLASS="keyword">float</SPAN> x, <SPAN CLASS="keyword">float</SPAN> y)
+<SPAN CLASS="linenum">0171:</SPAN> {
+<SPAN CLASS="linenum">0172:</SPAN>     D3DXVECTOR4 ray_start_proj = D3DXVECTOR4(-2*x+1, -2*y+1, 0, 1);<SPAN CLASS="comment">// 前方クリップ面</SPAN>
+<SPAN CLASS="linenum">0173:</SPAN>     D3DXVECTOR4 ray_eye        = D3DXVECTOR4(0, 0, 0, 1);<SPAN CLASS="comment">// ビュー空間でのカメラの位置</SPAN>
+<SPAN CLASS="linenum">0174:</SPAN>     D3DXVECTOR4 ray_start;
+<SPAN CLASS="linenum">0175:</SPAN>     D3DXVECTOR4 ray_to;
+<SPAN CLASS="linenum">0176:</SPAN>     D3DXVECTOR4 ray_dir;
+<SPAN CLASS="linenum">0177:</SPAN>     D3DXMATRIX mInv;
+<SPAN CLASS="linenum">0178:</SPAN>     
+<SPAN CLASS="linenum">0179:</SPAN>     <SPAN CLASS="comment">// 視点を射影空間からワールド座標に変換する</SPAN>
+<SPAN CLASS="linenum">0180:</SPAN>     D3DXVec4Transform( &amp;ray_start, &amp;ray_eye,        camera.GetViewInverse() );
+<SPAN CLASS="linenum">0181:</SPAN>     D3DXVec4Transform( &amp;ray_to,    &amp;ray_start_proj, camera.GetViewProjInverse() );
+<SPAN CLASS="linenum">0182:</SPAN>     D3DXVec4Scale( &amp;ray_to,    &amp;ray_to,    1.0f/ray_to.w   );<SPAN CLASS="comment">// w=1 の射影空間に落とす</SPAN>
+<SPAN CLASS="linenum">0183:</SPAN>     <SPAN CLASS="comment">// 向きの計算</SPAN>
+<SPAN CLASS="linenum">0184:</SPAN>     ray_dir = ray_to - ray_start;
+<SPAN CLASS="linenum">0185:</SPAN>     D3DXVec4Normalize(&amp;ray_dir, &amp;ray_dir);
+<SPAN CLASS="linenum">0186:</SPAN>     
+<SPAN CLASS="linenum">0187:</SPAN>     <SPAN CLASS="comment">// 色計算</SPAN>
+<SPAN CLASS="linenum">0188:</SPAN>     <SPAN CLASS="keyword">return</SPAN> GetColor(dest, &amp;ray_start, &amp;ray_dir);
+<SPAN CLASS="linenum">0189:</SPAN> }
+<SPAN CLASS="linenum">0190:</SPAN> 
+<SPAN CLASS="linenum">0191:</SPAN> };<SPAN CLASS="comment">// namespace Render</SPAN>
+<SPAN CLASS="linenum">0192:</SPAN> </PRE>
+</BODY>
+</HTML>

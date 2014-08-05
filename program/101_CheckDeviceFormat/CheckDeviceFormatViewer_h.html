@@ -1,0 +1,228 @@
+<HTML>
+<HEAD>
+<TITLE>CheckDeviceFormatViewer.h</TITLE>
+<meta name="GENERATOR" content="cpp2html 2.1 by Niisaka">
+<meta http-equiv="Content-Type" content="text/html">
+<meta http-equiv="Content-Style-Type" content="text/css">
+<STYLE TYPE="text/css">
+<!--
+SPAN.comment { color:#008000; font-weight:normal; font-style:normal;}
+SPAN.keyword { color:#0000FF; font-weight:normal; font-style:normal;}
+SPAN.string { color:#600000; font-weight:normal; font-style:normal;}
+SPAN.linenum { color:#A0A0A0; font-weight:normal; font-style:normal;}
+-->
+</STYLE>
+</HEAD>
+<BODY TEXT="#000000" BGCOLOR="#FFFFFF">
+<PRE><SPAN CLASS="linenum">0001:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0002:</SPAN> <SPAN CLASS="comment">// File: CheckDeviceFormatViewer.h</SPAN>
+<SPAN CLASS="linenum">0003:</SPAN> <SPAN CLASS="comment">//</SPAN>
+<SPAN CLASS="linenum">0004:</SPAN> <SPAN CLASS="comment">// Desc: Header file CheckDeviceFormatViewer sample app</SPAN>
+<SPAN CLASS="linenum">0005:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0006:</SPAN> <SPAN CLASS="keyword">#pragma</SPAN> once
+<SPAN CLASS="linenum">0007:</SPAN> <SPAN CLASS="keyword">#ifndef</SPAN> __AFXWIN_H__
+<SPAN CLASS="linenum">0008:</SPAN> <SPAN CLASS="keyword">#error</SPAN> include '<SPAN CLASS="string">stdafx.h</SPAN>' before including <SPAN CLASS="keyword">this</SPAN> file
+<SPAN CLASS="linenum">0009:</SPAN> <SPAN CLASS="keyword">#endif</SPAN>
+<SPAN CLASS="linenum">0010:</SPAN> 
+<SPAN CLASS="linenum">0011:</SPAN> 
+<SPAN CLASS="linenum">0012:</SPAN> 
+<SPAN CLASS="linenum">0013:</SPAN> 
+<SPAN CLASS="linenum">0014:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0015:</SPAN> <SPAN CLASS="comment">// Defines, and constants</SPAN>
+<SPAN CLASS="linenum">0016:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0017:</SPAN> <SPAN CLASS="comment">// TODO: change "DirectX AppWizard Apps" to your name or the company name</SPAN>
+<SPAN CLASS="linenum">0018:</SPAN> <SPAN CLASS="keyword">#define</SPAN> DXAPP_KEY        TEXT("<SPAN CLASS="string">Software\\DirectX AppWizard Apps\\CheckDeviceFormatViewer</SPAN>")
+<SPAN CLASS="linenum">0019:</SPAN> 
+<SPAN CLASS="linenum">0020:</SPAN> <SPAN CLASS="comment">// Struct to store the current input state</SPAN>
+<SPAN CLASS="linenum">0021:</SPAN> <SPAN CLASS="keyword">struct</SPAN> UserInput
+<SPAN CLASS="linenum">0022:</SPAN> {
+<SPAN CLASS="linenum">0023:</SPAN>     <SPAN CLASS="comment">// TODO: change as needed</SPAN>
+<SPAN CLASS="linenum">0024:</SPAN>     BOOL bRotateUp;
+<SPAN CLASS="linenum">0025:</SPAN>     BOOL bRotateDown;
+<SPAN CLASS="linenum">0026:</SPAN>     BOOL bRotateLeft;
+<SPAN CLASS="linenum">0027:</SPAN>     BOOL bRotateRight;
+<SPAN CLASS="linenum">0028:</SPAN> };
+<SPAN CLASS="linenum">0029:</SPAN> 
+<SPAN CLASS="linenum">0030:</SPAN> <SPAN CLASS="comment">// フォーマット管理</SPAN>
+<SPAN CLASS="linenum">0031:</SPAN> <SPAN CLASS="keyword">typedef</SPAN> <SPAN CLASS="keyword">struct</SPAN> {
+<SPAN CLASS="linenum">0032:</SPAN>     D3DFORMAT   val;
+<SPAN CLASS="linenum">0033:</SPAN>     <SPAN CLASS="keyword">char</SPAN>        text[64];
+<SPAN CLASS="linenum">0034:</SPAN> }MyFormat;
+<SPAN CLASS="linenum">0035:</SPAN> 
+<SPAN CLASS="linenum">0036:</SPAN> <SPAN CLASS="comment">// Usage 管理</SPAN>
+<SPAN CLASS="linenum">0037:</SPAN> <SPAN CLASS="keyword">typedef</SPAN> <SPAN CLASS="keyword">struct</SPAN> {
+<SPAN CLASS="linenum">0038:</SPAN>     DWORD       val;
+<SPAN CLASS="linenum">0039:</SPAN>     <SPAN CLASS="keyword">char</SPAN>        text[64];
+<SPAN CLASS="linenum">0040:</SPAN> }MyUsage;
+<SPAN CLASS="linenum">0041:</SPAN> 
+<SPAN CLASS="linenum">0042:</SPAN> 
+<SPAN CLASS="linenum">0043:</SPAN> 
+<SPAN CLASS="linenum">0044:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0045:</SPAN> <SPAN CLASS="comment">// Name: class CAppForm</SPAN>
+<SPAN CLASS="linenum">0046:</SPAN> <SPAN CLASS="comment">// Desc: CFormView-based class which allows the UI to be created with a form</SPAN>
+<SPAN CLASS="linenum">0047:</SPAN> <SPAN CLASS="comment">//       (dialog) resource. This class manages all the controls on the form.</SPAN>
+<SPAN CLASS="linenum">0048:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0049:</SPAN> <SPAN CLASS="keyword">class</SPAN> CAppForm : <SPAN CLASS="keyword">public</SPAN> CFormView, <SPAN CLASS="keyword">public</SPAN> CD3DApplication
+<SPAN CLASS="linenum">0050:</SPAN> {
+<SPAN CLASS="linenum">0051:</SPAN> <SPAN CLASS="keyword">public</SPAN>:
+<SPAN CLASS="linenum">0052:</SPAN>     BOOL                    m_bLoadingApp;          <SPAN CLASS="comment">// TRUE, if the app is loading</SPAN>
+<SPAN CLASS="linenum">0053:</SPAN>     ID3DXFont*              m_pFont;                <SPAN CLASS="comment">// D3DX font    </SPAN>
+<SPAN CLASS="linenum">0054:</SPAN>     UserInput               m_UserInput;            <SPAN CLASS="comment">// Struct for storing user input </SPAN>
+<SPAN CLASS="linenum">0055:</SPAN> 
+<SPAN CLASS="linenum">0056:</SPAN>     FLOAT                   m_fWorldRotX;           <SPAN CLASS="comment">// World rotation state X-axis</SPAN>
+<SPAN CLASS="linenum">0057:</SPAN>     FLOAT                   m_fWorldRotY;           <SPAN CLASS="comment">// World rotation state Y-axis</SPAN>
+<SPAN CLASS="linenum">0058:</SPAN> 
+<SPAN CLASS="linenum">0059:</SPAN>     <SPAN CLASS="keyword">static</SPAN> <SPAN CLASS="keyword">const</SPAN> MyFormat   *m_Formats;
+<SPAN CLASS="linenum">0060:</SPAN>     <SPAN CLASS="keyword">int</SPAN>                     m_nFormat;
+<SPAN CLASS="linenum">0061:</SPAN>     <SPAN CLASS="keyword">static</SPAN> <SPAN CLASS="keyword">const</SPAN> MyUsage    *m_Usages;
+<SPAN CLASS="linenum">0062:</SPAN> 
+<SPAN CLASS="linenum">0063:</SPAN>     BOOL                    *m_pbResult;
+<SPAN CLASS="linenum">0064:</SPAN> 
+<SPAN CLASS="linenum">0065:</SPAN> <SPAN CLASS="keyword">private</SPAN>:
+<SPAN CLASS="linenum">0066:</SPAN>     HWND    m_hwndRenderWindow;
+<SPAN CLASS="linenum">0067:</SPAN>     HWND    m_hwndRenderFullScreen;
+<SPAN CLASS="linenum">0068:</SPAN>     HWND    m_hWndTopLevelParent;
+<SPAN CLASS="linenum">0069:</SPAN> 
+<SPAN CLASS="linenum">0070:</SPAN>     <SPAN CLASS="keyword">virtual</SPAN> HRESULT ConfirmDevice( D3DCAPS9*,DWORD,D3DFORMAT );
+<SPAN CLASS="linenum">0071:</SPAN>     <SPAN CLASS="keyword">virtual</SPAN> HRESULT OneTimeSceneInit();
+<SPAN CLASS="linenum">0072:</SPAN>     <SPAN CLASS="keyword">virtual</SPAN> HRESULT InitDeviceObjects();
+<SPAN CLASS="linenum">0073:</SPAN>     <SPAN CLASS="keyword">virtual</SPAN> HRESULT RestoreDeviceObjects();
+<SPAN CLASS="linenum">0074:</SPAN>     <SPAN CLASS="keyword">virtual</SPAN> HRESULT FrameMove();
+<SPAN CLASS="linenum">0075:</SPAN>     <SPAN CLASS="keyword">virtual</SPAN> HRESULT Render();
+<SPAN CLASS="linenum">0076:</SPAN>     <SPAN CLASS="keyword">virtual</SPAN> HRESULT InvalidateDeviceObjects();
+<SPAN CLASS="linenum">0077:</SPAN>     <SPAN CLASS="keyword">virtual</SPAN> HRESULT DeleteDeviceObjects();
+<SPAN CLASS="linenum">0078:</SPAN>     <SPAN CLASS="keyword">virtual</SPAN> HRESULT FinalCleanup();
+<SPAN CLASS="linenum">0079:</SPAN>     <SPAN CLASS="keyword">virtual</SPAN> HRESULT AdjustWindowForChange();
+<SPAN CLASS="linenum">0080:</SPAN> 
+<SPAN CLASS="linenum">0081:</SPAN>     HRESULT RenderText();
+<SPAN CLASS="linenum">0082:</SPAN> 
+<SPAN CLASS="linenum">0083:</SPAN>     <SPAN CLASS="keyword">void</SPAN>    UpdateInput( UserInput* pUserInput );
+<SPAN CLASS="linenum">0084:</SPAN>     VOID    ReadSettings();
+<SPAN CLASS="linenum">0085:</SPAN>     VOID    WriteSettings();
+<SPAN CLASS="linenum">0086:</SPAN> 
+<SPAN CLASS="linenum">0087:</SPAN>     VOID    UpdateUIForDeviceCapabilites();
+<SPAN CLASS="linenum">0088:</SPAN> 
+<SPAN CLASS="linenum">0089:</SPAN> <SPAN CLASS="keyword">protected</SPAN>:
+<SPAN CLASS="linenum">0090:</SPAN>     DECLARE_DYNCREATE(CAppForm)
+<SPAN CLASS="linenum">0091:</SPAN> 
+<SPAN CLASS="linenum">0092:</SPAN>              CAppForm();
+<SPAN CLASS="linenum">0093:</SPAN>     <SPAN CLASS="keyword">virtual</SPAN>  ~CAppForm();
+<SPAN CLASS="linenum">0094:</SPAN> 
+<SPAN CLASS="linenum">0095:</SPAN> <SPAN CLASS="keyword">public</SPAN>:
+<SPAN CLASS="linenum">0096:</SPAN>     BOOL IsReady() { <SPAN CLASS="keyword">return</SPAN> m_bActive; }
+<SPAN CLASS="linenum">0097:</SPAN>     TCHAR* PstrFrameStats() { <SPAN CLASS="keyword">return</SPAN> m_strFrameStats; }
+<SPAN CLASS="linenum">0098:</SPAN>     VOID RenderScene() { Render3DEnvironment(); }
+<SPAN CLASS="linenum">0099:</SPAN>     HRESULT CheckForLostFullscreen();
+<SPAN CLASS="linenum">0100:</SPAN> 
+<SPAN CLASS="linenum">0101:</SPAN>     <SPAN CLASS="comment">//{{AFX_DATA(CAppForm)</SPAN>
+<SPAN CLASS="linenum">0102:</SPAN>     <SPAN CLASS="keyword">enum</SPAN> { IDD = IDD_FORMVIEW };
+<SPAN CLASS="linenum">0103:</SPAN>     <SPAN CLASS="comment">//}}AFX_DATA</SPAN>
+<SPAN CLASS="linenum">0104:</SPAN> 
+<SPAN CLASS="linenum">0105:</SPAN>     <SPAN CLASS="comment">//{{AFX_VIRTUAL(CAppForm)</SPAN>
+<SPAN CLASS="linenum">0106:</SPAN>     <SPAN CLASS="keyword">virtual</SPAN> <SPAN CLASS="keyword">void</SPAN> OnInitialUpdate();
+<SPAN CLASS="linenum">0107:</SPAN>     <SPAN CLASS="keyword">protected</SPAN>:
+<SPAN CLASS="linenum">0108:</SPAN>     <SPAN CLASS="keyword">virtual</SPAN> LRESULT WindowProc(UINT message, WPARAM wParam, LPARAM lParam);
+<SPAN CLASS="linenum">0109:</SPAN>     <SPAN CLASS="keyword">virtual</SPAN> <SPAN CLASS="keyword">void</SPAN> DoDataExchange(CDataExchange* pDX);    <SPAN CLASS="comment">// DDX/DDV support</SPAN>
+<SPAN CLASS="linenum">0110:</SPAN>     <SPAN CLASS="comment">//}}AFX_VIRTUAL</SPAN>
+<SPAN CLASS="linenum">0111:</SPAN> 
+<SPAN CLASS="linenum">0112:</SPAN> <SPAN CLASS="keyword">public</SPAN>:
+<SPAN CLASS="linenum">0113:</SPAN>     <SPAN CLASS="comment">//{{AFX_MSG(CAppForm)</SPAN>
+<SPAN CLASS="linenum">0114:</SPAN>     afx_msg <SPAN CLASS="keyword">void</SPAN> OnToggleFullScreen();
+<SPAN CLASS="linenum">0115:</SPAN>     afx_msg <SPAN CLASS="keyword">void</SPAN> OnChangeDevice();
+<SPAN CLASS="linenum">0116:</SPAN>     <SPAN CLASS="comment">//}}AFX_MSG</SPAN>
+<SPAN CLASS="linenum">0117:</SPAN>     DECLARE_MESSAGE_MAP()
+<SPAN CLASS="linenum">0118:</SPAN> <SPAN CLASS="comment">//  afx_msg void OnBnClickedButtonCheckDeviceFormat();</SPAN>
+<SPAN CLASS="linenum">0119:</SPAN>     BOOL m_bCheckRenderTarget;
+<SPAN CLASS="linenum">0120:</SPAN>     BOOL m_bCheckDepthStencil;
+<SPAN CLASS="linenum">0121:</SPAN>     BOOL m_bCheckDynamic;
+<SPAN CLASS="linenum">0122:</SPAN>     BOOL m_bCheckAutoGenMipmap;
+<SPAN CLASS="linenum">0123:</SPAN>     BOOL m_bCheckDMap;
+<SPAN CLASS="linenum">0124:</SPAN>     <SPAN CLASS="keyword">int</SPAN> m_iResourceType;
+<SPAN CLASS="linenum">0125:</SPAN>     afx_msg <SPAN CLASS="keyword">void</SPAN> OnBnClickedCheckRendertarget();
+<SPAN CLASS="linenum">0126:</SPAN>     afx_msg <SPAN CLASS="keyword">void</SPAN> OnBnClickedButton1();
+<SPAN CLASS="linenum">0127:</SPAN>     afx_msg <SPAN CLASS="keyword">void</SPAN> OnBnClickedButtonCheckDeviceFormat();
+<SPAN CLASS="linenum">0128:</SPAN> };
+<SPAN CLASS="linenum">0129:</SPAN> 
+<SPAN CLASS="linenum">0130:</SPAN> 
+<SPAN CLASS="linenum">0131:</SPAN> 
+<SPAN CLASS="linenum">0132:</SPAN> 
+<SPAN CLASS="linenum">0133:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0134:</SPAN> <SPAN CLASS="comment">// Name: class CAppDoc</SPAN>
+<SPAN CLASS="linenum">0135:</SPAN> <SPAN CLASS="comment">// Desc: Overridden CDocument class needed for the CFormView</SPAN>
+<SPAN CLASS="linenum">0136:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0137:</SPAN> <SPAN CLASS="keyword">class</SPAN> CAppDoc : <SPAN CLASS="keyword">public</SPAN> CDocument
+<SPAN CLASS="linenum">0138:</SPAN> {
+<SPAN CLASS="linenum">0139:</SPAN> <SPAN CLASS="keyword">protected</SPAN>:
+<SPAN CLASS="linenum">0140:</SPAN>     DECLARE_DYNCREATE(CAppDoc)
+<SPAN CLASS="linenum">0141:</SPAN> 
+<SPAN CLASS="linenum">0142:</SPAN> <SPAN CLASS="comment">// Overrides</SPAN>
+<SPAN CLASS="linenum">0143:</SPAN>     <SPAN CLASS="comment">// ClassWizard generated virtual function overrides</SPAN>
+<SPAN CLASS="linenum">0144:</SPAN>     <SPAN CLASS="comment">//{{AFX_VIRTUAL(CAppDoc)</SPAN>
+<SPAN CLASS="linenum">0145:</SPAN>     <SPAN CLASS="keyword">public</SPAN>:
+<SPAN CLASS="linenum">0146:</SPAN>     <SPAN CLASS="comment">//}}AFX_VIRTUAL</SPAN>
+<SPAN CLASS="linenum">0147:</SPAN> 
+<SPAN CLASS="linenum">0148:</SPAN> <SPAN CLASS="comment">// Implementation</SPAN>
+<SPAN CLASS="linenum">0149:</SPAN>     <SPAN CLASS="comment">//{{AFX_MSG(CAppDoc)</SPAN>
+<SPAN CLASS="linenum">0150:</SPAN>         <SPAN CLASS="comment">// NOTE - the ClassWizard will add and remove member functions here.</SPAN>
+<SPAN CLASS="linenum">0151:</SPAN>         <SPAN CLASS="comment">//    DO NOT EDIT what you see in these blocks of generated code !</SPAN>
+<SPAN CLASS="linenum">0152:</SPAN>     <SPAN CLASS="comment">//}}AFX_MSG</SPAN>
+<SPAN CLASS="linenum">0153:</SPAN>     DECLARE_MESSAGE_MAP()
+<SPAN CLASS="linenum">0154:</SPAN> };
+<SPAN CLASS="linenum">0155:</SPAN> 
+<SPAN CLASS="linenum">0156:</SPAN> 
+<SPAN CLASS="linenum">0157:</SPAN> 
+<SPAN CLASS="linenum">0158:</SPAN> 
+<SPAN CLASS="linenum">0159:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0160:</SPAN> <SPAN CLASS="comment">// Name: class CAppFrameWnd</SPAN>
+<SPAN CLASS="linenum">0161:</SPAN> <SPAN CLASS="comment">// Desc: CFrameWnd-based class needed to override the CFormView's window style</SPAN>
+<SPAN CLASS="linenum">0162:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0163:</SPAN> <SPAN CLASS="keyword">class</SPAN> CAppFrameWnd : <SPAN CLASS="keyword">public</SPAN> CFrameWnd
+<SPAN CLASS="linenum">0164:</SPAN> {
+<SPAN CLASS="linenum">0165:</SPAN> <SPAN CLASS="keyword">protected</SPAN>:
+<SPAN CLASS="linenum">0166:</SPAN>     DECLARE_DYNCREATE(CAppFrameWnd)
+<SPAN CLASS="linenum">0167:</SPAN> <SPAN CLASS="keyword">public</SPAN>:
+<SPAN CLASS="linenum">0168:</SPAN>     <SPAN CLASS="comment">// ClassWizard generated virtual function overrides</SPAN>
+<SPAN CLASS="linenum">0169:</SPAN>     <SPAN CLASS="comment">//{{AFX_VIRTUAL(CAppFrameWnd)</SPAN>
+<SPAN CLASS="linenum">0170:</SPAN>     <SPAN CLASS="keyword">public</SPAN>:
+<SPAN CLASS="linenum">0171:</SPAN>     <SPAN CLASS="keyword">virtual</SPAN> BOOL PreCreateWindow( CREATESTRUCT&amp; cs );
+<SPAN CLASS="linenum">0172:</SPAN>     <SPAN CLASS="keyword">virtual</SPAN> BOOL LoadFrame(UINT nIDResource, DWORD dwDefaultStyle = WS_OVERLAPPEDWINDOW | FWS_ADDTOTITLE, CWnd* pParentWnd = NULL, CCreateContext* pContext = NULL);
+<SPAN CLASS="linenum">0173:</SPAN>     <SPAN CLASS="comment">//}}AFX_VIRTUAL</SPAN>
+<SPAN CLASS="linenum">0174:</SPAN> 
+<SPAN CLASS="linenum">0175:</SPAN> <SPAN CLASS="keyword">protected</SPAN>:
+<SPAN CLASS="linenum">0176:</SPAN>     <SPAN CLASS="comment">//{{AFX_MSG(CAppFrameWnd)</SPAN>
+<SPAN CLASS="linenum">0177:</SPAN>     afx_msg <SPAN CLASS="keyword">void</SPAN> OnChangeDevice();
+<SPAN CLASS="linenum">0178:</SPAN>     <SPAN CLASS="comment">//}}AFX_MSG</SPAN>
+<SPAN CLASS="linenum">0179:</SPAN>     DECLARE_MESSAGE_MAP()
+<SPAN CLASS="linenum">0180:</SPAN> };
+<SPAN CLASS="linenum">0181:</SPAN> 
+<SPAN CLASS="linenum">0182:</SPAN> 
+<SPAN CLASS="linenum">0183:</SPAN> 
+<SPAN CLASS="linenum">0184:</SPAN> 
+<SPAN CLASS="linenum">0185:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0186:</SPAN> <SPAN CLASS="comment">// Name: class CApp</SPAN>
+<SPAN CLASS="linenum">0187:</SPAN> <SPAN CLASS="comment">// Desc: Main MFC application class derived from CWinApp.</SPAN>
+<SPAN CLASS="linenum">0188:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0189:</SPAN> <SPAN CLASS="keyword">class</SPAN> CApp : <SPAN CLASS="keyword">public</SPAN> CWinApp
+<SPAN CLASS="linenum">0190:</SPAN> {
+<SPAN CLASS="linenum">0191:</SPAN> <SPAN CLASS="keyword">public</SPAN>:
+<SPAN CLASS="linenum">0192:</SPAN> 
+<SPAN CLASS="linenum">0193:</SPAN> <SPAN CLASS="comment">// Overrides</SPAN>
+<SPAN CLASS="linenum">0194:</SPAN>     <SPAN CLASS="comment">// ClassWizard generated virtual function overrides</SPAN>
+<SPAN CLASS="linenum">0195:</SPAN>     <SPAN CLASS="comment">//{{AFX_VIRTUAL(CApp)</SPAN>
+<SPAN CLASS="linenum">0196:</SPAN>     <SPAN CLASS="keyword">public</SPAN>:
+<SPAN CLASS="linenum">0197:</SPAN>     <SPAN CLASS="keyword">virtual</SPAN> BOOL InitInstance();
+<SPAN CLASS="linenum">0198:</SPAN>     <SPAN CLASS="keyword">virtual</SPAN> BOOL OnIdle( LONG );
+<SPAN CLASS="linenum">0199:</SPAN>     <SPAN CLASS="comment">//}}AFX_VIRTUAL</SPAN>
+<SPAN CLASS="linenum">0200:</SPAN> 
+<SPAN CLASS="linenum">0201:</SPAN> <SPAN CLASS="comment">// Implementation</SPAN>
+<SPAN CLASS="linenum">0202:</SPAN>     <SPAN CLASS="comment">//{{AFX_MSG(CApp)</SPAN>
+<SPAN CLASS="linenum">0203:</SPAN>     <SPAN CLASS="comment">//}}AFX_MSG</SPAN>
+<SPAN CLASS="linenum">0204:</SPAN>     DECLARE_MESSAGE_MAP()
+<SPAN CLASS="linenum">0205:</SPAN> };
+<SPAN CLASS="linenum">0206:</SPAN> 
+<SPAN CLASS="linenum">0207:</SPAN> 
+<SPAN CLASS="linenum">0208:</SPAN> 
+<SPAN CLASS="linenum">0209:</SPAN> 
+<SPAN CLASS="linenum">0210:</SPAN> </PRE>
+</BODY>
+</HTML>

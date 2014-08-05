@@ -1,0 +1,168 @@
+<head>
+	<title>t-pot『三角関数フィッティングによる主方向の導出』</title>
+	<link rel="stylesheet" type="text/css" href="../if.css">
+</head>
+<meta http-equiv=Content-Type content="text/html; charset=shift_jis">
+<body text=#ffffff>
+<div class="contents">
+<center>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<h1>三角関数フィッティングによる主方向の導出</h1><br>
+<h3>～Kanoさんに捧ぐ～</h3>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<!--<image src = "title.png">-->
+</center>
+
+
+<h2>■はじめに</h2>
+
+
+<p>
+先日、Kano さん達と呑んだときに、ハッチングの話になりました。<br>
+「ハッチングのテクスチャーは主曲率の方向に張るのがいいと考えられるが、
+一般に、ポリゴンモデルがあったときに主方向を求める方法は定かではない。」との話になりました。<br>
+そこで、求める方法を適当に考えてみました。
+<p>
+
+
+<h2>■考え方</h2>
+
+
+<p>
+主方向とは、パラメータで与えられた曲線
+</p>
+<pre class="CodeBlock">
+<b>p</b> = <b>p</b>(u,v)
+</pre>
+<p>
+に関して、接ベクトル
+</p>
+<pre class="CodeBlock">
+     ∂<b>p</b>        ∂<b>p</b>
+<b>p</b><sub>u</sub> = ――,  <b>p</b><sub>v</sub> = ――
+     ∂<b>u</b>        ∂<b>v</b>
+</pre>
+<p>
+を定義出来ます。この曲面を局所的に展開した場合に、u0, v0の周りでは、
+</p>
+<pre class="CodeBlock">
+<b>p</b>(<b>u</b>0+d<b>u</b>, <b>v</b>0+d<b>v</b>) = <b>p</b>(<b>u</b>0,<b>v</b>0) + d<b>u</b>･<b>p</b><sub>u</sub> + d<b>v</b>･<b>p</b><sub>v</sub>
+                   + [d<b>u</b> d<b>v</b>]┌ <b>p</b><sub>u</sub>･<b>p</b><sub>u</sub>  <b>p</b><sub>u</sub>･<b>p</b><sub>v</sub> ┐┌d<b>u</b>┐
+                       <b>  </b>   └ <b>p</b><sub>v</sub>･<b>p</b><sub>u</sub>  <b>p</b><sub>v</sub>･<b>p</b><sub>v</sub> ┘└d<b>v</b>┘＋･･･
+</pre>
+<p>
+と、展開できます（曲面の方向微分がC<sup>2</sup>級ぐらい必要かな？）。<br>
+２次の係数を与える行列を対角化した場合、その固有ベクトルをベクトルを主方向といいます。<br>
+主方向は、２次曲面で分解したときの方向を規定し、それぞれ直交します。
+</p>
+
+<p>
+さて、曲面から、無限小だけ離れた領域を考えます。<br>
+この領域に関して、接ベクトルでつくる角度と、曲線の法線方向の成分をプロットすると、一つのグラフが描けます。<br>
+</p>
+<image src = "plot.png">
+<p>
+例えば曲面が楕円面のときの底面の点でのグラフはサインカーブになります。<br>
+それ以外の場合でも、曲面が２次までの範囲で、同じような曲線になります。<br>
+ここで「同じような」というのは、主方向が関数の山や谷になっている周期πの周期関数ということです。<br>
+周期関数があればフーリエ展開したくなるのが世の常というものです。<br>
+サンプリングが等間隔ではないので、フーリエ展開はできないのですが、三角関数のフィッティングを行い、その位相から主方向を求めます。
+</p>
+
+<h2>■計算方法</h2>
+
+
+<p>
+ポリゴンの頂点を<b>p</b>とします。<br>
+頂点は、n個の頂点<b>v</b><sub>i</sub>と隣接しています。<br>
+<b>v</b><sub>i</sub>への<b>P</b>からの方向ベクトルをd<b>v</b><sub>i</sub> = <b>v</b><sub>i</sub>-<b>p</b>で定義します。<br>
+頂点<b>p</b>での法線ベクトルを<b>N</b>、<b>N</b>に直交する接ベクトル基底を<b>U</b>、<b>V</b>とします。<br>
+d<b>v</b><sub>i</sub> を規格化したベクトルに関して、<b>U</b>及び<b>V</b>との内積から得られる角度を横軸、
+<b>N</b>との内積を縦軸にしてグラフを作ります。
+</p>
+<image src = "sample.png">
+<pre class="CodeBlock">
+      <b>N</b>･d<b>v</b><sub>i</sub>
+d<sub>i</sub> = ―――
+      |d<b>v</b><sub>i</sub>|
+             <b>V</b>･d<b>v</b><sub>i</sub>  <b>U</b>･d<b>v</b><sub>i</sub>
+θ<sub>i</sub> = atan2(―――, ―――)
+             |d<b>v</b><sub>i</sub>|  |d<b>v</b><sub>i</sub>|
+</pre>
+<p>
+この点列に関するフィッティングを行います。<br>
+周期πの関数でフィッティングしたいので、
+</p>
+<pre class="CodeBlock">
+f = A cos(2θ) + B sin(2θ)
+</pre>
+<p>
+の関数を考えます。<br>
+AとB、それぞれの係数を別々に求めます。<br>
+フィッティングするための誤差関数は、
+</p>
+<pre class="CodeBlock">
+err<sub>A</sub> = Σ<sub>i</sub>(d<sub>i</sub> - A cos(2θ<sub>i</sub>))<sup>2</sup>,
+err<sub>B</sub> = Σ<sub>i</sub>(d<sub>i</sub> - B sin(2θ<sub>i</sub>))<sup>2</sup>
+</pre>
+<p>
+を使います。この誤差関数の値が小さくなるA及びBが各点列にもっとも近い関数fを与えます。<br>
+極値の条件、
+</p>
+<pre class="CodeBlock">
+    ∂err<sub>A</sub>
+0≡ ――― = -2Σ<sub>i</sub>(d<sub>i</sub> - A cos(2θ<sub>i</sub>))cos(2θ<sub>i</sub>),
+     ∂A
+
+    ∂err<sub>B</sub>
+0≡ ――― = -2Σ<sub>i</sub>(d<sub>i</sub> - B sin(2θ<sub>i</sub>))sin(2θ<sub>i</sub>),
+     ∂B
+</pre>
+<p>
+から係数を求めると、<br>
+</p>
+<pre class="CodeBlock">
+    Σ<sub>i</sub> d<sub>i</sub>cos(2θ<sub>i</sub>)
+A = ―――――――,
+    Σ<sub>i</sub> cos<sup>2</sup>(2θ<sub>i</sub>)
+
+    Σ<sub>i</sub> d<sub>i</sub>sin(2θ<sub>i</sub>)
+B = ―――――――,
+    Σ<sub>i</sub> sin<sup>2</sup>(2θ<sub>i</sub>)
+</pre>
+<p>
+になります。<br>
+この係数と、三角関数の公式
+</p>
+<pre class="CodeBlock">
+f = A cos(2θ) + B sin(2θ) = √(A<sup>2</sup>+B<sup>2</sup>) cos(2θ+ψ),
+ψ = atan2(B, A),
+</pre>
+<p>
+から、位相が求まります。この位相が主方向になります。
+</p>
+
+
+<h2>■最後に</h2>
+
+
+<p>
+まさに机上の空論で、数値等で確認していないので、正しいのかわかりませんが、
+頂点情報などの離散的な値から曲面という連続量を得るための方法の1つになるのではないでしょうか。
+</p>
+
+
+
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<center>
+<p><a href="../index.html">もどる</a></p>
+<p><a href="mailto:imagire@gmail.com">imagire@gmail.com</a></p>
+</center>
+
+</body>
+</html>

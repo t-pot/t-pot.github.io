@@ -1,0 +1,210 @@
+<head>
+	<title>t-pot『HSV変換』</title>
+	<link rel="stylesheet" type="text/css" href="../if.css">
+</head>
+<meta http-equiv=Content-Type content="text/html; charset=shift_jis">
+<body>
+
+
+<div class="contents">
+<center>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<h1>HSV変換</h1><br>
+<h3>～ HSV Transform ～</h3>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<image src = "title.png">
+<br>
+<hr>
+</center>
+<div>
+
+
+<h2>■はじめに</h2>
+
+
+<p>
+<a href="http://bbx.hp.infoseek.co.jp/cgi-bin/bbx.cgi">BBX</a>で、「フォトショップの色相変化のように、テクスチャの模様を壊さずに色を変更させたいのです。」という質問があったので検証してみました。<br>
+一度RGB成分をHSVに変換して、Hをずらした後、RGBに戻します。<br>
+今回のアプリケーションでは、時間に応じて色相の変化量を変えています。
+「t-pot」の文字を虹のグラデーションで書いているのですが、この部分はスクロールします。
+</p>
+
+<p>
+で、いつものようにプログラムです。<br>
+</p>
+<ul style = "LIST-STYLE-TYPE:none">
+<li><a href="src.zip">src.zip (HSV変換:DirectX9 [Vertex shader 1_1, Pixel shader 2_0])</a>
+</ul>
+<p>
+カーソルキーで、カメラが回ります。<br>
+</p>
+<p>
+ソースには、いつものように適当にファイルが入っています。
+大事なファイルは次のものです。
+</p>
+<table>
+<tr><td><a href="main_h.html">main.h</a></td><td>アプリケーションのヘッダ</td></tr>
+<tr><td><a href="main_cpp.html">main.cpp</a></td><td>アプリケーションのソース</td></tr>
+<tr><td><a href="hlsl_fx.html">hlsl.fx</a></td><td>シェーダプログラム</td></tr>
+</table>
+
+
+<h2>■HSV色座標系</h2>
+
+
+<p>
+HSV色座標系とは、比較的理解しやすい、色の表現方法の１つです。<br>
+HSV色座標系では、色はH(Hue/色相)、S(Saturation/彩度)、V(Value/明度)で表現されます。
+</p>
+<image src = "hsv.png">
+<p>
+色相とは、赤、黄、緑、シアン、青、マゼンタを周期的につなげた輪のような構造（色相環）をしており、色合いを表現します。
+</p>
+<image src = "h.png">
+<p>
+彩度とは、色の鮮やかさのことです。
+例えば、彩度を上げればより派手な色になり、彩度を下げれば鮮やかでない白色に近くなります。
+</p>
+<image src = "s.png">
+<p>
+明度とは、色のもつ明るさの度合のことです。明度が高いほど明るい色になり、低ければ暗い色になります。
+</p>
+<image src = "v.png">
+<p>
+</p>
+
+<h2>■プログラム</h2>
+
+
+<p>
+ＲＧＢ色座標系からＨＳＶ色座標系への変換は色々なところに落ちているので、Ｃ言語のものをぱくって改良して使いましょう。
+</p>
+<p>
+まず、元になる色ですが、デカールテクスチャの色を使います。
+変数「rgb」に変換する色を格納しておきます。
+</p>
+
+<pre class="CodeBlock">
+hlsl.fx
+<font color="deepskyblue">0073:</font> float4 PS(VS_OUTPUT In) : COLOR
+<font color="deepskyblue">0074:</font> {   
+<font color="deepskyblue">0076:</font>     float4 ret = (float4)0;
+<font color="deepskyblue">0077:</font>     float4 decale = tex2D( DecaleSamp, In.Tex );      <font color="cyan">// デカール</font>
+<font color="deepskyblue">0078:</font>     float3 rgb = decale.xyz;    <font color="cyan">// 元になる色</font>
+</pre>
+<p>
+ＲＧＢからＨＳＶへの変換は、一番強い色をＶ値に、色の差を正規化したものをＳ値にします。<br>
+Ｈ値は、一番強い色から別の色への距離として求められます。<br>
+本来は、Ｓ値が０のときは、色味が無いので、Ｈ値には色実が無いことを表す「NO_HUE」を割り当てるのが普通ですが、今回はどうでもいいのでその処理は省きます。<br>
+なお、今回は、Ｈ、Ｓ、Ｖ各色共に０～１の間に正規化しました。
+</p>
+<pre class="CodeBlock">
+hlsl.fx
+<font color="deepskyblue">0079:</font>     float3 hsv;
+<font color="deepskyblue">0080:</font>     
+<font color="deepskyblue">0081:</font>     <font color="cyan">// RGB 2 HSV</font>
+<font color="deepskyblue">0082:</font>     <font color="blue">float</font> max = max(rgb.r, max(rgb.g, rgb.b));
+<font color="deepskyblue">0083:</font>     <font color="blue">float</font> min = min(rgb.r, min(rgb.g, rgb.b));
+<font color="deepskyblue">0084:</font>     <font color="blue">float</font> delta = max - min;
+<font color="deepskyblue">0085:</font> 
+<font color="deepskyblue">0086:</font>     hsv.z = max; <font color="cyan">// v</font>
+<font color="deepskyblue">0087:</font>     <font color="blue">if</font> (max != 0.0){
+<font color="deepskyblue">0088:</font>         hsv.y = delta / max;<font color="cyan">//s</font>
+<font color="deepskyblue">0089:</font>     }<font color="blue">else</font>{
+<font color="deepskyblue">0090:</font>         hsv.y = 0.0;<font color="cyan">//s</font>
+<font color="deepskyblue">0091:</font>     }
+<font color="deepskyblue">0092:</font>     
+<font color="deepskyblue">0075:</font> <font color="cyan">//    const float NO_HUE = -1;</font>
+<font color="deepskyblue">0093:</font> <font color="cyan">//  if (hsv.y == 0.0) {</font>
+<font color="deepskyblue">0094:</font> <font color="cyan">//      hsv.x = NO_HUE; // h</font>
+<font color="deepskyblue">0095:</font> <font color="cyan">//  } else {</font>
+<font color="deepskyblue">0096:</font>       <font color="blue">if</font> ( rgb.r == max ){
+<font color="deepskyblue">0097:</font>           hsv.x =     (rgb.g - rgb.b) / delta;<font color="cyan">// h</font>
+<font color="deepskyblue">0098:</font>       }<font color="blue">else</font> <font color="blue">if</font> (rgb.g == max){
+<font color="deepskyblue">0099:</font>           hsv.x = 2 + (rgb.b - rgb.r) / delta;<font color="cyan">// h</font>
+<font color="deepskyblue">0100:</font>       }<font color="blue">else</font>{
+<font color="deepskyblue">0101:</font>           hsv.x = 4 + (rgb.r - rgb.g) / delta;<font color="cyan">// h</font>
+<font color="deepskyblue">0102:</font>       }
+<font color="deepskyblue">0103:</font>       hsv.x /= 6.0;
+<font color="deepskyblue">0104:</font>       <font color="blue">if</font> (hsv.x &lt; 0) hsv.x += 1.0;
+<font color="deepskyblue">0105:</font> <font color="cyan">//  }</font>
+</pre>
+<p>
+次に、まぁそのままではつまらないので、加工してみましょう。<br>
+Ｈ値を適当に動かして、一様に色合いを変えて見ます。
+</p>
+<pre class="CodeBlock">
+hlsl.fx
+<font color="deepskyblue">0107:</font>     hsv.x += fShift;                                <font color="cyan">// 色相補正</font>
+<font color="deepskyblue">0108:</font>     <font color="blue">if</font> (1.0 &lt;= hsv.x) hsv.x -= 1.0;
+</pre>
+<p>
+ＨＳＶからＲＧＢへの逆変換もよく知られていて、そのまま実装してみます。
+</p>
+<pre class="CodeBlock">
+hlsl.fx
+<font color="deepskyblue">0110:</font>     <font color="cyan">// HSV 2 RGB</font>
+<font color="deepskyblue">0111:</font>     <font color="blue">if</font> ( hsv.y == 0 ){ <font color="cyan">/* Grayscale */</font>
+<font color="deepskyblue">0112:</font>         ret.r = ret.g = ret.b = hsv.z;<font color="cyan">// v</font>
+<font color="deepskyblue">0113:</font>     } <font color="blue">else</font> {
+<font color="deepskyblue">0114:</font>         <font color="blue">if</font> (1.0 &lt;= hsv.x) hsv.x -= 1.0;
+<font color="deepskyblue">0115:</font>         hsv.x *= 6.0;
+<font color="deepskyblue">0116:</font>         <font color="blue">float</font> i = floor (hsv.x);
+<font color="deepskyblue">0117:</font>         <font color="blue">float</font> f = hsv.x - i;
+<font color="deepskyblue">0118:</font>         <font color="blue">float</font> aa = hsv.z * (1 - hsv.y);
+<font color="deepskyblue">0119:</font>         <font color="blue">float</font> bb = hsv.z * (1 - (hsv.y * f));
+<font color="deepskyblue">0120:</font>         <font color="blue">float</font> cc = hsv.z * (1 - (hsv.y * (1 - f)));
+<font color="deepskyblue">0121:</font>         <font color="blue">if</font>( i &lt; 1 ){
+<font color="deepskyblue">0122:</font>             ret.r = hsv.z; ret.g = cc;    ret.b = aa;
+<font color="deepskyblue">0123:</font>         }<font color="blue">else</font> <font color="blue">if</font>( i &lt; 2 ){
+<font color="deepskyblue">0124:</font>             ret.r = bb;    ret.g = hsv.z; ret.b = aa;
+<font color="deepskyblue">0125:</font>         }<font color="blue">else</font> <font color="blue">if</font>( i &lt; 3 ){
+<font color="deepskyblue">0126:</font>             ret.r = aa;    ret.g = hsv.z; ret.b = cc;
+<font color="deepskyblue">0127:</font>         }<font color="blue">else</font> <font color="blue">if</font>( i &lt; 4 ){
+<font color="deepskyblue">0128:</font>             ret.r = aa;    ret.g = bb;    ret.b = hsv.z;
+<font color="deepskyblue">0129:</font>         }<font color="blue">else</font> <font color="blue">if</font>( i &lt; 5 ){
+<font color="deepskyblue">0130:</font>             ret.r = cc;    ret.g = aa;    ret.b = hsv.z;
+<font color="deepskyblue">0131:</font>         }<font color="blue">else</font>{
+<font color="deepskyblue">0132:</font>             ret.r = hsv.z; ret.g = aa;    ret.b = bb;
+<font color="deepskyblue">0133:</font>         }
+<font color="deepskyblue">0134:</font>     }
+</pre>
+<p>
+今回は、最終的に求められた色をシェーディング色とみなしてライティングして出力します。
+</p>
+<pre class="CodeBlock">
+hlsl.fx
+<font color="deepskyblue">0136:</font>     <font color="blue">return</font> (0.5f*In.LN + 0.5f) * ret;
+<font color="deepskyblue">0137:</font> }
+</pre>
+<p>
+</p>
+
+
+
+<h2>■最後に</h2>
+
+
+<p>
+やる前は命令数とかたらないのかなぁと思っていたのですが、意外と実現できますね。<br>
+まぁ、プログラムの長さの割りにできることはたいしたことが無いので、あまり使わないと思いますが…
+</p>
+
+
+
+
+</div>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<center>
+<hr>
+<p><a href="../index.html">もどる</a></p>
+<p><a href="mailto:imagire@gmail.com">imagire@gmail.com</a></p>
+</center>
+
+</body>
+</html>

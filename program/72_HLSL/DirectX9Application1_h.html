@@ -1,0 +1,132 @@
+<HTML>
+<HEAD>
+<TITLE>DirectX9Application1.h</TITLE>
+<meta name="GENERATOR" content="cpp2html 2.1 by Niisaka">
+<meta http-equiv="Content-Type" content="text/html">
+<meta http-equiv="Content-Style-Type" content="text/css">
+<STYLE TYPE="text/css">
+<!--
+SPAN.comment { color:#008000; font-weight:normal; font-style:normal;}
+SPAN.keyword { color:#0000FF; font-weight:normal; font-style:normal;}
+SPAN.string { color:#600000; font-weight:normal; font-style:normal;}
+SPAN.linenum { color:#A0A0A0; font-weight:normal; font-style:normal;}
+-->
+</STYLE>
+</HEAD>
+<BODY TEXT="#000000" BGCOLOR="#FFFFFF">
+<PRE><SPAN CLASS="linenum">0001:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0002:</SPAN> <SPAN CLASS="comment">// File: DirectX9Application1.h</SPAN>
+<SPAN CLASS="linenum">0003:</SPAN> <SPAN CLASS="comment">//</SPAN>
+<SPAN CLASS="linenum">0004:</SPAN> <SPAN CLASS="comment">// Desc: Header file DirectX9Application1 sample app</SPAN>
+<SPAN CLASS="linenum">0005:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0006:</SPAN> <SPAN CLASS="keyword">#pragma</SPAN> once
+<SPAN CLASS="linenum">0007:</SPAN> 
+<SPAN CLASS="linenum">0008:</SPAN> 
+<SPAN CLASS="linenum">0009:</SPAN> 
+<SPAN CLASS="linenum">0010:</SPAN> 
+<SPAN CLASS="linenum">0011:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0012:</SPAN> <SPAN CLASS="comment">// Defines, and constants</SPAN>
+<SPAN CLASS="linenum">0013:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0014:</SPAN> <SPAN CLASS="comment">// TODO: change "DirectX AppWizard Apps" to your name or the company name</SPAN>
+<SPAN CLASS="linenum">0015:</SPAN> <SPAN CLASS="keyword">#define</SPAN> DXAPP_KEY        TEXT("<SPAN CLASS="string">Software\\DirectX AppWizard Apps\\DirectX9Application1</SPAN>")
+<SPAN CLASS="linenum">0016:</SPAN> 
+<SPAN CLASS="linenum">0017:</SPAN> <SPAN CLASS="comment">// DirectInput action mapper reports events only when buttons/axis change</SPAN>
+<SPAN CLASS="linenum">0018:</SPAN> <SPAN CLASS="comment">// so we need to remember the present state of relevant axis/buttons for </SPAN>
+<SPAN CLASS="linenum">0019:</SPAN> <SPAN CLASS="comment">// each DirectInput device.  The CInputDeviceManager will store a </SPAN>
+<SPAN CLASS="linenum">0020:</SPAN> <SPAN CLASS="comment">// pointer for each device that points to this struct</SPAN>
+<SPAN CLASS="linenum">0021:</SPAN> <SPAN CLASS="keyword">struct</SPAN> InputDeviceState
+<SPAN CLASS="linenum">0022:</SPAN> {
+<SPAN CLASS="linenum">0023:</SPAN>     <SPAN CLASS="comment">// TODO: change as needed</SPAN>
+<SPAN CLASS="linenum">0024:</SPAN>     FLOAT fAxisRotateLR;
+<SPAN CLASS="linenum">0025:</SPAN>     BOOL  bButtonRotateLeft;
+<SPAN CLASS="linenum">0026:</SPAN>     BOOL  bButtonRotateRight;
+<SPAN CLASS="linenum">0027:</SPAN> 
+<SPAN CLASS="linenum">0028:</SPAN>     FLOAT fAxisRotateUD;
+<SPAN CLASS="linenum">0029:</SPAN>     BOOL  bButtonRotateUp;
+<SPAN CLASS="linenum">0030:</SPAN>     BOOL  bButtonRotateDown;
+<SPAN CLASS="linenum">0031:</SPAN> 
+<SPAN CLASS="linenum">0032:</SPAN>     BOOL  bButtonPlaySoundButtonDown;
+<SPAN CLASS="linenum">0033:</SPAN> };
+<SPAN CLASS="linenum">0034:</SPAN> 
+<SPAN CLASS="linenum">0035:</SPAN> 
+<SPAN CLASS="linenum">0036:</SPAN> <SPAN CLASS="comment">// Struct to store the current input state</SPAN>
+<SPAN CLASS="linenum">0037:</SPAN> <SPAN CLASS="keyword">struct</SPAN> UserInput
+<SPAN CLASS="linenum">0038:</SPAN> {
+<SPAN CLASS="linenum">0039:</SPAN>     <SPAN CLASS="comment">// TODO: change as needed</SPAN>
+<SPAN CLASS="linenum">0040:</SPAN>     FLOAT fAxisRotateUD;
+<SPAN CLASS="linenum">0041:</SPAN>     FLOAT fAxisRotateLR;
+<SPAN CLASS="linenum">0042:</SPAN>     BOOL bPlaySoundButtonDown;
+<SPAN CLASS="linenum">0043:</SPAN>     BOOL bDoConfigureInput;
+<SPAN CLASS="linenum">0044:</SPAN>     BOOL bDoConfigureDisplay;
+<SPAN CLASS="linenum">0045:</SPAN> };
+<SPAN CLASS="linenum">0046:</SPAN> 
+<SPAN CLASS="linenum">0047:</SPAN> 
+<SPAN CLASS="linenum">0048:</SPAN> 
+<SPAN CLASS="linenum">0049:</SPAN> 
+<SPAN CLASS="linenum">0050:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0051:</SPAN> <SPAN CLASS="comment">// Name: class CMyD3DApplication</SPAN>
+<SPAN CLASS="linenum">0052:</SPAN> <SPAN CLASS="comment">// Desc: Application class. The base class (CD3DApplication) provides the </SPAN>
+<SPAN CLASS="linenum">0053:</SPAN> <SPAN CLASS="comment">//       generic functionality needed in all Direct3D samples. CMyD3DApplication </SPAN>
+<SPAN CLASS="linenum">0054:</SPAN> <SPAN CLASS="comment">//       adds functionality specific to this sample program.</SPAN>
+<SPAN CLASS="linenum">0055:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0056:</SPAN> <SPAN CLASS="keyword">class</SPAN> CMyD3DApplication : <SPAN CLASS="keyword">public</SPAN> CD3DApplication
+<SPAN CLASS="linenum">0057:</SPAN> {
+<SPAN CLASS="linenum">0058:</SPAN>     <SPAN CLASS="comment">// ★シェーダが書かれたエフェクト</SPAN>
+<SPAN CLASS="linenum">0059:</SPAN>     LPD3DXEFFECT     m_pEffect;      <SPAN CLASS="comment">// ★シェーダが書かれたエフェクト</SPAN>
+<SPAN CLASS="linenum">0060:</SPAN>     D3DXHANDLE       m_hmWVP;        <SPAN CLASS="comment">// ★ワールド×ビュー×射影行列</SPAN>
+<SPAN CLASS="linenum">0061:</SPAN> 
+<SPAN CLASS="linenum">0062:</SPAN>     <SPAN CLASS="comment">// ★計算で使う行列</SPAN>
+<SPAN CLASS="linenum">0063:</SPAN>     D3DXMATRIX m_matWorld;
+<SPAN CLASS="linenum">0064:</SPAN>     D3DXMATRIX m_matView;
+<SPAN CLASS="linenum">0065:</SPAN>     D3DXMATRIX m_matProj;
+<SPAN CLASS="linenum">0066:</SPAN> 
+<SPAN CLASS="linenum">0067:</SPAN>     BOOL                    m_bLoadingApp;          <SPAN CLASS="comment">// TRUE, if the app is loading</SPAN>
+<SPAN CLASS="linenum">0068:</SPAN>     CD3DFont*               m_pFont;                <SPAN CLASS="comment">// Font for drawing text</SPAN>
+<SPAN CLASS="linenum">0069:</SPAN>     ID3DXMesh*              m_pD3DXMesh;            <SPAN CLASS="comment">// D3DX mesh to store teapot</SPAN>
+<SPAN CLASS="linenum">0070:</SPAN>     CInputDeviceManager*    m_pInputDeviceManager;  <SPAN CLASS="comment">// DirectInput device manager</SPAN>
+<SPAN CLASS="linenum">0071:</SPAN>     DIACTIONFORMAT          m_diafGame;             <SPAN CLASS="comment">// Action format for game play</SPAN>
+<SPAN CLASS="linenum">0072:</SPAN>     LPDIRECT3DSURFACE9      m_pDIConfigSurface;     <SPAN CLASS="comment">// Surface for config'ing DInput devices</SPAN>
+<SPAN CLASS="linenum">0073:</SPAN>     UserInput               m_UserInput;            <SPAN CLASS="comment">// Struct for storing user input </SPAN>
+<SPAN CLASS="linenum">0074:</SPAN> 
+<SPAN CLASS="linenum">0075:</SPAN>     FLOAT                   m_fSoundPlayRepeatCountdown; <SPAN CLASS="comment">// Sound repeat timer</SPAN>
+<SPAN CLASS="linenum">0076:</SPAN>     CMusicManager*          m_pMusicManager;        <SPAN CLASS="comment">// DirectMusic manager class</SPAN>
+<SPAN CLASS="linenum">0077:</SPAN>     CMusicSegment*          m_pBounceSound;         <SPAN CLASS="comment">// Bounce sound</SPAN>
+<SPAN CLASS="linenum">0078:</SPAN>     FLOAT                   m_fWorldRotX;           <SPAN CLASS="comment">// World rotation state X-axis</SPAN>
+<SPAN CLASS="linenum">0079:</SPAN>     FLOAT                   m_fWorldRotY;           <SPAN CLASS="comment">// World rotation state Y-axis</SPAN>
+<SPAN CLASS="linenum">0080:</SPAN> 
+<SPAN CLASS="linenum">0081:</SPAN> <SPAN CLASS="keyword">protected</SPAN>:
+<SPAN CLASS="linenum">0082:</SPAN>     <SPAN CLASS="keyword">virtual</SPAN> HRESULT OneTimeSceneInit();
+<SPAN CLASS="linenum">0083:</SPAN>     <SPAN CLASS="keyword">virtual</SPAN> HRESULT InitDeviceObjects();
+<SPAN CLASS="linenum">0084:</SPAN>     <SPAN CLASS="keyword">virtual</SPAN> HRESULT RestoreDeviceObjects();
+<SPAN CLASS="linenum">0085:</SPAN>     <SPAN CLASS="keyword">virtual</SPAN> HRESULT InvalidateDeviceObjects();
+<SPAN CLASS="linenum">0086:</SPAN>     <SPAN CLASS="keyword">virtual</SPAN> HRESULT DeleteDeviceObjects();
+<SPAN CLASS="linenum">0087:</SPAN>     <SPAN CLASS="keyword">virtual</SPAN> HRESULT Render();
+<SPAN CLASS="linenum">0088:</SPAN>     <SPAN CLASS="keyword">virtual</SPAN> HRESULT FrameMove();
+<SPAN CLASS="linenum">0089:</SPAN>     <SPAN CLASS="keyword">virtual</SPAN> HRESULT FinalCleanup();
+<SPAN CLASS="linenum">0090:</SPAN>     <SPAN CLASS="keyword">virtual</SPAN> HRESULT ConfirmDevice( D3DCAPS9*, DWORD, D3DFORMAT );
+<SPAN CLASS="linenum">0091:</SPAN>     VOID    Pause( <SPAN CLASS="keyword">bool</SPAN> bPause );
+<SPAN CLASS="linenum">0092:</SPAN> 
+<SPAN CLASS="linenum">0093:</SPAN>     HRESULT RenderText();
+<SPAN CLASS="linenum">0094:</SPAN> 
+<SPAN CLASS="linenum">0095:</SPAN>     HRESULT InitInput( HWND hWnd );
+<SPAN CLASS="linenum">0096:</SPAN>     <SPAN CLASS="keyword">void</SPAN>    UpdateInput( UserInput* pUserInput );
+<SPAN CLASS="linenum">0097:</SPAN>     <SPAN CLASS="keyword">void</SPAN>    CleanupDirectInput();
+<SPAN CLASS="linenum">0098:</SPAN>     HRESULT InitAudio( HWND hWnd );
+<SPAN CLASS="linenum">0099:</SPAN> 
+<SPAN CLASS="linenum">0100:</SPAN>     VOID    ReadSettings();
+<SPAN CLASS="linenum">0101:</SPAN>     VOID    WriteSettings();
+<SPAN CLASS="linenum">0102:</SPAN> 
+<SPAN CLASS="linenum">0103:</SPAN> <SPAN CLASS="keyword">public</SPAN>:
+<SPAN CLASS="linenum">0104:</SPAN>     LRESULT MsgProc( HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam );
+<SPAN CLASS="linenum">0105:</SPAN>     CMyD3DApplication();
+<SPAN CLASS="linenum">0106:</SPAN>     <SPAN CLASS="keyword">virtual</SPAN> ~CMyD3DApplication();
+<SPAN CLASS="linenum">0107:</SPAN> 
+<SPAN CLASS="linenum">0108:</SPAN>     HRESULT InputAddDeviceCB( CInputDeviceManager::DeviceInfo* pDeviceInfo, <SPAN CLASS="keyword">const</SPAN> DIDEVICEINSTANCE* pdidi );
+<SPAN CLASS="linenum">0109:</SPAN>     <SPAN CLASS="keyword">static</SPAN> HRESULT CALLBACK StaticInputAddDeviceCB( CInputDeviceManager::DeviceInfo* pDeviceInfo, <SPAN CLASS="keyword">const</SPAN> DIDEVICEINSTANCE* pdidi, LPVOID pParam );   
+<SPAN CLASS="linenum">0110:</SPAN>     BOOL    ConfigureInputDevicesCB( IUnknown* pUnknown );
+<SPAN CLASS="linenum">0111:</SPAN>     <SPAN CLASS="keyword">static</SPAN> BOOL CALLBACK StaticConfigureInputDevicesCB( IUnknown* pUnknown, VOID* pUserData );
+<SPAN CLASS="linenum">0112:</SPAN> };
+<SPAN CLASS="linenum">0113:</SPAN> 
+<SPAN CLASS="linenum">0114:</SPAN> </PRE>
+</BODY>
+</HTML>

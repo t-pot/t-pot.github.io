@@ -1,0 +1,428 @@
+<head>
+	<title>t-pot『.NET で OpenGL』</title>
+	<link rel="stylesheet" type="text/css" href="../if.css">
+</head>
+<meta http-equiv=Content-Type content="text/html; charset=shift_jis">
+<body>
+
+
+<div class="contents">
+<center>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<h1>.NET で OpenGL</h1><br>
+<h3>～ OpenGL using .NET framework ～</h3>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<image src = "title.png">
+<br>
+<hr>
+</center>
+<div>
+
+
+<h2>■はじめに</h2>
+
+
+<p>
+とある用事で、Windows のツールを作ることになりました。
+せっかくだから C++.NET で作ろうと思いました。
+後々のメンテを考えて３ＤのＡＰＩは OpenGL で作ろうと思いました。
+あまり解説が無かったので、解説を書いてみました。
+</p>
+<p>
+で、いつものようにプログラムです。<br>
+</p>
+<ul style = "LIST-STYLE-TYPE:none">
+<li><a href="OpenGL.NET.zip">OpenGL.NET.zip (.NETを使ったOpenGLのサンプル)</a>
+</ul>
+<p>
+Windowの右側の領域がOpenGLで描画されています。<br>
+ボタンを押すと、ポーズのON/OFFが切り替わります。
+</p>
+<p>
+ソースには、いつものように適当にファイルが入っています。
+大事なファイルは次のものです。
+</p>
+<table>
+<tr><td><a href="Form1_h.html">Form1.h</a></td><td>フォームのソース</td></tr>
+<tr><td><a href="MyRender_cpp.html">MyRender.cpp</a></td><td>OpenGLを使った描画部のソース</td></tr>
+<tr><td><a href="tpotGL_h.html">tpotGL.h</a></td><td>フォームから呼び出すOpenGLのインターフェイスが書かれたヘッダ</td></tr>
+<tr><td><a href="tpotCGL_h.html">tpotCGL.h</a></td><td>OpneGLのラッパクラスのヘッダ</td></tr>
+<tr><td><a href="t-potCGL_cpp.html">t-potCGL.cpp</a></td><td>OpneGLのラッパクラスのソース</td></tr>
+</table>
+
+
+<h2>■フォームの作成</h2>
+
+
+<p>
+C++.NET の開発は、VBと同じようにフォームを作成することから始まります。<br>
+アプリケーションウィザードで「Windows フォームアプリケーション」を作成します。<br>
+そのあと、適当に部品を張り付けます。<br>
+ここでは、ボタンを置くパネルと描画するためのpictureBox、ポーズのためのボタン及びTimerを張り付けました。<br>
+panel は、DockプロパティをLeftに、pictureBox1はDockプロパティをFillにしました。これによって、フォームのサイズを変更したときにpictureBoxのサイズも自動で変わってくれます。（panelのあとにpictureBoxを配置する必要があります）<br>
+</p>
+<image src = "form.png">
+<p>
+あと、プロパティウィンドウをイベント表示にして、pictureBox1の描画関数、タイマーの更新関数、ボタンをクリックしたときの関数を追加します。これらは、Form1.h に勝手にプロトタイプが追加されるので、あとは中を埋めて生きます。<br>
+例えば、ボタンを押すイベントは、下の黄色い部分以外は勝手に作られています。
+</p>
+<pre class="CodeBlock">
+Form1.h
+<font color="deepskyblue">0158:</font>     <font color="blue">private</font>: System::Void button1_Click(System::Object *  sender, System::EventArgs *  e)
+<font color="deepskyblue">0159:</font>              {<font color="yellow">
+<font color="deepskyblue">0160:</font>                  bPause = !bPause;
+<font color="deepskyblue">0161:</font>                  <font color="blue">if</font>(bPause)
+<font color="deepskyblue">0162:</font>                  {
+<font color="deepskyblue">0163:</font>                      <font color="blue">this</font>-&gt;button1-&gt;Text = "<font color="blue">そして時は\n動き出すッ!!</font>";
+<font color="deepskyblue">0164:</font>                  }<font color="blue">else</font>{
+<font color="deepskyblue">0165:</font>                      <font color="blue">this</font>-&gt;button1-&gt;Text = "<font color="blue">時よッ!!\n止まれッ!!</font>";
+<font color="deepskyblue">0166:</font>                  }
+<font color="deepskyblue">0167:</font>              </font>}
+</pre>
+<p>
+なお、この関数の中で使っている変数「bPause」は、クラスの宣言に手で追加しています。
+</p>
+
+
+<h2>■OpenGLの呼び出し</h2>
+
+
+<p>
+.NET のプログラミングは、フォームに部品をつけて、それらのプロパティを設定し、
+イベントをヘッダファイルで編集するのが基本のようです。<br>
+ヘッダでは windows.h をインクルードしていません。
+したがって、OpenGL のような Win32 プログラムとして用意されているものを組み込むために一寸技巧を凝らします。<br>
+今回は、OpenGLの管理を独自クラスで行うのですが、フォームとのやり取りは、クラスを直接見せずに、void* として扱います。<br>
+具体的には、下のような関数を作ります。
+</p>
+<pre class="CodeBlock">
+tpotGL.h
+<font color="deepskyblue">0010:</font> <font color="blue">namespace</font> tpot
+<font color="deepskyblue">0011:</font> {
+<font color="deepskyblue">0012:</font>     <font color="cyan">// 初期化</font>
+<font color="deepskyblue">0013:</font>     <font color="blue">void</font> *InitGL(System::IntPtr hWnd);
+<font color="deepskyblue">0014:</font>     <font color="cyan">// 後片付け</font>
+<font color="deepskyblue">0015:</font>     <font color="blue">void</font>  DestroyGL(<font color="blue">void</font>*);
+<font color="deepskyblue">0016:</font> 
+<font color="deepskyblue">0017:</font> }<font color="cyan">// namespace tpot</font>
+</pre>
+<p>
+フォームはvoid*をOpenGLのハンドルと考えて処理します。
+</p>
+<pre class="CodeBlock">
+Form1.h
+<font color="deepskyblue">0033:</font>         Form1(<font color="blue">void</font>)
+<font color="deepskyblue">0035:</font>         {
+<font color="deepskyblue">0036:</font>             InitializeComponent();
+<font color="deepskyblue">0037:</font>             
+<font color="deepskyblue">0038:</font>             <font color="cyan">// OpenGL の初期化</font>
+<font color="deepskyblue">0039:</font>             <font color="yellow">_pGL = tpot::InitGL(pictureBox1->Handle);</font>
+<font color="deepskyblue">0040:</font>             if(_pGL) MyInitRender(_pGL );
+<font color="deepskyblue">0044:</font>         }
+<font color="deepskyblue">0045:</font>   
+<font color="deepskyblue">0047:</font>         <font color="blue">void</font> Dispose(Boolean disposing)
+<font color="deepskyblue">0048:</font>         {
+<font color="deepskyblue">0049:</font>             <font color="cyan">// OpenGLの開放</font>
+<font color="deepskyblue">0050:</font>             <font color="yellow">tpot::DestroyGL( _pGL );</font>
+<font color="deepskyblue">0051:</font> 
+<font color="deepskyblue">0057:</font>         }
+</pre>
+<p>
+ここで、コンストラクタが初期化するための関数で、Dispose が開放のためのフォームの関数です。
+</p>
+<p>
+OpenGLの初期化は描画するオブジェクトのハンドルを与えれば良い様に作りました。pictureBoxは、Handleというそのままのオブジェクトを持っているので、これを渡せばpictureBoxに描画できます（というかそのように作りました）。ここで、注意しておくことは、.NETでは、ハンドルは、HANDLE 型ではなく System::IntPtr 型で収められているということです。まぁ、キャストすれば良く、ToInt32()でint型にしてからHWND型にキャストして処理します。
+</p>
+
+<pre class="CodeBlock">
+t-potCGL.cpp
+<font color="deepskyblue">0091:</font>     <font color="cyan">// -----------------------------------------------------------------------</font>
+<font color="deepskyblue">0092:</font>     <font color="cyan">// 初期化</font>
+<font color="deepskyblue">0093:</font>     <font color="cyan">// -----------------------------------------------------------------------</font>
+<font color="deepskyblue">0094:</font>     <font color="blue">void</font> *InitGL( System::IntPtr hWnd )
+<font color="deepskyblue">0095:</font>     {
+<font color="deepskyblue">0096:</font>         <font color="blue">return</font> <font color="blue">new</font> CGl((HWND)hWnd.ToInt32());
+<font color="deepskyblue">0097:</font>     }
+<font color="deepskyblue">0098:</font> 
+<font color="deepskyblue">0099:</font> 
+<font color="deepskyblue">0100:</font>     <font color="cyan">// -----------------------------------------------------------------------</font>
+<font color="deepskyblue">0101:</font>     <font color="cyan">// 開放</font>
+<font color="deepskyblue">0102:</font>     <font color="cyan">// -----------------------------------------------------------------------</font>
+<font color="deepskyblue">0103:</font>     <font color="blue">void</font>  DestroyGL(<font color="blue">void</font>*p)
+<font color="deepskyblue">0104:</font>     {
+<font color="deepskyblue">0105:</font>         <font color="blue">delete</font> (CGl*)p;
+<font color="deepskyblue">0106:</font>     }
+</pre>
+
+<p>
+で、今までが前座です。これからOpenGL 自体の処理を行います。<br>
+CGl というクラスで OpenGL の管理をしているのですが、このクラスは、windowハンドルからデバイスコンテキストのハンドルを所得して、レンダリングコンテキストを作成します。この作成には、wgl関数が使えます。
+</p>
+
+<pre class="CodeBlock">
+t-potCGL.cpp
+<font color="deepskyblue">0016:</font>     <font color="cyan">// -----------------------------------------------------------------------</font>
+<font color="deepskyblue">0017:</font>     <font color="cyan">// コンストラクタ</font>
+<font color="deepskyblue">0018:</font>     <font color="cyan">// -----------------------------------------------------------------------</font>
+<font color="deepskyblue">0019:</font>     CGl::CGl( HWND hWnd )
+<font color="deepskyblue">0020:</font>     {
+<font color="deepskyblue">0021:</font>         _hWnd = hWnd;
+<font color="deepskyblue">0022:</font>         _hDC = GetDC(_hWnd);
+<font color="deepskyblue">0023:</font>         
+<font color="deepskyblue">0024:</font>         <font color="cyan">// ピクセル フォーマットを設定する</font>
+<font color="deepskyblue">0025:</font>         <font color="blue">if</font>( 0 != SetupPixelFormat( _hDC ) ) <font color="blue">return</font>;
+<font color="deepskyblue">0026:</font> 
+<font color="deepskyblue">0027:</font>         <font color="cyan">// レンダリング コンテキストの作成 </font>
+<font color="deepskyblue">0028:</font>         _hglrc = wglCreateContext (_hDC); 
+<font color="deepskyblue">0029:</font>     }
+</pre>
+
+<p>
+フレームバッファのピクセル数などは、SetupPixelFormat という関数で行います。SetupPixelFormat は、PIXELFORMATDESCRIPTOR による設定を基に、OpenGL のピクセルフォーマットを指定します。
+</p>
+
+<pre class="CodeBlock">
+t-potCGL.cpp
+<font color="deepskyblue">0048:</font>     <font color="cyan">// -----------------------------------------------------------------------</font>
+<font color="deepskyblue">0049:</font>     <font color="cyan">// ピクセル フォーマットを設定する</font>
+<font color="deepskyblue">0050:</font>     <font color="cyan">// -----------------------------------------------------------------------</font>
+<font color="deepskyblue">0051:</font>     <font color="blue">int</font> CGl::SetupPixelFormat( HDC hdc )
+<font color="deepskyblue">0052:</font>     {
+<font color="deepskyblue">0053:</font>         <font color="blue">int</font> pixelformat;
+<font color="deepskyblue">0054:</font> 
+<font color="deepskyblue">0055:</font>         <font color="blue">static</font> PIXELFORMATDESCRIPTOR pfd = {
+<font color="deepskyblue">0056:</font>             <font color="blue">sizeof</font> (PIXELFORMATDESCRIPTOR),     <font color="cyan">// 構造体のサイズ</font>
+<font color="deepskyblue">0057:</font>             1,                                  <font color="cyan">// OpenGL バージョン</font>
+<font color="deepskyblue">0058:</font>             PFD_DRAW_TO_WINDOW |                <font color="cyan">// ウィンドウスタイル</font>
+<font color="deepskyblue">0059:</font>             PFD_SUPPORT_OPENGL |                <font color="cyan">// OpenGL を使う</font>
+<font color="deepskyblue">0060:</font>             PFD_DOUBLEBUFFER,                   <font color="cyan">// ダブルバッファ</font>
+<font color="deepskyblue">0061:</font>             PFD_TYPE_RGBA,                      <font color="cyan">// ピクセルのカラーデータ</font>
+<font color="deepskyblue">0062:</font>             32,                                 <font color="cyan">// 色のビット数</font>
+<font color="deepskyblue">0063:</font>             0, 0, 0, 0, 0, 0, 0, 0,             <font color="cyan">// RGBAカラーバッファのビット</font>
+<font color="deepskyblue">0064:</font>             0, 0, 0, 0, 0,                      <font color="cyan">// アキュムレーションバッファのピクセル当りのビット数</font>
+<font color="deepskyblue">0065:</font>             32,                                 <font color="cyan">// デプスバッファ    のピクセル当りのビット数</font>
+<font color="deepskyblue">0066:</font>             0,                                  <font color="cyan">// ステンシルバッファのピクセル当りのビット数</font>
+<font color="deepskyblue">0067:</font>             0,                                  <font color="cyan">// 補助バッファ      のピクセル当りのビット数</font>
+<font color="deepskyblue">0068:</font>             PFD_MAIN_PLANE,                     <font color="cyan">// レイヤータイプ</font>
+<font color="deepskyblue">0069:</font>             0,                                  <font color="cyan">// </font>
+<font color="deepskyblue">0070:</font>             0,                                  <font color="cyan">// </font>
+<font color="deepskyblue">0071:</font>             0,                                  <font color="cyan">// </font>
+<font color="deepskyblue">0072:</font>             0                                   <font color="cyan">// </font>
+<font color="deepskyblue">0073:</font>         };
+<font color="deepskyblue">0074:</font>         
+<font color="deepskyblue">0075:</font>         <font color="blue">if</font> ( 0 == (pixelformat = ChoosePixelFormat (hdc, &amp;pfd)) )
+<font color="deepskyblue">0076:</font>         {
+<font color="deepskyblue">0077:</font>             <font color="blue">return</font> 1;
+<font color="deepskyblue">0078:</font>         }
+<font color="deepskyblue">0079:</font> 
+<font color="deepskyblue">0080:</font>         <font color="blue">if</font> ( FALSE == SetPixelFormat(hdc, pixelformat, &amp;pfd) )
+<font color="deepskyblue">0081:</font>         {
+<font color="deepskyblue">0082:</font>             <font color="blue">return</font> 2;
+<font color="deepskyblue">0083:</font>         }
+<font color="deepskyblue">0084:</font> 
+<font color="deepskyblue">0085:</font>         <font color="blue">return</font> 0;
+<font color="deepskyblue">0086:</font>     }
+</pre>
+
+<p>
+終了するときは、作成したレンダリングコンテキストを削除して、所得したデバイスコンテキストを開放します。
+</p>
+
+<pre class="CodeBlock">
+t-potCGL.cpp
+<font color="deepskyblue">0032:</font>     <font color="cyan">// -----------------------------------------------------------------------</font>
+<font color="deepskyblue">0033:</font>     <font color="cyan">// デストラクタ</font>
+<font color="deepskyblue">0034:</font>     <font color="cyan">// -----------------------------------------------------------------------</font>
+<font color="deepskyblue">0035:</font>     CGl::~CGl()
+<font color="deepskyblue">0036:</font>     {
+<font color="deepskyblue">0037:</font>         <font color="cyan">// レンダリング コンテキストをカレントからはずす。</font>
+<font color="deepskyblue">0038:</font>         wglMakeCurrent (NULL, NULL) ; 
+<font color="deepskyblue">0039:</font>          
+<font color="deepskyblue">0040:</font>         <font color="cyan">// レンダリング コンテキストの削除</font>
+<font color="deepskyblue">0041:</font>         wglDeleteContext (_hglrc);
+<font color="deepskyblue">0042:</font> 
+<font color="deepskyblue">0043:</font>         <font color="cyan">// GetDC で確保した分を開放</font>
+<font color="deepskyblue">0044:</font>         ReleaseDC( _hWnd, _hDC );
+<font color="deepskyblue">0045:</font>     }
+</pre>
+
+<p>
+</p>
+
+
+<h2>■描画</h2>
+
+
+<p>
+ここまでくれば、後はほとんど OpenGL プログラムです。<br>
+今回は、MyRender という関数を作って、タイマーから16msごとに呼び出しています。
+（MyRenderは、グローバルな関数です。これはちょとしょぼいですね。）
+</p>
+
+<pre class="CodeBlock">
+Form1.h
+<font color="deepskyblue">0142:</font>     <font color="blue">private</font>: System::Void timer1_Tick(System::Object *  sender, System::EventArgs *  e)
+<font color="deepskyblue">0143:</font>              {
+<font color="deepskyblue">0144:</font>                 <font color="blue">float</font> dTime;
+<font color="deepskyblue">0145:</font>                 <font color="blue">int</font> iNow;
+<font color="deepskyblue">0146:</font> 
+<font color="deepskyblue">0147:</font>                 <font color="cyan">// カウンタの更新</font>
+<font color="deepskyblue">0148:</font>                 iNow = System::Environment::TickCount;
+<font color="deepskyblue">0149:</font>                 dTime = 0.001f * (<font color="blue">float</font>)(iNow - iPrev);
+<font color="deepskyblue">0150:</font>                 iPrev = iNow;
+<font color="deepskyblue">0151:</font>                 
+<font color="deepskyblue">0152:</font>                 <font color="blue">if</font>(bPause) dTime = 0.0f;<font color="cyan">// ポーズ処理</font>
+<font color="deepskyblue">0153:</font> 
+<font color="deepskyblue">0154:</font>                 <font color="cyan">// 再描画</font>
+<font color="deepskyblue">0155:</font>                 <font color="blue">if</font>(_pGL) MyRender( _pGL, dTime, pictureBox1-&gt;Width, pictureBox1-&gt;Height );
+<font color="deepskyblue">0156:</font>              }
+</pre>
+
+<p>
+MyRender の中身は、ちょっと以外OpenGLプログラムです。<br>
+適当にクリアして、ポリゴンを描画しています。
+</p>
+
+<pre class="CodeBlock">
+MyRender.cpp
+<font color="deepskyblue">0029:</font> <font color="blue">void</font> MyRender( <font color="blue">void</font> *p, <font color="blue">float</font> dt, <font color="blue">int</font> w, <font color="blue">int</font> h )
+<font color="deepskyblue">0030:</font> {
+<font color="deepskyblue">0031:</font>     tpot::CGl *pGL = (tpot::CGl*)p;
+<font color="deepskyblue">0032:</font>     
+<font color="deepskyblue">0033:</font>     <font color="cyan">// 描画開始</font>
+<font color="deepskyblue">0034:</font>     pGL-&gt;BeginRender();
+<font color="deepskyblue">0035:</font> 
+<font color="deepskyblue">0036:</font>     <font color="cyan">// 描画範囲の設定</font>
+<font color="deepskyblue">0037:</font>     glViewport(0, 0, w, h);
+<font color="deepskyblue">0038:</font> 
+<font color="deepskyblue">0039:</font>     <font color="cyan">// 最初の塗りつぶし</font>
+<font color="deepskyblue">0040:</font>     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT) ;
+<font color="deepskyblue">0041:</font> 
+<font color="deepskyblue">0042:</font>     <font color="cyan">// 射影行列の設定</font>
+<font color="deepskyblue">0043:</font>     glMatrixMode(GL_PROJECTION);
+<font color="deepskyblue">0044:</font>     glLoadIdentity();
+<font color="deepskyblue">0045:</font>     gluPerspective(40, (<font color="blue">float</font>)w/(<font color="blue">float</font>)h, 0.1, 200);
+<font color="deepskyblue">0046:</font> 
+<font color="deepskyblue">0047:</font>     <font color="cyan">// カメラの設定</font>
+<font color="deepskyblue">0048:</font>     glMatrixMode(GL_MODELVIEW);
+<font color="deepskyblue">0049:</font>     glLoadIdentity();
+<font color="deepskyblue">0050:</font>     glTranslated( 0.0, 0.0, -5.0 );
+<font color="deepskyblue">0051:</font> 
+<font color="deepskyblue">0052:</font>     <font color="cyan">// 回転</font>
+<font color="deepskyblue">0053:</font>     <font color="blue">static</font> <font color="blue">float</font> angle = 0;
+<font color="deepskyblue">0054:</font>     angle += 360.0f * dt / 10.0f;
+<font color="deepskyblue">0055:</font>     <font color="blue">if</font>(360&lt;angle)angle-=360;
+<font color="deepskyblue">0056:</font>     glRotatef( angle, 0.0f, 0.0f, 1.0f );
+<font color="deepskyblue">0057:</font> 
+<font color="deepskyblue">0058:</font>     <font color="cyan">// 四角形を描く</font>
+<font color="deepskyblue">0059:</font>     glBegin(GL_QUADS);
+<font color="deepskyblue">0060:</font> 
+<font color="deepskyblue">0061:</font>         glColor3f(1.0, 0.0, 0.0);
+<font color="deepskyblue">0062:</font>         glVertex3f(-1,-1,1);
+<font color="deepskyblue">0063:</font>         glVertex3f( 1,-1,1);
+<font color="deepskyblue">0064:</font>         glVertex3f( 1, 1,1);
+<font color="deepskyblue">0065:</font>         glVertex3f(-1, 1,1);
+<font color="deepskyblue">0066:</font> 
+<font color="deepskyblue">0067:</font>     glEnd();    
+<font color="deepskyblue">0068:</font>     
+<font color="deepskyblue">0069:</font>     <font color="cyan">// 終了</font>
+<font color="deepskyblue">0070:</font>     glFlush();
+<font color="deepskyblue">0071:</font>     pGL-&gt;EndRender();
+<font color="deepskyblue">0072:</font> }
+</pre>
+
+<p>
+ちょっと違う部分というのが、描画の直前と直後です。これは先ほど作成したCGlクラスのコンテキストを使う部分です。<br>
+初期化部分は、wglMakeCurrent をつかって、デバイスコンテキストにレンダリングコンテキストを割り当てます。
+</p>
+
+<pre class="CodeBlock">
+tpotCGL.h
+<font color="deepskyblue">0037:</font>     <font color="blue">inline</font> <font color="blue">void</font> CGl::BeginRender()
+<font color="deepskyblue">0038:</font>     {
+<font color="deepskyblue">0039:</font>         wglMakeCurrent( _hDC, _hglrc );
+<font color="deepskyblue">0040:</font>     }
+</pre>
+
+<p>
+終了したら、デバイスコンテキストをスワップして画面を更新すると共に、レンダリングコンテキストを切り離します。<br>
+これらは、普通のWindowsのOpenGLプログラムなので、他のサイトを見ても同じ内容を見かけるでしょう。
+</p>
+
+<pre class="CodeBlock">
+tpotCGL.h
+<font color="deepskyblue">0042:</font>     <font color="blue">inline</font> <font color="blue">void</font> CGl::EndRender()
+<font color="deepskyblue">0043:</font>     {
+<font color="deepskyblue">0044:</font>         SwapBuffers( _hDC );
+<font color="deepskyblue">0045:</font>         wglMakeCurrent( _hDC, 0);
+<font color="deepskyblue">0046:</font>     }
+</pre>
+
+<p>
+さて、本当のところあと少し残りがあります。<br>
+CGlクラスを作成した後に、背景色の設定や深度バッファを有効にするなど普遍な部分をあらかじめ設定しておきます。
+</p>
+
+<pre class="CodeBlock">
+MyRender.cpp
+<font color="deepskyblue">0014:</font> <font color="blue">void</font> MyInitRender( <font color="blue">void</font> *p )
+<font color="deepskyblue">0015:</font> {
+<font color="deepskyblue">0016:</font>     tpot::CGl *pGL = (tpot::CGl*)p;
+<font color="deepskyblue">0017:</font>     
+<font color="deepskyblue">0018:</font>     <font color="cyan">// レンダリング コンテキストをカレントにする</font>
+<font color="deepskyblue">0019:</font>     pGL-&gt;SetCurrent();
+<font color="deepskyblue">0020:</font> 
+<font color="deepskyblue">0021:</font>     <font color="cyan">// 背景色</font>
+<font color="deepskyblue">0022:</font>     glClearColor(1.0f, 1.0f, 1.0f, 1.0f) ;
+<font color="deepskyblue">0023:</font> 
+<font color="deepskyblue">0024:</font>     <font color="cyan">/// 深度バッファ</font>
+<font color="deepskyblue">0025:</font>     glEnable(GL_DEPTH_TEST);
+<font color="deepskyblue">0026:</font>     glDepthFunc(GL_LEQUAL);
+<font color="deepskyblue">0027:</font> }
+</pre>
+
+<p>
+CGl::SetCurrent は、描画開始時と同じようにデバイスコンテキストにレンダリングコンテキストを割り当てているだけです。
+</p>
+
+<pre class="CodeBlock">
+tpotCGL.h
+<font color="deepskyblue">0032:</font>     <font color="blue">inline</font> <font color="blue">void</font> CGl::SetCurrent()
+<font color="deepskyblue">0033:</font>     {
+<font color="deepskyblue">0034:</font>         wglMakeCurrent( _hDC, _hglrc );
+<font color="deepskyblue">0035:</font>     }
+</pre>
+
+<p>
+なお、今回のソースをコンパイルするには、opengl32.lib と glu23.lib を「追加の依存ファイル」に追加する必要があります。<br>
+また、実行には、opengl32.dll が必要です。
+</p>
+
+
+<h2>■最後に</h2>
+
+
+<p>
+もともとMFCは嫌いだったのですが、これで完全に.NET frameworkに移ってもいい気がしました。<br>
+やっぱり、C++だと、ライブラリがそのまま使えて楽ですね。<br>
+まぁ、OpenGL なら C# でもライブラリが作られているようなので、何でもいいか。
+</p>
+
+
+
+
+</div>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<center>
+<hr>
+<p><a href="../index.html">もどる</a></p>
+<p><a href="mailto:imagire@gmail.com">imagire@gmail.com</a></p>
+</center>
+
+</body>
+</html>

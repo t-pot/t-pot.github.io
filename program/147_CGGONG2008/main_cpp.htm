@@ -1,0 +1,1119 @@
+<PRE>   1: <FONT COLOR="#008040">//--------------------------------------------------------------------------------------</FONT>
+   2: <FONT COLOR="#008040">// File: main.cpp</FONT>
+   3: <FONT COLOR="#008040">//--------------------------------------------------------------------------------------</FONT>
+   4: <FONT COLOR="#0000FF">#include</FONT> <FONT COLOR="#FF0000">&quot;DXUT.h&quot;</FONT>
+   5: <FONT COLOR="#0000FF">#include</FONT> <FONT COLOR="#FF0000">&quot;DXUTgui.h&quot;</FONT>
+   6: <FONT COLOR="#0000FF">#include</FONT> <FONT COLOR="#FF0000">&quot;DXUTmisc.h&quot;</FONT>
+   7: <FONT COLOR="#0000FF">#include</FONT> <FONT COLOR="#FF0000">&quot;DXUTCamera.h&quot;</FONT>
+   8: <FONT COLOR="#0000FF">#include</FONT> <FONT COLOR="#FF0000">&quot;DXUTSettingsDlg.h&quot;</FONT>
+   9: <FONT COLOR="#0000FF">#include</FONT> <FONT COLOR="#FF0000">&quot;SDKmisc.h&quot;</FONT>
+  10: <FONT COLOR="#0000FF">#include</FONT> <FONT COLOR="#FF0000">&quot;SDKmesh.h&quot;</FONT>
+  11: <FONT COLOR="#0000FF">#include</FONT> <FONT COLOR="#FF0000">&quot;resource.h&quot;</FONT>
+  12: <FONT COLOR="#0000FF">#include</FONT> <FONT COLOR="#FF0000">&quot;ModelXFile.h&quot;</FONT>
+  13: 
+  14: <FONT COLOR="#0000FF">#define</FONT> frand() ((<FONT COLOR="#0000FF">float</FONT>)rand()/(<FONT COLOR="#0000FF">float</FONT>)RAND_MAX)
+  15: 
+  16: <FONT COLOR="#008040">//--------------------------------------------------------------------------------------</FONT>
+  17: <FONT COLOR="#008040">// Parameters for test</FONT>
+  18: <FONT COLOR="#008040">//--------------------------------------------------------------------------------------</FONT>
+  19: 
+  20: <FONT COLOR="#008040">//#define DEBUG_VS   // Uncomment this line to debug D3D9 vertex shaders </FONT>
+  21: <FONT COLOR="#008040">//#define DEBUG_PS   // Uncomment this line to debug D3D9 pixel shaders </FONT>
+  22: 
+  23: <FONT COLOR="#0000FF">#define</FONT> MAX_SO_POLYGONE <FONT COLOR="#FF0000">65536</FONT>
+  24: 
+  25: 
+  26: <FONT COLOR="#008040">//--------------------------------------------------------------------------------------</FONT>
+  27: <FONT COLOR="#008040">// Global variables</FONT>
+  28: <FONT COLOR="#008040">//--------------------------------------------------------------------------------------</FONT>
+  29: CModelViewerCamera      g_Camera;               <FONT COLOR="#008040">// A model viewing camera</FONT>
+  30: CDXUTDialogResourceManager g_DialogResourceManager; <FONT COLOR="#008040">// manager for shared resources of dialogs</FONT>
+  31: CD3DSettingsDlg         g_SettingsDlg;          <FONT COLOR="#008040">// Device settings dialog</FONT>
+  32: CDXUTTextHelper*		g_pTxtHelper = NULL;
+  33: CDXUTDialog             g_HUD;                  <FONT COLOR="#008040">// dialog for standard controls</FONT>
+  34: CDXUTDialog             g_SampleUI;             <FONT COLOR="#008040">// dialog for sample specific controls</FONT>
+  35: ID3D10Device*           g_pd3dDevice = NULL;
+  36: 
+  37: <FONT COLOR="#008040">// Direct3D 10 resources</FONT>
+  38: ID3DX10Font*            g_pFont10 = NULL;       
+  39: ID3DX10Sprite*          g_pSprite10 = NULL;     
+  40: ID3D10Effect*           g_pEffect10 = NULL;     
+  41: ID3D10InputLayout*      g_pVertexLayout = NULL; 
+  42: ID3D10EffectTechnique*  g_pTechRenderScene = NULL;
+  43: ID3D10EffectTechnique*  g_pTechRenderSceneClipping = NULL;
+  44: ID3D10EffectTechnique*  g_pTechPartialSortBack = NULL;
+  45: ID3D10EffectTechnique*  g_pTechPartialSortFront = NULL;
+  46: ID3D10EffectMatrixVariable*   g_pmWorldViewProj = NULL;
+  47: ID3D10EffectMatrixVariable*   g_pmWorldView = NULL;
+  48: ID3D10EffectMatrixVariable*   g_pmWorld = NULL;
+  49: ID3D10EffectVectorVariable*   g_pMaterialAmbientColor = NULL;
+  50: ID3D10EffectVectorVariable*   g_pMaterialDiffuseColor = NULL;
+  51: ID3D10EffectVectorVariable*   g_pLightDir = NULL;
+  52: ID3D10EffectVectorVariable*   g_pLightDiffuse = NULL;
+  53: ID3D10EffectScalarVariable*   g_pfZMin = NULL;
+  54: ID3D10EffectScalarVariable*   g_pfZMid = NULL;
+  55: ID3D10EffectScalarVariable*   g_pfZMax = NULL;
+  56: ID3D10EffectShaderResourceVariable* g_ptxMesh = NULL;
+  57: 
+  58: <FONT COLOR="#008040">// SO objects</FONT>
+  59: <FONT COLOR="#0000FF">enum</FONT>
+  60: {
+  61: 	METHOD_NONE = <FONT COLOR="#FF0000">0</FONT>,
+  62: 	METHOD_SLICE,
+  63: 	METHOD_PARTIAL,
+  64: };
+  65: <FONT COLOR="#0000FF">unsigned</FONT> <FONT COLOR="#0000FF">int</FONT> g_dwMethodIdx = METHOD_NONE;
+  66: <FONT COLOR="#0000FF">unsigned</FONT> <FONT COLOR="#0000FF">int</FONT> g_dwNumPartsLog = <FONT COLOR="#FF0000">1</FONT>;
+  67: <FONT COLOR="#0000FF">unsigned</FONT> <FONT COLOR="#0000FF">int</FONT> g_dwNumParts = (<FONT COLOR="#FF0000">1</FONT>&lt;&lt;g_dwNumPartsLog);
+  68: ID3D10Buffer*           *g_pSO = NULL;
+  69: 
+  70: 
+  71: MeshXFile              *g_pMesh = <FONT COLOR="#FF0000">0</FONT>;
+  72: 
+  73: <FONT COLOR="#008040">// 背景</FONT>
+  74: <FONT COLOR="#0000FF">typedef</FONT> <FONT COLOR="#0000FF">struct</FONT> {
+  75:   <FONT COLOR="#0000FF">float</FONT> x,y,z;
+  76:   <FONT COLOR="#0000FF">float</FONT> u,v;
+  77: } BGVERTEX;
+  78: ID3D10ShaderResourceView* g_pTexRVBg = NULL;
+  79: ID3D10Texture2D* g_pTextureBg = NULL;
+  80: ID3D10InputLayout*      g_pVertexLayoutBg = NULL; 
+  81: ID3D10EffectTechnique*  g_pTechRenderBg = NULL;
+  82: ID3D10Buffer*                               g_pVBBg = NULL;
+  83: ID3D10Buffer*                               g_pIBBg = NULL;
+  84: 
+  85: <FONT COLOR="#008040">// 雪</FONT>
+  86: <FONT COLOR="#0000FF">#define</FONT> SNOW_COUNT <FONT COLOR="#FF0000">10240</FONT>
+  87: <FONT COLOR="#0000FF">#define</FONT> SNOW_VELOCITY <FONT COLOR="#FF0000">0.05</FONT>
+  88: <FONT COLOR="#0000FF">#define</FONT> SNOW_X_MAX <FONT COLOR="#FF0000">1.0</FONT>
+  89: <FONT COLOR="#0000FF">#define</FONT> SNOW_X_MIN -<FONT COLOR="#FF0000">1.0</FONT>
+  90: <FONT COLOR="#0000FF">#define</FONT> SNOW_Y_MAX <FONT COLOR="#FF0000">1.0</FONT>
+  91: <FONT COLOR="#0000FF">#define</FONT> SNOW_Y_MIN -<FONT COLOR="#FF0000">1.0</FONT>
+  92: <FONT COLOR="#0000FF">#define</FONT> SNOW_Z_MAX <FONT COLOR="#FF0000">100.0</FONT>
+  93: <FONT COLOR="#0000FF">#define</FONT> SNOW_Z_MIN <FONT COLOR="#FF0000">1.0</FONT>
+  94: <FONT COLOR="#0000FF">typedef</FONT> <FONT COLOR="#0000FF">struct</FONT> {
+  95:   <FONT COLOR="#0000FF">float</FONT> x,y,z;
+  96:   <FONT COLOR="#0000FF">float</FONT> bx,by,bz;
+  97:   <FONT COLOR="#0000FF">float</FONT> tx,ty,tz;
+  98: } SNOWVERTEX;
+  99: ID3D10ShaderResourceView* g_pTexRVSnow = NULL;
+ 100: ID3D10Texture2D*          g_pTextureSnow = NULL;
+ 101: ID3D10InputLayout*        g_pVertexLayoutSnow = NULL; 
+ 102: ID3D10EffectTechnique*    g_pTechRenderSnow = NULL;
+ 103: ID3D10Buffer*             g_pVBSnow = NULL;
+ 104: SNOWVERTEX                g_aSnowVertex[SNOW_COUNT];
+ 105: 
+ 106: <FONT COLOR="#008040">// 積もった雪</FONT>
+ 107: <FONT COLOR="#0000FF">typedef</FONT> <FONT COLOR="#0000FF">struct</FONT> {
+ 108:   <FONT COLOR="#0000FF">float</FONT> x,y,z;
+ 109:   <FONT COLOR="#0000FF">float</FONT> u,v;
+ 110: } SNOWMAPVERTEX;
+ 111: <FONT COLOR="#0000FF">#define</FONT> SNOWMAPSIZE <FONT COLOR="#FF0000">256</FONT>
+ 112: <FONT COLOR="#0000FF">#define</FONT> SNOWMAPINDEX_COUNT (<FONT COLOR="#FF0000">6</FONT> * (SNOWMAPSIZE-<FONT COLOR="#FF0000">1</FONT>) * (SNOWMAPSIZE-<FONT COLOR="#FF0000">1</FONT>))
+ 113: ID3D10Texture2D*            g_pSnowMapDepth;     <FONT COLOR="#008040">// Depth stencil for the environment map</FONT>
+ 114: ID3D10DepthStencilView*     g_pSnowMapDSV;       <FONT COLOR="#008040">// Depth stencil view for environment map for all 6 faces</FONT>
+ 115: ID3D10Texture2D*            g_pSnowMap;          <FONT COLOR="#008040">// Environment map</FONT>
+ 116: ID3D10RenderTargetView*     g_pSnowMapRTV;       <FONT COLOR="#008040">// Render target view for the alpha map</FONT>
+ 117: ID3D10ShaderResourceView*   g_pSnowMapSRV;       <FONT COLOR="#008040">// Shader resource view for the cubic env map</FONT>
+ 118: ID3D10EffectTechnique*      g_pTechRenderDepth = NULL;
+ 119: ID3D10EffectTechnique*      g_pTechRenderSnowMap = NULL;
+ 120: ID3D10InputLayout*          g_pVertexLayoutSnowMap = NULL; 
+ 121: ID3D10Buffer*               g_pVBSnowMap = NULL;
+ 122: ID3D10Buffer*               g_pIBSnowMap = NULL;
+ 123: ID3D10EffectScalarVariable* g_pfBaseValue = NULL;
+ 124: ID3D10EffectScalarVariable* g_pfCompValue = NULL;
+ 125: 
+ 126: <FONT COLOR="#008040">//--------------------------------------------------------------------------------------</FONT>
+ 127: <FONT COLOR="#008040">// UI control IDs</FONT>
+ 128: <FONT COLOR="#008040">//--------------------------------------------------------------------------------------</FONT>
+ 129: <FONT COLOR="#0000FF">#define</FONT> IDC_TOGGLEFULLSCREEN    <FONT COLOR="#FF0000">1</FONT>
+ 130: <FONT COLOR="#0000FF">#define</FONT> IDC_TOGGLEREF           <FONT COLOR="#FF0000">2</FONT>
+ 131: <FONT COLOR="#0000FF">#define</FONT> IDC_CHANGEDEVICE        <FONT COLOR="#FF0000">3</FONT>
+ 132: <FONT COLOR="#0000FF">#define</FONT> IDC_METHOD              <FONT COLOR="#FF0000">4</FONT>
+ 133: <FONT COLOR="#0000FF">#define</FONT> IDC_PARTITIONLABEL      <FONT COLOR="#FF0000">5</FONT>
+ 134: <FONT COLOR="#0000FF">#define</FONT> IDC_PARTITION           <FONT COLOR="#FF0000">6</FONT>
+ 135: 
+ 136: 
+ 137: <FONT COLOR="#008040">//--------------------------------------------------------------------------------------</FONT>
+ 138: <FONT COLOR="#008040">// Forward declarations </FONT>
+ 139: <FONT COLOR="#008040">//--------------------------------------------------------------------------------------</FONT>
+ 140: LRESULT CALLBACK MsgProc( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam, <FONT COLOR="#0000FF">bool</FONT>* pbNoFurtherProcessing, <FONT COLOR="#0000FF">void</FONT>* pUserContext );
+ 141: <FONT COLOR="#0000FF">void</FONT>    CALLBACK OnKeyboard( UINT nChar, <FONT COLOR="#0000FF">bool</FONT> bKeyDown, <FONT COLOR="#0000FF">bool</FONT> bAltDown, <FONT COLOR="#0000FF">void</FONT>* pUserContext );
+ 142: <FONT COLOR="#0000FF">void</FONT>    CALLBACK OnGUIEvent( UINT nEvent, <FONT COLOR="#0000FF">int</FONT> nControlID, CDXUTControl* pControl, <FONT COLOR="#0000FF">void</FONT>* pUserContext );
+ 143: <FONT COLOR="#0000FF">void</FONT>    CALLBACK OnFrameMove( <FONT COLOR="#0000FF">double</FONT> fTime, <FONT COLOR="#0000FF">float</FONT> fElapsedTime, <FONT COLOR="#0000FF">void</FONT>* pUserContext );
+ 144: <FONT COLOR="#0000FF">bool</FONT>    CALLBACK ModifyDeviceSettings( DXUTDeviceSettings* pDeviceSettings, <FONT COLOR="#0000FF">void</FONT>* pUserContext );
+ 145: 
+ 146: <FONT COLOR="#0000FF">bool</FONT>    CALLBACK IsD3D10DeviceAcceptable( UINT Adapter, UINT Output, D3D10_DRIVER_TYPE DeviceType, DXGI_FORMAT BackBufferFormat, <FONT COLOR="#0000FF">bool</FONT> bWindowed, <FONT COLOR="#0000FF">void</FONT>* pUserContext );
+ 147: HRESULT CALLBACK OnD3D10CreateDevice( ID3D10Device* pd3dDevice, <FONT COLOR="#0000FF">const</FONT> DXGI_SURFACE_DESC* pBackBufferSurfaceDesc, <FONT COLOR="#0000FF">void</FONT>* pUserContext );
+ 148: HRESULT CALLBACK OnD3D10ResizedSwapChain( ID3D10Device* pd3dDevice, IDXGISwapChain *pSwapChain, <FONT COLOR="#0000FF">const</FONT> DXGI_SURFACE_DESC* pBackBufferSurfaceDesc, <FONT COLOR="#0000FF">void</FONT>* pUserContext );
+ 149: <FONT COLOR="#0000FF">void</FONT>    CALLBACK OnD3D10FrameRender( ID3D10Device* pd3dDevice, <FONT COLOR="#0000FF">double</FONT> fTime, <FONT COLOR="#0000FF">float</FONT> fElapsedTime, <FONT COLOR="#0000FF">void</FONT>* pUserContext );
+ 150: <FONT COLOR="#0000FF">void</FONT>    CALLBACK OnD3D10ReleasingSwapChain( <FONT COLOR="#0000FF">void</FONT>* pUserContext );
+ 151: <FONT COLOR="#0000FF">void</FONT>    CALLBACK OnD3D10DestroyDevice( <FONT COLOR="#0000FF">void</FONT>* pUserContext );
+ 152: 
+ 153: <FONT COLOR="#0000FF">void</FONT>    InitApp();
+ 154: <FONT COLOR="#0000FF">void</FONT>    RenderText();
+ 155: 
+ 156: 
+ 157: <FONT COLOR="#008040">//--------------------------------------------------------------------------------------</FONT>
+ 158: <FONT COLOR="#008040">// Entry point to the program. Initializes everything and goes into a message processing </FONT>
+ 159: <FONT COLOR="#008040">// loop. Idle time is used to render the scene.</FONT>
+ 160: <FONT COLOR="#008040">//--------------------------------------------------------------------------------------</FONT>
+ 161: <FONT COLOR="#0000FF">int</FONT> WINAPI wWinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, <FONT COLOR="#0000FF">int</FONT> nCmdShow )
+ 162: {
+ 163:     <FONT COLOR="#008040">// Enable run-time memory check for debug builds.</FONT>
+ 164: <FONT COLOR="#0000FF">#if</FONT> defined(DEBUG) | defined(_DEBUG)
+ 165:     _CrtSetDbgFlag( _CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF );
+ 166: <FONT COLOR="#0000FF">#endif</FONT>
+ 167: 
+ 168:     <FONT COLOR="#008040">// DXUT will create and use the best device (either D3D9 or D3D10) </FONT>
+ 169:     <FONT COLOR="#008040">// that is available on the system depending on which D3D callbacks are set below</FONT>
+ 170: 
+ 171:     <FONT COLOR="#008040">// Set DXUT callbacks</FONT>
+ 172:     DXUTSetCallbackMsgProc( MsgProc );
+ 173:     DXUTSetCallbackKeyboard( OnKeyboard );
+ 174:     DXUTSetCallbackFrameMove( OnFrameMove );
+ 175:     DXUTSetCallbackDeviceChanging( ModifyDeviceSettings );
+ 176: 
+ 177:     DXUTSetCallbackD3D10DeviceAcceptable( IsD3D10DeviceAcceptable );
+ 178:     DXUTSetCallbackD3D10DeviceCreated( OnD3D10CreateDevice );
+ 179:     DXUTSetCallbackD3D10SwapChainResized( OnD3D10ResizedSwapChain );
+ 180:     DXUTSetCallbackD3D10SwapChainReleasing( OnD3D10ReleasingSwapChain );
+ 181:     DXUTSetCallbackD3D10DeviceDestroyed( OnD3D10DestroyDevice );
+ 182:     DXUTSetCallbackD3D10FrameRender( OnD3D10FrameRender );
+ 183: 
+ 184:     InitApp();
+ 185:     DXUTInit( <FONT COLOR="#0000FF">true</FONT>, <FONT COLOR="#0000FF">true</FONT>, NULL ); <FONT COLOR="#008040">// Parse the command line, show msgboxes on error, no extra command line params</FONT>
+ 186:     DXUTSetCursorSettings( <FONT COLOR="#0000FF">true</FONT>, <FONT COLOR="#0000FF">true</FONT> );
+ 187:     DXUTCreateWindow( L<FONT COLOR="#FF0000">&quot;Partial Sorting&quot;</FONT> );
+ 188:     DXUTCreateDevice( <FONT COLOR="#0000FF">true</FONT>, <FONT COLOR="#FF0000">640</FONT>, <FONT COLOR="#FF0000">480</FONT> );
+ 189: 
+ 190:     DXUTMainLoop(); <FONT COLOR="#008040">// Enter into the DXUT render loop</FONT>
+ 191: 
+ 192:     <FONT COLOR="#0000FF">return</FONT> DXUTGetExitCode();
+ 193: }
+ 194: 
+ 195: 
+ 196: <FONT COLOR="#008040">//--------------------------------------------------------------------------------------</FONT>
+ 197: <FONT COLOR="#008040">// Initialize the app </FONT>
+ 198: <FONT COLOR="#008040">//--------------------------------------------------------------------------------------</FONT>
+ 199: <FONT COLOR="#0000FF">void</FONT> InitApp()
+ 200: {
+ 201:     g_SettingsDlg<FONT COLOR="#FF0000">.</FONT>Init( &amp;g_DialogResourceManager );
+ 202:     g_HUD<FONT COLOR="#FF0000">.</FONT>Init( &amp;g_DialogResourceManager );
+ 203:     g_SampleUI<FONT COLOR="#FF0000">.</FONT>Init( &amp;g_DialogResourceManager );
+ 204: 
+ 205:     g_HUD<FONT COLOR="#FF0000">.</FONT>SetCallback( OnGUIEvent ); <FONT COLOR="#0000FF">int</FONT> iY = <FONT COLOR="#FF0000">10</FONT>; 
+ 206:     g_HUD<FONT COLOR="#FF0000">.</FONT>AddButton( IDC_TOGGLEFULLSCREEN, L<FONT COLOR="#FF0000">&quot;Toggle full screen&quot;</FONT>, <FONT COLOR="#FF0000">35</FONT>, iY, <FONT COLOR="#FF0000">125</FONT>, <FONT COLOR="#FF0000">22</FONT> );
+ 207:     g_HUD<FONT COLOR="#FF0000">.</FONT>AddButton( IDC_TOGGLEREF, L<FONT COLOR="#FF0000">&quot;Toggle REF (F3)&quot;</FONT>, <FONT COLOR="#FF0000">35</FONT>, iY += <FONT COLOR="#FF0000">24</FONT>, <FONT COLOR="#FF0000">125</FONT>, <FONT COLOR="#FF0000">22</FONT>, VK_F3 );
+ 208:     g_HUD<FONT COLOR="#FF0000">.</FONT>AddButton( IDC_CHANGEDEVICE, L<FONT COLOR="#FF0000">&quot;Change device (F2)&quot;</FONT>, <FONT COLOR="#FF0000">35</FONT>, iY += <FONT COLOR="#FF0000">24</FONT>, <FONT COLOR="#FF0000">125</FONT>, <FONT COLOR="#FF0000">22</FONT>, VK_F2 );
+ 209: 
+ 210:     g_SampleUI<FONT COLOR="#FF0000">.</FONT>SetCallback( OnGUIEvent ); iY = <FONT COLOR="#FF0000">10</FONT>; 
+ 211:     g_SampleUI<FONT COLOR="#FF0000">.</FONT>AddComboBox( IDC_METHOD, <FONT COLOR="#FF0000">10</FONT>, iY, <FONT COLOR="#FF0000">150</FONT>, <FONT COLOR="#FF0000">24</FONT>, L<FONT COLOR="#FF0000">'M'</FONT> );
+ 212:     g_SampleUI<FONT COLOR="#FF0000">.</FONT>GetComboBox( IDC_METHOD )-&gt;AddItem( L<FONT COLOR="#FF0000">&quot;(M)ethod: None&quot;</FONT>, (<FONT COLOR="#0000FF">void</FONT>*)<FONT COLOR="#FF0000">0</FONT> );
+ 213:     g_SampleUI<FONT COLOR="#FF0000">.</FONT>GetComboBox( IDC_METHOD )-&gt;AddItem( L<FONT COLOR="#FF0000">&quot;(M)ethod: Slice&quot;</FONT>, (<FONT COLOR="#0000FF">void</FONT>*)<FONT COLOR="#FF0000">1</FONT> );
+ 214:     g_SampleUI<FONT COLOR="#FF0000">.</FONT>GetComboBox( IDC_METHOD )-&gt;AddItem( L<FONT COLOR="#FF0000">&quot;(M)ethod: Partial Sort&quot;</FONT>, (<FONT COLOR="#0000FF">void</FONT>*)<FONT COLOR="#FF0000">2</FONT> );
+ 215: 	g_SampleUI<FONT COLOR="#FF0000">.</FONT>GetComboBox( IDC_METHOD )-&gt;SetSelectedByData( (<FONT COLOR="#0000FF">void</FONT>*)g_dwMethodIdx );
+ 216:     WCHAR wszBuf[<FONT COLOR="#FF0000">256</FONT>];
+ 217:     StringCchPrintf( wszBuf, <FONT COLOR="#FF0000">256</FONT>, L<FONT COLOR="#FF0000">&quot;Number of partitions: %u&quot;</FONT>, g_dwNumParts );
+ 218:     g_SampleUI<FONT COLOR="#FF0000">.</FONT>AddStatic( IDC_PARTITIONLABEL, wszBuf, <FONT COLOR="#FF0000">10</FONT>, iY += <FONT COLOR="#FF0000">30</FONT>, <FONT COLOR="#FF0000">150</FONT>, <FONT COLOR="#FF0000">16</FONT> );
+ 219:     g_SampleUI<FONT COLOR="#FF0000">.</FONT>AddSlider( IDC_PARTITION, <FONT COLOR="#FF0000">10</FONT>, iY += <FONT COLOR="#FF0000">14</FONT>, <FONT COLOR="#FF0000">140</FONT>, <FONT COLOR="#FF0000">24</FONT>, <FONT COLOR="#FF0000">1</FONT>, <FONT COLOR="#FF0000">10</FONT>, g_dwNumPartsLog );
+ 220: }
+ 221: 
+ 222: 
+ 223: <FONT COLOR="#008040">//--------------------------------------------------------------------------------------</FONT>
+ 224: <FONT COLOR="#008040">// Render the help and statistics text. This function uses the ID3DXFont interface for </FONT>
+ 225: <FONT COLOR="#008040">// efficient text rendering.</FONT>
+ 226: <FONT COLOR="#008040">//--------------------------------------------------------------------------------------</FONT>
+ 227: <FONT COLOR="#0000FF">void</FONT> RenderText()
+ 228: {
+ 229:     g_pTxtHelper-&gt;Begin();
+ 230:     g_pTxtHelper-&gt;SetInsertionPos( <FONT COLOR="#FF0000">5</FONT>, <FONT COLOR="#FF0000">5</FONT> );
+ 231:     g_pTxtHelper-&gt;SetForegroundColor( D3DXCOLOR( <FONT COLOR="#FF0000">1.0</FONT>f, <FONT COLOR="#FF0000">1.0</FONT>f, <FONT COLOR="#FF0000">0.0</FONT>f, <FONT COLOR="#FF0000">1.0</FONT>f ) );
+ 232:     g_pTxtHelper-&gt;DrawTextLine( DXUTGetFrameStats( DXUTIsVsyncEnabled() ) );  
+ 233:     g_pTxtHelper-&gt;DrawTextLine( DXUTGetDeviceStats() );
+ 234:     g_pTxtHelper-&gt;End();
+ 235: }
+ 236: 
+ 237: 
+ 238: <FONT COLOR="#008040">//--------------------------------------------------------------------------------------</FONT>
+ 239: <FONT COLOR="#008040">// Reject any D3D10 devices that aren't acceptable by returning false</FONT>
+ 240: <FONT COLOR="#008040">//--------------------------------------------------------------------------------------</FONT>
+ 241: <FONT COLOR="#0000FF">bool</FONT> CALLBACK IsD3D10DeviceAcceptable( UINT Adapter, UINT Output, D3D10_DRIVER_TYPE DeviceType, DXGI_FORMAT BackBufferFormat, <FONT COLOR="#0000FF">bool</FONT> bWindowed, <FONT COLOR="#0000FF">void</FONT>* pUserContext )
+ 242: {
+ 243:     <FONT COLOR="#0000FF">return</FONT> <FONT COLOR="#0000FF">true</FONT>;
+ 244: }
+ 245: 
+ 246: <FONT COLOR="#008040">//--------------------------------------------------------------------------------------</FONT>
+ 247: <FONT COLOR="#0000FF">void</FONT> DestroyPartitions()
+ 248: {
+ 249:     <FONT COLOR="#0000FF">for</FONT>(<FONT COLOR="#0000FF">unsigned</FONT> <FONT COLOR="#0000FF">int</FONT> i = <FONT COLOR="#FF0000">0</FONT>; i &lt; g_dwNumPartsLog; i++)
+ 250:     {
+ 251: 		SAFE_RELEASE(g_pSO[i]);
+ 252: 	}
+ 253: 
+ 254: 	SAFE_DELETE( g_pSO );
+ 255: }
+ 256: <FONT COLOR="#0000FF">typedef</FONT> ID3D10Buffer *LPD3D10Buffer;
+ 257: 
+ 258: <FONT COLOR="#008040">//--------------------------------------------------------------------------------------</FONT>
+ 259: HRESULT CreatePartitions(ID3D10Device* pd3dDevice)
+ 260: {
+ 261:     HRESULT hr;
+ 262: 
+ 263: 	g_pSO = <FONT COLOR="#0000FF">new</FONT> LPD3D10Buffer[g_dwNumPartsLog];
+ 264: 
+ 265:     D3D10_BUFFER_DESC vbdesc =
+ 266:     {
+ 267: 		<FONT COLOR="#FF0000">3</FONT> * MAX_SO_POLYGONE * g_pMesh-&gt;GetVertexSize(),
+ 268:         D3D10_USAGE_DEFAULT,
+ 269:         D3D10_BIND_VERTEX_BUFFER | D3D10_BIND_STREAM_OUTPUT,
+ 270:         <FONT COLOR="#FF0000">0</FONT>,
+ 271:         <FONT COLOR="#FF0000">0</FONT>
+ 272:     };
+ 273: 
+ 274:     <FONT COLOR="#0000FF">for</FONT>(<FONT COLOR="#0000FF">unsigned</FONT> <FONT COLOR="#0000FF">int</FONT> i = <FONT COLOR="#FF0000">0</FONT>; i &lt; g_dwNumPartsLog; i++)
+ 275:     {
+ 276: 	    V_RETURN( pd3dDevice-&gt;CreateBuffer( &amp;vbdesc, NULL, &amp;g_pSO[i]) );
+ 277: 	}
+ 278: 
+ 279: 	<FONT COLOR="#0000FF">return</FONT> S_OK;
+ 280: }
+ 281: 
+ 282: <FONT COLOR="#008040">//--------------------------------------------------------------------------------------</FONT>
+ 283: <FONT COLOR="#008040">// Create any D3D10 resources that aren't dependant on the back buffer</FONT>
+ 284: <FONT COLOR="#008040">//--------------------------------------------------------------------------------------</FONT>
+ 285: HRESULT CALLBACK OnD3D10CreateDevice( ID3D10Device* pd3dDevice, <FONT COLOR="#0000FF">const</FONT> DXGI_SURFACE_DESC *pBackBufferSurfaceDesc, <FONT COLOR="#0000FF">void</FONT>* pUserContext )
+ 286: {
+ 287:     HRESULT hr;
+ 288: 
+ 289: 	g_pd3dDevice = pd3dDevice;
+ 290: 
+ 291:     V_RETURN( D3DX10CreateSprite( pd3dDevice, <FONT COLOR="#FF0000">500</FONT>, &amp;g_pSprite10 ) );
+ 292:     V_RETURN( g_DialogResourceManager<FONT COLOR="#FF0000">.</FONT>OnD3D10CreateDevice( pd3dDevice ) );
+ 293:     V_RETURN( g_SettingsDlg<FONT COLOR="#FF0000">.</FONT>OnD3D10CreateDevice( pd3dDevice ) );
+ 294:     V_RETURN( D3DX10CreateFont( pd3dDevice, <FONT COLOR="#FF0000">15</FONT>, <FONT COLOR="#FF0000">0</FONT>, FW_BOLD, <FONT COLOR="#FF0000">1</FONT>, FALSE, DEFAULT_CHARSET, 
+ 295:                                 OUT_DEFAULT_PRECIS, DEFAULT_QUALITY, DEFAULT_PITCH | FF_DONTCARE, 
+ 296:                                 L<FONT COLOR="#FF0000">&quot;Arial&quot;</FONT>, &amp;g_pFont10 ) );
+ 297:     g_pTxtHelper = <FONT COLOR="#0000FF">new</FONT> CDXUTTextHelper( NULL, NULL, g_pFont10, g_pSprite10, <FONT COLOR="#FF0000">15</FONT> );
+ 298: 
+ 299:     <FONT COLOR="#008040">// Read the D3DX effect file</FONT>
+ 300:     WCHAR str[MAX_PATH];
+ 301:     V_RETURN( DXUTFindDXSDKMediaFileCch( str, MAX_PATH, L<FONT COLOR="#FF0000">&quot;main.fx&quot;</FONT> ) );
+ 302:     DWORD dwShaderFlags = D3D10_SHADER_ENABLE_STRICTNESS;
+ 303:     <FONT COLOR="#0000FF">#if</FONT> defined( DEBUG ) || defined( _DEBUG )
+ 304:     <FONT COLOR="#008040">// Set the D3D10_SHADER_DEBUG flag to embed debug information in the shaders.</FONT>
+ 305:     <FONT COLOR="#008040">// Setting this flag improves the shader debugging experience, but still allows </FONT>
+ 306:     <FONT COLOR="#008040">// the shaders to be optimized and to run exactly the way they will run in </FONT>
+ 307:     <FONT COLOR="#008040">// the release configuration of this program.</FONT>
+ 308:     dwShaderFlags |= D3D10_SHADER_DEBUG;
+ 309:     <FONT COLOR="#0000FF">#endif</FONT>
+ 310:     V_RETURN( D3DX10CreateEffectFromFile( str, NULL, NULL, <FONT COLOR="#FF0000">&quot;fx_4_0&quot;</FONT>, dwShaderFlags, <FONT COLOR="#FF0000">0</FONT>, pd3dDevice, NULL, NULL, &amp;g_pEffect10, NULL, NULL ) );
+ 311: 
+ 312:     <FONT COLOR="#008040">// Get effects variables</FONT>
+ 313: 	g_pTechRenderScene = g_pEffect10-&gt;GetTechniqueByName(<FONT COLOR="#FF0000">&quot;RenderScene&quot;</FONT>);
+ 314: 	g_pTechRenderSceneClipping = g_pEffect10-&gt;GetTechniqueByName(<FONT COLOR="#FF0000">&quot;RenderSceneClipping&quot;</FONT>);
+ 315: 	g_pTechPartialSortFront = g_pEffect10-&gt;GetTechniqueByName(<FONT COLOR="#FF0000">&quot;TechPartialSortFront&quot;</FONT>);
+ 316: 	g_pTechPartialSortBack  = g_pEffect10-&gt;GetTechniqueByName(<FONT COLOR="#FF0000">&quot;TechPartialSortBack&quot;</FONT>);
+ 317: 	g_pTechRenderBg = g_pEffect10-&gt;GetTechniqueByName(<FONT COLOR="#FF0000">&quot;RenderSceneBg&quot;</FONT>);
+ 318: 	g_pTechRenderSnow = g_pEffect10-&gt;GetTechniqueByName(<FONT COLOR="#FF0000">&quot;RenderSceneSnow&quot;</FONT>);
+ 319: 	g_pTechRenderDepth = g_pEffect10-&gt;GetTechniqueByName(<FONT COLOR="#FF0000">&quot;RenderSceneDepth&quot;</FONT>);
+ 320: 	g_pTechRenderSnowMap = g_pEffect10-&gt;GetTechniqueByName(<FONT COLOR="#FF0000">&quot;RenderSnowMap&quot;</FONT>);
+ 321:     g_pmWorldViewProj = g_pEffect10-&gt;GetVariableByName( <FONT COLOR="#FF0000">&quot;g_mWorldViewProjection&quot;</FONT> )-&gt;AsMatrix();
+ 322:     g_pmWorldView = g_pEffect10-&gt;GetVariableByName( <FONT COLOR="#FF0000">&quot;g_mWorldView&quot;</FONT> )-&gt;AsMatrix();
+ 323:     g_pmWorld = g_pEffect10-&gt;GetVariableByName( <FONT COLOR="#FF0000">&quot;g_mWorld&quot;</FONT> )-&gt;AsMatrix();
+ 324: 	g_ptxMesh = g_pEffect10-&gt;GetVariableByName( <FONT COLOR="#FF0000">&quot;g_MeshTexture&quot;</FONT> )-&gt;AsShaderResource();
+ 325:     g_pfZMin  = g_pEffect10-&gt;GetVariableByName( <FONT COLOR="#FF0000">&quot;g_fZmin&quot;</FONT> )-&gt;AsScalar();
+ 326:     g_pfZMid  = g_pEffect10-&gt;GetVariableByName( <FONT COLOR="#FF0000">&quot;g_fZmid&quot;</FONT> )-&gt;AsScalar();
+ 327: 	g_pfZMax  = g_pEffect10-&gt;GetVariableByName( <FONT COLOR="#FF0000">&quot;g_fZmax&quot;</FONT> )-&gt;AsScalar();
+ 328: 	g_pfBaseValue = g_pEffect10-&gt;GetVariableByName( <FONT COLOR="#FF0000">&quot;g_fBaseValue&quot;</FONT> )-&gt;AsScalar();
+ 329: 	g_pfCompValue = g_pEffect10-&gt;GetVariableByName( <FONT COLOR="#FF0000">&quot;g_fCompValue&quot;</FONT> )-&gt;AsScalar();
+ 330: 
+ 331: 	g_pMaterialAmbientColor = g_pEffect10-&gt;GetVariableByName( <FONT COLOR="#FF0000">&quot;g_MaterialAmbientColor&quot;</FONT> )-&gt;AsVector();
+ 332: 	g_pMaterialDiffuseColor = g_pEffect10-&gt;GetVariableByName( <FONT COLOR="#FF0000">&quot;g_MaterialDiffuseColor&quot;</FONT> )-&gt;AsVector();
+ 333: 	g_pLightDir             = g_pEffect10-&gt;GetVariableByName( <FONT COLOR="#FF0000">&quot;g_LightDir&quot;</FONT>             )-&gt;AsVector();
+ 334: 	g_pLightDiffuse         = g_pEffect10-&gt;GetVariableByName( <FONT COLOR="#FF0000">&quot;g_LightDiffuse&quot;</FONT>         )-&gt;AsVector();
+ 335: 
+ 336: 	FLOAT vMaterialAmbientColor[<FONT COLOR="#FF0000">4</FONT>] = {<FONT COLOR="#FF0000">0.3</FONT>f, <FONT COLOR="#FF0000">0.3</FONT>f, <FONT COLOR="#FF0000">0.3</FONT>f, <FONT COLOR="#FF0000">0.3</FONT>f};
+ 337: 	g_pMaterialAmbientColor-&gt;SetFloatVector(vMaterialAmbientColor);
+ 338: 	FLOAT vMaterialDiffuseColor[<FONT COLOR="#FF0000">4</FONT>] = {<FONT COLOR="#FF0000">0.7</FONT>f, <FONT COLOR="#FF0000">0.7</FONT>f, <FONT COLOR="#FF0000">0.7</FONT>f, <FONT COLOR="#FF0000">0.0</FONT>f};
+ 339: 	g_pMaterialDiffuseColor-&gt;SetFloatVector(vMaterialDiffuseColor);
+ 340: 	FLOAT vLightDir[<FONT COLOR="#FF0000">4</FONT>] = {<FONT COLOR="#FF0000">0.7</FONT>f, <FONT COLOR="#FF0000">0.7</FONT>f, <FONT COLOR="#FF0000">0.7</FONT>f, <FONT COLOR="#FF0000">0.0</FONT>f};
+ 341: 	g_pLightDir-&gt;SetFloatVector(vLightDir);
+ 342: 	FLOAT vLightDiffuse[<FONT COLOR="#FF0000">4</FONT>] = {<FONT COLOR="#FF0000">1.0</FONT>f, <FONT COLOR="#FF0000">1.0</FONT>f, <FONT COLOR="#FF0000">1.0</FONT>f, <FONT COLOR="#FF0000">0.0</FONT>f};
+ 343: 	g_pLightDiffuse-&gt;SetFloatVector(vLightDiffuse);
+ 344: 
+ 345:     <FONT COLOR="#0000FF">const</FONT> D3D10_INPUT_ELEMENT_DESC layout[] =
+ 346:     {
+ 347:         { <FONT COLOR="#FF0000">&quot;POSITION&quot;</FONT>, <FONT COLOR="#FF0000">0</FONT>, DXGI_FORMAT_R32G32B32_FLOAT, <FONT COLOR="#FF0000">0</FONT>, <FONT COLOR="#FF0000">0</FONT>, D3D10_INPUT_PER_VERTEX_DATA, <FONT COLOR="#FF0000">0</FONT> },
+ 348:         { <FONT COLOR="#FF0000">&quot;NORMAL&quot;</FONT>,   <FONT COLOR="#FF0000">0</FONT>, DXGI_FORMAT_R32G32B32_FLOAT, <FONT COLOR="#FF0000">0</FONT>, <FONT COLOR="#FF0000">12</FONT>, D3D10_INPUT_PER_VERTEX_DATA, <FONT COLOR="#FF0000">0</FONT> },
+ 349:         { <FONT COLOR="#FF0000">&quot;TEXCOORD&quot;</FONT>, <FONT COLOR="#FF0000">0</FONT>, DXGI_FORMAT_R32G32_FLOAT,    <FONT COLOR="#FF0000">0</FONT>, <FONT COLOR="#FF0000">24</FONT>, D3D10_INPUT_PER_VERTEX_DATA, <FONT COLOR="#FF0000">0</FONT> },
+ 350:     };
+ 351:     D3D10_PASS_DESC PassDesc;
+ 352:     g_pTechRenderScene-&gt;GetPassByIndex( <FONT COLOR="#FF0000">0</FONT> )-&gt;GetDesc( &amp;PassDesc );
+ 353:     V_RETURN( pd3dDevice-&gt;CreateInputLayout( layout, <FONT COLOR="#FF0000">3</FONT>, PassDesc<FONT COLOR="#FF0000">.</FONT>pIAInputSignature, PassDesc<FONT COLOR="#FF0000">.</FONT>IAInputSignatureSize, &amp;g_pVertexLayout ) );
+ 354: 
+ 355: 	g_pMesh = <FONT COLOR="#0000FF">new</FONT> MeshXFile();
+ 356: 	g_pMesh-&gt;OnCreateDevice(pd3dDevice, TEXT(<FONT COLOR="#FF0000">&quot;t-pot.x&quot;</FONT>), TEXT(<FONT COLOR="#FF0000">&quot;t-pot.bmp&quot;</FONT>), g_pTechRenderScene);
+ 357: 	
+ 358: 	<FONT COLOR="#008040">// 背景</FONT>
+ 359: 	LoadTexture(pd3dDevice, TEXT(<FONT COLOR="#FF0000">&quot;bg.jpg&quot;</FONT>), &amp;g_pTexRVBg, &amp;g_pTextureBg);
+ 360:     <FONT COLOR="#0000FF">const</FONT> D3D10_INPUT_ELEMENT_DESC layoutBg[] =
+ 361:     {
+ 362:         { <FONT COLOR="#FF0000">&quot;POSITION&quot;</FONT>, <FONT COLOR="#FF0000">0</FONT>, DXGI_FORMAT_R32G32B32_FLOAT, <FONT COLOR="#FF0000">0</FONT>,  <FONT COLOR="#FF0000">0</FONT>, D3D10_INPUT_PER_VERTEX_DATA, <FONT COLOR="#FF0000">0</FONT> },
+ 363:         { <FONT COLOR="#FF0000">&quot;TEXCOORD&quot;</FONT>, <FONT COLOR="#FF0000">0</FONT>, DXGI_FORMAT_R32G32_FLOAT,    <FONT COLOR="#FF0000">0</FONT>, <FONT COLOR="#FF0000">12</FONT>, D3D10_INPUT_PER_VERTEX_DATA, <FONT COLOR="#FF0000">0</FONT> },
+ 364:     };
+ 365:     g_pTechRenderBg-&gt;GetPassByIndex( <FONT COLOR="#FF0000">0</FONT> )-&gt;GetDesc( &amp;PassDesc );
+ 366:     V_RETURN( pd3dDevice-&gt;CreateInputLayout( layoutBg, <FONT COLOR="#0000FF">sizeof</FONT>(layoutBg)/<FONT COLOR="#0000FF">sizeof</FONT>(D3D10_INPUT_ELEMENT_DESC)
+ 367: 		, PassDesc<FONT COLOR="#FF0000">.</FONT>pIAInputSignature, PassDesc<FONT COLOR="#FF0000">.</FONT>IAInputSignatureSize, &amp;g_pVertexLayoutBg ) );
+ 368: 	<FONT COLOR="#008040">// 頂点バッファの作成</FONT>
+ 369: 	D3D10_BUFFER_DESC vbdesc =
+ 370: 	{
+ 371: 		<FONT COLOR="#FF0000">4</FONT> * <FONT COLOR="#0000FF">sizeof</FONT>(BGVERTEX),
+ 372: 		D3D10_USAGE_DEFAULT,
+ 373: 		D3D10_BIND_VERTEX_BUFFER,
+ 374: 		<FONT COLOR="#FF0000">0</FONT>,
+ 375: 		<FONT COLOR="#FF0000">0</FONT>
+ 376: 	};
+ 377: 	BGVERTEX pVertexBg[<FONT COLOR="#FF0000">4</FONT>] = {{-<FONT COLOR="#FF0000">1</FONT>,<FONT COLOR="#FF0000">1</FONT>,<FONT COLOR="#FF0000">0.5</FONT>,<FONT COLOR="#FF0000">0</FONT>,<FONT COLOR="#FF0000">0</FONT>},{<FONT COLOR="#FF0000">1</FONT>,<FONT COLOR="#FF0000">1</FONT>,<FONT COLOR="#FF0000">0.5</FONT>,<FONT COLOR="#FF0000">1</FONT>,<FONT COLOR="#FF0000">0</FONT>},{-<FONT COLOR="#FF0000">1</FONT>,-<FONT COLOR="#FF0000">1</FONT>,<FONT COLOR="#FF0000">0.5</FONT>,<FONT COLOR="#FF0000">0</FONT>,<FONT COLOR="#FF0000">1</FONT>},{<FONT COLOR="#FF0000">1</FONT>,-<FONT COLOR="#FF0000">1</FONT>,<FONT COLOR="#FF0000">0.5</FONT>,<FONT COLOR="#FF0000">1</FONT>,<FONT COLOR="#FF0000">1</FONT>}};
+ 378: 	D3D10_SUBRESOURCE_DATA InitData;
+ 379: 	InitData<FONT COLOR="#FF0000">.</FONT>pSysMem = pVertexBg;
+ 380: 	InitData<FONT COLOR="#FF0000">.</FONT>SysMemPitch = <FONT COLOR="#FF0000">0</FONT>;
+ 381: 	InitData<FONT COLOR="#FF0000">.</FONT>SysMemSlicePitch = <FONT COLOR="#FF0000">0</FONT>;
+ 382: 	V( pd3dDevice-&gt;CreateBuffer( &amp;vbdesc, &amp;InitData, &amp;g_pVBBg ) );
+ 383: 	<FONT COLOR="#008040">// インデックスバッファの作成</FONT>
+ 384: 	vbdesc<FONT COLOR="#FF0000">.</FONT>BindFlags = D3D10_BIND_INDEX_BUFFER;
+ 385: 	vbdesc<FONT COLOR="#FF0000">.</FONT>ByteWidth = <FONT COLOR="#FF0000">6</FONT> * <FONT COLOR="#0000FF">sizeof</FONT>(DWORD);
+ 386: 	DWORD pIndexBg[] = {<FONT COLOR="#FF0000">0</FONT>,<FONT COLOR="#FF0000">1</FONT>,<FONT COLOR="#FF0000">2</FONT>,<FONT COLOR="#FF0000">1</FONT>,<FONT COLOR="#FF0000">3</FONT>,<FONT COLOR="#FF0000">2</FONT>};
+ 387: 	InitData<FONT COLOR="#FF0000">.</FONT>pSysMem = pIndexBg;
+ 388: 	V_RETURN( pd3dDevice-&gt;CreateBuffer( &amp;vbdesc, &amp;InitData, &amp;g_pIBBg ) );
+ 389: 
+ 390: 	<FONT COLOR="#008040">// 雪</FONT>
+ 391: 	LoadTexture(pd3dDevice, TEXT(<FONT COLOR="#FF0000">&quot;snow.jpg&quot;</FONT>), &amp;g_pTexRVSnow, &amp;g_pTextureSnow);
+ 392:     <FONT COLOR="#0000FF">const</FONT> D3D10_INPUT_ELEMENT_DESC layoutSnow[] =
+ 393:     {
+ 394:         { <FONT COLOR="#FF0000">&quot;POSITION&quot;</FONT>, <FONT COLOR="#FF0000">0</FONT>, DXGI_FORMAT_R32G32B32_FLOAT, <FONT COLOR="#FF0000">0</FONT>,  <FONT COLOR="#FF0000">0</FONT>, D3D10_INPUT_PER_VERTEX_DATA, <FONT COLOR="#FF0000">0</FONT> },
+ 395:         { <FONT COLOR="#FF0000">&quot;BINORMAL&quot;</FONT>, <FONT COLOR="#FF0000">0</FONT>, DXGI_FORMAT_R32G32B32_FLOAT, <FONT COLOR="#FF0000">0</FONT>, <FONT COLOR="#FF0000">12</FONT>, D3D10_INPUT_PER_VERTEX_DATA, <FONT COLOR="#FF0000">0</FONT> },
+ 396:         { <FONT COLOR="#FF0000">&quot;TANGENT&quot;</FONT>,  <FONT COLOR="#FF0000">0</FONT>, DXGI_FORMAT_R32G32B32_FLOAT, <FONT COLOR="#FF0000">0</FONT>, <FONT COLOR="#FF0000">24</FONT>, D3D10_INPUT_PER_VERTEX_DATA, <FONT COLOR="#FF0000">0</FONT> },
+ 397:     };
+ 398:     g_pTechRenderSnow-&gt;GetPassByIndex( <FONT COLOR="#FF0000">0</FONT> )-&gt;GetDesc( &amp;PassDesc );
+ 399:     V_RETURN( pd3dDevice-&gt;CreateInputLayout( layoutSnow, <FONT COLOR="#0000FF">sizeof</FONT>(layoutSnow)/<FONT COLOR="#0000FF">sizeof</FONT>(D3D10_INPUT_ELEMENT_DESC)
+ 400: 		, PassDesc<FONT COLOR="#FF0000">.</FONT>pIAInputSignature, PassDesc<FONT COLOR="#FF0000">.</FONT>IAInputSignatureSize, &amp;g_pVertexLayoutSnow ) );
+ 401:     vbdesc<FONT COLOR="#FF0000">.</FONT>ByteWidth = <FONT COLOR="#0000FF">sizeof</FONT>( SNOWVERTEX ) * SNOW_COUNT;
+ 402:     vbdesc<FONT COLOR="#FF0000">.</FONT>Usage = D3D10_USAGE_DYNAMIC;
+ 403:     vbdesc<FONT COLOR="#FF0000">.</FONT>BindFlags = D3D10_BIND_VERTEX_BUFFER;
+ 404:     vbdesc<FONT COLOR="#FF0000">.</FONT>CPUAccessFlags = D3D10_CPU_ACCESS_WRITE;
+ 405:     vbdesc<FONT COLOR="#FF0000">.</FONT>MiscFlags = <FONT COLOR="#FF0000">0</FONT>;
+ 406: 	V( pd3dDevice-&gt;CreateBuffer( &amp;vbdesc, NULL, &amp;g_pVBSnow ) );
+ 407: 	SNOWVERTEX *pVertex = g_aSnowVertex;
+ 408: 	<FONT COLOR="#0000FF">for</FONT>(<FONT COLOR="#0000FF">unsigned</FONT> <FONT COLOR="#0000FF">int</FONT> i = <FONT COLOR="#FF0000">0</FONT>; i &lt; SNOW_COUNT; i++){
+ 409: 		pVertex-&gt;x = (SNOW_X_MAX - SNOW_X_MIN) * frand() + SNOW_X_MIN;
+ 410: 		pVertex-&gt;z = (SNOW_Z_MAX - SNOW_Z_MIN) * frand() + SNOW_Z_MIN;
+ 411: 		pVertex-&gt;y = (SNOW_Y_MAX - SNOW_Y_MIN) * (<FONT COLOR="#0000FF">float</FONT>)i / (<FONT COLOR="#0000FF">float</FONT>)SNOW_COUNT + SNOW_Y_MIN;
+ 412: 		pVertex-&gt;tx = <FONT COLOR="#FF0000">0.1</FONT>f * (frand() - <FONT COLOR="#FF0000">0.5</FONT>);
+ 413: 		pVertex-&gt;tz = <FONT COLOR="#FF0000">0.1</FONT>f * (frand() - <FONT COLOR="#FF0000">0.5</FONT>);
+ 414: 		pVertex-&gt;ty = -<FONT COLOR="#FF0000">1.0</FONT>f;
+ 415: 		<FONT COLOR="#008040">// normalize</FONT>
+ 416: 		<FONT COLOR="#0000FF">float</FONT> d = <FONT COLOR="#FF0000">1.0</FONT>f/sqrtf(pVertex-&gt;tx*pVertex-&gt;tx+pVertex-&gt;ty*pVertex-&gt;ty+pVertex-&gt;tz*pVertex-&gt;tz);
+ 417: 		pVertex-&gt;tx *= d;
+ 418: 		pVertex-&gt;ty *= d;
+ 419: 		pVertex-&gt;tz *= d;
+ 420: 		<FONT COLOR="#008040">// binormal = (0,1,0)×tangent</FONT>
+ 421: 		pVertex-&gt;bx = pVertex-&gt;tz;
+ 422: 		pVertex-&gt;by = <FONT COLOR="#FF0000">0.0</FONT>f;
+ 423: 		pVertex-&gt;bz = -pVertex-&gt;tx;
+ 424: 		d = <FONT COLOR="#FF0000">1.0</FONT>f/sqrtf(pVertex-&gt;bx*pVertex-&gt;bx+pVertex-&gt;by*pVertex-&gt;by+pVertex-&gt;bz*pVertex-&gt;bz);
+ 425: 		pVertex-&gt;bx *= d;
+ 426: 		pVertex-&gt;by *= d;
+ 427: 		pVertex-&gt;bz *= d;
+ 428: 
+ 429: 		pVertex++;
+ 430: 	}
+ 431: 
+ 432: 	<FONT COLOR="#008040">// 雪面</FONT>
+ 433:     D3D10_TEXTURE2D_DESC dstex;
+ 434:     dstex<FONT COLOR="#FF0000">.</FONT>Width = SNOWMAPSIZE;
+ 435:     dstex<FONT COLOR="#FF0000">.</FONT>Height = SNOWMAPSIZE;
+ 436:     dstex<FONT COLOR="#FF0000">.</FONT>MipLevels = <FONT COLOR="#FF0000">1</FONT>;
+ 437:     dstex<FONT COLOR="#FF0000">.</FONT>ArraySize = <FONT COLOR="#FF0000">1</FONT>;
+ 438:     dstex<FONT COLOR="#FF0000">.</FONT>SampleDesc<FONT COLOR="#FF0000">.</FONT>Count = <FONT COLOR="#FF0000">1</FONT>;
+ 439:     dstex<FONT COLOR="#FF0000">.</FONT>SampleDesc<FONT COLOR="#FF0000">.</FONT>Quality = <FONT COLOR="#FF0000">0</FONT>;
+ 440:     dstex<FONT COLOR="#FF0000">.</FONT>Format = DXGI_FORMAT_D32_FLOAT;
+ 441:     dstex<FONT COLOR="#FF0000">.</FONT>Usage = D3D10_USAGE_DEFAULT;
+ 442:     dstex<FONT COLOR="#FF0000">.</FONT>BindFlags = D3D10_BIND_DEPTH_STENCIL;
+ 443:     dstex<FONT COLOR="#FF0000">.</FONT>CPUAccessFlags = <FONT COLOR="#FF0000">0</FONT>;
+ 444:     dstex<FONT COLOR="#FF0000">.</FONT>MiscFlags = <FONT COLOR="#FF0000">0</FONT>;
+ 445:     V_RETURN( pd3dDevice-&gt;CreateTexture2D( &amp;dstex, NULL, &amp;g_pSnowMapDepth ));
+ 446: 
+ 447:     D3D10_DEPTH_STENCIL_VIEW_DESC DescDS;
+ 448:     DescDS<FONT COLOR="#FF0000">.</FONT>Format = DXGI_FORMAT_D32_FLOAT;
+ 449:     DescDS<FONT COLOR="#FF0000">.</FONT>ViewDimension = D3D10_DSV_DIMENSION_TEXTURE2D;
+ 450:     DescDS<FONT COLOR="#FF0000">.</FONT>Texture2DArray<FONT COLOR="#FF0000">.</FONT>FirstArraySlice = <FONT COLOR="#FF0000">0</FONT>;
+ 451:     DescDS<FONT COLOR="#FF0000">.</FONT>Texture2DArray<FONT COLOR="#FF0000">.</FONT>ArraySize = <FONT COLOR="#FF0000">1</FONT>;
+ 452:     DescDS<FONT COLOR="#FF0000">.</FONT>Texture2DArray<FONT COLOR="#FF0000">.</FONT>MipSlice = <FONT COLOR="#FF0000">0</FONT>;
+ 453:     V_RETURN( pd3dDevice-&gt;CreateDepthStencilView( g_pSnowMapDepth, &amp;DescDS, &amp;g_pSnowMapDSV ));
+ 454: 
+ 455: <FONT COLOR="#008040">//    dstex.Format = DXGI_FORMAT_R32G32B32A32_FLOAT;</FONT>
+ 456:     dstex<FONT COLOR="#FF0000">.</FONT>Format = DXGI_FORMAT_R32_FLOAT;
+ 457: <FONT COLOR="#008040">//    dstex.Format = DXGI_FORMAT_R16G16B16A16_FLOAT;</FONT>
+ 458:     dstex<FONT COLOR="#FF0000">.</FONT>BindFlags = D3D10_BIND_RENDER_TARGET | D3D10_BIND_SHADER_RESOURCE;
+ 459:     V_RETURN( pd3dDevice-&gt;CreateTexture2D( &amp;dstex, NULL, &amp;g_pSnowMap ));
+ 460: 	
+ 461:     D3D10_RENDER_TARGET_VIEW_DESC DescRT;
+ 462:     DescRT<FONT COLOR="#FF0000">.</FONT>Format = dstex<FONT COLOR="#FF0000">.</FONT>Format;
+ 463:     DescRT<FONT COLOR="#FF0000">.</FONT>ViewDimension = D3D10_RTV_DIMENSION_TEXTURE2D;
+ 464:     DescRT<FONT COLOR="#FF0000">.</FONT>Texture2DArray<FONT COLOR="#FF0000">.</FONT>FirstArraySlice = <FONT COLOR="#FF0000">0</FONT>;
+ 465:     DescRT<FONT COLOR="#FF0000">.</FONT>Texture2DArray<FONT COLOR="#FF0000">.</FONT>ArraySize = <FONT COLOR="#FF0000">1</FONT>;
+ 466:     DescRT<FONT COLOR="#FF0000">.</FONT>Texture2DArray<FONT COLOR="#FF0000">.</FONT>MipSlice = <FONT COLOR="#FF0000">0</FONT>;
+ 467:     V_RETURN( pd3dDevice-&gt;CreateRenderTargetView( g_pSnowMap, &amp;DescRT, &amp;g_pSnowMapRTV ));
+ 468: 
+ 469:     <FONT COLOR="#008040">// Create the shader resource view for the cubic env map</FONT>
+ 470:     D3D10_SHADER_RESOURCE_VIEW_DESC SRVDesc;
+ 471:     ZeroMemory( &amp;SRVDesc, <FONT COLOR="#0000FF">sizeof</FONT>(SRVDesc) );
+ 472:     SRVDesc<FONT COLOR="#FF0000">.</FONT>Format = dstex<FONT COLOR="#FF0000">.</FONT>Format;
+ 473:     SRVDesc<FONT COLOR="#FF0000">.</FONT>ViewDimension = D3D10_SRV_DIMENSION_TEXTURE2D;
+ 474:     SRVDesc<FONT COLOR="#FF0000">.</FONT>TextureCube<FONT COLOR="#FF0000">.</FONT>MipLevels = <FONT COLOR="#FF0000">1</FONT>;
+ 475:     SRVDesc<FONT COLOR="#FF0000">.</FONT>TextureCube<FONT COLOR="#FF0000">.</FONT>MostDetailedMip = <FONT COLOR="#FF0000">0</FONT>;
+ 476:     V_RETURN( pd3dDevice-&gt;CreateShaderResourceView( g_pSnowMap, &amp;SRVDesc, &amp;g_pSnowMapSRV ));
+ 477: 
+ 478:     <FONT COLOR="#0000FF">const</FONT> D3D10_INPUT_ELEMENT_DESC layoutSnowMap[] =
+ 479:     {
+ 480:         { <FONT COLOR="#FF0000">&quot;POSITION&quot;</FONT>, <FONT COLOR="#FF0000">0</FONT>, DXGI_FORMAT_R32G32B32_FLOAT, <FONT COLOR="#FF0000">0</FONT>,  <FONT COLOR="#FF0000">0</FONT>, D3D10_INPUT_PER_VERTEX_DATA, <FONT COLOR="#FF0000">0</FONT> },
+ 481:         { <FONT COLOR="#FF0000">&quot;TEXCOORD&quot;</FONT>, <FONT COLOR="#FF0000">0</FONT>, DXGI_FORMAT_R32G32_FLOAT,    <FONT COLOR="#FF0000">0</FONT>, <FONT COLOR="#FF0000">12</FONT>, D3D10_INPUT_PER_VERTEX_DATA, <FONT COLOR="#FF0000">0</FONT> },
+ 482:     };
+ 483:     g_pTechRenderBg-&gt;GetPassByIndex( <FONT COLOR="#FF0000">0</FONT> )-&gt;GetDesc( &amp;PassDesc );
+ 484:     V_RETURN( pd3dDevice-&gt;CreateInputLayout( layoutSnowMap, <FONT COLOR="#0000FF">sizeof</FONT>(layoutSnowMap)/<FONT COLOR="#0000FF">sizeof</FONT>(D3D10_INPUT_ELEMENT_DESC)
+ 485: 		, PassDesc<FONT COLOR="#FF0000">.</FONT>pIAInputSignature, PassDesc<FONT COLOR="#FF0000">.</FONT>IAInputSignatureSize, &amp;g_pVertexLayoutSnowMap ) );
+ 486: 	{
+ 487: 	<FONT COLOR="#008040">// 頂点バッファの作成</FONT>
+ 488: 	D3D10_BUFFER_DESC vbdesc =
+ 489: 	{
+ 490: 		SNOWMAPSIZE * SNOWMAPSIZE * <FONT COLOR="#0000FF">sizeof</FONT>(SNOWMAPVERTEX),
+ 491: 		D3D10_USAGE_DEFAULT,
+ 492: 		D3D10_BIND_VERTEX_BUFFER,
+ 493: 		<FONT COLOR="#FF0000">0</FONT>,
+ 494: 		<FONT COLOR="#FF0000">0</FONT>
+ 495: 	};
+ 496: 	SNOWMAPVERTEX *pVertexSnowMap = <FONT COLOR="#0000FF">new</FONT> SNOWMAPVERTEX[SNOWMAPSIZE * SNOWMAPSIZE];
+ 497: 	<FONT COLOR="#0000FF">unsigned</FONT> <FONT COLOR="#0000FF">int</FONT> idx = <FONT COLOR="#FF0000">0</FONT>;
+ 498: 	<FONT COLOR="#0000FF">for</FONT>(<FONT COLOR="#0000FF">unsigned</FONT> <FONT COLOR="#0000FF">int</FONT> y = <FONT COLOR="#FF0000">0</FONT>; y &lt; SNOWMAPSIZE; y++)
+ 499: 		<FONT COLOR="#0000FF">for</FONT>(<FONT COLOR="#0000FF">unsigned</FONT> <FONT COLOR="#0000FF">int</FONT> x = <FONT COLOR="#FF0000">0</FONT>; x &lt; SNOWMAPSIZE; x++)
+ 500: 		{
+ 501: 			pVertexSnowMap[idx]<FONT COLOR="#FF0000">.</FONT>u = (<FONT COLOR="#0000FF">float</FONT>)x/(<FONT COLOR="#0000FF">float</FONT>)SNOWMAPSIZE;
+ 502: 			pVertexSnowMap[idx]<FONT COLOR="#FF0000">.</FONT>v = (<FONT COLOR="#0000FF">float</FONT>)y/(<FONT COLOR="#0000FF">float</FONT>)SNOWMAPSIZE;
+ 503: 			pVertexSnowMap[idx]<FONT COLOR="#FF0000">.</FONT>x = <FONT COLOR="#FF0000">3.0</FONT>*(+(pVertexSnowMap[idx]<FONT COLOR="#FF0000">.</FONT>u - <FONT COLOR="#FF0000">0.5</FONT>f)-(pVertexSnowMap[idx]<FONT COLOR="#FF0000">.</FONT>v - <FONT COLOR="#FF0000">0.5</FONT>f))/<FONT COLOR="#FF0000">1.41421356</FONT>f;
+ 504: 			pVertexSnowMap[idx]<FONT COLOR="#FF0000">.</FONT>z = <FONT COLOR="#FF0000">3.0</FONT>*(-(pVertexSnowMap[idx]<FONT COLOR="#FF0000">.</FONT>v - <FONT COLOR="#FF0000">0.5</FONT>f)-(pVertexSnowMap[idx]<FONT COLOR="#FF0000">.</FONT>u - <FONT COLOR="#FF0000">0.5</FONT>f))/<FONT COLOR="#FF0000">1.41421356</FONT>f;
+ 505: 			pVertexSnowMap[idx]<FONT COLOR="#FF0000">.</FONT>y = <FONT COLOR="#FF0000">1</FONT>;
+ 506: 			idx++;
+ 507: 		}
+ 508: 	D3D10_SUBRESOURCE_DATA InitData;
+ 509: 	InitData<FONT COLOR="#FF0000">.</FONT>pSysMem = pVertexSnowMap;
+ 510: 	InitData<FONT COLOR="#FF0000">.</FONT>SysMemPitch = <FONT COLOR="#FF0000">0</FONT>;
+ 511: 	InitData<FONT COLOR="#FF0000">.</FONT>SysMemSlicePitch = <FONT COLOR="#FF0000">0</FONT>;
+ 512: 	V( pd3dDevice-&gt;CreateBuffer( &amp;vbdesc, &amp;InitData, &amp;g_pVBSnowMap ) );
+ 513: 	<FONT COLOR="#0000FF">delete</FONT>[] pVertexSnowMap;
+ 514: 	<FONT COLOR="#008040">// インデックスバッファの作成</FONT>
+ 515: 	vbdesc<FONT COLOR="#FF0000">.</FONT>BindFlags = D3D10_BIND_INDEX_BUFFER;
+ 516: 	vbdesc<FONT COLOR="#FF0000">.</FONT>ByteWidth = SNOWMAPINDEX_COUNT * <FONT COLOR="#0000FF">sizeof</FONT>(DWORD);
+ 517: 	DWORD *pIndexSnowMap = <FONT COLOR="#0000FF">new</FONT> DWORD[SNOWMAPINDEX_COUNT];
+ 518: 	idx = <FONT COLOR="#FF0000">0</FONT>;
+ 519: 	<FONT COLOR="#0000FF">for</FONT>(<FONT COLOR="#0000FF">unsigned</FONT> <FONT COLOR="#0000FF">int</FONT> y = <FONT COLOR="#FF0000">0</FONT>; y &lt; SNOWMAPSIZE-<FONT COLOR="#FF0000">1</FONT>; y++)
+ 520: 		<FONT COLOR="#0000FF">for</FONT>(<FONT COLOR="#0000FF">unsigned</FONT> <FONT COLOR="#0000FF">int</FONT> x = <FONT COLOR="#FF0000">0</FONT>; x &lt; SNOWMAPSIZE-<FONT COLOR="#FF0000">1</FONT>; x++)
+ 521: 		{
+ 522: 			<FONT COLOR="#0000FF">unsigned</FONT> <FONT COLOR="#0000FF">int</FONT> id0 = y * SNOWMAPSIZE + x;
+ 523: 			pIndexSnowMap[idx + <FONT COLOR="#FF0000">0</FONT>] = id0;
+ 524: 			pIndexSnowMap[idx + <FONT COLOR="#FF0000">1</FONT>] = id0+<FONT COLOR="#FF0000">1</FONT>;
+ 525: 			pIndexSnowMap[idx + <FONT COLOR="#FF0000">2</FONT>] = id0+SNOWMAPSIZE;
+ 526: 			pIndexSnowMap[idx + <FONT COLOR="#FF0000">3</FONT>] = id0+<FONT COLOR="#FF0000">1</FONT>;
+ 527: 			pIndexSnowMap[idx + <FONT COLOR="#FF0000">4</FONT>] = id0+SNOWMAPSIZE;
+ 528: 			pIndexSnowMap[idx + <FONT COLOR="#FF0000">5</FONT>] = id0+SNOWMAPSIZE+<FONT COLOR="#FF0000">1</FONT>;
+ 529: 			idx+=<FONT COLOR="#FF0000">6</FONT>;
+ 530: 		}
+ 531: 	InitData<FONT COLOR="#FF0000">.</FONT>pSysMem = pIndexSnowMap;
+ 532: 	V_RETURN( pd3dDevice-&gt;CreateBuffer( &amp;vbdesc, &amp;InitData, &amp;g_pIBSnowMap ) );
+ 533: 	<FONT COLOR="#0000FF">delete</FONT>[] pIndexSnowMap;
+ 534: 	}
+ 535: 
+ 536: 	CreatePartitions(pd3dDevice);
+ 537: 
+ 538: 	<FONT COLOR="#008040">// Setup the camera's view parameters</FONT>
+ 539:     D3DXVECTOR3 vecEye(<FONT COLOR="#FF0000">2.0</FONT>f, <FONT COLOR="#FF0000">2.0</FONT>f, -<FONT COLOR="#FF0000">2.0</FONT>f);
+ 540:     D3DXVECTOR3 vecAt (<FONT COLOR="#FF0000">0.0</FONT>f, <FONT COLOR="#FF0000">0.0</FONT>f, -<FONT COLOR="#FF0000">0.0</FONT>f);
+ 541:     g_Camera<FONT COLOR="#FF0000">.</FONT>SetViewParams( &amp;vecEye, &amp;vecAt );
+ 542: 
+ 543: 
+ 544:     <FONT COLOR="#0000FF">return</FONT> S_OK;
+ 545: }
+ 546: 
+ 547: <FONT COLOR="#008040">//--------------------------------------------------------------------------------------</FONT>
+ 548: <FONT COLOR="#008040">// Release D3D10 resources created in OnD3D10CreateDevice </FONT>
+ 549: <FONT COLOR="#008040">//--------------------------------------------------------------------------------------</FONT>
+ 550: <FONT COLOR="#0000FF">void</FONT> CALLBACK OnD3D10DestroyDevice( <FONT COLOR="#0000FF">void</FONT>* pUserContext )
+ 551: {
+ 552: 	SAFE_RELEASE( g_pVBSnowMap );
+ 553:     SAFE_RELEASE( g_pIBSnowMap );
+ 554:     SAFE_RELEASE( g_pVertexLayoutSnowMap );
+ 555:     SAFE_RELEASE( g_pSnowMapDepth );
+ 556:     SAFE_RELEASE( g_pSnowMapDSV );
+ 557:     SAFE_RELEASE( g_pSnowMapRTV );
+ 558:     SAFE_RELEASE( g_pSnowMapSRV );
+ 559:     SAFE_RELEASE( g_pSnowMap );
+ 560: 
+ 561: 	SAFE_RELEASE( g_pVBSnow );
+ 562:     SAFE_RELEASE( g_pVertexLayoutSnow );
+ 563:     SAFE_RELEASE( g_pTexRVSnow );
+ 564:     SAFE_RELEASE( g_pTextureSnow );
+ 565: 
+ 566: 	SAFE_RELEASE( g_pVBBg );
+ 567:     SAFE_RELEASE( g_pIBBg );
+ 568:     SAFE_RELEASE( g_pVertexLayoutBg );
+ 569:     SAFE_RELEASE( g_pTexRVBg );
+ 570:     SAFE_RELEASE( g_pTextureBg );
+ 571: 
+ 572: 	g_pMesh-&gt;OnDestroyDevice();
+ 573:     SAFE_DELETE( g_pMesh );
+ 574: 
+ 575: 	DestroyPartitions();
+ 576: 
+ 577:     g_DialogResourceManager<FONT COLOR="#FF0000">.</FONT>OnD3D10DestroyDevice();
+ 578:     g_SettingsDlg<FONT COLOR="#FF0000">.</FONT>OnD3D10DestroyDevice();
+ 579:     SAFE_RELEASE( g_pFont10 );
+ 580:     SAFE_RELEASE( g_pEffect10 );
+ 581:     SAFE_RELEASE( g_pVertexLayout );
+ 582:     SAFE_RELEASE( g_pSprite10 );
+ 583:     SAFE_DELETE( g_pTxtHelper );
+ 584: }
+ 585: 
+ 586: <FONT COLOR="#008040">//--------------------------------------------------------------------------------------</FONT>
+ 587: <FONT COLOR="#008040">// Create any D3D10 resources that depend on the back buffer</FONT>
+ 588: <FONT COLOR="#008040">//--------------------------------------------------------------------------------------</FONT>
+ 589: HRESULT CALLBACK OnD3D10ResizedSwapChain( ID3D10Device* pd3dDevice, IDXGISwapChain *pSwapChain, <FONT COLOR="#0000FF">const</FONT> DXGI_SURFACE_DESC* pBackBufferSurfaceDesc, <FONT COLOR="#0000FF">void</FONT>* pUserContext )
+ 590: {
+ 591:     HRESULT hr;
+ 592: 
+ 593:     V_RETURN( g_DialogResourceManager<FONT COLOR="#FF0000">.</FONT>OnD3D10ResizedSwapChain( pd3dDevice, pBackBufferSurfaceDesc ) );
+ 594:     V_RETURN( g_SettingsDlg<FONT COLOR="#FF0000">.</FONT>OnD3D10ResizedSwapChain( pd3dDevice, pBackBufferSurfaceDesc ) );
+ 595: 
+ 596:     <FONT COLOR="#008040">// Setup the camera's projection parameters</FONT>
+ 597:     <FONT COLOR="#0000FF">float</FONT> fAspectRatio = pBackBufferSurfaceDesc-&gt;Width / (FLOAT)pBackBufferSurfaceDesc-&gt;Height;
+ 598:     g_Camera<FONT COLOR="#FF0000">.</FONT>SetProjParams( D3DX_PI/<FONT COLOR="#FF0000">4</FONT>, fAspectRatio, <FONT COLOR="#FF0000">0.1</FONT>f, <FONT COLOR="#FF0000">1000.0</FONT>f );
+ 599:     g_Camera<FONT COLOR="#FF0000">.</FONT>SetWindow( pBackBufferSurfaceDesc-&gt;Width, pBackBufferSurfaceDesc-&gt;Height );
+ 600:     g_Camera<FONT COLOR="#FF0000">.</FONT>SetButtonMasks( MOUSE_LEFT_BUTTON, MOUSE_WHEEL, MOUSE_MIDDLE_BUTTON );
+ 601: 
+ 602:     g_HUD<FONT COLOR="#FF0000">.</FONT>SetLocation( pBackBufferSurfaceDesc-&gt;Width-<FONT COLOR="#FF0000">170</FONT>, <FONT COLOR="#FF0000">0</FONT> );
+ 603:     g_HUD<FONT COLOR="#FF0000">.</FONT>SetSize( <FONT COLOR="#FF0000">170</FONT>, <FONT COLOR="#FF0000">170</FONT> );
+ 604:     g_SampleUI<FONT COLOR="#FF0000">.</FONT>SetLocation( pBackBufferSurfaceDesc-&gt;Width-<FONT COLOR="#FF0000">170</FONT>, pBackBufferSurfaceDesc-&gt;Height-<FONT COLOR="#FF0000">300</FONT> );
+ 605:     g_SampleUI<FONT COLOR="#FF0000">.</FONT>SetSize( <FONT COLOR="#FF0000">170</FONT>, <FONT COLOR="#FF0000">300</FONT> );
+ 606: 
+ 607:     <FONT COLOR="#0000FF">return</FONT> S_OK;
+ 608: }
+ 609: 
+ 610: <FONT COLOR="#008040">//--------------------------------------------------------------------------------------</FONT>
+ 611: <FONT COLOR="#008040">//--------------------------------------------------------------------------------------</FONT>
+ 612: <FONT COLOR="#0000FF">void</FONT> RenderSort(ID3D10Device* pd3dDevice, <FONT COLOR="#0000FF">float</FONT> z_min, <FONT COLOR="#0000FF">float</FONT> z_max, <FONT COLOR="#0000FF">unsigned</FONT> <FONT COLOR="#0000FF">int</FONT> level, ID3D10Buffer *pSoSrc, MeshXFile *pMesh=NULL)
+ 613: {
+ 614: 	<FONT COLOR="#0000FF">float</FONT> z_mid = <FONT COLOR="#FF0000">0.5</FONT>f * (z_min + z_max);
+ 615: 	
+ 616: 	<FONT COLOR="#0000FF">if</FONT>(<FONT COLOR="#FF0000">0</FONT>==--level){
+ 617: 		<FONT COLOR="#008040">// pSoSrc を描画</FONT>
+ 618: 	    ID3D10Buffer *buffersRT[<FONT COLOR="#FF0000">1</FONT>] = {NULL};
+ 619: 		UINT offsetRT[<FONT COLOR="#FF0000">1</FONT>] = {<FONT COLOR="#FF0000">0</FONT>};
+ 620: 	    pd3dDevice-&gt;SOSetTargets( <FONT COLOR="#FF0000">1</FONT>, buffersRT, offsetRT );
+ 621: 
+ 622: 	    ID3D10Buffer *buffers[<FONT COLOR="#FF0000">1</FONT>] = {pSoSrc};
+ 623: 	    UINT stride[<FONT COLOR="#FF0000">1</FONT>] = { <FONT COLOR="#0000FF">sizeof</FONT>(CUSTOMVERTEX) };
+ 624: 	    UINT offset[<FONT COLOR="#FF0000">1</FONT>] = { <FONT COLOR="#FF0000">0</FONT> };
+ 625: 	    pd3dDevice-&gt;IASetVertexBuffers( <FONT COLOR="#FF0000">0</FONT>, <FONT COLOR="#FF0000">1</FONT>, buffers, stride, offset );
+ 626: 	    pd3dDevice-&gt;IASetPrimitiveTopology( D3D10_PRIMITIVE_TOPOLOGY_TRIANGLELIST );
+ 627: 	    pd3dDevice-&gt;IASetInputLayout( g_pVertexLayout );
+ 628: 
+ 629: 	    D3D10_TECHNIQUE_DESC techDesc;
+ 630: 	    g_pTechRenderScene-&gt;GetDesc( &amp;techDesc );
+ 631: 
+ 632: 	    <FONT COLOR="#0000FF">for</FONT>( UINT p = <FONT COLOR="#FF0000">0</FONT>; p &lt; techDesc<FONT COLOR="#FF0000">.</FONT>Passes; ++p )
+ 633: 	    {
+ 634: 	        g_pTechRenderScene-&gt;GetPassByIndex( p )-&gt;Apply(<FONT COLOR="#FF0000">0</FONT>);
+ 635:             pd3dDevice-&gt;DrawAuto();
+ 636: 	    }
+ 637: 		buffers[<FONT COLOR="#FF0000">0</FONT>] = NULL;
+ 638: 		pd3dDevice-&gt;IASetVertexBuffers( <FONT COLOR="#FF0000">0</FONT>, <FONT COLOR="#FF0000">1</FONT>, buffers, stride, offset );
+ 639: 	}<FONT COLOR="#0000FF">else</FONT>{
+ 640: 		<FONT COLOR="#008040">// pSoSrc を元に、pSO0 に 半分から手前のポリゴンを、pSO1 に半分から奥のポリゴンを書き込む</FONT>
+ 641: 		<FONT COLOR="#0000FF">for</FONT>(<FONT COLOR="#0000FF">unsigned</FONT> <FONT COLOR="#0000FF">int</FONT> i = <FONT COLOR="#FF0000">0</FONT>; i &lt; <FONT COLOR="#FF0000">2</FONT>; i++)
+ 642: 		{
+ 643: 			ID3D10Buffer *buffersRT[<FONT COLOR="#FF0000">1</FONT>] = {g_pSO[level-<FONT COLOR="#FF0000">1</FONT>]};
+ 644: 			UINT offsetRT[<FONT COLOR="#FF0000">1</FONT>] = { <FONT COLOR="#FF0000">0</FONT> };
+ 645: 			pd3dDevice-&gt;SOSetTargets( <FONT COLOR="#FF0000">1</FONT>, buffersRT, offsetRT );
+ 646: 
+ 647: 			<FONT COLOR="#008040">// Set Effects Parameters</FONT>
+ 648: 			g_pfZMid-&gt;SetFloat( z_mid );
+ 649: 
+ 650: 			ID3D10EffectTechnique *pTech = (<FONT COLOR="#FF0000">0</FONT>==i) ? g_pTechPartialSortBack : g_pTechPartialSortFront; 
+ 651: 			D3D10_TECHNIQUE_DESC techDesc;
+ 652: 			pTech-&gt;GetDesc( &amp;techDesc );
+ 653: 
+ 654: 			<FONT COLOR="#0000FF">if</FONT>(NULL != pMesh)
+ 655: 			{
+ 656: 				pMesh-&gt;SetBuffers();
+ 657: 
+ 658: 				<FONT COLOR="#0000FF">for</FONT>( UINT p = <FONT COLOR="#FF0000">0</FONT>; p &lt; techDesc<FONT COLOR="#FF0000">.</FONT>Passes; ++p )
+ 659: 				{
+ 660: 					pTech-&gt;GetPassByIndex( p )-&gt;Apply(<FONT COLOR="#FF0000">0</FONT>);
+ 661: 					pMesh-&gt;Draw();
+ 662: 				}
+ 663: 			}<FONT COLOR="#0000FF">else</FONT>{
+ 664: 				ID3D10Buffer *buffers[<FONT COLOR="#FF0000">1</FONT>] = {pSoSrc};
+ 665: 				UINT stride[<FONT COLOR="#FF0000">1</FONT>] = { <FONT COLOR="#0000FF">sizeof</FONT>(CUSTOMVERTEX) };
+ 666: 				UINT offset[<FONT COLOR="#FF0000">1</FONT>] = { <FONT COLOR="#FF0000">0</FONT> };
+ 667: 				pd3dDevice-&gt;IASetVertexBuffers( <FONT COLOR="#FF0000">0</FONT>, <FONT COLOR="#FF0000">1</FONT>, buffers, stride, offset );
+ 668: 				pd3dDevice-&gt;IASetPrimitiveTopology( D3D10_PRIMITIVE_TOPOLOGY_TRIANGLELIST );
+ 669: 
+ 670: 				<FONT COLOR="#0000FF">for</FONT>( UINT p = <FONT COLOR="#FF0000">0</FONT>; p &lt; techDesc<FONT COLOR="#FF0000">.</FONT>Passes; ++p )
+ 671: 				{
+ 672: 					pTech-&gt;GetPassByIndex( p )-&gt;Apply(<FONT COLOR="#FF0000">0</FONT>);
+ 673: 					pd3dDevice-&gt;DrawAuto();
+ 674: 				}
+ 675: 				ID3D10Buffer *buffersRT[<FONT COLOR="#FF0000">1</FONT>] = {NULL};
+ 676: 				pd3dDevice-&gt;SOSetTargets( <FONT COLOR="#FF0000">1</FONT>, buffersRT, offsetRT );
+ 677: 				buffers[<FONT COLOR="#FF0000">0</FONT>] = NULL;
+ 678: 				pd3dDevice-&gt;IASetVertexBuffers( <FONT COLOR="#FF0000">0</FONT>, <FONT COLOR="#FF0000">1</FONT>, buffers, stride, offset );
+ 679: 			}
+ 680: 			<FONT COLOR="#008040">// 再帰的に、奥から描画</FONT>
+ 681: 			<FONT COLOR="#0000FF">if</FONT>(<FONT COLOR="#FF0000">0</FONT>==i)
+ 682: 			{
+ 683: 				RenderSort(pd3dDevice, z_mid, z_max, level, buffersRT[<FONT COLOR="#FF0000">0</FONT>]);
+ 684: 			}<FONT COLOR="#0000FF">else</FONT>{
+ 685: 				RenderSort(pd3dDevice, z_min, z_mid, level, buffersRT[<FONT COLOR="#FF0000">0</FONT>]);
+ 686: 			}
+ 687: 		}
+ 688: 	}
+ 689: }
+ 690: 
+ 691: <FONT COLOR="#008040">//--------------------------------------------------------------------------------------</FONT>
+ 692: <FONT COLOR="#008040">//--------------------------------------------------------------------------------------</FONT>
+ 693: <FONT COLOR="#0000FF">void</FONT> RenderSnowCover(ID3D10Device* pd3dDevice, <FONT COLOR="#0000FF">float</FONT> fElapsedTime, <FONT COLOR="#0000FF">bool</FONT> reset = <FONT COLOR="#0000FF">false</FONT>)
+ 694: {
+ 695: 	<FONT COLOR="#0000FF">static</FONT> <FONT COLOR="#0000FF">float</FONT> rate = <FONT COLOR="#FF0000">0.5</FONT>;
+ 696: 	<FONT COLOR="#0000FF">if</FONT>(reset) rate = <FONT COLOR="#FF0000">0.0</FONT>;
+ 697: 	rate += fElapsedTime * <FONT COLOR="#FF0000">0.05</FONT>f;
+ 698: 	<FONT COLOR="#0000FF">if</FONT>(<FONT COLOR="#FF0000">1.0</FONT>f &lt; rate)rate = <FONT COLOR="#FF0000">1.0</FONT>f;
+ 699: 	g_pfCompValue-&gt;SetFloat(rate * <FONT COLOR="#FF0000">0.00035</FONT>);
+ 700: 	<FONT COLOR="#0000FF">float</FONT> alpha = rate * <FONT COLOR="#FF0000">100</FONT>;
+ 701: 	alpha = (<FONT COLOR="#FF0000">1.0</FONT> &lt; alpha) ? <FONT COLOR="#FF0000">1.0</FONT> : alpha;
+ 702: 	g_pfBaseValue-&gt;SetFloat(alpha);
+ 703: 	
+ 704: 	<FONT COLOR="#008040">// Save</FONT>
+ 705:     ID3D10RenderTargetView* apOldRTVs[<FONT COLOR="#FF0000">1</FONT>] = { NULL };
+ 706:     ID3D10DepthStencilView* pOldDS = NULL;
+ 707:     pd3dDevice-&gt;OMGetRenderTargets( <FONT COLOR="#FF0000">1</FONT>, apOldRTVs, &amp;pOldDS );
+ 708:     D3D10_VIEWPORT OldVP;
+ 709:     UINT cRT = <FONT COLOR="#FF0000">1</FONT>;
+ 710:     pd3dDevice-&gt;RSGetViewports( &amp;cRT, &amp;OldVP );
+ 711: 
+ 712:     <FONT COLOR="#008040">// Set a new viewport</FONT>
+ 713:     D3D10_VIEWPORT MVP;
+ 714:     MVP<FONT COLOR="#FF0000">.</FONT>Height = SNOWMAPSIZE;
+ 715:     MVP<FONT COLOR="#FF0000">.</FONT>Width = SNOWMAPSIZE;
+ 716:     MVP<FONT COLOR="#FF0000">.</FONT>MinDepth = <FONT COLOR="#FF0000">0</FONT>;
+ 717:     MVP<FONT COLOR="#FF0000">.</FONT>MaxDepth = <FONT COLOR="#FF0000">1</FONT>;
+ 718:     MVP<FONT COLOR="#FF0000">.</FONT>TopLeftX = <FONT COLOR="#FF0000">0</FONT>;
+ 719:     MVP<FONT COLOR="#FF0000">.</FONT>TopLeftY = <FONT COLOR="#FF0000">0</FONT>;
+ 720:     pd3dDevice-&gt;RSSetViewports( <FONT COLOR="#FF0000">1</FONT>, &amp;MVP );
+ 721: 
+ 722: 	g_ptxMesh-&gt;SetResource(NULL);
+ 723:     pd3dDevice-&gt;IASetInputLayout( NULL );
+ 724: 	UINT uStrides = <FONT COLOR="#0000FF">sizeof</FONT>(CUSTOMVERTEX);
+ 725:     UINT uOffsets = <FONT COLOR="#FF0000">0</FONT>;
+ 726:     ID3D10Buffer *pBuffers[<FONT COLOR="#FF0000">1</FONT>] = { NULL };
+ 727:     pd3dDevice-&gt;IASetVertexBuffers( <FONT COLOR="#FF0000">0</FONT>, <FONT COLOR="#FF0000">1</FONT>, pBuffers, &amp;uStrides, &amp;uOffsets );
+ 728:     pd3dDevice-&gt;IASetIndexBuffer( NULL, DXGI_FORMAT_R32_UINT, <FONT COLOR="#FF0000">0</FONT> );
+ 729: 
+ 730:     <FONT COLOR="#0000FF">float</FONT> ClearColor[<FONT COLOR="#FF0000">4</FONT>] = { <FONT COLOR="#FF0000">10.0</FONT>, <FONT COLOR="#FF0000">10.0</FONT>, <FONT COLOR="#FF0000">0.0</FONT>, <FONT COLOR="#FF0000">0.0</FONT> };
+ 731:     pd3dDevice-&gt;ClearRenderTargetView( g_pSnowMapRTV, ClearColor);
+ 732:     pd3dDevice-&gt;ClearDepthStencilView( g_pSnowMapDSV, D3D10_CLEAR_DEPTH, <FONT COLOR="#FF0000">1.0</FONT>, <FONT COLOR="#FF0000">0</FONT>);
+ 733: 
+ 734:     ID3D10RenderTargetView* aRTViews[ <FONT COLOR="#FF0000">1</FONT> ] = { g_pSnowMapRTV };
+ 735:     pd3dDevice-&gt;OMSetRenderTargets( <FONT COLOR="#0000FF">sizeof</FONT>(aRTViews) / <FONT COLOR="#0000FF">sizeof</FONT>(aRTViews[<FONT COLOR="#FF0000">0</FONT>]), aRTViews, g_pSnowMapDSV );
+ 736: 
+ 737: 	<FONT COLOR="#008040">// Render scene	</FONT>
+ 738:     D3DXMATRIX  mWorld, mView, mProj;
+ 739:     D3DXMATRIX  mWorldViewProjection;
+ 740: 	D3DXVECTOR3 vEyePt    = D3DXVECTOR3(<FONT COLOR="#FF0000">0</FONT>, <FONT COLOR="#FF0000">1</FONT>, <FONT COLOR="#FF0000">0</FONT>);
+ 741: 	D3DXVECTOR3 vLookatPt = D3DXVECTOR3(<FONT COLOR="#FF0000">0</FONT>, <FONT COLOR="#FF0000">0</FONT>, <FONT COLOR="#FF0000">0</FONT>);
+ 742: 	D3DXVECTOR3 vUp       = D3DXVECTOR3(<FONT COLOR="#FF0000">1</FONT>, <FONT COLOR="#FF0000">0</FONT>, <FONT COLOR="#FF0000">1</FONT>);
+ 743: 	D3DXMatrixLookAtLH( &amp;mView, &amp;vEyePt, &amp;vLookatPt, &amp;vUp );
+ 744: 	D3DXMatrixOrthoLH( &amp;mProj, <FONT COLOR="#FF0000">3.0</FONT>f, <FONT COLOR="#FF0000">3.0</FONT>f, <FONT COLOR="#FF0000">0.0</FONT>, <FONT COLOR="#FF0000">2.0</FONT>f );<FONT COLOR="#008040">// w,h,n,f</FONT>
+ 745: 	mWorld = *g_Camera<FONT COLOR="#FF0000">.</FONT>GetWorldMatrix();
+ 746: 	mWorldViewProjection = mWorld * mView * mProj;
+ 747: 	g_pmWorldViewProj-&gt;SetMatrix( (<FONT COLOR="#0000FF">float</FONT>*)&amp;mWorldViewProjection );
+ 748: 	g_pMesh-&gt;SetBuffers();
+ 749: 	D3D10_TECHNIQUE_DESC techDesc;
+ 750: 	g_pTechRenderDepth-&gt;GetDesc( &amp;techDesc );
+ 751: 	<FONT COLOR="#0000FF">for</FONT>( UINT p = <FONT COLOR="#FF0000">0</FONT>; p &lt; techDesc<FONT COLOR="#FF0000">.</FONT>Passes; ++p )
+ 752: 	{
+ 753: 		g_pTechRenderDepth-&gt;GetPassByIndex( p )-&gt;Apply(<FONT COLOR="#FF0000">0</FONT>);
+ 754: 
+ 755: 		g_pMesh-&gt;Draw();
+ 756: 	}
+ 757: 
+ 758: 
+ 759: 	<FONT COLOR="#008040">// Restore</FONT>
+ 760: 	pd3dDevice-&gt;RSSetViewports( <FONT COLOR="#FF0000">1</FONT>, &amp;OldVP );
+ 761:     pd3dDevice-&gt;OMSetRenderTargets( <FONT COLOR="#FF0000">1</FONT>, apOldRTVs, pOldDS );
+ 762:     SAFE_RELEASE( apOldRTVs[<FONT COLOR="#FF0000">0</FONT>] );
+ 763:     SAFE_RELEASE( pOldDS );
+ 764: 
+ 765: 	<FONT COLOR="#008040">// VTF で雪を描く</FONT>
+ 766:     ID3D10Buffer *buffers[<FONT COLOR="#FF0000">1</FONT>] = {g_pVBSnowMap};
+ 767:     UINT stride[<FONT COLOR="#FF0000">1</FONT>] = { <FONT COLOR="#0000FF">sizeof</FONT>(SNOWMAPVERTEX) };
+ 768:     UINT offset[<FONT COLOR="#FF0000">1</FONT>] = { <FONT COLOR="#FF0000">0</FONT> };
+ 769:     pd3dDevice-&gt;IASetVertexBuffers( <FONT COLOR="#FF0000">0</FONT>, <FONT COLOR="#FF0000">1</FONT>, buffers, stride, offset );
+ 770:     pd3dDevice-&gt;IASetPrimitiveTopology( D3D10_PRIMITIVE_TOPOLOGY_TRIANGLELIST );
+ 771:     pd3dDevice-&gt;IASetInputLayout( g_pVertexLayoutSnowMap );
+ 772:     pd3dDevice-&gt;IASetIndexBuffer( g_pIBSnowMap, DXGI_FORMAT_R32_UINT, <FONT COLOR="#FF0000">0</FONT> );
+ 773: 
+ 774: 	mWorld = *g_Camera<FONT COLOR="#FF0000">.</FONT>GetWorldMatrix();
+ 775: 	mProj = *g_Camera<FONT COLOR="#FF0000">.</FONT>GetProjMatrix();
+ 776: 	mView = *g_Camera<FONT COLOR="#FF0000">.</FONT>GetViewMatrix();
+ 777: 	mWorldViewProjection =  mView * mProj;
+ 778: <FONT COLOR="#008040">//	mWorldViewProjection = mWorld * mView * mProj;</FONT>
+ 779: 	g_pmWorldViewProj-&gt;SetMatrix( (<FONT COLOR="#0000FF">float</FONT>*)&amp;mWorldViewProjection );
+ 780: 
+ 781: 	g_ptxMesh-&gt;SetResource(g_pSnowMapSRV);
+ 782: 
+ 783:     g_pTechRenderSnowMap-&gt;GetPassByIndex( <FONT COLOR="#FF0000">0</FONT> )-&gt;Apply(<FONT COLOR="#FF0000">0</FONT>);
+ 784:     pd3dDevice-&gt;DrawIndexed( SNOWMAPINDEX_COUNT, <FONT COLOR="#FF0000">0</FONT>, <FONT COLOR="#FF0000">0</FONT> );
+ 785: 
+ 786: 	g_ptxMesh-&gt;SetResource(NULL);
+ 787: }
+ 788: 
+ 789: 
+ 790: <FONT COLOR="#008040">//--------------------------------------------------------------------------------------</FONT>
+ 791: <FONT COLOR="#008040">// Render the scene using the D3D10 device</FONT>
+ 792: <FONT COLOR="#008040">//--------------------------------------------------------------------------------------</FONT>
+ 793: <FONT COLOR="#0000FF">void</FONT> CALLBACK OnD3D10FrameRender( ID3D10Device* pd3dDevice, <FONT COLOR="#0000FF">double</FONT> fTime, <FONT COLOR="#0000FF">float</FONT> fElapsedTime, <FONT COLOR="#0000FF">void</FONT>* pUserContext )
+ 794: {
+ 795:     D3DXMATRIX  mWorldViewProjection;
+ 796:     D3DXMATRIX  mWorldView;
+ 797:     D3DXMATRIX  mWorld;
+ 798:     D3DXMATRIX  mView;
+ 799:     D3DXMATRIX  mProj;
+ 800: 
+ 801: <FONT COLOR="#0000FF">#if</FONT> <FONT COLOR="#FF0000">0</FONT>
+ 802: 	<FONT COLOR="#0000FF">float</FONT> ClearColor[<FONT COLOR="#FF0000">4</FONT>] = { <FONT COLOR="#FF0000">1.</FONT>f, <FONT COLOR="#FF0000">1.</FONT>f, <FONT COLOR="#FF0000">1.</FONT>f, <FONT COLOR="#FF0000">0.0</FONT>f };
+ 803: <FONT COLOR="#008040">//    float ClearColor[4] = { 0.176f, 0.196f, 0.667f, 0.0f };</FONT>
+ 804:     ID3D10RenderTargetView* pRTV = DXUTGetD3D10RenderTargetView();
+ 805:     pd3dDevice-&gt;ClearRenderTargetView( pRTV, ClearColor );
+ 806: <FONT COLOR="#0000FF">#else</FONT>
+ 807: 	<FONT COLOR="#008040">// 背景描画</FONT>
+ 808:     ID3D10Buffer *buffers[<FONT COLOR="#FF0000">1</FONT>] = {g_pVBBg};
+ 809:     UINT stride[<FONT COLOR="#FF0000">1</FONT>] = { <FONT COLOR="#0000FF">sizeof</FONT>(BGVERTEX) };
+ 810:     UINT offset[<FONT COLOR="#FF0000">1</FONT>] = { <FONT COLOR="#FF0000">0</FONT> };
+ 811:     pd3dDevice-&gt;IASetVertexBuffers( <FONT COLOR="#FF0000">0</FONT>, <FONT COLOR="#FF0000">1</FONT>, buffers, stride, offset );
+ 812:     pd3dDevice-&gt;IASetPrimitiveTopology( D3D10_PRIMITIVE_TOPOLOGY_TRIANGLELIST );
+ 813:     pd3dDevice-&gt;IASetInputLayout( g_pVertexLayoutBg );
+ 814:     pd3dDevice-&gt;IASetIndexBuffer( g_pIBBg, DXGI_FORMAT_R32_UINT, <FONT COLOR="#FF0000">0</FONT> );
+ 815: 	g_ptxMesh-&gt;SetResource(g_pTexRVBg);
+ 816: 
+ 817: <FONT COLOR="#008040">//g_ptxMesh-&gt;SetResource(g_pSnowMapSRV);</FONT>
+ 818: 
+ 819: 	D3D10_TECHNIQUE_DESC techDesc;
+ 820:     g_pTechRenderBg-&gt;GetDesc( &amp;techDesc );
+ 821: 
+ 822:     <FONT COLOR="#0000FF">for</FONT>( UINT p = <FONT COLOR="#FF0000">0</FONT>; p &lt; techDesc<FONT COLOR="#FF0000">.</FONT>Passes; ++p )
+ 823:     {
+ 824:         g_pTechRenderBg-&gt;GetPassByIndex( p )-&gt;Apply(<FONT COLOR="#FF0000">0</FONT>);
+ 825:         pd3dDevice-&gt;DrawIndexed( <FONT COLOR="#FF0000">6</FONT>, <FONT COLOR="#FF0000">0</FONT>, <FONT COLOR="#FF0000">0</FONT> );
+ 826:     }
+ 827: <FONT COLOR="#0000FF">#endif</FONT>
+ 828: 
+ 829:     <FONT COLOR="#008040">// Clear the depth stencil</FONT>
+ 830:     ID3D10DepthStencilView* pDSV = DXUTGetD3D10DepthStencilView();
+ 831:     pd3dDevice-&gt;ClearDepthStencilView( pDSV, D3D10_CLEAR_DEPTH, <FONT COLOR="#FF0000">1.0</FONT>, <FONT COLOR="#FF0000">0</FONT> );
+ 832: 
+ 833:     <FONT COLOR="#008040">// If the settings dialog is being shown, then render it instead of rendering the app's scene</FONT>
+ 834:     <FONT COLOR="#0000FF">if</FONT>( g_SettingsDlg<FONT COLOR="#FF0000">.</FONT>IsActive() )
+ 835:     {
+ 836:         g_SettingsDlg<FONT COLOR="#FF0000">.</FONT>OnRender( fElapsedTime );
+ 837:         <FONT COLOR="#0000FF">return</FONT>;
+ 838:     }
+ 839: 
+ 840: 	<FONT COLOR="#0000FF">switch</FONT>(g_dwMethodIdx)
+ 841: 	{
+ 842: 	<FONT COLOR="#0000FF">case</FONT> METHOD_NONE:
+ 843: 		{
+ 844: 		<FONT COLOR="#008040">// Get the projection &amp; view matrix from the camera class</FONT>
+ 845: 		mWorld = *g_Camera<FONT COLOR="#FF0000">.</FONT>GetWorldMatrix();
+ 846: 		mProj = *g_Camera<FONT COLOR="#FF0000">.</FONT>GetProjMatrix();
+ 847: 		mView = *g_Camera<FONT COLOR="#FF0000">.</FONT>GetViewMatrix();
+ 848: 		mWorldViewProjection = mWorld * mView * mProj;
+ 849: 
+ 850: 		<FONT COLOR="#008040">// Update the effect's variables.  Instead of using strings, it would </FONT>
+ 851: 		<FONT COLOR="#008040">// be more efficient to cache a handle to the parameter by calling </FONT>
+ 852: 		<FONT COLOR="#008040">// ID3DXEffect::GetParameterByName</FONT>
+ 853: 		g_pmWorldViewProj-&gt;SetMatrix( (<FONT COLOR="#0000FF">float</FONT>*)&amp;mWorldViewProjection );
+ 854: 		g_pmWorld-&gt;SetMatrix( (<FONT COLOR="#0000FF">float</FONT>*)&amp;mWorld );
+ 855: 
+ 856: 		<FONT COLOR="#008040">// Set vertex Layout</FONT>
+ 857: 		pd3dDevice-&gt;IASetInputLayout( g_pVertexLayout );
+ 858: 
+ 859: 		g_pMesh-&gt;SetBuffers();
+ 860: 		g_ptxMesh-&gt;SetResource(g_pMesh-&gt;GetTexture());
+ 861: 
+ 862: 		D3D10_TECHNIQUE_DESC techDesc;
+ 863: 		g_pTechRenderScene-&gt;GetDesc( &amp;techDesc );
+ 864: 		<FONT COLOR="#0000FF">for</FONT>( UINT p = <FONT COLOR="#FF0000">0</FONT>; p &lt; techDesc<FONT COLOR="#FF0000">.</FONT>Passes; ++p )
+ 865: 		{
+ 866: 			g_pTechRenderScene-&gt;GetPassByIndex( p )-&gt;Apply(<FONT COLOR="#FF0000">0</FONT>);
+ 867: 
+ 868: 			g_pMesh-&gt;Draw();
+ 869: 		}
+ 870: 		}
+ 871: 		<FONT COLOR="#0000FF">break</FONT>;
+ 872: 	<FONT COLOR="#0000FF">case</FONT> METHOD_SLICE:
+ 873: 		{
+ 874: 		<FONT COLOR="#008040">// Get the projection &amp; view matrix from the camera class</FONT>
+ 875: 		mWorld = *g_Camera<FONT COLOR="#FF0000">.</FONT>GetWorldMatrix();
+ 876: 		mProj = *g_Camera<FONT COLOR="#FF0000">.</FONT>GetProjMatrix();
+ 877: 		mView = *g_Camera<FONT COLOR="#FF0000">.</FONT>GetViewMatrix();
+ 878: 		mWorldView = mWorld * mView;
+ 879: 		mWorldViewProjection = mWorldView * mProj;
+ 880: 
+ 881: 		<FONT COLOR="#008040">// Update the effect's variables.  Instead of using strings, it would </FONT>
+ 882: 		<FONT COLOR="#008040">// be more efficient to cache a handle to the parameter by calling </FONT>
+ 883: 		<FONT COLOR="#008040">// ID3DXEffect::GetParameterByName</FONT>
+ 884: 		g_pmWorldViewProj-&gt;SetMatrix( (<FONT COLOR="#0000FF">float</FONT>*)&amp;mWorldViewProjection );
+ 885: 		g_pmWorld-&gt;SetMatrix( (<FONT COLOR="#0000FF">float</FONT>*)&amp;mWorld );
+ 886: 
+ 887: 		<FONT COLOR="#008040">// Set vertex Layout</FONT>
+ 888: 		pd3dDevice-&gt;IASetInputLayout( g_pVertexLayout );
+ 889: 
+ 890: 		g_pMesh-&gt;SetBuffers();
+ 891: 		g_ptxMesh-&gt;SetResource(g_pMesh-&gt;GetTexture());
+ 892: 
+ 893: 		D3D10_TECHNIQUE_DESC techDesc;
+ 894: 		g_pTechRenderSceneClipping-&gt;GetDesc( &amp;techDesc );
+ 895: 
+ 896: 		<FONT COLOR="#0000FF">const</FONT> D3DXVECTOR3 *pCenter = g_pMesh-&gt;GetBoundingSphereCenter();
+ 897: 		FLOAT radius = g_pMesh-&gt;GetBoundingSphereRadius();
+ 898: 
+ 899: 		<FONT COLOR="#0000FF">for</FONT>(<FONT COLOR="#0000FF">unsigned</FONT> <FONT COLOR="#0000FF">int</FONT> i = g_dwNumParts; <FONT COLOR="#FF0000">0</FONT> &lt; i; i--)
+ 900: 		{
+ 901: 			D3DXVECTOR3 v_near;
+ 902: 			D3DXVECTOR3 v_far;
+ 903: 
+ 904: 			D3DXVec3TransformCoord(&amp;v_near, pCenter, &amp;mWorldView);
+ 905: 			v_far = v_near;
+ 906: 			v_near<FONT COLOR="#FF0000">.</FONT>z += radius * (<FONT COLOR="#FF0000">2.0</FONT>f * (FLOAT)(i-<FONT COLOR="#FF0000">1</FONT>)/(FLOAT)g_dwNumParts-<FONT COLOR="#FF0000">1.0</FONT>f);
+ 907: 			v_far<FONT COLOR="#FF0000">.</FONT>z  += radius * (<FONT COLOR="#FF0000">2.0</FONT>f * (FLOAT)(i  )/(FLOAT)g_dwNumParts-<FONT COLOR="#FF0000">1.0</FONT>f);
+ 908: 
+ 909: 			g_pfZMin-&gt;SetFloat( v_near<FONT COLOR="#FF0000">.</FONT>z );
+ 910: 			g_pfZMax-&gt;SetFloat( v_far<FONT COLOR="#FF0000">.</FONT>z );
+ 911: 
+ 912: 			<FONT COLOR="#0000FF">for</FONT>( UINT p = <FONT COLOR="#FF0000">0</FONT>; p &lt; techDesc<FONT COLOR="#FF0000">.</FONT>Passes; ++p )
+ 913: 			{
+ 914: 				g_pTechRenderSceneClipping-&gt;GetPassByIndex( p )-&gt;Apply(<FONT COLOR="#FF0000">0</FONT>);
+ 915: 
+ 916: 				g_pMesh-&gt;Draw();
+ 917: 			}
+ 918: 		}
+ 919: 		}
+ 920: 		<FONT COLOR="#0000FF">break</FONT>;
+ 921: 	<FONT COLOR="#0000FF">case</FONT> METHOD_PARTIAL:
+ 922: 		{
+ 923: 		<FONT COLOR="#008040">// Get the projection &amp; view matrix from the camera class</FONT>
+ 924: 		mWorld = *g_Camera<FONT COLOR="#FF0000">.</FONT>GetWorldMatrix();
+ 925: 		mProj = *g_Camera<FONT COLOR="#FF0000">.</FONT>GetProjMatrix();
+ 926: 		mView = *g_Camera<FONT COLOR="#FF0000">.</FONT>GetViewMatrix();
+ 927: 		mWorldView = mWorld * mView;
+ 928: 		mWorldViewProjection = mWorldView * mProj;
+ 929: 
+ 930: 		g_ptxMesh-&gt;SetResource(g_pMesh-&gt;GetTexture());
+ 931: 		g_pmWorldViewProj-&gt;SetMatrix( (<FONT COLOR="#0000FF">float</FONT>*)&amp;mWorldViewProjection );
+ 932: 		g_pmWorldView-&gt;SetMatrix( (<FONT COLOR="#0000FF">float</FONT>*)&amp;mWorldView );
+ 933: 		g_pmWorld-&gt;SetMatrix( (<FONT COLOR="#0000FF">float</FONT>*)&amp;mWorld );
+ 934: 
+ 935: 
+ 936: 		<FONT COLOR="#0000FF">const</FONT> D3DXVECTOR3 *pCenter = g_pMesh-&gt;GetBoundingSphereCenter();
+ 937: 		D3DXVECTOR3 vCenter;
+ 938: 		D3DXVec3TransformCoord(&amp;vCenter, pCenter, &amp;mWorldView);
+ 939: 		FLOAT radius = g_pMesh-&gt;GetBoundingSphereRadius();
+ 940: 
+ 941: 		RenderSort(pd3dDevice
+ 942: 				 , vCenter<FONT COLOR="#FF0000">.</FONT>z-radius
+ 943: 				 , vCenter<FONT COLOR="#FF0000">.</FONT>z+radius
+ 944: 				 , g_dwNumPartsLog+<FONT COLOR="#FF0000">1</FONT>, NULL, g_pMesh);
+ 945: 		}
+ 946: 		<FONT COLOR="#0000FF">break</FONT>;
+ 947: 	<FONT COLOR="#0000FF">default</FONT>:
+ 948: 		assert(<FONT COLOR="#FF0000">0</FONT>);
+ 949: 		<FONT COLOR="#0000FF">break</FONT>;
+ 950: 	}
+ 951: 
+ 952: 	<FONT COLOR="#008040">// 雪</FONT>
+ 953: 	SNOWVERTEX *pVertex = g_aSnowVertex;
+ 954: 	<FONT COLOR="#0000FF">float</FONT> velo = SNOW_VELOCITY * fElapsedTime;
+ 955: 	<FONT COLOR="#0000FF">for</FONT>(<FONT COLOR="#0000FF">unsigned</FONT> <FONT COLOR="#0000FF">int</FONT> i = <FONT COLOR="#FF0000">0</FONT>; i &lt; SNOW_COUNT; i++){
+ 956: 		pVertex-&gt;x += pVertex-&gt;tx * velo;
+ 957: 		pVertex-&gt;x += (pVertex-&gt;x &lt; SNOW_X_MIN) ? (SNOW_X_MAX - SNOW_X_MIN) : <FONT COLOR="#FF0000">0</FONT>;
+ 958: 		pVertex-&gt;x -= (SNOW_X_MAX &lt; pVertex-&gt;x) ? (SNOW_X_MAX - SNOW_X_MIN) : <FONT COLOR="#FF0000">0</FONT>;
+ 959: 		pVertex-&gt;y += pVertex-&gt;ty * velo;
+ 960: 		pVertex-&gt;y += (pVertex-&gt;y &lt; SNOW_Y_MIN) ? (SNOW_Y_MAX - SNOW_Y_MIN) : <FONT COLOR="#FF0000">0</FONT>;
+ 961: 		pVertex-&gt;y -= (SNOW_Y_MAX &lt; pVertex-&gt;y) ? (SNOW_Y_MAX - SNOW_Y_MIN) : <FONT COLOR="#FF0000">0</FONT>;
+ 962: 		pVertex-&gt;z += pVertex-&gt;tz * velo;
+ 963: 		pVertex-&gt;z += (pVertex-&gt;z &lt; SNOW_Z_MIN) ? (SNOW_Z_MAX - SNOW_Z_MIN) : <FONT COLOR="#FF0000">0</FONT>;
+ 964: 		pVertex-&gt;z -= (SNOW_Z_MAX &lt; pVertex-&gt;z) ? (SNOW_Z_MAX - SNOW_Z_MIN) : <FONT COLOR="#FF0000">0</FONT>;
+ 965: 		pVertex++;
+ 966: 	}
+ 967:     SNOWVERTEX *pVB;
+ 968:     <FONT COLOR="#0000FF">if</FONT>( SUCCEEDED( g_pVBSnow-&gt;Map( D3D10_MAP_WRITE_DISCARD, <FONT COLOR="#FF0000">0</FONT>, (LPVOID*)&amp;pVB ) ) )
+ 969:     {
+ 970:         CopyMemory( pVB, g_aSnowVertex, <FONT COLOR="#0000FF">sizeof</FONT>(g_aSnowVertex) );
+ 971:         g_pVBSnow-&gt;Unmap();
+ 972:     }
+ 973:     buffers[<FONT COLOR="#FF0000">0</FONT>] = g_pVBSnow;
+ 974:     stride[<FONT COLOR="#FF0000">0</FONT>] = <FONT COLOR="#0000FF">sizeof</FONT>(SNOWVERTEX);
+ 975:     offset[<FONT COLOR="#FF0000">0</FONT>] = <FONT COLOR="#FF0000">0</FONT>;
+ 976:     pd3dDevice-&gt;IASetVertexBuffers( <FONT COLOR="#FF0000">0</FONT>, <FONT COLOR="#FF0000">1</FONT>, buffers, stride, offset );
+ 977:     pd3dDevice-&gt;IASetPrimitiveTopology( D3D10_PRIMITIVE_TOPOLOGY_POINTLIST );
+ 978:     pd3dDevice-&gt;IASetInputLayout( g_pVertexLayoutSnow );
+ 979:     pd3dDevice-&gt;IASetIndexBuffer( g_pIBBg, DXGI_FORMAT_R32_UINT, <FONT COLOR="#FF0000">0</FONT> );
+ 980: 	g_ptxMesh-&gt;SetResource(g_pTexRVSnow);
+ 981: 	mProj = *g_Camera<FONT COLOR="#FF0000">.</FONT>GetProjMatrix();
+ 982: 	mView = *g_Camera<FONT COLOR="#FF0000">.</FONT>GetViewMatrix();
+ 983: 	mWorldViewProjection = mProj;
+ 984: 	g_pmWorldViewProj-&gt;SetMatrix( (<FONT COLOR="#0000FF">float</FONT>*)&amp;mWorldViewProjection );
+ 985: 	g_pTechRenderSnow-&gt;GetPassByIndex(<FONT COLOR="#FF0000">0</FONT>)-&gt;Apply(<FONT COLOR="#FF0000">0</FONT>);
+ 986:     pd3dDevice-&gt;Draw( SNOW_COUNT, <FONT COLOR="#FF0000">0</FONT> );
+ 987: 
+ 988: 	<FONT COLOR="#0000FF">bool</FONT> bReset = <FONT COLOR="#0000FF">false</FONT>;
+ 989: 	D3DXVECTOR3 vecEye(<FONT COLOR="#FF0000">2.0</FONT>f, <FONT COLOR="#FF0000">2.0</FONT>f, -<FONT COLOR="#FF0000">2.0</FONT>f);
+ 990: 	<FONT COLOR="#0000FF">static</FONT> D3DXVECTOR3 vecEyeLast(<FONT COLOR="#FF0000">2.0</FONT>f, <FONT COLOR="#FF0000">2.0</FONT>f, -<FONT COLOR="#FF0000">2.0</FONT>f);
+ 991: 	mWorldView = mWorld * mView;
+ 992: 	<FONT COLOR="#0000FF">static</FONT> <FONT COLOR="#0000FF">bool</FONT> init = <FONT COLOR="#0000FF">false</FONT>;
+ 993: 	<FONT COLOR="#0000FF">if</FONT>(!init){init = <FONT COLOR="#0000FF">true</FONT>;
+ 994: 		mWorldView = mWorld * mView;
+ 995: 		D3DXVec3TransformCoord(&amp;vecEyeLast, &amp;vecEyeLast, &amp;mWorldView);
+ 996: 	}
+ 997: 	D3DXVec3TransformCoord(&amp;vecEye, &amp;vecEye, &amp;mWorldView);
+ 998: 	<FONT COLOR="#0000FF">if</FONT>(<FONT COLOR="#FF0000">0.001</FONT> &lt; (vecEyeLast<FONT COLOR="#FF0000">.</FONT>x - vecEye<FONT COLOR="#FF0000">.</FONT>x) * (vecEyeLast<FONT COLOR="#FF0000">.</FONT>x - vecEye<FONT COLOR="#FF0000">.</FONT>x)) bReset = <FONT COLOR="#0000FF">true</FONT>;<FONT COLOR="#008040">// 強く首を振るとリセット</FONT>
+ 999: 	vecEyeLast = vecEye;
+1000: 	RenderSnowCover(pd3dDevice, fElapsedTime, bReset);
+1001: 
+1002: 
+1003: 	DXUT_BeginPerfEvent( DXUT_PERFEVENTCOLOR, L<FONT COLOR="#FF0000">&quot;HUD / Stats&quot;</FONT> );
+1004:     RenderText();
+1005:     g_HUD<FONT COLOR="#FF0000">.</FONT>OnRender( fElapsedTime ); 
+1006:     g_SampleUI<FONT COLOR="#FF0000">.</FONT>OnRender( fElapsedTime );
+1007:     DXUT_EndPerfEvent();
+1008: }
+1009: 
+1010: 
+1011: <FONT COLOR="#008040">//--------------------------------------------------------------------------------------</FONT>
+1012: <FONT COLOR="#008040">// Release D3D10 resources created in OnD3D10ResizedSwapChain </FONT>
+1013: <FONT COLOR="#008040">//--------------------------------------------------------------------------------------</FONT>
+1014: <FONT COLOR="#0000FF">void</FONT> CALLBACK OnD3D10ReleasingSwapChain( <FONT COLOR="#0000FF">void</FONT>* pUserContext )
+1015: {
+1016:     g_DialogResourceManager<FONT COLOR="#FF0000">.</FONT>OnD3D10ReleasingSwapChain();
+1017: }
+1018: 
+1019: 
+1020: <FONT COLOR="#008040">//--------------------------------------------------------------------------------------</FONT>
+1021: <FONT COLOR="#008040">// Called right before creating a D3D9 or D3D10 device, allowing the app to modify the device settings as needed</FONT>
+1022: <FONT COLOR="#008040">//--------------------------------------------------------------------------------------</FONT>
+1023: <FONT COLOR="#0000FF">bool</FONT> CALLBACK ModifyDeviceSettings( DXUTDeviceSettings* pDeviceSettings, <FONT COLOR="#0000FF">void</FONT>* pUserContext )
+1024: {
+1025:     <FONT COLOR="#008040">// For the first device created if its a REF device, optionally display a warning dialog box</FONT>
+1026:     <FONT COLOR="#0000FF">static</FONT> <FONT COLOR="#0000FF">bool</FONT> s_bFirstTime = <FONT COLOR="#0000FF">true</FONT>;
+1027:     <FONT COLOR="#0000FF">if</FONT>( s_bFirstTime )
+1028:     {
+1029:         s_bFirstTime = <FONT COLOR="#0000FF">false</FONT>;
+1030:         <FONT COLOR="#0000FF">if</FONT>( (DXUT_D3D10_DEVICE == pDeviceSettings-&gt;ver &amp;&amp; pDeviceSettings-&gt;d3d10<FONT COLOR="#FF0000">.</FONT>DriverType == D3D10_DRIVER_TYPE_REFERENCE) )
+1031:             DXUTDisplaySwitchingToREFWarning( pDeviceSettings-&gt;ver );
+1032:     }
+1033: 
+1034: 	pDeviceSettings-&gt;d3d10<FONT COLOR="#FF0000">.</FONT>SyncInterval = <FONT COLOR="#FF0000">0</FONT>;
+1035: 
+1036:     <FONT COLOR="#0000FF">return</FONT> <FONT COLOR="#0000FF">true</FONT>;
+1037: }
+1038: 
+1039: 
+1040: <FONT COLOR="#008040">//--------------------------------------------------------------------------------------</FONT>
+1041: <FONT COLOR="#008040">// Handle updates to the scene.  This is called regardless of which D3D API is used</FONT>
+1042: <FONT COLOR="#008040">//--------------------------------------------------------------------------------------</FONT>
+1043: <FONT COLOR="#0000FF">void</FONT> CALLBACK OnFrameMove( <FONT COLOR="#0000FF">double</FONT> fTime, <FONT COLOR="#0000FF">float</FONT> fElapsedTime, <FONT COLOR="#0000FF">void</FONT>* pUserContext )
+1044: {
+1045:     <FONT COLOR="#008040">// Update the camera's position based on user input </FONT>
+1046:     g_Camera<FONT COLOR="#FF0000">.</FONT>FrameMove( fElapsedTime );
+1047: }
+1048: 
+1049: 
+1050: <FONT COLOR="#008040">//--------------------------------------------------------------------------------------</FONT>
+1051: <FONT COLOR="#008040">// Handle messages to the application</FONT>
+1052: <FONT COLOR="#008040">//--------------------------------------------------------------------------------------</FONT>
+1053: LRESULT CALLBACK MsgProc( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam, <FONT COLOR="#0000FF">bool</FONT>* pbNoFurtherProcessing, <FONT COLOR="#0000FF">void</FONT>* pUserContext )
+1054: {
+1055:     <FONT COLOR="#008040">// Pass messages to dialog resource manager calls so GUI state is updated correctly</FONT>
+1056:     *pbNoFurtherProcessing = g_DialogResourceManager<FONT COLOR="#FF0000">.</FONT>MsgProc( hWnd, uMsg, wParam, lParam );
+1057:     <FONT COLOR="#0000FF">if</FONT>( *pbNoFurtherProcessing )
+1058:         <FONT COLOR="#0000FF">return</FONT> <FONT COLOR="#FF0000">0</FONT>;
+1059: 
+1060:     <FONT COLOR="#008040">// Pass messages to settings dialog if its active</FONT>
+1061:     <FONT COLOR="#0000FF">if</FONT>( g_SettingsDlg<FONT COLOR="#FF0000">.</FONT>IsActive() )
+1062:     {
+1063:         g_SettingsDlg<FONT COLOR="#FF0000">.</FONT>MsgProc( hWnd, uMsg, wParam, lParam );
+1064:         <FONT COLOR="#0000FF">return</FONT> <FONT COLOR="#FF0000">0</FONT>;
+1065:     }
+1066: 
+1067:     <FONT COLOR="#008040">// Give the dialogs a chance to handle the message first</FONT>
+1068:     *pbNoFurtherProcessing = g_HUD<FONT COLOR="#FF0000">.</FONT>MsgProc( hWnd, uMsg, wParam, lParam );
+1069:     <FONT COLOR="#0000FF">if</FONT>( *pbNoFurtherProcessing )
+1070:         <FONT COLOR="#0000FF">return</FONT> <FONT COLOR="#FF0000">0</FONT>;
+1071:     *pbNoFurtherProcessing = g_SampleUI<FONT COLOR="#FF0000">.</FONT>MsgProc( hWnd, uMsg, wParam, lParam );
+1072:     <FONT COLOR="#0000FF">if</FONT>( *pbNoFurtherProcessing )
+1073:         <FONT COLOR="#0000FF">return</FONT> <FONT COLOR="#FF0000">0</FONT>;
+1074: 
+1075:     <FONT COLOR="#008040">// Pass all remaining windows messages to camera so it can respond to user input</FONT>
+1076:     g_Camera<FONT COLOR="#FF0000">.</FONT>HandleMessages( hWnd, uMsg, wParam, lParam );
+1077: 
+1078:     <FONT COLOR="#0000FF">return</FONT> <FONT COLOR="#FF0000">0</FONT>;
+1079: }
+1080: 
+1081: 
+1082: <FONT COLOR="#008040">//--------------------------------------------------------------------------------------</FONT>
+1083: <FONT COLOR="#008040">// Handle key presses</FONT>
+1084: <FONT COLOR="#008040">//--------------------------------------------------------------------------------------</FONT>
+1085: <FONT COLOR="#0000FF">void</FONT> CALLBACK OnKeyboard( UINT nChar, <FONT COLOR="#0000FF">bool</FONT> bKeyDown, <FONT COLOR="#0000FF">bool</FONT> bAltDown, <FONT COLOR="#0000FF">void</FONT>* pUserContext )
+1086: {
+1087: }
+1088: 
+1089: 
+1090: <FONT COLOR="#008040">//--------------------------------------------------------------------------------------</FONT>
+1091: <FONT COLOR="#008040">// Handles the GUI events</FONT>
+1092: <FONT COLOR="#008040">//--------------------------------------------------------------------------------------</FONT>
+1093: <FONT COLOR="#0000FF">void</FONT> CALLBACK OnGUIEvent( UINT nEvent, <FONT COLOR="#0000FF">int</FONT> nControlID, CDXUTControl* pControl, <FONT COLOR="#0000FF">void</FONT>* pUserContext )
+1094: {
+1095:     <FONT COLOR="#0000FF">switch</FONT>( nControlID )
+1096:     {
+1097:         <FONT COLOR="#0000FF">case</FONT> IDC_TOGGLEFULLSCREEN: DXUTToggleFullScreen(); <FONT COLOR="#0000FF">break</FONT>;
+1098:         <FONT COLOR="#0000FF">case</FONT> IDC_TOGGLEREF:        DXUTToggleREF(); <FONT COLOR="#0000FF">break</FONT>;
+1099:         <FONT COLOR="#0000FF">case</FONT> IDC_CHANGEDEVICE:     g_SettingsDlg<FONT COLOR="#FF0000">.</FONT>SetActive( !g_SettingsDlg<FONT COLOR="#FF0000">.</FONT>IsActive() ); <FONT COLOR="#0000FF">break</FONT>;
+1100:         <FONT COLOR="#0000FF">case</FONT> IDC_METHOD:
+1101:         {
+1102:             g_dwMethodIdx = (<FONT COLOR="#0000FF">unsigned</FONT> <FONT COLOR="#0000FF">int</FONT>)((CDXUTComboBox*)pControl)-&gt;GetSelectedData();
+1103: <FONT COLOR="#008040">//            pd3dDevice-&gt;SetRenderState( D3DRS_FILLMODE, g_bWireframe ? D3DFILL_WIREFRAME : D3DFILL_SOLID );</FONT>
+1104:             <FONT COLOR="#0000FF">break</FONT>;
+1105:         }
+1106:         <FONT COLOR="#0000FF">case</FONT> IDC_PARTITION:
+1107: 			DestroyPartitions();
+1108:             g_dwNumPartsLog = ((CDXUTSlider*)pControl)-&gt;GetValue();
+1109: 			g_dwNumParts = (<FONT COLOR="#FF0000">1</FONT>&lt;&lt;g_dwNumPartsLog);
+1110:             WCHAR wszBuf[<FONT COLOR="#FF0000">256</FONT>];
+1111:             StringCchPrintf( wszBuf, <FONT COLOR="#FF0000">256</FONT>, L<FONT COLOR="#FF0000">&quot;Number of partitions: %u&quot;</FONT>, g_dwNumParts );
+1112:             g_SampleUI<FONT COLOR="#FF0000">.</FONT>GetStatic( IDC_PARTITIONLABEL )-&gt;SetText( wszBuf );
+1113: 			CreatePartitions(g_pd3dDevice);
+1114:             <FONT COLOR="#0000FF">break</FONT>;
+1115: 	}
+1116: }
+1117: 
+1118: 
+</PRE>

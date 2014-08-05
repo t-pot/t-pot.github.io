@@ -1,0 +1,1075 @@
+<HTML>
+<HEAD>
+<TITLE>DirectX9Application1.cpp</TITLE>
+<meta name="GENERATOR" content="cpp2html 2.1 by Niisaka">
+<meta http-equiv="Content-Type" content="text/html">
+<meta http-equiv="Content-Style-Type" content="text/css">
+<STYLE TYPE="text/css">
+<!--
+SPAN.comment { color:#008000; font-weight:normal; font-style:normal;}
+SPAN.keyword { color:#0000FF; font-weight:normal; font-style:normal;}
+SPAN.string { color:#600000; font-weight:normal; font-style:normal;}
+SPAN.linenum { color:#A0A0A0; font-weight:normal; font-style:normal;}
+-->
+</STYLE>
+</HEAD>
+<BODY TEXT="#000000" BGCOLOR="#FFFFFF">
+<PRE><SPAN CLASS="linenum">0001:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0002:</SPAN> <SPAN CLASS="comment">// File: DirectX9Application1.cpp</SPAN>
+<SPAN CLASS="linenum">0003:</SPAN> <SPAN CLASS="comment">//</SPAN>
+<SPAN CLASS="linenum">0004:</SPAN> <SPAN CLASS="comment">// Desc: DirectX window application created by the DirectX AppWizard</SPAN>
+<SPAN CLASS="linenum">0005:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0006:</SPAN> <SPAN CLASS="keyword">#define</SPAN> STRICT
+<SPAN CLASS="linenum">0007:</SPAN> <SPAN CLASS="keyword">#define</SPAN> DIRECTINPUT_VERSION 0x0800
+<SPAN CLASS="linenum">0008:</SPAN> <SPAN CLASS="keyword">#include</SPAN> &lt;windows.h&gt;
+<SPAN CLASS="linenum">0009:</SPAN> <SPAN CLASS="keyword">#include</SPAN> &lt;commctrl.h&gt;
+<SPAN CLASS="linenum">0010:</SPAN> <SPAN CLASS="keyword">#include</SPAN> &lt;commdlg.h&gt;
+<SPAN CLASS="linenum">0011:</SPAN> <SPAN CLASS="keyword">#include</SPAN> &lt;basetsd.h&gt;
+<SPAN CLASS="linenum">0012:</SPAN> <SPAN CLASS="keyword">#include</SPAN> &lt;math.h&gt;
+<SPAN CLASS="linenum">0013:</SPAN> <SPAN CLASS="keyword">#include</SPAN> &lt;stdio.h&gt;
+<SPAN CLASS="linenum">0014:</SPAN> <SPAN CLASS="keyword">#include</SPAN> &lt;d3dx9.h&gt;
+<SPAN CLASS="linenum">0015:</SPAN> <SPAN CLASS="keyword">#include</SPAN> &lt;dxerr9.h&gt;
+<SPAN CLASS="linenum">0016:</SPAN> <SPAN CLASS="keyword">#include</SPAN> &lt;tchar.h&gt;
+<SPAN CLASS="linenum">0017:</SPAN> <SPAN CLASS="keyword">#include</SPAN> &lt;dinput.h&gt;
+<SPAN CLASS="linenum">0018:</SPAN> <SPAN CLASS="keyword">#include</SPAN> "<SPAN CLASS="string">DXUtil.h</SPAN>"
+<SPAN CLASS="linenum">0019:</SPAN> <SPAN CLASS="keyword">#include</SPAN> "<SPAN CLASS="string">D3DEnumeration.h</SPAN>"
+<SPAN CLASS="linenum">0020:</SPAN> <SPAN CLASS="keyword">#include</SPAN> "<SPAN CLASS="string">D3DSettings.h</SPAN>"
+<SPAN CLASS="linenum">0021:</SPAN> <SPAN CLASS="keyword">#include</SPAN> "<SPAN CLASS="string">D3DApp.h</SPAN>"
+<SPAN CLASS="linenum">0022:</SPAN> <SPAN CLASS="keyword">#include</SPAN> "<SPAN CLASS="string">D3DFont.h</SPAN>"
+<SPAN CLASS="linenum">0023:</SPAN> <SPAN CLASS="keyword">#include</SPAN> "<SPAN CLASS="string">D3DFile.h</SPAN>"
+<SPAN CLASS="linenum">0024:</SPAN> <SPAN CLASS="keyword">#include</SPAN> "<SPAN CLASS="string">D3DUtil.h</SPAN>"
+<SPAN CLASS="linenum">0025:</SPAN> <SPAN CLASS="keyword">#include</SPAN> "<SPAN CLASS="string">DIUtil.h</SPAN>"
+<SPAN CLASS="linenum">0026:</SPAN> <SPAN CLASS="keyword">#include</SPAN> "<SPAN CLASS="string">DMUtil.h</SPAN>"
+<SPAN CLASS="linenum">0027:</SPAN> <SPAN CLASS="keyword">#include</SPAN> "<SPAN CLASS="string">resource.h</SPAN>"
+<SPAN CLASS="linenum">0028:</SPAN> <SPAN CLASS="keyword">#include</SPAN> "<SPAN CLASS="string">DirectX9Application1.h</SPAN>"
+<SPAN CLASS="linenum">0029:</SPAN> 
+<SPAN CLASS="linenum">0030:</SPAN> 
+<SPAN CLASS="linenum">0031:</SPAN> 
+<SPAN CLASS="linenum">0032:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0033:</SPAN> <SPAN CLASS="comment">// Defines, and constants</SPAN>
+<SPAN CLASS="linenum">0034:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0035:</SPAN> <SPAN CLASS="comment">// This GUID must be unique for every game, and the same for </SPAN>
+<SPAN CLASS="linenum">0036:</SPAN> <SPAN CLASS="comment">// every instance of this app.  // {4CBF02D2-CE10-4C41-8015-EC6330304301}</SPAN>
+<SPAN CLASS="linenum">0037:</SPAN> <SPAN CLASS="comment">// The GUID allows DirectInput to remember input settings</SPAN>
+<SPAN CLASS="linenum">0038:</SPAN> GUID g_guidApp = { 0x4CBF02D2, 0xCE10, 0x4C41, { 0x80, 0x15, 0xEC, 0x63, 0x30, 0x30, 0x43, 0x1 } };
+<SPAN CLASS="linenum">0039:</SPAN> 
+<SPAN CLASS="linenum">0040:</SPAN> 
+<SPAN CLASS="linenum">0041:</SPAN> <SPAN CLASS="comment">// Input semantics used by this app</SPAN>
+<SPAN CLASS="linenum">0042:</SPAN> <SPAN CLASS="keyword">enum</SPAN> INPUT_SEMANTICS
+<SPAN CLASS="linenum">0043:</SPAN> {
+<SPAN CLASS="linenum">0044:</SPAN>     <SPAN CLASS="comment">// Gameplay semantics</SPAN>
+<SPAN CLASS="linenum">0045:</SPAN>     <SPAN CLASS="comment">// TODO: change as needed</SPAN>
+<SPAN CLASS="linenum">0046:</SPAN>     INPUT_ROTATE_AXIS_LR=1, INPUT_ROTATE_AXIS_UD,       
+<SPAN CLASS="linenum">0047:</SPAN>     INPUT_ROTATE_LEFT,      INPUT_ROTATE_RIGHT,    
+<SPAN CLASS="linenum">0048:</SPAN>     INPUT_ROTATE_UP,        INPUT_ROTATE_DOWN,
+<SPAN CLASS="linenum">0049:</SPAN>     INPUT_CONFIG_INPUT,     INPUT_CONFIG_DISPLAY,
+<SPAN CLASS="linenum">0050:</SPAN>     INPUT_PLAY_SOUND,       
+<SPAN CLASS="linenum">0051:</SPAN> };
+<SPAN CLASS="linenum">0052:</SPAN> 
+<SPAN CLASS="linenum">0053:</SPAN> <SPAN CLASS="comment">// Actions used by this app</SPAN>
+<SPAN CLASS="linenum">0054:</SPAN> DIACTION g_rgGameAction[] =
+<SPAN CLASS="linenum">0055:</SPAN> {
+<SPAN CLASS="linenum">0056:</SPAN>     <SPAN CLASS="comment">// TODO: change as needed.  Be sure to delete user map files </SPAN>
+<SPAN CLASS="linenum">0057:</SPAN>     <SPAN CLASS="comment">// (C:\Program Files\Common Files\DirectX\DirectInput\User Maps\*.ini)</SPAN>
+<SPAN CLASS="linenum">0058:</SPAN>     <SPAN CLASS="comment">// after changing this, otherwise settings won't reset and will be read </SPAN>
+<SPAN CLASS="linenum">0059:</SPAN>     <SPAN CLASS="comment">// from the out of date ini files </SPAN>
+<SPAN CLASS="linenum">0060:</SPAN> 
+<SPAN CLASS="linenum">0061:</SPAN>     <SPAN CLASS="comment">// Device input (joystick, etc.) that is pre-defined by DInput, according</SPAN>
+<SPAN CLASS="linenum">0062:</SPAN>     <SPAN CLASS="comment">// to genre type. The genre for this app is space simulators.</SPAN>
+<SPAN CLASS="linenum">0063:</SPAN>     { INPUT_ROTATE_AXIS_LR,  DIAXIS_3DCONTROL_LATERAL,      0, TEXT("<SPAN CLASS="string">Rotate left/right</SPAN>"), },
+<SPAN CLASS="linenum">0064:</SPAN>     { INPUT_ROTATE_AXIS_UD,  DIAXIS_3DCONTROL_MOVE,         0, TEXT("<SPAN CLASS="string">Rotate up/down</SPAN>"), },
+<SPAN CLASS="linenum">0065:</SPAN>     { INPUT_PLAY_SOUND,      DIBUTTON_3DCONTROL_SPECIAL,    0, TEXT("<SPAN CLASS="string">Play sound</SPAN>"), },
+<SPAN CLASS="linenum">0066:</SPAN> 
+<SPAN CLASS="linenum">0067:</SPAN>     <SPAN CLASS="comment">// Keyboard input mappings</SPAN>
+<SPAN CLASS="linenum">0068:</SPAN>     { INPUT_ROTATE_LEFT,     DIKEYBOARD_LEFT,               0, TEXT("<SPAN CLASS="string">Rotate left</SPAN>"), },
+<SPAN CLASS="linenum">0069:</SPAN>     { INPUT_ROTATE_RIGHT,    DIKEYBOARD_RIGHT,              0, TEXT("<SPAN CLASS="string">Rotate right</SPAN>"), },
+<SPAN CLASS="linenum">0070:</SPAN>     { INPUT_ROTATE_UP,       DIKEYBOARD_UP,                 0, TEXT("<SPAN CLASS="string">Rotate up</SPAN>"), },
+<SPAN CLASS="linenum">0071:</SPAN>     { INPUT_ROTATE_DOWN,     DIKEYBOARD_DOWN,               0, TEXT("<SPAN CLASS="string">Rotate down</SPAN>"), },
+<SPAN CLASS="linenum">0072:</SPAN>     { INPUT_PLAY_SOUND,      DIKEYBOARD_F5,                 0, TEXT("<SPAN CLASS="string">Play sound</SPAN>"), },
+<SPAN CLASS="linenum">0073:</SPAN>     { INPUT_CONFIG_DISPLAY,  DIKEYBOARD_F2,                 DIA_APPFIXED, TEXT("<SPAN CLASS="string">Configure Display</SPAN>"), },    
+<SPAN CLASS="linenum">0074:</SPAN>     { INPUT_CONFIG_INPUT,    DIKEYBOARD_F3,                 DIA_APPFIXED, TEXT("<SPAN CLASS="string">Configure Input</SPAN>"), },    
+<SPAN CLASS="linenum">0075:</SPAN> };
+<SPAN CLASS="linenum">0076:</SPAN> 
+<SPAN CLASS="linenum">0077:</SPAN> <SPAN CLASS="keyword">#define</SPAN> NUMBER_OF_GAMEACTIONS    (<SPAN CLASS="keyword">sizeof</SPAN>(g_rgGameAction)/<SPAN CLASS="keyword">sizeof</SPAN>(DIACTION))
+<SPAN CLASS="linenum">0078:</SPAN> 
+<SPAN CLASS="linenum">0079:</SPAN> 
+<SPAN CLASS="linenum">0080:</SPAN> 
+<SPAN CLASS="linenum">0081:</SPAN> 
+<SPAN CLASS="linenum">0082:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0083:</SPAN> <SPAN CLASS="comment">// Global access to the app (needed for the global WndProc())</SPAN>
+<SPAN CLASS="linenum">0084:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0085:</SPAN> CMyD3DApplication* g_pApp  = NULL;
+<SPAN CLASS="linenum">0086:</SPAN> HINSTANCE          g_hInst = NULL;
+<SPAN CLASS="linenum">0087:</SPAN> 
+<SPAN CLASS="linenum">0088:</SPAN> 
+<SPAN CLASS="linenum">0089:</SPAN> 
+<SPAN CLASS="linenum">0090:</SPAN> 
+<SPAN CLASS="linenum">0091:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0092:</SPAN> <SPAN CLASS="comment">// Name: WinMain()</SPAN>
+<SPAN CLASS="linenum">0093:</SPAN> <SPAN CLASS="comment">// Desc: Entry point to the program. Initializes everything, and goes into a</SPAN>
+<SPAN CLASS="linenum">0094:</SPAN> <SPAN CLASS="comment">//       message-processing loop. Idle time is used to render the scene.</SPAN>
+<SPAN CLASS="linenum">0095:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0096:</SPAN> INT WINAPI WinMain( HINSTANCE hInst, HINSTANCE, LPSTR, INT )
+<SPAN CLASS="linenum">0097:</SPAN> {
+<SPAN CLASS="linenum">0098:</SPAN>     CMyD3DApplication d3dApp;
+<SPAN CLASS="linenum">0099:</SPAN> 
+<SPAN CLASS="linenum">0100:</SPAN>     g_pApp  = &amp;d3dApp;
+<SPAN CLASS="linenum">0101:</SPAN>     g_hInst = hInst;
+<SPAN CLASS="linenum">0102:</SPAN> 
+<SPAN CLASS="linenum">0103:</SPAN>     InitCommonControls();
+<SPAN CLASS="linenum">0104:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( FAILED( d3dApp.Create( hInst ) ) )
+<SPAN CLASS="linenum">0105:</SPAN>         <SPAN CLASS="keyword">return</SPAN> 0;
+<SPAN CLASS="linenum">0106:</SPAN> 
+<SPAN CLASS="linenum">0107:</SPAN>     <SPAN CLASS="keyword">return</SPAN> d3dApp.Run();
+<SPAN CLASS="linenum">0108:</SPAN> }
+<SPAN CLASS="linenum">0109:</SPAN> 
+<SPAN CLASS="linenum">0110:</SPAN> 
+<SPAN CLASS="linenum">0111:</SPAN> 
+<SPAN CLASS="linenum">0112:</SPAN> 
+<SPAN CLASS="linenum">0113:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0114:</SPAN> <SPAN CLASS="comment">// Name: CMyD3DApplication()</SPAN>
+<SPAN CLASS="linenum">0115:</SPAN> <SPAN CLASS="comment">// Desc: Application constructor.   Paired with ~CMyD3DApplication()</SPAN>
+<SPAN CLASS="linenum">0116:</SPAN> <SPAN CLASS="comment">//       Member variables should be initialized to a known state here.  </SPAN>
+<SPAN CLASS="linenum">0117:</SPAN> <SPAN CLASS="comment">//       The application window has not yet been created and no Direct3D device </SPAN>
+<SPAN CLASS="linenum">0118:</SPAN> <SPAN CLASS="comment">//       has been created, so any initialization that depends on a window or </SPAN>
+<SPAN CLASS="linenum">0119:</SPAN> <SPAN CLASS="comment">//       Direct3D should be deferred to a later stage. </SPAN>
+<SPAN CLASS="linenum">0120:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0121:</SPAN> CMyD3DApplication::CMyD3DApplication()
+<SPAN CLASS="linenum">0122:</SPAN> {
+<SPAN CLASS="linenum">0123:</SPAN>     <SPAN CLASS="comment">// ★初期化</SPAN>
+<SPAN CLASS="linenum">0124:</SPAN>     m_pEffect         = NULL;
+<SPAN CLASS="linenum">0125:</SPAN>     m_hmWVP = NULL;
+<SPAN CLASS="linenum">0126:</SPAN> 
+<SPAN CLASS="linenum">0127:</SPAN> 
+<SPAN CLASS="linenum">0128:</SPAN>     m_dwCreationWidth           = 500;
+<SPAN CLASS="linenum">0129:</SPAN>     m_dwCreationHeight          = 375;
+<SPAN CLASS="linenum">0130:</SPAN>     m_strWindowTitle            = TEXT( "<SPAN CLASS="string">DirectX9Application1</SPAN>" );
+<SPAN CLASS="linenum">0131:</SPAN>     m_d3dEnumeration.AppUsesDepthBuffer   = TRUE;
+<SPAN CLASS="linenum">0132:</SPAN>     m_bStartFullscreen          = <SPAN CLASS="keyword">false</SPAN>;
+<SPAN CLASS="linenum">0133:</SPAN>     m_bShowCursorWhenFullscreen = <SPAN CLASS="keyword">false</SPAN>;
+<SPAN CLASS="linenum">0134:</SPAN> 
+<SPAN CLASS="linenum">0135:</SPAN>     <SPAN CLASS="comment">// Create a D3D font using d3dfont.cpp</SPAN>
+<SPAN CLASS="linenum">0136:</SPAN>     m_pFont                     = <SPAN CLASS="keyword">new</SPAN> CD3DFont( _T("<SPAN CLASS="string">Arial</SPAN>"), 12, D3DFONT_BOLD );
+<SPAN CLASS="linenum">0137:</SPAN>     m_bLoadingApp               = TRUE;
+<SPAN CLASS="linenum">0138:</SPAN>     m_pD3DXMesh                 = NULL;
+<SPAN CLASS="linenum">0139:</SPAN>     m_pInputDeviceManager       = NULL;
+<SPAN CLASS="linenum">0140:</SPAN>     m_pMusicManager             = NULL;
+<SPAN CLASS="linenum">0141:</SPAN>     m_pBounceSound              = NULL;
+<SPAN CLASS="linenum">0142:</SPAN>     m_pDIConfigSurface          = NULL;
+<SPAN CLASS="linenum">0143:</SPAN> 
+<SPAN CLASS="linenum">0144:</SPAN>     ZeroMemory( &amp;m_UserInput, <SPAN CLASS="keyword">sizeof</SPAN>(m_UserInput) );
+<SPAN CLASS="linenum">0145:</SPAN>     m_fWorldRotX                = 0.0f;
+<SPAN CLASS="linenum">0146:</SPAN>     m_fWorldRotY                = 0.0f;
+<SPAN CLASS="linenum">0147:</SPAN> 
+<SPAN CLASS="linenum">0148:</SPAN>     <SPAN CLASS="comment">// Read settings from registry</SPAN>
+<SPAN CLASS="linenum">0149:</SPAN>     ReadSettings();
+<SPAN CLASS="linenum">0150:</SPAN> }
+<SPAN CLASS="linenum">0151:</SPAN> 
+<SPAN CLASS="linenum">0152:</SPAN> 
+<SPAN CLASS="linenum">0153:</SPAN> 
+<SPAN CLASS="linenum">0154:</SPAN> 
+<SPAN CLASS="linenum">0155:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0156:</SPAN> <SPAN CLASS="comment">// Name: ~CMyD3DApplication()</SPAN>
+<SPAN CLASS="linenum">0157:</SPAN> <SPAN CLASS="comment">// Desc: Application destructor.  Paired with CMyD3DApplication()</SPAN>
+<SPAN CLASS="linenum">0158:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0159:</SPAN> CMyD3DApplication::~CMyD3DApplication()
+<SPAN CLASS="linenum">0160:</SPAN> {
+<SPAN CLASS="linenum">0161:</SPAN> }
+<SPAN CLASS="linenum">0162:</SPAN> 
+<SPAN CLASS="linenum">0163:</SPAN> 
+<SPAN CLASS="linenum">0164:</SPAN> 
+<SPAN CLASS="linenum">0165:</SPAN> 
+<SPAN CLASS="linenum">0166:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0167:</SPAN> <SPAN CLASS="comment">// Name: OneTimeSceneInit()</SPAN>
+<SPAN CLASS="linenum">0168:</SPAN> <SPAN CLASS="comment">// Desc: Paired with FinalCleanup().</SPAN>
+<SPAN CLASS="linenum">0169:</SPAN> <SPAN CLASS="comment">//       The window has been created and the IDirect3D9 interface has been</SPAN>
+<SPAN CLASS="linenum">0170:</SPAN> <SPAN CLASS="comment">//       created, but the device has not been created yet.  Here you can</SPAN>
+<SPAN CLASS="linenum">0171:</SPAN> <SPAN CLASS="comment">//       perform application-related initialization and cleanup that does</SPAN>
+<SPAN CLASS="linenum">0172:</SPAN> <SPAN CLASS="comment">//       not depend on a device.</SPAN>
+<SPAN CLASS="linenum">0173:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0174:</SPAN> HRESULT CMyD3DApplication::OneTimeSceneInit()
+<SPAN CLASS="linenum">0175:</SPAN> {
+<SPAN CLASS="linenum">0176:</SPAN>     <SPAN CLASS="comment">// TODO: perform one time initialization</SPAN>
+<SPAN CLASS="linenum">0177:</SPAN> 
+<SPAN CLASS="linenum">0178:</SPAN>     <SPAN CLASS="comment">// Drawing loading status message until app finishes loading</SPAN>
+<SPAN CLASS="linenum">0179:</SPAN>     SendMessage( m_hWnd, WM_PAINT, 0, 0 );
+<SPAN CLASS="linenum">0180:</SPAN> 
+<SPAN CLASS="linenum">0181:</SPAN>     <SPAN CLASS="comment">// Initialize DirectInput</SPAN>
+<SPAN CLASS="linenum">0182:</SPAN>     InitInput( m_hWnd );
+<SPAN CLASS="linenum">0183:</SPAN> 
+<SPAN CLASS="linenum">0184:</SPAN>     <SPAN CLASS="comment">// Initialize audio</SPAN>
+<SPAN CLASS="linenum">0185:</SPAN>     InitAudio( m_hWnd );
+<SPAN CLASS="linenum">0186:</SPAN> 
+<SPAN CLASS="linenum">0187:</SPAN>     m_bLoadingApp = FALSE;
+<SPAN CLASS="linenum">0188:</SPAN> 
+<SPAN CLASS="linenum">0189:</SPAN>     <SPAN CLASS="keyword">return</SPAN> S_OK;
+<SPAN CLASS="linenum">0190:</SPAN> }
+<SPAN CLASS="linenum">0191:</SPAN> 
+<SPAN CLASS="linenum">0192:</SPAN> 
+<SPAN CLASS="linenum">0193:</SPAN> 
+<SPAN CLASS="linenum">0194:</SPAN> 
+<SPAN CLASS="linenum">0195:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0196:</SPAN> <SPAN CLASS="comment">// Name: ReadSettings()</SPAN>
+<SPAN CLASS="linenum">0197:</SPAN> <SPAN CLASS="comment">// Desc: Read the app settings from the registry</SPAN>
+<SPAN CLASS="linenum">0198:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0199:</SPAN> VOID CMyD3DApplication::ReadSettings()
+<SPAN CLASS="linenum">0200:</SPAN> {
+<SPAN CLASS="linenum">0201:</SPAN>     HKEY hkey;
+<SPAN CLASS="linenum">0202:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( ERROR_SUCCESS == RegCreateKeyEx( HKEY_CURRENT_USER, DXAPP_KEY, 
+<SPAN CLASS="linenum">0203:</SPAN>         0, NULL, REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &amp;hkey, NULL ) )
+<SPAN CLASS="linenum">0204:</SPAN>     {
+<SPAN CLASS="linenum">0205:</SPAN>         <SPAN CLASS="comment">// TODO: change as needed</SPAN>
+<SPAN CLASS="linenum">0206:</SPAN> 
+<SPAN CLASS="linenum">0207:</SPAN>         <SPAN CLASS="comment">// Read the stored window width/height.  This is just an example,</SPAN>
+<SPAN CLASS="linenum">0208:</SPAN>         <SPAN CLASS="comment">// of how to use DXUtil_Read*() functions.</SPAN>
+<SPAN CLASS="linenum">0209:</SPAN>         DXUtil_ReadIntRegKey( hkey, TEXT("<SPAN CLASS="string">Width</SPAN>"), &amp;m_dwCreationWidth, m_dwCreationWidth );
+<SPAN CLASS="linenum">0210:</SPAN>         DXUtil_ReadIntRegKey( hkey, TEXT("<SPAN CLASS="string">Height</SPAN>"), &amp;m_dwCreationHeight, m_dwCreationHeight );
+<SPAN CLASS="linenum">0211:</SPAN> 
+<SPAN CLASS="linenum">0212:</SPAN>         RegCloseKey( hkey );
+<SPAN CLASS="linenum">0213:</SPAN>     }
+<SPAN CLASS="linenum">0214:</SPAN> }
+<SPAN CLASS="linenum">0215:</SPAN> 
+<SPAN CLASS="linenum">0216:</SPAN> 
+<SPAN CLASS="linenum">0217:</SPAN> 
+<SPAN CLASS="linenum">0218:</SPAN> 
+<SPAN CLASS="linenum">0219:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0220:</SPAN> <SPAN CLASS="comment">// Name: WriteSettings()</SPAN>
+<SPAN CLASS="linenum">0221:</SPAN> <SPAN CLASS="comment">// Desc: Write the app settings to the registry</SPAN>
+<SPAN CLASS="linenum">0222:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0223:</SPAN> VOID CMyD3DApplication::WriteSettings()
+<SPAN CLASS="linenum">0224:</SPAN> {
+<SPAN CLASS="linenum">0225:</SPAN>     HKEY hkey;
+<SPAN CLASS="linenum">0226:</SPAN> 
+<SPAN CLASS="linenum">0227:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( ERROR_SUCCESS == RegCreateKeyEx( HKEY_CURRENT_USER, DXAPP_KEY, 
+<SPAN CLASS="linenum">0228:</SPAN>         0, NULL, REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &amp;hkey, NULL ) )
+<SPAN CLASS="linenum">0229:</SPAN>     {
+<SPAN CLASS="linenum">0230:</SPAN>         <SPAN CLASS="comment">// TODO: change as needed</SPAN>
+<SPAN CLASS="linenum">0231:</SPAN> 
+<SPAN CLASS="linenum">0232:</SPAN>         <SPAN CLASS="comment">// Write the window width/height.  This is just an example,</SPAN>
+<SPAN CLASS="linenum">0233:</SPAN>         <SPAN CLASS="comment">// of how to use DXUtil_Write*() functions.</SPAN>
+<SPAN CLASS="linenum">0234:</SPAN>         DXUtil_WriteIntRegKey( hkey, TEXT("<SPAN CLASS="string">Width</SPAN>"), m_rcWindowClient.right );
+<SPAN CLASS="linenum">0235:</SPAN>         DXUtil_WriteIntRegKey( hkey, TEXT("<SPAN CLASS="string">Height</SPAN>"), m_rcWindowClient.bottom );
+<SPAN CLASS="linenum">0236:</SPAN> 
+<SPAN CLASS="linenum">0237:</SPAN>         RegCloseKey( hkey );
+<SPAN CLASS="linenum">0238:</SPAN>     }
+<SPAN CLASS="linenum">0239:</SPAN> }
+<SPAN CLASS="linenum">0240:</SPAN> 
+<SPAN CLASS="linenum">0241:</SPAN> 
+<SPAN CLASS="linenum">0242:</SPAN> 
+<SPAN CLASS="linenum">0243:</SPAN> 
+<SPAN CLASS="linenum">0244:</SPAN> 
+<SPAN CLASS="linenum">0245:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0246:</SPAN> <SPAN CLASS="comment">// Name: StaticInputAddDeviceCB()</SPAN>
+<SPAN CLASS="linenum">0247:</SPAN> <SPAN CLASS="comment">// Desc: Static callback helper to call into CMyD3DApplication class</SPAN>
+<SPAN CLASS="linenum">0248:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0249:</SPAN> HRESULT CALLBACK CMyD3DApplication::StaticInputAddDeviceCB( 
+<SPAN CLASS="linenum">0250:</SPAN>                                          CInputDeviceManager::DeviceInfo* pDeviceInfo, 
+<SPAN CLASS="linenum">0251:</SPAN>                                          <SPAN CLASS="keyword">const</SPAN> DIDEVICEINSTANCE* pdidi, 
+<SPAN CLASS="linenum">0252:</SPAN>                                          LPVOID pParam )
+<SPAN CLASS="linenum">0253:</SPAN> {
+<SPAN CLASS="linenum">0254:</SPAN>     CMyD3DApplication* pApp = (CMyD3DApplication*) pParam;
+<SPAN CLASS="linenum">0255:</SPAN>     <SPAN CLASS="keyword">return</SPAN> pApp-&gt;InputAddDeviceCB( pDeviceInfo, pdidi );
+<SPAN CLASS="linenum">0256:</SPAN> }
+<SPAN CLASS="linenum">0257:</SPAN> 
+<SPAN CLASS="linenum">0258:</SPAN> 
+<SPAN CLASS="linenum">0259:</SPAN> 
+<SPAN CLASS="linenum">0260:</SPAN> 
+<SPAN CLASS="linenum">0261:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0262:</SPAN> <SPAN CLASS="comment">// Name: InputAddDeviceCB()</SPAN>
+<SPAN CLASS="linenum">0263:</SPAN> <SPAN CLASS="comment">// Desc: Called from CInputDeviceManager whenever a device is added. </SPAN>
+<SPAN CLASS="linenum">0264:</SPAN> <SPAN CLASS="comment">//       Set the dead zone, and creates a new InputDeviceState for each device</SPAN>
+<SPAN CLASS="linenum">0265:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0266:</SPAN> HRESULT CMyD3DApplication::InputAddDeviceCB( CInputDeviceManager::DeviceInfo* pDeviceInfo, 
+<SPAN CLASS="linenum">0267:</SPAN>                                                    <SPAN CLASS="keyword">const</SPAN> DIDEVICEINSTANCE* pdidi )
+<SPAN CLASS="linenum">0268:</SPAN> {
+<SPAN CLASS="linenum">0269:</SPAN>     UNREFERENCED_PARAMETER( pdidi );
+<SPAN CLASS="linenum">0270:</SPAN>     
+<SPAN CLASS="linenum">0271:</SPAN>     <SPAN CLASS="comment">// Setup the deadzone </SPAN>
+<SPAN CLASS="linenum">0272:</SPAN>     DIPROPDWORD dipdw;
+<SPAN CLASS="linenum">0273:</SPAN>     dipdw.diph.dwSize       = <SPAN CLASS="keyword">sizeof</SPAN>(DIPROPDWORD);
+<SPAN CLASS="linenum">0274:</SPAN>     dipdw.diph.dwHeaderSize = <SPAN CLASS="keyword">sizeof</SPAN>(DIPROPHEADER);
+<SPAN CLASS="linenum">0275:</SPAN>     dipdw.diph.dwObj        = 0;
+<SPAN CLASS="linenum">0276:</SPAN>     dipdw.diph.dwHow        = DIPH_DEVICE;
+<SPAN CLASS="linenum">0277:</SPAN>     dipdw.dwData            = 500;
+<SPAN CLASS="linenum">0278:</SPAN>     pDeviceInfo-&gt;pdidDevice-&gt;SetProperty( DIPROP_DEADZONE, &amp;dipdw.diph );
+<SPAN CLASS="linenum">0279:</SPAN> 
+<SPAN CLASS="linenum">0280:</SPAN>     <SPAN CLASS="comment">// Create a new InputDeviceState for each device so the </SPAN>
+<SPAN CLASS="linenum">0281:</SPAN>     <SPAN CLASS="comment">// app can record its state </SPAN>
+<SPAN CLASS="linenum">0282:</SPAN>     InputDeviceState* pNewInputDeviceState = <SPAN CLASS="keyword">new</SPAN> InputDeviceState;
+<SPAN CLASS="linenum">0283:</SPAN>     ZeroMemory( pNewInputDeviceState, <SPAN CLASS="keyword">sizeof</SPAN>(InputDeviceState) );
+<SPAN CLASS="linenum">0284:</SPAN>     pDeviceInfo-&gt;pParam = (LPVOID) pNewInputDeviceState;
+<SPAN CLASS="linenum">0285:</SPAN> 
+<SPAN CLASS="linenum">0286:</SPAN>     <SPAN CLASS="keyword">return</SPAN> S_OK;
+<SPAN CLASS="linenum">0287:</SPAN> }
+<SPAN CLASS="linenum">0288:</SPAN> 
+<SPAN CLASS="linenum">0289:</SPAN> 
+<SPAN CLASS="linenum">0290:</SPAN> 
+<SPAN CLASS="linenum">0291:</SPAN> 
+<SPAN CLASS="linenum">0292:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0293:</SPAN> <SPAN CLASS="comment">// Name: InitInput()</SPAN>
+<SPAN CLASS="linenum">0294:</SPAN> <SPAN CLASS="comment">// Desc: Initialize DirectInput objects</SPAN>
+<SPAN CLASS="linenum">0295:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0296:</SPAN> HRESULT CMyD3DApplication::InitInput( HWND hWnd )
+<SPAN CLASS="linenum">0297:</SPAN> {
+<SPAN CLASS="linenum">0298:</SPAN>     HRESULT hr;
+<SPAN CLASS="linenum">0299:</SPAN> 
+<SPAN CLASS="linenum">0300:</SPAN>     <SPAN CLASS="comment">// Setup action format for the actual gameplay</SPAN>
+<SPAN CLASS="linenum">0301:</SPAN>     ZeroMemory( &amp;m_diafGame, <SPAN CLASS="keyword">sizeof</SPAN>(DIACTIONFORMAT) );
+<SPAN CLASS="linenum">0302:</SPAN>     m_diafGame.dwSize          = <SPAN CLASS="keyword">sizeof</SPAN>(DIACTIONFORMAT);
+<SPAN CLASS="linenum">0303:</SPAN>     m_diafGame.dwActionSize    = <SPAN CLASS="keyword">sizeof</SPAN>(DIACTION);
+<SPAN CLASS="linenum">0304:</SPAN>     m_diafGame.dwDataSize      = NUMBER_OF_GAMEACTIONS * <SPAN CLASS="keyword">sizeof</SPAN>(DWORD);
+<SPAN CLASS="linenum">0305:</SPAN>     m_diafGame.guidActionMap   = g_guidApp;
+<SPAN CLASS="linenum">0306:</SPAN> 
+<SPAN CLASS="linenum">0307:</SPAN>     <SPAN CLASS="comment">// TODO: change the genre as needed</SPAN>
+<SPAN CLASS="linenum">0308:</SPAN>     m_diafGame.dwGenre         = DIVIRTUAL_CAD_3DCONTROL; 
+<SPAN CLASS="linenum">0309:</SPAN> 
+<SPAN CLASS="linenum">0310:</SPAN>     m_diafGame.dwNumActions    = NUMBER_OF_GAMEACTIONS;
+<SPAN CLASS="linenum">0311:</SPAN>     m_diafGame.rgoAction       = g_rgGameAction;
+<SPAN CLASS="linenum">0312:</SPAN>     m_diafGame.lAxisMin        = -100;
+<SPAN CLASS="linenum">0313:</SPAN>     m_diafGame.lAxisMax        = 100;
+<SPAN CLASS="linenum">0314:</SPAN>     m_diafGame.dwBufferSize    = 16;
+<SPAN CLASS="linenum">0315:</SPAN>     _tcscpy( m_diafGame.tszActionMap, _T("<SPAN CLASS="string">DirectX9Application1 Game</SPAN>") );
+<SPAN CLASS="linenum">0316:</SPAN> 
+<SPAN CLASS="linenum">0317:</SPAN>     <SPAN CLASS="comment">// Create a new input device manager</SPAN>
+<SPAN CLASS="linenum">0318:</SPAN>     m_pInputDeviceManager = <SPAN CLASS="keyword">new</SPAN> CInputDeviceManager();
+<SPAN CLASS="linenum">0319:</SPAN> 
+<SPAN CLASS="linenum">0320:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( FAILED( hr = m_pInputDeviceManager-&gt;Create( hWnd, NULL, m_diafGame, 
+<SPAN CLASS="linenum">0321:</SPAN>                                                     StaticInputAddDeviceCB, <SPAN CLASS="keyword">this</SPAN> ) ) )
+<SPAN CLASS="linenum">0322:</SPAN>         <SPAN CLASS="keyword">return</SPAN> DXTRACE_ERR( "<SPAN CLASS="string">m_pInputDeviceManager-&gt;Create</SPAN>", hr );
+<SPAN CLASS="linenum">0323:</SPAN> 
+<SPAN CLASS="linenum">0324:</SPAN>     <SPAN CLASS="keyword">return</SPAN> S_OK;
+<SPAN CLASS="linenum">0325:</SPAN> }
+<SPAN CLASS="linenum">0326:</SPAN> 
+<SPAN CLASS="linenum">0327:</SPAN> 
+<SPAN CLASS="linenum">0328:</SPAN> 
+<SPAN CLASS="linenum">0329:</SPAN> 
+<SPAN CLASS="linenum">0330:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0331:</SPAN> <SPAN CLASS="comment">// Name: InitAudio()</SPAN>
+<SPAN CLASS="linenum">0332:</SPAN> <SPAN CLASS="comment">// Desc: Initialize DirectX audio objects</SPAN>
+<SPAN CLASS="linenum">0333:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0334:</SPAN> HRESULT CMyD3DApplication::InitAudio( HWND hWnd )
+<SPAN CLASS="linenum">0335:</SPAN> {
+<SPAN CLASS="linenum">0336:</SPAN>     HRESULT hr;
+<SPAN CLASS="linenum">0337:</SPAN> 
+<SPAN CLASS="linenum">0338:</SPAN>     <SPAN CLASS="comment">// Create the music manager class, used to create the sounds</SPAN>
+<SPAN CLASS="linenum">0339:</SPAN>     m_pMusicManager = <SPAN CLASS="keyword">new</SPAN> CMusicManager();
+<SPAN CLASS="linenum">0340:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( FAILED( hr = m_pMusicManager-&gt;Initialize( hWnd ) ) )
+<SPAN CLASS="linenum">0341:</SPAN>         <SPAN CLASS="keyword">return</SPAN> DXTRACE_ERR( "<SPAN CLASS="string">m_pMusicManager-&gt;Initialize</SPAN>", hr );
+<SPAN CLASS="linenum">0342:</SPAN> 
+<SPAN CLASS="linenum">0343:</SPAN>     <SPAN CLASS="comment">// Instruct the music manager where to find the files</SPAN>
+<SPAN CLASS="linenum">0344:</SPAN>     <SPAN CLASS="comment">// TODO: Set this to the media directory, or use resources</SPAN>
+<SPAN CLASS="linenum">0345:</SPAN>     TCHAR szPath[MAX_PATH];
+<SPAN CLASS="linenum">0346:</SPAN>     GetCurrentDirectory( MAX_PATH, szPath ); 
+<SPAN CLASS="linenum">0347:</SPAN>     m_pMusicManager-&gt;SetSearchDirectory( szPath );
+<SPAN CLASS="linenum">0348:</SPAN> 
+<SPAN CLASS="linenum">0349:</SPAN>     <SPAN CLASS="comment">// TODO: load the sounds from resources (or files)</SPAN>
+<SPAN CLASS="linenum">0350:</SPAN>     m_pMusicManager-&gt;CreateSegmentFromResource( &amp;m_pBounceSound, _T("<SPAN CLASS="string">BOUNCE</SPAN>"), _T("<SPAN CLASS="string">WAVE</SPAN>") );
+<SPAN CLASS="linenum">0351:</SPAN> 
+<SPAN CLASS="linenum">0352:</SPAN>     <SPAN CLASS="keyword">return</SPAN> S_OK;
+<SPAN CLASS="linenum">0353:</SPAN> }
+<SPAN CLASS="linenum">0354:</SPAN> 
+<SPAN CLASS="linenum">0355:</SPAN> 
+<SPAN CLASS="linenum">0356:</SPAN> 
+<SPAN CLASS="linenum">0357:</SPAN> 
+<SPAN CLASS="linenum">0358:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0359:</SPAN> <SPAN CLASS="comment">// Name: ConfirmDevice()</SPAN>
+<SPAN CLASS="linenum">0360:</SPAN> <SPAN CLASS="comment">// Desc: Called during device initialization, this code checks the display device</SPAN>
+<SPAN CLASS="linenum">0361:</SPAN> <SPAN CLASS="comment">//       for some minimum set of capabilities</SPAN>
+<SPAN CLASS="linenum">0362:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0363:</SPAN> HRESULT CMyD3DApplication::ConfirmDevice( D3DCAPS9* pCaps, DWORD dwBehavior,
+<SPAN CLASS="linenum">0364:</SPAN>                                           D3DFORMAT Format )
+<SPAN CLASS="linenum">0365:</SPAN> {
+<SPAN CLASS="linenum">0366:</SPAN>     UNREFERENCED_PARAMETER( Format );
+<SPAN CLASS="linenum">0367:</SPAN>     UNREFERENCED_PARAMETER( dwBehavior );
+<SPAN CLASS="linenum">0368:</SPAN>     UNREFERENCED_PARAMETER( pCaps );
+<SPAN CLASS="linenum">0369:</SPAN>     
+<SPAN CLASS="linenum">0370:</SPAN>     BOOL bCapsAcceptable;
+<SPAN CLASS="linenum">0371:</SPAN> 
+<SPAN CLASS="linenum">0372:</SPAN>     <SPAN CLASS="comment">// TODO: Perform checks to see if these display caps are acceptable.</SPAN>
+<SPAN CLASS="linenum">0373:</SPAN>     bCapsAcceptable = TRUE;
+<SPAN CLASS="linenum">0374:</SPAN> 
+<SPAN CLASS="linenum">0375:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( bCapsAcceptable )         
+<SPAN CLASS="linenum">0376:</SPAN>         <SPAN CLASS="keyword">return</SPAN> S_OK;
+<SPAN CLASS="linenum">0377:</SPAN>     <SPAN CLASS="keyword">else</SPAN>
+<SPAN CLASS="linenum">0378:</SPAN>         <SPAN CLASS="keyword">return</SPAN> E_FAIL;
+<SPAN CLASS="linenum">0379:</SPAN> }
+<SPAN CLASS="linenum">0380:</SPAN> 
+<SPAN CLASS="linenum">0381:</SPAN> 
+<SPAN CLASS="linenum">0382:</SPAN> 
+<SPAN CLASS="linenum">0383:</SPAN> 
+<SPAN CLASS="linenum">0384:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0385:</SPAN> <SPAN CLASS="comment">// Name: InitDeviceObjects()</SPAN>
+<SPAN CLASS="linenum">0386:</SPAN> <SPAN CLASS="comment">// Desc: Paired with DeleteDeviceObjects()</SPAN>
+<SPAN CLASS="linenum">0387:</SPAN> <SPAN CLASS="comment">//       The device has been created.  Resources that are not lost on</SPAN>
+<SPAN CLASS="linenum">0388:</SPAN> <SPAN CLASS="comment">//       Reset() can be created here -- resources in D3DPOOL_MANAGED,</SPAN>
+<SPAN CLASS="linenum">0389:</SPAN> <SPAN CLASS="comment">//       D3DPOOL_SCRATCH, or D3DPOOL_SYSTEMMEM.  Image surfaces created via</SPAN>
+<SPAN CLASS="linenum">0390:</SPAN> <SPAN CLASS="comment">//       CreateImageSurface are never lost and can be created here.  Vertex</SPAN>
+<SPAN CLASS="linenum">0391:</SPAN> <SPAN CLASS="comment">//       shaders and pixel shaders can also be created here as they are not</SPAN>
+<SPAN CLASS="linenum">0392:</SPAN> <SPAN CLASS="comment">//       lost on Reset().</SPAN>
+<SPAN CLASS="linenum">0393:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0394:</SPAN> HRESULT CMyD3DApplication::InitDeviceObjects()
+<SPAN CLASS="linenum">0395:</SPAN> {
+<SPAN CLASS="linenum">0396:</SPAN>     <SPAN CLASS="comment">// TODO: create device objects</SPAN>
+<SPAN CLASS="linenum">0397:</SPAN> 
+<SPAN CLASS="linenum">0398:</SPAN>     HRESULT hr;
+<SPAN CLASS="linenum">0399:</SPAN> 
+<SPAN CLASS="linenum">0400:</SPAN>     <SPAN CLASS="comment">// Init the font</SPAN>
+<SPAN CLASS="linenum">0401:</SPAN>     m_pFont-&gt;InitDeviceObjects( m_pd3dDevice );
+<SPAN CLASS="linenum">0402:</SPAN> 
+<SPAN CLASS="linenum">0403:</SPAN>     <SPAN CLASS="comment">// Create a teapot mesh using D3DX</SPAN>
+<SPAN CLASS="linenum">0404:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( FAILED( hr = D3DXCreateTeapot( m_pd3dDevice, &amp;m_pD3DXMesh, NULL ) ) )
+<SPAN CLASS="linenum">0405:</SPAN>         <SPAN CLASS="keyword">return</SPAN> DXTRACE_ERR( "<SPAN CLASS="string">D3DXCreateTeapot</SPAN>", hr );
+<SPAN CLASS="linenum">0406:</SPAN> 
+<SPAN CLASS="linenum">0407:</SPAN>     <SPAN CLASS="comment">// ★シェーダの読み込み</SPAN>
+<SPAN CLASS="linenum">0408:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( FAILED( hr = D3DXCreateEffectFromFile( m_pd3dDevice, "<SPAN CLASS="string">hlsl.fx</SPAN>", NULL, NULL, 
+<SPAN CLASS="linenum">0409:</SPAN>                                                0, NULL, &amp;m_pEffect, NULL ) ) )
+<SPAN CLASS="linenum">0410:</SPAN>     {
+<SPAN CLASS="linenum">0411:</SPAN>         <SPAN CLASS="keyword">return</SPAN> hr;
+<SPAN CLASS="linenum">0412:</SPAN>     }
+<SPAN CLASS="linenum">0413:</SPAN>     D3DXEFFECT_DESC m_EffectDesc;
+<SPAN CLASS="linenum">0414:</SPAN>     D3DXPARAMETER_DESC ParamDesc;
+<SPAN CLASS="linenum">0415:</SPAN>     D3DXHANDLE hParam;
+<SPAN CLASS="linenum">0416:</SPAN>     m_pEffect-&gt;GetDesc( &amp;m_EffectDesc );
+<SPAN CLASS="linenum">0417:</SPAN>     <SPAN CLASS="keyword">for</SPAN>( UINT iParam = 0; iParam &lt; m_EffectDesc.Parameters; iParam++ )
+<SPAN CLASS="linenum">0418:</SPAN>     {
+<SPAN CLASS="linenum">0419:</SPAN>         hParam = m_pEffect-&gt;GetParameter ( NULL, iParam );
+<SPAN CLASS="linenum">0420:</SPAN>         m_pEffect-&gt;GetParameterDesc( hParam, &amp;ParamDesc );
+<SPAN CLASS="linenum">0421:</SPAN>         <SPAN CLASS="keyword">if</SPAN>( ParamDesc.Name != NULL &amp;&amp; 
+<SPAN CLASS="linenum">0422:</SPAN>             ( ParamDesc.Class == D3DXPC_MATRIX_ROWS || ParamDesc.Class == D3DXPC_MATRIX_COLUMNS ) )
+<SPAN CLASS="linenum">0423:</SPAN>         {
+<SPAN CLASS="linenum">0424:</SPAN>             <SPAN CLASS="keyword">if</SPAN>( strcmpi( ParamDesc.Name, "<SPAN CLASS="string">mWVP</SPAN>" ) == 0 )
+<SPAN CLASS="linenum">0425:</SPAN>                 m_hmWVP = hParam;
+<SPAN CLASS="linenum">0426:</SPAN>         }
+<SPAN CLASS="linenum">0427:</SPAN>     }
+<SPAN CLASS="linenum">0428:</SPAN> 
+<SPAN CLASS="linenum">0429:</SPAN>     <SPAN CLASS="keyword">return</SPAN> S_OK;
+<SPAN CLASS="linenum">0430:</SPAN> }
+<SPAN CLASS="linenum">0431:</SPAN> 
+<SPAN CLASS="linenum">0432:</SPAN> 
+<SPAN CLASS="linenum">0433:</SPAN> 
+<SPAN CLASS="linenum">0434:</SPAN> 
+<SPAN CLASS="linenum">0435:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0436:</SPAN> <SPAN CLASS="comment">// Name: RestoreDeviceObjects()</SPAN>
+<SPAN CLASS="linenum">0437:</SPAN> <SPAN CLASS="comment">// Desc: Paired with InvalidateDeviceObjects()</SPAN>
+<SPAN CLASS="linenum">0438:</SPAN> <SPAN CLASS="comment">//       The device exists, but may have just been Reset().  Resources in</SPAN>
+<SPAN CLASS="linenum">0439:</SPAN> <SPAN CLASS="comment">//       D3DPOOL_DEFAULT and any other device state that persists during</SPAN>
+<SPAN CLASS="linenum">0440:</SPAN> <SPAN CLASS="comment">//       rendering should be set here.  Render states, matrices, textures,</SPAN>
+<SPAN CLASS="linenum">0441:</SPAN> <SPAN CLASS="comment">//       etc., that don't change during rendering can be set once here to</SPAN>
+<SPAN CLASS="linenum">0442:</SPAN> <SPAN CLASS="comment">//       avoid redundant state setting during Render() or FrameMove().</SPAN>
+<SPAN CLASS="linenum">0443:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0444:</SPAN> HRESULT CMyD3DApplication::RestoreDeviceObjects()
+<SPAN CLASS="linenum">0445:</SPAN> {
+<SPAN CLASS="linenum">0446:</SPAN>     <SPAN CLASS="comment">// TODO: setup render states</SPAN>
+<SPAN CLASS="linenum">0447:</SPAN>     HRESULT hr;
+<SPAN CLASS="linenum">0448:</SPAN> 
+<SPAN CLASS="linenum">0449:</SPAN>     <SPAN CLASS="comment">// Setup a material</SPAN>
+<SPAN CLASS="linenum">0450:</SPAN>     D3DMATERIAL9 mtrl;
+<SPAN CLASS="linenum">0451:</SPAN>     D3DUtil_InitMaterial( mtrl, 1.0f, 0.0f, 0.0f );
+<SPAN CLASS="linenum">0452:</SPAN>     m_pd3dDevice-&gt;SetMaterial( &amp;mtrl );
+<SPAN CLASS="linenum">0453:</SPAN> 
+<SPAN CLASS="linenum">0454:</SPAN>     <SPAN CLASS="comment">// Set up the textures</SPAN>
+<SPAN CLASS="linenum">0455:</SPAN>     m_pd3dDevice-&gt;SetTextureStageState( 0, D3DTSS_COLOROP,   D3DTOP_MODULATE );
+<SPAN CLASS="linenum">0456:</SPAN>     m_pd3dDevice-&gt;SetTextureStageState( 0, D3DTSS_COLORARG1, D3DTA_TEXTURE );
+<SPAN CLASS="linenum">0457:</SPAN>     m_pd3dDevice-&gt;SetTextureStageState( 0, D3DTSS_COLORARG2, D3DTA_DIFFUSE );
+<SPAN CLASS="linenum">0458:</SPAN>     m_pd3dDevice-&gt;SetTextureStageState( 0, D3DTSS_ALPHAOP,   D3DTOP_MODULATE );
+<SPAN CLASS="linenum">0459:</SPAN>     m_pd3dDevice-&gt;SetTextureStageState( 0, D3DTSS_ALPHAARG1, D3DTA_TEXTURE );
+<SPAN CLASS="linenum">0460:</SPAN>     m_pd3dDevice-&gt;SetTextureStageState( 0, D3DTSS_ALPHAARG2, D3DTA_DIFFUSE );
+<SPAN CLASS="linenum">0461:</SPAN>     m_pd3dDevice-&gt;SetSamplerState( 0, D3DSAMP_MINFILTER, D3DTEXF_LINEAR );
+<SPAN CLASS="linenum">0462:</SPAN>     m_pd3dDevice-&gt;SetSamplerState( 0, D3DSAMP_MAGFILTER, D3DTEXF_LINEAR );
+<SPAN CLASS="linenum">0463:</SPAN> 
+<SPAN CLASS="linenum">0464:</SPAN>     <SPAN CLASS="comment">// Set miscellaneous render states</SPAN>
+<SPAN CLASS="linenum">0465:</SPAN>     m_pd3dDevice-&gt;SetRenderState( D3DRS_DITHERENABLE,   FALSE );
+<SPAN CLASS="linenum">0466:</SPAN>     m_pd3dDevice-&gt;SetRenderState( D3DRS_SPECULARENABLE, FALSE );
+<SPAN CLASS="linenum">0467:</SPAN>     m_pd3dDevice-&gt;SetRenderState( D3DRS_ZENABLE,        TRUE );
+<SPAN CLASS="linenum">0468:</SPAN> <SPAN CLASS="comment">//    m_pd3dDevice-&gt;SetRenderState( D3DRS_AMBIENT,        0x000F0F0F ); // ★いらない</SPAN>
+<SPAN CLASS="linenum">0469:</SPAN>     m_pd3dDevice-&gt;SetRenderState( D3DRS_LIGHTING, FALSE );              <SPAN CLASS="comment">// ★ 光源計算なし</SPAN>
+<SPAN CLASS="linenum">0470:</SPAN> 
+<SPAN CLASS="linenum">0471:</SPAN>     <SPAN CLASS="comment">// ワールド行列を設定する</SPAN>
+<SPAN CLASS="linenum">0472:</SPAN>     D3DXMATRIX matIdentity;
+<SPAN CLASS="linenum">0473:</SPAN>     D3DXMatrixIdentity( &amp;matIdentity );
+<SPAN CLASS="linenum">0474:</SPAN> <SPAN CLASS="comment">//    m_pd3dDevice-&gt;SetTransform( D3DTS_WORLD,  &amp;matIdentity ); // ★いらない</SPAN>
+<SPAN CLASS="linenum">0475:</SPAN> 
+<SPAN CLASS="linenum">0476:</SPAN>     <SPAN CLASS="comment">// Set up our view matrix. A view matrix can be defined given an eye point,</SPAN>
+<SPAN CLASS="linenum">0477:</SPAN>     <SPAN CLASS="comment">// a point to lookat, and a direction for which way is up. Here, we set the</SPAN>
+<SPAN CLASS="linenum">0478:</SPAN>     <SPAN CLASS="comment">// eye five units back along the z-axis and up three units, look at the</SPAN>
+<SPAN CLASS="linenum">0479:</SPAN>     <SPAN CLASS="comment">// origin, and define "up" to be in the y-direction.</SPAN>
+<SPAN CLASS="linenum">0480:</SPAN>     D3DXMATRIX matView;
+<SPAN CLASS="linenum">0481:</SPAN>     D3DXVECTOR3 vFromPt   = D3DXVECTOR3( 0.0f, 0.0f, -5.0f );
+<SPAN CLASS="linenum">0482:</SPAN>     D3DXVECTOR3 vLookatPt = D3DXVECTOR3( 0.0f, 0.0f, 0.0f );
+<SPAN CLASS="linenum">0483:</SPAN>     D3DXVECTOR3 vUpVec    = D3DXVECTOR3( 0.0f, 1.0f, 0.0f );
+<SPAN CLASS="linenum">0484:</SPAN> <SPAN CLASS="comment">//    D3DXMatrixLookAtLH( &amp;matView, &amp;vFromPt, &amp;vLookatPt, &amp;vUpVec );</SPAN>
+<SPAN CLASS="linenum">0485:</SPAN>     D3DXMatrixLookAtLH( &amp;m_matView, &amp;vFromPt, &amp;vLookatPt, &amp;vUpVec );
+<SPAN CLASS="linenum">0486:</SPAN> <SPAN CLASS="comment">//    m_pd3dDevice-&gt;SetTransform( D3DTS_VIEW, &amp;matView ); // ★いらない</SPAN>
+<SPAN CLASS="linenum">0487:</SPAN> 
+<SPAN CLASS="linenum">0488:</SPAN>     <SPAN CLASS="comment">// Set the projection matrix</SPAN>
+<SPAN CLASS="linenum">0489:</SPAN>     D3DXMATRIX matProj;
+<SPAN CLASS="linenum">0490:</SPAN>     FLOAT fAspect = ((FLOAT)m_d3dsdBackBuffer.Width) / m_d3dsdBackBuffer.Height;
+<SPAN CLASS="linenum">0491:</SPAN>     D3DXMatrixPerspectiveFovLH( &amp;m_matProj, D3DX_PI/4, fAspect, 1.0f, 100.0f );
+<SPAN CLASS="linenum">0492:</SPAN> <SPAN CLASS="comment">//    D3DXMatrixPerspectiveFovLH( &amp;matProj, D3DX_PI/4, fAspect, 1.0f, 100.0f );</SPAN>
+<SPAN CLASS="linenum">0493:</SPAN> <SPAN CLASS="comment">//    m_pd3dDevice-&gt;SetTransform( D3DTS_PROJECTION, &amp;matProj ); // ★いらない</SPAN>
+<SPAN CLASS="linenum">0494:</SPAN> 
+<SPAN CLASS="linenum">0495:</SPAN> <SPAN CLASS="keyword">#if</SPAN> 0 <SPAN CLASS="comment">// ★いらない</SPAN>
+<SPAN CLASS="linenum">0496:</SPAN>     <SPAN CLASS="comment">// Set up lighting states</SPAN>
+<SPAN CLASS="linenum">0497:</SPAN>     D3DLIGHT9 light;
+<SPAN CLASS="linenum">0498:</SPAN>     D3DUtil_InitLight( light, D3DLIGHT_DIRECTIONAL, -1.0f, -1.0f, 2.0f );
+<SPAN CLASS="linenum">0499:</SPAN>     m_pd3dDevice-&gt;SetLight( 0, &amp;light );
+<SPAN CLASS="linenum">0500:</SPAN>     m_pd3dDevice-&gt;LightEnable( 0, TRUE );
+<SPAN CLASS="linenum">0501:</SPAN>     m_pd3dDevice-&gt;SetRenderState( D3DRS_LIGHTING, TRUE );
+<SPAN CLASS="linenum">0502:</SPAN> <SPAN CLASS="keyword">#endif</SPAN>
+<SPAN CLASS="linenum">0503:</SPAN> 
+<SPAN CLASS="linenum">0504:</SPAN>     <SPAN CLASS="comment">// Restore the font</SPAN>
+<SPAN CLASS="linenum">0505:</SPAN>     m_pFont-&gt;RestoreDeviceObjects();
+<SPAN CLASS="linenum">0506:</SPAN> 
+<SPAN CLASS="linenum">0507:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( !m_bWindowed )
+<SPAN CLASS="linenum">0508:</SPAN>     {
+<SPAN CLASS="linenum">0509:</SPAN>         <SPAN CLASS="comment">// Create a surface for configuring DInput devices</SPAN>
+<SPAN CLASS="linenum">0510:</SPAN>         <SPAN CLASS="keyword">if</SPAN>( FAILED( hr = m_pd3dDevice-&gt;CreateOffscreenPlainSurface( 640, 480, 
+<SPAN CLASS="linenum">0511:</SPAN>                                         m_d3dsdBackBuffer.Format, D3DPOOL_DEFAULT, 
+<SPAN CLASS="linenum">0512:</SPAN>                                         &amp;m_pDIConfigSurface, NULL ) ) ) 
+<SPAN CLASS="linenum">0513:</SPAN>             <SPAN CLASS="keyword">return</SPAN> DXTRACE_ERR( "<SPAN CLASS="string">CreateOffscreenPlainSurface</SPAN>", hr );
+<SPAN CLASS="linenum">0514:</SPAN>     }
+<SPAN CLASS="linenum">0515:</SPAN> 
+<SPAN CLASS="linenum">0516:</SPAN>     <SPAN CLASS="comment">// ★エフェクトのリセット</SPAN>
+<SPAN CLASS="linenum">0517:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( m_pEffect != NULL ) m_pEffect-&gt;OnResetDevice();
+<SPAN CLASS="linenum">0518:</SPAN> 
+<SPAN CLASS="linenum">0519:</SPAN>     <SPAN CLASS="keyword">return</SPAN> S_OK;
+<SPAN CLASS="linenum">0520:</SPAN> }
+<SPAN CLASS="linenum">0521:</SPAN> 
+<SPAN CLASS="linenum">0522:</SPAN> 
+<SPAN CLASS="linenum">0523:</SPAN> 
+<SPAN CLASS="linenum">0524:</SPAN> 
+<SPAN CLASS="linenum">0525:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0526:</SPAN> <SPAN CLASS="comment">// Name: StaticConfigureInputDevicesCB()</SPAN>
+<SPAN CLASS="linenum">0527:</SPAN> <SPAN CLASS="comment">// Desc: Static callback helper to call into CMyD3DApplication class</SPAN>
+<SPAN CLASS="linenum">0528:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0529:</SPAN> BOOL CALLBACK CMyD3DApplication::StaticConfigureInputDevicesCB( 
+<SPAN CLASS="linenum">0530:</SPAN>                                             IUnknown* pUnknown, VOID* pUserData )
+<SPAN CLASS="linenum">0531:</SPAN> {
+<SPAN CLASS="linenum">0532:</SPAN>     CMyD3DApplication* pApp = (CMyD3DApplication*) pUserData;
+<SPAN CLASS="linenum">0533:</SPAN>     <SPAN CLASS="keyword">return</SPAN> pApp-&gt;ConfigureInputDevicesCB( pUnknown );
+<SPAN CLASS="linenum">0534:</SPAN> }
+<SPAN CLASS="linenum">0535:</SPAN> 
+<SPAN CLASS="linenum">0536:</SPAN> 
+<SPAN CLASS="linenum">0537:</SPAN> 
+<SPAN CLASS="linenum">0538:</SPAN> 
+<SPAN CLASS="linenum">0539:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0540:</SPAN> <SPAN CLASS="comment">// Name: ConfigureInputDevicesCB()</SPAN>
+<SPAN CLASS="linenum">0541:</SPAN> <SPAN CLASS="comment">// Desc: Callback function for configuring input devices. This function is</SPAN>
+<SPAN CLASS="linenum">0542:</SPAN> <SPAN CLASS="comment">//       called in fullscreen modes, so that the input device configuration</SPAN>
+<SPAN CLASS="linenum">0543:</SPAN> <SPAN CLASS="comment">//       window can update the screen.</SPAN>
+<SPAN CLASS="linenum">0544:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0545:</SPAN> BOOL CMyD3DApplication::ConfigureInputDevicesCB( IUnknown* pUnknown )
+<SPAN CLASS="linenum">0546:</SPAN> {
+<SPAN CLASS="linenum">0547:</SPAN>     <SPAN CLASS="comment">// Get access to the surface</SPAN>
+<SPAN CLASS="linenum">0548:</SPAN>     LPDIRECT3DSURFACE9 pConfigSurface = NULL;
+<SPAN CLASS="linenum">0549:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( FAILED( pUnknown-&gt;QueryInterface( IID_IDirect3DSurface9,
+<SPAN CLASS="linenum">0550:</SPAN>                                           (VOID**)&amp;pConfigSurface ) ) )
+<SPAN CLASS="linenum">0551:</SPAN>         <SPAN CLASS="keyword">return</SPAN> TRUE;
+<SPAN CLASS="linenum">0552:</SPAN> 
+<SPAN CLASS="linenum">0553:</SPAN>     <SPAN CLASS="comment">// Render the scene, with the config surface blitted on top</SPAN>
+<SPAN CLASS="linenum">0554:</SPAN>     Render();
+<SPAN CLASS="linenum">0555:</SPAN> 
+<SPAN CLASS="linenum">0556:</SPAN>     RECT  rcSrc;
+<SPAN CLASS="linenum">0557:</SPAN>     SetRect( &amp;rcSrc, 0, 0, 640, 480 );
+<SPAN CLASS="linenum">0558:</SPAN> 
+<SPAN CLASS="linenum">0559:</SPAN>     POINT ptDst;
+<SPAN CLASS="linenum">0560:</SPAN>     ptDst.x = (m_d3dsdBackBuffer.Width-640)/2;
+<SPAN CLASS="linenum">0561:</SPAN>     ptDst.y = (m_d3dsdBackBuffer.Height-480)/2;
+<SPAN CLASS="linenum">0562:</SPAN> 
+<SPAN CLASS="linenum">0563:</SPAN>     LPDIRECT3DSURFACE9 pBackBuffer;
+<SPAN CLASS="linenum">0564:</SPAN>     m_pd3dDevice-&gt;GetBackBuffer( 0, 0, D3DBACKBUFFER_TYPE_MONO, &amp;pBackBuffer );
+<SPAN CLASS="linenum">0565:</SPAN>     m_pd3dDevice-&gt;UpdateSurface( pConfigSurface, &amp;rcSrc, pBackBuffer, &amp;ptDst );
+<SPAN CLASS="linenum">0566:</SPAN>     pBackBuffer-&gt;Release();
+<SPAN CLASS="linenum">0567:</SPAN> 
+<SPAN CLASS="linenum">0568:</SPAN>     <SPAN CLASS="comment">// Present the backbuffer contents to the front buffer</SPAN>
+<SPAN CLASS="linenum">0569:</SPAN>     m_pd3dDevice-&gt;Present( 0, 0, 0, 0 );
+<SPAN CLASS="linenum">0570:</SPAN> 
+<SPAN CLASS="linenum">0571:</SPAN>     <SPAN CLASS="comment">// Release the surface</SPAN>
+<SPAN CLASS="linenum">0572:</SPAN>     pConfigSurface-&gt;Release();
+<SPAN CLASS="linenum">0573:</SPAN> 
+<SPAN CLASS="linenum">0574:</SPAN>     <SPAN CLASS="keyword">return</SPAN> TRUE;
+<SPAN CLASS="linenum">0575:</SPAN> }
+<SPAN CLASS="linenum">0576:</SPAN> 
+<SPAN CLASS="linenum">0577:</SPAN> 
+<SPAN CLASS="linenum">0578:</SPAN> 
+<SPAN CLASS="linenum">0579:</SPAN> 
+<SPAN CLASS="linenum">0580:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0581:</SPAN> <SPAN CLASS="comment">// Name: FrameMove()</SPAN>
+<SPAN CLASS="linenum">0582:</SPAN> <SPAN CLASS="comment">// Desc: Called once per frame, the call is the entry point for animating</SPAN>
+<SPAN CLASS="linenum">0583:</SPAN> <SPAN CLASS="comment">//       the scene.</SPAN>
+<SPAN CLASS="linenum">0584:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0585:</SPAN> HRESULT CMyD3DApplication::FrameMove()
+<SPAN CLASS="linenum">0586:</SPAN> {
+<SPAN CLASS="linenum">0587:</SPAN>     <SPAN CLASS="comment">// TODO: update world</SPAN>
+<SPAN CLASS="linenum">0588:</SPAN> 
+<SPAN CLASS="linenum">0589:</SPAN>     <SPAN CLASS="comment">// Update user input state</SPAN>
+<SPAN CLASS="linenum">0590:</SPAN>     UpdateInput( &amp;m_UserInput );
+<SPAN CLASS="linenum">0591:</SPAN> 
+<SPAN CLASS="linenum">0592:</SPAN>     <SPAN CLASS="comment">// Respond to input</SPAN>
+<SPAN CLASS="linenum">0593:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( m_UserInput.bDoConfigureInput &amp;&amp; m_bWindowed )  <SPAN CLASS="comment">// full-screen configure disabled for now</SPAN>
+<SPAN CLASS="linenum">0594:</SPAN>     {
+<SPAN CLASS="linenum">0595:</SPAN>         <SPAN CLASS="comment">// One-shot per keypress</SPAN>
+<SPAN CLASS="linenum">0596:</SPAN>         m_UserInput.bDoConfigureInput = FALSE;
+<SPAN CLASS="linenum">0597:</SPAN> 
+<SPAN CLASS="linenum">0598:</SPAN>         Pause( <SPAN CLASS="keyword">true</SPAN> );
+<SPAN CLASS="linenum">0599:</SPAN> 
+<SPAN CLASS="linenum">0600:</SPAN>         <SPAN CLASS="comment">// Get access to the list of semantically-mapped input devices</SPAN>
+<SPAN CLASS="linenum">0601:</SPAN>         <SPAN CLASS="comment">// to delete all InputDeviceState structs before calling ConfigureDevices()</SPAN>
+<SPAN CLASS="linenum">0602:</SPAN>         CInputDeviceManager::DeviceInfo* pDeviceInfos;
+<SPAN CLASS="linenum">0603:</SPAN>         DWORD dwNumDevices;
+<SPAN CLASS="linenum">0604:</SPAN>         m_pInputDeviceManager-&gt;GetDevices( &amp;pDeviceInfos, &amp;dwNumDevices );
+<SPAN CLASS="linenum">0605:</SPAN> 
+<SPAN CLASS="linenum">0606:</SPAN>         <SPAN CLASS="keyword">for</SPAN>( DWORD i=0; i&lt;dwNumDevices; i++ )
+<SPAN CLASS="linenum">0607:</SPAN>         {
+<SPAN CLASS="linenum">0608:</SPAN>             InputDeviceState* pInputDeviceState = (InputDeviceState*) pDeviceInfos[i].pParam;
+<SPAN CLASS="linenum">0609:</SPAN>             SAFE_DELETE( pInputDeviceState );
+<SPAN CLASS="linenum">0610:</SPAN>             pDeviceInfos[i].pParam = NULL;
+<SPAN CLASS="linenum">0611:</SPAN>         }
+<SPAN CLASS="linenum">0612:</SPAN> 
+<SPAN CLASS="linenum">0613:</SPAN>         <SPAN CLASS="comment">// Configure the devices (with edit capability)</SPAN>
+<SPAN CLASS="linenum">0614:</SPAN>         <SPAN CLASS="keyword">if</SPAN>( m_bWindowed )
+<SPAN CLASS="linenum">0615:</SPAN>             m_pInputDeviceManager-&gt;ConfigureDevices( m_hWnd, NULL, NULL, DICD_EDIT, NULL );
+<SPAN CLASS="linenum">0616:</SPAN>         <SPAN CLASS="keyword">else</SPAN>
+<SPAN CLASS="linenum">0617:</SPAN>             m_pInputDeviceManager-&gt;ConfigureDevices( m_hWnd,
+<SPAN CLASS="linenum">0618:</SPAN>                                                      m_pDIConfigSurface,
+<SPAN CLASS="linenum">0619:</SPAN>                                                      (VOID*)StaticConfigureInputDevicesCB,
+<SPAN CLASS="linenum">0620:</SPAN>                                                      DICD_EDIT, (LPVOID) <SPAN CLASS="keyword">this</SPAN> );
+<SPAN CLASS="linenum">0621:</SPAN> 
+<SPAN CLASS="linenum">0622:</SPAN>         Pause( <SPAN CLASS="keyword">false</SPAN> );
+<SPAN CLASS="linenum">0623:</SPAN>     }
+<SPAN CLASS="linenum">0624:</SPAN> 
+<SPAN CLASS="linenum">0625:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( m_UserInput.bDoConfigureDisplay )
+<SPAN CLASS="linenum">0626:</SPAN>     {
+<SPAN CLASS="linenum">0627:</SPAN>         <SPAN CLASS="comment">// One-shot per keypress</SPAN>
+<SPAN CLASS="linenum">0628:</SPAN>         m_UserInput.bDoConfigureDisplay = FALSE;
+<SPAN CLASS="linenum">0629:</SPAN> 
+<SPAN CLASS="linenum">0630:</SPAN>         Pause(<SPAN CLASS="keyword">true</SPAN>);
+<SPAN CLASS="linenum">0631:</SPAN> 
+<SPAN CLASS="linenum">0632:</SPAN>         <SPAN CLASS="comment">// Configure the display device</SPAN>
+<SPAN CLASS="linenum">0633:</SPAN>         UserSelectNewDevice();
+<SPAN CLASS="linenum">0634:</SPAN> 
+<SPAN CLASS="linenum">0635:</SPAN>         Pause(<SPAN CLASS="keyword">false</SPAN>);
+<SPAN CLASS="linenum">0636:</SPAN>     }
+<SPAN CLASS="linenum">0637:</SPAN> 
+<SPAN CLASS="linenum">0638:</SPAN>     <SPAN CLASS="comment">// Update the world state according to user input</SPAN>
+<SPAN CLASS="linenum">0639:</SPAN>     D3DXMATRIX matWorld;
+<SPAN CLASS="linenum">0640:</SPAN>     D3DXMATRIX matRotY;
+<SPAN CLASS="linenum">0641:</SPAN>     D3DXMATRIX matRotX;
+<SPAN CLASS="linenum">0642:</SPAN> 
+<SPAN CLASS="linenum">0643:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( m_UserInput.fAxisRotateLR )
+<SPAN CLASS="linenum">0644:</SPAN>         m_fWorldRotY += m_fElapsedTime * m_UserInput.fAxisRotateLR;
+<SPAN CLASS="linenum">0645:</SPAN> 
+<SPAN CLASS="linenum">0646:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( m_UserInput.fAxisRotateUD )
+<SPAN CLASS="linenum">0647:</SPAN>         m_fWorldRotX += m_fElapsedTime * m_UserInput.fAxisRotateUD;
+<SPAN CLASS="linenum">0648:</SPAN> 
+<SPAN CLASS="linenum">0649:</SPAN>     D3DXMatrixRotationX( &amp;matRotX, m_fWorldRotX );
+<SPAN CLASS="linenum">0650:</SPAN>     D3DXMatrixRotationY( &amp;matRotY, m_fWorldRotY );
+<SPAN CLASS="linenum">0651:</SPAN> 
+<SPAN CLASS="linenum">0652:</SPAN> <SPAN CLASS="comment">//    D3DXMatrixMultiply( &amp;matWorld, &amp;matRotX, &amp;matRotY );</SPAN>
+<SPAN CLASS="linenum">0653:</SPAN>     D3DXMatrixMultiply( &amp;m_matWorld, &amp;matRotX, &amp;matRotY );  <SPAN CLASS="comment">// ★変更</SPAN>
+<SPAN CLASS="linenum">0654:</SPAN> <SPAN CLASS="comment">//    m_pd3dDevice-&gt;SetTransform( D3DTS_WORLD, &amp;matWorld );// ★いらない</SPAN>
+<SPAN CLASS="linenum">0655:</SPAN> 
+<SPAN CLASS="linenum">0656:</SPAN>     <SPAN CLASS="comment">// Play the sound every so often while the button is pressed </SPAN>
+<SPAN CLASS="linenum">0657:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( m_UserInput.bPlaySoundButtonDown )
+<SPAN CLASS="linenum">0658:</SPAN>     {
+<SPAN CLASS="linenum">0659:</SPAN>         m_fSoundPlayRepeatCountdown -= m_fElapsedTime;
+<SPAN CLASS="linenum">0660:</SPAN>         <SPAN CLASS="keyword">if</SPAN>( m_fSoundPlayRepeatCountdown &lt;= 0.0f )
+<SPAN CLASS="linenum">0661:</SPAN>         {
+<SPAN CLASS="linenum">0662:</SPAN>             m_fSoundPlayRepeatCountdown = 0.5f;
+<SPAN CLASS="linenum">0663:</SPAN>             <SPAN CLASS="keyword">if</SPAN>( m_pBounceSound )
+<SPAN CLASS="linenum">0664:</SPAN>                 m_pBounceSound-&gt;Play();
+<SPAN CLASS="linenum">0665:</SPAN>         }
+<SPAN CLASS="linenum">0666:</SPAN>     }
+<SPAN CLASS="linenum">0667:</SPAN>     <SPAN CLASS="keyword">else</SPAN>
+<SPAN CLASS="linenum">0668:</SPAN>     {
+<SPAN CLASS="linenum">0669:</SPAN>         m_fSoundPlayRepeatCountdown = 0.0f;
+<SPAN CLASS="linenum">0670:</SPAN>     }
+<SPAN CLASS="linenum">0671:</SPAN> 
+<SPAN CLASS="linenum">0672:</SPAN>     <SPAN CLASS="keyword">return</SPAN> S_OK;
+<SPAN CLASS="linenum">0673:</SPAN> }
+<SPAN CLASS="linenum">0674:</SPAN> 
+<SPAN CLASS="linenum">0675:</SPAN> 
+<SPAN CLASS="linenum">0676:</SPAN> 
+<SPAN CLASS="linenum">0677:</SPAN> 
+<SPAN CLASS="linenum">0678:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0679:</SPAN> <SPAN CLASS="comment">// Name: UpdateInput()</SPAN>
+<SPAN CLASS="linenum">0680:</SPAN> <SPAN CLASS="comment">// Desc: Update the user input.  Called once per frame </SPAN>
+<SPAN CLASS="linenum">0681:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0682:</SPAN> <SPAN CLASS="keyword">void</SPAN> CMyD3DApplication::UpdateInput( UserInput* pUserInput )
+<SPAN CLASS="linenum">0683:</SPAN> {
+<SPAN CLASS="linenum">0684:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( NULL == m_pInputDeviceManager )
+<SPAN CLASS="linenum">0685:</SPAN>         <SPAN CLASS="keyword">return</SPAN>;
+<SPAN CLASS="linenum">0686:</SPAN> 
+<SPAN CLASS="linenum">0687:</SPAN>     <SPAN CLASS="comment">// Get access to the list of semantically-mapped input devices</SPAN>
+<SPAN CLASS="linenum">0688:</SPAN>     CInputDeviceManager::DeviceInfo* pDeviceInfos;
+<SPAN CLASS="linenum">0689:</SPAN>     DWORD dwNumDevices;
+<SPAN CLASS="linenum">0690:</SPAN>     m_pInputDeviceManager-&gt;GetDevices( &amp;pDeviceInfos, &amp;dwNumDevices );
+<SPAN CLASS="linenum">0691:</SPAN> 
+<SPAN CLASS="linenum">0692:</SPAN>     <SPAN CLASS="comment">// Loop through all devices and check game input</SPAN>
+<SPAN CLASS="linenum">0693:</SPAN>     <SPAN CLASS="keyword">for</SPAN>( DWORD i=0; i&lt;dwNumDevices; i++ )
+<SPAN CLASS="linenum">0694:</SPAN>     {
+<SPAN CLASS="linenum">0695:</SPAN>         DIDEVICEOBJECTDATA rgdod[10];
+<SPAN CLASS="linenum">0696:</SPAN>         DWORD   dwItems = 10;
+<SPAN CLASS="linenum">0697:</SPAN>         HRESULT hr;
+<SPAN CLASS="linenum">0698:</SPAN>         LPDIRECTINPUTDEVICE8 pdidDevice = pDeviceInfos[i].pdidDevice;
+<SPAN CLASS="linenum">0699:</SPAN>         InputDeviceState* pInputDeviceState = (InputDeviceState*) pDeviceInfos[i].pParam;
+<SPAN CLASS="linenum">0700:</SPAN> 
+<SPAN CLASS="linenum">0701:</SPAN>         hr = pdidDevice-&gt;Acquire();
+<SPAN CLASS="linenum">0702:</SPAN>         hr = pdidDevice-&gt;Poll();
+<SPAN CLASS="linenum">0703:</SPAN>         hr = pdidDevice-&gt;GetDeviceData( <SPAN CLASS="keyword">sizeof</SPAN>(DIDEVICEOBJECTDATA),
+<SPAN CLASS="linenum">0704:</SPAN>                                         rgdod, &amp;dwItems, 0 );
+<SPAN CLASS="linenum">0705:</SPAN>         <SPAN CLASS="keyword">if</SPAN>( FAILED(hr) )
+<SPAN CLASS="linenum">0706:</SPAN>             <SPAN CLASS="keyword">continue</SPAN>;
+<SPAN CLASS="linenum">0707:</SPAN> 
+<SPAN CLASS="linenum">0708:</SPAN>         <SPAN CLASS="comment">// Get the sematics codes for the game menu</SPAN>
+<SPAN CLASS="linenum">0709:</SPAN>         <SPAN CLASS="keyword">for</SPAN>( DWORD j=0; j&lt;dwItems; j++ )
+<SPAN CLASS="linenum">0710:</SPAN>         {
+<SPAN CLASS="linenum">0711:</SPAN>             BOOL  bButtonState = (rgdod[j].dwData==0x80) ? TRUE : FALSE;
+<SPAN CLASS="linenum">0712:</SPAN>             FLOAT fButtonState = (rgdod[j].dwData==0x80) ? 1.0f : 0.0f;
+<SPAN CLASS="linenum">0713:</SPAN>             FLOAT fAxisState   = (FLOAT)((<SPAN CLASS="keyword">int</SPAN>)rgdod[j].dwData)/100.0f;
+<SPAN CLASS="linenum">0714:</SPAN>             UNREFERENCED_PARAMETER( fButtonState );
+<SPAN CLASS="linenum">0715:</SPAN> 
+<SPAN CLASS="linenum">0716:</SPAN>             <SPAN CLASS="keyword">switch</SPAN>( rgdod[j].uAppData )
+<SPAN CLASS="linenum">0717:</SPAN>             {
+<SPAN CLASS="linenum">0718:</SPAN>                 <SPAN CLASS="comment">// TODO: Handle semantics for the game </SPAN>
+<SPAN CLASS="linenum">0719:</SPAN> 
+<SPAN CLASS="linenum">0720:</SPAN>                 <SPAN CLASS="comment">// Handle relative axis data</SPAN>
+<SPAN CLASS="linenum">0721:</SPAN>                 <SPAN CLASS="keyword">case</SPAN> INPUT_ROTATE_AXIS_LR: 
+<SPAN CLASS="linenum">0722:</SPAN>                     pInputDeviceState-&gt;fAxisRotateLR = -fAxisState;
+<SPAN CLASS="linenum">0723:</SPAN>                     <SPAN CLASS="keyword">break</SPAN>;
+<SPAN CLASS="linenum">0724:</SPAN>                 <SPAN CLASS="keyword">case</SPAN> INPUT_ROTATE_AXIS_UD:
+<SPAN CLASS="linenum">0725:</SPAN>                     pInputDeviceState-&gt;fAxisRotateUD = -fAxisState;
+<SPAN CLASS="linenum">0726:</SPAN>                     <SPAN CLASS="keyword">break</SPAN>;
+<SPAN CLASS="linenum">0727:</SPAN> 
+<SPAN CLASS="linenum">0728:</SPAN>                 <SPAN CLASS="comment">// Handle buttons separately so the button state data</SPAN>
+<SPAN CLASS="linenum">0729:</SPAN>                 <SPAN CLASS="comment">// doesn't overwrite the axis state data, and handle</SPAN>
+<SPAN CLASS="linenum">0730:</SPAN>                 <SPAN CLASS="comment">// each button separately so they don't overwrite each other</SPAN>
+<SPAN CLASS="linenum">0731:</SPAN>                 <SPAN CLASS="keyword">case</SPAN> INPUT_ROTATE_LEFT:  pInputDeviceState-&gt;bButtonRotateLeft  = bButtonState; <SPAN CLASS="keyword">break</SPAN>;
+<SPAN CLASS="linenum">0732:</SPAN>                 <SPAN CLASS="keyword">case</SPAN> INPUT_ROTATE_RIGHT: pInputDeviceState-&gt;bButtonRotateRight = bButtonState; <SPAN CLASS="keyword">break</SPAN>;
+<SPAN CLASS="linenum">0733:</SPAN>                 <SPAN CLASS="keyword">case</SPAN> INPUT_ROTATE_UP:    pInputDeviceState-&gt;bButtonRotateUp    = bButtonState; <SPAN CLASS="keyword">break</SPAN>;
+<SPAN CLASS="linenum">0734:</SPAN>                 <SPAN CLASS="keyword">case</SPAN> INPUT_ROTATE_DOWN:  pInputDeviceState-&gt;bButtonRotateDown  = bButtonState; <SPAN CLASS="keyword">break</SPAN>;
+<SPAN CLASS="linenum">0735:</SPAN>                 <SPAN CLASS="keyword">case</SPAN> INPUT_PLAY_SOUND:   pInputDeviceState-&gt;bButtonPlaySoundButtonDown = bButtonState; <SPAN CLASS="keyword">break</SPAN>;
+<SPAN CLASS="linenum">0736:</SPAN> 
+<SPAN CLASS="linenum">0737:</SPAN>                 <SPAN CLASS="comment">// Handle one-shot buttons</SPAN>
+<SPAN CLASS="linenum">0738:</SPAN>                 <SPAN CLASS="keyword">case</SPAN> INPUT_CONFIG_INPUT:   <SPAN CLASS="keyword">if</SPAN>( bButtonState ) pUserInput-&gt;bDoConfigureInput = TRUE; <SPAN CLASS="keyword">break</SPAN>;
+<SPAN CLASS="linenum">0739:</SPAN>                 <SPAN CLASS="keyword">case</SPAN> INPUT_CONFIG_DISPLAY: <SPAN CLASS="keyword">if</SPAN>( bButtonState ) pUserInput-&gt;bDoConfigureDisplay = TRUE; <SPAN CLASS="keyword">break</SPAN>;
+<SPAN CLASS="linenum">0740:</SPAN>             }
+<SPAN CLASS="linenum">0741:</SPAN>         }
+<SPAN CLASS="linenum">0742:</SPAN>     }
+<SPAN CLASS="linenum">0743:</SPAN> 
+<SPAN CLASS="linenum">0744:</SPAN>     <SPAN CLASS="comment">// TODO: change process code as needed</SPAN>
+<SPAN CLASS="linenum">0745:</SPAN> 
+<SPAN CLASS="linenum">0746:</SPAN>     <SPAN CLASS="comment">// Process user input and store result into pUserInput struct</SPAN>
+<SPAN CLASS="linenum">0747:</SPAN>     pUserInput-&gt;fAxisRotateLR = 0.0f;
+<SPAN CLASS="linenum">0748:</SPAN>     pUserInput-&gt;fAxisRotateUD = 0.0f;
+<SPAN CLASS="linenum">0749:</SPAN>     pUserInput-&gt;bPlaySoundButtonDown = FALSE;
+<SPAN CLASS="linenum">0750:</SPAN> 
+<SPAN CLASS="linenum">0751:</SPAN>     <SPAN CLASS="comment">// Concatinate the data from all the DirectInput devices</SPAN>
+<SPAN CLASS="linenum">0752:</SPAN>     <SPAN CLASS="keyword">for</SPAN>( i=0; i&lt;dwNumDevices; i++ )
+<SPAN CLASS="linenum">0753:</SPAN>     {
+<SPAN CLASS="linenum">0754:</SPAN>         InputDeviceState* pInputDeviceState = (InputDeviceState*) pDeviceInfos[i].pParam;
+<SPAN CLASS="linenum">0755:</SPAN> 
+<SPAN CLASS="linenum">0756:</SPAN>         <SPAN CLASS="comment">// Use the axis data that is furthest from zero</SPAN>
+<SPAN CLASS="linenum">0757:</SPAN>         <SPAN CLASS="keyword">if</SPAN>( fabs(pInputDeviceState-&gt;fAxisRotateLR) &gt; fabs(pUserInput-&gt;fAxisRotateLR) )
+<SPAN CLASS="linenum">0758:</SPAN>             pUserInput-&gt;fAxisRotateLR = pInputDeviceState-&gt;fAxisRotateLR;
+<SPAN CLASS="linenum">0759:</SPAN> 
+<SPAN CLASS="linenum">0760:</SPAN>         <SPAN CLASS="keyword">if</SPAN>( fabs(pInputDeviceState-&gt;fAxisRotateUD) &gt; fabs(pUserInput-&gt;fAxisRotateUD) )
+<SPAN CLASS="linenum">0761:</SPAN>             pUserInput-&gt;fAxisRotateUD = pInputDeviceState-&gt;fAxisRotateUD;
+<SPAN CLASS="linenum">0762:</SPAN> 
+<SPAN CLASS="linenum">0763:</SPAN>         <SPAN CLASS="comment">// Process the button data </SPAN>
+<SPAN CLASS="linenum">0764:</SPAN>         <SPAN CLASS="keyword">if</SPAN>( pInputDeviceState-&gt;bButtonRotateLeft )
+<SPAN CLASS="linenum">0765:</SPAN>             pUserInput-&gt;fAxisRotateLR = 1.0f;
+<SPAN CLASS="linenum">0766:</SPAN>         <SPAN CLASS="keyword">else</SPAN> <SPAN CLASS="keyword">if</SPAN>( pInputDeviceState-&gt;bButtonRotateRight )
+<SPAN CLASS="linenum">0767:</SPAN>             pUserInput-&gt;fAxisRotateLR = -1.0f;
+<SPAN CLASS="linenum">0768:</SPAN> 
+<SPAN CLASS="linenum">0769:</SPAN>         <SPAN CLASS="keyword">if</SPAN>( pInputDeviceState-&gt;bButtonRotateUp )
+<SPAN CLASS="linenum">0770:</SPAN>             pUserInput-&gt;fAxisRotateUD = 1.0f;
+<SPAN CLASS="linenum">0771:</SPAN>         <SPAN CLASS="keyword">else</SPAN> <SPAN CLASS="keyword">if</SPAN>( pInputDeviceState-&gt;bButtonRotateDown )
+<SPAN CLASS="linenum">0772:</SPAN>             pUserInput-&gt;fAxisRotateUD = -1.0f;
+<SPAN CLASS="linenum">0773:</SPAN> 
+<SPAN CLASS="linenum">0774:</SPAN>         <SPAN CLASS="keyword">if</SPAN>( pInputDeviceState-&gt;bButtonPlaySoundButtonDown )
+<SPAN CLASS="linenum">0775:</SPAN>             pUserInput-&gt;bPlaySoundButtonDown = TRUE;
+<SPAN CLASS="linenum">0776:</SPAN>     } 
+<SPAN CLASS="linenum">0777:</SPAN> }
+<SPAN CLASS="linenum">0778:</SPAN> 
+<SPAN CLASS="linenum">0779:</SPAN> 
+<SPAN CLASS="linenum">0780:</SPAN> 
+<SPAN CLASS="linenum">0781:</SPAN> 
+<SPAN CLASS="linenum">0782:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0783:</SPAN> <SPAN CLASS="comment">// Name: Render()</SPAN>
+<SPAN CLASS="linenum">0784:</SPAN> <SPAN CLASS="comment">// Desc: Called once per frame, the call is the entry point for 3d</SPAN>
+<SPAN CLASS="linenum">0785:</SPAN> <SPAN CLASS="comment">//       rendering. This function sets up render states, clears the</SPAN>
+<SPAN CLASS="linenum">0786:</SPAN> <SPAN CLASS="comment">//       viewport, and renders the scene.</SPAN>
+<SPAN CLASS="linenum">0787:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0788:</SPAN> HRESULT CMyD3DApplication::Render()
+<SPAN CLASS="linenum">0789:</SPAN> {
+<SPAN CLASS="linenum">0790:</SPAN>     <SPAN CLASS="comment">// Clear the viewport</SPAN>
+<SPAN CLASS="linenum">0791:</SPAN>     m_pd3dDevice-&gt;Clear( 0L, NULL, D3DCLEAR_TARGET|D3DCLEAR_ZBUFFER,
+<SPAN CLASS="linenum">0792:</SPAN>                          0x000000ff, 1.0f, 0L );
+<SPAN CLASS="linenum">0793:</SPAN> 
+<SPAN CLASS="linenum">0794:</SPAN>     <SPAN CLASS="comment">// Begin the scene</SPAN>
+<SPAN CLASS="linenum">0795:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( SUCCEEDED( m_pd3dDevice-&gt;BeginScene() ) )
+<SPAN CLASS="linenum">0796:</SPAN>     {
+<SPAN CLASS="linenum">0797:</SPAN> <SPAN CLASS="keyword">#if</SPAN> 1
+<SPAN CLASS="linenum">0798:</SPAN>         UINT nPasses;
+<SPAN CLASS="linenum">0799:</SPAN>         UINT iPass;
+<SPAN CLASS="linenum">0800:</SPAN> 
+<SPAN CLASS="linenum">0801:</SPAN>         <SPAN CLASS="keyword">if</SPAN>( m_pEffect != NULL )
+<SPAN CLASS="linenum">0802:</SPAN>         {
+<SPAN CLASS="linenum">0803:</SPAN>             <SPAN CLASS="comment">// ★シェーダの設定</SPAN>
+<SPAN CLASS="linenum">0804:</SPAN>             D3DXHANDLE hTechnique = m_pEffect-&gt;GetTechniqueByName( "<SPAN CLASS="string">TShader</SPAN>" );
+<SPAN CLASS="linenum">0805:</SPAN>             m_pEffect-&gt;SetTechnique( hTechnique );
+<SPAN CLASS="linenum">0806:</SPAN>             
+<SPAN CLASS="linenum">0807:</SPAN>             <SPAN CLASS="comment">// ★行列の設定</SPAN>
+<SPAN CLASS="linenum">0808:</SPAN>             D3DXMATRIX m = m_matWorld*m_matView*m_matProj;
+<SPAN CLASS="linenum">0809:</SPAN>             <SPAN CLASS="keyword">if</SPAN>( m_hmWVP != NULL )
+<SPAN CLASS="linenum">0810:</SPAN>                 m_pEffect-&gt;SetMatrix( m_hmWVP, &amp;m );
+<SPAN CLASS="linenum">0811:</SPAN> 
+<SPAN CLASS="linenum">0812:</SPAN>             <SPAN CLASS="comment">// ★描画</SPAN>
+<SPAN CLASS="linenum">0813:</SPAN>             m_pEffect-&gt;Begin( &amp;nPasses, 0 );
+<SPAN CLASS="linenum">0814:</SPAN>             <SPAN CLASS="keyword">for</SPAN>( iPass = 0; iPass &lt; nPasses; iPass ++ )
+<SPAN CLASS="linenum">0815:</SPAN>             {
+<SPAN CLASS="linenum">0816:</SPAN>                 m_pEffect-&gt;Pass( iPass );
+<SPAN CLASS="linenum">0817:</SPAN>                 <SPAN CLASS="comment">// ティーポットのレンダリング</SPAN>
+<SPAN CLASS="linenum">0818:</SPAN>                 m_pD3DXMesh-&gt;DrawSubset( 0 );
+<SPAN CLASS="linenum">0819:</SPAN>             }
+<SPAN CLASS="linenum">0820:</SPAN>             m_pEffect-&gt;End();
+<SPAN CLASS="linenum">0821:</SPAN>         }
+<SPAN CLASS="linenum">0822:</SPAN> <SPAN CLASS="keyword">#else</SPAN>
+<SPAN CLASS="linenum">0823:</SPAN>         <SPAN CLASS="comment">// Render the teapot mesh</SPAN>
+<SPAN CLASS="linenum">0824:</SPAN>         m_pD3DXMesh-&gt;DrawSubset(0);
+<SPAN CLASS="linenum">0825:</SPAN> <SPAN CLASS="keyword">#endif</SPAN>
+<SPAN CLASS="linenum">0826:</SPAN> 
+<SPAN CLASS="linenum">0827:</SPAN>         <SPAN CLASS="comment">// Render stats and help text  </SPAN>
+<SPAN CLASS="linenum">0828:</SPAN>         RenderText();
+<SPAN CLASS="linenum">0829:</SPAN> 
+<SPAN CLASS="linenum">0830:</SPAN>         <SPAN CLASS="comment">// End the scene.</SPAN>
+<SPAN CLASS="linenum">0831:</SPAN>         m_pd3dDevice-&gt;EndScene();
+<SPAN CLASS="linenum">0832:</SPAN>     }
+<SPAN CLASS="linenum">0833:</SPAN> 
+<SPAN CLASS="linenum">0834:</SPAN>     <SPAN CLASS="keyword">return</SPAN> S_OK;
+<SPAN CLASS="linenum">0835:</SPAN> }
+<SPAN CLASS="linenum">0836:</SPAN> 
+<SPAN CLASS="linenum">0837:</SPAN> 
+<SPAN CLASS="linenum">0838:</SPAN> 
+<SPAN CLASS="linenum">0839:</SPAN> 
+<SPAN CLASS="linenum">0840:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0841:</SPAN> <SPAN CLASS="comment">// Name: RenderText()</SPAN>
+<SPAN CLASS="linenum">0842:</SPAN> <SPAN CLASS="comment">// Desc: Renders stats and help text to the scene.</SPAN>
+<SPAN CLASS="linenum">0843:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0844:</SPAN> HRESULT CMyD3DApplication::RenderText()
+<SPAN CLASS="linenum">0845:</SPAN> {
+<SPAN CLASS="linenum">0846:</SPAN>     D3DCOLOR fontColor        = D3DCOLOR_ARGB(255,255,255,0);
+<SPAN CLASS="linenum">0847:</SPAN>     TCHAR szMsg[MAX_PATH] = TEXT("<SPAN CLASS="string"></SPAN>");
+<SPAN CLASS="linenum">0848:</SPAN> 
+<SPAN CLASS="linenum">0849:</SPAN>     <SPAN CLASS="comment">// Output display stats</SPAN>
+<SPAN CLASS="linenum">0850:</SPAN>     FLOAT fNextLine = 40.0f; 
+<SPAN CLASS="linenum">0851:</SPAN> 
+<SPAN CLASS="linenum">0852:</SPAN>     lstrcpy( szMsg, m_strDeviceStats );
+<SPAN CLASS="linenum">0853:</SPAN>     fNextLine -= 20.0f;
+<SPAN CLASS="linenum">0854:</SPAN>     m_pFont-&gt;DrawText( 2, fNextLine, fontColor, szMsg );
+<SPAN CLASS="linenum">0855:</SPAN> 
+<SPAN CLASS="linenum">0856:</SPAN>     lstrcpy( szMsg, m_strFrameStats );
+<SPAN CLASS="linenum">0857:</SPAN>     fNextLine -= 20.0f;
+<SPAN CLASS="linenum">0858:</SPAN>     m_pFont-&gt;DrawText( 2, fNextLine, fontColor, szMsg );
+<SPAN CLASS="linenum">0859:</SPAN> 
+<SPAN CLASS="linenum">0860:</SPAN>     <SPAN CLASS="comment">// Output statistics &amp; help</SPAN>
+<SPAN CLASS="linenum">0861:</SPAN>     fNextLine = (FLOAT) m_d3dsdBackBuffer.Height; 
+<SPAN CLASS="linenum">0862:</SPAN>     sprintf( szMsg, TEXT("<SPAN CLASS="string">Left/Right Axis: %0.2f Up/Down Axis: %0.2f </SPAN>"), 
+<SPAN CLASS="linenum">0863:</SPAN>               m_UserInput.fAxisRotateLR, m_UserInput.fAxisRotateUD );
+<SPAN CLASS="linenum">0864:</SPAN>     fNextLine -= 20.0f; m_pFont-&gt;DrawText( 2, fNextLine, fontColor, szMsg );
+<SPAN CLASS="linenum">0865:</SPAN>     lstrcpy( szMsg, TEXT("<SPAN CLASS="string">Use arrow keys or joystick to rotate object</SPAN>") );
+<SPAN CLASS="linenum">0866:</SPAN>     fNextLine -= 20.0f; m_pFont-&gt;DrawText( 2, fNextLine, fontColor, szMsg );
+<SPAN CLASS="linenum">0867:</SPAN>     lstrcpy( szMsg, TEXT("<SPAN CLASS="string">Hold 'F5' down to play and repeat a sound</SPAN>") );
+<SPAN CLASS="linenum">0868:</SPAN>     fNextLine -= 20.0f; m_pFont-&gt;DrawText( 2, fNextLine, fontColor, szMsg );
+<SPAN CLASS="linenum">0869:</SPAN>     lstrcpy( szMsg, TEXT("<SPAN CLASS="string">Press 'F3' to configure input</SPAN>") );
+<SPAN CLASS="linenum">0870:</SPAN>     fNextLine -= 20.0f; m_pFont-&gt;DrawText( 2, fNextLine, fontColor, szMsg );
+<SPAN CLASS="linenum">0871:</SPAN>     lstrcpy( szMsg, TEXT("<SPAN CLASS="string">Press 'F2' to configure display</SPAN>") );
+<SPAN CLASS="linenum">0872:</SPAN>     fNextLine -= 20.0f; m_pFont-&gt;DrawText( 2, fNextLine, fontColor, szMsg );
+<SPAN CLASS="linenum">0873:</SPAN>     <SPAN CLASS="keyword">return</SPAN> S_OK;
+<SPAN CLASS="linenum">0874:</SPAN> }
+<SPAN CLASS="linenum">0875:</SPAN> 
+<SPAN CLASS="linenum">0876:</SPAN> 
+<SPAN CLASS="linenum">0877:</SPAN> 
+<SPAN CLASS="linenum">0878:</SPAN> 
+<SPAN CLASS="linenum">0879:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0880:</SPAN> <SPAN CLASS="comment">// Name: Pause()</SPAN>
+<SPAN CLASS="linenum">0881:</SPAN> <SPAN CLASS="comment">// Desc: Called in to toggle the pause state of the app.</SPAN>
+<SPAN CLASS="linenum">0882:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0883:</SPAN> VOID CMyD3DApplication::Pause( <SPAN CLASS="keyword">bool</SPAN> bPause )
+<SPAN CLASS="linenum">0884:</SPAN> {
+<SPAN CLASS="linenum">0885:</SPAN>     <SPAN CLASS="comment">// Get access to the list of semantically-mapped input devices</SPAN>
+<SPAN CLASS="linenum">0886:</SPAN>     <SPAN CLASS="comment">// to zero the state of all InputDeviceState structs.  This is needed</SPAN>
+<SPAN CLASS="linenum">0887:</SPAN>     <SPAN CLASS="comment">// because when using DISCL_FOREGROUND, the action mapper will not </SPAN>
+<SPAN CLASS="linenum">0888:</SPAN>     <SPAN CLASS="comment">// record actions when the focus switches, for example if a dialog appears.</SPAN>
+<SPAN CLASS="linenum">0889:</SPAN>     <SPAN CLASS="comment">// This causes a problem when a button held down when loosing focus, and let</SPAN>
+<SPAN CLASS="linenum">0890:</SPAN>     <SPAN CLASS="comment">// go when the focus is lost.  The app will not record that the button </SPAN>
+<SPAN CLASS="linenum">0891:</SPAN>     <SPAN CLASS="comment">// has been let go, so the state will be incorrect when focus returns.  </SPAN>
+<SPAN CLASS="linenum">0892:</SPAN>     <SPAN CLASS="comment">// To fix this either use DISCL_BACKGROUND or zero the state when </SPAN>
+<SPAN CLASS="linenum">0893:</SPAN>     <SPAN CLASS="comment">// loosing focus.</SPAN>
+<SPAN CLASS="linenum">0894:</SPAN>     CInputDeviceManager::DeviceInfo* pDeviceInfos;
+<SPAN CLASS="linenum">0895:</SPAN>     DWORD dwNumDevices;
+<SPAN CLASS="linenum">0896:</SPAN>     m_pInputDeviceManager-&gt;GetDevices( &amp;pDeviceInfos, &amp;dwNumDevices );
+<SPAN CLASS="linenum">0897:</SPAN> 
+<SPAN CLASS="linenum">0898:</SPAN>     <SPAN CLASS="keyword">for</SPAN>( DWORD i=0; i&lt;dwNumDevices; i++ )
+<SPAN CLASS="linenum">0899:</SPAN>     {
+<SPAN CLASS="linenum">0900:</SPAN>         InputDeviceState* pInputDeviceState = (InputDeviceState*) pDeviceInfos[i].pParam;
+<SPAN CLASS="linenum">0901:</SPAN>         ZeroMemory( pInputDeviceState, <SPAN CLASS="keyword">sizeof</SPAN>(InputDeviceState) );
+<SPAN CLASS="linenum">0902:</SPAN>     }
+<SPAN CLASS="linenum">0903:</SPAN> 
+<SPAN CLASS="linenum">0904:</SPAN>     CD3DApplication::Pause( bPause );
+<SPAN CLASS="linenum">0905:</SPAN> }
+<SPAN CLASS="linenum">0906:</SPAN> 
+<SPAN CLASS="linenum">0907:</SPAN> 
+<SPAN CLASS="linenum">0908:</SPAN> 
+<SPAN CLASS="linenum">0909:</SPAN> 
+<SPAN CLASS="linenum">0910:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0911:</SPAN> <SPAN CLASS="comment">// Name: MsgProc()</SPAN>
+<SPAN CLASS="linenum">0912:</SPAN> <SPAN CLASS="comment">// Desc: Overrrides the main WndProc, so the sample can do custom message</SPAN>
+<SPAN CLASS="linenum">0913:</SPAN> <SPAN CLASS="comment">//       handling (e.g. processing mouse, keyboard, or menu commands).</SPAN>
+<SPAN CLASS="linenum">0914:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0915:</SPAN> LRESULT CMyD3DApplication::MsgProc( HWND hWnd, UINT msg, WPARAM wParam,
+<SPAN CLASS="linenum">0916:</SPAN>                                     LPARAM lParam )
+<SPAN CLASS="linenum">0917:</SPAN> {
+<SPAN CLASS="linenum">0918:</SPAN>     <SPAN CLASS="keyword">switch</SPAN>( msg )
+<SPAN CLASS="linenum">0919:</SPAN>     {
+<SPAN CLASS="linenum">0920:</SPAN>         <SPAN CLASS="keyword">case</SPAN> WM_PAINT:
+<SPAN CLASS="linenum">0921:</SPAN>         {
+<SPAN CLASS="linenum">0922:</SPAN>             <SPAN CLASS="keyword">if</SPAN>( m_bLoadingApp )
+<SPAN CLASS="linenum">0923:</SPAN>             {
+<SPAN CLASS="linenum">0924:</SPAN>                 <SPAN CLASS="comment">// Draw on the window tell the user that the app is loading</SPAN>
+<SPAN CLASS="linenum">0925:</SPAN>                 <SPAN CLASS="comment">// TODO: change as needed</SPAN>
+<SPAN CLASS="linenum">0926:</SPAN>                 HDC hDC = GetDC( hWnd );
+<SPAN CLASS="linenum">0927:</SPAN>                 TCHAR strMsg[MAX_PATH];
+<SPAN CLASS="linenum">0928:</SPAN>                 wsprintf( strMsg, TEXT("<SPAN CLASS="string">Loading... Please wait</SPAN>") );
+<SPAN CLASS="linenum">0929:</SPAN>                 RECT rct;
+<SPAN CLASS="linenum">0930:</SPAN>                 GetClientRect( hWnd, &amp;rct );
+<SPAN CLASS="linenum">0931:</SPAN>                 DrawText( hDC, strMsg, -1, &amp;rct, DT_CENTER|DT_VCENTER|DT_SINGLELINE );
+<SPAN CLASS="linenum">0932:</SPAN>                 ReleaseDC( hWnd, hDC );
+<SPAN CLASS="linenum">0933:</SPAN>             }
+<SPAN CLASS="linenum">0934:</SPAN>             <SPAN CLASS="keyword">break</SPAN>;
+<SPAN CLASS="linenum">0935:</SPAN>         }
+<SPAN CLASS="linenum">0936:</SPAN> 
+<SPAN CLASS="linenum">0937:</SPAN>         <SPAN CLASS="keyword">case</SPAN> WM_COMMAND:
+<SPAN CLASS="linenum">0938:</SPAN>         {
+<SPAN CLASS="linenum">0939:</SPAN>             <SPAN CLASS="keyword">switch</SPAN>( LOWORD(wParam) )
+<SPAN CLASS="linenum">0940:</SPAN>             {
+<SPAN CLASS="linenum">0941:</SPAN>                 <SPAN CLASS="keyword">case</SPAN> IDM_CONFIGINPUT:
+<SPAN CLASS="linenum">0942:</SPAN>                     m_UserInput.bDoConfigureInput = TRUE;
+<SPAN CLASS="linenum">0943:</SPAN>                     <SPAN CLASS="keyword">break</SPAN>;
+<SPAN CLASS="linenum">0944:</SPAN> 
+<SPAN CLASS="linenum">0945:</SPAN>                 <SPAN CLASS="keyword">case</SPAN> IDM_CHANGEDEVICE:
+<SPAN CLASS="linenum">0946:</SPAN>                     m_UserInput.bDoConfigureDisplay = TRUE;
+<SPAN CLASS="linenum">0947:</SPAN>                     <SPAN CLASS="keyword">return</SPAN> 0; <SPAN CLASS="comment">// Don't hand off to parent</SPAN>
+<SPAN CLASS="linenum">0948:</SPAN>             }
+<SPAN CLASS="linenum">0949:</SPAN>             <SPAN CLASS="keyword">break</SPAN>;
+<SPAN CLASS="linenum">0950:</SPAN>         }
+<SPAN CLASS="linenum">0951:</SPAN> 
+<SPAN CLASS="linenum">0952:</SPAN>     }
+<SPAN CLASS="linenum">0953:</SPAN> 
+<SPAN CLASS="linenum">0954:</SPAN>     <SPAN CLASS="keyword">return</SPAN> CD3DApplication::MsgProc( hWnd, msg, wParam, lParam );
+<SPAN CLASS="linenum">0955:</SPAN> }
+<SPAN CLASS="linenum">0956:</SPAN> 
+<SPAN CLASS="linenum">0957:</SPAN> 
+<SPAN CLASS="linenum">0958:</SPAN> 
+<SPAN CLASS="linenum">0959:</SPAN> 
+<SPAN CLASS="linenum">0960:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0961:</SPAN> <SPAN CLASS="comment">// Name: InvalidateDeviceObjects()</SPAN>
+<SPAN CLASS="linenum">0962:</SPAN> <SPAN CLASS="comment">// Desc: Invalidates device objects.  Paired with RestoreDeviceObjects()</SPAN>
+<SPAN CLASS="linenum">0963:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0964:</SPAN> HRESULT CMyD3DApplication::InvalidateDeviceObjects()
+<SPAN CLASS="linenum">0965:</SPAN> {
+<SPAN CLASS="linenum">0966:</SPAN>     <SPAN CLASS="comment">// TODO: Cleanup any objects created in RestoreDeviceObjects()</SPAN>
+<SPAN CLASS="linenum">0967:</SPAN>     m_pFont-&gt;InvalidateDeviceObjects();
+<SPAN CLASS="linenum">0968:</SPAN>     SAFE_RELEASE( m_pDIConfigSurface );
+<SPAN CLASS="linenum">0969:</SPAN> 
+<SPAN CLASS="linenum">0970:</SPAN>     <SPAN CLASS="comment">// ★ビデオメモリリソースへの参照を解放する。</SPAN>
+<SPAN CLASS="linenum">0971:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( m_pEffect != NULL ) m_pEffect-&gt;OnLostDevice();
+<SPAN CLASS="linenum">0972:</SPAN> 
+<SPAN CLASS="linenum">0973:</SPAN>     <SPAN CLASS="keyword">return</SPAN> S_OK;
+<SPAN CLASS="linenum">0974:</SPAN> }
+<SPAN CLASS="linenum">0975:</SPAN> 
+<SPAN CLASS="linenum">0976:</SPAN> 
+<SPAN CLASS="linenum">0977:</SPAN> 
+<SPAN CLASS="linenum">0978:</SPAN> 
+<SPAN CLASS="linenum">0979:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0980:</SPAN> <SPAN CLASS="comment">// Name: DeleteDeviceObjects()</SPAN>
+<SPAN CLASS="linenum">0981:</SPAN> <SPAN CLASS="comment">// Desc: Paired with InitDeviceObjects()</SPAN>
+<SPAN CLASS="linenum">0982:</SPAN> <SPAN CLASS="comment">//       Called when the app is exiting, or the device is being changed,</SPAN>
+<SPAN CLASS="linenum">0983:</SPAN> <SPAN CLASS="comment">//       this function deletes any device dependent objects.  </SPAN>
+<SPAN CLASS="linenum">0984:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0985:</SPAN> HRESULT CMyD3DApplication::DeleteDeviceObjects()
+<SPAN CLASS="linenum">0986:</SPAN> {
+<SPAN CLASS="linenum">0987:</SPAN>     <SPAN CLASS="comment">// ★エフェクトの開放</SPAN>
+<SPAN CLASS="linenum">0988:</SPAN>     SAFE_RELEASE( m_pEffect );
+<SPAN CLASS="linenum">0989:</SPAN> 
+<SPAN CLASS="linenum">0990:</SPAN>     <SPAN CLASS="comment">// TODO: Cleanup any objects created in InitDeviceObjects()</SPAN>
+<SPAN CLASS="linenum">0991:</SPAN>     m_pFont-&gt;DeleteDeviceObjects();
+<SPAN CLASS="linenum">0992:</SPAN>     SAFE_RELEASE( m_pD3DXMesh );
+<SPAN CLASS="linenum">0993:</SPAN> 
+<SPAN CLASS="linenum">0994:</SPAN>     <SPAN CLASS="keyword">return</SPAN> S_OK;
+<SPAN CLASS="linenum">0995:</SPAN> }
+<SPAN CLASS="linenum">0996:</SPAN> 
+<SPAN CLASS="linenum">0997:</SPAN> 
+<SPAN CLASS="linenum">0998:</SPAN> 
+<SPAN CLASS="linenum">0999:</SPAN> 
+<SPAN CLASS="linenum">1000:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">1001:</SPAN> <SPAN CLASS="comment">// Name: FinalCleanup()</SPAN>
+<SPAN CLASS="linenum">1002:</SPAN> <SPAN CLASS="comment">// Desc: Paired with OneTimeSceneInit()</SPAN>
+<SPAN CLASS="linenum">1003:</SPAN> <SPAN CLASS="comment">//       Called before the app exits, this function gives the app the chance</SPAN>
+<SPAN CLASS="linenum">1004:</SPAN> <SPAN CLASS="comment">//       to cleanup after itself.</SPAN>
+<SPAN CLASS="linenum">1005:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">1006:</SPAN> HRESULT CMyD3DApplication::FinalCleanup()
+<SPAN CLASS="linenum">1007:</SPAN> {
+<SPAN CLASS="linenum">1008:</SPAN>     <SPAN CLASS="comment">// TODO: Perform any final cleanup needed</SPAN>
+<SPAN CLASS="linenum">1009:</SPAN>     <SPAN CLASS="comment">// Cleanup D3D font</SPAN>
+<SPAN CLASS="linenum">1010:</SPAN>     SAFE_DELETE( m_pFont );
+<SPAN CLASS="linenum">1011:</SPAN> 
+<SPAN CLASS="linenum">1012:</SPAN>     <SPAN CLASS="comment">// Cleanup DirectInput</SPAN>
+<SPAN CLASS="linenum">1013:</SPAN>     CleanupDirectInput();
+<SPAN CLASS="linenum">1014:</SPAN> 
+<SPAN CLASS="linenum">1015:</SPAN>     <SPAN CLASS="comment">// Cleanup DirectX audio objects</SPAN>
+<SPAN CLASS="linenum">1016:</SPAN>     SAFE_DELETE( m_pBounceSound );
+<SPAN CLASS="linenum">1017:</SPAN>     SAFE_DELETE( m_pMusicManager );
+<SPAN CLASS="linenum">1018:</SPAN>     <SPAN CLASS="comment">// Write the settings to the registry</SPAN>
+<SPAN CLASS="linenum">1019:</SPAN>     WriteSettings();
+<SPAN CLASS="linenum">1020:</SPAN> 
+<SPAN CLASS="linenum">1021:</SPAN>     <SPAN CLASS="keyword">return</SPAN> S_OK;
+<SPAN CLASS="linenum">1022:</SPAN> }
+<SPAN CLASS="linenum">1023:</SPAN> 
+<SPAN CLASS="linenum">1024:</SPAN> 
+<SPAN CLASS="linenum">1025:</SPAN> 
+<SPAN CLASS="linenum">1026:</SPAN> 
+<SPAN CLASS="linenum">1027:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">1028:</SPAN> <SPAN CLASS="comment">// Name: CleanupDirectInput()</SPAN>
+<SPAN CLASS="linenum">1029:</SPAN> <SPAN CLASS="comment">// Desc: Cleanup DirectInput </SPAN>
+<SPAN CLASS="linenum">1030:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">1031:</SPAN> VOID CMyD3DApplication::CleanupDirectInput()
+<SPAN CLASS="linenum">1032:</SPAN> {
+<SPAN CLASS="linenum">1033:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( NULL == m_pInputDeviceManager )
+<SPAN CLASS="linenum">1034:</SPAN>         <SPAN CLASS="keyword">return</SPAN>;
+<SPAN CLASS="linenum">1035:</SPAN> 
+<SPAN CLASS="linenum">1036:</SPAN>     <SPAN CLASS="comment">// Get access to the list of semantically-mapped input devices</SPAN>
+<SPAN CLASS="linenum">1037:</SPAN>     <SPAN CLASS="comment">// to delete all InputDeviceState structs</SPAN>
+<SPAN CLASS="linenum">1038:</SPAN>     CInputDeviceManager::DeviceInfo* pDeviceInfos;
+<SPAN CLASS="linenum">1039:</SPAN>     DWORD dwNumDevices;
+<SPAN CLASS="linenum">1040:</SPAN>     m_pInputDeviceManager-&gt;GetDevices( &amp;pDeviceInfos, &amp;dwNumDevices );
+<SPAN CLASS="linenum">1041:</SPAN> 
+<SPAN CLASS="linenum">1042:</SPAN>     <SPAN CLASS="keyword">for</SPAN>( DWORD i=0; i&lt;dwNumDevices; i++ )
+<SPAN CLASS="linenum">1043:</SPAN>     {
+<SPAN CLASS="linenum">1044:</SPAN>         InputDeviceState* pInputDeviceState = (InputDeviceState*) pDeviceInfos[i].pParam;
+<SPAN CLASS="linenum">1045:</SPAN>         SAFE_DELETE( pInputDeviceState );
+<SPAN CLASS="linenum">1046:</SPAN>         pDeviceInfos[i].pParam = NULL;
+<SPAN CLASS="linenum">1047:</SPAN>     }
+<SPAN CLASS="linenum">1048:</SPAN> 
+<SPAN CLASS="linenum">1049:</SPAN>     <SPAN CLASS="comment">// Cleanup DirectX input objects</SPAN>
+<SPAN CLASS="linenum">1050:</SPAN>     SAFE_DELETE( m_pInputDeviceManager );
+<SPAN CLASS="linenum">1051:</SPAN> 
+<SPAN CLASS="linenum">1052:</SPAN> }
+<SPAN CLASS="linenum">1053:</SPAN> 
+<SPAN CLASS="linenum">1054:</SPAN> 
+<SPAN CLASS="linenum">1055:</SPAN> 
+<SPAN CLASS="linenum">1056:</SPAN> 
+<SPAN CLASS="linenum">1057:</SPAN> </PRE>
+</BODY>
+</HTML>

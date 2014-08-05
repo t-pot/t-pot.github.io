@@ -1,0 +1,86 @@
+<head>
+	<title>t-pot 『DirectX8.0 入門:fpsの表示』</title>
+	<link rel="stylesheet" type="text/css" href="../if.css">
+</head>
+<meta http-equiv=Content-Type content="text/html; charset=shift_jis">
+<body>
+<div class="contents">
+<center>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<h1>fpsの表示</h1><br>
+<h3>～どのくらい速い？～</h3>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+</center>
+<h2>■fps って何？</h2>
+
+<p>
+fps 値 とは、frames per second、つまり一秒間に画面を更新した回数です。
+この回数が多いと、ゲームが滑らかに動きます。
+TV は、通常 60fps で更新され、30fps より小さいと、動きがガタガタします。
+アクションゲームなら、60fps 程度、RPGなら 30fps を心がけましょう。
+</p>
+
+<h2>■いきなりプログラム</h2>
+
+<p>
+今回のプログラムは、下のものです。マルチメディアタイマーを使いますので、
+winmm.lib をリンクのライブラリモジュールに追加してください。
+</p>
+<ul style = "LIST-STYLE-TYPE:none">
+<li><a href="fps.lzh">fps.lzh (Windows アプリケーションの雛型のソース)</a>
+</ul>
+
+
+<p>
+文字列表示用に用意した変数は次のとおりです。
+この関数 BeginScene と EndScene の間で、毎フレーム呼び出します。
+</p>
+<pre class="CodeBlock">
+// ----------------------------------------------------------------------------
+// Name: fps_disp()
+// Desc: フレーム数の表示
+//-----------------------------------------------------------------------------
+#include &ltstdio.h&gt
+static void fps_disp()
+{
+    static DWORD    last = timeGetTime();
+    static DWORD    frames = 0;
+    static char     buf[256] = "";
+    DWORD           current;
+    
+    current = timeGetTime();
+    frames++;
+    
+    if(500 <= current - last) {// 0.5秒毎に更新
+        float dt = (float)(current - last) / 1000.0f;
+        float fps = (float)frames / dt;
+        last = current;
+        frames = 0;
+        sprintf(buf, "%.02f fps", fps);
+    }
+    sFont.Print(buf, 0,0);
+}
+</pre>
+<p>
+マルチメディアタイマーの timeGetTime() で現在時刻を調べます。
+timeGetTime() は、1/1000秒単位の精度を持ちます。<br>
+毎フレーム計算しても負荷になるだけなので、500ms (0.5秒) ごとに計算します。<br>
+fps の計算方法は、時間あたりの更新数ですから、更新回数を経過時間（を秒で換算したもの）で割ります。<br>
+後は、次の計算のために、時間を保存して、フレーム数をクリアします。<br>
+そして、表示のために、前回の CMyFont に文字列を渡します。
+</p>
+
+
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<center>
+<hr>
+<p><a href="../index.html">もどる</a></p>
+<p><a href="mailto:imagire@gmail.com">imagire@gmail.com</a></p>
+</center>
+</body>
+</html>

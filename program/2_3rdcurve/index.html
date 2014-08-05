@@ -1,0 +1,270 @@
+<head>
+	<title>t-pot 『3次曲線』</title>
+	<link rel="stylesheet" type="text/css" href="../if.css">
+</head>
+<body>
+<div class="contents">
+<center>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<h1>3次曲線</h1><br>
+<h3>～これが一番使えるとおもうよ～</h3>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+</center>
+<h2>■どうして３次なの？</h2>
+
+<p>前回に続いて、パラメトリック曲線です。前回は、一番簡単な直線の運動を扱いました。
+直線は真っ直ぐなので、『曲線』を表現するためにはあまり使われません
+（他の理由で色々つかえるので、取り上げましたが・・・）。
+実際に多く使われ、また、使い勝手がよいものは、3次曲線です。
+</p>
+
+<p>どうして、3次曲線が良いのでしょうか？
+ちょっと物理学を考えてみましょう。『慣性の法則』を思い出して下さい。
+力が加わっていなければ、動いている物は真っ直ぐに進むというやつです。
+『慣性の法則』は、物体の位置や速度によりません。つまり、位置だけでなく、
+速度も曲線の変数として、自由に設定できるということです。
+さて、どうしてそれが3次曲線なのでしょうか？それは、設定できる変数が、
+初期位置、最終位置、初期速度および最終速度の４つだからです。
+一般に、自由度を n 個持つ曲線は、n - 1 次の多項式で表現できます。
+前回、初期位置、最終位置の２つを設定した曲線は、１次曲線になりました。
+同様に、４つの変数を指定する曲線は、３次曲線になります。
+</p>
+
+<h2>■Ferguson / Coons 曲線</h2>
+<p>ということで（別に証明したわけではないですが）、位置と速度を指定する場合には、
+３次曲線を使います。では、具体的にはどう使うのでしょうか？
+例えば、サッカーでのシュートの表現が考えられます。
+サッカーのゴールシーンを作る時に、一番操作しやすいパラメータは、
+蹴る位置、蹴る勢い（方向と強さ）、ゴールした位置、ゴールに突き刺さった時の勢い
+だと思います。これがまさに、３次曲線の変数になります。
+蹴る位置、ゴールした位置を <b>x</b><sub>0</sub>, <b>x</b><sub>1</sub>、
+蹴る勢い、ゴールに突き刺さった時の勢いを <b>v</b><sub>0</sub>, <b>v</b><sub>1</sub> とします。
+</p>
+<pre class="CodeBlock">
+<img src = "prog21.gif">
+</pre>
+<p>これを、一般の３次曲線の式</p>
+<pre class="CodeBlock">
+<b>X</b> = <b>x</b> (t) = <b>a</b>t<sup>3</sup> + <b>b</b>t<sup>2</sup> + <b>c</b>t + <b>d</b>
+</pre>
+<p>に代入して、係数<b>a</b>、<b>b</b>、<b>c</b> 及び <b>d</b> を求めます。
+<a name = "Ferguson"><a href="./calc2.html#Ferguson">これを計算すれば、</a></a></p>
+
+<pre class="CodeBlock">
+<sup>  </sup>                ┌ 2 -2  1  1┐┌ <b>x</b><sub>0</sub> ┐
+<b>x</b>(t) = [t<sup>3</sup> t<sup>2</sup> t 1]│-3  3 -2 -1││ <b>x</b><sub>1</sub> │
+<sup>  </sup>                │ 0  0  1  0││ <b>v</b><sub>0</sub> │
+<sup>  </sup>                └ 1  0  0  0┘└ <b>v</b><sub>1</sub> ┘
+</pre>
+<p>となります。実は、この初期位置、速度及び、最終位置と速度を変数に持つ曲線には、
+特別な名前が付けられていて、Ferguson / Coons 曲線と呼ばれます。
+この後出て来る Bezier 曲線や B-Spline 曲線とは、変数とする物が違うだけで同じ物を表現しています。
+この後、色々と出てきても、『あぁ、それぞれに使い易い場所があるから書き換えてるんだ』と思ってください。
+</p>
+
+<p>最後の結果を行列とベクトルの積にまとめたのは形をきれいにする以上の意味があります。
+実際に３次曲線を扱う時に、<b>x</b><sub>0</sub>, <b>x</b><sub>1</sub>, <b>v</b><sub>0</sub>, <b>v</b><sub>1</sub>
+が決まっている場合が多々あります。そんな時は、後ろの積を先に計算して
+</p>
+<pre class="CodeBlock">
+<sup>  </sup>                ┌ 2<b>x</b><sub>0</sub> - 2<b>x</b><sub>1</sub> +  <b>v</b><sub>0</sub> + <b>v</b><sub>1</sub> ┐
+<b>x</b>(t) = [t<sup>3</sup> t<sup>2</sup> t 1]│-3<b>x</b><sub>0</sub> + 3<b>x</b><sub>1</sub> - 2<b>v</b><sub>0</sub> - <b>v</b><sub>1</sub> │
+<sup>  </sup>                │                   <b>v</b><sub>0</sub> │
+<sup>  </sup>                └                   <b>x</b><sub>0</sub> ┘
+</pre>
+<p>
+とすれば、使う時に時間の冪とベクトルの積だけの計算に収まります。逆にあらかじめ計算する時刻が決まっているなら、
+</p>
+<pre class="CodeBlock">
+<sup>   </sup>                                         ┌ <b>x</b><sub>0</sub> ┐
+<b>x</b>(t) = [2t<sup>3</sup>-3t<sup>2</sup>+1  -2t<sup>3</sup>+3t<sup>2</sup>  t<sup>3</sup>-2t<sup>2</sup>+t  t<sup>3</sup>-t<sup>2</sup>]│ <b>x</b><sub>1</sub> │
+<sup>   </sup>                                         │ <b>v</b><sub>0</sub> │
+<sup>   </sup>                                         └ <b>v</b><sub>1</sub> ┘
+</pre>
+<p>
+として、<b>x</b><sub>0</sub>, <b>x</b><sub>1</sub>, <b>v</b><sub>0</sub>, <b>v</b><sub>1</sub>が決まった時点で
+<b>x</b>(t) をすぐに求めることができます。
+シチュエーション次第で（あらかじめ用意しておくことによって）計算を軽くすることができます。
+<b>x</b>(t) を行列ではさんだベクトルの形式でまとめておくのは、しばしば有用になるので、覚えておくと良いと思います。
+</p>
+
+<p>
+最後にひとつ注意しなければならないことがあります。速度を位置のパラメータ微分にしました、
+これは時間微分とは異なります。パラメータ微分を元の時間変数で記述すると、
+</p>
+<pre class="CodeBlock">
+       d<b>x</b>(t)    d <b>X</b>(T)               d <b>X</b>(T)
+<b>v</b>(t) = ―― = ――――― = (T1 - T0) ―――,
+        dt      T  - T0               d T
+              d ―――
+                T1 - T0
+</pre>
+<p>
+となります。従って、現実の速度をパラメトリック曲線の速度に変換する時は、時間間隔 T1-T0 を掛けて下さい。
+</p>
+
+<h2>■Bezier 曲線</h2>
+
+<p>Ferguson / Coons 曲線は速度を指定しますが、コンピュータの画面で速度を指定するのはなかなか大変なので、
+位置を 4 点指定することにより、曲線を指定する方法が存在します。その方法の一つの曲線が Bezier 曲線です。
+位置として指定する点を制御点と呼びます。Bezier 曲線の制御点は、始点と終点
+及びその間の２点になります。具体的には、Ferguson / Coons 曲線の変数と、
+</p>
+<pre class="CodeBlock">
+<b>P</b><sub>0</sub> = <b>x</b><sub>0</sub>                   <b>x</b><sub>0</sub> = <b>P</b><sub>0</sub>
+<b>P</b><sub>1</sub> = <b>x</b><sub>0</sub> + <b>v</b><sub>0</sub> / 3      ⇔  <b>x</b><sub>1</sub> = <b>P</b><sub>3</sub>
+<b>P</b><sub>2</sub> = <b>x</b><sub>1</sub> - <b>v</b><sub>1</sub> / 3          <b>v</b><sub>0</sub> = 3 (<b>P</b><sub>1</sub> - <b>P</b><sub>0</sub>)
+<b>P</b><sub>3</sub> = <b>x</b><sub>1</sub>                   <b>v</b><sub>1</sub> = 3 (<b>P</b><sub>3</sub> - <b>P</b><sub>2</sub>)
+</pre>
+
+<p>の関係で結ばれます。</p>
+<pre class="CodeBlock">
+<img src = "prog22.gif">
+</pre>
+<p>Bezier 曲線をあらわに書くと、Ferguson / Coons 曲線の行列で書いた式と、上の関係式から、</p>
+<pre class="CodeBlock">
+<sup>  </sup>                ┌  2 -2  1  1┐┌ 1  0  0  0┐┌ <b>P</b><sub>0</sub> ┐
+<b>x</b>(t) = [t<sup>3</sup> t<sup>2</sup> t 1]│ -3  3 -2 -1││ 0  0  0  1││ <b>P</b><sub>1</sub> │
+<sup>  </sup>                │  0  0  1  0││-3  3  0  0││ <b>P</b><sub>2</sub> │
+<sup>  </sup>                └  1  0  0  0┘└ 0  0 -3  3┘└ <b>P</b><sub>3</sub> ┘
+<sup>  </sup>                ┌ -1  3 -3  1┐┌ <b>P</b><sub>0</sub> ┐
+     = [t<sup>3</sup> t<sup>2</sup> t 1]│  3 -6  3  0││ <b>P</b><sub>1</sub> │
+<sup>  </sup>                │ -3  3  0  0││ <b>P</b><sub>2</sub> │
+<sup>  </sup>                └  1  0  0  0┘└ <b>P</b><sub>3</sub> ┘
+</pre>
+<p>となります。この式を、さらに変形すると、</p>
+<pre class="CodeBlock">
+<sup>  </sup>                                            ┌ <b>P</b><sub>0</sub> ┐
+<b>x</b>(t) = [1-3t+3t<sup>2</sup>-t<sup>3</sup>  3(t-2t<sup>2</sup>+t<sup>3</sup>)  3(t<sup>2</sup>-t<sup>3</sup>)  t<sup>3</sup>]│ <b>P</b><sub>1</sub> │
+<sup>  </sup>                                            │ <b>P</b><sub>2</sub> │
+<sup>  </sup>                                            └ <b>P</b><sub>3</sub> ┘
+<sup>    </sup>                                   ┌ <b>P</b><sub>0</sub> ┐
+     = [(1-t)<sup>3</sup>  3t(1-t)<sup>2</sup>  3t<sup>2</sup>(1-t)  t<sup>3</sup>]│ <b>P</b><sub>1</sub> │
+<sup>    </sup>                                   │ <b>P</b><sub>2</sub> │
+<sup>    </sup>                                   └ <b>P</b><sub>3</sub> ┘
+     = Σ<sup>3</sup><sub>i=0</sub>  <sub>3</sub>C<sub>i</sub> t<sup>i</sup>(1-t)<sup>3-i</sup> <b>P</b><sub>i</sub>,
+但し、
+<sup>  </sup>        n!
+<sub>n</sub>C<sub>m</sub> = ―――――,    n! = n (n-1)･･･3 2 1.
+<sup>  </sup>     m!(n-m)!
+</pre>
+<p>となります。最後の式にはいたるところ『3』という数字が出ています。この『3』は実は３次曲線の３です。
+『3』を別の数字に変えると、その次数に応じた Bezier 曲線を作れます。例えば次数を『1』にすると、
+</p>
+<pre class="CodeBlock">
+<b>x</b>(t) = Σ<sup>1</sup><sub>i=0</sub>  <sub>1</sub>C<sub>i</sub> t<sup>i</sup>(1-t)<sup>1-i</sup> <b>P</b><sub>i</sub>,
+     = (1 - t) <b>P</b><sub>0</sub> + t <b>P</b><sub>1</sub>
+     = (<b>P</b><sub>1</sub> - <b>P</b><sub>0</sub>) t + <b>P</b><sub>0</sub>,
+</pre>
+<p>
+となります。これは見覚えがありますね。１次の Bezier 曲線は<b>P</b><sub>1</sub>、<b>P</b><sub>0</sub>を結ぶ直線になります。n 次の Bezier 曲線は一般に <b>P</b><sub>0</sub> から始まって、
+<b>P</b><sub>0</sub>→<b>P</b><sub>1</sub>→<b>P</b><sub>2</sub>→･･･→<b>P</b><sub>n-1</sub>→<b>P</b><sub>n</sub>
+と、順順に近づいて、最後に<b>P</b><sub>n</sub>に到着する性質があります。必ず、<b>P</b><sub>i</sub>に着くとは限りませんが、制御する時の目安として、近づいてもらいたい場所に番号順に並べるようにすればいいことがわかります。
+</p>
+
+
+<h2>■Catmull Rom 曲線</h2>
+
+<p>さて、最後にもう一つだけ曲線を取り扱いましょう。
+最近、本を読んで、この曲線が Catmull Rom 曲線という名前が付いていることを知りました。
+やはり、みんなが使いそうなものには名前がついているものです。</p>
+<p>Ferguson / Coons 曲線はなかなか使いやすいのですが、なんせいつも速度ベクトルを指定しなくてはなりません。
+Bezier 曲線は、全ての制御点を点として指定できるのですが、通過しない制御点の制御が大変です。
+点列が沢山あった場合に、その中の連続した４点を制御点とする曲線が Catmull Rom 曲線です。
+この曲線を繋げば、点列を３次曲線で繋ぐことができます。
+なおかつ、それは次の曲線に滑らかにつながるものです。
+</p>
+<pre class="CodeBlock">
+<img src = "prog23.gif">
+</pre>
+
+<p>
+さて、その作り方ですが、まず、Ferguson / Coons 曲線を元にします。
+Ferguson / Coons 曲線は、設定する２点は通過するわけですから、それはそのまま制御点として用い。
+残った速度を制御点で表現すればよいことになります。
+なおかつ、その速度の表現に関して、終点の速度が次の始点の速度に等しければ、滑らかにつながります。
+これは、速度の制御点による表現が i だけに依存し、初期速度と最終速度の形が ( i をずらしただけの)
+同じ形になっていれば条件は満たされています。
+</p>
+<p>
+ここでは、速度の表現として、最初と最後の移動量
+</p>
+<pre class="CodeBlock">
+d<b>x</b><sub>i</sub> = <b>x</b><sub>i</sub> - <b>x</b><sub>i-1</sub>,
+</pre>
+<p>
+の、始（終）点の前と後ろに関する平均を採用します。
+</p>
+<pre class="CodeBlock">
+<sub> </sub>     1 <sub>    </sub>             1
+<b>v</b><sub>i</sub> = ― (d<b>x</b><sub>i</sub> + d<b>x</b><sub>i+1</sub>) = ― (<b>x</b><sub>i+1</sub> - <b>x</b><sub>i-1</sub>)
+<sub> </sub>     2 <sub>    </sub>             2
+</pre>
+
+<p>
+この速度の表現を用い、t = 0, 1 で、<b>P</b><sub>i</sub>, <b>P</b><sub>i+1</sub>を通る曲線は、
+<a name = "3rdCurve"><a href="calc2.html#3rdCurve">ちょちょちょっと計算すると</a></a>、</p>
+<pre class="CodeBlock">
+<sup>   </sup>      1            ┌ -1  3 -3  1┐┌ <b>P</b><sub>i-1</sub> ┐
+<b>x</b><sub>i</sub>(t) = ― [t<sup>3</sup> t<sup>2</sup> t 1]│  2 -5  4 -1││ <b>P</b><sub>i  </sub> │
+<sup>   </sup>      2            │ -1  0  1  0││ <b>P</b><sub>i+1</sub> │
+<sup>   </sup>                   └  0  2  0  0┘└ <b>P</b><sub>i+2</sub> ┘
+</pre>
+<p>
+となります。
+</p>
+<p>
+さて、この曲線は <b>P</b><sub>i</sub> から <b>P</b><sub>i+1</sub>までを繋ぎますが、
+<b>P</b><sub>i-1</sub>, <b>P</b><sub>i+2</sub> に依存しています。
+<b>P</b><sub>0</sub> から <b>P</b><sub>n+1</sub> 迄の点列を曲線で繋ごうとした場合に、
+0 番目と n 番目の曲線は、<b>P</b><sub>-1</sub> と <b>P</b><sub>n+2</sub> の点がない為に、
+曲線 <b>x</b><sub>0</sub>(t), <b>x</b><sub>n</sub>(t) を求められません。
+従って、ここだけは特別な速度を使わなくてはなりません。
+ここでは、平均的には最初と最後の速度の中間の速度で移動した、と仮定します。
+</p>
+<pre class="CodeBlock">
+<sup>   </sup>                 1          
+d<b>x</b><sub>1</sub>(t) = <b>x</b><sub>1</sub> - <b>x</b><sub>0</sub> = ― (<b>v</b><sub>0</sub> + <b>v</b><sub>1</sub>)
+<sup>   </sup>                 2     
+</pre>
+<p>
+ちなみに、最初の『=』は定義で、後半の『=』が仮定です。
+この仮定を用い<a name = "Edge"><a href="calc2.html#Edge">計算すると</a></a>、境界での曲線の方程式は、
+</p>
+<pre class="CodeBlock">
+<sup>   </sup>      1            ┌  0  0  0  0┐┌ <b>0</b><sub>   </sub> ┐
+<b>x</b><sub>0</sub>(t) = ― [t<sup>3</sup> t<sup>2</sup> t 1]│  0  1 -2  1││ <b>P</b><sub>0  </sub> │
+<sup>   </sup>      2            │  0 -3  4 -1││ <b>P</b><sub>1  </sub> │
+<sup>   </sup>                   └  0  2  0  0┘└ <b>P</b><sub>2  </sub> ┘
+
+<sup>   </sup>      1            ┌  0  0  0  0┐┌ <b>P</b><sub>n-1</sub> ┐
+<b>x</b><sub>n</sub>(t) = ― [t<sup>3</sup> t<sup>2</sup> t 1]│  1 -2  1  0││ <b>P</b><sub>n  </sub> │
+<sup>   </sup>      2            │ -1  0  1  0││ <b>P</b><sub>n+1</sub> │
+<sup>   </sup>                   └  0  2  0  0┘└ <b>0</b><sub>   </sub> ┘
+</pre>
+<p>
+となります。
+以上により、<b>P</b><sub>0</sub> から <b>P</b><sub>n+1</sub> 迄を繋ぐ３次曲線 <b>x</b><sub>0</sub>(t) ～ <b>x</b><sub>n+1</sub>(t) の方程式ができました。
+</p>
+<p>
+この曲線を用いたサンプルを用意しました。<br><br>
+<ul style = "LIST-STYLE-TYPE:none">
+<li><a href="src.lzh">src.lzh(ソースつき)</a>
+</ul>
+この後に説明するであろう patch での表示になっていますが、端の曲線を見ていただければ
+この曲線がどのようなものかわかっていただけると思います。
+</p>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<center>
+<hr>
+<p><a href="calc2.html">今回実際にした計算</a></p>
+<p><a href="../index.html">もどる</a></p>
+<p><a href="mailto:imagire@gmail.com">imagire@gmail.com</a></p>
+</center>
+</body>
+</html>

@@ -1,0 +1,251 @@
+<head>
+	<title>t-pot 『DirectX8.0 入門:半透明にしてみる』</title>
+	<link rel="stylesheet" type="text/css" href="../if.css">
+</head>
+<meta http-equiv=Content-Type content="text/html; charset=shift_jis">
+<body>
+<div class="contents">
+<center>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<h1>半透明にしてみる</h1><br>
+<h3>～きれいなポリゴンは好きですか？～</h3>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+</center>
+<h2>■今回のファイルは</h2>
+
+<p>
+今回は、さらに、アルファブレンディングを用いて、半透明を実現します。
+</p>
+<right><image src = "alpha1.gif"></right>
+<p>
+次のソースを、ダウンロードしてください。
+<p>
+
+<ul style = "LIST-STYLE-TYPE:none">
+<li><a href="alpha.lzh">alpha.lzh (アルファブレンディングしてポリゴンを表示するサンプルのソース)</a>
+</ul>
+
+<p>
+今回も、draw.cpp を書き換えただけです。
+</p>
+
+<h2>■オブジェクト</h2>
+
+<p>
+今回は、２枚のポリゴンを使います。そのために、オブジェクトを２倍、用意しました。
+</p>
+<pre class="CodeBlock">
+LPDIRECT3DVERTEXBUFFER8 pVB1 = NULL;
+LPDIRECT3DVERTEXBUFFER8 pVB2 = NULL;
+LPDIRECT3DTEXTURE8      pTexture1 = NULL;
+LPDIRECT3DTEXTURE8      pTexture2 = NULL;
+</pre>
+<p>
+また、テクスチャー画像として、桜の絵(sakura.bmp)と、TEST と書いた絵(test.bmp)を用意しました。<br>
+下の画像の、下地になって、一部隠れている部分が、sakura.bmp で、黄色くTEST と書かれた画像が test.bmp です。
+</p>
+<right><image src = "alpha0.gif"></right>
+
+<h2>■初期化</h2>
+
+<p>
+とにかく、２倍２倍です。<br>
+それぞれ、色分けしてみました。
+</p>
+<pre class="CodeBlock">
+HRESULT InitRender(LPDIRECT3DDEVICE8 lpD3DDEV)
+{
+<Font color = orange><b>    CUSTOMVERTEX vertices1[] =
+    {
+        //     x,      y,    z,  rhw, color
+        { 100.0f, 100.0f, 0.5f, 1.0f, D3DCOLOR_RGBA(0xff, 0xff, 0xff, 0x80), 0.0f,0.0f,},
+        { 420.0f, 100.0f, 0.5f, 1.0f, D3DCOLOR_RGBA(0xff, 0xff, 0xff, 0x80), 1.0f,0.0f,},
+        { 100.0f, 340.0f, 0.5f, 1.0f, D3DCOLOR_RGBA(0xff, 0xff, 0xff, 0x80), 0.0f,1.0f,},
+        { 420.0f, 340.0f, 0.5f, 1.0f, D3DCOLOR_RGBA(0xff, 0xff, 0xff, 0x80), 1.0f,1.0f,},
+    };</b></Font>
+<Font color = yellow><b>    CUSTOMVERTEX vertices2[] =
+    {
+        //     x,      y,    z,  rhw, color
+        { 132.0f, 124.0f, 0.5f, 1.0f, D3DCOLOR_RGBA(0xff, 0xff, 0xff, 0x80), 0.0f,0.0f,},
+        { 388.0f, 124.0f, 0.5f, 1.0f, D3DCOLOR_RGBA(0xff, 0xff, 0xff, 0x80), 1.0f,0.0f,},
+        { 132.0f, 316.0f, 0.5f, 1.0f, D3DCOLOR_RGBA(0xff, 0xff, 0xff, 0x80), 0.0f,1.0f,},
+        { 388.0f, 316.0f, 0.5f, 1.0f, D3DCOLOR_RGBA(0xff, 0xff, 0xff, 0x80), 1.0f,1.0f,},
+    };</b></Font>
+    HRESULT hr;
+    
+<Font color = orange><b>    hr = lpD3DDEV->CreateVertexBuffer( 4*sizeof(CUSTOMVERTEX),0,
+                    D3DFVF_CUSTOMVERTEX, D3DPOOL_DEFAULT, &pVB1);
+    if(FAILED(hr)) return E_FAIL;</b></Font>
+<Font color = yellow><b>    hr = lpD3DDEV->CreateVertexBuffer( 4*sizeof(CUSTOMVERTEX),0,
+                    D3DFVF_CUSTOMVERTEX, D3DPOOL_DEFAULT, &pVB2);
+    if(FAILED(hr)) return E_FAIL;</b></Font>
+
+    VOID* pVertices;
+<Font color = orange><b>    hr = pVB1->Lock( 0, sizeof(vertices1), (BYTE**)&pVertices, 0);
+    if(FAILED(hr)) return E_FAIL;
+    memcpy( pVertices, vertices1, sizeof(vertices1) );
+    pVB1->Unlock();</b></Font>
+    
+<Font color = yellow><b>    hr = pVB2->Lock( 0, sizeof(vertices2), (BYTE**)&pVertices, 0);
+    if(FAILED(hr)) return E_FAIL;
+    memcpy( pVertices, vertices2, sizeof(vertices2) );
+    pVB2->Unlock();</b></Font>
+    
+<Font color = orange><b>    D3DXCreateTextureFromFileEx(lpD3DDEV, "sakura.bmp",0,0,0,0,D3DFMT_A8R8G8B8,
+                                D3DPOOL_MANAGED, D3DX_FILTER_LINEAR, D3DX_FILTER_LINEAR,
+                                0, NULL, NULL, &pTexture1);</b></Font>
+
+<Font color = yellow><b>    D3DXCreateTextureFromFileEx(lpD3DDEV, "test.bmp",0,0,0,0,D3DFMT_A8R8G8B8,
+                                D3DPOOL_MANAGED, D3DX_FILTER_LINEAR, D3DX_FILTER_LINEAR,
+                                0, NULL, NULL, &pTexture2);</b></Font>
+
+    return S_OK;
+}
+</pre>
+<p>
+まさに、コピペの嵐ですね。もっと、きれいにまとめて初期化しましょう。<br>
+今回、D3DCOLOR_RGBA の第四引数が 0x80=128 になっています。
+この値がアルファ値で、合成する時の割合（濃さ）として用いられます。
+255 のだいたい半分の値で、半分の強さで合成されることになります。
+</p>
+
+<h2>■描画</h2>
+
+<p>
+今回は、ここが豊かです。
+</p>
+
+<pre class="CodeBlock">
+void Render(LPDIRECT3DDEVICE8 lpD3DDEV)
+{
+    lpD3DDEV->SetVertexShader( D3DFVF_CUSTOMVERTEX );
+    
+    <Font color = aquamarine><b>// テクスチャのブレンディング方法を定義する
+    lpD3DDEV->SetTextureStageState( 0, D3DTSS_ALPHAOP, D3DTOP_MODULATE);// 引数の成分を乗算する
+    lpD3DDEV->SetTextureStageState( 0, D3DTSS_COLORARG1, D3DTA_TEXTURE);
+    lpD3DDEV->SetTextureStageState( 0, D3DTSS_COLORARG2, D3DTA_DIFFUSE);</b></Font>
+    
+    <Font color = orange><b>// 桜のポリゴンを描く
+    lpD3DDEV->SetTexture( 0, pTexture1);
+    lpD3DDEV->SetStreamSource( 0, pVB1, sizeof(CUSTOMVERTEX) );
+    lpD3DDEV->DrawPrimitive( D3DPT_TRIANGLESTRIP, 0, 2);</b></Font>
+    
+    <Font color = aquamarine><b>// アルファ合成の設定
+    lpD3DDEV->SetRenderState(D3DRS_ALPHABLENDENABLE, TRUE);
+    lpD3DDEV->SetRenderState(D3DRS_DESTBLEND, D3DBLEND_INVSRCALPHA);
+    lpD3DDEV->SetRenderState(D3DRS_SRCBLEND, D3DBLEND_SRCALPHA);</b></Font>
+    
+    <Font color = yellow><b>// TESTのポリゴンを描く
+    lpD3DDEV->SetTexture( 0, pTexture2);
+    lpD3DDEV->SetStreamSource( 0, pVB2, sizeof(CUSTOMVERTEX) );
+    lpD3DDEV->DrawPrimitive( D3DPT_TRIANGLESTRIP, 0, 2);</b></Font>
+    
+    <Font color = aquamarine><b>// 次のポリゴンが半透明にならないように
+    lpD3DDEV->SetRenderState(D3DRS_ALPHABLENDENABLE, FALSE);</b></Font>
+}
+</pre>
+<p>
+lpD3DDEV->SetVertexShader( D3DFVF_CUSTOMVERTEX );は、前回もやりましたが、ポリゴンの頂点フォーマットを設定します。
+</p>
+<p>
+lpD3DDEV->SetTextureStageState(....);は、アルファ合成する時に、どのような色を用いるか、指定します。<br>
+今回の設定では、テクスチャーの色と、ポリゴン自体の色を掛けた値を使います。
+つまり、テクスチャーの画像でも、ポリゴンの色でも、どちらでも色の指定が可能になります。
+</p>
+<p>
+そのあと、桜の画像を描画します。ここは、前回やったとおりです。
+</p>
+<p>
+次に、いよいよ半透明の設定です。<br>
+lpD3DDEV->SetRenderState(D3DRS_ALPHABLENDENABLE, TRUE); で、アルファ合成の切り替えをします。
+これで、半透明が使えるようになりました。<br>
+後の 2 つは、どのように合成するかを設定します。<br>
+D3DRS_DESTBLEND は、下地の画像の合成法を設定します。
+D3DBLEND_INVSRCALPHA は、上に描くポリゴンのアルファ値の濃さによって、下地の描画を薄くします。
+上に描くポリゴンのアルファ値が 0 の時はそのまま描き、255 の時は描きません（黒く描きます）。
+これで、透けた先の濃さが調整されます。<br>
+D3DRS_SRCBLEND は、上に書く画像の合成法を設定します。
+D3DBLEND_SRCALPHA は、描くポリゴンのアルファ値の濃さで描きます。
+アルファ値の値が高ければ高いほど、濃く描きます。<br>
+これで、透けるような描画ができる設定になりました。<br>
+後で、設定を変えた場合に、どのようになるかお見せします。
+</p>
+<p>
+そして、TEST 画像の描画です。<br>
+描画自体は、桜の画像を描画したのと変わりません。
+つまり、その前の SetRenderState が、半透明画像の描画の肝になっています。
+</p>
+
+<p>
+最後に、この後のポリゴンが半透明で描画されないように、アルファ合成をオフします。<br>
+</p>
+<h2>■後片付け</h2>
+
+<p>
+後片付けは、いつものように、使ったものを開放するだけです。
+</p>
+
+<pre class="CodeBlock">
+void CleanRender()
+{
+    <Font color = yellow><b>RELEASE(pTexture2);</b></Font>
+    <Font color = orange><b>RELEASE(pTexture1);</b></Font>
+    <Font color = yellow><b>RELEASE(pVB2);</b></Font>
+    <Font color = orange><b>RELEASE(pVB1);</b></Font>
+}
+</pre>
+
+<h2>■バリエーション</h2>
+<p>
+D3DRS_DESTBLEND や、D3DRS_SRCBLEND を変える事によって、様々な合成を行うことが出来ます。
+一例として、下に挙げてみました。
+</p>
+<p>
+<Font color = yellow><b>内挿</b></Font>：色ガラスみたいに、後ろが透けて見える表現です。
+半透明のポリゴンのアルファ値を変える事によって、濃さを調整できます
+(0:透明～128:下の画像～255:不透明)。
+</p>
+<pre class="CodeBlock">
+    lpD3DDEV->SetRenderState(D3DRS_DESTBLEND, D3DBLEND_INVSRCALPHA);
+    lpD3DDEV->SetRenderState(D3DRS_SRCBLEND, D3DBLEND_SRCALPHA);
+</pre>
+<right><image src = "alpha1.gif"></right>
+<p>
+<Font color = yellow><b>加算</b></Font>：ポリゴンが光り輝く表現をする時に使います。
+</p>
+<pre class="CodeBlock">
+    lpD3DDEV->SetRenderState(D3DRS_DESTBLEND, D3DBLEND_ONE);
+    lpD3DDEV->SetRenderState(D3DRS_SRCBLEND, D3DBLEND_SRCALPHA);
+</pre>
+<right><image src = "alpha2.gif"></right>
+<p>
+<Font color = yellow><b>減算もどき（黒く乗算）</b></Font>：色を沈ませたい時に使えます。
+下の画像では黄色いテクスチャーを張ったために青くなっていますが、白いテクスチャーを張ると、そこが黒くなります。
+</p>
+<pre class="CodeBlock">
+    lpD3DDEV->SetRenderState(D3DRS_DESTBLEND, D3DBLEND_INVSRCCOLOR);
+    lpD3DDEV->SetRenderState(D3DRS_SRCBLEND, D3DBLEND_ZERO);
+</pre>
+<right><image src = "alpha3.gif"></right>
+<p>
+<Font color = yellow><b>不透明</b></Font>：アルファ合成の ON/OFF の切り替えをせずに、不透明のポリゴンを表示するのに使います。
+</p>
+<pre class="CodeBlock">
+    lpD3DDEV->SetRenderState(D3DRS_DESTBLEND, D3DBLEND_ZERO);
+    lpD3DDEV->SetRenderState(D3DRS_SRCBLEND, D3DBLEND_ONE);
+</pre>
+<right><image src = "alpha0.gif"></right>
+
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<center>
+<hr>
+<p><a href="../index.html">もどる</a></p>
+<p><a href="mailto:imagire@gmail.com">imagire@gmail.com</a></p>
+</center>
+</body>
+</html>

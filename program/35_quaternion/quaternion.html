@@ -1,0 +1,652 @@
+<head>
+	<title>t-pot『Quaternion』</title>
+	<link rel="stylesheet" type="text/css" href="../if.css">
+</head>
+<meta http-equiv=Content-Type content="text/html; charset=shift_jis">
+<body text=#ffffff>
+
+<div class="contents">
+<center>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<h1>Quaternion</h1><br>
+<h3>～いや、もう皆使えるだろ～</h3>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+</center>
+
+<center>
+<p>
+2002 May. 28 修正（<a href="old/quaternion.html">修正前のドキュメント</a>）
+</p>
+</center>
+
+
+<h2>■はじめに</h2>
+
+
+<p>
+前回、剛体をちょこっとやってみたのですが、
+回転部分が完全には３次元の特殊正規直行行列（まぁSO3だ）になっていないので、
+計算をしつづけると、車がゆがんできます。<br>
+これを防止するために、回転を表現する別の方法である Quaternion で姿勢を制御します。
+</p>
+<br>
+<image src = "title.gif">
+<p>
+今回のソースは、次のものです（DirectX8.1用です）。
+</p>
+<ul style = "LIST-STYLE-TYPE:none">
+<li><a href="quaternion.lzh">quaternion.lzh (quaternionのソース)</a>
+</ul>
+
+<p>
+今回は、前回のソースの変更版です。<br>
+といってもGeForce3以上でないと動かないのも酷だと思ったので、普通の環境で動くようにしています。
+</p>
+<table>
+<tr><td><a href="rigidbody_h.html">rigidbody.h</a></td><td>剛体運動に関する定義。</td></tr>
+<tr><td><a href="rigidbody_cpp.html">rigidbody.cpp</a></td><td>剛体運動の計算部分。</td></tr>
+<tr><td><a href="main_h.html">main.h</a></td><td>基本的な定数など。今回も出番無し。</td></tr>
+<tr><td><a href="main_cpp.html">main.cpp</a></td><td>描画に関係しないシステム的な部分。変更が無いので、出番無し。</td></tr>
+<tr><td><a href="draw_h.html">draw.h</a></td><td>描画の各関数の定義。特に意味無いので出番無し。</td></tr>
+<tr><td><a href="draw_cpp.html">draw.cpp</a></td><td>メインの描画部分。</td></tr>
+<tr><td><a href="font_h.html">font.h</a></td><td>FPS表示用。既出。</td></tr>
+<tr><td><a href="font_cpp.html">font.cpp</a></td><td>FPS表示用。既出。</td></tr><tr><td><a href="load_h.html">load.h</a></td><td>ファイルの読み込み。</td></tr>
+<tr><td><a href="load_cpp.html">load.cpp</a></td><td>ファイルの読み込み。</td></tr>
+<tr><td><a href="bg_cpp.html">bg.cpp</a></td><td>地面＋天円柱の描画。今回説明無し。</td></tr>
+<tr><td><a href="light_eff_cpp.html">light_eff.cpp</a></td><td>ライトの方向を説明するラインを描画。XFCのものから、抜き出し。</td></tr>
+<tr><td><a href="resource_h.html">resource.h</a></td><td>メニューに関する定義。</td></tr>
+</table>
+<image src = "tile_bmp.jpg" width = 64 height=64>tile.bmp (床デカール)
+<image src = "sky_bmp.jpg" width = 64 height=64>sky.bmp (空デカール)
+<p>
+あと、いつもの様に、モデルと、実行ファイル及び、プロジェクトファイルが入っています。
+</p>
+
+<p>
+操作方法は、
+</p>
+<table>
+<tr><td>[ESC][F12]</td><td>終了</td></tr>
+<tr><td>[↑]</td><td>加速</td></tr>
+<tr><td>[↓]</td><td>減速</td></tr>
+<tr><td>[←][→]</td><td>曲がる</td></tr>
+<tr><td>[SPACE]</td><td>リセット</td></tr>
+</table>
+<p>
+です。<br>
+その他に、左ボタンを押しながらのドラッグでカメラが回り、右ボタンを押しながらのドラッグで光源が回ります。<br>
+今回も、車の動きが不安定です。ご了承ください。
+</p>
+
+
+<h2>■Quaternion(４元数)とは</h2>
+
+
+<p>
+Quaternion とは、複素数が２次元の自由度だった（複素数は平面に書ける）ものを、４次元に自由度を拡張したものです。<br>
+Quaternion は、一般に次のように書けます。
+</p>
+<pre class="CodeBlock">
+<i>q</i> = a + b<i>i</i> + c<i>j</i> + d<i>k</i>
+</pre>
+<p>
+ここで、a,b,c,d は実数です。<br>
+<i>i</i>, <i>j</i>, <i>k</i> (と、暗黙の<i>1</i>) は、Quaternion の基底です。<br>
+基底の積に関して、次の規則が決められています。
+</p>
+<pre class="CodeBlock">
+<i>i</i>･<i>1</i> = <i>1</i>･<i>i</i> = <i>i</i>, 
+<i>j</i>･<i>1</i> = <i>1</i>･<i>j</i> = <i>j</i>, (ようは<i>1</i>に何かけても<i>1</i>)
+<i>k</i>･<i>1</i> = <i>1</i>･<i>k</i> = <i>k</i>, 
+<i>i</i>･<i>j</i> =-<i>j</i>･<i>i</i> = <i>k</i>, 
+<i>j</i>･<i>k</i> =-<i>k</i>･<i>j</i> = <i>i</i>, (他の基底は積の結果が巡回的)
+<i>k</i>･<i>i</i> =-<i>i</i>･<i>k</i> = <i>j</i>.
+</pre>
+<p>
+この規則を用いると、２つの quaternion
+</p>
+<pre class="CodeBlock">
+<i>q</i><sub>1</sub> = a<sub>1</sub> + b<sub>1</sub><i>i</i> + c<sub>1</sub><i>j</i> + d<sub>1</sub><i>k</i>,
+<i>q</i><sub>2</sub> = a<sub>2</sub> + b<sub>2</sub><i>i</i> + c<sub>2</sub><i>j</i> + d<sub>2</sub><i>k</i>,
+</pre>
+<p>
+の和と差と積は次のようになります。
+</p>
+<pre class="CodeBlock">
+<i>q</i><sub>1</sub> + <i>q</i><sub>2</sub> = a<sub>1</sub> + a<sub>2</sub> + (b<sub>1</sub> + b<sub>2</sub>)<i>i</i> + (c<sub>1</sub> + c<sub>2</sub>)<i>j</i> + (d<sub>1</sub> + d<sub>2</sub>)<i>k</i>,
+<i>q</i><sub>1</sub> - <i>q</i><sub>2</sub> = a<sub>1</sub> - a<sub>2</sub> + (b<sub>1</sub> - b<sub>2</sub>)<i>i</i> + (c<sub>1</sub> - c<sub>2</sub>)<i>j</i> + (d<sub>1</sub> - d<sub>2</sub>)<i>k</i>.
+</pre>
+<pre class="CodeBlock">
+<i>q</i><sub>1</sub>･<i>q</i><sub>2</sub> = (a<sub>1</sub> + b<sub>1</sub><i>i</i> + c<sub>1</sub><i>j</i> + d<sub>1</sub><i>k</i>)･(a<sub>2</sub> + b<sub>2</sub><i>i</i> + c<sub>2</sub><i>j</i> + c<sub>2</sub><i>j</i>)
+      = (a<sub>1</sub> + b<sub>1</sub><i>i</i> + c<sub>1</sub><i>j</i> + d<sub>1</sub><i>k</i>)･a<sub>2</sub>
+      + (a<sub>1</sub> + b<sub>1</sub><i>i</i> + c<sub>1</sub><i>j</i> + d<sub>1</sub><i>k</i>)･b<sub>2</sub><i>i</i>
+      + (a<sub>1</sub> + b<sub>1</sub><i>i</i> + c<sub>1</sub><i>j</i> + d<sub>1</sub><i>k</i>)･c<sub>2</sub><i>j</i>
+      + (a<sub>1</sub> + b<sub>1</sub><i>i</i> + c<sub>1</sub><i>j</i> + d<sub>1</sub><i>k</i>)･d<sub>2</sub><i>k</i>
+                                    <font color = yellow>↓基底の積の規則を使って</font>
+      = (a<sub>1</sub>  + b<sub>1</sub><i>i</i> + c<sub>1</sub><i>j</i> + d<sub>1</sub><i>k</i>)･a<sub>2</sub>
+      + (a<sub>1</sub><i>i</i> - b<sub>1</sub><i> </i> - c<sub>1</sub><i>k</i> + d<sub>1</sub><i>j</i>)･b<sub>2</sub>
+      + (a<sub>1</sub><i>j</i> + b<sub>1</sub><i>k</i> - c<sub>1</sub><i> </i> - d<sub>1</sub><i>i</i>)･c<sub>2</sub>
+      + (a<sub>1</sub><i>k</i> - b<sub>1</sub><i>j</i> + c<sub>1</sub><i>i</i> - d<sub>1</sub><i> </i>)･d<sub>2</sub>
+                                    <font color = yellow>↓それぞれの基底でまとめて</font>
+      = (a<sub>1</sub>a<sub>2</sub> - b<sub>1</sub>b<sub>2</sub> - c<sub>1</sub>c<sub>2</sub> - d<sub>1</sub>d<sub>2</sub>)
+      + (a<sub>1</sub>b<sub>2</sub> + b<sub>1</sub>a<sub>2</sub> + c<sub>1</sub>d<sub>2</sub> - d<sub>1</sub>c<sub>2</sub>)<i>i</i>
+      + (a<sub>1</sub>c<sub>2</sub> - b<sub>1</sub>d<sub>2</sub> + c<sub>1</sub>a<sub>2</sub> + d<sub>1</sub>b<sub>2</sub>)<i>j</i>
+      + (a<sub>1</sub>d<sub>2</sub> + b<sub>1</sub>c<sub>2</sub> - c<sub>1</sub>b<sub>2</sub> + d<sub>1</sub>a<sub>2</sub>)<i>k</i>
+</pre>
+
+<p>
+さて、上の書き方は非常に項が多くて、やってられません。<br>
+ということで、ベクトルを用いた表記方法が使われています。<br>
+それは、３次元ベクトルと１つの実数の集合として表記する方法で、
+</p>
+<pre class="CodeBlock">
+<i>q</i> = (a, <b>v</b>),     ⇔     <i>q</i> = a + b<i>i</i> + c<i>j</i> + d<i>k</i>
+<b>v</b> = &lt b c d &gt
+</pre>
+<p>
+のように書きます。<br>
+この表記法を用いると、和や積は
+</p>
+<pre class="CodeBlock">
+<i>q</i><sub>1</sub> + <i>q</i><sub>2</sub> = (a<sub>1</sub> + a<sub>2</sub>, <b>v</b><sub>1</sub> + <b>v</b><sub>2</sub>),
+<i>q</i><sub>1</sub> - <i>q</i><sub>2</sub> = (a<sub>1</sub> - a<sub>2</sub>, <b>v</b><sub>1</sub> - <b>v</b><sub>2</sub>),
+<i>q</i><sub>1</sub> ･ <i>q</i><sub>2</sub> = (a<sub>1</sub>a<sub>2</sub> - <b>v</b><sub>1</sub>･<b>v</b><sub>2</sub>,  a<sub>1</sub><b>v</b><sub>2</sub> + a<sub>2</sub><b>v</b><sub>1</sub> + <b>v</b><sub>1</sub>×<b>v</b><sub>2</sub>),
+</pre>
+<p>
+と、積はベクトルの内積や外積を使いますが、より短い形で書けます。
+</p>
+<p>
+さらに、短い書き方として、ベクトルと実数の区別が付く事から、
+</p>
+<pre class="CodeBlock">
+<i>q</i> = a + <b>v</b>
+</pre>
+<p>
+もあります。
+</p>
+
+<h2>■逆Quaternion</h2>
+
+
+<p>
+Quaternion は複素数を拡張したものなのでほとんどの quaternion <i>q</i> に関して
+その逆数（掛けて1になるもの）<i>q</i><sup>-1</sup>が存在します。<br>
+次の回転で使うので、ここで紹介しておきます。<br>
+次の quaternion の積に注目します。
+</p>
+<pre class="CodeBlock">
+(a, <b>v</b>)(a, -<b>v</b>) = (aa + <b>v</b>･<b>v</b>,  -a<b>v</b> + a<b>v</b> - <b>v</b>×<b>v</b>)    <font color = yellow>↓<b>v</b>×<b>v</b>=<b>0</b></font>
+              = (a<sup>2</sup> + <b>v</b>･<b>v</b>,  <b>0</b>)
+              = (a<sup>2</sup> + <b>v</b>･<b>v</b>)<i>1</i>
+                 <i>1</i> ≡ (1, &lt 0 0 0 &gt) : 単位 quaternion
+</pre>
+<p>
+上の式をよく見ると、次の quaternion が逆 quaternion になります。
+</p>
+<pre class="CodeBlock">
+        <i>q</i> <sup>'</sup>
+<i>q</i> <sup>-1</sup> = ──        <i>q</i> <sup>'</sup>  = (a, -<b>v</b>)  :<i>q</i> の共役
+      ∥<i>q</i>∥<sup>2</sup>     ∥<i>q</i>∥<sup>2</sup> = a<sup>2</sup> + <b>v</b>･<b>v</b> :<i>q</i> のノルム
+</pre>
+
+
+<h2>■Quaternion と回転の関係</h2>
+
+
+<p>
+では、Quaternion の何がありがたられるかということですが、
+それは、Quaternion が直接的にベクトルの回転を表現するからです。<br>
+例えば、４元ベクトルの quaternion による表現
+</p>
+<pre class="CodeBlock">
+<i>P</i> = (w, <b>x</b>) = (w, &lt x y z &gt)
+</pre>
+<p>
+を考えます。<br>
+この両辺に quaternion <i>q</i> =(a, <b>v</b>) と、その逆 quaternion を作用させると、
+</p>
+<pre class="CodeBlock">
+<i>P'</i> = <i>q</i> <i>P</i> <i>q</i> <sup>-1</sup>
+   = (a, <b>v</b>) (w, <b>x</b>) (a, -<b>v</b>)/∥<i>q</i>∥<sup>2</sup>
+
+                 <font color = yellow>↓<i>q</i><sub>1</sub> ･ <i>q</i><sub>2</sub> = (a<sub>1</sub>a<sub>2</sub> - <b>v</b><sub>1</sub>･<b>v</b><sub>2</sub>,  a<sub>1</sub><b>v</b><sub>2</sub> + a<sub>2</sub><b>v</b><sub>1</sub> + <b>v</b><sub>1</sub>×<b
+>v</b><sub>2</sub>)</font>
+   = (aw-<b>v</b>･<b>x</b>, a<b>x</b>+w<b>v</b>+<b>v</b>×<b>x</b>) (a, -<b>v</b>)/∥<i>q</i>∥<sup>2</sup>
+   = (a<sup>2</sup>w-<font color=yellow>a<b>v</b>･<b>x</b></font>+(<font color = yellow>a<b>x</b>･<b>v</b></font>+w<b>v</b>･<b>v</b>+<font color=gray>(<b>v</b>×<b>x</b>)<b>v</b></font>), -<font color=orange>aw<b>v</b></font>+(<b>v</b>･<b>x</b>)<b>v</b>+a<sup>2</sup><b>x</b>+<font color=orange>aw<b>v</b></font>+a<b>v</b>×<b>x</b>-a<b>x</b>×<b>v</b>-w<font color=black><b>v</b>×<b>v</b></font>-(<b>v</b>×<b>x</b>)×<b>v</b>)/∥<i>q</i>∥<sup>2</sup>
+
+                 <font color = yellow>↓黄色と<font color=orange>オレンジ</font>の部分は消し合い、<font color=gray>灰色</font>と<font color=black>黒</font>の部分はベクトルの計算の性質上０になる</font>
+
+   = ((a<sup>2</sup>+<b>v</b>･<b>v</b>)w, (<b>v</b>･<b>x</b>)<b>v</b>+a<sup>2</sup><b>x</b>+2a<b>v</b>×<b>x</b>-(<b>v</b>×<b>x</b>)×<b>v</b>)/∥<i>q</i>∥<sup>2</sup>
+   = (∥<i>q</i>∥<sup>2</sup>w, a<sup>2</sup><b>x</b>+2a<b>v</b>×<b>x</b>+(<b>v</b>･<b>x</b>)<b>v</b>-(<b>v</b>×<b>x</b>)×<b>v</b>)/∥<i>q</i>∥<sup>2</sup>
+   = (w, <b>x'</b>)
+
+   <b>x'</b> = (a<sup>2</sup><b>x</b>+2a<b>v</b>×<b>x</b>+(<b>v</b>･<b>x</b>)<b>v</b>-(<b>v</b>×<b>x</b>)×<b>v</b>)/∥<i>q</i>∥<sup>2</sup>
+</pre>
+<p>
+さて、この変換後のベクトルの大きさを調べてみます。<br>
+計算の簡単のために、∥<i>q</i>∥<sup>4</sup> を掛けておくと、
+</p>
+<pre class="CodeBlock">
+∥<i>q</i>∥<sup>4</sup><b>x'</b><sup>2</sup> = (a<sup>2</sup><b>x</b>+2a<b>v</b>×<b>x</b>+(<b>v</b>･<b>x</b>)<b>v</b>-(<b>v</b>×<b>x</b>)×<b>v</b>)･(a<sup>2</sup><b>x</b>+2a<b>v</b>×<b>x</b>+(<b>v</b>･<b>x</b>)<b>v</b>-(<b>v</b>×<b>x</b>)×<b>v</b>)
+          = a<sup>4</sup><b>x</b>･</sup><b>x</b> + 2a<sup>3</sup><font color=gray><b>x</b>･(<b>v</b>×<b>x</b>)</font> + a<sup>2</sup>(<b>v</b>･<b>x</b>)(<b>x</b>･<b>v</b>) - a<sup>2</sup><b>x</b>･((<b>v</b>×<b>x</b>)×<b>v</b>))
+           + 2a<sup>3</sup><font color=gray>(<b>v</b>×<b>x</b>)･<b>x</b></font> + 4a<sup>2</sup>(<b>v</b>×<b>x</b>)･(<b>v</b>×<b>x</b>) + 2a(<b>v</b>･<b>x</b>)<font color=gray>((<b>v</b>×<b>x</b>)･<b>v</b>)</font> - 2a<font color=gray>(<b>v</b>×<b>x</b>)･((<b>v</b>×<b>x</b>)×<b>v</b>)</font>
+           + a<sup>2</sup>(<b>v</b>･<b>x</b>)(<b>v</b>･<b>x</b>) + 2a(<b>v</b>･<b>x</b>)<font color=gray>(<b>v</b>･(<b>v</b>×<b>x</b>))</font> + (<b>v</b>･<b>x</b>)<sup>2</sup><b>v</b>･<b>v</b> - (<b>v</b>･<b>x</b>)<font color=gray>(<b>v</b>･((<b>v</b>×<b>x</b>)×<b>v</b>))</font>
+           - a<sup>2</sup>((<b>v</b>×<b>x</b>)×<b>v</b>)･<b>x</b> - 2a<font color=gray>((<b>v</b>×<b>x</b>)×<b>v</b>)･(<b>v</b>×<b>x</b>)</font> - (<b>v</b>･<b>x</b>)<font color=gray>(((<b>v</b>×<b>x</b>)×<b>v</b>)･<b>v</b>)</font> + ((<b>v</b>×<b>x</b>)×<b>v</b>)･((<b>v</b>×<b>x</b>)×<b>v</b>)
+
+                 <font color = yellow>↓<font color=gray>灰色</font>の部分はベクトルの計算の性質上０になる</font>
+
+          = a<sup>4</sup><b>x</b>･</sup><b>x</b> + a<sup>2</sup>(<b>v</b>･<b>x</b>)<sup>2</sup> - a<sup>2</sup><b>x</b>･((<b>v</b>×<b>x</b>)×<b>v</b>)) + 4a<sup>2</sup>(<b>v</b>×<b>x</b>)<sup>2</sup> + a<sup>2</sup>(<b>v</b>･<b>x</b>)<sup>2</sup> + (<b>v</b>･<b>x</b>)<sup>2</sup><b>v</b>･<b>v</b>
+           - a<sup>2</sup>((<b>v</b>×<b>x</b>)×<b>v</b>)･<b>x</b> + ((<b>v</b>×<b>x</b>)×<b>v</b>)･((<b>v</b>×<b>x</b>)×<b>v</b>)
+          = a<sup>4</sup><b>x</b>･</sup><b>x</b> + 2a<sup>2</sup>(<b>v</b>･<b>x</b>)<sup>2</sup> - 2a<sup>2</sup><b>x</b>･((<b>v</b>×<b>x</b>)×<b>v</b>)) + 4a<sup>2</sup>(<b>v</b>×<b>x</b>)<sup>2</sup> + (<b>v</b>･<b>x</b>)<sup>2</sup><b>v</b>･<b>v</b> + ((<b>v</b>×<b>x</b>)×<b>v</b>)･((<b>v</b>×<b>x</b>)×<b>v</b>)
+
+                 <font color = yellow>↓(<b>a</b>×<b>b</b>)×<b>c</b> = <b>b</b>(<b>c</b>･<b>a</b>) - <b>a</b>(<b>c</b>･<b>b</b>)</font>
+
+          = a<sup>4</sup><b>x</b>･</sup><b>x</b> + 2a<sup>2</sup>(<b>v</b>･<b>x</b>)<sup>2</sup> - 2a<sup>2</sup><b>x</b>･(<b>x</b>(<b>v</b>･<b>v</b>)-<b>v</b>(<b>v</b>･<b>x</b>)) + 4a<sup>2</sup>(<b>v</b>×<b>x</b>)<sup>2</sup> + (<b>v</b>･<b>x</b>)<sup>2</sup><b>v</b>･<b>v</b>
+           + (<b>x</b>(<b>v</b>･<b>v</b>)-<font color=gray><b>v</b></font>(<b>v</b>･<b>x</b>))･((<b>v</b>×<b>x</b>)×<b>v</b>)
+          = a<sup>4</sup><b>x</b>･</sup><b>x</b> - 2a<sup>2</sup>(<b>x</b>･<b>x</b>)(<b>v</b>･<b>v</b>) + (<b>v</b>･<b>x</b>)<sup>2</sup><b>v</b>･<b>v</b> + (<b>v</b>･<b>v</b>)(<b>x</b>･((<b>v</b>×<b>x</b>)×<b>v</b>))
+           + 4a<sup>2</sup>(<b>v</b>･<b>x</b>)<sup>2</sup> + 4a<sup>2</sup>(<b>v</b>×<b>x</b>)<sup>2</sup>
+
+                 <font color = yellow>↓(<b>v</b>･<b>x</b>)<sup>2</sup> = |v|<sup>2</sup>|x|<sup>2</sup>cos<sup>2</sup>Θ、(<b>v</b>×<b>x</b>)<sup>2</sup> = |v|<sup>2</sup>|x|<sup>2</sup>sin<sup>2</sup>Θ</font>
+
+        = a<sup>4</sup><b>x</b>･</sup><b>x</b> + 2a<sup>2</sup>(<b>x</b>･<b>x</b>)(<b>v</b>･<b>v</b>) + (<b>v</b>･<b>x</b>)<sup>2</sup><b>v</b>･<b>v</b> + (<b>v</b>･<b>v</b>)(<b>x</b>･((<b>v</b>×<b>x</b>)×<b>v</b>))
+          = a<sup>4</sup><b>x</b>･</sup><b>x</b> + 2a<sup>2</sup>(<b>x</b>･<b>x</b>)(<b>v</b>･<b>v</b>) + <font color = yellow>(<b>v</b>･<b>x</b>)<sup>2</sup><b>v</b>･<b>v</b></font> + (<b>v</b>･<b>v</b>)(<b>x</b>･(<b>x</b>(<b>v</b>･<b>v</b>)-<font color = yellow><b>v</b>(<b>v</b>･<b>x</b>)</font>))
+          = a<sup>4</sup><b>x</b>･</sup><b>x</b> + 2a<sup>2</sup>(<b>x</b>･<b>x</b>)(<b>v</b>･<b>v</b>) + (<b>v</b>･<b>v</b>)<sup>2</sup><b>x</b>･<b>x</b>
+          = (a<sup>2</sup> + (<b>v</b>･<b>v</b>))<sup>2</sup>(<b>x</b>･<b>x</b>)
+          = ∥<i>q</i>∥<sup>4</sup><b>x</b><sup>2</sup>
+</pre>
+<p>
+になります。<br>
+大きさが変わらないということは、「ベクトルの向きを変えた」すなわち回転したことになります。<br>
+しかも、４元ベクトルの第四成分 w も変化して無いので、本当に回転を表現していることになります。<br>
+</p>
+<pre class="CodeBlock">
+iforさんから、この部分が分からないとの指摘を受けました。
+（3次元）ベクトルは、突き詰めていけば、（x,y,z）の成分を持つ数字の集合です。
+このベクトルは、単位ベクトルeとスカラーaを用いて
+(x,y,z)=ae
+と、必ず書くことが出来ます。
+ベクトルの変換は、aを変化させる（拡大縮小）のと、eを変化させる（回転）の合成になります。
+平行移動も、その結果は回転と拡縮の結果に帰着させられるということです。
+その上で、「ベクトルの大きさが変わらない変換」というのは、残された「回転しか変換をしていない」ということになるので、
+「大きさが変わらないので回転したことになる」という表現を使いました。
+</pre>
+
+
+
+<h2>■任意軸回りの回転</h2>
+
+
+<p>
+さて、quaternion を次の形で書きます。
+</p>
+<pre class="CodeBlock">
+<i>q</i> = |<i>q</i> |(cos(θ/2), sin(θ/2)<b>ω</b>)
+</pre>
+<p>
+ここで、<b>ω</b>は単位ベクトル、|<i>q</i> | は quaternion の大きさ（|<i>q</i> |=Sqrt(∥<i>q</i>∥<sup>2</sup>)）です。<br>
+任意の quaternion はこの形式で掛けますが、この quaterion を用いてベクトルを回転すると、
+</p>
+<pre class="CodeBlock">
+<i>P'</i> = <i>q</i> <i>P</i> <i>q</i> <sup>-1</sup>
+   = (w, <b>x'</b>)
+
+<b>x'</b> = (a<sup>2</sup><b>x</b>+2a<b>v</b>×<b>x</b>+(<b>v</b>･<b>x</b>)<b>v</b>-(<b>v</b>×<b>x</b>)×<b>v</b>)/∥<i>q</i>∥<sup>2</sup>
+   = cos<sup>2</sup>(θ/2)<b>x</b> + 2cos(θ/2)sin(θ/2)<b>ω</b>×<b>x</b> + sin<sup>2</sup>(θ/2)(<b>ω</b>･<b>x</b>)<b>ω</b> - sin<sup>2</sup>(θ/2)(<b>ω</b>×<b>x</b>)×<b>ω</b>
+
+                 <font color = yellow>↓(<b>a</b>×<b>b</b>)×<b>c</b> = <b>b</b>(<b>c</b>･<b>a</b>) - <b>a</b>(<b>c</b>･<b>b</b>)</font>
+
+   = cos<sup>2</sup>(θ/2)<b>x</b> + 2cos(θ/2)sin(θ/2)<b>ω</b>×<b>x</b> + sin<sup>2</sup>(θ/2)(<b>ω</b>･<b>x</b>)<b>ω</b> - sin<sup>2</sup>(θ/2)(<b>x</b>(<b>ω</b>･<b>ω</b>)-<b>ω</b>(<b>ω</b>･<b>x</b>))
+   = (cos<sup>2</sup>(θ/2)-sin<sup>2</sup>(θ/2))<b>x</b> + 2cos(θ/2)sin(θ/2)<b>ω</b>×<b>x</b> + 2sin<sup>2</sup>(θ/2)(<b>ω</b>･<b>x</b>)<b>ω</b>
+  = cosθ <b>x</b> + sinθ <b>ω</b>×<b>x</b> + (1-cosθ)(<b>ω</b>･<b>x</b>)<b>ω</b>
+  = (<b>ω</b>･<b>x</b>)<b>ω</b> + (<b>x</b>-(<b>ω</b>･<b>x</b>)<b>ω</b>)cosθ + <b>ω</b>×<b>x</b> sinθ
+</pre>
+<p>
+さて、上の式をよく見ると、ベクトルを回転していることが見えてきます。<br>
+下の図を見てください。
+</p>
+
+<image src = "rot.gif">
+
+<p>
+先ず、一つ目の項です。<br>
+最初の項は、<b>ω</b>の軸への<b>x</b>の射影になっています。<br>
+２つめの項は、元のベクトルから、<b>ω</b>の軸へ射影を引いた値。
+つまり、<b>ω</b>に直行した射影にcosθを掛けた形になっています。<br>
+最後の項は、<b>ω</b>×<b>x</b> つまり、まえの２つの項に直行したベクトルです。<br>
+また、その大きさは、｜<b>ω</b>×<b>x</b>｜=|<b>ω</b>||<b>x</b>|sin(<b>ω</b>,<b>x</b>) で、
+|<b>x</b>|sin(<b>ω</b>,<b>x</b>)は、丁度<b>x</b>の<b>ω</b>に直行した成分の大きさになっています。
+従って、上の図にある円の円上に<b>ω</b>×<b>x</b>はあります。<br>
+２、３項目にそれぞれ cos, sin がかかっているので、上の式は、<b>x</b> を<b>ω</b>を軸にして、θだけまわしていることを表現しています。
+</p>
+<p>
+この議論は |<i>q</i> |≠0の時に成り立つので、quaternion の大きさが0にならないようにだけ注意してください。
+</p>
+
+
+<h2>■球面線型補間</h2>
+
+
+<p>
+では、有名な球面線型補間です。<br>
+2つのベクトルを直線的にではなく、弧を描いて補間します。<br>
+ベクトル<i>q</i><sub>0</sub>を<i>q</i><sub>1</sub>まで補間します。<br>
+<i>q</i><sub>0</sub>と<i>q</i><sub>1</sub>の大きさは等しいとします。<br>
+球面線型補間は、<i>q</i><sub>0</sub>から<i>q</i><sub>1</sub>まで回転させる補間なので、
+先ほどまで扱っていた quaternion による回転で表現できます。<br>
+２つのベクトルを回転させる軸は、両方のベクトルに直行するので、それぞれのベクトルの外積になります。<br>
+パラメータt=0の時<i>q</i><sub>0</sub>、t=1の時<i>q</i><sub>1</sub>になるように補間することにすると、
+パラメータの値がtの時の回転角は、<b>θ</b>tになります（θはそれぞれのベクトルのなす角）。<br>
+以上から、ベクトルを回転させる quaternion は、
+</p>
+
+<pre class="CodeBlock">
+                    <i>q</i><sub>0</sub>×<i>q</i><sub>1</sub>
+<i>R</i>(t) = (cos(θt/2), ──── sin(θt/2))
+                   |<i>q</i><sub>0</sub>×<i>q</i><sub>1</sub>|
+</pre>
+
+<image src = "slerp.gif">
+
+<p>
+になります。<br>
+さて、quaternion としての球面線型補間は以上でおしまいですが、あえて、回転の計算を行うと、
+ベクトル部分の回転結果は、
+</p>
+<pre class="CodeBlock">
+<b>q</b>(t) = <i>R</i>(t) <b>q</b><sub>0</sub> <i>R</i> <sup>-1</sup>(t)
+    = a<sup>2</sup><b>q</b><sub>0</sub>+2a<b>v</b>×<b>q</b><sub>0</sub>+(<font color=gray><b>v</b>･<b>q</b><sub>0</sub></font>)<b>v</b><font color=yellow>-(<b>v</b>×<b>q</b><sub>0</sub>)×<b>v</b></font>         a=cos(θt/2),   <b>v</b>=sin(θt/2)<i>q</i><sub>0</sub>×<i>q</i><sub>1</sub>/|<i>q</i><sub>0</sub>×<i>q</i><sub>1</sub>|
+                 <font color = yellow>↓<font color=gray>灰色</font>の部分はベクトルの計算の性質上０になる</font>
+    = a<sup>2</sup><b>q</b><sub>0</sub>+2a<b>v</b>×<b>q</b><sub>0</sub><font color=yellow>+(<font color=gray><b>v</b>･<b>q</b><sub>0</sub></font>)<b>v</b>-(<b>v</b>･<b>v</b>)<b>q</b><sub>0</sub></font>
+                 <font color = yellow>↓展開</font>
+    = cos<sup>2</sup>(θt/2)<b>q</b><sub>0</sub>+2cos(θt/2) (sin(θt/2)<i>q</i><sub>0</sub>×<i>q</i><sub>1</sub>/|<i>q</i><sub>0</sub>×<i>q</i><sub>1</sub>|)×<b>q</b><sub>0</sub>+0-sin<sup>2</sup>(θt/2)<b>q</b><sub>0</sub>
+                 <font color = yellow>↓倍角の公式</font>
+    = cos(θt)<b>q</b><sub>0</sub> + sin(θt)/|<i>q</i><sub>0</sub>×<i>q</i><sub>1</sub>|(<i>q</i><sub>0</sub>×<i>q</i><sub>1</sub>)×<b>q</b><sub>0</sub>
+    = cos(θt)<b>q</b><sub>0</sub> + sin(θt)/|<i>q</i><sub>0</sub>×<i>q</i><sub>1</sub>|((<i>q</i><sub>0</sub>･<i>q</i><sub>0</sub>)<b>q</b><sub>1</sub>-(<i>q</i><sub>0</sub>･<i>q</i><sub>1</sub>)<b>q</b><sub>0</sub>)
+                 <font color = yellow>↓<b>q</b><sub>0</sub>と<b>q</b><sub>1</sub>のベクトルの大きさが同じと仮定する</font>
+    = cos(θt)<b>q</b><sub>0</sub> + sin(θt)/sin(θ)(<b>q</b><sub>1</sub>-cos(θ)<b>q</b><sub>0</sub>)
+       cos(θt)sin(θ) - sin(θt)cos(θ)       sin(θt)
+    = ──────────────── <b>q</b><sub>0</sub> + ──── <b>q</b><sub>1</sub>
+                    sin(θ)                   sin(θ)
+
+      sin(θ(1-t))      sin(θt)
+    = ───── <b>q</b><sub>0</sub> + ──── <b>q</b><sub>1</sub>
+        sin(θ)         sin(θ)
+
+</pre>
+<p>
+となります。<br>
+Quaternion を使わなくても、この計算をすれば、球面線型補間が実現できます。
+</p>
+
+
+<h2>■Quaternion による回転の行列表記</h2>
+
+
+<p>
+いままで、quaterinon の世界での回転を扱っていましたが、我々が実際に欲しいのは行列です。<br>
+そこで、
+</p>
+<pre class="CodeBlock">
+<i>P'</i> = <i>q</i> <i>P</i> <i>q</i> <sup>-1</sup> = M <i>P</i>
+
+但し、   <i>q</i> = (a, <b>v</b>),  <i>P</i> = (w, <b>x</b>)
+</pre>
+<p>
+を満たす行列 M を求めます。<br>
+変換後のベクトルを計算すると、
+</p>
+<pre class="CodeBlock">
+<i>P'</i> = <i>q</i> <i>P</i> <i>q</i> <sup>-1</sup> = (w, <b>x'</b>)
+
+<b>x'</b> = (a<sup>2</sup><b>x</b>+2a<b>v</b>×<b>x</b>+(<b>v</b>･<b>x</b>)<b>v</b>-(<b>v</b>×<b>x</b>)×<b>v</b>)/∥<i>q</i>∥<sup>2</sup>
+                 <font color = yellow>↓(<b>a</b>×<b>b</b>)×<b>c</b> = <b>b</b>(<b>c</b>･<b>a</b>) - <b>a</b>(<b>c</b>･<b>b</b>)</font>
+   = (a<sup>2</sup><b>x</b>+2a<b>v</b>×<b>x</b>+(<b>v</b>･<b>x</b>)<b>v</b>-((<b>v</b>･<b>v</b>)<b>x</b>-(<b>v</b>･<b>x</b>)<b>v</b>))/∥<i>q</i>∥<sup>2</sup>
+                 <font color = yellow>↓各項をまとめて</font>
+   = ((a<sup>2</sup>-<b>v</b>･<b>v</b>)<b>x</b>+2a<b>v</b>×<b>x</b>+2(<b>v</b>･<b>x</b>)<b>v</b>)/∥<i>q</i>∥<sup>2</sup>
+                 <font color = yellow>↓成分で展開</font>
+   = ((a<sup>2</sup>-<b>v</b>･<b>v</b>)(x<b>i</b>+y<b>j</b>+z<b>k</b>)
+     +2a((<b>v</b><sub>y</sub>z-<b>v</b><sub>z</sub>y)<b>i</b>+(<b>v</b><sub>z</sub>x-<b>v</b><sub>x</sub>z)<b>j</b>+(<b>v</b><sub>x</sub>y-<b>v</b><sub>y</sub>x)<b>k</b>)
+     +2(<b>v</b><sub>x</sub>x+<b>v</b><sub>y</sub>y+<b>v</b><sub>z</sub>z)(<b>v</b><sub>x</sub><b>i</b>+<b>v</b><sub>y</sub><b>j</b>+<b>v</b><sub>z</sub><b>k</b>))/∥<i>q</i>∥<sup>2</sup>
+                 <font color = yellow>↓縦ベクトルで整理する</font>
+       1  <sup> </sup>┌ a<sup>2</sup>-<b>v</b>･<b>v</b>+2<b>v</b><sub>x</sub><sup>2</sup> 2<b>v</b><sub>x</sub><b>v</b><sub>y</sub>-2a<b>v</b><sub>z</sub>  2<b>v</b><sub>x</sub><b>v</b><sub>z</sub>+2a<b>v</b><sub>y</sub>  ┐┌ x ┐
+   =  ─  <sup> </sup>│ 2<b>v</b><sub>x</sub><b>v</b><sub>y</sub>+2a<b>v</b><sub>z</sub>  a<sup>2</sup>-<b>v</b>･<b>v</b>+2<b>v</b><sub>y</sub><sup>2</sup> 2<b>v</b><sub>y</sub><b>v</b><sub>z</sub>-2a<b>v</b><sub>x</sub>  ││ y │
+     ∥<i>q</i>∥<sup>2</sup>└ 2<b>v</b><sub>x</sub><b>v</b><sub>z</sub>-2a<b>v</b><sub>y</sub>  2<b>v</b><sub>y</sub><b>v</b><sub>z</sub>+2a<b>v</b><sub>x</sub>  a<sup>2</sup>-<b>v</b>･<b>v</b>+2<b>v</b><sub>z</sub><sup>2</sup> ┘└ z ┘
+       1  <sup> </sup>┌ ∥<i>q</i>∥<sup>2</sup>-2<b>v</b><sub>y</sub><sup>2</sup>-2<b>v</b><sub>z</sub><sup>2</sup>  2<b>v</b><sub>x</sub><b>v</b><sub>y</sub>-2a<b>v</b><sub>z</sub>       2<b>v</b><sub>x</sub><b>v</b><sub>z</sub>+2a<b>v</b><sub>y</sub>      ┐┌ x ┐
+   =  ─  <sup> </sup>│ 2<b>v</b><sub>x</sub><b>v</b><sub>y</sub>+2a<b>v</b><sub>z</sub>       ∥<i>q</i>∥<sup>2</sup>-2<b>v</b><sub>z</sub><sup>2</sup>-2<b>v</b><sub>x</sub><sup>2</sup>  2<b>v</b><sub>y</sub><b>v</b><sub>z</sub>-2a<b>v</b><sub>x</sub>      ││ y │
+     ∥<i>q</i>∥<sup>2</sup>└ 2<b>v</b><sub>x</sub><b>v</b><sub>z</sub>-2a<b>v</b><sub>y</sub>       2<b>v</b><sub>y</sub><b>v</b><sub>z</sub>+2a<b>v</b><sub>x</sub>       ∥<i>q</i>∥<sup>2</sup>-2<b>v</b><sub>y</sub><sup>2</sup>-2<b>v</b><sub>y</sub><sup>2</sup> ┘└ z ┘
+</pre>
+<p>
+なので、変換行列 M は、
+</p>
+<pre class="CodeBlock">
+       1  <sup> </sup>┌ ∥<i>q</i>∥<sup>2</sup>-2<b>v</b><sub>y</sub><sup>2</sup>-2<b>v</b><sub>z</sub><sup>2</sup>  2<b>v</b><sub>x</sub><b>v</b><sub>y</sub>-2a<b>v</b><sub>z</sub>       2<b>v</b><sub>x</sub><b>v</b><sub>z</sub>+2a<b>v</b><sub>y</sub>       0  <sup> </sup>┐
+M  =  ─  <sup> </sup>│ 2<b>v</b><sub>x</sub><b>v</b><sub>y</sub>+2a<b>v</b><sub>z</sub>       ∥<i>q</i>∥<sup>2</sup>-2<b>v</b><sub>z</sub><sup>2</sup>-2<b>v</b><sub>x</sub><sup>2</sup>  2<b>v</b><sub>y</sub><b>v</b><sub>z</sub>-2a<b>v</b><sub>x</sub>       0  <sup> </sup>│
+     ∥<i>q</i>∥<sup>2</sup>│ 2<b>v</b><sub>x</sub><b>v</b><sub>z</sub>-2a<b>v</b><sub>y</sub>       2<b>v</b><sub>y</sub><b>v</b><sub>z</sub>+2a<b>v</b><sub>x</sub>       ∥<i>q</i>∥<sup>2</sup>-2<b>v</b><sub>y</sub><sup>2</sup>-2<b>v</b><sub>y</sub><sup>2</sup>  0  <sup> </sup>│
+           └ 0                0                0             ∥<i>q</i>∥<sup>2</sup>┘
+</pre>
+<p>
+になります。<br>
+特に、回転 quaternion の表記
+</p>
+<pre class="CodeBlock">
+<i>q</i> = |<i>q</i> |(cos(θ/2), sin(θ/2)<b>ω</b>)
+</pre>
+<p>
+の時には、
+</p>
+<pre class="CodeBlock">
+    ┌ 1-2sin<sup>2</sup>(θ/2)(<b>ω</b><sub>y</sub><sup>2</sup>+<b>ω</b><sub>z</sub><sup>2</sup>)  2sin<sup>2</sup>(θ/2)<b>ω</b><sub>x</sub><b>ω</b><sub>y</sub>-2cos(θ/2)sin(θ/2)<b>ω</b><sub>z</sub>       2sin<sup>2</sup>(θ/2)<b>ω</b><sub>x</sub><b>ω</b><sub>z</sub>+2cos(θ/2)sin(θ/2)<b>ω</b><sub>y</sub>       0  <sup> </sup>┐
+M  =│ 2sin<sup>2</sup>(θ/2)<b>ω</b><sub>x</sub><b>ω</b><sub>y</sub>+2cos(θ/2)sin(θ/2)<b>ω</b><sub>z</sub>       1-2sin<sup>2</sup>(θ/2)(<b>ω</b><sub>z</sub><sup>2</sup>+<b>ω</b><sub>x</sub><sup>2</sup>)  2sin<sup>2</sup>(θ/2)<b>ω</b><sub>y</sub><b>ω</b><sub>z</sub>-2cos(θ/2)sin(θ/2)<b>ω</b><sub>x</sub>       0  <sup> </sup>│
+    │ 2sin<sup>2</sup>(θ/2)<b>ω</b><sub>x</sub><b>ω</b><sub>z</sub>-2cos(θ/2)sin(θ/2)<b>ω</b><sub>y</sub>       2sin<sup>2</sup>(θ/2)<b>ω</b><sub>y</sub><b>ω</b><sub>z</sub>+2cos(θ/2)sin(θ/2)<b>ω</b><sub>x</sub>       1-2sin<sup>2</sup>(θ/2)(<b>ω</b><sub>x</sub><sup>2</sup>+<b>ω</b><sub>y</sub><sup>2</sup>)  0  <sup> </sup>│
+    └ 0                                        0                                        0                                   1  ┘
+    ┌ 1-2sin<sup>2</sup>(θ/2)(<b>ω</b><sub>y</sub><sup>2</sup>+<b>ω</b><sub>z</sub><sup>2</sup>)     2sin<sup>2</sup>(θ/2)<b>ω</b><sub>x</sub><b>ω</b><sub>y</sub>-sin(θ)<b>ω</b><sub>z</sub> 2sin<sup>2</sup>(θ/2)<b>ω</b><sub>x</sub><b>ω</b><sub>z</sub>+sin(θ)<b>ω</b><sub>y</sub>  0 ┐
+   =│ 2sin<sup>2</sup>(θ/2)<b>ω</b><sub>x</sub><b>ω</b><sub>y</sub>+sin(θ)<b>ω</b><sub>z</sub>  1-2sin<sup>2</sup>(θ/2)(<b>ω</b><sub>z</sub><sup>2</sup>+<b>ω</b><sub>x</sub><sup>2</sup>)    2sin<sup>2</sup>(θ/2)<b>ω</b><sub>y</sub><b>ω</b><sub>z</sub>-sin(θ)<b>ω</b><sub>x</sub>  0 │
+    │ 2sin<sup>2</sup>(θ/2)<b>ω</b><sub>x</sub><b>ω</b><sub>z</sub>-sin(θ)<b>ω</b><sub>y</sub>  2sin<sup>2</sup>(θ/2)<b>ω</b><sub>y</sub><b>ω</b><sub>z</sub>+sin(θ)<b>ω</b><sub>x</sub> 1-2sin<sup>2</sup>(θ/2)(<b>ω</b><sub>x</sub><sup>2</sup>+<b>ω</b><sub>y</sub><sup>2</sup>)     0 │
+    └ 0                             0                           0                           1 ┘
+             ┌  0 -<b>ω</b><sub>z</sub> +<b>ω</b><sub>y</sub>   0 ┐           ┌ <b>ω</b><sub>y</sub><sup>2</sup>+<b>ω</b><sub>z</sub><sup>2</sup>  -<b>ω</b><sub>x</sub><b>ω</b><sub>y</sub>   -<b>ω</b><sub>x</sub><b>ω</b><sub>z</sub>   0 ┐
+   = 1+sinθ<sup> </sup>│+<b>ω</b><sub>z</sub>   0 -<b>ω</b><sub>x</sub>   0 │-2sin<sup>2</sup>(θ/2)│ -<b>ω</b><sub>x</sub><b>ω</b><sub>y</sub>   <b>ω</b><sub>z</sub><sup>2</sup>+<b>ω</b><sub>x</sub><sup>2</sup>  -<b>ω</b><sub>y</sub><b>ω</b><sub>z</sub>   0 │
+             │-<b>ω</b><sub>y</sub> +<b>ω</b><sub>x</sub>   0   0 │           │ -<b>ω</b><sub>x</sub><b>ω</b><sub>z</sub>   -<b>ω</b><sub>y</sub><b>ω</b><sub>z</sub>    <b>ω</b><sub>x</sub><sup>2</sup>+<b>ω</b><sub>y</sub><sup>2</sup> 0 │
+             └  0    0    0   0 ┘           └  0         0         0        0 ┘
+
+             ┌  0 -<b>ω</b><sub>z</sub> +<b>ω</b><sub>y</sub>   0 ┐           <sub> </sub>┌ <b>ω</b><sub>y</sub><sup>2</sup>+<b>ω</b><sub>z</sub><sup>2</sup>  -<b>ω</b><sub>x</sub><b>ω</b><sub>y</sub>   -<b>ω</b><sub>x</sub><b>ω</b><sub>z</sub>   0 ┐
+   = 1+sinθ<sup> </sup>│+<b>ω</b><sub>z</sub>   0 -<b>ω</b><sub>x</sub>   0 │-(1-cos(θ))│ -<b>ω</b><sub>x</sub><b>ω</b><sub>y</sub>   <b>ω</b><sub>z</sub><sup>2</sup>+<b>ω</b><sub>x</sub><sup>2</sup>  -<b>ω</b><sub>y</sub><b>ω</b><sub>z</sub>   0 │
+             │-<b>ω</b><sub>y</sub> +<b>ω</b><sub>x</sub>   0   0 │           <sub> </sub>│ -<b>ω</b><sub>x</sub><b>ω</b><sub>z</sub>   -<b>ω</b><sub>y</sub><b>ω</b><sub>z</sub>    <b>ω</b><sub>x</sub><sup>2</sup>+<b>ω</b><sub>y</sub><sup>2</sup> 0 │
+             └  0    0    0   0 ┘           <sub> </sub>└  0         0         0        0 ┘
+</pre>
+<p>
+になります。
+</p>
+
+
+<h2>■回転行列の時間発展</h2>
+
+<p>
+まとめると、ベクトルの時間発展は、時間発展 quaternion <i>q(t)</i> を求めて、
+その行列表示 M 
+</p>
+<pre class="CodeBlock">
+<i>P(t)</i> = <i>q(t)</i> <i>P(0)</i> <i>q(t)</i> <sup>-1</sup> = M <i>P</i>
+</pre>
+<p>
+を求めればMが回転行列になります。<br>
+<i>q(t)</i> は、角速度ωが一定だとすると(ωt=θ(回した角度)なので)、回転軸の方向を<b>e</b>として、
+</p>
+<pre class="CodeBlock">
+<i>q(t)</i> = |<i>q</i> |(cos(ωt/2), sin(ωt/2)<b>e</b>)
+</pre>
+<p>
+が成り立ちます。<br>
+さて、角速度ωや回転軸<b>e</b>は、時間とともに変化します。
+これらの量が変化する場合の <i>q(t)</i> を求めます。
+</p>
+<p>
+<i>q(t)</i> の時間変化を求めると、
+</p>
+<pre class="CodeBlock">
+d        d
+―<i>q(t)</i> = ―(cos(ωt/2), sin(ωt/2)<b>e</b>)
+dt       dt
+            1              t dω
+       = (-―ωsin(ωt/2)-― ― sin(ωt/2)
+            2              2 dt
+                      d<b>e</b>    ω                t dω
+         , sin(ωt/2) ―  + ― cos(ωt/2)<b>e</b> + ― ― cos(ωt/2)<b>e</b>)
+                      dt     2                2 dt
+d            ω
+―<i>q(0)</i> = (0, ― <b>e</b>)
+dt            2
+</pre>
+<p>
+になります。ここで、時間発展に関係しない|<i>q</i> |は省きました。<br>
+この結果を、オイラー法
+</p>
+<pre class="CodeBlock">
+                df
+f(Δt) = f(0) + ― Δt
+                dt 
+</pre>
+<p>
+を用いれば、
+</p>
+<pre class="CodeBlock">
+                    ω               ω
+<i>q(Δt)</i> = <i>q(0)</i> + (0, ― <b>e</b>) Δt  = (1, ― <b>e</b> Δt )
+                     2                2
+</pre>
+<p>
+になります。<br>
+この結果は、微小時間の時間発展です。<br>
+過去からの時間発展を含めると、いままでの時間発展の結果をさらに微小時間だけ時間発展させるわけですから、
+</p>
+<pre class="CodeBlock">
+                             ω
+<i>q(t)</i> = <i>q(Δt)</i><i>q(t-Δt)</i> =  (1, ― <b>e</b> Δt )<i>q(t-Δt)</i>
+                              2
+</pre>
+<p>
+が最終結果になります。<i>q(t-Δt)</i>は、前のフレームの<i>q(t)</i>です。<br>
+ちょいと Baraff と違いますが、こちらが正解でしょう。
+<p>
+
+<h2>■プログラム</h2>
+
+
+<p>
+では、実際のプログラムです。<br>
+剛体のクラスを一部変形して、回転行列の部分を quaternion にします(rigidbody.h)。
+</p>
+<pre class="CodeBlock">
+<font color = deepskyblue>0015:</font> class CRigidBody {
+<font color = deepskyblue>0016:</font> private:
+<font color = deepskyblue>0017:</font> protected:
+<font color = deepskyblue>0018:</font>     <font color = cyan>// 定数</font>
+<font color = deepskyblue>0019:</font>     float           mass;
+<font color = deepskyblue>0020:</font>     D3DXMATRIX      IBody;
+<font color = deepskyblue>0021:</font>     D3DXMATRIX      IBodyinv;
+<font color = deepskyblue>0022:</font>     <font color = cyan>// 状態ベクトル</font>
+<font color = deepskyblue>0023:</font>     D3DXVECTOR4     x;                      <font color = cyan>// 重心座標</font>
+<font color = deepskyblue>0024:</font>     <font color = yellow>D3DXQUATERNION  q;</font>                      <font color = cyan>// 回転quaternion</font>
+<font color = deepskyblue>0025:</font>     D3DXVECTOR4     p;                      <font color = cyan>// 運動量</font>
+<font color = deepskyblue>0026:</font>     D3DXVECTOR3     L;                      <font color = cyan>// 回転モーメント</font>
+<font color = deepskyblue>0027:</font>     <font color = cyan>// ２次的変数</font>
+<font color = deepskyblue>0028:</font>     D3DXVECTOR4     v;
+<font color = deepskyblue>0029:</font>     D3DXMATRIX      Iinv;
+<font color = deepskyblue>0030:</font>     <font color = yellow>D3DXMATRIX      R;</font>                      <font color = cyan>// 回転座標</font>
+<font color = deepskyblue>0031:</font>     D3DXVECTOR3     omega;
+<font color = deepskyblue>0032:</font>     <font color = cyan>// 外力</font>
+<font color = deepskyblue>0033:</font>     D3DXVECTOR4     force;
+<font color = deepskyblue>0034:</font>     D3DXVECTOR3     torque;
+<font color = deepskyblue>****:</font> ...
+<font color = deepskyblue>0047:</font> };
+</pre>
+<p>
+２次的変数に回転座標のRを追加しました。<br>
+回転quaternion q の計算をした後に、描画に必要になる行列 R を必ず求めることにします。
+</p>
+<p>
+回転部分の更新は次のようになります。<br>
+前の節の結果を使い、角速度ベクトル<b>ω</b>の向きと、その速さから回転 quaternion を導出します。<br>
+その回転を前のフレームの回転 quaternion に掛けることによって、回転を合成します。
+</p>
+<pre class="CodeBlock">
+<font color = deepskyblue>0055:</font> <font color = cyan>// ----------------------------------------------------------------------------</font>
+<font color = deepskyblue>0056:</font> <font color = cyan>// 座標に時間変化を足しこむ</font>
+<font color = deepskyblue>0057:</font> void CRigidBody::Update(float dt)
+<font color = deepskyblue>0058:</font> {
+<font color = deepskyblue>0059:</font>     this->ComputeForceAndTorque(dt);
+<font color = deepskyblue>0060:</font>     this->Calc2ndValues();
+<font color = deepskyblue>0061:</font> 
+<font color = deepskyblue>0062:</font>     this->x += dt * this->v;
+<font color = deepskyblue>0063:</font>     this->p += dt * this->force;
+<font color = deepskyblue>0064:</font>     this->L += dt * this->torque;
+<font color = deepskyblue>0065:</font> 
+<font color = deepskyblue>0066:</font>     <font color = yellow>D3DXQUATERNION tmp = D3DXQUATERNION(
+                                           0.5f * dt * this->omega.x
+                                         , 0.5f * dt * this->omega.y
+                                         , 0.5f * dt * this->omega.z
+                                         , 1.0f); </font>
+<font color = deepskyblue>0067:</font>     <font color = yellow>this->q = this->q * tmp;</font>
+<font color = deepskyblue>0068:</font> }
+</pre>
+<p>
+ちなみに、前節における角速度ωと向き<b>e</b>と、角速度ベクトル<b>ω</b>は
+</p>
+<pre class="CodeBlock">
+<b>ω</b> = ω <b>e</b>
+</pre>
+<p>
+の関係があり、その結果を使っています。
+</p>
+
+<p>
+その他に回転行列を使っている部分も変更を受けます。<br>
+速度を求めるときに、同時に回転行列を求めます。
+</p>
+<pre class="CodeBlock">
+<font color = deepskyblue>0040:</font> <font color = cyan>// ----------------------------------------------------------------------------</font>
+<font color = deepskyblue>0041:</font> <font color = cyan>// v や ω を計算</font>
+<font color = deepskyblue>0042:</font> void CRigidBody::Calc2ndValues()
+<font color = deepskyblue>0043:</font> {
+<font color = deepskyblue>0044:</font>     D3DXVec4Scale(&this->v, &this->p, 1.0f/this->mass);
+<font color = deepskyblue>0045:</font>     
+<font color = deepskyblue>0046:</font>     D3DXMATRIX m;
+<font color = deepskyblue>0047:</font>     D3DXMatrixTranspose(&m, &this->R);
+<font color = deepskyblue>0048:</font>     this->Iinv = this->R * this->IBodyinv * m;
+<font color = deepskyblue>0049:</font> 
+<font color = deepskyblue>0050:</font>     D3DXVec3TransformNormal(&this->omega, &this->L, &this->Iinv);
+<font color = deepskyblue>0051:</font>     
+<font color = deepskyblue>0052:</font>     <font color = yellow>D3DXQUATERNION n;</font>
+<font color = deepskyblue>0053:</font>     <font color = yellow>D3DXMatrixRotationQuaternion(&this->R, D3DXQuaternionNormalize(&n,&this->q));</font>
+<font color = deepskyblue>0054:</font> }
+</pre>
+<p>
+D3DXMatrixRotationQuaternion を使うためには、規格化をしないといけないようなので、規格化しています。<br>
+D3DX には、今まで説明してきたような関数が用意されています。<br>
+D3DX関数を利用することは、省力化や安定性、再利用性を考えてもよいことだと思うので、(自分でも組めることが前提ですが)積極的に利用するのも悪くないと思います。
+</p>
+
+
+<h2>■最後に</h2>
+
+
+<p>
+う～、けっこうしんどかったなぁ～<br>
+今回は大学のセミナー風に、計算をはしょらないできちんと導出してみました。<br>
+まぁ、自分のためにですけど。<br>
+<br>
+やっぱり、きちんと走るようにしなくちゃいけませんね。<br>
+諸事情により、出来るかわかりませんけど…
+</p>
+
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<center>
+<p><a href="../index.html">もどる</a></p>
+<p><a href="mailto:imagire@gmail.com">imagire@gmail.com</a></p>
+</center>
+</body>
+</html>

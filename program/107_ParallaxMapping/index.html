@@ -1,0 +1,172 @@
+<head>
+	<title>t-pot『視差マッピング』</title>
+	<link rel="stylesheet" type="text/css" href="../if.css">
+</head>
+<meta http-equiv=Content-Type content="text/html; charset=shift_jis">
+<body>
+
+
+<div class="contents">
+<center>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<h1>視差マッピング</h1><br>
+<h3>～ Parallax Mapping ～</h3>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<image src = "title.png">
+<br>
+<hr>
+</center>
+<div>
+
+
+<h2>■はじめに</h2>
+
+
+<p>
+<a href="http://web.sfc.keio.ac.jp/~syoyo/lucille/blog/">lucille 開発日記</a>や<a href="http://spin.s2c.ne.jp/">spin</a>で紹介されていた、バンプマップの親戚（？）であるパララクスマッピングを実装してみました。
+</p>
+<p>
+で、いつものようにプログラムです。
+</p>
+<ul style = "LIST-STYLE-TYPE:none">
+<li><a href="src.zip">src.zip (PRT:DirectX9)</a>
+</ul>
+<p>
+
+</p>
+<p>
+ソースには、いつものように適当にファイルが入っています。<br>
+大事なファイルは次のものです。
+</p>
+<table>
+<tr><td><a href="main_h.html">main.h</a></td><td>アプリケーションのヘッダ</td></tr>
+<tr><td><a href="main_cpp.html">main.cpp</a></td><td>アプリケーションのソース</td></tr>
+<tr><td><a href="hlsl_fx.html">hlsl.fx</a></td><td>シェーダプログラム</td></tr>
+</table>
+<p>
+素材としては、<A HREF="http://www.amazon.co.jp/exec/obidos/ASIN/4839912475/tpot-22" target="_top">DirectX 9 シェーダプログラミングブック</A>で使ったデカールや法線マップにその基となった高さマップを使っています。
+</p>
+<image src = "t-pot.png">デカールテクスチャ
+<image src = "height.png">高さマッピング
+<image src = "normal.png">法線マッピング
+<p>
+カーソルキーで、カメラが回って、zやxでズームが変えられます。
+また、スペースキーで「パララクス マッピング」と「バンプ マッピング」の切り替えができます。
+</p>
+
+
+<h2>■概要</h2>
+
+<p>
+パララクスマッピングとは、テクスチャ座標を、高さに比例させて視線方向にずらして他のテクスチャをサンプリングする方法です。<br>
+バンプマップよりも強くでこぼこ間が出ます。
+</p>
+<image src = "parallax.png">パララクスマッピング
+<image src = "bump.png">バンプマッピング
+<p>
+負荷もバンプマッピングとそれほど変わらないようです。
+</p>
+
+
+<h2>■歴史</h2>
+
+<p>
+今回の方法は、<a href="http://www.reallyslick.com/index.html">Terry Welsh氏</a>による実装を追っただけですが、パララクスマッピングは次のように日本人が発展させてきたもののようです。
+</p>
+<p>
+spin からの引用
+</p>
+<pre class="CodeBlock">
+解説資料には次のものがあります。<a href="http://www.star.t.u-tokyo.ac.jp/index-j.php">東京大学</a>（当時）の金子智道氏らの研究がベースとなっており、
+Welsh氏は、近似による方法の簡略化（視線ベクトルのz成分による除算を省略）と、
+OpenGLの頂点プログラム(ARB)とフラグメントプログラム(ARB)での処理の記述などを行っています。
+
+(1) 「Detailed Shape Representation with Parallax Mapping（パララクスマッピングによる３次元形状表現）」
+（著者: 金子智道氏, 高幣俊之氏, 稲見昌彦氏, <a href="http://www.adm.u-tokyo.ac.jp/IRS/IntroPage_J/intro70112260_j.html"> 川上直樹氏</a>, <a href="http://www.mis.atr.co.jp/~yanagida/index-j.html"> 柳田康幸氏</a>, <a href="http://www.star.t.u-tokyo.ac.jp/~maeda/index-j.html"> 前田太郎氏</a> <a href="http://www.adm.u-tokyo.ac.jp/IRS/IntroPage_J/intro70236066_j.html">舘暲氏</a> / <a href="http://www.ic-at.org/"> ICAT 2001</a> / <a href="http://vrsj.t.u-tokyo.ac.jp/ic-at/papers/01205.pdf">英文PDF</a>）
+
+(2) 「Parallax Mapping with Offset Limiting: A PerPixel Approximation of Uneven Surfaces」
+（著者: <a href="http://www.reallyslick.com/index.html">Terry Welsh氏</a> / 2004年1月 / <a href="http://www.infiscape.com/doc/parallax_mapping.pdf"> PDF</a>）
+
+最初の論文は、2000年9月に、<a href="http://www.vrlab.esys.tsukuba.ac.jp/vrsjac2000/pre-program.htm">日本バーチャルリアリティ学会第5回大会</a>にて、
+<a href="http://www.star.t.u-tokyo.ac.jp/index-j.php">東京大学</a>（当時）の、高幣俊之氏、稲見昌彦氏、柳田康幸氏、前田太郎氏、舘暲氏が発表した論文
+「両眼立体視のためのリアルタイム・テクスチャマッピング手法」になるようです。
+</pre>
+
+<h2>■プログラム</h2>
+
+
+<p>
+パララクスマッピングのプログラムは、ピクセルシェーダの最初に高さマップを読み込みます。そしたら、それ以外のテクスチャをサンプリングするテクスチャ座標を、その高さで重みをつけて頂点座標系での視線ベクトル（の接線方向と従法線方向）でずらします。<br>
+あとは、バンプマップと同じようにします。ここで、ピクセルシェーダに入力された E と L は、頂点座標系での視線ベクトルとライトベクトルです。
+</p>
+<pre class="CodeBlock">
+hlsl.fx
+<font color="deepskyblue">0110:</font> float4 PS( VS_OUTPUT In) : COLOR
+<font color="deepskyblue">0111:</font> {   
+<font color="deepskyblue">0112:</font>     float3 L = normalize(In.L);                     <font color="cyan">// ライトベクトル</font>
+<font color="deepskyblue">0113:</font>     float3 E = normalize(In.E);                     <font color="cyan">// 視線ベクトル</font>
+<font color="deepskyblue">0114:</font> 
+<font color="deepskyblue">0115:</font>     <font color="yellow"><font color="blue">float</font> h = tex2D( HeightSamp, In.Tex );<font color="cyan">// 高さマップのサンプリング</font></font>
+<font color="deepskyblue">0116:</font>     
+<font color="deepskyblue">0117:</font>     float2 Tex = In.Tex <font color="yellow">+ 0.03 * h * E.xy</font>;
+<font color="deepskyblue">0118:</font>     
+<font color="deepskyblue">0119:</font>     float3 N = 2.0f*tex2D( NormalSamp, Tex ).xyz-1.0;<font color="cyan">// 法線マップからの法線</font>
+<font color="deepskyblue">0120:</font>     float3 R = reflect(-E, N);      <font color="cyan">// 反射ベクトル</font>
+<font color="deepskyblue">0121:</font>     <font color="blue">float</font> amb = -vLightDir.w;                       <font color="cyan">// 環境光の強さ</font>
+<font color="deepskyblue">0122:</font>     
+<font color="deepskyblue">0123:</font>     <font color="blue">return</font> In.Color * tex2D( DecaleSamp, Tex )  <font color="cyan">// 拡散光と環境光には、</font>
+<font color="deepskyblue">0124:</font>                * (max(0, dot(N, L))+amb)            <font color="cyan">// 頂点色とテクスチャの色を合成する</font>
+<font color="deepskyblue">0125:</font>              + 0.3f * pow(max(0,dot(R, L)), 8);     <font color="cyan">// Phong 鏡面反射光</font>
+<font color="deepskyblue">0126:</font> }
+</pre>
+<p>
+ちなみに、バンプマッピングのプログラムは、次のようになります。
+</p>
+<pre class="CodeBlock">
+hlsl.fx
+<font color="deepskyblue">0129:</font> float4 PS_BUMP( VS_OUTPUT In) : COLOR
+<font color="deepskyblue">0130:</font> {   
+<font color="deepskyblue">0131:</font>     float3 L = normalize(In.L);                     <font color="cyan">// ライトベクトル</font>
+<font color="deepskyblue">0132:</font>     float3 E = normalize(In.E);                     <font color="cyan">// 視線ベクトル</font>
+<font color="deepskyblue">0133:</font> 
+<font color="deepskyblue">0134:</font>     <font color="blue">float</font> h = tex2D( HeightSamp, In.Tex );<font color="cyan">// 高さマップのサンプリング</font>
+<font color="deepskyblue">0135:</font>     
+<font color="deepskyblue">0136:</font>     float2 Tex = In.Tex;
+<font color="deepskyblue">0137:</font>     
+<font color="deepskyblue">0138:</font>     float3 N = 2.0f*tex2D( NormalSamp, Tex ).xyz-1.0;<font color="cyan">// 法線マップからの法線</font>
+<font color="deepskyblue">0139:</font>     float3 R = reflect(-E, N);      <font color="cyan">// 反射ベクトル</font>
+<font color="deepskyblue">0140:</font>     <font color="blue">float</font> amb = -vLightDir.w;                       <font color="cyan">// 環境光の強さ</font>
+<font color="deepskyblue">0141:</font>     
+<font color="deepskyblue">0142:</font>     <font color="blue">return</font> In.Color * tex2D( DecaleSamp, Tex )  <font color="cyan">// 拡散光と環境光には、</font>
+<font color="deepskyblue">0143:</font>                * (max(0, dot(N, L))+amb)            <font color="cyan">// 頂点色とテクスチャの色を合成する</font>
+<font color="deepskyblue">0144:</font>              + 0.3f * pow(max(0,dot(R, L)), 8);     <font color="cyan">// Phong 鏡面反射光</font>
+<font color="deepskyblue">0145:</font> }
+</pre>
+
+
+<h2>■最後に</h2>
+
+
+<p>
+まぁ、１０分ぐらいでできたのですが、どうでしょうねぇ？<br>
+バンプよりは強くかかりますが、少し違和感を感じます。
+</p>
+
+
+
+
+</div>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<center>
+<hr>
+<p><a href="../index.html">もどる</a></p>
+<p><a href="mailto:imagire@gmail.com">imagire@gmail.com</a></p>
+</center>
+
+</body>
+</html>

@@ -1,0 +1,204 @@
+<head>
+	<title>t-pot『FPS 固定』</title>
+	<link rel="stylesheet" type="text/css" href="../if.css">
+</head>
+<meta http-equiv=Content-Type content="text/html; charset=shift_jis">
+<body>
+
+
+<div class="contents">
+<center>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<h1>FPS 固定</h1><br>
+<h3>～ FPS fixing ～</h3>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<image src = "title.png">
+<br>
+<hr>
+</center>
+<div>
+
+
+<h2>■はじめに</h2>
+
+
+<p>
+いろいろと忙しくて、こったネタに入れないので、手軽なプログラムをしてみました。<br>
+DirectX のプログラムでいつもいやなのはFPS(Frams Per Seconds)が固定されないことです。
+海外のゲームでは、FPSが常に変動していることを仮定してプログラムを組みますが、
+コンシューマ（家庭用）主体のわが国では、FPSを固定してプログラムするのに慣れている方が大半です。<br>
+また、モーションブラーを効果的に使うには、FPS値が固定しているほうが望ましいと考えられます。<br>
+という言い訳をかまして、FPS を一定にするプログラムを作ってみました。
+</p>
+<p>
+で、いつものようにプログラムです。<br>
+</p>
+<ul style = "LIST-STYLE-TYPE:none">
+<li><a href="src.zip">src.zip (FPS固定:DirectX 9)</a>
+</ul>
+<p>
+ピクセルシェーダ2_0用ですが、まるで意味はありません。
+この後説明するプログラムをコピー＆ペーストして、自分のプログラムに貼り付けてみてください。
+</p>
+
+<p>
+ソースには、いつものように適当にファイルが入っています。<br>
+大事なソースは次のようになります。
+</p>
+<table>
+<tr><td><a href="main_h.html">main.h</a></td><td>アプリケーションのヘッダ</td></tr>
+<tr><td><a href="main_cpp.html">main.cpp</a></td><td>アプリケーションのソース</td></tr>
+<tr><td><a href="hlsl_fx.html">hlsl.fx</a></td><td>アプリケーションで使うHLSLプログラム</td></tr>
+</table>
+
+
+<h2>■なにやってるの？</h2>
+
+
+<p>
+ディスプレイは上から下に向かって書いているのですが（液晶でもそうか？）、
+その走査が一番下まで言ってから上に帰ってくる間を「垂直帰線期間」といいます。<br>
+DirectX では、この間にフロントバッファとバックバッファを差し替えることによって、ちらつきのない画面を再現しています。<br>
+この間隔はディスプレイによって異なりますが、私が使っている液晶ディスプレイは60Hz(1秒間に60回の画面書き換えを行う)です。性能がよいディスプレイだと、より周波数が高くなっていることでしょう。<br>
+さて、60秒に1回書き換えるならば、それ以上の速さで描画したときにディスプレイで表示されない画面が発生してしまいます。<br>
+これは無駄なので、描画以外の別の処理や別のアプリケーションにＣＰＵなどのパワーを受け渡したいとことです。<br>
+もちろん、FPS が一定になると、アニメーションの処理などが簡単になるといった別の側面もあります。<br>
+これを実現するには、画面を描画した後に、現在垂直帰線期間かどうかを調べて、まだ垂直帰線期間中になければ、別の処理に負荷を明け渡せば実現できます。<br>
+DirectX では、現在の走査情報を調べる関数として、
+</p>
+<pre class="CodeBlock">
+IDirect3DDevice9::GetRasterStatus( ID, D3DRASTER_STATUS* 出力先)
+</pre>
+<p>
+が用意されています。最初の引数のIDは、マルチヘッドディスプレイのための識別IDです。<br>
+垂直帰線期間を調べるには、出力先として与える D3DRASTER_STATUS のメンバ「InVBlank」をみます。この値が TRUE ならば、垂直帰線期間です。<br>
+また、FLASE の時は、D3DRASTER_STATUS.ScanLine に現在書き込んでいる走査線の値が格納されるので、負荷を予想するのに便利でしょう。<br>
+なお、GetRasterStatus はディスプレイ等によってサポートされない場合があるらしいので、今回のプログラムを使えば完璧かどうかはわかりません。
+</p>
+<p>
+GetRasterStatusを呼び出す場所ですが、画面を更新する「Present」関数の直前で呼び出して調べます。<br>
+関数呼び出しがPresent関数よりもはるか前だと、その後の処理が垂直帰線期間を飛び越える可能性があるので、注意が必要です。<br>
+なお、アプリケーションウィザードを使ったプログラムの場合は、Render関数の最後でGetRasterStatusによる調査をおこなえばよいです。
+</p>
+<p>
+なお、今回のプログラムでは、GetRasterStatusの呼び出しで無限ループをかけて無駄にＣＰＵを使っています。<br>
+都合に応じて、Sleep で休ませたり、他の処理を呼び出すなりしてください。
+</p>
+
+<pre class="CodeBlock">
+main.cpp
+<font color="deepskyblue">0366:</font> <font color="cyan">//-------------------------------------------------------------</font>
+<font color="deepskyblue">0367:</font> <font color="cyan">// Name: Render()</font>
+<font color="deepskyblue">0368:</font> <font color="cyan">// Desc: 画面を描画する.</font>
+<font color="deepskyblue">0369:</font> <font color="cyan">//-------------------------------------------------------------</font>
+<font color="deepskyblue">0370:</font> HRESULT CMyD3DApplication::Render()
+<font color="deepskyblue">0371:</font> {
+<font color="deepskyblue">0400:</font>     <font color="cyan">//---------------------------------------------------------</font>
+<font color="deepskyblue">0401:</font>     <font color="cyan">// 描画</font>
+<font color="deepskyblue">0402:</font>     <font color="cyan">//---------------------------------------------------------</font>
+<font color="deepskyblue">0403:</font>     <font color="blue">if</font>( SUCCEEDED( m_pd3dDevice-&gt;BeginScene() ) )
+<font color="deepskyblue">0404:</font>     {
+
+描画～
+
+<font color="deepskyblue">0561:</font>         <font color="cyan">// 描画の終了</font>
+<font color="deepskyblue">0562:</font>         m_pd3dDevice-&gt;EndScene();
+<font color="deepskyblue">0563:</font>     }
+<font color="deepskyblue">0564:</font> 
+<font color="deepskyblue">0568:</font>     <font color="cyan">// -----------------------------------------------------------------------</font>
+<font color="deepskyblue">0569:</font>     <font color="cyan">// 画面のリフレッシュレートにあわせる</font>
+<font color="deepskyblue">0570:</font>     <font color="cyan">// -----------------------------------------------------------------------</font>
+<font color="deepskyblue">0571:</font>     D3DRASTER_STATUS rs;
+<font color="deepskyblue">0572:</font>     <font color="blue">do</font>{
+<font color="deepskyblue">0573:</font>         <font color="blue">if</font>(D3D_OK!=m_pd3dDevice-&gt;GetRasterStatus(0,&amp;rs)){
+<font color="deepskyblue">0574:</font>             rs.InVBlank = TRUE;<font color="cyan">// 所得失敗！本当はどうするのですかねぇ。</font>
+<font color="deepskyblue">0575:</font>         }
+<font color="deepskyblue">0576:</font>     }<font color="blue">while</font>(!rs.InVBlank);<font color="cyan">// ラスタが垂直帰線消去間隔にある</font>
+<font color="deepskyblue">0577:</font> 
+<font color="deepskyblue">0578:</font>     <font color="blue">return</font> S_OK;
+<font color="deepskyblue">0579:</font> }
+</pre>
+<p>
+このプログラムを実行しても、処理落ちしたときには、がたつくので、
+過度に期待しないでください。
+</p>
+
+
+<h2>■最後に</h2>
+
+
+<p>
+いままでFPSを一定にして処理していなかったので、あまり詳しくないのですが、
+こんな方法でいいのでしょうかねぇ？
+</p>
+
+
+
+
+<h2>■追記（2003 Dec. 11）</h2>
+
+
+<p>
+cozさんから、
+</p>
+<pre class="CodeBlock">
+FPSを一定にする方法ですが、DirectX9では、
+D3DPRESENT_INTERVAL_DEFAULT
+などに設定すればいいと思う
+んですが、そういうことではないんですか？
+</pre>
+<p>
+というお言葉をいただきました。<br>
+早速、下のプログラムのように変更して試してみました。
+</p>
+<pre class="CodeBlock">
+d3dapp.cpp
+<font color="deepskyblue">0723:</font>    <font color="cyan">// Create the device</font>
+<font color="deepskyblue">****:</font>    <font color="yellow">m_d3dpp.PresentationInterval = D3DPRESENT_INTERVAL_DEFAULT;</font>
+<font color="deepskyblue">0724:</font>    hr = m_pD3D->CreateDevice( m_d3dSettings.AdapterOrdinal(), pDeviceInfo-&gtDevType,
+<font color="deepskyblue">0725:</font>                               m_hWndFocus, behaviorFlags, &m_d3dpp,
+<font color="deepskyblue">0726:</font>                               &m_pd3dDevice );
+</pre>
+<p>
+確かに、同じような効果が得られますね。<br>
+ところで、このままでは、パフォーマンスが低かったのですが、他に何か設定がいるのでしょうか？
+</p>
+
+
+<h2>■追記（2004 Feb. 29）</h2>
+
+<p>
+nemoさんから、
+</p>
+<pre class="CodeBlock">
+ところで、HPのコンテンツのDirectX 9.0:FPS 固定 [FPS fixing]についてなのです
+が、最後のほうでD3DPRESENT_INTERVAL_DEFAULTについて記述があります。
+
+たしかにD3DPRESENT_INTERVAL_DEFAULTを設定するとFPSは固定されるのですが、うち
+の液晶では少しちらついてしまいます。
+
+これはタイマーの精度が低いのが原因なようで、timeBeginPeriod(1);で精度を上げ
+てやれば問題なく働きます。
+</pre>
+<p>
+というお言葉をいただきました。<br>
+D3DPRESENT_INTERVAL_DEFAULT だけでは完璧ではないということなので、過信しないようにしましょう。
+</p>
+
+
+
+</div>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<center>
+<hr>
+<p><a href="../index.html">もどる</a></p>
+<p><a href="mailto:imagire@gmail.com">imagire@gmail.com</a></p>
+</center>
+
+</body>
+</html>

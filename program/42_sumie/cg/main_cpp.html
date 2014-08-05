@@ -1,0 +1,188 @@
+<HTML>
+<HEAD>
+<TITLE>main.cpp</TITLE>
+<meta name="GENERATOR" content="cpp2html 2.1 by Niisaka">
+<meta http-equiv="Content-Type" content="text/html">
+</HEAD>
+<BODY TEXT="#000000" BGCOLOR="#FFFFFF">
+<PRE><FONT COLOR="#40F628">0001:</FONT> <FONT COLOR="#008000">// ----------------------------------------------------------------------------</FONT>
+<FONT COLOR="#40F628">0002:</FONT> <FONT COLOR="#008000">//</FONT>
+<FONT COLOR="#40F628">0003:</FONT> <FONT COLOR="#008000">// main.cpp - Main part for windows programming</FONT>
+<FONT COLOR="#40F628">0004:</FONT> <FONT COLOR="#008000">// </FONT>
+<FONT COLOR="#40F628">0005:</FONT> <FONT COLOR="#008000">// Copyright (c) 2001 if (if@edokko.com)</FONT>
+<FONT COLOR="#40F628">0006:</FONT> <FONT COLOR="#008000">// All Rights Reserved.</FONT>
+<FONT COLOR="#40F628">0007:</FONT> <FONT COLOR="#008000">//</FONT>
+<FONT COLOR="#40F628">0008:</FONT> <FONT COLOR="#008000">// ----------------------------------------------------------------------------</FONT>
+<FONT COLOR="#40F628">0009:</FONT> <FONT COLOR="#0000FF">#define</FONT> STRICT
+<FONT COLOR="#40F628">0010:</FONT> 
+<FONT COLOR="#40F628">0011:</FONT> <FONT COLOR="#0000FF">#include</FONT> &lt;windows.h&gt;
+<FONT COLOR="#40F628">0012:</FONT> <FONT COLOR="#0000FF">#include</FONT> &lt;d3d8.h&gt;
+<FONT COLOR="#40F628">0013:</FONT> <FONT COLOR="#0000FF">#include</FONT> &lt;d3dx8.h&gt;
+<FONT COLOR="#40F628">0014:</FONT> <FONT COLOR="#0000FF">#include</FONT> "<FONT COLOR="#600000">main.h</FONT>"
+<FONT COLOR="#40F628">0015:</FONT> <FONT COLOR="#0000FF">#include</FONT> "<FONT COLOR="#600000">draw.h</FONT>"
+<FONT COLOR="#40F628">0016:</FONT> 
+<FONT COLOR="#40F628">0017:</FONT> <FONT COLOR="#008000">// ----------------------------------------------------------------------------</FONT>
+<FONT COLOR="#40F628">0018:</FONT> <FONT COLOR="#008000">// Object</FONT>
+<FONT COLOR="#40F628">0019:</FONT> <FONT COLOR="#008000">// ----------------------------------------------------------------------------</FONT>
+<FONT COLOR="#40F628">0020:</FONT> <FONT COLOR="#0000FF">static</FONT> LPDIRECT3D8              s_lpD3D = NULL;
+<FONT COLOR="#40F628">0021:</FONT> <FONT COLOR="#0000FF">static</FONT> LPDIRECT3DDEVICE8        s_lpD3DDEV = NULL;
+<FONT COLOR="#40F628">0022:</FONT> <FONT COLOR="#0000FF">static</FONT> D3DPRESENT_PARAMETERS    s_d3dpp;
+<FONT COLOR="#40F628">0023:</FONT> 
+<FONT COLOR="#40F628">0024:</FONT> <FONT COLOR="#0000FF">static</FONT> <FONT COLOR="#0000FF">bool</FONT>                     s_end;      <FONT COLOR="#008000">// flag for finish</FONT>
+<FONT COLOR="#40F628">0025:</FONT> 
+<FONT COLOR="#40F628">0026:</FONT> <FONT COLOR="#008000">// ----------------------------------------------------------------------------</FONT>
+<FONT COLOR="#40F628">0027:</FONT> <FONT COLOR="#008000">// decl</FONT>
+<FONT COLOR="#40F628">0028:</FONT> <FONT COLOR="#008000">// ----------------------------------------------------------------------------</FONT>
+<FONT COLOR="#40F628">0029:</FONT> <FONT COLOR="#0000FF">int</FONT> PASCAL WinMain(HINSTANCE hInst,HINSTANCE hPrev,<FONT COLOR="#0000FF">char</FONT> *CmdLine,<FONT COLOR="#0000FF">int</FONT> CmdShow);
+<FONT COLOR="#40F628">0030:</FONT> LRESULT CALLBACK MsgProc(HWND hWnd,UINT msg,WPARAM wParam,LPARAM lParam);
+<FONT COLOR="#40F628">0031:</FONT> HRESULT InitD3D( HWND hWnd );
+<FONT COLOR="#40F628">0032:</FONT> 
+<FONT COLOR="#40F628">0033:</FONT> <FONT COLOR="#0000FF">void</FONT> SetDrop(<FONT COLOR="#0000FF">float</FONT> x , <FONT COLOR="#0000FF">float</FONT> y);
+<FONT COLOR="#40F628">0034:</FONT> <FONT COLOR="#0000FF">void</FONT> ResetDrop();
+<FONT COLOR="#40F628">0035:</FONT> <FONT COLOR="#0000FF">int</FONT>  IsDrop();
+<FONT COLOR="#40F628">0036:</FONT> 
+<FONT COLOR="#40F628">0037:</FONT> <FONT COLOR="#008000">// ----------------------------------------------------------------------------</FONT>
+<FONT COLOR="#40F628">0038:</FONT> <FONT COLOR="#008000">// Name: WinMain()</FONT>
+<FONT COLOR="#40F628">0039:</FONT> <FONT COLOR="#008000">//-----------------------------------------------------------------------------</FONT>
+<FONT COLOR="#40F628">0040:</FONT> <FONT COLOR="#0000FF">int</FONT> PASCAL WinMain(HINSTANCE hInst,HINSTANCE hPrev,<FONT COLOR="#0000FF">char</FONT> *CmdLine,<FONT COLOR="#0000FF">int</FONT> CmdShow)
+<FONT COLOR="#40F628">0041:</FONT> {
+<FONT COLOR="#40F628">0042:</FONT>     s_end = 0;
+<FONT COLOR="#40F628">0043:</FONT>     
+<FONT COLOR="#40F628">0044:</FONT>     RECT    rect;
+<FONT COLOR="#40F628">0045:</FONT>     SetRect(&amp;rect, 0, 0, WIDTH, HEIGHT);
+<FONT COLOR="#40F628">0046:</FONT>     DWORD   style = WS_CAPTION|WS_SYSMENU|WS_BORDER|WS_MINIMIZEBOX;
+<FONT COLOR="#40F628">0047:</FONT>     AdjustWindowRect(&amp;rect, style, FALSE);
+<FONT COLOR="#40F628">0048:</FONT>     <FONT COLOR="#0000FF">int</FONT> width  = rect.right - rect.left;
+<FONT COLOR="#40F628">0049:</FONT>     <FONT COLOR="#0000FF">int</FONT> height = rect.bottom - rect.top;    
+<FONT COLOR="#40F628">0050:</FONT>     
+<FONT COLOR="#40F628">0051:</FONT>     WNDCLASS wc;
+<FONT COLOR="#40F628">0052:</FONT>     ZeroMemory(&amp;wc, <FONT COLOR="#0000FF">sizeof</FONT>(WNDCLASS));
+<FONT COLOR="#40F628">0053:</FONT>     wc.hbrBackground    = (HBRUSH)GetStockObject(BLACK_BRUSH);
+<FONT COLOR="#40F628">0054:</FONT>     wc.hCursor          = LoadCursor(NULL, IDC_ARROW);
+<FONT COLOR="#40F628">0055:</FONT>     wc.hInstance        = hInst;
+<FONT COLOR="#40F628">0056:</FONT>     wc.lpfnWndProc      = MsgProc;
+<FONT COLOR="#40F628">0057:</FONT>     wc.lpszClassName    = CAPTION;
+<FONT COLOR="#40F628">0058:</FONT>     <FONT COLOR="#0000FF">if</FONT>(RegisterClass(&amp;wc) == 0) <FONT COLOR="#0000FF">return</FONT> 0;
+<FONT COLOR="#40F628">0059:</FONT>     
+<FONT COLOR="#40F628">0060:</FONT>     HWND hWnd = CreateWindow(CAPTION
+<FONT COLOR="#40F628">0061:</FONT>                             ,CAPTION
+<FONT COLOR="#40F628">0062:</FONT>                             ,style
+<FONT COLOR="#40F628">0063:</FONT>                             ,CW_USEDEFAULT
+<FONT COLOR="#40F628">0064:</FONT>                             ,CW_USEDEFAULT
+<FONT COLOR="#40F628">0065:</FONT>                             ,width
+<FONT COLOR="#40F628">0066:</FONT>                             ,height
+<FONT COLOR="#40F628">0067:</FONT>                             ,NULL
+<FONT COLOR="#40F628">0068:</FONT>                             ,NULL
+<FONT COLOR="#40F628">0069:</FONT>                             ,hInst
+<FONT COLOR="#40F628">0070:</FONT>                             ,NULL
+<FONT COLOR="#40F628">0071:</FONT>                             );
+<FONT COLOR="#40F628">0072:</FONT>     <FONT COLOR="#0000FF">if</FONT>(hWnd == NULL) <FONT COLOR="#0000FF">return</FONT> 0;
+<FONT COLOR="#40F628">0073:</FONT>     
+<FONT COLOR="#40F628">0074:</FONT>     <FONT COLOR="#0000FF">if</FONT>(SUCCEEDED(InitD3D(hWnd))){
+<FONT COLOR="#40F628">0075:</FONT>         
+<FONT COLOR="#40F628">0076:</FONT>         <FONT COLOR="#0000FF">if</FONT>(FAILED(InitRender(s_lpD3DDEV))) s_end = <FONT COLOR="#0000FF">true</FONT>;
+<FONT COLOR="#40F628">0077:</FONT>         
+<FONT COLOR="#40F628">0078:</FONT>         ShowWindow(hWnd, SW_SHOW);
+<FONT COLOR="#40F628">0079:</FONT>         UpdateWindow(hWnd);
+<FONT COLOR="#40F628">0080:</FONT>     
+<FONT COLOR="#40F628">0081:</FONT>         <FONT COLOR="#008000">// Main loop</FONT>
+<FONT COLOR="#40F628">0082:</FONT>         MSG msg;
+<FONT COLOR="#40F628">0083:</FONT>         <FONT COLOR="#0000FF">while</FONT> (!s_end)
+<FONT COLOR="#40F628">0084:</FONT>         {
+<FONT COLOR="#40F628">0085:</FONT>             <FONT COLOR="#0000FF">if</FONT> (PeekMessage(&amp;msg, NULL, 0, 0, PM_REMOVE)){
+<FONT COLOR="#40F628">0086:</FONT>                 TranslateMessage(&amp;msg);
+<FONT COLOR="#40F628">0087:</FONT>                 DispatchMessage(&amp;msg);
+<FONT COLOR="#40F628">0088:</FONT>             }<FONT COLOR="#0000FF">else</FONT>{
+<FONT COLOR="#40F628">0089:</FONT>                 s_lpD3DDEV-&gt;Clear(0,NULL,D3DCLEAR_TARGET | D3DCLEAR_ZBUFFER,D3DCOLOR_XRGB(255,255,255),1.0f,0);
+<FONT COLOR="#40F628">0090:</FONT>                 s_lpD3DDEV-&gt;BeginScene();
+<FONT COLOR="#40F628">0091:</FONT>                 Render(s_lpD3DDEV);
+<FONT COLOR="#40F628">0092:</FONT>                 s_lpD3DDEV-&gt;EndScene();
+<FONT COLOR="#40F628">0093:</FONT>                 <FONT COLOR="#0000FF">if</FONT> (FAILED(s_lpD3DDEV-&gt;Present(NULL,NULL,NULL,NULL)))
+<FONT COLOR="#40F628">0094:</FONT>                     s_lpD3DDEV-&gt;Reset(&amp;s_d3dpp);
+<FONT COLOR="#40F628">0095:</FONT>             }
+<FONT COLOR="#40F628">0096:</FONT>         }
+<FONT COLOR="#40F628">0097:</FONT>     }
+<FONT COLOR="#40F628">0098:</FONT>     
+<FONT COLOR="#40F628">0099:</FONT>     <FONT COLOR="#008000">// finish</FONT>
+<FONT COLOR="#40F628">0100:</FONT>     CleanRender(s_lpD3DDEV);
+<FONT COLOR="#40F628">0101:</FONT>     RELEASE(s_lpD3DDEV);
+<FONT COLOR="#40F628">0102:</FONT>     RELEASE(s_lpD3D);
+<FONT COLOR="#40F628">0103:</FONT>     
+<FONT COLOR="#40F628">0104:</FONT>     <FONT COLOR="#0000FF">return</FONT> 0;
+<FONT COLOR="#40F628">0105:</FONT> }
+<FONT COLOR="#40F628">0106:</FONT> <FONT COLOR="#008000">// ----------------------------------------------------------------------------</FONT>
+<FONT COLOR="#40F628">0107:</FONT> <FONT COLOR="#008000">// Name: MsgProc()</FONT>
+<FONT COLOR="#40F628">0108:</FONT> <FONT COLOR="#008000">//-----------------------------------------------------------------------------</FONT>
+<FONT COLOR="#40F628">0109:</FONT> LRESULT CALLBACK MsgProc(HWND hWnd,UINT msg,WPARAM wParam,LPARAM lParam)
+<FONT COLOR="#40F628">0110:</FONT> {
+<FONT COLOR="#40F628">0111:</FONT>     <FONT COLOR="#0000FF">long</FONT> x, y;
+<FONT COLOR="#40F628">0112:</FONT> 
+<FONT COLOR="#40F628">0113:</FONT>     <FONT COLOR="#0000FF">switch</FONT> (msg){
+<FONT COLOR="#40F628">0114:</FONT>     <FONT COLOR="#0000FF">case</FONT> WM_LBUTTONDOWN:
+<FONT COLOR="#40F628">0115:</FONT>         x = (lParam &lt;&lt; 16) &gt;&gt; 16;
+<FONT COLOR="#40F628">0116:</FONT>         y = lParam &gt;&gt; 16;
+<FONT COLOR="#40F628">0117:</FONT>         SetDrop((<FONT COLOR="#0000FF">float</FONT>)x , (<FONT COLOR="#0000FF">float</FONT>)y);
+<FONT COLOR="#40F628">0118:</FONT>         <FONT COLOR="#0000FF">break</FONT>;
+<FONT COLOR="#40F628">0119:</FONT>     <FONT COLOR="#0000FF">case</FONT> WM_MOUSEMOVE:
+<FONT COLOR="#40F628">0120:</FONT>         x = (lParam &lt;&lt; 16) &gt;&gt; 16;
+<FONT COLOR="#40F628">0121:</FONT>         y = lParam &gt;&gt; 16;
+<FONT COLOR="#40F628">0122:</FONT>         <FONT COLOR="#0000FF">if</FONT>(IsDrop())SetDrop((<FONT COLOR="#0000FF">float</FONT>)x , (<FONT COLOR="#0000FF">float</FONT>)y);
+<FONT COLOR="#40F628">0123:</FONT>         <FONT COLOR="#0000FF">break</FONT>;
+<FONT COLOR="#40F628">0124:</FONT>     <FONT COLOR="#0000FF">case</FONT> WM_LBUTTONUP:
+<FONT COLOR="#40F628">0125:</FONT>         ResetDrop();
+<FONT COLOR="#40F628">0126:</FONT>         <FONT COLOR="#0000FF">break</FONT>;
+<FONT COLOR="#40F628">0127:</FONT>     <FONT COLOR="#0000FF">case</FONT> WM_KEYDOWN:
+<FONT COLOR="#40F628">0128:</FONT>     <FONT COLOR="#0000FF">case</FONT> WM_CLOSE:
+<FONT COLOR="#40F628">0129:</FONT>         s_end = <FONT COLOR="#0000FF">true</FONT>;
+<FONT COLOR="#40F628">0130:</FONT>         <FONT COLOR="#0000FF">return</FONT> 1;
+<FONT COLOR="#40F628">0131:</FONT>         <FONT COLOR="#0000FF">break</FONT>;
+<FONT COLOR="#40F628">0132:</FONT>     <FONT COLOR="#0000FF">default</FONT>:
+<FONT COLOR="#40F628">0133:</FONT>         <FONT COLOR="#0000FF">break</FONT>;
+<FONT COLOR="#40F628">0134:</FONT>     }
+<FONT COLOR="#40F628">0135:</FONT>     <FONT COLOR="#0000FF">return</FONT> DefWindowProc(hWnd,msg,wParam,lParam);
+<FONT COLOR="#40F628">0136:</FONT> }
+<FONT COLOR="#40F628">0137:</FONT> <FONT COLOR="#008000">//-----------------------------------------------------------------------------</FONT>
+<FONT COLOR="#40F628">0138:</FONT> <FONT COLOR="#008000">// Name: InitD3D()</FONT>
+<FONT COLOR="#40F628">0139:</FONT> <FONT COLOR="#008000">//-----------------------------------------------------------------------------</FONT>
+<FONT COLOR="#40F628">0140:</FONT> HRESULT InitD3D( HWND hWnd )
+<FONT COLOR="#40F628">0141:</FONT> {
+<FONT COLOR="#40F628">0142:</FONT>     <FONT COLOR="#0000FF">if</FONT> (NULL == (s_lpD3D = Direct3DCreate8(D3D_SDK_VERSION))){
+<FONT COLOR="#40F628">0143:</FONT>         MessageBox(NULL,"<FONT COLOR="#600000">Failed to Create Direct3D</FONT>",CAPTION,MB_OK | MB_ICONSTOP);
+<FONT COLOR="#40F628">0144:</FONT>         <FONT COLOR="#0000FF">return</FONT> E_FAIL;
+<FONT COLOR="#40F628">0145:</FONT>     }
+<FONT COLOR="#40F628">0146:</FONT> 
+<FONT COLOR="#40F628">0147:</FONT>     D3DDISPLAYMODE d3ddm;
+<FONT COLOR="#40F628">0148:</FONT>     <FONT COLOR="#0000FF">if</FONT>( FAILED( s_lpD3D-&gt;GetAdapterDisplayMode( D3DADAPTER_DEFAULT, &amp;d3ddm ) ) ) <FONT COLOR="#0000FF">return</FONT> E_FAIL;
+<FONT COLOR="#40F628">0149:</FONT> 
+<FONT COLOR="#40F628">0150:</FONT>     ZeroMemory(&amp;s_d3dpp, <FONT COLOR="#0000FF">sizeof</FONT>(D3DPRESENT_PARAMETERS));
+<FONT COLOR="#40F628">0151:</FONT> 
+<FONT COLOR="#40F628">0152:</FONT>     s_d3dpp.BackBufferCount = 1;
+<FONT COLOR="#40F628">0153:</FONT>     s_d3dpp.Windowed = TRUE;
+<FONT COLOR="#40F628">0154:</FONT>     s_d3dpp.BackBufferWidth = WIDTH;
+<FONT COLOR="#40F628">0155:</FONT>     s_d3dpp.BackBufferHeight = HEIGHT;
+<FONT COLOR="#40F628">0156:</FONT>     s_d3dpp.BackBufferFormat = d3ddm.Format;
+<FONT COLOR="#40F628">0157:</FONT>     s_d3dpp.MultiSampleType = D3DMULTISAMPLE_NONE;
+<FONT COLOR="#40F628">0158:</FONT>     s_d3dpp.SwapEffect = D3DSWAPEFFECT_DISCARD;
+<FONT COLOR="#40F628">0159:</FONT>     s_d3dpp.hDeviceWindow = hWnd;
+<FONT COLOR="#40F628">0160:</FONT>     s_d3dpp.EnableAutoDepthStencil = TRUE;
+<FONT COLOR="#40F628">0161:</FONT>     s_d3dpp.AutoDepthStencilFormat = D3DFMT_D16;
+<FONT COLOR="#40F628">0162:</FONT>  
+<FONT COLOR="#40F628">0163:</FONT>     D3DCAPS8 caps;
+<FONT COLOR="#40F628">0164:</FONT>     s_lpD3D-&gt;GetDeviceCaps(D3DADAPTER_DEFAULT, D3DDEVTYPE_HAL, &amp;caps);
+<FONT COLOR="#40F628">0165:</FONT>     DWORD  vs[] = {D3DCREATE_HARDWARE_VERTEXPROCESSING, D3DCREATE_MIXED_VERTEXPROCESSING, D3DCREATE_SOFTWARE_VERTEXPROCESSING,0 };
+<FONT COLOR="#40F628">0166:</FONT>     D3DDEVTYPE ps[] = {D3DDEVTYPE_HAL, D3DDEVTYPE_REF, (D3DDEVTYPE)0};
+<FONT COLOR="#40F628">0167:</FONT>     
+<FONT COLOR="#40F628">0168:</FONT>     DWORD v = (caps.VertexShaderVersion &lt; D3DVS_VERSION(1,1)) ? 1 : 0;
+<FONT COLOR="#40F628">0169:</FONT>     DWORD p = (caps.PixelShaderVersion  &lt; D3DPS_VERSION(1,1)) ? 1 : 0;
+<FONT COLOR="#40F628">0170:</FONT> 
+<FONT COLOR="#40F628">0171:</FONT>     <FONT COLOR="#0000FF">for</FONT>(;ps[p];p++){
+<FONT COLOR="#40F628">0172:</FONT>     <FONT COLOR="#0000FF">for</FONT>(;vs[v];v++){
+<FONT COLOR="#40F628">0173:</FONT>         <FONT COLOR="#0000FF">if</FONT>(SUCCEEDED(s_lpD3D-&gt;CreateDevice(D3DADAPTER_DEFAULT, ps[p],hWnd,vs[v],&amp;s_d3dpp,&amp;s_lpD3DDEV))) <FONT COLOR="#0000FF">goto</FONT> set_up;
+<FONT COLOR="#40F628">0174:</FONT>     }
+<FONT COLOR="#40F628">0175:</FONT>     }
+<FONT COLOR="#40F628">0176:</FONT> set_up:
+<FONT COLOR="#40F628">0177:</FONT>     <FONT COLOR="#0000FF">return</FONT> S_OK;
+<FONT COLOR="#40F628">0178:</FONT> }
+<FONT COLOR="#40F628">0179:</FONT> </PRE>
+</BODY>
+</HTML>

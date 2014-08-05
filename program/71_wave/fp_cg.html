@@ -1,0 +1,55 @@
+<HTML>
+<HEAD>
+<TITLE>fp.cg</TITLE>
+<meta name="GENERATOR" content="cpp2html 2.1 by Niisaka">
+<meta http-equiv="Content-Type" content="text/html">
+<meta http-equiv="Content-Style-Type" content="text/css">
+<STYLE TYPE="text/css">
+<!--
+SPAN.comment { color:#008000; font-weight:normal; font-style:normal;}
+SPAN.keyword { color:#0000FF; font-weight:normal; font-style:normal;}
+SPAN.string { color:#600000; font-weight:normal; font-style:normal;}
+SPAN.linenum { color:#A0A0A0; font-weight:normal; font-style:normal;}
+-->
+</STYLE>
+</HEAD>
+<BODY TEXT="#000000" BGCOLOR="#FFFFFF">
+<PRE><SPAN CLASS="linenum">0001:</SPAN> <SPAN CLASS="comment">// ---------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0002:</SPAN> <SPAN CLASS="comment">// 頂点プログラム出力データ</SPAN>
+<SPAN CLASS="linenum">0003:</SPAN> <SPAN CLASS="comment">// ---------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0004:</SPAN> <SPAN CLASS="keyword">struct</SPAN> vertout
+<SPAN CLASS="linenum">0005:</SPAN> {
+<SPAN CLASS="linenum">0006:</SPAN>     float4 hpos     : HPOS; <SPAN CLASS="comment">// 頂点座標</SPAN>
+<SPAN CLASS="linenum">0007:</SPAN>     float4 tcoords  : TEX0; <SPAN CLASS="comment">// テクスチャ座標</SPAN>
+<SPAN CLASS="linenum">0008:</SPAN>     float4 eye      : TEX1; <SPAN CLASS="comment">// 反射ベクトル</SPAN>
+<SPAN CLASS="linenum">0009:</SPAN>     float4 light    : TEX2; <SPAN CLASS="comment">// 光源ベクトル</SPAN>
+<SPAN CLASS="linenum">0010:</SPAN> };
+<SPAN CLASS="linenum">0011:</SPAN> <SPAN CLASS="comment">// ---------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0012:</SPAN> <SPAN CLASS="comment">// フラグメントプログラム</SPAN>
+<SPAN CLASS="linenum">0013:</SPAN> <SPAN CLASS="comment">// ---------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0014:</SPAN> fragout main(vertout I
+<SPAN CLASS="linenum">0015:</SPAN>             , uniform texobj2D SrcTex : texunit0
+<SPAN CLASS="linenum">0016:</SPAN>     )
+<SPAN CLASS="linenum">0017:</SPAN> {
+<SPAN CLASS="linenum">0018:</SPAN>     fragout O;
+<SPAN CLASS="linenum">0019:</SPAN>     
+<SPAN CLASS="linenum">0020:</SPAN>     float3 N = - 2.0f * f3tex2D( SrcTex, I.tcoords.xy ) + 1.0f;<SPAN CLASS="comment">// 法線ベクトル</SPAN>
+<SPAN CLASS="linenum">0021:</SPAN>     float3 E = normalize(I.eye.xyz);        <SPAN CLASS="comment">// 視線ベクトル</SPAN>
+<SPAN CLASS="linenum">0022:</SPAN>     float3 R = -E + 2.0f * dot(E, N) * N;   <SPAN CLASS="comment">// 反射ベクトル</SPAN>
+<SPAN CLASS="linenum">0023:</SPAN>     float3 L = normalize(I.light.xyz);      <SPAN CLASS="comment">// 光源ベクトル</SPAN>
+<SPAN CLASS="linenum">0024:</SPAN> 
+<SPAN CLASS="linenum">0025:</SPAN>     <SPAN CLASS="keyword">float</SPAN> RL = max(dot(R,L), 0.0f);         <SPAN CLASS="comment">// (反射,光源)</SPAN>
+<SPAN CLASS="linenum">0026:</SPAN>     <SPAN CLASS="keyword">float</SPAN> NL = max(dot(N,L), 0.0f);         <SPAN CLASS="comment">// (法線,光源)</SPAN>
+<SPAN CLASS="linenum">0027:</SPAN> 
+<SPAN CLASS="linenum">0028:</SPAN>     float4 amb = {0.1f, 0.05f,  0.04f, 1};  <SPAN CLASS="comment">// 環境色</SPAN>
+<SPAN CLASS="linenum">0029:</SPAN>     float4 dif = {1.0f, 0.6f, 0.4f, 1};     <SPAN CLASS="comment">// 拡散色</SPAN>
+<SPAN CLASS="linenum">0030:</SPAN>     float4 spe = {2.0f, 1.8f, 1.2f, 1};     <SPAN CLASS="comment">// 反射色</SPAN>
+<SPAN CLASS="linenum">0031:</SPAN> 
+<SPAN CLASS="linenum">0032:</SPAN>     <SPAN CLASS="comment">// フォンスペキュラー</SPAN>
+<SPAN CLASS="linenum">0033:</SPAN>     O.col = amb + dif*NL + spe*pow(RL, 64);
+<SPAN CLASS="linenum">0034:</SPAN>     
+<SPAN CLASS="linenum">0035:</SPAN>     <SPAN CLASS="keyword">return</SPAN> O;
+<SPAN CLASS="linenum">0036:</SPAN> } 
+<SPAN CLASS="linenum">0037:</SPAN> </PRE>
+</BODY>
+</HTML>

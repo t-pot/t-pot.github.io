@@ -1,0 +1,325 @@
+<HTML>
+<HEAD>
+<TITLE>main.fx</TITLE>
+<meta name="GENERATOR" content="cpp2html 2.1 by Niisaka">
+<meta http-equiv="Content-Type" content="text/html">
+<meta http-equiv="Content-Style-Type" content="text/css">
+<STYLE TYPE="text/css">
+<!--
+SPAN.comment { color:#008000; font-weight:normal; font-style:normal;}
+SPAN.keyword { color:#0000FF; font-weight:normal; font-style:normal;}
+SPAN.string { color:#600000; font-weight:normal; font-style:normal;}
+SPAN.linenum { color:#A0A0A0; font-weight:normal; font-style:normal;}
+-->
+</STYLE>
+</HEAD>
+<BODY TEXT="#000000" BGCOLOR="#FFFFFF">
+<PRE><SPAN CLASS="linenum">0001:</SPAN> <SPAN CLASS="comment">//--------------------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0002:</SPAN> <SPAN CLASS="comment">// File: main.fx</SPAN>
+<SPAN CLASS="linenum">0003:</SPAN> <SPAN CLASS="comment">//</SPAN>
+<SPAN CLASS="linenum">0004:</SPAN> <SPAN CLASS="comment">// The effect file for the main sample.  </SPAN>
+<SPAN CLASS="linenum">0005:</SPAN> <SPAN CLASS="comment">// </SPAN>
+<SPAN CLASS="linenum">0006:</SPAN> <SPAN CLASS="comment">// Copyright (c) 2004 IMAGIRE Takashi. All rights reserved.</SPAN>
+<SPAN CLASS="linenum">0007:</SPAN> <SPAN CLASS="comment">//--------------------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0008:</SPAN> 
+<SPAN CLASS="linenum">0009:</SPAN> 
+<SPAN CLASS="linenum">0010:</SPAN> <SPAN CLASS="comment">//--------------------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0011:</SPAN> <SPAN CLASS="comment">// Global variables</SPAN>
+<SPAN CLASS="linenum">0012:</SPAN> <SPAN CLASS="comment">//--------------------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0013:</SPAN> 
+<SPAN CLASS="linenum">0014:</SPAN> <SPAN CLASS="keyword">float</SPAN>    g_fInvTexSize;
+<SPAN CLASS="linenum">0015:</SPAN> 
+<SPAN CLASS="linenum">0016:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0017:</SPAN> <SPAN CLASS="comment">// Texture samplers</SPAN>
+<SPAN CLASS="linenum">0018:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0019:</SPAN> texture Texture;
+<SPAN CLASS="linenum">0020:</SPAN> sampler Sampler = sampler_state
+<SPAN CLASS="linenum">0021:</SPAN> {
+<SPAN CLASS="linenum">0022:</SPAN>     Texture = &lt;Texture&gt;;
+<SPAN CLASS="linenum">0023:</SPAN>     MinFilter = POINT;
+<SPAN CLASS="linenum">0024:</SPAN>     MagFilter = POINT;
+<SPAN CLASS="linenum">0025:</SPAN>     MipFilter = NONE;
+<SPAN CLASS="linenum">0026:</SPAN> 
+<SPAN CLASS="linenum">0027:</SPAN>     AddressU = Clamp;
+<SPAN CLASS="linenum">0028:</SPAN>     AddressV = Clamp;
+<SPAN CLASS="linenum">0029:</SPAN> };
+<SPAN CLASS="linenum">0030:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0031:</SPAN> texture TextureInfo;
+<SPAN CLASS="linenum">0032:</SPAN> sampler SamplerInfo = sampler_state
+<SPAN CLASS="linenum">0033:</SPAN> {
+<SPAN CLASS="linenum">0034:</SPAN>     Texture = &lt;TextureInfo&gt;;
+<SPAN CLASS="linenum">0035:</SPAN>     MinFilter = POINT;
+<SPAN CLASS="linenum">0036:</SPAN>     MagFilter = POINT;
+<SPAN CLASS="linenum">0037:</SPAN>     MipFilter = NONE;
+<SPAN CLASS="linenum">0038:</SPAN> 
+<SPAN CLASS="linenum">0039:</SPAN>     AddressU = Clamp;
+<SPAN CLASS="linenum">0040:</SPAN>     AddressV = Clamp;
+<SPAN CLASS="linenum">0041:</SPAN> };
+<SPAN CLASS="linenum">0042:</SPAN> 
+<SPAN CLASS="linenum">0043:</SPAN> 
+<SPAN CLASS="linenum">0044:</SPAN> <SPAN CLASS="comment">//=============================================================================</SPAN>
+<SPAN CLASS="linenum">0045:</SPAN> <SPAN CLASS="comment">// ëŒêîÇÇ∆ÇÈ</SPAN>
+<SPAN CLASS="linenum">0046:</SPAN> <SPAN CLASS="comment">//=============================================================================</SPAN>
+<SPAN CLASS="linenum">0047:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0048:</SPAN> <SPAN CLASS="comment">// Vertex shader output structure</SPAN>
+<SPAN CLASS="linenum">0049:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0050:</SPAN> <SPAN CLASS="keyword">struct</SPAN> LogVS_OUTPUT
+<SPAN CLASS="linenum">0051:</SPAN> {
+<SPAN CLASS="linenum">0052:</SPAN>     float4 Position : POSITION;
+<SPAN CLASS="linenum">0053:</SPAN>     float2 TexCoord0 : TEXCOORD0;
+<SPAN CLASS="linenum">0054:</SPAN>     float2 TexCoord1 : TEXCOORD1;
+<SPAN CLASS="linenum">0055:</SPAN>     float2 TexCoord2 : TEXCOORD2;
+<SPAN CLASS="linenum">0056:</SPAN>     float2 TexCoord3 : TEXCOORD3;
+<SPAN CLASS="linenum">0057:</SPAN> };
+<SPAN CLASS="linenum">0058:</SPAN> 
+<SPAN CLASS="linenum">0059:</SPAN> 
+<SPAN CLASS="linenum">0060:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0061:</SPAN> <SPAN CLASS="comment">// Name: LogVS</SPAN>
+<SPAN CLASS="linenum">0062:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0063:</SPAN> LogVS_OUTPUT LogVS( float4 vPos : POSITION, 
+<SPAN CLASS="linenum">0064:</SPAN>                     float2 vTexCoord0 : TEXCOORD0 )
+<SPAN CLASS="linenum">0065:</SPAN> {
+<SPAN CLASS="linenum">0066:</SPAN>     LogVS_OUTPUT Output;
+<SPAN CLASS="linenum">0067:</SPAN>   
+<SPAN CLASS="linenum">0068:</SPAN>     <SPAN CLASS="comment">// tranform vertex position into screen space</SPAN>
+<SPAN CLASS="linenum">0069:</SPAN>     Output.Position = vPos;
+<SPAN CLASS="linenum">0070:</SPAN>     
+<SPAN CLASS="linenum">0071:</SPAN>     <SPAN CLASS="comment">// Just copy the texture coordinate through</SPAN>
+<SPAN CLASS="linenum">0072:</SPAN>     Output.TexCoord0 = vTexCoord0 + float2( 0.5*g_fInvTexSize, 0.5*g_fInvTexSize );
+<SPAN CLASS="linenum">0073:</SPAN>     Output.TexCoord1 = vTexCoord0 + float2( 1.5*g_fInvTexSize, 0.5*g_fInvTexSize );
+<SPAN CLASS="linenum">0074:</SPAN>     Output.TexCoord2 = vTexCoord0 + float2( 0.5*g_fInvTexSize, 1.5*g_fInvTexSize );
+<SPAN CLASS="linenum">0075:</SPAN>     Output.TexCoord3 = vTexCoord0 + float2( 1.5*g_fInvTexSize, 1.5*g_fInvTexSize );
+<SPAN CLASS="linenum">0076:</SPAN>     
+<SPAN CLASS="linenum">0077:</SPAN>     <SPAN CLASS="keyword">return</SPAN> Output;    
+<SPAN CLASS="linenum">0078:</SPAN> }
+<SPAN CLASS="linenum">0079:</SPAN> 
+<SPAN CLASS="linenum">0080:</SPAN> 
+<SPAN CLASS="linenum">0081:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0082:</SPAN> <SPAN CLASS="comment">// Name: LogPS</SPAN>
+<SPAN CLASS="linenum">0083:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0084:</SPAN> float4 LogPS( LogVS_OUTPUT In ) : COLOR
+<SPAN CLASS="linenum">0085:</SPAN> {
+<SPAN CLASS="linenum">0086:</SPAN>     <SPAN CLASS="keyword">const</SPAN> float3 RGB2Y   = float3( +0.29900f, +0.58700f, +0.11400f );
+<SPAN CLASS="linenum">0087:</SPAN>     <SPAN CLASS="keyword">const</SPAN> <SPAN CLASS="keyword">float</SPAN> EPSILON = 0.00001;
+<SPAN CLASS="linenum">0088:</SPAN>     float4 output;
+<SPAN CLASS="linenum">0089:</SPAN>     
+<SPAN CLASS="linenum">0090:</SPAN>     <SPAN CLASS="keyword">float</SPAN> l0 = dot( RGB2Y, tex2D( Sampler, In.TexCoord0 ));
+<SPAN CLASS="linenum">0091:</SPAN>     <SPAN CLASS="keyword">float</SPAN> l1 = dot( RGB2Y, tex2D( Sampler, In.TexCoord1 ));
+<SPAN CLASS="linenum">0092:</SPAN>     <SPAN CLASS="keyword">float</SPAN> l2 = dot( RGB2Y, tex2D( Sampler, In.TexCoord2 ));
+<SPAN CLASS="linenum">0093:</SPAN>     <SPAN CLASS="keyword">float</SPAN> l3 = dot( RGB2Y, tex2D( Sampler, In.TexCoord3 ));
+<SPAN CLASS="linenum">0094:</SPAN>     
+<SPAN CLASS="linenum">0095:</SPAN>     <SPAN CLASS="keyword">float</SPAN> l_max = max(max(l0,l1),max(l2,l3));
+<SPAN CLASS="linenum">0096:</SPAN>     
+<SPAN CLASS="linenum">0097:</SPAN>     <SPAN CLASS="keyword">float</SPAN> total =  log( EPSILON + l0 )
+<SPAN CLASS="linenum">0098:</SPAN>                  + log( EPSILON + l1 )
+<SPAN CLASS="linenum">0099:</SPAN>                  + log( EPSILON + l2 )
+<SPAN CLASS="linenum">0100:</SPAN>                  + log( EPSILON + l3 );
+<SPAN CLASS="linenum">0101:</SPAN>                  
+<SPAN CLASS="linenum">0102:</SPAN>     output.r = l_max;
+<SPAN CLASS="linenum">0103:</SPAN>     output.gba = 0.25f * total;
+<SPAN CLASS="linenum">0104:</SPAN>     
+<SPAN CLASS="linenum">0105:</SPAN>     <SPAN CLASS="keyword">return</SPAN> output;
+<SPAN CLASS="linenum">0106:</SPAN> }
+<SPAN CLASS="linenum">0107:</SPAN> 
+<SPAN CLASS="linenum">0108:</SPAN> 
+<SPAN CLASS="linenum">0109:</SPAN> <SPAN CLASS="comment">//--------------------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0110:</SPAN> <SPAN CLASS="comment">// Techniques</SPAN>
+<SPAN CLASS="linenum">0111:</SPAN> <SPAN CLASS="comment">//--------------------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0112:</SPAN> technique LogTechnique
+<SPAN CLASS="linenum">0113:</SPAN> {
+<SPAN CLASS="linenum">0114:</SPAN>     pass P0
+<SPAN CLASS="linenum">0115:</SPAN>     {
+<SPAN CLASS="linenum">0116:</SPAN>         VertexShader = compile vs_1_1 LogVS();
+<SPAN CLASS="linenum">0117:</SPAN>         PixelShader  = compile ps_2_0 LogPS();
+<SPAN CLASS="linenum">0118:</SPAN>     }
+<SPAN CLASS="linenum">0119:</SPAN> }
+<SPAN CLASS="linenum">0120:</SPAN> 
+<SPAN CLASS="linenum">0121:</SPAN> 
+<SPAN CLASS="linenum">0122:</SPAN> 
+<SPAN CLASS="linenum">0123:</SPAN> 
+<SPAN CLASS="linenum">0124:</SPAN> 
+<SPAN CLASS="linenum">0125:</SPAN> <SPAN CLASS="comment">//=============================================================================</SPAN>
+<SPAN CLASS="linenum">0126:</SPAN> <SPAN CLASS="comment">// èkè¨Ç∑ÇÈ</SPAN>
+<SPAN CLASS="linenum">0127:</SPAN> <SPAN CLASS="comment">//=============================================================================</SPAN>
+<SPAN CLASS="linenum">0128:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0129:</SPAN> <SPAN CLASS="comment">// Vertex shader output structure</SPAN>
+<SPAN CLASS="linenum">0130:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0131:</SPAN> <SPAN CLASS="keyword">struct</SPAN> SmallVS_OUTPUT
+<SPAN CLASS="linenum">0132:</SPAN> {
+<SPAN CLASS="linenum">0133:</SPAN>     float4 Position : POSITION;
+<SPAN CLASS="linenum">0134:</SPAN>     float2 TexCoord0 : TEXCOORD0;
+<SPAN CLASS="linenum">0135:</SPAN>     float2 TexCoord1 : TEXCOORD1;
+<SPAN CLASS="linenum">0136:</SPAN>     float2 TexCoord2 : TEXCOORD2;
+<SPAN CLASS="linenum">0137:</SPAN>     float2 TexCoord3 : TEXCOORD3;
+<SPAN CLASS="linenum">0138:</SPAN>     float2 TexCoord4 : TEXCOORD4;
+<SPAN CLASS="linenum">0139:</SPAN>     float2 TexCoord5 : TEXCOORD5;
+<SPAN CLASS="linenum">0140:</SPAN>     float2 TexCoord6 : TEXCOORD6;
+<SPAN CLASS="linenum">0141:</SPAN>     float2 TexCoord7 : TEXCOORD7;
+<SPAN CLASS="linenum">0142:</SPAN> };
+<SPAN CLASS="linenum">0143:</SPAN> 
+<SPAN CLASS="linenum">0144:</SPAN> 
+<SPAN CLASS="linenum">0145:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0146:</SPAN> <SPAN CLASS="comment">// Name: LogVS</SPAN>
+<SPAN CLASS="linenum">0147:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0148:</SPAN> SmallVS_OUTPUT SmallVS( float4 vPos : POSITION, 
+<SPAN CLASS="linenum">0149:</SPAN>                     float2 vTexCoord0 : TEXCOORD0 )
+<SPAN CLASS="linenum">0150:</SPAN> {
+<SPAN CLASS="linenum">0151:</SPAN>     SmallVS_OUTPUT Output;
+<SPAN CLASS="linenum">0152:</SPAN>   
+<SPAN CLASS="linenum">0153:</SPAN>     <SPAN CLASS="comment">// tranform vertex position into screen space</SPAN>
+<SPAN CLASS="linenum">0154:</SPAN>     Output.Position = vPos;
+<SPAN CLASS="linenum">0155:</SPAN>     
+<SPAN CLASS="linenum">0156:</SPAN>     <SPAN CLASS="comment">// Just copy the texture coordinate through</SPAN>
+<SPAN CLASS="linenum">0157:</SPAN>     Output.TexCoord0 = vTexCoord0 + float2( 0.5*g_fInvTexSize, 0.5*g_fInvTexSize );
+<SPAN CLASS="linenum">0158:</SPAN>     Output.TexCoord1 = vTexCoord0 + float2( 1.5*g_fInvTexSize, 0.5*g_fInvTexSize );
+<SPAN CLASS="linenum">0159:</SPAN>     Output.TexCoord2 = vTexCoord0 + float2( 3.5*g_fInvTexSize, 0.5*g_fInvTexSize );
+<SPAN CLASS="linenum">0160:</SPAN>     Output.TexCoord3 = vTexCoord0 + float2( 5.5*g_fInvTexSize, 0.5*g_fInvTexSize );
+<SPAN CLASS="linenum">0161:</SPAN>     Output.TexCoord4 = vTexCoord0 + float2( 0.5*g_fInvTexSize, 1.5*g_fInvTexSize );
+<SPAN CLASS="linenum">0162:</SPAN>     Output.TexCoord5 = vTexCoord0 + float2( 1.5*g_fInvTexSize, 1.5*g_fInvTexSize );
+<SPAN CLASS="linenum">0163:</SPAN>     Output.TexCoord6 = vTexCoord0 + float2( 3.5*g_fInvTexSize, 1.5*g_fInvTexSize );
+<SPAN CLASS="linenum">0164:</SPAN>     Output.TexCoord7 = vTexCoord0 + float2( 5.5*g_fInvTexSize, 1.5*g_fInvTexSize );
+<SPAN CLASS="linenum">0165:</SPAN>     
+<SPAN CLASS="linenum">0166:</SPAN>     <SPAN CLASS="keyword">return</SPAN> Output;    
+<SPAN CLASS="linenum">0167:</SPAN> }
+<SPAN CLASS="linenum">0168:</SPAN> 
+<SPAN CLASS="linenum">0169:</SPAN> 
+<SPAN CLASS="linenum">0170:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0171:</SPAN> <SPAN CLASS="comment">// Name: SmallPS</SPAN>
+<SPAN CLASS="linenum">0172:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0173:</SPAN> float4 SmallPS( SmallVS_OUTPUT In ) : COLOR
+<SPAN CLASS="linenum">0174:</SPAN> {
+<SPAN CLASS="linenum">0175:</SPAN>     float4 output;
+<SPAN CLASS="linenum">0176:</SPAN>     
+<SPAN CLASS="linenum">0177:</SPAN>     float4 t0 = tex2D( Sampler, In.TexCoord0 );
+<SPAN CLASS="linenum">0178:</SPAN>     float4 t1 = tex2D( Sampler, In.TexCoord1 );
+<SPAN CLASS="linenum">0179:</SPAN>     float4 t2 = tex2D( Sampler, In.TexCoord2 );
+<SPAN CLASS="linenum">0180:</SPAN>     float4 t3 = tex2D( Sampler, In.TexCoord3 );
+<SPAN CLASS="linenum">0181:</SPAN>     float4 t4 = tex2D( Sampler, In.TexCoord4 );
+<SPAN CLASS="linenum">0182:</SPAN>     float4 t5 = tex2D( Sampler, In.TexCoord5 );
+<SPAN CLASS="linenum">0183:</SPAN>     float4 t6 = tex2D( Sampler, In.TexCoord6 );
+<SPAN CLASS="linenum">0184:</SPAN>     float4 t7 = tex2D( Sampler, In.TexCoord7 );
+<SPAN CLASS="linenum">0185:</SPAN>     float4 t8 = tex2D( Sampler, In.TexCoord0 + float2(0,2.0*g_fInvTexSize) );
+<SPAN CLASS="linenum">0186:</SPAN>     float4 t9 = tex2D( Sampler, In.TexCoord1 + float2(0,2.0*g_fInvTexSize) );
+<SPAN CLASS="linenum">0187:</SPAN>     float4 ta = tex2D( Sampler, In.TexCoord2 + float2(0,2.0*g_fInvTexSize) );
+<SPAN CLASS="linenum">0188:</SPAN>     float4 tb = tex2D( Sampler, In.TexCoord3 + float2(0,2.0*g_fInvTexSize) );
+<SPAN CLASS="linenum">0189:</SPAN>     float4 tc = tex2D( Sampler, In.TexCoord4 + float2(0,2.0*g_fInvTexSize) );
+<SPAN CLASS="linenum">0190:</SPAN>     float4 td = tex2D( Sampler, In.TexCoord5 + float2(0,2.0*g_fInvTexSize) );
+<SPAN CLASS="linenum">0191:</SPAN>     float4 te = tex2D( Sampler, In.TexCoord6 + float2(0,2.0*g_fInvTexSize) );
+<SPAN CLASS="linenum">0192:</SPAN>     float4 tf = tex2D( Sampler, In.TexCoord7 + float2(0,2.0*g_fInvTexSize) );
+<SPAN CLASS="linenum">0193:</SPAN>     
+<SPAN CLASS="linenum">0194:</SPAN>     <SPAN CLASS="keyword">float</SPAN> l_max = max(max(max(max(t0.r,t1.r),max(t2.r,t3.r)),
+<SPAN CLASS="linenum">0195:</SPAN>                           max(max(t4.r,t5.r),max(t6.r,t7.r))),
+<SPAN CLASS="linenum">0196:</SPAN>                       max(max(max(t8.r,t9.r),max(ta.r,tb.r)),
+<SPAN CLASS="linenum">0197:</SPAN>                           max(max(tc.r,td.r),max(te.r,tf.r))));
+<SPAN CLASS="linenum">0198:</SPAN>     
+<SPAN CLASS="linenum">0199:</SPAN>     output.r = l_max;
+<SPAN CLASS="linenum">0200:</SPAN>     output.gba = (1.0/16.0)* (t0.gba + t1.gba + t2.gba + t3.gba
+<SPAN CLASS="linenum">0201:</SPAN>                             + t4.gba + t5.gba + t6.gba + t7.gba
+<SPAN CLASS="linenum">0202:</SPAN>                             + t8.gba + t9.gba + ta.gba + tb.gba
+<SPAN CLASS="linenum">0203:</SPAN>                             + tc.gba + td.gba + te.gba + tf.gba);
+<SPAN CLASS="linenum">0204:</SPAN>     
+<SPAN CLASS="linenum">0205:</SPAN>     <SPAN CLASS="keyword">return</SPAN> output;
+<SPAN CLASS="linenum">0206:</SPAN> }
+<SPAN CLASS="linenum">0207:</SPAN> 
+<SPAN CLASS="linenum">0208:</SPAN> 
+<SPAN CLASS="linenum">0209:</SPAN> <SPAN CLASS="comment">//--------------------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0210:</SPAN> <SPAN CLASS="comment">// Techniques</SPAN>
+<SPAN CLASS="linenum">0211:</SPAN> <SPAN CLASS="comment">//--------------------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0212:</SPAN> technique SmallTechnique
+<SPAN CLASS="linenum">0213:</SPAN> {
+<SPAN CLASS="linenum">0214:</SPAN>     pass P0
+<SPAN CLASS="linenum">0215:</SPAN>     {
+<SPAN CLASS="linenum">0216:</SPAN>         VertexShader = compile vs_1_1 SmallVS();
+<SPAN CLASS="linenum">0217:</SPAN>         PixelShader  = compile ps_2_0 SmallPS();
+<SPAN CLASS="linenum">0218:</SPAN>     }
+<SPAN CLASS="linenum">0219:</SPAN> }
+<SPAN CLASS="linenum">0220:</SPAN> 
+<SPAN CLASS="linenum">0221:</SPAN> 
+<SPAN CLASS="linenum">0222:</SPAN> 
+<SPAN CLASS="linenum">0223:</SPAN> 
+<SPAN CLASS="linenum">0224:</SPAN> 
+<SPAN CLASS="linenum">0225:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0226:</SPAN> <SPAN CLASS="comment">// Vertex shader output structure</SPAN>
+<SPAN CLASS="linenum">0227:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0228:</SPAN> <SPAN CLASS="keyword">struct</SPAN> FinalVS_OUTPUT
+<SPAN CLASS="linenum">0229:</SPAN> {
+<SPAN CLASS="linenum">0230:</SPAN>     float4 Position : POSITION;
+<SPAN CLASS="linenum">0231:</SPAN>     float2 TexCoord : TEXCOORD0;
+<SPAN CLASS="linenum">0232:</SPAN> };
+<SPAN CLASS="linenum">0233:</SPAN> 
+<SPAN CLASS="linenum">0234:</SPAN> 
+<SPAN CLASS="linenum">0235:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0236:</SPAN> <SPAN CLASS="comment">// Name: FinalVS</SPAN>
+<SPAN CLASS="linenum">0237:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0238:</SPAN> FinalVS_OUTPUT FinalVS( float4 vPos : POSITION, 
+<SPAN CLASS="linenum">0239:</SPAN>                     float2 vTexCoord0 : TEXCOORD0 )
+<SPAN CLASS="linenum">0240:</SPAN> {
+<SPAN CLASS="linenum">0241:</SPAN>     FinalVS_OUTPUT Output;
+<SPAN CLASS="linenum">0242:</SPAN>   
+<SPAN CLASS="linenum">0243:</SPAN>     <SPAN CLASS="comment">// tranform vertex position into screen space</SPAN>
+<SPAN CLASS="linenum">0244:</SPAN>     Output.Position = vPos - float4( 0.5*g_fInvTexSize, 0.5*g_fInvTexSize, 0, 0 );
+<SPAN CLASS="linenum">0245:</SPAN>     
+<SPAN CLASS="linenum">0246:</SPAN>     <SPAN CLASS="comment">// Just copy the texture coordinate through</SPAN>
+<SPAN CLASS="linenum">0247:</SPAN>     Output.TexCoord = vTexCoord0;
+<SPAN CLASS="linenum">0248:</SPAN>     
+<SPAN CLASS="linenum">0249:</SPAN>     <SPAN CLASS="keyword">return</SPAN> Output;    
+<SPAN CLASS="linenum">0250:</SPAN> }
+<SPAN CLASS="linenum">0251:</SPAN> 
+<SPAN CLASS="linenum">0252:</SPAN> 
+<SPAN CLASS="linenum">0253:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0254:</SPAN> <SPAN CLASS="comment">// Name: FinalPS</SPAN>
+<SPAN CLASS="linenum">0255:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0256:</SPAN> float4 FinalPS( FinalVS_OUTPUT In ) : COLOR
+<SPAN CLASS="linenum">0257:</SPAN> {
+<SPAN CLASS="linenum">0258:</SPAN>     <SPAN CLASS="keyword">const</SPAN> float3 RGB2Y   = float3( +0.29900f, +0.58700f, +0.11400f );
+<SPAN CLASS="linenum">0259:</SPAN>     <SPAN CLASS="keyword">const</SPAN> float3 RGB2Cb  = float3( -0.16874f, -0.33126f, +0.50000f );
+<SPAN CLASS="linenum">0260:</SPAN>     <SPAN CLASS="keyword">const</SPAN> float3 RGB2Cr  = float3( +0.50000f, -0.41869f, -0.08131f );
+<SPAN CLASS="linenum">0261:</SPAN>     <SPAN CLASS="keyword">const</SPAN> float3 YCbCr2R = float3( +1.00000f, +0.00000f, +1.40200f );
+<SPAN CLASS="linenum">0262:</SPAN>     <SPAN CLASS="keyword">const</SPAN> float3 YCbCr2G = float3( +1.00000f, -0.34414f, -0.71414f );
+<SPAN CLASS="linenum">0263:</SPAN>     <SPAN CLASS="keyword">const</SPAN> float3 YCbCr2B = float3( +1.00000f, +1.77200f, +0.00000f );
+<SPAN CLASS="linenum">0264:</SPAN>     
+<SPAN CLASS="linenum">0265:</SPAN>     float4 info  = tex2D( SamplerInfo, float2(0.5,0.5) );
+<SPAN CLASS="linenum">0266:</SPAN>     float3 texel = tex2D( Sampler, In.TexCoord ).rgb;
+<SPAN CLASS="linenum">0267:</SPAN>     
+<SPAN CLASS="linenum">0268:</SPAN>     <SPAN CLASS="keyword">float</SPAN> coeff = 0.18 * exp( -info.g );
+<SPAN CLASS="linenum">0269:</SPAN>     <SPAN CLASS="keyword">float</SPAN> l_max = coeff * info.r;
+<SPAN CLASS="linenum">0270:</SPAN> 
+<SPAN CLASS="linenum">0271:</SPAN>     <SPAN CLASS="comment">// YCbCrånÇ…ïœä∑</SPAN>
+<SPAN CLASS="linenum">0272:</SPAN>     float3 YCbCr;
+<SPAN CLASS="linenum">0273:</SPAN>     YCbCr.y = dot( RGB2Cb, texel );
+<SPAN CLASS="linenum">0274:</SPAN>     YCbCr.z = dot( RGB2Cr, texel );
+<SPAN CLASS="linenum">0275:</SPAN> 
+<SPAN CLASS="linenum">0276:</SPAN>     <SPAN CLASS="comment">// êFÇÃã≠Ç≥ÇÕï‚ê≥</SPAN>
+<SPAN CLASS="linenum">0277:</SPAN>     <SPAN CLASS="keyword">float</SPAN> lum = coeff * dot( RGB2Y,  texel );
+<SPAN CLASS="linenum">0278:</SPAN>     YCbCr.x = lum * (1.0f+lum/(l_max*l_max)) / (1.0f+lum);
+<SPAN CLASS="linenum">0279:</SPAN>     
+<SPAN CLASS="linenum">0280:</SPAN>     <SPAN CLASS="comment">// RGBånÇ…ÇµÇƒèoóÕ</SPAN>
+<SPAN CLASS="linenum">0281:</SPAN>     float4 color;
+<SPAN CLASS="linenum">0282:</SPAN>     color.r = dot( YCbCr2R,  YCbCr );
+<SPAN CLASS="linenum">0283:</SPAN>     color.g = dot( YCbCr2G,  YCbCr );
+<SPAN CLASS="linenum">0284:</SPAN>     color.b = dot( YCbCr2B,  YCbCr );
+<SPAN CLASS="linenum">0285:</SPAN>     color.a = 0;
+<SPAN CLASS="linenum">0286:</SPAN>     
+<SPAN CLASS="linenum">0287:</SPAN>     <SPAN CLASS="keyword">return</SPAN> color;
+<SPAN CLASS="linenum">0288:</SPAN> }
+<SPAN CLASS="linenum">0289:</SPAN> 
+<SPAN CLASS="linenum">0290:</SPAN> 
+<SPAN CLASS="linenum">0291:</SPAN> <SPAN CLASS="comment">//--------------------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0292:</SPAN> <SPAN CLASS="comment">// Techniques</SPAN>
+<SPAN CLASS="linenum">0293:</SPAN> <SPAN CLASS="comment">//--------------------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0294:</SPAN> technique FinalTechnique
+<SPAN CLASS="linenum">0295:</SPAN> {
+<SPAN CLASS="linenum">0296:</SPAN>     pass P0
+<SPAN CLASS="linenum">0297:</SPAN>     {
+<SPAN CLASS="linenum">0298:</SPAN>         VertexShader = compile vs_1_1 FinalVS();
+<SPAN CLASS="linenum">0299:</SPAN>         PixelShader  = compile ps_2_0 FinalPS();
+<SPAN CLASS="linenum">0300:</SPAN>     }
+<SPAN CLASS="linenum">0301:</SPAN> }
+<SPAN CLASS="linenum">0302:</SPAN> 
+<SPAN CLASS="linenum">0303:</SPAN> 
+<SPAN CLASS="linenum">0304:</SPAN> 
+<SPAN CLASS="linenum">0305:</SPAN> 
+<SPAN CLASS="linenum">0306:</SPAN> 
+<SPAN CLASS="linenum">0307:</SPAN> </PRE>
+</BODY>
+</HTML>

@@ -1,0 +1,423 @@
+<head>
+	<title>t-pot『ガウスフィルタ』</title>
+	<link rel="stylesheet" type="text/css" href="../if.css">
+</head>
+<meta http-equiv=Content-Type content="text/html; charset=shift_jis">
+<body>
+
+
+<div class="contents">
+<center>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<h1>ガウスフィルタ</h1><br>
+<h3>～ Gaussian Filter ～</h3>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<image src = "title.jpg">
+<br>
+<hr>
+<br>
+</center>
+<div>
+
+<h2>■はじめに</h2>
+
+
+<p>
+ＡＴＩのネットセミナーで紹介されていた、２パスを使ったガウス型のブラーフィルタです。<br>
+今回のプログラムは、１５タップ３０ピクセルのサンプリングと、ＡＴＩのものよりもサンプリング数が増えていることが特徴でしょうか（というか、なんでＡＴＩは少ないの？）。
+</p>
+<ul style = "LIST-STYLE-TYPE:none">
+<li><a href="src.zip">src.zip (ガウスフィルタ:DirectX9)</a>
+</ul>
+
+<p>
+まぁ、いつものように適当にファイルが入っています。<br>
+APP WIZARD から出力されるフレームワークのファイルは紹介を省かせていただきます。
+</p>
+<table>
+<tr><td><a href="hlsl_fx.html">hlsl.fx</a></td><td>シェーダの入ったエフェクトファイル</td></tr>
+<tr><td><a href="main_h.html">main.h</a></td><td>アプリケーションのヘッダ</td></tr>
+<tr><td><a href="main_cpp.html">main.cpp</a></td><td>アプリケーションのソース</td></tr>
+</table>
+<image src = "map_bmp.png" width = "64" height = "64">map.bmp:デカールテクスチャ
+
+<p>
+あと、実行ファイル、モデル及び、プロジェクトファイルが入っています。
+</p>
+
+
+<h2>■ガウスフィルタとは</h2>
+
+
+<p>
+ガウスフィルタとは、ガウス関数を使ったぼかしフィルタです。<br>
+ガウス関数とは、指数関数的な形をした関数で、次の形をしています。
+</p>
+<pre class="CodeBlock">
+       1         x<sup>2</sup>
+f(x) = - exp(- ―― )
+       N        2σ<sup>2</sup>
+</pre>
+<p>
+Nは規格化変数で、σ<sup>2</sup>は分散です。分散とは、平均&ltx&gtからのずれの２乗期待値
+</p>
+<pre class="CodeBlock">
+                   1         x<sup>2</sup>
+σ<sup>2</sup> = ∫dx (x-&ltx&gt)<sup>2</sup> - exp(- ―― )
+                   N        2σ<sup>2</sup>
+</pre>
+<p>
+で、例えば、分散σ<sup>2</sup>=5<sup>2</sup>の規格化定数Nを除いたグラフは、次のようになります。
+</p>
+<image src = "2D.png" width = "80%" height = "80%">
+<p>
+分散σ<sup>2</sup>は、おおよそのグラフの幅をあらわし、x=σの場所で、exp(-0.5)=0.6065になります。分散が大きければ大きいほど関数の山は緩やかになり、逆に小さくなれば、鋭い針のような形になります。
+</p>
+
+<p>
+ガウス関数をフィルタリングに使うというのは、ピクセルを合成する時の重みを中心のピクセルからの距離に応じてガウス関数で決定するということです。<br>
+より、具体的には、ピクセルのｘ軸、ｙ軸に対応して２次元の合成
+</p>
+<pre class="CodeBlock">
+           1            (x<sub>i</sub>-x<sub>a</sub>)<sup>2</sup>       (y<sub>j</sub>-y<sub>b</sub>)<sup>2</sup>
+p(x<sub>a</sub>,y<sub>b</sub>) = ― ∑∑exp(- ――― ) exp(- ――― ) p(x<sub>i</sub>,y<sub>j</sub>)
+           N<sup>2</sup>  i j        2σ<sup>2</sup>            2σ<sup>2</sup>
+</pre>
+<p>
+の公式にしたがって、ピクセルが合成されます。<br>
+ここで、i,jにわたる和はピクセルの周辺の適当な個数のサンプリングで、規格化定数Nは、すべてのピクセルが同じ色だったら、ぼかした後も同じ色になるように
+</p>
+<pre class="CodeBlock">
+              (x<sub>i</sub>-x<sub>a</sub>)<sup>2</sup>        (y<sub>j</sub>-y<sub>b</sub>)<sup>2</sup>
+N<sup>2</sup> = ∑∑exp(- ――― ) exp(- ――― )
+     i j        2σ<sup>2</sup>            2σ<sup>2</sup>
+</pre>
+<p>
+になります。
+</p>
+<p>
+ガウス関数による合成の特徴の１つは、２パスにきれいに処理を分離できることです。
+式をよく見て分解すると、ｘ軸方向と、ｙ軸方向の和にきれいに分けることができます。
+</p>
+<pre class="CodeBlock">
+           1         (x<sub>i</sub>-x<sub>a</sub>)<sup>2</sup>
+p(x<sub>a</sub>,y<sub>j</sub>) = - ∑exp(- ――― ) p(x<sub>i</sub>,y<sub>j</sub>)
+           N  i        2σ<sup>2</sup>
+
+           1         (y<sub>j</sub>-y<sub>b</sub>)<sup>2</sup>
+p(x<sub>a</sub>,y<sub>b</sub>) = - ∑exp(- ――― ) p(x<sub>a</sub>,y<sub>j</sub>)
+           N  j        2σ<sup>2</sup>
+</pre>
+<p>
+この式があるので、最初にｘ軸方向のサンプリングを行ってから、ｙ軸方向のサンプリングを別に行うという方法が正当化されます。
+</p>
+<p>
+もうひとつの特徴は、円形にサンプリングできるということです。<br>
+座標変換
+</p>
+<pre class="CodeBlock">
+x-x<sub>a</sub> = r cosθ
+y-y<sub>b</sub> = r sinθ
+</pre>
+<p>
+をすると、合成の式は、
+</p>
+<pre class="CodeBlock">
+           1               r<sup>2</sup>
+p(x<sub>a</sub>,y<sub>b</sub>) = ― ∑∑r exp(- ―― ) p(x<sub>i</sub>,y<sub>j</sub>)
+           N<sup>2</sup> θ r         2σ<sup>2</sup>
+</pre>
+<p>
+になり、重みの式自体には、角度θの係数が入らないので、中心のピクセルから同じ距離にあるピクセルは同じ重みで合成されます<br>
+逆の視点で見れば、一つの点がサンプリングされる時に、等しい距離にあるピクセルは同じ重みでサンプリングするので、ピクセルの色は円形に広がることになります。<br>
+このような関数は、重みをrの関数にすれば可能ですが、２パスにきれいに分けられる関数は少ないと思うので、ガウス関数は有用な関数の１つであると断定することができます。
+</p>
+<p>
+具体的にグラフを見ても、重みが円形に広がっているのが確認できるでしょう。
+</p>
+
+<image src = "3D.png">
+
+
+
+<h2>■プログラム</h2>
+
+
+<p>
+では、プログラムを見ていきましょう。<br>
+頂点シェーダプログラムを最初に見ましょう。<br>
+最初は、ｘ軸方向にぼかしをかけます<br>
+基本的には、中心のテクセル座標をピクセルシェーダに送るだけです。
+そのときに、ｙ軸を0.5テクセルだけ下げました。
+これは、後々張ったときにテクセル中心がずれるのを防ぐためのものですが、
+張るときに注意すれば、ずらさないほうが、よりぼけるのでいいかもしれません。
+</p>
+<pre class="CodeBlock">
+hlsl.fx
+<font color="deepskyblue">0042:</font> <font color="cyan">// -------------------------------------------------------------</font>
+<font color="deepskyblue">0043:</font> <font color="cyan">// 頂点シェーダプログラム</font>
+<font color="deepskyblue">0044:</font> <font color="cyan">// -------------------------------------------------------------</font>
+<font color="deepskyblue">0045:</font> VS_OUTPUT VS_pass1 (
+<font color="deepskyblue">0046:</font>       float4 Pos    : POSITION,          <font color="cyan">// モデルの頂点</font>
+<font color="deepskyblue">0047:</font>       float4 Tex    : TEXCOORD0          <font color="cyan">// テクスチャ座標</font>
+<font color="deepskyblue">0048:</font> ){
+<font color="deepskyblue">0049:</font>     VS_OUTPUT Out = (VS_OUTPUT)0;        <font color="cyan">// 出力データ</font>
+<font color="deepskyblue">0050:</font>     
+<font color="deepskyblue">0051:</font>     <font color="cyan">// 位置座標</font>
+<font color="deepskyblue">0052:</font>     Out.Pos = Pos;
+<font color="deepskyblue">0053:</font>     
+<font color="deepskyblue">0054:</font>     Out.Tex = Tex + float2( 0, 0.5f/MAP_HEIGHT );
+<font color="deepskyblue">0055:</font>     
+<font color="deepskyblue">0056:</font>     <font color="blue">return</font> Out;
+<font color="deepskyblue">0057:</font> }
+</pre>
+<p>
+ピクセルシェーダでいよいよサンプリングです。<br>
+今回は、テクセル中心をちょうどテクセルの真ん中にする位置でサンプリングしました。<br>
+１５回のサンプリングで、３０テクセルのサンプリングをします。<br>
+ガウス関数の重みは定数配列weightとして与えます。ちなみに、符号が異なる同じ距離にあるテクセルは同じ重みの値が使えるので、定数は８つ用意すれば事足ります。
+</p>
+<image src = "sampling.png">
+<pre class="CodeBlock">
+hlsl.fx
+<font color="deepskyblue">0059:</font> <font color="cyan">// -------------------------------------------------------------</font>
+<font color="deepskyblue">0060:</font> <font color="cyan">// ピクセルシェーダプログラム</font>
+<font color="deepskyblue">0061:</font> <font color="cyan">// -------------------------------------------------------------</font>
+<font color="deepskyblue">0062:</font> float4 PS_pass1(VS_OUTPUT In) : COLOR
+<font color="deepskyblue">0063:</font> {   
+<font color="deepskyblue">0064:</font>     float4 Color;
+<font color="deepskyblue">0065:</font>     
+<font color="deepskyblue">0066:</font>     Color  = weight[0] *  tex2D( SrcSamp, In.Tex );
+<font color="deepskyblue">0067:</font>     Color += weight[1]
+<font color="deepskyblue">0068:</font>      * (tex2D( SrcSamp, In.Tex + float2( + 2.0f/MAP_WIDTH, 0 ) )
+<font color="deepskyblue">0069:</font>      +  tex2D( SrcSamp, In.Tex + float2( - 2.0f/MAP_WIDTH, 0 ) ));
+<font color="deepskyblue">0070:</font>     Color += weight[2]
+<font color="deepskyblue">0071:</font>      * (tex2D( SrcSamp, In.Tex + float2( + 4.0f/MAP_WIDTH, 0 ) )
+<font color="deepskyblue">0072:</font>      +  tex2D( SrcSamp, In.Tex + float2( - 4.0f/MAP_WIDTH, 0 ) ));
+<font color="deepskyblue">0073:</font>     Color += weight[3]
+<font color="deepskyblue">0074:</font>      * (tex2D( SrcSamp, In.Tex + float2( + 6.0f/MAP_WIDTH, 0 ) )
+<font color="deepskyblue">0075:</font>      +  tex2D( SrcSamp, In.Tex + float2( - 6.0f/MAP_WIDTH, 0 ) ));
+<font color="deepskyblue">0076:</font>     Color += weight[4]
+<font color="deepskyblue">0077:</font>      * (tex2D( SrcSamp, In.Tex + float2( + 8.0f/MAP_WIDTH, 0 ) )
+<font color="deepskyblue">0078:</font>      +  tex2D( SrcSamp, In.Tex + float2( - 8.0f/MAP_WIDTH, 0 ) ));
+<font color="deepskyblue">0079:</font>     Color += weight[5]
+<font color="deepskyblue">0080:</font>      * (tex2D( SrcSamp, In.Tex + float2( +10.0f/MAP_WIDTH, 0 ) )
+<font color="deepskyblue">0081:</font>      +  tex2D( SrcSamp, In.Tex + float2( -10.0f/MAP_WIDTH, 0 ) ));
+<font color="deepskyblue">0082:</font>     Color += weight[6]
+<font color="deepskyblue">0083:</font>      * (tex2D( SrcSamp, In.Tex + float2( +12.0f/MAP_WIDTH, 0 ) )
+<font color="deepskyblue">0084:</font>      +  tex2D( SrcSamp, In.Tex + float2( -12.0f/MAP_WIDTH, 0 ) ));
+<font color="deepskyblue">0085:</font>     Color += weight[7]
+<font color="deepskyblue">0086:</font>      * (tex2D( SrcSamp, In.Tex + float2( +14.0f/MAP_WIDTH, 0 ) )
+<font color="deepskyblue">0087:</font>      +  tex2D( SrcSamp, In.Tex + float2( -14.0f/MAP_WIDTH, 0 ) ));
+<font color="deepskyblue">0088:</font>     
+<font color="deepskyblue">0089:</font>     <font color="blue">return</font> Color;
+<font color="deepskyblue">0090:</font> }
+</pre>
+<p>
+ｙ軸方向のぼかしは、同じ定数を使って、ずらす方向をｘ軸からｙ軸に変更するだけです。
+</p>
+<pre class="CodeBlock">
+hlsl.fx
+<font color="deepskyblue">0112:</font> <font color="cyan">// -------------------------------------------------------------</font>
+<font color="deepskyblue">0113:</font> <font color="cyan">// ピクセルシェーダプログラム</font>
+<font color="deepskyblue">0114:</font> <font color="cyan">// -------------------------------------------------------------</font>
+<font color="deepskyblue">0115:</font> float4 PS_pass2(VS_OUTPUT In) : COLOR
+<font color="deepskyblue">0116:</font> {   
+<font color="deepskyblue">0117:</font>     float4 Color;
+<font color="deepskyblue">0118:</font>     
+<font color="deepskyblue">0119:</font>     Color  = weight[0] *  tex2D( SrcSamp, In.Tex );
+<font color="deepskyblue">0120:</font>     Color += weight[1]
+<font color="deepskyblue">0121:</font>      * (tex2D( SrcSamp, In.Tex + float2( 0, + 2.0f/MAP_HEIGHT) )
+<font color="deepskyblue">0122:</font>      +  tex2D( SrcSamp, In.Tex + float2( 0, - 2.0f/MAP_HEIGHT) ));
+<font color="deepskyblue">0123:</font>     Color += weight[2]
+<font color="deepskyblue">0124:</font>      * (tex2D( SrcSamp, In.Tex + float2( 0, + 4.0f/MAP_HEIGHT) )
+<font color="deepskyblue">0125:</font>      +  tex2D( SrcSamp, In.Tex + float2( 0, - 4.0f/MAP_HEIGHT) ));
+<font color="deepskyblue">0126:</font>     Color += weight[3]
+<font color="deepskyblue">0127:</font>      * (tex2D( SrcSamp, In.Tex + float2( 0, + 6.0f/MAP_HEIGHT) )
+<font color="deepskyblue">0128:</font>      +  tex2D( SrcSamp, In.Tex + float2( 0, - 6.0f/MAP_HEIGHT) ));
+<font color="deepskyblue">0129:</font>     Color += weight[4]
+<font color="deepskyblue">0130:</font>      * (tex2D( SrcSamp, In.Tex + float2( 0, + 8.0f/MAP_HEIGHT) )
+<font color="deepskyblue">0131:</font>      +  tex2D( SrcSamp, In.Tex + float2( 0, - 8.0f/MAP_HEIGHT) ));
+<font color="deepskyblue">0132:</font>     Color += weight[5]
+<font color="deepskyblue">0133:</font>      * (tex2D( SrcSamp, In.Tex + float2( 0, +10.0f/MAP_HEIGHT) )
+<font color="deepskyblue">0134:</font>      +  tex2D( SrcSamp, In.Tex + float2( 0, -10.0f/MAP_HEIGHT) ));
+<font color="deepskyblue">0135:</font>     Color += weight[6]
+<font color="deepskyblue">0136:</font>      * (tex2D( SrcSamp, In.Tex + float2( 0, +12.0f/MAP_HEIGHT) )
+<font color="deepskyblue">0137:</font>      +  tex2D( SrcSamp, In.Tex + float2( 0, -12.0f/MAP_HEIGHT) ));
+<font color="deepskyblue">0138:</font>     Color += weight[7]
+<font color="deepskyblue">0139:</font>      * (tex2D( SrcSamp, In.Tex + float2( 0, +14.0f/MAP_HEIGHT) )
+<font color="deepskyblue">0140:</font>      +  tex2D( SrcSamp, In.Tex + float2( 0, -14.0f/MAP_HEIGHT) ));
+<font color="deepskyblue">0141:</font>     
+<font color="deepskyblue">0142:</font>     <font color="blue">return</font> Color;
+<font color="deepskyblue">0143:</font> }
+</pre>
+<p>
+ちなみに、重みの計算ですが、アプリケーション側で初期化時や設定が変更されたときにしています。m_tbl[i]にそれぞれの重みをガウス関数から計算し、最後に規格化定数で割って正規化します。<br>
+重みは、中央の１つだけが２テクセルのサンプリングに使われ、他は４テクセルのサンプリングをするので、規格化のための係数の重みを考えなくてはなりません。
+</p>
+<pre class="CodeBlock">
+main.cpp
+<font color="deepskyblue">0173:</font> <font color="cyan">//-------------------------------------------------------------</font>
+<font color="deepskyblue">0174:</font> <font color="cyan">// Name: UpdateWeight()</font>
+<font color="deepskyblue">0175:</font> <font color="cyan">// Desc: 重みの計算</font>
+<font color="deepskyblue">0176:</font> <font color="cyan">//-------------------------------------------------------------</font>
+<font color="deepskyblue">0177:</font> VOID CMyD3DApplication::UpdateWeight( FLOAT dispersion )
+<font color="deepskyblue">0178:</font> {
+<font color="deepskyblue">0179:</font>     DWORD i;
+<font color="deepskyblue">0180:</font> 
+<font color="deepskyblue">0181:</font>     FLOAT total=0;
+<font color="deepskyblue">0182:</font>     <font color="blue">for</font>( i=0; i&lt;WEIGHT_MUN; i++ ){
+<font color="deepskyblue">0183:</font>         m_tbl[i] = expf(-0.5f*(FLOAT)(i*i)/dispersion);
+<font color="deepskyblue">0184:</font>         <font color="blue">if</font>(0==i){
+<font color="deepskyblue">0185:</font>             total += m_tbl[i];
+<font color="deepskyblue">0186:</font>         }<font color="blue">else</font>{
+<font color="deepskyblue">0187:</font>             <font color="cyan">// 中心以外は、２回同じ係数を使うので２倍</font>
+<font color="deepskyblue">0188:</font>             total += 2.0f*m_tbl[i];
+<font color="deepskyblue">0189:</font>         }
+<font color="deepskyblue">0190:</font>     }
+<font color="deepskyblue">0191:</font>     <font color="cyan">// 規格化</font>
+<font color="deepskyblue">0192:</font>     <font color="blue">for</font>( i=0; i&lt;WEIGHT_MUN; i++ ) m_tbl[i] /= total;
+<font color="deepskyblue">0193:</font> 
+<font color="deepskyblue">0194:</font>     <font color="blue">if</font>(m_pEffect) m_pEffect-&gt;SetFloatArray(m_hafWeight
+<font color="deepskyblue">0195:</font>                                         , m_tbl, WEIGHT_MUN);
+<font color="deepskyblue">0196:</font> 
+<font color="deepskyblue">0197:</font> }
+</pre>
+<p>
+</p>
+
+
+
+<h2>■ついでにフレア</h2>
+
+
+<p>
+今回のフィルタを使って、擬似フレアエフェクトを作成しました。<br>
+フレアの大きさを大きくするために、４分の１の縮小バッファに明るい部分を抽出してぼかしました。
+</p>
+<image src = "flare.jpg">
+
+
+<h2>■最後に</h2>
+
+
+<p>
+お、おもい・・・<br>
+使ってよいのかわからない重さですね。
+</p>
+
+
+<h2>■高速化 (2003 Feb. 11追加)</h2>
+
+
+<p>
+<a href="http://www.daionet.gr.jp/~masa/">Masaさん</a>の掲示板で、<br>
+「私が今使った感じでは、<br>
+ガウスフィルタ自体は特に重くなっていませんね。」<br>
+いわれてしまったので、高速化してみました。<br>
+前回80FPS程度だったものが、今回は120FPS程度になりました。
+</p>
+<ul style = "LIST-STYLE-TYPE:none">
+<li><a href="src.zip">src2.zip (ガウスフィルタちょっと高速版:DirectX9)</a>
+</ul>
+<table>
+<tr><td><a href="src2/hlsl_fx.html">hlsl.fx</a></td><td>シェーダの入ったエフェクトファイル</td></tr>
+<tr><td><a href="src2/main_h.html">main.h</a></td><td>アプリケーションのヘッダ</td></tr>
+<tr><td><a href="src2/main_cpp.html">main.cpp</a></td><td>アプリケーションのソース</td></tr>
+</table>
+<p>
+前回のプログラムがピクセルシェーダ命令数で 15(texture) + 59(arithmetic) 命令だったところを16 + 25 命令にしました。<br>
+今回は、テクセル座標をずらして、１サンプルで４テクセル読み込むようにして、
+かつ、中心のタップもずらして２つ読むようにしています。
+</p>
+<image src = "sampling2.png">
+<p>
+ほとんどわかりませんが、よりぼけているはずです。
+</p>
+<p>
+プログラムの高速化ですが、ピクセルシェーダプログラムを頂点シェーダやアプリケーションのプログラムに押し込む形で進めていきました。<br>
+ps.2.0では、８つのテクスチャ座標を渡せるので、片方のテクスチャ座標を渡します。
+</p>
+<pre class="CodeBlock">
+hlsl.fx
+<font color="deepskyblue">0052:</font> <font color="cyan">// -------------------------------------------------------------</font>
+<font color="deepskyblue">0053:</font> <font color="cyan">// 頂点シェーダプログラム</font>
+<font color="deepskyblue">0054:</font> <font color="cyan">// -------------------------------------------------------------</font>
+<font color="deepskyblue">0055:</font> VS_OUTPUT VS_pass1 (
+<font color="deepskyblue">0056:</font>       float4 Pos    : POSITION,          <font color="cyan">// モデルの頂点</font>
+<font color="deepskyblue">0057:</font>       float4 Tex    : TEXCOORD0          <font color="cyan">// テクスチャ座標</font>
+<font color="deepskyblue">0058:</font> ){
+<font color="deepskyblue">0059:</font>     VS_OUTPUT Out = (VS_OUTPUT)0;        <font color="cyan">// 出力データ</font>
+<font color="deepskyblue">0060:</font>     
+<font color="deepskyblue">0061:</font>     <font color="cyan">// 位置座標</font>
+<font color="deepskyblue">0062:</font>     Out.Pos = Pos;
+<font color="deepskyblue">0063:</font>     
+<font color="deepskyblue">0064:</font>     Out.Tex0 = Tex + float2( - 1.0f/MAP_WIDTH, 0.0f/MAP_HEIGHT );
+<font color="deepskyblue">0065:</font>     Out.Tex1 = Tex + float2( - 3.0f/MAP_WIDTH, 0.0f/MAP_HEIGHT );
+<font color="deepskyblue">0066:</font>     Out.Tex2 = Tex + float2( - 5.0f/MAP_WIDTH, 0.0f/MAP_HEIGHT );
+<font color="deepskyblue">0067:</font>     Out.Tex3 = Tex + float2( - 7.0f/MAP_WIDTH, 0.0f/MAP_HEIGHT );
+<font color="deepskyblue">0068:</font>     Out.Tex4 = Tex + float2( - 9.0f/MAP_WIDTH, 0.0f/MAP_HEIGHT );
+<font color="deepskyblue">0069:</font>     Out.Tex5 = Tex + float2( -11.0f/MAP_WIDTH, 0.0f/MAP_HEIGHT );
+<font color="deepskyblue">0070:</font>     Out.Tex6 = Tex + float2( -13.0f/MAP_WIDTH, 0.0f/MAP_HEIGHT );
+<font color="deepskyblue">0071:</font>     Out.Tex7 = Tex + float2( -15.0f/MAP_WIDTH, 0.0f/MAP_HEIGHT );
+<font color="deepskyblue">0072:</font>     
+<font color="deepskyblue">0073:</font>     <font color="blue">return</font> Out;
+<font color="deepskyblue">0074:</font> }
+</pre>
+<p>
+ピクセルシェーダでは、頂点シェーダから入力されたテクセル座標と、定数を足しこんで求めた反対側からのテクセル座標からサンプリングして重みを掛け合わせて足し込みます。<br>
+テクスチャ座標をずらす定数は、テクスチャの広さから求まるのですが、命令数を減らすために、ピクセルシェーダで計算しないで、アプリケーション側から設定して、命令数を稼ぎました。<br>
+また、定数を足してテクスチャ座標をずらしたので、外側にあったピクセルは内側に移動したことに注意してください。
+</p>
+<pre class="CodeBlock">
+hlsl.fx
+<font color="deepskyblue">0076:</font> <font color="cyan">// -------------------------------------------------------------</font>
+<font color="deepskyblue">0077:</font> <font color="cyan">// ピクセルシェーダプログラム</font>
+<font color="deepskyblue">0078:</font> <font color="cyan">// -------------------------------------------------------------</font>
+<font color="deepskyblue">0079:</font> float4 PS_pass1(VS_OUTPUT In) : COLOR
+<font color="deepskyblue">0080:</font> {   
+<font color="deepskyblue">0081:</font>     float4 Color;
+<font color="deepskyblue">0082:</font>     
+<font color="deepskyblue">0083:</font> <font color="cyan">//    offsetX = float2( 16.0f/MAP_WIDTH, 0.0f/MAP_HEIGHT );</font>
+<font color="deepskyblue">0084:</font>     
+<font color="deepskyblue">0085:</font>     Color  = weight[0] * (tex2D( SrcSamp, In.Tex0 )
+<font color="deepskyblue">0086:</font>                         + tex2D( SrcSamp, In.Tex7 + offsetX ));
+<font color="deepskyblue">0087:</font>     Color += weight[1] * (tex2D( SrcSamp, In.Tex1 )
+<font color="deepskyblue">0088:</font>                         + tex2D( SrcSamp, In.Tex6 + offsetX ));
+<font color="deepskyblue">0089:</font>     Color += weight[2] * (tex2D( SrcSamp, In.Tex2 )
+<font color="deepskyblue">0090:</font>                         + tex2D( SrcSamp, In.Tex5 + offsetX ));
+<font color="deepskyblue">0091:</font>     Color += weight[3] * (tex2D( SrcSamp, In.Tex3 )
+<font color="deepskyblue">0092:</font>                         + tex2D( SrcSamp, In.Tex4 + offsetX ));
+<font color="deepskyblue">0093:</font>     Color += weight[4] * (tex2D( SrcSamp, In.Tex4 )
+<font color="deepskyblue">0094:</font>                         + tex2D( SrcSamp, In.Tex3 + offsetX ));
+<font color="deepskyblue">0095:</font>     Color += weight[5] * (tex2D( SrcSamp, In.Tex5 )
+<font color="deepskyblue">0096:</font>                         + tex2D( SrcSamp, In.Tex2 + offsetX ));
+<font color="deepskyblue">0097:</font>     Color += weight[6] * (tex2D( SrcSamp, In.Tex6 )
+<font color="deepskyblue">0098:</font>                         + tex2D( SrcSamp, In.Tex1 + offsetX ));
+<font color="deepskyblue">0099:</font>     Color += weight[7] * (tex2D( SrcSamp, In.Tex7 )
+<font color="deepskyblue">0100:</font>                         + tex2D( SrcSamp, In.Tex0 + offsetX ));
+<font color="deepskyblue">0101:</font>     
+<font color="deepskyblue">0102:</font>     <font color="blue">return</font> Color;
+<font color="deepskyblue">0103:</font> }
+</pre>
+
+<p>
+これぐらいの高速化では、やっぱり重いと感じてしまう・・・<br>
+ガウスフィルタかけないと400FPSになっているので、使うときは縮小バッファを使わなくては駄目ではないでしょうか。
+</p>
+
+</div>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<center>
+<hr>
+<p><a href="../index.html">もどる</a></p>
+<p><a href="mailto:imagire@gmail.com">imagire@gmail.com</a></p>
+</center>
+
+</body>
+</html>

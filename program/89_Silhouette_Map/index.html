@@ -1,0 +1,566 @@
+<head>
+	<title>t-pot『Silhouette Map Texture Filtering』</title>
+	<link rel="stylesheet" type="text/css" href="../if.css">
+</head>
+<meta http-equiv=Content-Type content="text/html; charset=shift_jis">
+<body>
+
+
+<div class="contents">
+<center>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<h1>輪郭マップ テクスチャ フィルタ</h1><br>
+<h3>～ Silhouette Map Texture Filtering ～</h3>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<image src = "title.png">
+<br>
+<br>
+<hr>
+</center>
+<div>
+
+
+<h2>■はじめに/Introdution</h2>
+
+
+<p>
+<a href="http://www.siggraph.org/s2003/">SIGGRAPH 2003</a> で、Pradeep Senらによる<a href="http://graphics.stanford.edu/papers/silmap/">Shadow Silhouette Maps</a>が公開されます。<br>
+この論文のすばらしいところは、影の精度を高めるということではなく、シャドウマップとシャドウボリュームの融合を果たしたところです。<br>
+さらに言えば、サブピクセルの扱い方に新しい道を切り開きました。<br>
+ここでは、Shadow Silhouette Maps の考え方をテクスチャフィルタに応用してみました。
+</p>
+<p>
+In <a href="http://www.siggraph.org/s2003/">SIGGRAPH 2003</a>,
+<a href="http://graphics.stanford.edu/papers/silmap/">Shadow Silhouette Maps</a> by Pradeep Sen and others is exhibited.
+The wonderful point of this paper is not raising the accuracy of a shadow map,
+and just achieved fusion of a shadow map and shadow volume.
+Furthermore, the new way was opened to how to treat a sub pixel.
+Here, the view of Shadow Silhouette Maps was applied to the texture filter.
+</p>
+<p>
+今回のプログラムは、次のものです。
+</p>
+<p>
+This program is as follows.
+</p>
+<ul style = "LIST-STYLE-TYPE:none">
+<li><a href="src.zip">src.zip (輪郭マップ テクスチャ フィルタ:DirectX9(ピクセルシェーダ2.0)</a>
+</ul>
+
+<p>
+まぁ、いつものように適当にファイルが入っています。<br>
+APP WIZARD から出力されるフレームワークのファイルは紹介を省かせていただきます。
+</p>
+<p>
+The file is suitably contained so that it may be usual.
+The file of the framework outputted from APP WIZARD will exclude showing.</p>
+<table>
+<tr><td><a href="hlsl_fx.html">hlsl.fx</a></td><td>シェーダの入ったエフェクトファイル</td></tr>
+<tr><td><a href="main_h.html">main.h</a></td><td>アプリケーションのヘッダ</td></tr>
+<tr><td><a href="main_cpp.html">main.cpp</a></td><td>アプリケーションのソース</td></tr>
+</table>
+
+<p>
+あと、実行ファイル、プロジェクトファイルが入っています。
+</p>
+
+<p>
+The execution file and the project file are contained.
+</p>
+
+
+<h2>■何やってるの？/Algorithm</h2>
+
+
+<p>
+テクスチャを使う時には、いつもサイズというものを考慮しなくてはなりません。<br>
+メモリやフィルが大量にあって、大きなテクスチャを使える時は何も問題が無いのですが、
+現実はそんな都合よくできてはいなくて、なるべく小さなテクスチャにそれらしい絵を描かなくてはなりません。<br>
+といっても限度があります。例えば、4x4のサイズのテクスチャに円を描いてみましょう。
+</p>
+<p>
+When using a texture, you always have to take size into consideration.
+Although anything does not have a problem when a memory and fillrate have in large quantities and can use a big texture,
+such convenience is not improved by reality and the picture appropriate for it must be drawn on as small a texture as possible.
+But it is limited.
+For example, let's draw a circle on the texture of the size of 4x4.</p>
+
+<image src = "old.png">
+<p>
+さすがにこのサイズになると、バイリニアフィルタを使おうが、それらしくは見えません（ゼビウスの時代の弾などはこのサイズですが、そのころの職人も減ってますしね）。
+</p>
+<p>
+if it becomes this size truly,
+although I will use a bi-linear filter, it is not visible as it is
+(although the size of the bullets of the "xevious" is this size, the craftsmen at the time are also decreasing in number).
+</p>
+<p>
+いくらテクスチャメモリが多くなったといっても、このような細かい構造は存在しますし、ポリゴンが目の前に来てテクスチャが非常に拡大されてしまうときは、ままあります。<br>
+これらは、テクスチャのサイズが決まっているので、仕方が無いのですが、
+この問題を解消するためのヒントが提示されました。それがシルエットマップです。<br>
+シルエットマップとは、深度テクスチャのエッジを結ぶ頂点を格納したテクスチャのことです。<br>
+もちろん、深度テクスチャだけに限る必要は無いです。デカールテクスチャの模様の輪郭線に適用できることも容易に想像でき、そのときには、今まではポリゴンでしか表現できなかったキレのある直線を引くことができます。
+</p>
+<p>
+Although the texture memory increased how much,
+such fine structure exists,
+and when a polygon comes at hand and a texture is expanded very much, there is often.
+Since the size of a texture was decided, although these were unavoidable one,
+the hint for solving this problem was shown.
+It is a silhouette map.
+A silhouette map is the texture which stored the peak to which the edge of a depth texture is connected.
+Of course, there is no necessity of restricting only to a depth texture.
+It can imagine easily that it is also applicable to the outline of the pattern of a decale texture, and, then, the existing sharp straight line which has been expressed only by the polygon can be drawn until now.</p>
+
+<image src = "map.png">
+
+<p>
+具体的には、ピクセルデータを描画するときに、
+適当に作ったシルエットマップの点（上の図では緑色）を隣のテクセルのシルエットマップの点とつないで、それらの線の中か外にあるかを判定して色を決定します。<br>
+実際には、テクセルの色は、テクセルの頂点にあるものと考え、
+シルエットマップの隣の４テクセルとの連結線について、
+これから描画しようとするピクセルが、どの領域にいるかを計算して、
+領域の頂点の色をサンプリングデータとして出力します。
+</p>
+<p>
+Specifically, when drawing fragments,
+the point (green in the upper figure) of the silhouette map made suitably is connected with the point of the silhouette map of next texel,
+it judges whether it is in the inside of those lines, or outside, and a color is determined.
+In fact, it thinks that the color of texel is at the top of texel,
+and about a connection line with 4 texels of the next door of a silhouette map,
+the pixel which is going to draw from now on calculates in which domain it is,
+and outputs the color of the peak of a domain as sampling data.
+</p>
+
+<image src = "decide.png">
+
+<p>
+今回は、シルエットマップのデータをテクスチャのアルファ成分に格納します。<br>
+最初に、シルエットマップの位置座標をピクセル隅からの相対位置で求めます。<br>
+それらをアルファ成分の上位と下位の４ビットずつに格納します。
+</p>
+<p>
+This time, the data of a silhouette map is stored in the alpha component of a texture.
+First, the position coordinates of a silhouette map are searched for in the relative position from a pixel corner.
+They are stored in every 4 bits of the higher rank of an alpha ingredient, and a low rank.
+</p>
+<image src = "rgba.png">
+
+<p>
+実際にピクセルを求めるときには、円とピクセルの対角線２つの交点を計算して、
+交点が１つならその場所を、２つあればその平均値を使いました
+（といっても、この計算を少し間違っているようで、おかしな場所にシルエットポイントが出ています）。
+</p>
+<p>
+When actually calculating for fragments, 
+the intersection of two diagonal lines of a circle and a pixel was calculated
+and if the number of intersections was two,
+the average value was used (even if it says, as it has made a mistake in a part of this calculation, the silhouette point has come out to the strange place).
+</p>
+<image src = "create.png">
+<p>
+他にも輪郭線が複数交わっているところはその交点を使えばいいでしょう。
+交点が無いときには、中心にしています。<br>
+将来的には、大きなサイズのテクスチャから輪郭抽出によって、
+適切なシルエットポイントを抽出する方法を構築しなくてはいけないでしょう。
+</p>
+<p>
+Probably, the place at which two or more outline otherwise crosses should just use the intersection.
+It is made the center when there is no intersection.
+In the future, probably,
+how outline extraction extracts a suitable silhouette point must be built from the texture of big size.</p>
+
+
+<h2>■シェーダプログラム</h2>
+
+
+<p>
+ということで、今回のシェーダプログラムを紹介してきましょう。<br>
+今回は、非常に長いシェーダプログラムで、下手な手を入れると、コンパイルが通らないので、
+応用を仕様と考えている人は覚悟してください。
+</p>
+<p>
+By saying, let's introduce this shader program.
+This time, if it is a very long shader program and a hand is put in,
+without carrying out deep consideration,
+since compile does not pass, please those who consider application to be specification be determined.</p>
+<p>
+最初にテクスチャを読み込みます。<br>
+今回必要なテクスチャはシルエットマップの領域を選定するための中心とその周り計５テクセルと、
+色のサンプリングの元のテクセルの右下のテクセルc5になります。
+</p>
+<p>
+The first is reading a texture.
+A texture required this time is texel c5 at the lower right of the center for selecting the domain of a silhouette map,
+the surroundings a total of five texel,
+and original texel of a sampling of a color.
+</p>
+<image src = "c0-5.png">
+<pre class="CodeBlock">
+hlsl.fx
+<font color="deepskyblue">0040:</font> <font color="blue">const</font> <font color="blue">float</font> TEX_SIZE     = 5.0;
+<font color="deepskyblue">0041:</font> <font color="blue">const</font> <font color="blue">float</font> TEX_SIZE_INV = 1.0/5.0;
+<font color="deepskyblue">0042:</font> 
+<font color="deepskyblue">0043:</font> float4 PS(VS_OUTPUT In) : COLOR
+<font color="deepskyblue">0044:</font> {
+<font color="deepskyblue">0045:</font>     float4 t0 = In.Tex / In.Tex.w;
+<font color="deepskyblue">0046:</font>     float2 t1 = t0 + float2(-TEX_SIZE_INV, 0);
+<font color="deepskyblue">0047:</font>     float2 t2 = t0 + float2( TEX_SIZE_INV, 0);
+<font color="deepskyblue">0048:</font>     float2 t3 = t0 + float2(            0,-TEX_SIZE_INV);
+<font color="deepskyblue">0049:</font>     float2 t4 = t0 + float2(            0, TEX_SIZE_INV);
+<font color="deepskyblue">0050:</font>     float2 t5 = t0 + float2( TEX_SIZE_INV, TEX_SIZE_INV);
+<font color="deepskyblue">0051:</font>     
+<font color="deepskyblue">0052:</font>     float4 c0 = tex2D( SrcSamp, t0 );
+<font color="deepskyblue">0053:</font>     float4 c1 = tex2D( SrcSamp, t1 );
+<font color="deepskyblue">0054:</font>     float4 c2 = tex2D( SrcSamp, t2 );
+<font color="deepskyblue">0055:</font>     float4 c3 = tex2D( SrcSamp, t3 );
+<font color="deepskyblue">0056:</font>     float4 c4 = tex2D( SrcSamp, t4 );
+<font color="deepskyblue">0057:</font>     float4 c5 = tex2D( SrcSamp, t5 );
+<font color="deepskyblue">0058:</font>     
+</pre>
+<p>
+具体的な、c0～c5の値は次のとおりになります。
+</p>
+<p>
+The concrete value of c0-c5 is as follows.
+</p>
+<image src = "c.png">
+<p>
+次にシルエットマップの点を復元します。
+</p>
+<p>
+Next, the point of a silhouette map is restored.
+</p>
+
+<pre class="CodeBlock">
+hlsl.fx
+<font color="deepskyblue">0059:</font>     float3 uv0, uv1, uv2, uv3, uv4;
+<font color="deepskyblue">0060:</font>     
+<font color="deepskyblue">0061:</font>     uv0.y = frac( 16 * c0.a );
+<font color="deepskyblue">0062:</font>     uv1.y = frac( 16 * c1.a );
+<font color="deepskyblue">0063:</font>     uv2.y = frac( 16 * c2.a );
+<font color="deepskyblue">0064:</font>     uv3.y = frac( 16 * c3.a );
+<font color="deepskyblue">0065:</font>     uv4.y = frac( 16 * c4.a );
+<font color="deepskyblue">0066:</font>     uv0.x = frac(      c0.a ) - uv0.y/16;
+<font color="deepskyblue">0067:</font>     uv1.x = frac(      c1.a ) - uv1.y/16;
+<font color="deepskyblue">0068:</font>     uv2.x = frac(      c2.a ) - uv2.y/16;
+<font color="deepskyblue">0069:</font>     uv3.x = frac(      c3.a ) - uv3.y/16;
+<font color="deepskyblue">0070:</font>     uv4.x = frac(      c4.a ) - uv4.y/16;
+<font color="deepskyblue">0071:</font>     
+<font color="deepskyblue">0072:</font>     uv0.z = uv1.z = uv2.z = uv3.z = uv4.z = 0;
+<font color="deepskyblue">0073:</font> 
+<font color="deepskyblue">0074:</font>     uv1.xy += float2(-1, 0);
+<font color="deepskyblue">0075:</font>     uv2.xy += float2( 1, 0);
+<font color="deepskyblue">0076:</font>     uv3.xy += float2( 0,-1);
+<font color="deepskyblue">0077:</font>     uv4.xy += float2( 0, 1);
+<font color="deepskyblue">0078:</font> 
+<font color="deepskyblue">0079:</font>     float3 dt = frac(TEX_SIZE*t0) - uv0;
+<font color="deepskyblue">0080:</font> 
+</pre>
+
+<p>
+我々がほしいのは、ピクセルのあるシルエットポイントからの相対ベクトルになります。
+</p>
+<p>
+It is the relative vector from a silhouette point with a pixel which has us want.
+</p>
+<image src = "dt.png">
+<p>
+シルエットポイントは、
+</p>
+<p>
+Although it is like being stored by
+</p>
+<pre class="CodeBlock">
+a = v+u*16       (0<=u, v<16)
+</pre>
+<p>
+によって格納されていて、もともとは８ビットなので
+</p>
+<p>
+being
+</p>
+<pre class="CodeBlock">
+v = a&amp;15
+u = a/16
+</pre>
+<p>
+で、求めるようなものですが、浮動小数点数なので、16倍して、その小数部を求める方法で、ｙ軸方向を求め、
+その残りでｘ成分を求めます。
+</p>
+<p>
+being
+</p>
+
+<pre class="CodeBlock">
+v = 少数部(16*a)
+u = a - v/16
+</pre>
+<p>
+あとは、これらのデータの復元から相対ベクトルを求めます。
+</p>
+<p>
+since it is 8 bits also as a basis, and asking for it, since it is floating decimal mark,
+16, a silhouette point is the method of asking for the decimal part, after doubling,
+asks for the direction of a y-axis, and asks for x ingredients by the remainder.
+</p>
+<p>
+実際には、次のようになります。(それぞれ、オフセット（float2(a, b)やdtのuv0）を考慮する前の値です)
+</p>
+<p>
+In fact, it is as follows.
+(It is the value before taking into consideration offset (float2 (a and b) or uv0 for dt), respectively)
+</p>
+<image src = "uv.png">
+<p>
+次に、ピクセルがどの位置にあるのかを計算します。<br>
+こんなときには、外積を使うと、ポイントが、境界のどちらにあるかを判定できるので、
+それをそのまま使い、隣接するシルエットポイントと、に関してピクセルがどちらの面にあるのか調べます。
+</p>
+<p>
+Next, it calculates in which position a pixel is.
+Such at the time, if an cross product is used, since a point can judge in which bordering it is,
+it will be used as it is and it will investigate in which field a pixel is about an adjoining silhouette point.
+</p>
+<image src = "check.png">
+
+<pre class="CodeBlock">
+hlsl.fx
+<font color="deepskyblue">0081:</font>     <font color="blue">float</font> frag1 = cross(uv1-uv0, dt).z;
+<font color="deepskyblue">0082:</font>     <font color="blue">float</font> frag2 = cross(uv2-uv0, dt).z;
+<font color="deepskyblue">0083:</font>     <font color="blue">float</font> frag3 = cross(uv3-uv0, dt).z;
+<font color="deepskyblue">0084:</font>     <font color="blue">float</font> frag4 = cross(uv4-uv0, dt).z;
+<font color="deepskyblue">0085:</font>     
+</pre>
+<p>
+具体的な値は、次のようになります（白が正）。
+</p>
+<p>
+A concrete value is as follows (white is positive).
+</p>
+<image src = "flag.png">
+<p>
+最後に、flagの符号から、ピクセルがどの位置にあるのか判定します。
+</p>
+<p>
+Finally, it judges in which position a pixel is from the mark of flag.
+</p>
+<pre class="CodeBlock">
+hlsl.fx
+<font color="deepskyblue">0086:</font>     float4 ret = c5;
+<font color="deepskyblue">0087:</font>     <font color="blue">if</font>(0&lt;frag1){
+<font color="deepskyblue">0088:</font>         <font color="blue">if</font>(frag3&lt;0) ret = c0;
+<font color="deepskyblue">0089:</font>     }<font color="blue">else</font>{
+<font color="deepskyblue">0090:</font>         <font color="blue">if</font>(0 &lt;frag4) ret = c4;
+<font color="deepskyblue">0091:</font>     }
+<font color="deepskyblue">0092:</font>     <font color="blue">if</font>(frag2&lt;=0 &amp;&amp; 0&lt;frag3) ret = c2;
+<font color="deepskyblue">0093:</font> 
+<font color="deepskyblue">0094:</font>     <font color="blue">return</font> ret;
+<font color="deepskyblue">0095:</font> }
+</pre>
+<p>
+ちなみに、計算結果は次のとおりになり、赤い部分が左上のテクセル、青が右上、緑が左下、そして、黒が右下のテクセルをサンプリングします。
+</p>
+<p>
+Incidentally a calculation result is as follows,
+we sample a the upper right texel from the blue and the lower right from the black and the upper[lower] texel from the red [green].
+</p>
+<image src = "partition.png">
+<p>
+あとは、c0～c5の色が実際に反映されれば、キレのある円が作成されます。
+</p>
+<p>
+If the color of c0-c5 is actually reflected, the existing sharp circle will be created by the back.
+</p>
+
+
+<h2>■シルエットマップの生成</h2>
+
+
+<p>
+残るは、シルエットマップの作成です。<br>
+テクスチャの生成自体は普通にRGBA各8ビットのテクスチャを作成します。
+</p>
+<p>
+The remainder is creation of a silhouette map.
+The generation of a texture itself creates the texture of 8 bit each of RGBAs ordinarily.
+</p>
+<pre class="CodeBlock">
+main.cpp
+<font color="deepskyblue">0262:</font> HRESULT CMyD3DApplication::RestoreDeviceObjects()
+<font color="deepskyblue">0263:</font> {
+<font color="deepskyblue">0264:</font>     HRESULT hr;
+<font color="deepskyblue">0265:</font> 
+<font color="deepskyblue">0266:</font>     <font color="blue">if</font>( FAILED(hr = m_pd3dDevice-&gt;CreateTexture(MAP_SIZE, MAP_SIZE, 1
+<font color="deepskyblue">0267:</font>                           , D3DUSAGE_RENDERTARGET, D3DFMT_A8R8G8B8
+<font color="deepskyblue">0268:</font>                           , D3DPOOL_DEFAULT, &amp;m_pTex, NULL)))
+<font color="deepskyblue">0269:</font>         <font color="blue">return</font> hr;
+<font color="deepskyblue">0270:</font>     <font color="blue">if</font>( FAILED(hr = D3DXFillTexture(m_pTex, FillTex, NULL)))
+<font color="deepskyblue">0271:</font>         <font color="blue">return</font> hr;
+<font color="deepskyblue">0272:</font>     m_pEffect-&gt;SetTexture( "<font color="blue">tSrc</font>", m_pTex );
+<font color="deepskyblue">0273:</font> 
+</pre>
+<p>
+テクスチャは読み込まないで、D3DXFillTextureで作成します。<br>
+円の方程式と、テクセルの中心を通る２つの直線を連立して、
+交点がテクセルの４角形の中に入っていればその点をシルエットポイントとみなします。
+</p>
+<p>
+A texture is created by D3DXFillTexture without reading.
+Two straight lines passing through the center of texel and a circle are allied,
+and if the intersection is contained in four square shapes of texel,
+it will be considered that the point is a silhouette point.
+</p>
+<image src = "eq.png">
+
+<p>
+具体的な連立の方法を示すのは避けますが、ソースは次のようになりますので、各人で計算してください。
+</p>
+<p>
+Although that the method of concrete alliance is shown avoids,
+since spurce is as follows, please calculate to everybody.
+
+</p>
+
+<pre class="CodeBlock">
+main.cpp
+<font color="deepskyblue">0074:</font> VOID WINAPI FillTex (D3DXVECTOR4* pOut, CONST D3DXVECTOR2* pTexCoord, 
+<font color="deepskyblue">0075:</font> CONST D3DXVECTOR2* pTexelSize, LPVOID pData)
+<font color="deepskyblue">0076:</font> {
+<font color="deepskyblue">0077:</font>     FLOAT cx = 0.4f;
+<font color="deepskyblue">0078:</font>     FLOAT cy = 0.4f;
+<font color="deepskyblue">0079:</font>     FLOAT r  = 0.4f-0.0000001f;
+<font color="deepskyblue">0080:</font>         
+<font color="deepskyblue">0081:</font>     <font color="cyan">// 色成分を求める</font>
+<font color="deepskyblue">0082:</font>     FLOAT x = pTexCoord-&gt;x-0.5f*pTexelSize-&gt;x - cx;
+<font color="deepskyblue">0083:</font>     FLOAT y = pTexCoord-&gt;y-0.5f*pTexelSize-&gt;y - cy;
+<font color="deepskyblue">0084:</font>     FLOAT col = (x*x+y*y&lt;r*r) ? 0.0 : 1.0;
+<font color="deepskyblue">0085:</font>     
+<font color="deepskyblue">0086:</font>     <font color="cyan">// シルエットマップを求める</font>
+<font color="deepskyblue">0087:</font>     FLOAT Dx = cx - pTexCoord-&gt;x;
+<font color="deepskyblue">0088:</font>     FLOAT Dy = cy - pTexCoord-&gt;y;
+<font color="deepskyblue">0089:</font>     FLOAT D0 = 2*r*r+2*Dx*Dy-Dx*Dx-Dy*Dy;<font color="cyan">// 判別式 y=+(x-px)+py</font>
+<font color="deepskyblue">0090:</font>     FLOAT D1 = 2*r*r-2*Dx*Dy-Dx*Dx-Dy*Dy;<font color="cyan">// 判別式 y=-(x-px)+py</font>
+<font color="deepskyblue">0091:</font> 
+<font color="deepskyblue">0092:</font>     FLOAT U = 0.5f;
+<font color="deepskyblue">0093:</font>     FLOAT V = 0.5f;
+<font color="deepskyblue">0094:</font>     <font color="blue">int</font>   hit0=FALSE;
+<font color="deepskyblue">0095:</font>     <font color="blue">if</font>(0&lt;=D0){
+<font color="deepskyblue">0096:</font>         FLOAT tp = 0.5f*((Dx+Dy)+sqrt(D0));
+<font color="deepskyblue">0097:</font>         FLOAT tn = 0.5f*((Dx+Dy)-sqrt(D0));
+<font color="deepskyblue">0098:</font>         <font color="blue">if</font>(-0.5f/MAP_SIZE &lt;= tp &amp;&amp; tp &lt;= +0.5f/MAP_SIZE){
+<font color="deepskyblue">0099:</font>             U=0.5f+MAP_SIZE*tp;
+<font color="deepskyblue">0100:</font>             V=0.5f+MAP_SIZE*tp;
+<font color="deepskyblue">0101:</font>             hit0=TRUE;
+<font color="deepskyblue">0102:</font>         }<font color="blue">else</font>
+<font color="deepskyblue">0103:</font>         <font color="blue">if</font>(-0.5f/MAP_SIZE &lt;= tn &amp;&amp; tn &lt;= +0.5f/MAP_SIZE){
+<font color="deepskyblue">0104:</font>             U=0.5f+MAP_SIZE*tn;
+<font color="deepskyblue">0105:</font>             V=0.5f+MAP_SIZE*tn;
+<font color="deepskyblue">0106:</font>             hit0=TRUE;
+<font color="deepskyblue">0107:</font>         }
+<font color="deepskyblue">0108:</font>     }
+<font color="deepskyblue">0109:</font>     <font color="blue">if</font>(0&lt;=D1){
+<font color="deepskyblue">0110:</font>         FLOAT tp = 0.5f*((Dx-Dy)+sqrt(D1));
+<font color="deepskyblue">0111:</font>         FLOAT tn = 0.5f*((Dx-Dy)-sqrt(D1));
+<font color="deepskyblue">0112:</font>         <font color="blue">if</font>(-0.5f/MAP_SIZE &lt;= tp &amp;&amp; tp &lt;= +0.5f/MAP_SIZE){
+<font color="deepskyblue">0113:</font>             <font color="blue">if</font>(hit0){
+<font color="deepskyblue">0114:</font>                 U=0.5f*(U + 0.5f+MAP_SIZE*tp);
+<font color="deepskyblue">0115:</font>                 V=0.5f*(V + 0.5f-MAP_SIZE*tp);
+<font color="deepskyblue">0116:</font>             }<font color="blue">else</font>{
+<font color="deepskyblue">0117:</font>                 U=0.5f+MAP_SIZE*tp;
+<font color="deepskyblue">0118:</font>                 V=0.5f-MAP_SIZE*tp;
+<font color="deepskyblue">0119:</font>             }
+<font color="deepskyblue">0120:</font>         }<font color="blue">else</font>
+<font color="deepskyblue">0121:</font>         <font color="blue">if</font>(-0.5f/MAP_SIZE &lt;= tn &amp;&amp; tn &lt;= +0.5f/MAP_SIZE){
+<font color="deepskyblue">0122:</font>             <font color="blue">if</font>(hit0){
+<font color="deepskyblue">0123:</font>                 U=0.5f*(U + 0.5f+MAP_SIZE*tn);
+<font color="deepskyblue">0124:</font>                 V=0.5f*(V + 0.5f-MAP_SIZE*tn);
+<font color="deepskyblue">0125:</font>             }<font color="blue">else</font>{
+<font color="deepskyblue">0126:</font>                 U=0.5f+MAP_SIZE*tn;
+<font color="deepskyblue">0127:</font>                 V=0.5f-MAP_SIZE*tn;
+<font color="deepskyblue">0128:</font>             }
+<font color="deepskyblue">0129:</font>         }
+<font color="deepskyblue">0130:</font>     }
+<font color="deepskyblue">0133:</font>     
+<font color="deepskyblue">0134:</font>     <font color="cyan">// シルエットマップをアルファ成分に格納する</font>
+<font color="deepskyblue">0135:</font>     <font color="blue">int</font> iu = 16.0f*U;
+<font color="deepskyblue">0136:</font>     <font color="blue">int</font> iv = 16.0f*V;
+<font color="deepskyblue">0137:</font>     <font color="blue">int</font> alpha = iv+iu*16;
+<font color="deepskyblue">0138:</font> 
+<font color="deepskyblue">0139:</font>     pOut-&gt;x = pOut-&gt;y = pOut-&gt;z = col;
+<font color="deepskyblue">0140:</font>     pOut-&gt;w = (1.0f/256.0f)*(FLOAT)alpha;
+<font color="deepskyblue">0144:</font> }
+</pre>
+
+
+<h2>■最後に</h2>
+
+
+<p>
+バグがあるようですが、なかなか綺麗に輪郭が出ますね。<br>
+実際にゲームなどに使うには、テクスチャを作成するオーサリングツール等が必要になるので、気軽には導入されないでしょうが、
+確実に未来への道の１つになると思います。<br>
+他の方法への応用も可能でしょう。
+例えば、より綺麗な法線マップを作成したり、
+線形補間に使ってサブピクセル単位で重み付けをしたサンプリングをすることが可能になるでしょう。
+</p>
+
+<p>
+ちなみに、今回の処理ですが、ピクセルシェーダ命令を多く使っていることもあって、非常に負荷が高いです。余裕のあるときにしか現状は使えないでしょう。<br>
+たとえば、私のPCでは、次のfps (Frames Per Second)が得られました。
+</p>
+<pre class="CodeBlock">
+ポリゴン表示なし     1520 fps
+ポイントサンプリング 1475 fps
+バイリニアフィルタ   1248 fps
+今回の方法            477 fps
+</pre>
+
+<p>
+今回のプログラムを作るのに、
+<a href="http://members.jcom.home.ne.jp/himatsubushi/">Bee</a>さんや、<a href="http://monsho.hp.infoseek.co.jp/">Monsho</a>さんによる
+Shadow Silhouette Maps の解説が非常に役に立ちました。ありがとうございました。
+</p>
+<br>
+
+<p>
+Although it seems that there are something and a bug, a silhouette come out finely.<br>
+Since the authoring tool which creates a texture is needed in order to actually use for a game etc.,
+although it will not be introduced freely, I think that it is certainly set to one of the ways to the future.<br>
+Probably, the other methods will also be possible.
+For example, the sampling which carried out dignity attachment for this method per sub pixel using linear filtering will be made,
+or creation of more beautiful normal maps etc. will be attained.
+</p>
+<p>
+Although it is this processing, since very long pixel shader commands are used, load is very high.
+The present application could be used only when generous.<br>
+For example, the next fps (Frames Per Second) was obtained in my PC.
+</p>
+<pre class="CodeBlock">
+No polygone    1520 fps
+Point Sampling 1475 fps
+Linear Filter  1248 fps
+Silhouette map  477 fps
+</pre>
+
+<p>
+Explanations of the paper of the Shadow Silhouette Maps by <a href="http://members.jcom.home.ne.jp/himatsubushi/">Bee</a> or <a href="http://monsho.hp.infoseek.co.jp/">Monsho</a> was very helpful for making this program.
+Thank you.
+</p>
+
+
+</div>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<center>
+<hr>
+<p><a href="../index.html">もどる</a></p>
+<p><a href="mailto:imagire@gmail.com">imagire@gmail.com</a></p>
+</center>
+
+</body>
+</html>

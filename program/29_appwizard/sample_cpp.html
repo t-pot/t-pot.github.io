@@ -1,0 +1,494 @@
+<HTML>
+<HEAD>
+<TITLE>sample.cpp</TITLE>
+<meta name="GENERATOR" content="cpp2html 2.0 by Niisaka">
+<meta http-equiv="Content-Type" content="text/html">
+<meta http-equiv="Content-Style-Type" content="text/css">
+<STYLE TYPE="text/css">
+<!--
+SPAN.comment { color:#008000; font-weight:normal; font-style:normal;}
+SPAN.keyword { color:#0000FF; font-weight:normal; font-style:normal;}
+SPAN.string { color:#600000; font-weight:normal; font-style:normal;}
+SPAN.linenum { color:#A0A0A0; font-weight:normal; font-style:normal;}
+-->
+</STYLE>
+</HEAD>
+<BODY TEXT="#000000" BGCOLOR="#FFFFFF">
+<PRE><SPAN CLASS="linenum">0001:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0002:</SPAN> <SPAN CLASS="comment">// File: sample.cpp</SPAN>
+<SPAN CLASS="linenum">0003:</SPAN> <SPAN CLASS="comment">//</SPAN>
+<SPAN CLASS="linenum">0004:</SPAN> <SPAN CLASS="comment">// Desc: DirectX window application created by the DirectX AppWizard</SPAN>
+<SPAN CLASS="linenum">0005:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0006:</SPAN> <SPAN CLASS="keyword">#define</SPAN> STRICT
+<SPAN CLASS="linenum">0007:</SPAN> <SPAN CLASS="keyword">#include</SPAN> &lt;windows.h&gt;
+<SPAN CLASS="linenum">0008:</SPAN> <SPAN CLASS="keyword">#include</SPAN> &lt;basetsd.h&gt;
+<SPAN CLASS="linenum">0009:</SPAN> <SPAN CLASS="keyword">#include</SPAN> &lt;math.h&gt;
+<SPAN CLASS="linenum">0010:</SPAN> <SPAN CLASS="keyword">#include</SPAN> &lt;stdio.h&gt;
+<SPAN CLASS="linenum">0011:</SPAN> <SPAN CLASS="keyword">#include</SPAN> &lt;D3DX8.h&gt;
+<SPAN CLASS="linenum">0012:</SPAN> <SPAN CLASS="keyword">#include</SPAN> &lt;DXErr8.h&gt;
+<SPAN CLASS="linenum">0013:</SPAN> <SPAN CLASS="keyword">#include</SPAN> &lt;tchar.h&gt;
+<SPAN CLASS="linenum">0014:</SPAN> <SPAN CLASS="keyword">#include</SPAN> "<SPAN CLASS="string">D3DApp.h</SPAN>"
+<SPAN CLASS="linenum">0015:</SPAN> <SPAN CLASS="keyword">#include</SPAN> "<SPAN CLASS="string">D3DFont.h</SPAN>"
+<SPAN CLASS="linenum">0016:</SPAN> <SPAN CLASS="keyword">#include</SPAN> "<SPAN CLASS="string">D3DFile.h</SPAN>"
+<SPAN CLASS="linenum">0017:</SPAN> <SPAN CLASS="keyword">#include</SPAN> "<SPAN CLASS="string">D3DUtil.h</SPAN>"
+<SPAN CLASS="linenum">0018:</SPAN> <SPAN CLASS="keyword">#include</SPAN> "<SPAN CLASS="string">DXUtil.h</SPAN>"
+<SPAN CLASS="linenum">0019:</SPAN> <SPAN CLASS="keyword">#include</SPAN> "<SPAN CLASS="string">resource.h</SPAN>"
+<SPAN CLASS="linenum">0020:</SPAN> <SPAN CLASS="keyword">#include</SPAN> "<SPAN CLASS="string">sample.h</SPAN>"
+<SPAN CLASS="linenum">0021:</SPAN> 
+<SPAN CLASS="linenum">0022:</SPAN> 
+<SPAN CLASS="linenum">0023:</SPAN> 
+<SPAN CLASS="linenum">0024:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0025:</SPAN> <SPAN CLASS="comment">// Global access to the app (needed for the global WndProc())</SPAN>
+<SPAN CLASS="linenum">0026:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0027:</SPAN> CMyD3DApplication* g_pApp  = NULL;
+<SPAN CLASS="linenum">0028:</SPAN> HINSTANCE          g_hInst = NULL;
+<SPAN CLASS="linenum">0029:</SPAN> 
+<SPAN CLASS="linenum">0030:</SPAN> 
+<SPAN CLASS="linenum">0031:</SPAN> 
+<SPAN CLASS="linenum">0032:</SPAN> 
+<SPAN CLASS="linenum">0033:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0034:</SPAN> <SPAN CLASS="comment">// Name: WinMain()</SPAN>
+<SPAN CLASS="linenum">0035:</SPAN> <SPAN CLASS="comment">// Desc: Entry point to the program. Initializes everything, and goes into a</SPAN>
+<SPAN CLASS="linenum">0036:</SPAN> <SPAN CLASS="comment">//       message-processing loop. Idle time is used to render the scene.</SPAN>
+<SPAN CLASS="linenum">0037:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0038:</SPAN> INT WINAPI WinMain( HINSTANCE hInst, HINSTANCE, LPSTR, INT )
+<SPAN CLASS="linenum">0039:</SPAN> {
+<SPAN CLASS="linenum">0040:</SPAN>     CMyD3DApplication d3dApp;
+<SPAN CLASS="linenum">0041:</SPAN> 
+<SPAN CLASS="linenum">0042:</SPAN>     g_pApp  = &amp;d3dApp;
+<SPAN CLASS="linenum">0043:</SPAN>     g_hInst = hInst;
+<SPAN CLASS="linenum">0044:</SPAN> 
+<SPAN CLASS="linenum">0045:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( FAILED( d3dApp.Create( hInst ) ) )
+<SPAN CLASS="linenum">0046:</SPAN>         <SPAN CLASS="keyword">return</SPAN> 0;
+<SPAN CLASS="linenum">0047:</SPAN> 
+<SPAN CLASS="linenum">0048:</SPAN>     <SPAN CLASS="keyword">return</SPAN> d3dApp.Run();
+<SPAN CLASS="linenum">0049:</SPAN> }
+<SPAN CLASS="linenum">0050:</SPAN> 
+<SPAN CLASS="linenum">0051:</SPAN> 
+<SPAN CLASS="linenum">0052:</SPAN> 
+<SPAN CLASS="linenum">0053:</SPAN> 
+<SPAN CLASS="linenum">0054:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0055:</SPAN> <SPAN CLASS="comment">// Name: CMyD3DApplication()</SPAN>
+<SPAN CLASS="linenum">0056:</SPAN> <SPAN CLASS="comment">// Desc: Application constructor. Sets attributes for the app.</SPAN>
+<SPAN CLASS="linenum">0057:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0058:</SPAN> CMyD3DApplication::CMyD3DApplication()
+<SPAN CLASS="linenum">0059:</SPAN> {
+<SPAN CLASS="linenum">0060:</SPAN>     m_dwCreationWidth           = 500;
+<SPAN CLASS="linenum">0061:</SPAN>     m_dwCreationHeight          = 375;
+<SPAN CLASS="linenum">0062:</SPAN>     m_strWindowTitle            = TEXT( "<SPAN CLASS="string">sample</SPAN>" );
+<SPAN CLASS="linenum">0063:</SPAN>     m_bUseDepthBuffer           = TRUE;
+<SPAN CLASS="linenum">0064:</SPAN> 
+<SPAN CLASS="linenum">0065:</SPAN>     <SPAN CLASS="comment">// Create a D3D font using d3dfont.cpp</SPAN>
+<SPAN CLASS="linenum">0066:</SPAN>     m_pFont                     = <SPAN CLASS="keyword">new</SPAN> CD3DFont( _T("<SPAN CLASS="string">Arial</SPAN>"), 12, D3DFONT_BOLD );
+<SPAN CLASS="linenum">0067:</SPAN>     m_bLoadingApp               = TRUE;
+<SPAN CLASS="linenum">0068:</SPAN>     m_pD3DXMesh                 = NULL;
+<SPAN CLASS="linenum">0069:</SPAN> 
+<SPAN CLASS="linenum">0070:</SPAN>     ZeroMemory( &amp;m_UserInput, <SPAN CLASS="keyword">sizeof</SPAN>(m_UserInput) );
+<SPAN CLASS="linenum">0071:</SPAN>     m_fWorldRotX                = 0.0f;
+<SPAN CLASS="linenum">0072:</SPAN>     m_fWorldRotY                = 0.0f;
+<SPAN CLASS="linenum">0073:</SPAN> 
+<SPAN CLASS="linenum">0074:</SPAN>     <SPAN CLASS="comment">// Read settings from registry</SPAN>
+<SPAN CLASS="linenum">0075:</SPAN>     ReadSettings();
+<SPAN CLASS="linenum">0076:</SPAN> }
+<SPAN CLASS="linenum">0077:</SPAN> 
+<SPAN CLASS="linenum">0078:</SPAN> 
+<SPAN CLASS="linenum">0079:</SPAN> 
+<SPAN CLASS="linenum">0080:</SPAN> 
+<SPAN CLASS="linenum">0081:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0082:</SPAN> <SPAN CLASS="comment">// Name: OneTimeSceneInit()</SPAN>
+<SPAN CLASS="linenum">0083:</SPAN> <SPAN CLASS="comment">// Desc: Called during initial app startup, this function performs all the</SPAN>
+<SPAN CLASS="linenum">0084:</SPAN> <SPAN CLASS="comment">//       permanent initialization.</SPAN>
+<SPAN CLASS="linenum">0085:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0086:</SPAN> HRESULT CMyD3DApplication::OneTimeSceneInit()
+<SPAN CLASS="linenum">0087:</SPAN> {
+<SPAN CLASS="linenum">0088:</SPAN>     <SPAN CLASS="comment">// TODO: perform one time initialization</SPAN>
+<SPAN CLASS="linenum">0089:</SPAN> 
+<SPAN CLASS="linenum">0090:</SPAN>     <SPAN CLASS="comment">// Drawing loading status message until app finishes loading</SPAN>
+<SPAN CLASS="linenum">0091:</SPAN>     SendMessage( m_hWnd, WM_PAINT, 0, 0 );
+<SPAN CLASS="linenum">0092:</SPAN> 
+<SPAN CLASS="linenum">0093:</SPAN>     m_bLoadingApp = FALSE;
+<SPAN CLASS="linenum">0094:</SPAN> 
+<SPAN CLASS="linenum">0095:</SPAN>     <SPAN CLASS="keyword">return</SPAN> S_OK;
+<SPAN CLASS="linenum">0096:</SPAN> }
+<SPAN CLASS="linenum">0097:</SPAN> 
+<SPAN CLASS="linenum">0098:</SPAN> 
+<SPAN CLASS="linenum">0099:</SPAN> 
+<SPAN CLASS="linenum">0100:</SPAN> 
+<SPAN CLASS="linenum">0101:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0102:</SPAN> <SPAN CLASS="comment">// Name: ReadSettings()</SPAN>
+<SPAN CLASS="linenum">0103:</SPAN> <SPAN CLASS="comment">// Desc: Read the app settings from the registry</SPAN>
+<SPAN CLASS="linenum">0104:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0105:</SPAN> VOID CMyD3DApplication::ReadSettings()
+<SPAN CLASS="linenum">0106:</SPAN> {
+<SPAN CLASS="linenum">0107:</SPAN>     HKEY hkey;
+<SPAN CLASS="linenum">0108:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( ERROR_SUCCESS == RegCreateKeyEx( HKEY_CURRENT_USER, DXAPP_KEY, 
+<SPAN CLASS="linenum">0109:</SPAN>         0, NULL, REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &amp;hkey, NULL ) )
+<SPAN CLASS="linenum">0110:</SPAN>     {
+<SPAN CLASS="linenum">0111:</SPAN>         <SPAN CLASS="comment">// TODO: change as needed</SPAN>
+<SPAN CLASS="linenum">0112:</SPAN> 
+<SPAN CLASS="linenum">0113:</SPAN>         <SPAN CLASS="comment">// Read the stored window width/height.  This is just an example,</SPAN>
+<SPAN CLASS="linenum">0114:</SPAN>         <SPAN CLASS="comment">// of how to use DXUtil_Read*() functions.</SPAN>
+<SPAN CLASS="linenum">0115:</SPAN>         DXUtil_ReadIntRegKey( hkey, TEXT("<SPAN CLASS="string">Width</SPAN>"), &amp;m_dwCreationWidth, m_dwCreationWidth );
+<SPAN CLASS="linenum">0116:</SPAN>         DXUtil_ReadIntRegKey( hkey, TEXT("<SPAN CLASS="string">Height</SPAN>"), &amp;m_dwCreationHeight, m_dwCreationHeight );
+<SPAN CLASS="linenum">0117:</SPAN> 
+<SPAN CLASS="linenum">0118:</SPAN>         RegCloseKey( hkey );
+<SPAN CLASS="linenum">0119:</SPAN>     }
+<SPAN CLASS="linenum">0120:</SPAN> }
+<SPAN CLASS="linenum">0121:</SPAN> 
+<SPAN CLASS="linenum">0122:</SPAN> 
+<SPAN CLASS="linenum">0123:</SPAN> 
+<SPAN CLASS="linenum">0124:</SPAN> 
+<SPAN CLASS="linenum">0125:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0126:</SPAN> <SPAN CLASS="comment">// Name: WriteSettings()</SPAN>
+<SPAN CLASS="linenum">0127:</SPAN> <SPAN CLASS="comment">// Desc: Write the app settings to the registry</SPAN>
+<SPAN CLASS="linenum">0128:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0129:</SPAN> VOID CMyD3DApplication::WriteSettings()
+<SPAN CLASS="linenum">0130:</SPAN> {
+<SPAN CLASS="linenum">0131:</SPAN>     HKEY hkey;
+<SPAN CLASS="linenum">0132:</SPAN>     DWORD dwType = REG_DWORD;
+<SPAN CLASS="linenum">0133:</SPAN>     DWORD dwLength = <SPAN CLASS="keyword">sizeof</SPAN>(DWORD);
+<SPAN CLASS="linenum">0134:</SPAN> 
+<SPAN CLASS="linenum">0135:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( ERROR_SUCCESS == RegCreateKeyEx( HKEY_CURRENT_USER, DXAPP_KEY, 
+<SPAN CLASS="linenum">0136:</SPAN>         0, NULL, REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &amp;hkey, NULL ) )
+<SPAN CLASS="linenum">0137:</SPAN>     {
+<SPAN CLASS="linenum">0138:</SPAN>         <SPAN CLASS="comment">// TODO: change as needed</SPAN>
+<SPAN CLASS="linenum">0139:</SPAN> 
+<SPAN CLASS="linenum">0140:</SPAN>         <SPAN CLASS="comment">// Write the window width/height.  This is just an example,</SPAN>
+<SPAN CLASS="linenum">0141:</SPAN>         <SPAN CLASS="comment">// of how to use DXUtil_Write*() functions.</SPAN>
+<SPAN CLASS="linenum">0142:</SPAN>         DXUtil_WriteIntRegKey( hkey, TEXT("<SPAN CLASS="string">Width</SPAN>"), m_rcWindowClient.right );
+<SPAN CLASS="linenum">0143:</SPAN>         DXUtil_WriteIntRegKey( hkey, TEXT("<SPAN CLASS="string">Height</SPAN>"), m_rcWindowClient.bottom );
+<SPAN CLASS="linenum">0144:</SPAN> 
+<SPAN CLASS="linenum">0145:</SPAN>         RegCloseKey( hkey );
+<SPAN CLASS="linenum">0146:</SPAN>     }
+<SPAN CLASS="linenum">0147:</SPAN> }
+<SPAN CLASS="linenum">0148:</SPAN> 
+<SPAN CLASS="linenum">0149:</SPAN> 
+<SPAN CLASS="linenum">0150:</SPAN> 
+<SPAN CLASS="linenum">0151:</SPAN> 
+<SPAN CLASS="linenum">0152:</SPAN> 
+<SPAN CLASS="linenum">0153:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0154:</SPAN> <SPAN CLASS="comment">// Name: ConfirmDevice()</SPAN>
+<SPAN CLASS="linenum">0155:</SPAN> <SPAN CLASS="comment">// Desc: Called during device initialization, this code checks the display device</SPAN>
+<SPAN CLASS="linenum">0156:</SPAN> <SPAN CLASS="comment">//       for some minimum set of capabilities</SPAN>
+<SPAN CLASS="linenum">0157:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0158:</SPAN> HRESULT CMyD3DApplication::ConfirmDevice( D3DCAPS8* pCaps, DWORD dwBehavior,
+<SPAN CLASS="linenum">0159:</SPAN>                                           D3DFORMAT Format )
+<SPAN CLASS="linenum">0160:</SPAN> {
+<SPAN CLASS="linenum">0161:</SPAN>     BOOL bCapsAcceptable;
+<SPAN CLASS="linenum">0162:</SPAN> 
+<SPAN CLASS="linenum">0163:</SPAN>     <SPAN CLASS="comment">// TODO: Perform checks to see if these display caps are acceptable.</SPAN>
+<SPAN CLASS="linenum">0164:</SPAN>     bCapsAcceptable = TRUE;
+<SPAN CLASS="linenum">0165:</SPAN> 
+<SPAN CLASS="linenum">0166:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( bCapsAcceptable )         
+<SPAN CLASS="linenum">0167:</SPAN>         <SPAN CLASS="keyword">return</SPAN> S_OK;
+<SPAN CLASS="linenum">0168:</SPAN>     <SPAN CLASS="keyword">else</SPAN>
+<SPAN CLASS="linenum">0169:</SPAN>         <SPAN CLASS="keyword">return</SPAN> E_FAIL;
+<SPAN CLASS="linenum">0170:</SPAN> }
+<SPAN CLASS="linenum">0171:</SPAN> 
+<SPAN CLASS="linenum">0172:</SPAN> 
+<SPAN CLASS="linenum">0173:</SPAN> 
+<SPAN CLASS="linenum">0174:</SPAN> 
+<SPAN CLASS="linenum">0175:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0176:</SPAN> <SPAN CLASS="comment">// Name: InitDeviceObjects()</SPAN>
+<SPAN CLASS="linenum">0177:</SPAN> <SPAN CLASS="comment">// Desc: Initialize scene objects.</SPAN>
+<SPAN CLASS="linenum">0178:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0179:</SPAN> HRESULT CMyD3DApplication::InitDeviceObjects()
+<SPAN CLASS="linenum">0180:</SPAN> {
+<SPAN CLASS="linenum">0181:</SPAN>     <SPAN CLASS="comment">// TODO: create device objects</SPAN>
+<SPAN CLASS="linenum">0182:</SPAN> 
+<SPAN CLASS="linenum">0183:</SPAN>     HRESULT hr;
+<SPAN CLASS="linenum">0184:</SPAN> 
+<SPAN CLASS="linenum">0185:</SPAN>     <SPAN CLASS="comment">// Init the font</SPAN>
+<SPAN CLASS="linenum">0186:</SPAN>     m_pFont-&gt;InitDeviceObjects( m_pd3dDevice );
+<SPAN CLASS="linenum">0187:</SPAN> 
+<SPAN CLASS="linenum">0188:</SPAN>     <SPAN CLASS="comment">// Create a teapot mesh using D3DX</SPAN>
+<SPAN CLASS="linenum">0189:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( FAILED( hr = D3DXCreateTeapot( m_pd3dDevice, &amp;m_pD3DXMesh, NULL ) ) )
+<SPAN CLASS="linenum">0190:</SPAN>         <SPAN CLASS="keyword">return</SPAN> DXTRACE_ERR_NOMSGBOX( "<SPAN CLASS="string">D3DXCreateTeapot</SPAN>", hr );
+<SPAN CLASS="linenum">0191:</SPAN> 
+<SPAN CLASS="linenum">0192:</SPAN>     <SPAN CLASS="keyword">return</SPAN> S_OK;
+<SPAN CLASS="linenum">0193:</SPAN> }
+<SPAN CLASS="linenum">0194:</SPAN> 
+<SPAN CLASS="linenum">0195:</SPAN> 
+<SPAN CLASS="linenum">0196:</SPAN> 
+<SPAN CLASS="linenum">0197:</SPAN> 
+<SPAN CLASS="linenum">0198:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0199:</SPAN> <SPAN CLASS="comment">// Name: RestoreDeviceObjects()</SPAN>
+<SPAN CLASS="linenum">0200:</SPAN> <SPAN CLASS="comment">// Desc: Restores scene objects.</SPAN>
+<SPAN CLASS="linenum">0201:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0202:</SPAN> HRESULT CMyD3DApplication::RestoreDeviceObjects()
+<SPAN CLASS="linenum">0203:</SPAN> {
+<SPAN CLASS="linenum">0204:</SPAN>     <SPAN CLASS="comment">// TODO: setup render states</SPAN>
+<SPAN CLASS="linenum">0205:</SPAN> 
+<SPAN CLASS="linenum">0206:</SPAN>     <SPAN CLASS="comment">// Setup a material</SPAN>
+<SPAN CLASS="linenum">0207:</SPAN>     D3DMATERIAL8 mtrl;
+<SPAN CLASS="linenum">0208:</SPAN>     D3DUtil_InitMaterial( mtrl, 1.0f, 0.0f, 0.0f );
+<SPAN CLASS="linenum">0209:</SPAN>     m_pd3dDevice-&gt;SetMaterial( &amp;mtrl );
+<SPAN CLASS="linenum">0210:</SPAN> 
+<SPAN CLASS="linenum">0211:</SPAN>     <SPAN CLASS="comment">// Set up the textures</SPAN>
+<SPAN CLASS="linenum">0212:</SPAN>     m_pd3dDevice-&gt;SetTextureStageState( 0, D3DTSS_COLOROP,   D3DTOP_MODULATE );
+<SPAN CLASS="linenum">0213:</SPAN>     m_pd3dDevice-&gt;SetTextureStageState( 0, D3DTSS_COLORARG1, D3DTA_TEXTURE );
+<SPAN CLASS="linenum">0214:</SPAN>     m_pd3dDevice-&gt;SetTextureStageState( 0, D3DTSS_COLORARG2, D3DTA_DIFFUSE );
+<SPAN CLASS="linenum">0215:</SPAN>     m_pd3dDevice-&gt;SetTextureStageState( 0, D3DTSS_MINFILTER, D3DTEXF_LINEAR );
+<SPAN CLASS="linenum">0216:</SPAN>     m_pd3dDevice-&gt;SetTextureStageState( 0, D3DTSS_MAGFILTER, D3DTEXF_LINEAR );
+<SPAN CLASS="linenum">0217:</SPAN> 
+<SPAN CLASS="linenum">0218:</SPAN>     <SPAN CLASS="comment">// Set miscellaneous render states</SPAN>
+<SPAN CLASS="linenum">0219:</SPAN>     m_pd3dDevice-&gt;SetRenderState( D3DRS_DITHERENABLE,   FALSE );
+<SPAN CLASS="linenum">0220:</SPAN>     m_pd3dDevice-&gt;SetRenderState( D3DRS_SPECULARENABLE, FALSE );
+<SPAN CLASS="linenum">0221:</SPAN>     m_pd3dDevice-&gt;SetRenderState( D3DRS_ZENABLE,        TRUE );
+<SPAN CLASS="linenum">0222:</SPAN>     m_pd3dDevice-&gt;SetRenderState( D3DRS_AMBIENT,        0x000F0F0F );
+<SPAN CLASS="linenum">0223:</SPAN> 
+<SPAN CLASS="linenum">0224:</SPAN>     <SPAN CLASS="comment">// Set the world matrix</SPAN>
+<SPAN CLASS="linenum">0225:</SPAN>     D3DXMATRIX matIdentity;
+<SPAN CLASS="linenum">0226:</SPAN>     D3DXMatrixIdentity( &amp;matIdentity );
+<SPAN CLASS="linenum">0227:</SPAN>     m_pd3dDevice-&gt;SetTransform( D3DTS_WORLD,  &amp;matIdentity );
+<SPAN CLASS="linenum">0228:</SPAN> 
+<SPAN CLASS="linenum">0229:</SPAN>     <SPAN CLASS="comment">// Set up our view matrix. A view matrix can be defined given an eye point,</SPAN>
+<SPAN CLASS="linenum">0230:</SPAN>     <SPAN CLASS="comment">// a point to lookat, and a direction for which way is up. Here, we set the</SPAN>
+<SPAN CLASS="linenum">0231:</SPAN>     <SPAN CLASS="comment">// eye five units back along the z-axis and up three units, look at the</SPAN>
+<SPAN CLASS="linenum">0232:</SPAN>     <SPAN CLASS="comment">// origin, and define "up" to be in the y-direction.</SPAN>
+<SPAN CLASS="linenum">0233:</SPAN>     D3DXMATRIX matView;
+<SPAN CLASS="linenum">0234:</SPAN>     D3DXVECTOR3 vFromPt   = D3DXVECTOR3( 0.0f, 0.0f, -5.0f );
+<SPAN CLASS="linenum">0235:</SPAN>     D3DXVECTOR3 vLookatPt = D3DXVECTOR3( 0.0f, 0.0f, 0.0f );
+<SPAN CLASS="linenum">0236:</SPAN>     D3DXVECTOR3 vUpVec    = D3DXVECTOR3( 0.0f, 1.0f, 0.0f );
+<SPAN CLASS="linenum">0237:</SPAN>     D3DXMatrixLookAtLH( &amp;matView, &amp;vFromPt, &amp;vLookatPt, &amp;vUpVec );
+<SPAN CLASS="linenum">0238:</SPAN>     m_pd3dDevice-&gt;SetTransform( D3DTS_VIEW, &amp;matView );
+<SPAN CLASS="linenum">0239:</SPAN> 
+<SPAN CLASS="linenum">0240:</SPAN>     <SPAN CLASS="comment">// Set the projection matrix</SPAN>
+<SPAN CLASS="linenum">0241:</SPAN>     D3DXMATRIX matProj;
+<SPAN CLASS="linenum">0242:</SPAN>     FLOAT fAspect = ((FLOAT)m_d3dsdBackBuffer.Width) / m_d3dsdBackBuffer.Height;
+<SPAN CLASS="linenum">0243:</SPAN>     D3DXMatrixPerspectiveFovLH( &amp;matProj, D3DX_PI/4, fAspect, 1.0f, 100.0f );
+<SPAN CLASS="linenum">0244:</SPAN>     m_pd3dDevice-&gt;SetTransform( D3DTS_PROJECTION, &amp;matProj );
+<SPAN CLASS="linenum">0245:</SPAN> 
+<SPAN CLASS="linenum">0246:</SPAN>     <SPAN CLASS="comment">// Set up lighting states</SPAN>
+<SPAN CLASS="linenum">0247:</SPAN>     D3DLIGHT8 light;
+<SPAN CLASS="linenum">0248:</SPAN>     D3DUtil_InitLight( light, D3DLIGHT_DIRECTIONAL, -1.0f, -1.0f, 2.0f );
+<SPAN CLASS="linenum">0249:</SPAN>     m_pd3dDevice-&gt;SetLight( 0, &amp;light );
+<SPAN CLASS="linenum">0250:</SPAN>     m_pd3dDevice-&gt;LightEnable( 0, TRUE );
+<SPAN CLASS="linenum">0251:</SPAN>     m_pd3dDevice-&gt;SetRenderState( D3DRS_LIGHTING, TRUE );
+<SPAN CLASS="linenum">0252:</SPAN> 
+<SPAN CLASS="linenum">0253:</SPAN>     <SPAN CLASS="comment">// Restore the font</SPAN>
+<SPAN CLASS="linenum">0254:</SPAN>     m_pFont-&gt;RestoreDeviceObjects();
+<SPAN CLASS="linenum">0255:</SPAN> 
+<SPAN CLASS="linenum">0256:</SPAN>     <SPAN CLASS="keyword">return</SPAN> S_OK;
+<SPAN CLASS="linenum">0257:</SPAN> }
+<SPAN CLASS="linenum">0258:</SPAN> 
+<SPAN CLASS="linenum">0259:</SPAN> 
+<SPAN CLASS="linenum">0260:</SPAN> 
+<SPAN CLASS="linenum">0261:</SPAN> 
+<SPAN CLASS="linenum">0262:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0263:</SPAN> <SPAN CLASS="comment">// Name: FrameMove()</SPAN>
+<SPAN CLASS="linenum">0264:</SPAN> <SPAN CLASS="comment">// Desc: Called once per frame, the call is the entry point for animating</SPAN>
+<SPAN CLASS="linenum">0265:</SPAN> <SPAN CLASS="comment">//       the scene.</SPAN>
+<SPAN CLASS="linenum">0266:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0267:</SPAN> HRESULT CMyD3DApplication::FrameMove()
+<SPAN CLASS="linenum">0268:</SPAN> {
+<SPAN CLASS="linenum">0269:</SPAN>     <SPAN CLASS="comment">// TODO: update world</SPAN>
+<SPAN CLASS="linenum">0270:</SPAN> 
+<SPAN CLASS="linenum">0271:</SPAN>     <SPAN CLASS="comment">// Update user input state</SPAN>
+<SPAN CLASS="linenum">0272:</SPAN>     UpdateInput( &amp;m_UserInput );
+<SPAN CLASS="linenum">0273:</SPAN> 
+<SPAN CLASS="linenum">0274:</SPAN>     <SPAN CLASS="comment">// Update the world state according to user input</SPAN>
+<SPAN CLASS="linenum">0275:</SPAN>     D3DXMATRIX matWorld;
+<SPAN CLASS="linenum">0276:</SPAN>     D3DXMATRIX matRotY;
+<SPAN CLASS="linenum">0277:</SPAN>     D3DXMATRIX matRotX;
+<SPAN CLASS="linenum">0278:</SPAN> 
+<SPAN CLASS="linenum">0279:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( m_UserInput.bRotateLeft &amp;&amp; !m_UserInput.bRotateRight )
+<SPAN CLASS="linenum">0280:</SPAN>         m_fWorldRotY += m_fElapsedTime;
+<SPAN CLASS="linenum">0281:</SPAN>     <SPAN CLASS="keyword">else</SPAN> <SPAN CLASS="keyword">if</SPAN>( m_UserInput.bRotateRight &amp;&amp; !m_UserInput.bRotateLeft )
+<SPAN CLASS="linenum">0282:</SPAN>         m_fWorldRotY -= m_fElapsedTime;
+<SPAN CLASS="linenum">0283:</SPAN> 
+<SPAN CLASS="linenum">0284:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( m_UserInput.bRotateUp &amp;&amp; !m_UserInput.bRotateDown )
+<SPAN CLASS="linenum">0285:</SPAN>         m_fWorldRotX += m_fElapsedTime;
+<SPAN CLASS="linenum">0286:</SPAN>     <SPAN CLASS="keyword">else</SPAN> <SPAN CLASS="keyword">if</SPAN>( m_UserInput.bRotateDown &amp;&amp; !m_UserInput.bRotateUp )
+<SPAN CLASS="linenum">0287:</SPAN>         m_fWorldRotX -= m_fElapsedTime;
+<SPAN CLASS="linenum">0288:</SPAN> 
+<SPAN CLASS="linenum">0289:</SPAN>     D3DXMatrixRotationX( &amp;matRotX, m_fWorldRotX );
+<SPAN CLASS="linenum">0290:</SPAN>     D3DXMatrixRotationY( &amp;matRotY, m_fWorldRotY );
+<SPAN CLASS="linenum">0291:</SPAN> 
+<SPAN CLASS="linenum">0292:</SPAN>     D3DXMatrixMultiply( &amp;matWorld, &amp;matRotX, &amp;matRotY );
+<SPAN CLASS="linenum">0293:</SPAN>     m_pd3dDevice-&gt;SetTransform( D3DTS_WORLD, &amp;matWorld );
+<SPAN CLASS="linenum">0294:</SPAN> 
+<SPAN CLASS="linenum">0295:</SPAN>     <SPAN CLASS="keyword">return</SPAN> S_OK;
+<SPAN CLASS="linenum">0296:</SPAN> }
+<SPAN CLASS="linenum">0297:</SPAN> 
+<SPAN CLASS="linenum">0298:</SPAN> 
+<SPAN CLASS="linenum">0299:</SPAN> 
+<SPAN CLASS="linenum">0300:</SPAN> 
+<SPAN CLASS="linenum">0301:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0302:</SPAN> <SPAN CLASS="comment">// Name: UpdateInput()</SPAN>
+<SPAN CLASS="linenum">0303:</SPAN> <SPAN CLASS="comment">// Desc: Update the user input.  Called once per frame </SPAN>
+<SPAN CLASS="linenum">0304:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0305:</SPAN> <SPAN CLASS="keyword">void</SPAN> CMyD3DApplication::UpdateInput( UserInput* pUserInput )
+<SPAN CLASS="linenum">0306:</SPAN> {
+<SPAN CLASS="linenum">0307:</SPAN>     pUserInput-&gt;bRotateUp    = ( m_bHasFocus &amp;&amp; (GetAsyncKeyState( VK_UP )    &amp; 0x8000) == 0x8000 );
+<SPAN CLASS="linenum">0308:</SPAN>     pUserInput-&gt;bRotateDown  = ( m_bHasFocus &amp;&amp; (GetAsyncKeyState( VK_DOWN )  &amp; 0x8000) == 0x8000 );
+<SPAN CLASS="linenum">0309:</SPAN>     pUserInput-&gt;bRotateLeft  = ( m_bHasFocus &amp;&amp; (GetAsyncKeyState( VK_LEFT )  &amp; 0x8000) == 0x8000 );
+<SPAN CLASS="linenum">0310:</SPAN>     pUserInput-&gt;bRotateRight = ( m_bHasFocus &amp;&amp; (GetAsyncKeyState( VK_RIGHT ) &amp; 0x8000) == 0x8000 );
+<SPAN CLASS="linenum">0311:</SPAN> }
+<SPAN CLASS="linenum">0312:</SPAN> 
+<SPAN CLASS="linenum">0313:</SPAN> 
+<SPAN CLASS="linenum">0314:</SPAN> 
+<SPAN CLASS="linenum">0315:</SPAN> 
+<SPAN CLASS="linenum">0316:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0317:</SPAN> <SPAN CLASS="comment">// Name: Render()</SPAN>
+<SPAN CLASS="linenum">0318:</SPAN> <SPAN CLASS="comment">// Desc: Called once per frame, the call is the entry point for 3d</SPAN>
+<SPAN CLASS="linenum">0319:</SPAN> <SPAN CLASS="comment">//       rendering. This function sets up render states, clears the</SPAN>
+<SPAN CLASS="linenum">0320:</SPAN> <SPAN CLASS="comment">//       viewport, and renders the scene.</SPAN>
+<SPAN CLASS="linenum">0321:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0322:</SPAN> HRESULT CMyD3DApplication::Render()
+<SPAN CLASS="linenum">0323:</SPAN> {
+<SPAN CLASS="linenum">0324:</SPAN>     <SPAN CLASS="comment">// Clear the viewport</SPAN>
+<SPAN CLASS="linenum">0325:</SPAN>     m_pd3dDevice-&gt;Clear( 0L, NULL, D3DCLEAR_TARGET|D3DCLEAR_ZBUFFER,
+<SPAN CLASS="linenum">0326:</SPAN>                          0x000000ff, 1.0f, 0L );
+<SPAN CLASS="linenum">0327:</SPAN> 
+<SPAN CLASS="linenum">0328:</SPAN>     <SPAN CLASS="comment">// Begin the scene</SPAN>
+<SPAN CLASS="linenum">0329:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( SUCCEEDED( m_pd3dDevice-&gt;BeginScene() ) )
+<SPAN CLASS="linenum">0330:</SPAN>     {
+<SPAN CLASS="linenum">0331:</SPAN>         <SPAN CLASS="comment">// TODO: render world</SPAN>
+<SPAN CLASS="linenum">0332:</SPAN>         
+<SPAN CLASS="linenum">0333:</SPAN>         <SPAN CLASS="comment">// Render the teapot mesh</SPAN>
+<SPAN CLASS="linenum">0334:</SPAN>         m_pD3DXMesh-&gt;DrawSubset(0);
+<SPAN CLASS="linenum">0335:</SPAN> 
+<SPAN CLASS="linenum">0336:</SPAN>         <SPAN CLASS="comment">// Render stats and help text  </SPAN>
+<SPAN CLASS="linenum">0337:</SPAN>         RenderText();
+<SPAN CLASS="linenum">0338:</SPAN> 
+<SPAN CLASS="linenum">0339:</SPAN>         <SPAN CLASS="comment">// End the scene.</SPAN>
+<SPAN CLASS="linenum">0340:</SPAN>         m_pd3dDevice-&gt;EndScene();
+<SPAN CLASS="linenum">0341:</SPAN>     }
+<SPAN CLASS="linenum">0342:</SPAN> 
+<SPAN CLASS="linenum">0343:</SPAN>     <SPAN CLASS="keyword">return</SPAN> S_OK;
+<SPAN CLASS="linenum">0344:</SPAN> }
+<SPAN CLASS="linenum">0345:</SPAN> 
+<SPAN CLASS="linenum">0346:</SPAN> 
+<SPAN CLASS="linenum">0347:</SPAN> 
+<SPAN CLASS="linenum">0348:</SPAN> 
+<SPAN CLASS="linenum">0349:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0350:</SPAN> <SPAN CLASS="comment">// Name: RenderText()</SPAN>
+<SPAN CLASS="linenum">0351:</SPAN> <SPAN CLASS="comment">// Desc: Renders stats and help text to the scene.</SPAN>
+<SPAN CLASS="linenum">0352:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0353:</SPAN> HRESULT CMyD3DApplication::RenderText()
+<SPAN CLASS="linenum">0354:</SPAN> {
+<SPAN CLASS="linenum">0355:</SPAN>     D3DCOLOR fontColor        = D3DCOLOR_ARGB(255,255,255,0);
+<SPAN CLASS="linenum">0356:</SPAN>     D3DCOLOR fontWarningColor = D3DCOLOR_ARGB(255,0,255,255);
+<SPAN CLASS="linenum">0357:</SPAN>     TCHAR szMsg[MAX_PATH] = TEXT("<SPAN CLASS="string"></SPAN>");
+<SPAN CLASS="linenum">0358:</SPAN> 
+<SPAN CLASS="linenum">0359:</SPAN>     <SPAN CLASS="comment">// Output display stats</SPAN>
+<SPAN CLASS="linenum">0360:</SPAN>     FLOAT fNextLine = 40.0f; 
+<SPAN CLASS="linenum">0361:</SPAN> 
+<SPAN CLASS="linenum">0362:</SPAN>     lstrcpy( szMsg, m_strDeviceStats );
+<SPAN CLASS="linenum">0363:</SPAN>     fNextLine -= 20.0f;
+<SPAN CLASS="linenum">0364:</SPAN>     m_pFont-&gt;DrawText( 2, fNextLine, fontColor, szMsg );
+<SPAN CLASS="linenum">0365:</SPAN> 
+<SPAN CLASS="linenum">0366:</SPAN>     lstrcpy( szMsg, m_strFrameStats );
+<SPAN CLASS="linenum">0367:</SPAN>     fNextLine -= 20.0f;
+<SPAN CLASS="linenum">0368:</SPAN>     m_pFont-&gt;DrawText( 2, fNextLine, fontColor, szMsg );
+<SPAN CLASS="linenum">0369:</SPAN> 
+<SPAN CLASS="linenum">0370:</SPAN>     <SPAN CLASS="comment">// Output statistics & help</SPAN>
+<SPAN CLASS="linenum">0371:</SPAN>     fNextLine = (FLOAT) m_d3dsdBackBuffer.Height; 
+<SPAN CLASS="linenum">0372:</SPAN> 
+<SPAN CLASS="linenum">0373:</SPAN>     wsprintf( szMsg, TEXT("<SPAN CLASS="string">Arrow keys: Up=%d Down=%d Left=%d Right=%d</SPAN>"), 
+<SPAN CLASS="linenum">0374:</SPAN>               m_UserInput.bRotateUp, m_UserInput.bRotateDown, m_UserInput.bRotateLeft, m_UserInput.bRotateRight );
+<SPAN CLASS="linenum">0375:</SPAN>     fNextLine -= 20.0f; m_pFont-&gt;DrawText( 2, fNextLine, fontColor, szMsg );
+<SPAN CLASS="linenum">0376:</SPAN> 
+<SPAN CLASS="linenum">0377:</SPAN>     lstrcpy( szMsg, TEXT("<SPAN CLASS="string">Use arrow keys to rotate object</SPAN>") );
+<SPAN CLASS="linenum">0378:</SPAN>     fNextLine -= 20.0f; m_pFont-&gt;DrawText( 2, fNextLine, fontColor, szMsg );
+<SPAN CLASS="linenum">0379:</SPAN> 
+<SPAN CLASS="linenum">0380:</SPAN>     lstrcpy( szMsg, TEXT("<SPAN CLASS="string">Press 'F2' to configure display</SPAN>") );
+<SPAN CLASS="linenum">0381:</SPAN>     fNextLine -= 20.0f; m_pFont-&gt;DrawText( 2, fNextLine, fontColor, szMsg );
+<SPAN CLASS="linenum">0382:</SPAN> 
+<SPAN CLASS="linenum">0383:</SPAN>     <SPAN CLASS="keyword">return</SPAN> S_OK;
+<SPAN CLASS="linenum">0384:</SPAN> }
+<SPAN CLASS="linenum">0385:</SPAN> 
+<SPAN CLASS="linenum">0386:</SPAN> 
+<SPAN CLASS="linenum">0387:</SPAN> 
+<SPAN CLASS="linenum">0388:</SPAN> 
+<SPAN CLASS="linenum">0389:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0390:</SPAN> <SPAN CLASS="comment">// Name: MsgProc()</SPAN>
+<SPAN CLASS="linenum">0391:</SPAN> <SPAN CLASS="comment">// Desc: Overrrides the main WndProc, so the sample can do custom message</SPAN>
+<SPAN CLASS="linenum">0392:</SPAN> <SPAN CLASS="comment">//       handling (e.g. processing mouse, keyboard, or menu commands).</SPAN>
+<SPAN CLASS="linenum">0393:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0394:</SPAN> LRESULT CMyD3DApplication::MsgProc( HWND hWnd, UINT msg, WPARAM wParam,
+<SPAN CLASS="linenum">0395:</SPAN>                                     LPARAM lParam )
+<SPAN CLASS="linenum">0396:</SPAN> {
+<SPAN CLASS="linenum">0397:</SPAN>     <SPAN CLASS="keyword">switch</SPAN>( msg )
+<SPAN CLASS="linenum">0398:</SPAN>     {
+<SPAN CLASS="linenum">0399:</SPAN>         <SPAN CLASS="keyword">case</SPAN> WM_PAINT:
+<SPAN CLASS="linenum">0400:</SPAN>         {
+<SPAN CLASS="linenum">0401:</SPAN>             <SPAN CLASS="keyword">if</SPAN>( m_bLoadingApp )
+<SPAN CLASS="linenum">0402:</SPAN>             {
+<SPAN CLASS="linenum">0403:</SPAN>                 <SPAN CLASS="comment">// Draw on the window tell the user that the app is loading</SPAN>
+<SPAN CLASS="linenum">0404:</SPAN>                 <SPAN CLASS="comment">// TODO: change as needed</SPAN>
+<SPAN CLASS="linenum">0405:</SPAN>                 HDC hDC = GetDC( hWnd );
+<SPAN CLASS="linenum">0406:</SPAN>                 TCHAR strMsg[MAX_PATH];
+<SPAN CLASS="linenum">0407:</SPAN>                 wsprintf( strMsg, TEXT("<SPAN CLASS="string">Loading... Please wait</SPAN>") );
+<SPAN CLASS="linenum">0408:</SPAN>                 RECT rct;
+<SPAN CLASS="linenum">0409:</SPAN>                 GetClientRect( hWnd, &amp;rct );
+<SPAN CLASS="linenum">0410:</SPAN>                 DrawText( hDC, strMsg, -1, &amp;rct, DT_CENTER|DT_VCENTER|DT_SINGLELINE );
+<SPAN CLASS="linenum">0411:</SPAN>                 ReleaseDC( hWnd, hDC );
+<SPAN CLASS="linenum">0412:</SPAN>             }
+<SPAN CLASS="linenum">0413:</SPAN>             <SPAN CLASS="keyword">break</SPAN>;
+<SPAN CLASS="linenum">0414:</SPAN>         }
+<SPAN CLASS="linenum">0415:</SPAN> 
+<SPAN CLASS="linenum">0416:</SPAN>     }
+<SPAN CLASS="linenum">0417:</SPAN> 
+<SPAN CLASS="linenum">0418:</SPAN>     <SPAN CLASS="keyword">return</SPAN> CD3DApplication::MsgProc( hWnd, msg, wParam, lParam );
+<SPAN CLASS="linenum">0419:</SPAN> }
+<SPAN CLASS="linenum">0420:</SPAN> 
+<SPAN CLASS="linenum">0421:</SPAN> 
+<SPAN CLASS="linenum">0422:</SPAN> 
+<SPAN CLASS="linenum">0423:</SPAN> 
+<SPAN CLASS="linenum">0424:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0425:</SPAN> <SPAN CLASS="comment">// Name: InvalidateDeviceObjects()</SPAN>
+<SPAN CLASS="linenum">0426:</SPAN> <SPAN CLASS="comment">// Desc: Invalidates device objects.  </SPAN>
+<SPAN CLASS="linenum">0427:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0428:</SPAN> HRESULT CMyD3DApplication::InvalidateDeviceObjects()
+<SPAN CLASS="linenum">0429:</SPAN> {
+<SPAN CLASS="linenum">0430:</SPAN>     <SPAN CLASS="comment">// TODO: Cleanup any objects created in RestoreDeviceObjects()</SPAN>
+<SPAN CLASS="linenum">0431:</SPAN>     m_pFont-&gt;InvalidateDeviceObjects();
+<SPAN CLASS="linenum">0432:</SPAN> 
+<SPAN CLASS="linenum">0433:</SPAN>     <SPAN CLASS="keyword">return</SPAN> S_OK;
+<SPAN CLASS="linenum">0434:</SPAN> }
+<SPAN CLASS="linenum">0435:</SPAN> 
+<SPAN CLASS="linenum">0436:</SPAN> 
+<SPAN CLASS="linenum">0437:</SPAN> 
+<SPAN CLASS="linenum">0438:</SPAN> 
+<SPAN CLASS="linenum">0439:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0440:</SPAN> <SPAN CLASS="comment">// Name: DeleteDeviceObjects()</SPAN>
+<SPAN CLASS="linenum">0441:</SPAN> <SPAN CLASS="comment">// Desc: Called when the app is exiting, or the device is being changed,</SPAN>
+<SPAN CLASS="linenum">0442:</SPAN> <SPAN CLASS="comment">//       this function deletes any device dependent objects.  </SPAN>
+<SPAN CLASS="linenum">0443:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0444:</SPAN> HRESULT CMyD3DApplication::DeleteDeviceObjects()
+<SPAN CLASS="linenum">0445:</SPAN> {
+<SPAN CLASS="linenum">0446:</SPAN>     <SPAN CLASS="comment">// TODO: Cleanup any objects created in InitDeviceObjects()</SPAN>
+<SPAN CLASS="linenum">0447:</SPAN>     m_pFont-&gt;DeleteDeviceObjects();
+<SPAN CLASS="linenum">0448:</SPAN>     SAFE_RELEASE( m_pD3DXMesh );
+<SPAN CLASS="linenum">0449:</SPAN> 
+<SPAN CLASS="linenum">0450:</SPAN>     <SPAN CLASS="keyword">return</SPAN> S_OK;
+<SPAN CLASS="linenum">0451:</SPAN> }
+<SPAN CLASS="linenum">0452:</SPAN> 
+<SPAN CLASS="linenum">0453:</SPAN> 
+<SPAN CLASS="linenum">0454:</SPAN> 
+<SPAN CLASS="linenum">0455:</SPAN> 
+<SPAN CLASS="linenum">0456:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0457:</SPAN> <SPAN CLASS="comment">// Name: FinalCleanup()</SPAN>
+<SPAN CLASS="linenum">0458:</SPAN> <SPAN CLASS="comment">// Desc: Called before the app exits, this function gives the app the chance</SPAN>
+<SPAN CLASS="linenum">0459:</SPAN> <SPAN CLASS="comment">//       to cleanup after itself.</SPAN>
+<SPAN CLASS="linenum">0460:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0461:</SPAN> HRESULT CMyD3DApplication::FinalCleanup()
+<SPAN CLASS="linenum">0462:</SPAN> {
+<SPAN CLASS="linenum">0463:</SPAN>     <SPAN CLASS="comment">// TODO: Perform any final cleanup needed</SPAN>
+<SPAN CLASS="linenum">0464:</SPAN>     <SPAN CLASS="comment">// Cleanup D3D font</SPAN>
+<SPAN CLASS="linenum">0465:</SPAN>     SAFE_DELETE( m_pFont );
+<SPAN CLASS="linenum">0466:</SPAN> 
+<SPAN CLASS="linenum">0467:</SPAN>     <SPAN CLASS="comment">// Write the settings to the registry</SPAN>
+<SPAN CLASS="linenum">0468:</SPAN>     WriteSettings();
+<SPAN CLASS="linenum">0469:</SPAN> 
+<SPAN CLASS="linenum">0470:</SPAN>     <SPAN CLASS="keyword">return</SPAN> S_OK;
+<SPAN CLASS="linenum">0471:</SPAN> }
+<SPAN CLASS="linenum">0472:</SPAN> 
+<SPAN CLASS="linenum">0473:</SPAN> 
+<SPAN CLASS="linenum">0474:</SPAN> 
+<SPAN CLASS="linenum">0475:</SPAN> 
+<SPAN CLASS="linenum">0476:</SPAN> </PRE>
+</BODY>
+</HTML>

@@ -1,0 +1,1325 @@
+<HTML>
+<HEAD>
+<TITLE>main.cpp</TITLE>
+<meta name="GENERATOR" content="cpp2html 2.1 by Niisaka">
+<meta http-equiv="Content-Type" content="text/html">
+<meta http-equiv="Content-Style-Type" content="text/css">
+<STYLE TYPE="text/css">
+<!--
+SPAN.comment { color:#008000; font-weight:normal; font-style:normal;}
+SPAN.keyword { color:#0000FF; font-weight:normal; font-style:normal;}
+SPAN.string { color:#600000; font-weight:normal; font-style:normal;}
+SPAN.linenum { color:#A0A0A0; font-weight:normal; font-style:normal;}
+-->
+</STYLE>
+</HEAD>
+<BODY TEXT="#000000" BGCOLOR="#FFFFFF">
+<PRE><SPAN CLASS="linenum">0001:</SPAN> <SPAN CLASS="comment">//-------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0002:</SPAN> <SPAN CLASS="comment">// File: main.cpp</SPAN>
+<SPAN CLASS="linenum">0003:</SPAN> <SPAN CLASS="comment">//</SPAN>
+<SPAN CLASS="linenum">0004:</SPAN> <SPAN CLASS="comment">// Desc: ascii art</SPAN>
+<SPAN CLASS="linenum">0005:</SPAN> <SPAN CLASS="comment">//-------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0006:</SPAN> <SPAN CLASS="keyword">#define</SPAN> STRICT
+<SPAN CLASS="linenum">0007:</SPAN> <SPAN CLASS="keyword">#include</SPAN> &lt;windows.h&gt;
+<SPAN CLASS="linenum">0008:</SPAN> <SPAN CLASS="keyword">#include</SPAN> &lt;commctrl.h&gt;
+<SPAN CLASS="linenum">0009:</SPAN> <SPAN CLASS="keyword">#include</SPAN> &lt;commdlg.h&gt;
+<SPAN CLASS="linenum">0010:</SPAN> <SPAN CLASS="keyword">#include</SPAN> &lt;basetsd.h&gt;
+<SPAN CLASS="linenum">0011:</SPAN> <SPAN CLASS="keyword">#include</SPAN> &lt;math.h&gt;
+<SPAN CLASS="linenum">0012:</SPAN> <SPAN CLASS="keyword">#include</SPAN> &lt;stdio.h&gt;
+<SPAN CLASS="linenum">0013:</SPAN> <SPAN CLASS="keyword">#include</SPAN> &lt;d3dx9.h&gt;
+<SPAN CLASS="linenum">0014:</SPAN> <SPAN CLASS="keyword">#include</SPAN> &lt;dxerr9.h&gt;
+<SPAN CLASS="linenum">0015:</SPAN> <SPAN CLASS="keyword">#include</SPAN> &lt;tchar.h&gt;
+<SPAN CLASS="linenum">0016:</SPAN> <SPAN CLASS="keyword">#include</SPAN> "<SPAN CLASS="string">DXUtil.h</SPAN>"
+<SPAN CLASS="linenum">0017:</SPAN> <SPAN CLASS="keyword">#include</SPAN> "<SPAN CLASS="string">D3DEnumeration.h</SPAN>"
+<SPAN CLASS="linenum">0018:</SPAN> <SPAN CLASS="keyword">#include</SPAN> "<SPAN CLASS="string">D3DSettings.h</SPAN>"
+<SPAN CLASS="linenum">0019:</SPAN> <SPAN CLASS="keyword">#include</SPAN> "<SPAN CLASS="string">D3DApp.h</SPAN>"
+<SPAN CLASS="linenum">0020:</SPAN> <SPAN CLASS="keyword">#include</SPAN> "<SPAN CLASS="string">D3DFont.h</SPAN>"
+<SPAN CLASS="linenum">0021:</SPAN> <SPAN CLASS="keyword">#include</SPAN> "<SPAN CLASS="string">D3DFile.h</SPAN>"
+<SPAN CLASS="linenum">0022:</SPAN> <SPAN CLASS="keyword">#include</SPAN> "<SPAN CLASS="string">D3DUtil.h</SPAN>"
+<SPAN CLASS="linenum">0023:</SPAN> <SPAN CLASS="keyword">#include</SPAN> "<SPAN CLASS="string">resource.h</SPAN>"
+<SPAN CLASS="linenum">0024:</SPAN> <SPAN CLASS="keyword">#include</SPAN> "<SPAN CLASS="string">main.h</SPAN>"
+<SPAN CLASS="linenum">0025:</SPAN> 
+<SPAN CLASS="linenum">0026:</SPAN> <SPAN CLASS="keyword">#define</SPAN> MAP_WIDTH   512
+<SPAN CLASS="linenum">0027:</SPAN> <SPAN CLASS="keyword">#define</SPAN> MAP_HEIGHT  512
+<SPAN CLASS="linenum">0028:</SPAN> <SPAN CLASS="keyword">const</SPAN> <SPAN CLASS="keyword">int</SPAN> COLOR_MAP[] = {MAP_WIDTH/8, MAP_WIDTH/32};
+<SPAN CLASS="linenum">0029:</SPAN> 
+<SPAN CLASS="linenum">0030:</SPAN> 
+<SPAN CLASS="linenum">0031:</SPAN> <SPAN CLASS="comment">// 長いから短縮形を作ってみた</SPAN>
+<SPAN CLASS="linenum">0032:</SPAN> <SPAN CLASS="keyword">#define</SPAN> RS   m_pd3dDevice-&gt;SetRenderState
+<SPAN CLASS="linenum">0033:</SPAN> <SPAN CLASS="keyword">#define</SPAN> TSS  m_pd3dDevice-&gt;SetTextureStageState
+<SPAN CLASS="linenum">0034:</SPAN> <SPAN CLASS="keyword">#define</SPAN> SAMP m_pd3dDevice-&gt;SetSamplerState
+<SPAN CLASS="linenum">0035:</SPAN> 
+<SPAN CLASS="linenum">0036:</SPAN> 
+<SPAN CLASS="linenum">0037:</SPAN> <SPAN CLASS="comment">//-------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0038:</SPAN> <SPAN CLASS="comment">// 頂点の構造体</SPAN>
+<SPAN CLASS="linenum">0039:</SPAN> <SPAN CLASS="comment">//-------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0040:</SPAN> <SPAN CLASS="keyword">typedef</SPAN> <SPAN CLASS="keyword">struct</SPAN> {
+<SPAN CLASS="linenum">0041:</SPAN>     FLOAT       p[4];
+<SPAN CLASS="linenum">0042:</SPAN>     FLOAT       tu, tv;
+<SPAN CLASS="linenum">0043:</SPAN> } TVERTEX;
+<SPAN CLASS="linenum">0044:</SPAN> 
+<SPAN CLASS="linenum">0045:</SPAN> <SPAN CLASS="comment">//-------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0046:</SPAN> <SPAN CLASS="comment">// グローバル変数</SPAN>
+<SPAN CLASS="linenum">0047:</SPAN> <SPAN CLASS="comment">//-------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0048:</SPAN> CMyD3DApplication* g_pApp  = NULL;
+<SPAN CLASS="linenum">0049:</SPAN> HINSTANCE          g_hInst = NULL;
+<SPAN CLASS="linenum">0050:</SPAN> 
+<SPAN CLASS="linenum">0051:</SPAN> 
+<SPAN CLASS="linenum">0052:</SPAN> <SPAN CLASS="comment">//-------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0053:</SPAN> <SPAN CLASS="comment">// Name: WinMain()</SPAN>
+<SPAN CLASS="linenum">0054:</SPAN> <SPAN CLASS="comment">// Desc: メイン関数</SPAN>
+<SPAN CLASS="linenum">0055:</SPAN> <SPAN CLASS="comment">//-------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0056:</SPAN> INT WINAPI WinMain( HINSTANCE hInst, HINSTANCE, LPSTR, INT )
+<SPAN CLASS="linenum">0057:</SPAN> {
+<SPAN CLASS="linenum">0058:</SPAN>     CMyD3DApplication d3dApp;
+<SPAN CLASS="linenum">0059:</SPAN> 
+<SPAN CLASS="linenum">0060:</SPAN>     g_pApp  = &amp;d3dApp;
+<SPAN CLASS="linenum">0061:</SPAN>     g_hInst = hInst;
+<SPAN CLASS="linenum">0062:</SPAN> 
+<SPAN CLASS="linenum">0063:</SPAN>     InitCommonControls();
+<SPAN CLASS="linenum">0064:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( FAILED( d3dApp.Create( hInst ) ) )
+<SPAN CLASS="linenum">0065:</SPAN>         <SPAN CLASS="keyword">return</SPAN> 0;
+<SPAN CLASS="linenum">0066:</SPAN> 
+<SPAN CLASS="linenum">0067:</SPAN>     <SPAN CLASS="keyword">return</SPAN> d3dApp.Run();
+<SPAN CLASS="linenum">0068:</SPAN> }
+<SPAN CLASS="linenum">0069:</SPAN> 
+<SPAN CLASS="linenum">0070:</SPAN> 
+<SPAN CLASS="linenum">0071:</SPAN> 
+<SPAN CLASS="linenum">0072:</SPAN> 
+<SPAN CLASS="linenum">0073:</SPAN> <SPAN CLASS="comment">//-------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0074:</SPAN> <SPAN CLASS="comment">// Name: CMyD3DApplication()</SPAN>
+<SPAN CLASS="linenum">0075:</SPAN> <SPAN CLASS="comment">// Desc: アプリケーションのコンストラクタ</SPAN>
+<SPAN CLASS="linenum">0076:</SPAN> <SPAN CLASS="comment">//-------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0077:</SPAN> CMyD3DApplication::CMyD3DApplication()
+<SPAN CLASS="linenum">0078:</SPAN> {
+<SPAN CLASS="linenum">0079:</SPAN>     DWORD i, j;
+<SPAN CLASS="linenum">0080:</SPAN> 
+<SPAN CLASS="linenum">0081:</SPAN>     m_pMesh                     = <SPAN CLASS="keyword">new</SPAN> CD3DMesh();
+<SPAN CLASS="linenum">0082:</SPAN>     m_pMeshBg                   = <SPAN CLASS="keyword">new</SPAN> CD3DMesh();
+<SPAN CLASS="linenum">0083:</SPAN> 
+<SPAN CLASS="linenum">0084:</SPAN>     m_pMapZ                     = NULL;
+<SPAN CLASS="linenum">0085:</SPAN>     m_pOriginalMap              = NULL;
+<SPAN CLASS="linenum">0086:</SPAN>     m_pOriginalMapSurf          = NULL;
+<SPAN CLASS="linenum">0087:</SPAN>     m_pFinalMap                 = NULL;
+<SPAN CLASS="linenum">0088:</SPAN>     m_pFinalMapSurf             = NULL;
+<SPAN CLASS="linenum">0089:</SPAN>     m_pPostMap                  = NULL;
+<SPAN CLASS="linenum">0090:</SPAN>     m_pPostMapSurf              = NULL;
+<SPAN CLASS="linenum">0091:</SPAN>     m_pAsciiMap                 = NULL;
+<SPAN CLASS="linenum">0092:</SPAN>     m_pAsciiCoeffMap            = NULL;
+<SPAN CLASS="linenum">0093:</SPAN> 
+<SPAN CLASS="linenum">0094:</SPAN>     <SPAN CLASS="keyword">for</SPAN>( i=0;i&lt;2;i++ )
+<SPAN CLASS="linenum">0095:</SPAN>     {
+<SPAN CLASS="linenum">0096:</SPAN>         m_pColorMap[i]          = NULL;
+<SPAN CLASS="linenum">0097:</SPAN>         m_pColorMapSurf[i]      = NULL;
+<SPAN CLASS="linenum">0098:</SPAN>     }
+<SPAN CLASS="linenum">0099:</SPAN>     <SPAN CLASS="keyword">for</SPAN>( i=0;i&lt;2;i++ )
+<SPAN CLASS="linenum">0100:</SPAN>     <SPAN CLASS="keyword">for</SPAN>( j=0;j&lt;4;j++ )
+<SPAN CLASS="linenum">0101:</SPAN>     {
+<SPAN CLASS="linenum">0102:</SPAN>         m_pCoeffMap[i][j]       = NULL;
+<SPAN CLASS="linenum">0103:</SPAN>         m_pCoeffMapSurf[i][j]       = NULL;
+<SPAN CLASS="linenum">0104:</SPAN>     }
+<SPAN CLASS="linenum">0105:</SPAN>     <SPAN CLASS="keyword">for</SPAN>( j=0;j&lt;4;j++ )
+<SPAN CLASS="linenum">0106:</SPAN>     {
+<SPAN CLASS="linenum">0107:</SPAN>         m_pWaveletMap[j]        = NULL;
+<SPAN CLASS="linenum">0108:</SPAN>     }
+<SPAN CLASS="linenum">0109:</SPAN>     <SPAN CLASS="keyword">for</SPAN>( i=0;i&lt;13;i++ )
+<SPAN CLASS="linenum">0110:</SPAN>     {
+<SPAN CLASS="linenum">0111:</SPAN>         m_pDiffMap[i]           = NULL;
+<SPAN CLASS="linenum">0112:</SPAN>         m_pDiffMapSurf[i]       = NULL;
+<SPAN CLASS="linenum">0113:</SPAN>     }
+<SPAN CLASS="linenum">0114:</SPAN>     m_pIndex0Map            = NULL;
+<SPAN CLASS="linenum">0115:</SPAN>     m_pValue0Map            = NULL;
+<SPAN CLASS="linenum">0116:</SPAN>     m_pIndex0MapSurf        = NULL;
+<SPAN CLASS="linenum">0117:</SPAN>     m_pValue0MapSurf        = NULL;
+<SPAN CLASS="linenum">0118:</SPAN>     m_pIndex1Map            = NULL;
+<SPAN CLASS="linenum">0119:</SPAN>     m_pIndex1MapSurf        = NULL;
+<SPAN CLASS="linenum">0120:</SPAN> 
+<SPAN CLASS="linenum">0121:</SPAN> 
+<SPAN CLASS="linenum">0122:</SPAN>     m_pEffect                   = NULL;
+<SPAN CLASS="linenum">0123:</SPAN>     m_hTechnique                = NULL;
+<SPAN CLASS="linenum">0124:</SPAN>     m_htSrcMap                  = NULL;
+<SPAN CLASS="linenum">0125:</SPAN> 
+<SPAN CLASS="linenum">0126:</SPAN>     m_fWorldRotX                = -0.195;
+<SPAN CLASS="linenum">0127:</SPAN>     m_fWorldRotY                = 3.14159265f;
+<SPAN CLASS="linenum">0128:</SPAN>     m_fViewZoom                 = 7.0f;
+<SPAN CLASS="linenum">0129:</SPAN> 
+<SPAN CLASS="linenum">0130:</SPAN>     m_dwCreationWidth           = 512;
+<SPAN CLASS="linenum">0131:</SPAN>     m_dwCreationHeight          = 512;
+<SPAN CLASS="linenum">0132:</SPAN>     m_strWindowTitle            = TEXT( "<SPAN CLASS="string">main</SPAN>" );
+<SPAN CLASS="linenum">0133:</SPAN>     m_d3dEnumeration.AppUsesDepthBuffer   = TRUE;
+<SPAN CLASS="linenum">0134:</SPAN>     m_bStartFullscreen          = <SPAN CLASS="keyword">false</SPAN>;
+<SPAN CLASS="linenum">0135:</SPAN>     m_bShowCursorWhenFullscreen = <SPAN CLASS="keyword">false</SPAN>;
+<SPAN CLASS="linenum">0136:</SPAN> 
+<SPAN CLASS="linenum">0137:</SPAN>     m_pFont                     = <SPAN CLASS="keyword">new</SPAN> CD3DFont( _T("<SPAN CLASS="string">Arial</SPAN>"), 12, D3DFONT_BOLD );
+<SPAN CLASS="linenum">0138:</SPAN>     m_bLoadingApp               = TRUE;
+<SPAN CLASS="linenum">0139:</SPAN> 
+<SPAN CLASS="linenum">0140:</SPAN>     ZeroMemory( &amp;m_UserInput, <SPAN CLASS="keyword">sizeof</SPAN>(m_UserInput) );
+<SPAN CLASS="linenum">0141:</SPAN> }
+<SPAN CLASS="linenum">0142:</SPAN> 
+<SPAN CLASS="linenum">0143:</SPAN> 
+<SPAN CLASS="linenum">0144:</SPAN> 
+<SPAN CLASS="linenum">0145:</SPAN> 
+<SPAN CLASS="linenum">0146:</SPAN> <SPAN CLASS="comment">//-------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0147:</SPAN> <SPAN CLASS="comment">// Name: ~CMyD3DApplication()</SPAN>
+<SPAN CLASS="linenum">0148:</SPAN> <SPAN CLASS="comment">// Desc: デストラクタ</SPAN>
+<SPAN CLASS="linenum">0149:</SPAN> <SPAN CLASS="comment">//-------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0150:</SPAN> CMyD3DApplication::~CMyD3DApplication()
+<SPAN CLASS="linenum">0151:</SPAN> {
+<SPAN CLASS="linenum">0152:</SPAN> }
+<SPAN CLASS="linenum">0153:</SPAN> 
+<SPAN CLASS="linenum">0154:</SPAN> 
+<SPAN CLASS="linenum">0155:</SPAN> 
+<SPAN CLASS="linenum">0156:</SPAN> 
+<SPAN CLASS="linenum">0157:</SPAN> <SPAN CLASS="comment">//-------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0158:</SPAN> <SPAN CLASS="comment">// Name: OneTimeSceneInit()</SPAN>
+<SPAN CLASS="linenum">0159:</SPAN> <SPAN CLASS="comment">// Desc: 一度だけ行う初期化</SPAN>
+<SPAN CLASS="linenum">0160:</SPAN> <SPAN CLASS="comment">//      ウィンドウの初期化やIDirect3D9の初期化は終わってます。</SPAN>
+<SPAN CLASS="linenum">0161:</SPAN> <SPAN CLASS="comment">//      ただ、LPDIRECT3DDEVICE9 の初期化は終わっていません。</SPAN>
+<SPAN CLASS="linenum">0162:</SPAN> <SPAN CLASS="comment">//-------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0163:</SPAN> HRESULT CMyD3DApplication::OneTimeSceneInit()
+<SPAN CLASS="linenum">0164:</SPAN> {
+<SPAN CLASS="linenum">0165:</SPAN>     <SPAN CLASS="comment">// ローディングメッセージを表示する</SPAN>
+<SPAN CLASS="linenum">0166:</SPAN>     SendMessage( m_hWnd, WM_PAINT, 0, 0 );
+<SPAN CLASS="linenum">0167:</SPAN> 
+<SPAN CLASS="linenum">0168:</SPAN>     m_bLoadingApp = FALSE;
+<SPAN CLASS="linenum">0169:</SPAN> 
+<SPAN CLASS="linenum">0170:</SPAN>     <SPAN CLASS="keyword">return</SPAN> S_OK;
+<SPAN CLASS="linenum">0171:</SPAN> }
+<SPAN CLASS="linenum">0172:</SPAN> 
+<SPAN CLASS="linenum">0173:</SPAN> 
+<SPAN CLASS="linenum">0174:</SPAN> 
+<SPAN CLASS="linenum">0175:</SPAN> 
+<SPAN CLASS="linenum">0176:</SPAN> <SPAN CLASS="comment">//-------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0177:</SPAN> <SPAN CLASS="comment">// Name: ConfirmDevice()</SPAN>
+<SPAN CLASS="linenum">0178:</SPAN> <SPAN CLASS="comment">// Desc: 初期化の時に呼ばれます。必要な能力をチェックします。</SPAN>
+<SPAN CLASS="linenum">0179:</SPAN> <SPAN CLASS="comment">//-------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0180:</SPAN> HRESULT CMyD3DApplication::ConfirmDevice( D3DCAPS9* pCaps,
+<SPAN CLASS="linenum">0181:</SPAN>                      DWORD dwBehavior,    D3DFORMAT Format )
+<SPAN CLASS="linenum">0182:</SPAN> {
+<SPAN CLASS="linenum">0183:</SPAN>     UNREFERENCED_PARAMETER( Format );
+<SPAN CLASS="linenum">0184:</SPAN>     UNREFERENCED_PARAMETER( dwBehavior );
+<SPAN CLASS="linenum">0185:</SPAN>     UNREFERENCED_PARAMETER( pCaps );
+<SPAN CLASS="linenum">0186:</SPAN>     
+<SPAN CLASS="linenum">0187:</SPAN> 
+<SPAN CLASS="linenum">0188:</SPAN>     <SPAN CLASS="comment">// ピクセルシェーダバージョンチェック</SPAN>
+<SPAN CLASS="linenum">0189:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( pCaps-&gt;PixelShaderVersion &lt; D3DPS_VERSION(2,0) )
+<SPAN CLASS="linenum">0190:</SPAN>         <SPAN CLASS="keyword">return</SPAN> E_FAIL;
+<SPAN CLASS="linenum">0191:</SPAN> 
+<SPAN CLASS="linenum">0192:</SPAN>     <SPAN CLASS="comment">// 頂点シェーダバージョンが上位かソフトウェア頂点処理</SPAN>
+<SPAN CLASS="linenum">0193:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( pCaps-&gt;VertexShaderVersion &lt; D3DVS_VERSION(1,1)
+<SPAN CLASS="linenum">0194:</SPAN>     &amp;&amp;  0==(dwBehavior &amp; D3DCREATE_SOFTWARE_VERTEXPROCESSING) )
+<SPAN CLASS="linenum">0195:</SPAN>             <SPAN CLASS="keyword">return</SPAN> E_FAIL;
+<SPAN CLASS="linenum">0196:</SPAN> 
+<SPAN CLASS="linenum">0197:</SPAN>     <SPAN CLASS="keyword">return</SPAN> S_OK;
+<SPAN CLASS="linenum">0198:</SPAN> }
+<SPAN CLASS="linenum">0199:</SPAN> 
+<SPAN CLASS="linenum">0200:</SPAN> <SPAN CLASS="comment">// ----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0201:</SPAN> <SPAN CLASS="comment">// テクスチャーを作成</SPAN>
+<SPAN CLASS="linenum">0202:</SPAN> <SPAN CLASS="comment">// ----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0203:</SPAN> <SPAN CLASS="keyword">float</SPAN> GetHaarWavelet( <SPAN CLASS="keyword">int</SPAN> n, <SPAN CLASS="keyword">int</SPAN> m, <SPAN CLASS="keyword">float</SPAN> x, <SPAN CLASS="keyword">float</SPAN> y )
+<SPAN CLASS="linenum">0204:</SPAN> {
+<SPAN CLASS="linenum">0205:</SPAN>     <SPAN CLASS="keyword">switch</SPAN>(n)
+<SPAN CLASS="linenum">0206:</SPAN>     {
+<SPAN CLASS="linenum">0207:</SPAN>     <SPAN CLASS="keyword">case</SPAN> 0:
+<SPAN CLASS="linenum">0208:</SPAN>         <SPAN CLASS="keyword">return</SPAN> 1;
+<SPAN CLASS="linenum">0209:</SPAN>         <SPAN CLASS="keyword">break</SPAN>;
+<SPAN CLASS="linenum">0210:</SPAN>     <SPAN CLASS="keyword">case</SPAN> 1:
+<SPAN CLASS="linenum">0211:</SPAN>         <SPAN CLASS="keyword">switch</SPAN>(m)
+<SPAN CLASS="linenum">0212:</SPAN>         {
+<SPAN CLASS="linenum">0213:</SPAN>         <SPAN CLASS="keyword">case</SPAN> 0: <SPAN CLASS="keyword">return</SPAN> (y&lt;0.5) ? -1 : 1;
+<SPAN CLASS="linenum">0214:</SPAN>         <SPAN CLASS="keyword">case</SPAN> 1: <SPAN CLASS="keyword">return</SPAN> (x&lt;0.5) ? -1 : 1;
+<SPAN CLASS="linenum">0215:</SPAN>         <SPAN CLASS="keyword">case</SPAN> 2: <SPAN CLASS="keyword">return</SPAN> ((x&lt;0.5)^(y&lt;0.5)) ? -1 : 1;
+<SPAN CLASS="linenum">0216:</SPAN>         }
+<SPAN CLASS="linenum">0217:</SPAN>         <SPAN CLASS="keyword">break</SPAN>;
+<SPAN CLASS="linenum">0218:</SPAN>     <SPAN CLASS="keyword">case</SPAN> 2:
+<SPAN CLASS="linenum">0219:</SPAN>         <SPAN CLASS="keyword">if</SPAN>(1==((m/3)&amp;1)) x -= 0.5f;
+<SPAN CLASS="linenum">0220:</SPAN>         <SPAN CLASS="keyword">if</SPAN>(1==((m/3)/2)) y -= 0.5f;
+<SPAN CLASS="linenum">0221:</SPAN> 
+<SPAN CLASS="linenum">0222:</SPAN>         <SPAN CLASS="keyword">if</SPAN>( 0.0&lt;=x &amp;&amp; x&lt;0.5 &amp;&amp; 0.0&lt;=y &amp;&amp; y&lt;0.5 )
+<SPAN CLASS="linenum">0223:</SPAN>         {
+<SPAN CLASS="linenum">0224:</SPAN>             <SPAN CLASS="keyword">switch</SPAN>(m%3)
+<SPAN CLASS="linenum">0225:</SPAN>             {
+<SPAN CLASS="linenum">0226:</SPAN>             <SPAN CLASS="keyword">case</SPAN> 0: <SPAN CLASS="keyword">return</SPAN> (x&lt;0.25) ? -1 : 1;
+<SPAN CLASS="linenum">0227:</SPAN>             <SPAN CLASS="keyword">case</SPAN> 1: <SPAN CLASS="keyword">return</SPAN> (y&lt;0.25) ? -1 : 1;
+<SPAN CLASS="linenum">0228:</SPAN>             <SPAN CLASS="keyword">case</SPAN> 2: <SPAN CLASS="keyword">return</SPAN> ((x&lt;0.25)^(y&lt;0.25)) ? -1 : 1;
+<SPAN CLASS="linenum">0229:</SPAN>             }
+<SPAN CLASS="linenum">0230:</SPAN>             <SPAN CLASS="keyword">break</SPAN>;
+<SPAN CLASS="linenum">0231:</SPAN>         }
+<SPAN CLASS="linenum">0232:</SPAN>     }
+<SPAN CLASS="linenum">0233:</SPAN> 
+<SPAN CLASS="linenum">0234:</SPAN>     <SPAN CLASS="keyword">return</SPAN> 0;
+<SPAN CLASS="linenum">0235:</SPAN> }
+<SPAN CLASS="linenum">0236:</SPAN> 
+<SPAN CLASS="linenum">0237:</SPAN> 
+<SPAN CLASS="linenum">0238:</SPAN> <SPAN CLASS="comment">// ----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0239:</SPAN> <SPAN CLASS="comment">// テクスチャーを作成</SPAN>
+<SPAN CLASS="linenum">0240:</SPAN> <SPAN CLASS="comment">// ----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0241:</SPAN> VOID WINAPI FillTextureHaarWavelet(D3DXVECTOR4* pOut, CONST D3DXVECTOR2 *pTexCoord, CONST D3DXVECTOR2 *pTexelSize, LPVOID pData)
+<SPAN CLASS="linenum">0242:</SPAN> {
+<SPAN CLASS="linenum">0243:</SPAN>     <SPAN CLASS="keyword">float</SPAN> o[4] = {0.0, 0.0, 0.0, 0.0};
+<SPAN CLASS="linenum">0244:</SPAN>     <SPAN CLASS="keyword">int</SPAN> idx = (<SPAN CLASS="keyword">int</SPAN>)pData;
+<SPAN CLASS="linenum">0245:</SPAN> 
+<SPAN CLASS="linenum">0246:</SPAN>     <SPAN CLASS="keyword">switch</SPAN>(idx)
+<SPAN CLASS="linenum">0247:</SPAN>     {
+<SPAN CLASS="linenum">0248:</SPAN>     <SPAN CLASS="keyword">case</SPAN> 0:
+<SPAN CLASS="linenum">0249:</SPAN>         o[0] = GetHaarWavelet( 1, 0, pTexCoord-&gt;x, pTexCoord-&gt;y );
+<SPAN CLASS="linenum">0250:</SPAN>         o[1] = GetHaarWavelet( 1, 1, pTexCoord-&gt;x, pTexCoord-&gt;y );
+<SPAN CLASS="linenum">0251:</SPAN>         o[2] = GetHaarWavelet( 1, 2, pTexCoord-&gt;x, pTexCoord-&gt;y );
+<SPAN CLASS="linenum">0252:</SPAN>         o[3] = GetHaarWavelet( 0, 0, pTexCoord-&gt;x, pTexCoord-&gt;y );
+<SPAN CLASS="linenum">0253:</SPAN>         <SPAN CLASS="keyword">break</SPAN>;
+<SPAN CLASS="linenum">0254:</SPAN>     <SPAN CLASS="keyword">case</SPAN> 1:
+<SPAN CLASS="linenum">0255:</SPAN>         o[0] = GetHaarWavelet( 2, 0, pTexCoord-&gt;x, pTexCoord-&gt;y );
+<SPAN CLASS="linenum">0256:</SPAN>         o[1] = GetHaarWavelet( 2, 1, pTexCoord-&gt;x, pTexCoord-&gt;y );
+<SPAN CLASS="linenum">0257:</SPAN>         o[2] = GetHaarWavelet( 2, 2, pTexCoord-&gt;x, pTexCoord-&gt;y );
+<SPAN CLASS="linenum">0258:</SPAN>         o[3] = GetHaarWavelet( 2, 9, pTexCoord-&gt;x, pTexCoord-&gt;y );
+<SPAN CLASS="linenum">0259:</SPAN>         <SPAN CLASS="keyword">break</SPAN>;
+<SPAN CLASS="linenum">0260:</SPAN>     <SPAN CLASS="keyword">case</SPAN> 2:
+<SPAN CLASS="linenum">0261:</SPAN>         o[0] = GetHaarWavelet( 2, 3, pTexCoord-&gt;x, pTexCoord-&gt;y );
+<SPAN CLASS="linenum">0262:</SPAN>         o[1] = GetHaarWavelet( 2, 4, pTexCoord-&gt;x, pTexCoord-&gt;y );
+<SPAN CLASS="linenum">0263:</SPAN>         o[2] = GetHaarWavelet( 2, 5, pTexCoord-&gt;x, pTexCoord-&gt;y );
+<SPAN CLASS="linenum">0264:</SPAN>         o[3] = GetHaarWavelet( 2,10, pTexCoord-&gt;x, pTexCoord-&gt;y );
+<SPAN CLASS="linenum">0265:</SPAN>         <SPAN CLASS="keyword">break</SPAN>;
+<SPAN CLASS="linenum">0266:</SPAN>     <SPAN CLASS="keyword">case</SPAN> 3:
+<SPAN CLASS="linenum">0267:</SPAN>         o[0] = GetHaarWavelet( 2, 6, pTexCoord-&gt;x, pTexCoord-&gt;y );
+<SPAN CLASS="linenum">0268:</SPAN>         o[1] = GetHaarWavelet( 2, 7, pTexCoord-&gt;x, pTexCoord-&gt;y );
+<SPAN CLASS="linenum">0269:</SPAN>         o[2] = GetHaarWavelet( 2, 8, pTexCoord-&gt;x, pTexCoord-&gt;y );
+<SPAN CLASS="linenum">0270:</SPAN>         o[3] = GetHaarWavelet( 2,11, pTexCoord-&gt;x, pTexCoord-&gt;y );
+<SPAN CLASS="linenum">0271:</SPAN>         <SPAN CLASS="keyword">break</SPAN>;
+<SPAN CLASS="linenum">0272:</SPAN>     }
+<SPAN CLASS="linenum">0273:</SPAN>     pOut-&gt;x = 0.5f * o[0] + 0.5f;
+<SPAN CLASS="linenum">0274:</SPAN>     pOut-&gt;y = 0.5f * o[1] + 0.5f;
+<SPAN CLASS="linenum">0275:</SPAN>     pOut-&gt;z = 0.5f * o[2] + 0.5f;
+<SPAN CLASS="linenum">0276:</SPAN>     pOut-&gt;w = 0.5f * o[3] + 0.5f;
+<SPAN CLASS="linenum">0277:</SPAN> }
+<SPAN CLASS="linenum">0278:</SPAN> 
+<SPAN CLASS="linenum">0279:</SPAN> <SPAN CLASS="comment">// ----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0280:</SPAN> <SPAN CLASS="comment">// テクスチャーを作成</SPAN>
+<SPAN CLASS="linenum">0281:</SPAN> <SPAN CLASS="comment">// ----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0282:</SPAN> VOID WINAPI FillTextureAsciiCoeff(D3DXVECTOR4* pOut, CONST D3DXVECTOR2 *pTexCoord, CONST D3DXVECTOR2 *pTexelSize, LPVOID pData)
+<SPAN CLASS="linenum">0283:</SPAN> {
+<SPAN CLASS="linenum">0284:</SPAN>     CMyD3DApplication *pApp = (CMyD3DApplication*)pData;
+<SPAN CLASS="linenum">0285:</SPAN>     DWORD i, j;
+<SPAN CLASS="linenum">0286:</SPAN>     <SPAN CLASS="keyword">int</SPAN> ascii = 52.0 * pTexCoord-&gt;x;
+<SPAN CLASS="linenum">0287:</SPAN>     <SPAN CLASS="keyword">int</SPAN> idx   =  4.0 * pTexCoord-&gt;y;
+<SPAN CLASS="linenum">0288:</SPAN>     <SPAN CLASS="keyword">int</SPAN> n[4];
+<SPAN CLASS="linenum">0289:</SPAN>     <SPAN CLASS="keyword">int</SPAN> m[4];
+<SPAN CLASS="linenum">0290:</SPAN>     <SPAN CLASS="keyword">float</SPAN> o[4] = {0,0,0,0};
+<SPAN CLASS="linenum">0291:</SPAN> 
+<SPAN CLASS="linenum">0292:</SPAN>     <SPAN CLASS="keyword">switch</SPAN>(idx)
+<SPAN CLASS="linenum">0293:</SPAN>     {
+<SPAN CLASS="linenum">0294:</SPAN>     <SPAN CLASS="keyword">case</SPAN> 0:
+<SPAN CLASS="linenum">0295:</SPAN>         n[0] = 1; m[0] = 0;
+<SPAN CLASS="linenum">0296:</SPAN>         n[1] = 1; m[1] = 1;
+<SPAN CLASS="linenum">0297:</SPAN>         n[2] = 1; m[2] = 2;
+<SPAN CLASS="linenum">0298:</SPAN>         n[3] = 0; m[3] = 0;
+<SPAN CLASS="linenum">0299:</SPAN>         <SPAN CLASS="keyword">break</SPAN>;
+<SPAN CLASS="linenum">0300:</SPAN>     <SPAN CLASS="keyword">case</SPAN> 1:
+<SPAN CLASS="linenum">0301:</SPAN>         n[0] = 2; m[0] = 0;
+<SPAN CLASS="linenum">0302:</SPAN>         n[1] = 2; m[1] = 1;
+<SPAN CLASS="linenum">0303:</SPAN>         n[2] = 2; m[2] = 2;
+<SPAN CLASS="linenum">0304:</SPAN>         n[3] = 2; m[3] = 9;
+<SPAN CLASS="linenum">0305:</SPAN>         <SPAN CLASS="keyword">break</SPAN>;
+<SPAN CLASS="linenum">0306:</SPAN>     <SPAN CLASS="keyword">case</SPAN> 2:
+<SPAN CLASS="linenum">0307:</SPAN>         n[0] = 2; m[0] = 3;
+<SPAN CLASS="linenum">0308:</SPAN>         n[1] = 2; m[1] = 4;
+<SPAN CLASS="linenum">0309:</SPAN>         n[2] = 2; m[2] = 5;
+<SPAN CLASS="linenum">0310:</SPAN>         n[3] = 2; m[3] =10;
+<SPAN CLASS="linenum">0311:</SPAN>         <SPAN CLASS="keyword">break</SPAN>;
+<SPAN CLASS="linenum">0312:</SPAN>     <SPAN CLASS="keyword">case</SPAN> 3:
+<SPAN CLASS="linenum">0313:</SPAN>         n[0] = 2; m[0] = 6;
+<SPAN CLASS="linenum">0314:</SPAN>         n[1] = 2; m[1] = 7;
+<SPAN CLASS="linenum">0315:</SPAN>         n[2] = 2; m[2] = 8;
+<SPAN CLASS="linenum">0316:</SPAN>         n[3] = 2; m[3] =11;
+<SPAN CLASS="linenum">0317:</SPAN>         <SPAN CLASS="keyword">break</SPAN>;
+<SPAN CLASS="linenum">0318:</SPAN>     }
+<SPAN CLASS="linenum">0319:</SPAN>     <SPAN CLASS="keyword">for</SPAN>( i=0;i&lt;24;i++ )
+<SPAN CLASS="linenum">0320:</SPAN>     <SPAN CLASS="keyword">for</SPAN>( j=0;j&lt;24;j++ )
+<SPAN CLASS="linenum">0321:</SPAN>     {
+<SPAN CLASS="linenum">0322:</SPAN>         <SPAN CLASS="keyword">float</SPAN> x = (1.0f/24.0f) * (<SPAN CLASS="keyword">float</SPAN>)i;
+<SPAN CLASS="linenum">0323:</SPAN>         <SPAN CLASS="keyword">float</SPAN> y = (1.0f/24.0f) * (<SPAN CLASS="keyword">float</SPAN>)j;
+<SPAN CLASS="linenum">0324:</SPAN>         <SPAN CLASS="keyword">float</SPAN> tex = (2.0f/255.0f) * (<SPAN CLASS="keyword">float</SPAN>) pApp-&gt;m_iTex[ascii][j][i] - 1.0f;
+<SPAN CLASS="linenum">0325:</SPAN> 
+<SPAN CLASS="linenum">0326:</SPAN>         o[0] += GetHaarWavelet( n[0], m[0], x, y ) * tex;
+<SPAN CLASS="linenum">0327:</SPAN>         o[1] += GetHaarWavelet( n[1], m[1], x, y ) * tex;
+<SPAN CLASS="linenum">0328:</SPAN>         o[2] += GetHaarWavelet( n[2], m[2], x, y ) * tex;
+<SPAN CLASS="linenum">0329:</SPAN>         o[3] += GetHaarWavelet( n[3], m[3], x, y ) * tex;
+<SPAN CLASS="linenum">0330:</SPAN>     }
+<SPAN CLASS="linenum">0331:</SPAN>     o[0] /= (24.0*24.0);
+<SPAN CLASS="linenum">0332:</SPAN>     o[1] /= (24.0*24.0);
+<SPAN CLASS="linenum">0333:</SPAN>     o[2] /= (24.0*24.0);
+<SPAN CLASS="linenum">0334:</SPAN>     o[3] /= (24.0*24.0);
+<SPAN CLASS="linenum">0335:</SPAN> 
+<SPAN CLASS="linenum">0336:</SPAN>     pOut-&gt;x = 0.5f * o[0] + 0.5f;
+<SPAN CLASS="linenum">0337:</SPAN>     pOut-&gt;y = 0.5f * o[1] + 0.5f;
+<SPAN CLASS="linenum">0338:</SPAN>     pOut-&gt;z = 0.5f * o[2] + 0.5f;
+<SPAN CLASS="linenum">0339:</SPAN>     pOut-&gt;w = 0.5f * o[3] + 0.5f;
+<SPAN CLASS="linenum">0340:</SPAN> }
+<SPAN CLASS="linenum">0341:</SPAN> 
+<SPAN CLASS="linenum">0342:</SPAN> 
+<SPAN CLASS="linenum">0343:</SPAN> 
+<SPAN CLASS="linenum">0344:</SPAN> 
+<SPAN CLASS="linenum">0345:</SPAN> <SPAN CLASS="keyword">void</SPAN> CMyD3DApplication::CreateTextureArray( LPDIRECT3DTEXTURE9 pTex )
+<SPAN CLASS="linenum">0346:</SPAN> {
+<SPAN CLASS="linenum">0347:</SPAN>     D3DLOCKED_RECT d3dlr;
+<SPAN CLASS="linenum">0348:</SPAN> 
+<SPAN CLASS="linenum">0349:</SPAN>     pTex-&gt;LockRect(0,&amp;d3dlr,NULL,D3DLOCK_READONLY); <SPAN CLASS="comment">//サーフェイス上の矩形をロック</SPAN>
+<SPAN CLASS="linenum">0350:</SPAN>     
+<SPAN CLASS="linenum">0351:</SPAN>     <SPAN CLASS="keyword">unsigned</SPAN> <SPAN CLASS="keyword">char</SPAN> *p = (<SPAN CLASS="keyword">unsigned</SPAN> <SPAN CLASS="keyword">char</SPAN> *)d3dlr.pBits;
+<SPAN CLASS="linenum">0352:</SPAN>     <SPAN CLASS="keyword">for</SPAN>( <SPAN CLASS="keyword">int</SPAN> y = 0; y &lt; ASCII_HEIGHT; y++ )
+<SPAN CLASS="linenum">0353:</SPAN>     {
+<SPAN CLASS="linenum">0354:</SPAN>         <SPAN CLASS="keyword">for</SPAN>( <SPAN CLASS="keyword">int</SPAN> x = 0; x &lt; ASCII_MAX * ASCII_WIDTH; x++ )
+<SPAN CLASS="linenum">0355:</SPAN>         {
+<SPAN CLASS="linenum">0356:</SPAN>             <SPAN CLASS="keyword">int</SPAN> idx = x/ASCII_WIDTH;
+<SPAN CLASS="linenum">0357:</SPAN>             m_iTex[idx][y][x%ASCII_WIDTH] = p[ 32 * d3dlr.Pitch * y / ASCII_HEIGHT
+<SPAN CLASS="linenum">0358:</SPAN>                                             + d3dlr.Pitch * x / (ASCII_MAX * ASCII_WIDTH) ];
+<SPAN CLASS="linenum">0359:</SPAN>         }
+<SPAN CLASS="linenum">0360:</SPAN>     }
+<SPAN CLASS="linenum">0361:</SPAN> 
+<SPAN CLASS="linenum">0362:</SPAN>     pTex-&gt;UnlockRect(0);
+<SPAN CLASS="linenum">0363:</SPAN> }
+<SPAN CLASS="linenum">0364:</SPAN> 
+<SPAN CLASS="linenum">0365:</SPAN> 
+<SPAN CLASS="linenum">0366:</SPAN> 
+<SPAN CLASS="linenum">0367:</SPAN> 
+<SPAN CLASS="linenum">0368:</SPAN> <SPAN CLASS="comment">//-------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0369:</SPAN> <SPAN CLASS="comment">// Name: InitDeviceObjects()</SPAN>
+<SPAN CLASS="linenum">0370:</SPAN> <SPAN CLASS="comment">// Desc: デバイスが生成された後の初期化をします。</SPAN>
+<SPAN CLASS="linenum">0371:</SPAN> <SPAN CLASS="comment">//      フレームバッファフォーマットやデバイスの種類が変わった</SPAN>
+<SPAN CLASS="linenum">0372:</SPAN> <SPAN CLASS="comment">//      後に通過します。</SPAN>
+<SPAN CLASS="linenum">0373:</SPAN> <SPAN CLASS="comment">//      ここで確保したメモリはDeleteDeviceObjects()で開放します</SPAN>
+<SPAN CLASS="linenum">0374:</SPAN> <SPAN CLASS="comment">//-------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0375:</SPAN> HRESULT CMyD3DApplication::InitDeviceObjects()
+<SPAN CLASS="linenum">0376:</SPAN> {
+<SPAN CLASS="linenum">0377:</SPAN>     HRESULT hr;
+<SPAN CLASS="linenum">0378:</SPAN> 
+<SPAN CLASS="linenum">0379:</SPAN> <SPAN CLASS="keyword">#ifdef</SPAN> DX9C
+<SPAN CLASS="linenum">0380:</SPAN>     <SPAN CLASS="comment">// UFOの読み込み</SPAN>
+<SPAN CLASS="linenum">0381:</SPAN>     <SPAN CLASS="keyword">if</SPAN>(FAILED(hr=m_pMesh  -&gt;Create( m_pd3dDevice, (LPCWSTR)("<SPAN CLASS="string">t-pot.x</SPAN>"))))
+<SPAN CLASS="linenum">0382:</SPAN>         <SPAN CLASS="keyword">return</SPAN> DXTRACE_ERR( "<SPAN CLASS="string">LoadCar</SPAN>", hr );
+<SPAN CLASS="linenum">0383:</SPAN>     <SPAN CLASS="comment">// 地面の読み込み</SPAN>
+<SPAN CLASS="linenum">0384:</SPAN>     <SPAN CLASS="keyword">if</SPAN>(FAILED(hr=m_pMeshBg-&gt;Create( m_pd3dDevice, (LPCWSTR)("<SPAN CLASS="string">map.x</SPAN>"))))
+<SPAN CLASS="linenum">0385:</SPAN>         <SPAN CLASS="keyword">return</SPAN> DXTRACE_ERR( "<SPAN CLASS="string">Load BG</SPAN>", hr );
+<SPAN CLASS="linenum">0386:</SPAN> <SPAN CLASS="keyword">#else</SPAN> <SPAN CLASS="comment">// DX9C</SPAN>
+<SPAN CLASS="linenum">0387:</SPAN>     <SPAN CLASS="comment">// UFOの読み込み</SPAN>
+<SPAN CLASS="linenum">0388:</SPAN>     <SPAN CLASS="keyword">if</SPAN>(FAILED(hr=m_pMesh  -&gt;Create( m_pd3dDevice, _T("<SPAN CLASS="string">t-pot.x</SPAN>"))))
+<SPAN CLASS="linenum">0389:</SPAN>         <SPAN CLASS="keyword">return</SPAN> DXTRACE_ERR( "<SPAN CLASS="string">LoadCar</SPAN>", hr );
+<SPAN CLASS="linenum">0390:</SPAN>     <SPAN CLASS="comment">// 地面の読み込み</SPAN>
+<SPAN CLASS="linenum">0391:</SPAN>     <SPAN CLASS="keyword">if</SPAN>(FAILED(hr=m_pMeshBg-&gt;Create( m_pd3dDevice, _T("<SPAN CLASS="string">map.x</SPAN>"))))
+<SPAN CLASS="linenum">0392:</SPAN>         <SPAN CLASS="keyword">return</SPAN> DXTRACE_ERR( "<SPAN CLASS="string">Load BG</SPAN>", hr );
+<SPAN CLASS="linenum">0393:</SPAN> <SPAN CLASS="keyword">#endif</SPAN> <SPAN CLASS="comment">// DX9C</SPAN>
+<SPAN CLASS="linenum">0394:</SPAN>     m_pMesh-&gt;UseMeshMaterials(<SPAN CLASS="keyword">false</SPAN>);
+<SPAN CLASS="linenum">0395:</SPAN>     m_pMeshBg-&gt;UseMeshMaterials(<SPAN CLASS="keyword">false</SPAN>);
+<SPAN CLASS="linenum">0396:</SPAN>         
+<SPAN CLASS="linenum">0397:</SPAN>     <SPAN CLASS="comment">// シェーダの読み込み</SPAN>
+<SPAN CLASS="linenum">0398:</SPAN>     LPD3DXBUFFER pErr;
+<SPAN CLASS="linenum">0399:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( FAILED( hr = D3DXCreateEffectFromFile(
+<SPAN CLASS="linenum">0400:</SPAN>                 m_pd3dDevice, "<SPAN CLASS="string">hlsl.fx</SPAN>", NULL, NULL, 
+<SPAN CLASS="linenum">0401:</SPAN>                 D3DXSHADER_DEBUG , NULL, &amp;m_pEffect, &amp;pErr ))){
+<SPAN CLASS="linenum">0402:</SPAN>         MessageBox( NULL, (LPCTSTR)pErr-&gt;GetBufferPointer()
+<SPAN CLASS="linenum">0403:</SPAN>                     , "<SPAN CLASS="string">ERROR</SPAN>", MB_OK);
+<SPAN CLASS="linenum">0404:</SPAN>         <SPAN CLASS="keyword">return</SPAN> DXTRACE_ERR( "<SPAN CLASS="string">CreateEffectFromFile</SPAN>", hr );
+<SPAN CLASS="linenum">0405:</SPAN>     }
+<SPAN CLASS="linenum">0406:</SPAN>     m_hTechnique = m_pEffect-&gt;GetTechniqueByName( "<SPAN CLASS="string">TShader</SPAN>" );
+<SPAN CLASS="linenum">0407:</SPAN>     m_htSrcMap  = m_pEffect-&gt;GetParameterByName( NULL, "<SPAN CLASS="string">SrcMap</SPAN>" );
+<SPAN CLASS="linenum">0408:</SPAN> 
+<SPAN CLASS="linenum">0409:</SPAN>     <SPAN CLASS="comment">// フォント</SPAN>
+<SPAN CLASS="linenum">0410:</SPAN>     m_pFont-&gt;InitDeviceObjects( m_pd3dDevice );
+<SPAN CLASS="linenum">0411:</SPAN>     <SPAN CLASS="keyword">return</SPAN> S_OK;
+<SPAN CLASS="linenum">0412:</SPAN> }
+<SPAN CLASS="linenum">0413:</SPAN> 
+<SPAN CLASS="linenum">0414:</SPAN> <SPAN CLASS="comment">//-------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0415:</SPAN> <SPAN CLASS="comment">// Name: RestoreDeviceObjects()</SPAN>
+<SPAN CLASS="linenum">0416:</SPAN> <SPAN CLASS="comment">// Desc: 画面のサイズが変更された時等に呼ばれます。</SPAN>
+<SPAN CLASS="linenum">0417:</SPAN> <SPAN CLASS="comment">//      確保したメモリはInvalidateDeviceObjects()で開放します。</SPAN>
+<SPAN CLASS="linenum">0418:</SPAN> <SPAN CLASS="comment">//-------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0419:</SPAN> HRESULT CMyD3DApplication::RestoreDeviceObjects()
+<SPAN CLASS="linenum">0420:</SPAN> {
+<SPAN CLASS="linenum">0421:</SPAN>     DWORD i, j;
+<SPAN CLASS="linenum">0422:</SPAN> 
+<SPAN CLASS="linenum">0423:</SPAN>     <SPAN CLASS="comment">// メッシュ</SPAN>
+<SPAN CLASS="linenum">0424:</SPAN>     m_pMesh  -&gt;RestoreDeviceObjects( m_pd3dDevice );
+<SPAN CLASS="linenum">0425:</SPAN>     m_pMeshBg-&gt;RestoreDeviceObjects( m_pd3dDevice );
+<SPAN CLASS="linenum">0426:</SPAN> 
+<SPAN CLASS="linenum">0427:</SPAN>     <SPAN CLASS="comment">// 質感の設定</SPAN>
+<SPAN CLASS="linenum">0428:</SPAN>     D3DMATERIAL9 mtrl;
+<SPAN CLASS="linenum">0429:</SPAN>     D3DUtil_InitMaterial( mtrl, 1.0f, 0.0f, 0.0f );
+<SPAN CLASS="linenum">0430:</SPAN>     m_pd3dDevice-&gt;SetMaterial( &amp;mtrl );
+<SPAN CLASS="linenum">0431:</SPAN> 
+<SPAN CLASS="linenum">0432:</SPAN> 
+<SPAN CLASS="linenum">0433:</SPAN>     <SPAN CLASS="comment">// レンダリング状態の設定</SPAN>
+<SPAN CLASS="linenum">0434:</SPAN>     RS( D3DRS_DITHERENABLE,   FALSE );
+<SPAN CLASS="linenum">0435:</SPAN>     RS( D3DRS_SPECULARENABLE, FALSE );
+<SPAN CLASS="linenum">0436:</SPAN>     RS( D3DRS_ALPHATESTENABLE, FALSE );
+<SPAN CLASS="linenum">0437:</SPAN>     RS( D3DRS_ZENABLE,        TRUE );
+<SPAN CLASS="linenum">0438:</SPAN>     RS( D3DRS_AMBIENT,        0x000F0F0F );
+<SPAN CLASS="linenum">0439:</SPAN>     
+<SPAN CLASS="linenum">0440:</SPAN>     TSS( 0, D3DTSS_COLOROP,   D3DTOP_MODULATE );
+<SPAN CLASS="linenum">0441:</SPAN>     TSS( 0, D3DTSS_COLORARG1, D3DTA_TEXTURE );
+<SPAN CLASS="linenum">0442:</SPAN>     TSS( 0, D3DTSS_COLORARG2, D3DTA_DIFFUSE );
+<SPAN CLASS="linenum">0443:</SPAN>     TSS( 0, D3DTSS_ALPHAOP,   D3DTOP_SELECTARG1 );
+<SPAN CLASS="linenum">0444:</SPAN>     TSS( 0, D3DTSS_ALPHAARG1, D3DTA_DIFFUSE );
+<SPAN CLASS="linenum">0445:</SPAN>     SAMP( 0, D3DSAMP_MINFILTER, D3DTEXF_POINT );
+<SPAN CLASS="linenum">0446:</SPAN>     SAMP( 0, D3DSAMP_MAGFILTER, D3DTEXF_POINT );
+<SPAN CLASS="linenum">0447:</SPAN>     SAMP( 0, D3DSAMP_ADDRESSU, D3DTADDRESS_CLAMP );
+<SPAN CLASS="linenum">0448:</SPAN>     SAMP( 0, D3DSAMP_ADDRESSV, D3DTADDRESS_CLAMP );
+<SPAN CLASS="linenum">0449:</SPAN> 
+<SPAN CLASS="linenum">0450:</SPAN>     <SPAN CLASS="comment">// ワールド行列</SPAN>
+<SPAN CLASS="linenum">0451:</SPAN>     D3DXMATRIX matIdentity;
+<SPAN CLASS="linenum">0452:</SPAN>     D3DXMatrixIdentity( &amp;m_mWorld );
+<SPAN CLASS="linenum">0453:</SPAN> 
+<SPAN CLASS="linenum">0454:</SPAN>     <SPAN CLASS="comment">// ビュー行列</SPAN>
+<SPAN CLASS="linenum">0455:</SPAN>     D3DXVECTOR3 vFromPt   = D3DXVECTOR3( 0.0f, 0.0f, -5.0f );
+<SPAN CLASS="linenum">0456:</SPAN>     D3DXVECTOR3 vLookatPt = D3DXVECTOR3( 0.0f, 0.0f, 0.0f );
+<SPAN CLASS="linenum">0457:</SPAN>     D3DXVECTOR3 vUpVec    = D3DXVECTOR3( 0.0f, 1.0f, 0.0f );
+<SPAN CLASS="linenum">0458:</SPAN>     D3DXMatrixLookAtLH( &amp;m_mView, &amp;vFromPt, &amp;vLookatPt, &amp;vUpVec );
+<SPAN CLASS="linenum">0459:</SPAN> 
+<SPAN CLASS="linenum">0460:</SPAN>     <SPAN CLASS="comment">// 射影行列</SPAN>
+<SPAN CLASS="linenum">0461:</SPAN>     FLOAT fAspect = ((FLOAT)m_d3dsdBackBuffer.Width) / m_d3dsdBackBuffer.Height;
+<SPAN CLASS="linenum">0462:</SPAN>     D3DXMatrixPerspectiveFovLH( &amp;m_mProj, D3DX_PI/4, fAspect, 1.0f, 100.0f );
+<SPAN CLASS="linenum">0463:</SPAN> 
+<SPAN CLASS="linenum">0464:</SPAN>     <SPAN CLASS="comment">// フォント</SPAN>
+<SPAN CLASS="linenum">0465:</SPAN>     m_pFont-&gt;RestoreDeviceObjects();
+<SPAN CLASS="linenum">0466:</SPAN> 
+<SPAN CLASS="linenum">0467:</SPAN>     <SPAN CLASS="comment">// テクスチャ</SPAN>
+<SPAN CLASS="linenum">0468:</SPAN>     D3DXCreateTextureFromFileEx(m_pd3dDevice, "<SPAN CLASS="string">abc.bmp</SPAN>", 0,0,1,
+<SPAN CLASS="linenum">0469:</SPAN>         0, D3DFMT_UNKNOWN, D3DPOOL_MANAGED, D3DX_FILTER_POINT, D3DX_DEFAULT,0, NULL,NULL,
+<SPAN CLASS="linenum">0470:</SPAN>         &amp;m_pAsciiMap);
+<SPAN CLASS="linenum">0471:</SPAN>     CreateTextureArray( m_pAsciiMap );
+<SPAN CLASS="linenum">0472:</SPAN> 
+<SPAN CLASS="linenum">0473:</SPAN>     <SPAN CLASS="keyword">for</SPAN>( i=0;i&lt;4;i++ )
+<SPAN CLASS="linenum">0474:</SPAN>     {
+<SPAN CLASS="linenum">0475:</SPAN>         <SPAN CLASS="keyword">if</SPAN> (FAILED(m_pd3dDevice-&gt;CreateTexture( 4, 4, 1, 
+<SPAN CLASS="linenum">0476:</SPAN>             0, D3DFMT_A8R8G8B8, D3DPOOL_MANAGED, m_pWaveletMap+i, NULL)))
+<SPAN CLASS="linenum">0477:</SPAN>             <SPAN CLASS="keyword">return</SPAN> E_FAIL;
+<SPAN CLASS="linenum">0478:</SPAN>     }
+<SPAN CLASS="linenum">0479:</SPAN> 
+<SPAN CLASS="linenum">0480:</SPAN>     D3DXCreateTexture( m_pd3dDevice, 52, 4, 1, 
+<SPAN CLASS="linenum">0481:</SPAN>             0, D3DFMT_A32B32G32R32F, D3DPOOL_MANAGED, &amp;m_pAsciiCoeffMap);
+<SPAN CLASS="linenum">0482:</SPAN> 
+<SPAN CLASS="linenum">0483:</SPAN>     <SPAN CLASS="comment">// シャドウマップの生成</SPAN>
+<SPAN CLASS="linenum">0484:</SPAN>     <SPAN CLASS="keyword">if</SPAN> (FAILED(m_pd3dDevice-&gt;CreateDepthStencilSurface(MAP_WIDTH, MAP_HEIGHT, 
+<SPAN CLASS="linenum">0485:</SPAN>         D3DFMT_D16, D3DMULTISAMPLE_NONE, 0, TRUE, &amp;m_pMapZ, NULL)))
+<SPAN CLASS="linenum">0486:</SPAN>         <SPAN CLASS="keyword">return</SPAN> E_FAIL;
+<SPAN CLASS="linenum">0487:</SPAN>     <SPAN CLASS="keyword">if</SPAN> (FAILED(m_pd3dDevice-&gt;CreateTexture(MAP_WIDTH, MAP_HEIGHT, 1, 
+<SPAN CLASS="linenum">0488:</SPAN>         D3DUSAGE_RENDERTARGET, D3DFMT_A8R8G8B8, D3DPOOL_DEFAULT, &amp;m_pOriginalMap, NULL)))
+<SPAN CLASS="linenum">0489:</SPAN>         <SPAN CLASS="keyword">return</SPAN> E_FAIL;
+<SPAN CLASS="linenum">0490:</SPAN>     <SPAN CLASS="keyword">if</SPAN> (FAILED(m_pOriginalMap-&gt;GetSurfaceLevel(0, &amp;m_pOriginalMapSurf)))
+<SPAN CLASS="linenum">0491:</SPAN>         <SPAN CLASS="keyword">return</SPAN> E_FAIL;
+<SPAN CLASS="linenum">0492:</SPAN>     <SPAN CLASS="comment">// モノトーン</SPAN>
+<SPAN CLASS="linenum">0493:</SPAN>     <SPAN CLASS="keyword">if</SPAN> (FAILED(m_pd3dDevice-&gt;CreateTexture(
+<SPAN CLASS="linenum">0494:</SPAN>                         COLOR_MAP[0], COLOR_MAP[0], 1,
+<SPAN CLASS="linenum">0495:</SPAN>                         D3DUSAGE_RENDERTARGET, D3DFMT_A8R8G8B8,
+<SPAN CLASS="linenum">0496:</SPAN>                         D3DPOOL_DEFAULT, &amp;m_pPostMap, NULL)))
+<SPAN CLASS="linenum">0497:</SPAN>         <SPAN CLASS="keyword">return</SPAN> E_FAIL;
+<SPAN CLASS="linenum">0498:</SPAN>     <SPAN CLASS="keyword">if</SPAN> (FAILED(m_pPostMap-&gt;GetSurfaceLevel(0, &amp;m_pPostMapSurf)))
+<SPAN CLASS="linenum">0499:</SPAN>         <SPAN CLASS="keyword">return</SPAN> E_FAIL;
+<SPAN CLASS="linenum">0500:</SPAN>     <SPAN CLASS="comment">// 最終画像</SPAN>
+<SPAN CLASS="linenum">0501:</SPAN>     <SPAN CLASS="keyword">if</SPAN> (FAILED(m_pd3dDevice-&gt;CreateTexture(MAP_WIDTH, MAP_HEIGHT, 1, 
+<SPAN CLASS="linenum">0502:</SPAN>         D3DUSAGE_RENDERTARGET, D3DFMT_A8R8G8B8, D3DPOOL_DEFAULT, &amp;m_pFinalMap, NULL)))
+<SPAN CLASS="linenum">0503:</SPAN>         <SPAN CLASS="keyword">return</SPAN> E_FAIL;
+<SPAN CLASS="linenum">0504:</SPAN>     <SPAN CLASS="keyword">if</SPAN> (FAILED(m_pFinalMap-&gt;GetSurfaceLevel(0, &amp;m_pFinalMapSurf)))
+<SPAN CLASS="linenum">0505:</SPAN>         <SPAN CLASS="keyword">return</SPAN> E_FAIL;
+<SPAN CLASS="linenum">0506:</SPAN> 
+<SPAN CLASS="linenum">0507:</SPAN>     <SPAN CLASS="comment">// テクスチャ</SPAN>
+<SPAN CLASS="linenum">0508:</SPAN>     <SPAN CLASS="keyword">for</SPAN>( i=0;i&lt;2;i++ )
+<SPAN CLASS="linenum">0509:</SPAN>     {
+<SPAN CLASS="linenum">0510:</SPAN>         <SPAN CLASS="keyword">if</SPAN> (FAILED(m_pd3dDevice-&gt;CreateTexture( COLOR_MAP[i], COLOR_MAP[i], 1, 
+<SPAN CLASS="linenum">0511:</SPAN>             D3DUSAGE_RENDERTARGET, D3DFMT_A8R8G8B8, D3DPOOL_DEFAULT, &amp;m_pColorMap[i], NULL)))
+<SPAN CLASS="linenum">0512:</SPAN>             <SPAN CLASS="keyword">return</SPAN> E_FAIL;
+<SPAN CLASS="linenum">0513:</SPAN>         <SPAN CLASS="keyword">if</SPAN> (FAILED(m_pColorMap[i]-&gt;GetSurfaceLevel(0, &amp;m_pColorMapSurf[i])))
+<SPAN CLASS="linenum">0514:</SPAN>             <SPAN CLASS="keyword">return</SPAN> E_FAIL;
+<SPAN CLASS="linenum">0515:</SPAN>     }
+<SPAN CLASS="linenum">0516:</SPAN> 
+<SPAN CLASS="linenum">0517:</SPAN>     <SPAN CLASS="keyword">for</SPAN>( i=0;i&lt;2;i++ )
+<SPAN CLASS="linenum">0518:</SPAN>     <SPAN CLASS="keyword">for</SPAN>( j=0;j&lt;4;j++ )
+<SPAN CLASS="linenum">0519:</SPAN>     {
+<SPAN CLASS="linenum">0520:</SPAN>         <SPAN CLASS="keyword">if</SPAN> (FAILED(m_pd3dDevice-&gt;CreateTexture( COLOR_MAP[i], COLOR_MAP[i], 1, 
+<SPAN CLASS="linenum">0521:</SPAN>             D3DUSAGE_RENDERTARGET, D3DFMT_A8R8G8B8, D3DPOOL_DEFAULT, &amp;m_pCoeffMap[i][j], NULL)))
+<SPAN CLASS="linenum">0522:</SPAN>             <SPAN CLASS="keyword">return</SPAN> E_FAIL;
+<SPAN CLASS="linenum">0523:</SPAN>         <SPAN CLASS="keyword">if</SPAN> (FAILED(m_pCoeffMap[i][j]-&gt;GetSurfaceLevel(0, &amp;m_pCoeffMapSurf[i][j])))
+<SPAN CLASS="linenum">0524:</SPAN>             <SPAN CLASS="keyword">return</SPAN> E_FAIL;
+<SPAN CLASS="linenum">0525:</SPAN>     }
+<SPAN CLASS="linenum">0526:</SPAN> 
+<SPAN CLASS="linenum">0527:</SPAN>     <SPAN CLASS="keyword">for</SPAN>( i=0;i&lt;13;i++ )
+<SPAN CLASS="linenum">0528:</SPAN>     {
+<SPAN CLASS="linenum">0529:</SPAN>         <SPAN CLASS="keyword">if</SPAN> (FAILED(m_pd3dDevice-&gt;CreateTexture( COLOR_MAP[1], COLOR_MAP[1], 1, 
+<SPAN CLASS="linenum">0530:</SPAN>             D3DUSAGE_RENDERTARGET, D3DFMT_A8R8G8B8, D3DPOOL_DEFAULT, &amp;m_pDiffMap[i], NULL)))
+<SPAN CLASS="linenum">0531:</SPAN>             <SPAN CLASS="keyword">return</SPAN> E_FAIL;
+<SPAN CLASS="linenum">0532:</SPAN>         <SPAN CLASS="keyword">if</SPAN> (FAILED(m_pDiffMap[i]-&gt;GetSurfaceLevel(0, &amp;m_pDiffMapSurf[i])))
+<SPAN CLASS="linenum">0533:</SPAN>             <SPAN CLASS="keyword">return</SPAN> E_FAIL;
+<SPAN CLASS="linenum">0534:</SPAN>     }
+<SPAN CLASS="linenum">0535:</SPAN> 
+<SPAN CLASS="linenum">0536:</SPAN>     <SPAN CLASS="keyword">if</SPAN> (FAILED(m_pd3dDevice-&gt;CreateTexture( COLOR_MAP[1], COLOR_MAP[1], 1, 
+<SPAN CLASS="linenum">0537:</SPAN>         D3DUSAGE_RENDERTARGET, D3DFMT_A8R8G8B8, D3DPOOL_DEFAULT, &amp;m_pValue0Map, NULL)))
+<SPAN CLASS="linenum">0538:</SPAN>         <SPAN CLASS="keyword">return</SPAN> E_FAIL;
+<SPAN CLASS="linenum">0539:</SPAN>     <SPAN CLASS="keyword">if</SPAN> (FAILED(m_pValue0Map-&gt;GetSurfaceLevel(0, &amp;m_pValue0MapSurf)))
+<SPAN CLASS="linenum">0540:</SPAN>         <SPAN CLASS="keyword">return</SPAN> E_FAIL;
+<SPAN CLASS="linenum">0541:</SPAN>     <SPAN CLASS="keyword">if</SPAN> (FAILED(m_pd3dDevice-&gt;CreateTexture( COLOR_MAP[1], COLOR_MAP[1], 1, 
+<SPAN CLASS="linenum">0542:</SPAN>         D3DUSAGE_RENDERTARGET, D3DFMT_A8R8G8B8, D3DPOOL_DEFAULT, &amp;m_pIndex0Map, NULL)))
+<SPAN CLASS="linenum">0543:</SPAN>         <SPAN CLASS="keyword">return</SPAN> E_FAIL;
+<SPAN CLASS="linenum">0544:</SPAN>     <SPAN CLASS="keyword">if</SPAN> (FAILED(m_pIndex0Map-&gt;GetSurfaceLevel(0, &amp;m_pIndex0MapSurf)))
+<SPAN CLASS="linenum">0545:</SPAN>         <SPAN CLASS="keyword">return</SPAN> E_FAIL;
+<SPAN CLASS="linenum">0546:</SPAN> 
+<SPAN CLASS="linenum">0547:</SPAN>     <SPAN CLASS="keyword">if</SPAN> (FAILED(m_pd3dDevice-&gt;CreateTexture( COLOR_MAP[1], COLOR_MAP[1], 1, 
+<SPAN CLASS="linenum">0548:</SPAN>         D3DUSAGE_RENDERTARGET, D3DFMT_A8R8G8B8, D3DPOOL_DEFAULT, &amp;m_pIndex1Map, NULL)))
+<SPAN CLASS="linenum">0549:</SPAN>         <SPAN CLASS="keyword">return</SPAN> E_FAIL;
+<SPAN CLASS="linenum">0550:</SPAN>     <SPAN CLASS="keyword">if</SPAN> (FAILED(m_pIndex1Map-&gt;GetSurfaceLevel(0, &amp;m_pIndex1MapSurf)))
+<SPAN CLASS="linenum">0551:</SPAN>         <SPAN CLASS="keyword">return</SPAN> E_FAIL;
+<SPAN CLASS="linenum">0552:</SPAN> 
+<SPAN CLASS="linenum">0553:</SPAN>     <SPAN CLASS="comment">// Fill textures</SPAN>
+<SPAN CLASS="linenum">0554:</SPAN>     D3DXFillTexture( m_pAsciiCoeffMap, (LPD3DXFILL2D)FillTextureAsciiCoeff, (LPVOID)<SPAN CLASS="keyword">this</SPAN> );
+<SPAN CLASS="linenum">0555:</SPAN>     <SPAN CLASS="keyword">for</SPAN>( i=0;i&lt;4;i++ )
+<SPAN CLASS="linenum">0556:</SPAN>     {
+<SPAN CLASS="linenum">0557:</SPAN>         D3DXFillTexture( m_pWaveletMap[i], (LPD3DXFILL2D)FillTextureHaarWavelet, (LPVOID)i );
+<SPAN CLASS="linenum">0558:</SPAN>     }
+<SPAN CLASS="linenum">0559:</SPAN> 
+<SPAN CLASS="linenum">0560:</SPAN>     m_pEffect-&gt;OnResetDevice();
+<SPAN CLASS="linenum">0561:</SPAN> 
+<SPAN CLASS="linenum">0562:</SPAN>     <SPAN CLASS="keyword">return</SPAN> S_OK;
+<SPAN CLASS="linenum">0563:</SPAN> }
+<SPAN CLASS="linenum">0564:</SPAN> 
+<SPAN CLASS="linenum">0565:</SPAN> 
+<SPAN CLASS="linenum">0566:</SPAN> 
+<SPAN CLASS="linenum">0567:</SPAN> 
+<SPAN CLASS="linenum">0568:</SPAN> <SPAN CLASS="comment">//-------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0569:</SPAN> <SPAN CLASS="comment">// Name: FrameMove()</SPAN>
+<SPAN CLASS="linenum">0570:</SPAN> <SPAN CLASS="comment">// Desc: 毎フレーム呼ばれます。アニメの処理などを行います。</SPAN>
+<SPAN CLASS="linenum">0571:</SPAN> <SPAN CLASS="comment">//-------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0572:</SPAN> HRESULT CMyD3DApplication::FrameMove()
+<SPAN CLASS="linenum">0573:</SPAN> {
+<SPAN CLASS="linenum">0574:</SPAN>     <SPAN CLASS="comment">// 入力データの更新</SPAN>
+<SPAN CLASS="linenum">0575:</SPAN>     UpdateInput( &amp;m_UserInput );
+<SPAN CLASS="linenum">0576:</SPAN> 
+<SPAN CLASS="linenum">0577:</SPAN>     <SPAN CLASS="comment">//---------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0578:</SPAN>     <SPAN CLASS="comment">// 入力に応じて座標系を更新する</SPAN>
+<SPAN CLASS="linenum">0579:</SPAN>     <SPAN CLASS="comment">//---------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0580:</SPAN>     <SPAN CLASS="comment">// 回転</SPAN>
+<SPAN CLASS="linenum">0581:</SPAN>     D3DXMATRIX matRotY;
+<SPAN CLASS="linenum">0582:</SPAN>     D3DXMATRIX matRotX;
+<SPAN CLASS="linenum">0583:</SPAN> 
+<SPAN CLASS="linenum">0584:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( m_UserInput.bRotateLeft &amp;&amp; !m_UserInput.bRotateRight )
+<SPAN CLASS="linenum">0585:</SPAN>         m_fWorldRotY += m_fElapsedTime;
+<SPAN CLASS="linenum">0586:</SPAN>     <SPAN CLASS="keyword">else</SPAN>
+<SPAN CLASS="linenum">0587:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( m_UserInput.bRotateRight &amp;&amp; !m_UserInput.bRotateLeft )
+<SPAN CLASS="linenum">0588:</SPAN>         m_fWorldRotY -= m_fElapsedTime;
+<SPAN CLASS="linenum">0589:</SPAN> 
+<SPAN CLASS="linenum">0590:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( m_UserInput.bRotateUp &amp;&amp; !m_UserInput.bRotateDown )
+<SPAN CLASS="linenum">0591:</SPAN>         m_fWorldRotX += m_fElapsedTime;
+<SPAN CLASS="linenum">0592:</SPAN>     <SPAN CLASS="keyword">else</SPAN>
+<SPAN CLASS="linenum">0593:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( m_UserInput.bRotateDown &amp;&amp; !m_UserInput.bRotateUp )
+<SPAN CLASS="linenum">0594:</SPAN>         m_fWorldRotX -= m_fElapsedTime;
+<SPAN CLASS="linenum">0595:</SPAN> 
+<SPAN CLASS="linenum">0596:</SPAN>     D3DXMatrixRotationX( &amp;matRotX, m_fWorldRotX );
+<SPAN CLASS="linenum">0597:</SPAN>     D3DXMatrixRotationY( &amp;matRotY, m_fWorldRotY );
+<SPAN CLASS="linenum">0598:</SPAN> 
+<SPAN CLASS="linenum">0599:</SPAN>     D3DXMatrixMultiply( &amp;m_mWorld, &amp;matRotY, &amp;matRotX );
+<SPAN CLASS="linenum">0600:</SPAN>     
+<SPAN CLASS="linenum">0601:</SPAN>     <SPAN CLASS="comment">//---------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0602:</SPAN>     <SPAN CLASS="comment">// ビュー行列の設定</SPAN>
+<SPAN CLASS="linenum">0603:</SPAN>     <SPAN CLASS="comment">//---------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0604:</SPAN>     <SPAN CLASS="comment">// ズーム</SPAN>
+<SPAN CLASS="linenum">0605:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( m_UserInput.bZoomIn &amp;&amp; !m_UserInput.bZoomOut )
+<SPAN CLASS="linenum">0606:</SPAN>         m_fViewZoom += m_fElapsedTime;
+<SPAN CLASS="linenum">0607:</SPAN>     <SPAN CLASS="keyword">else</SPAN> <SPAN CLASS="keyword">if</SPAN>( m_UserInput.bZoomOut &amp;&amp; !m_UserInput.bZoomIn )
+<SPAN CLASS="linenum">0608:</SPAN>         m_fViewZoom -= m_fElapsedTime;
+<SPAN CLASS="linenum">0609:</SPAN> 
+<SPAN CLASS="linenum">0610:</SPAN>     D3DXVECTOR3 vFromPt   = D3DXVECTOR3( 0.0f, 0.0f, -m_fViewZoom );
+<SPAN CLASS="linenum">0611:</SPAN>     D3DXVECTOR3 vLookatPt = D3DXVECTOR3( 0.0f, 0.0f, 0.0f );
+<SPAN CLASS="linenum">0612:</SPAN>     D3DXVECTOR3 vUpVec    = D3DXVECTOR3( 0.0f, 1.0f, 0.0f );
+<SPAN CLASS="linenum">0613:</SPAN>     D3DXMatrixLookAtLH( &amp;m_mView, &amp;vFromPt, &amp;vLookatPt, &amp;vUpVec );
+<SPAN CLASS="linenum">0614:</SPAN> 
+<SPAN CLASS="linenum">0615:</SPAN>     <SPAN CLASS="keyword">return</SPAN> S_OK;
+<SPAN CLASS="linenum">0616:</SPAN> }
+<SPAN CLASS="linenum">0617:</SPAN> <SPAN CLASS="comment">//-------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0618:</SPAN> <SPAN CLASS="comment">// Name: UpdateInput()</SPAN>
+<SPAN CLASS="linenum">0619:</SPAN> <SPAN CLASS="comment">// Desc: 入力データを更新する</SPAN>
+<SPAN CLASS="linenum">0620:</SPAN> <SPAN CLASS="comment">//-------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0621:</SPAN> <SPAN CLASS="keyword">void</SPAN> CMyD3DApplication::UpdateInput( UserInput* pUserInput )
+<SPAN CLASS="linenum">0622:</SPAN> {
+<SPAN CLASS="linenum">0623:</SPAN>     pUserInput-&gt;bRotateUp    = ( m_bActive &amp;&amp; (GetAsyncKeyState( VK_UP )    &amp; 0x8000) == 0x8000 );
+<SPAN CLASS="linenum">0624:</SPAN>     pUserInput-&gt;bRotateDown  = ( m_bActive &amp;&amp; (GetAsyncKeyState( VK_DOWN )  &amp; 0x8000) == 0x8000 );
+<SPAN CLASS="linenum">0625:</SPAN>     pUserInput-&gt;bRotateLeft  = ( m_bActive &amp;&amp; (GetAsyncKeyState( VK_LEFT )  &amp; 0x8000) == 0x8000 );
+<SPAN CLASS="linenum">0626:</SPAN>     pUserInput-&gt;bRotateRight = ( m_bActive &amp;&amp; (GetAsyncKeyState( VK_RIGHT ) &amp; 0x8000) == 0x8000 );
+<SPAN CLASS="linenum">0627:</SPAN>     
+<SPAN CLASS="linenum">0628:</SPAN>     pUserInput-&gt;bZoomIn      = ( m_bActive &amp;&amp; (GetAsyncKeyState( '<SPAN CLASS="string">Z</SPAN>'     )  &amp; 0x8000) == 0x8000 );
+<SPAN CLASS="linenum">0629:</SPAN>     pUserInput-&gt;bZoomOut     = ( m_bActive &amp;&amp; (GetAsyncKeyState( '<SPAN CLASS="string">X</SPAN>'      ) &amp; 0x8000) == 0x8000 );
+<SPAN CLASS="linenum">0630:</SPAN> }
+<SPAN CLASS="linenum">0631:</SPAN> 
+<SPAN CLASS="linenum">0632:</SPAN> 
+<SPAN CLASS="linenum">0633:</SPAN> <SPAN CLASS="comment">//-------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0634:</SPAN> <SPAN CLASS="comment">// Name: Render()</SPAN>
+<SPAN CLASS="linenum">0635:</SPAN> <SPAN CLASS="comment">// Desc: 画面を描画する.</SPAN>
+<SPAN CLASS="linenum">0636:</SPAN> <SPAN CLASS="comment">//-------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0637:</SPAN> HRESULT CMyD3DApplication::Render()
+<SPAN CLASS="linenum">0638:</SPAN> {
+<SPAN CLASS="linenum">0639:</SPAN>     D3DXMATRIX m, mT, mR, mW, mView, mProj;
+<SPAN CLASS="linenum">0640:</SPAN>     D3DXVECTOR4 v;
+<SPAN CLASS="linenum">0641:</SPAN>     LPDIRECT3DSURFACE9 pOldBackBuffer, pOldZBuffer;
+<SPAN CLASS="linenum">0642:</SPAN>     D3DVIEWPORT9 oldViewport;
+<SPAN CLASS="linenum">0643:</SPAN>     DWORD i, j;
+<SPAN CLASS="linenum">0644:</SPAN> 
+<SPAN CLASS="linenum">0645:</SPAN>     <SPAN CLASS="comment">//---------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0646:</SPAN>     <SPAN CLASS="comment">// 描画</SPAN>
+<SPAN CLASS="linenum">0647:</SPAN>     <SPAN CLASS="comment">//---------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0648:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( SUCCEEDED( m_pd3dDevice-&gt;BeginScene() ) )
+<SPAN CLASS="linenum">0649:</SPAN>     {
+<SPAN CLASS="linenum">0650:</SPAN>         <SPAN CLASS="comment">//-------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0651:</SPAN>         <SPAN CLASS="comment">// レンダリングターゲットの保存</SPAN>
+<SPAN CLASS="linenum">0652:</SPAN>         <SPAN CLASS="comment">//-------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0653:</SPAN>         m_pd3dDevice-&gt;GetRenderTarget(0, &amp;pOldBackBuffer);
+<SPAN CLASS="linenum">0654:</SPAN>         m_pd3dDevice-&gt;GetDepthStencilSurface(&amp;pOldZBuffer);
+<SPAN CLASS="linenum">0655:</SPAN>         m_pd3dDevice-&gt;GetViewport(&amp;oldViewport);
+<SPAN CLASS="linenum">0656:</SPAN> 
+<SPAN CLASS="linenum">0657:</SPAN>         <SPAN CLASS="keyword">if</SPAN>( m_pEffect != NULL ) 
+<SPAN CLASS="linenum">0658:</SPAN>         {
+<SPAN CLASS="linenum">0659:</SPAN>             <SPAN CLASS="comment">//-------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0660:</SPAN>             <SPAN CLASS="comment">// レンダリングターゲットの変更</SPAN>
+<SPAN CLASS="linenum">0661:</SPAN>             <SPAN CLASS="comment">//-------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0662:</SPAN>             m_pd3dDevice-&gt;SetRenderTarget(0, m_pOriginalMapSurf);
+<SPAN CLASS="linenum">0663:</SPAN>             m_pd3dDevice-&gt;SetDepthStencilSurface(m_pMapZ);
+<SPAN CLASS="linenum">0664:</SPAN> 
+<SPAN CLASS="linenum">0665:</SPAN>             <SPAN CLASS="comment">// ビューポートの変更</SPAN>
+<SPAN CLASS="linenum">0666:</SPAN>             D3DVIEWPORT9 viewport = {0,0      <SPAN CLASS="comment">// 左上の座標</SPAN>
+<SPAN CLASS="linenum">0667:</SPAN>                             , MAP_WIDTH  <SPAN CLASS="comment">// 幅</SPAN>
+<SPAN CLASS="linenum">0668:</SPAN>                             , MAP_HEIGHT <SPAN CLASS="comment">// 高さ</SPAN>
+<SPAN CLASS="linenum">0669:</SPAN>                             , 0.0f,1.0f};     <SPAN CLASS="comment">// 前面、後面</SPAN>
+<SPAN CLASS="linenum">0670:</SPAN>             m_pd3dDevice-&gt;SetViewport(&amp;viewport);
+<SPAN CLASS="linenum">0671:</SPAN> 
+<SPAN CLASS="linenum">0672:</SPAN>             <SPAN CLASS="comment">// マップのクリア</SPAN>
+<SPAN CLASS="linenum">0673:</SPAN>             m_pd3dDevice-&gt;Clear(0L, NULL
+<SPAN CLASS="linenum">0674:</SPAN>                             , D3DCLEAR_TARGET | D3DCLEAR_ZBUFFER
+<SPAN CLASS="linenum">0675:</SPAN>                             , 0x003040, 1.0f, 0L);
+<SPAN CLASS="linenum">0676:</SPAN> 
+<SPAN CLASS="linenum">0677:</SPAN>             <SPAN CLASS="comment">//-------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0678:</SPAN>             <SPAN CLASS="comment">// 1パス:テクスチャにレンダリングの作成</SPAN>
+<SPAN CLASS="linenum">0679:</SPAN>             <SPAN CLASS="comment">//-------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0680:</SPAN>             m_pEffect-&gt;SetTechnique( "<SPAN CLASS="string">SimpleTech</SPAN>" );
+<SPAN CLASS="linenum">0681:</SPAN>             m_pEffect-&gt;Begin( NULL, 0 );
+<SPAN CLASS="linenum">0682:</SPAN> 
+<SPAN CLASS="linenum">0683:</SPAN>             mW = m_mWorld;
+<SPAN CLASS="linenum">0684:</SPAN>             m_pEffect-&gt;SetMatrix( "<SPAN CLASS="string">mWorldIT</SPAN>", &amp;mW );
+<SPAN CLASS="linenum">0685:</SPAN>             m = mW * m_mView * m_mProj;
+<SPAN CLASS="linenum">0686:</SPAN>             m_pEffect-&gt;SetMatrix( "<SPAN CLASS="string">mWorldViewProjection</SPAN>", &amp;m);
+<SPAN CLASS="linenum">0687:</SPAN>             v = D3DXVECTOR4(1,1,1,0);
+<SPAN CLASS="linenum">0688:</SPAN>             m_pEffect-&gt;SetVector( "<SPAN CLASS="string">MaterialAmbientColor</SPAN>", &amp;v);
+<SPAN CLASS="linenum">0689:</SPAN>             v = D3DXVECTOR4(0,0,0,0);
+<SPAN CLASS="linenum">0690:</SPAN>             m_pEffect-&gt;SetVector( "<SPAN CLASS="string">MaterialDiffuseColor</SPAN>", &amp;v);
+<SPAN CLASS="linenum">0691:</SPAN> 
+<SPAN CLASS="linenum">0692:</SPAN>             m_pEffect-&gt;SetTexture( "<SPAN CLASS="string">SrcMap</SPAN>", m_pMeshBg-&gt;m_pTextures[0] );
+<SPAN CLASS="linenum">0693:</SPAN> 
+<SPAN CLASS="linenum">0694:</SPAN>             BEGIN_PASS(0);
+<SPAN CLASS="linenum">0695:</SPAN>             m_pMeshBg-&gt;Render( m_pd3dDevice );
+<SPAN CLASS="linenum">0696:</SPAN>             END_PASS();
+<SPAN CLASS="linenum">0697:</SPAN> 
+<SPAN CLASS="linenum">0698:</SPAN>             <SPAN CLASS="comment">// 飛行モデルの描画</SPAN>
+<SPAN CLASS="linenum">0699:</SPAN>             D3DXMatrixTranslation( &amp;m, 1.0f, 0.0f ,0.0f );
+<SPAN CLASS="linenum">0700:</SPAN>             D3DXMatrixRotationY( &amp;mR,  fmod( 2.0f * m_fTime, 2.0f*3.14159265f) );
+<SPAN CLASS="linenum">0701:</SPAN>             D3DXMatrixTranslation( &amp;mT, 0.0f, 1.0f ,1.0f );
+<SPAN CLASS="linenum">0702:</SPAN>             mW = m * mR * mT * m_mWorld;
+<SPAN CLASS="linenum">0703:</SPAN>             m_pEffect-&gt;SetMatrix( "<SPAN CLASS="string">mWorldIT</SPAN>", &amp;mW);
+<SPAN CLASS="linenum">0704:</SPAN>             m = mW * m_mView * m_mProj;
+<SPAN CLASS="linenum">0705:</SPAN>             m_pEffect-&gt;SetMatrix( "<SPAN CLASS="string">mWorldViewProjection</SPAN>", &amp;m);
+<SPAN CLASS="linenum">0706:</SPAN>             v = D3DXVECTOR4(0.3,0.3,0.3,0);
+<SPAN CLASS="linenum">0707:</SPAN>             m_pEffect-&gt;SetVector( "<SPAN CLASS="string">MaterialAmbientColor</SPAN>", &amp;v);
+<SPAN CLASS="linenum">0708:</SPAN>             v = D3DXVECTOR4(0.7,0.7,0.7,0);
+<SPAN CLASS="linenum">0709:</SPAN>             m_pEffect-&gt;SetVector( "<SPAN CLASS="string">MaterialDiffuseColor</SPAN>", &amp;v);
+<SPAN CLASS="linenum">0710:</SPAN>             m_pEffect-&gt;SetTexture( "<SPAN CLASS="string">SrcMap</SPAN>", m_pMesh-&gt;m_pTextures[0] );
+<SPAN CLASS="linenum">0711:</SPAN> 
+<SPAN CLASS="linenum">0712:</SPAN>             BEGIN_PASS(0);
+<SPAN CLASS="linenum">0713:</SPAN>             m_pMesh  -&gt;Render( m_pd3dDevice );
+<SPAN CLASS="linenum">0714:</SPAN>             END_PASS();
+<SPAN CLASS="linenum">0715:</SPAN> 
+<SPAN CLASS="linenum">0716:</SPAN>             m_pEffect-&gt;End();
+<SPAN CLASS="linenum">0717:</SPAN> 
+<SPAN CLASS="linenum">0718:</SPAN> 
+<SPAN CLASS="linenum">0719:</SPAN>             <SPAN CLASS="comment">//-------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0720:</SPAN>             <SPAN CLASS="comment">// 縮小バッファにコピー</SPAN>
+<SPAN CLASS="linenum">0721:</SPAN>             <SPAN CLASS="comment">//-------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0722:</SPAN>             RS( D3DRS_ZENABLE, FALSE );
+<SPAN CLASS="linenum">0723:</SPAN>             m_pEffect-&gt;SetTechnique( "<SPAN CLASS="string">SmallTech</SPAN>" );
+<SPAN CLASS="linenum">0724:</SPAN>             m_pEffect-&gt;Begin( NULL, 0 );
+<SPAN CLASS="linenum">0725:</SPAN>             
+<SPAN CLASS="linenum">0726:</SPAN>             <SPAN CLASS="keyword">for</SPAN>( i=0;i&lt;2;i++ )
+<SPAN CLASS="linenum">0727:</SPAN>             {
+<SPAN CLASS="linenum">0728:</SPAN>                 m_pd3dDevice-&gt;SetRenderTarget(0, m_pColorMapSurf[i]);
+<SPAN CLASS="linenum">0729:</SPAN> 
+<SPAN CLASS="linenum">0730:</SPAN>                 <SPAN CLASS="keyword">static</SPAN> <SPAN CLASS="keyword">const</SPAN> <SPAN CLASS="keyword">float</SPAN> Vertex1[4][5] = {
+<SPAN CLASS="linenum">0731:</SPAN>                     <SPAN CLASS="comment">// x      y     z      tu    tv</SPAN>
+<SPAN CLASS="linenum">0732:</SPAN>                     {-1.0f, -1.0f, 0.5f,   0, 0,},
+<SPAN CLASS="linenum">0733:</SPAN>                     {+1.0f, -1.0f, 0.5f,   1, 0,},
+<SPAN CLASS="linenum">0734:</SPAN>                     {+1.0f, +1.0f, 0.5f,   1, 1,},
+<SPAN CLASS="linenum">0735:</SPAN>                     {-1.0f, +1.0f, 0.5f,   0, 1,},
+<SPAN CLASS="linenum">0736:</SPAN>                 };
+<SPAN CLASS="linenum">0737:</SPAN>                 m_pd3dDevice-&gt;SetFVF( D3DFVF_XYZ | D3DFVF_TEX1 );
+<SPAN CLASS="linenum">0738:</SPAN>                 <SPAN CLASS="keyword">if</SPAN>(0==i)
+<SPAN CLASS="linenum">0739:</SPAN>                 {
+<SPAN CLASS="linenum">0740:</SPAN>                     m_pEffect-&gt;SetTexture( "<SPAN CLASS="string">SrcMap</SPAN>", m_pOriginalMap );
+<SPAN CLASS="linenum">0741:</SPAN>                     m_pEffect-&gt;SetFloat( "<SPAN CLASS="string">INV_TEXSIZE</SPAN>", 1.0 / 512.0 );
+<SPAN CLASS="linenum">0742:</SPAN>                 }<SPAN CLASS="keyword">else</SPAN>{
+<SPAN CLASS="linenum">0743:</SPAN>                     m_pEffect-&gt;SetTexture( "<SPAN CLASS="string">SrcMap</SPAN>", m_pColorMap[i-1]);
+<SPAN CLASS="linenum">0744:</SPAN>                     m_pEffect-&gt;SetFloat( "<SPAN CLASS="string">INV_TEXSIZE</SPAN>", 1.0f/(FLOAT)COLOR_MAP[i-1]);
+<SPAN CLASS="linenum">0745:</SPAN>                 }
+<SPAN CLASS="linenum">0746:</SPAN>                 
+<SPAN CLASS="linenum">0747:</SPAN>                 BEGIN_PASS(0);
+<SPAN CLASS="linenum">0748:</SPAN>                 m_pd3dDevice-&gt;DrawPrimitiveUP( D3DPT_TRIANGLEFAN
+<SPAN CLASS="linenum">0749:</SPAN>                                 , 2, Vertex1, 5*<SPAN CLASS="keyword">sizeof</SPAN>( <SPAN CLASS="keyword">float</SPAN> ) );
+<SPAN CLASS="linenum">0750:</SPAN>                 END_PASS();
+<SPAN CLASS="linenum">0751:</SPAN>             }
+<SPAN CLASS="linenum">0752:</SPAN>             m_pEffect-&gt;End();
+<SPAN CLASS="linenum">0753:</SPAN> 
+<SPAN CLASS="linenum">0754:</SPAN>             <SPAN CLASS="comment">//-------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0755:</SPAN>             <SPAN CLASS="comment">// モノトーン化</SPAN>
+<SPAN CLASS="linenum">0756:</SPAN>             <SPAN CLASS="comment">//-------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0757:</SPAN>             m_pEffect-&gt;SetTechnique( "<SPAN CLASS="string">TShader</SPAN>" );
+<SPAN CLASS="linenum">0758:</SPAN>             m_pEffect-&gt;Begin( NULL, 0 );
+<SPAN CLASS="linenum">0759:</SPAN> 
+<SPAN CLASS="linenum">0760:</SPAN>             <SPAN CLASS="comment">//-------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0761:</SPAN>             <SPAN CLASS="comment">// フィルタリング</SPAN>
+<SPAN CLASS="linenum">0762:</SPAN>             <SPAN CLASS="comment">//-------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0763:</SPAN>             m_pd3dDevice-&gt;SetRenderTarget(0, m_pPostMapSurf);
+<SPAN CLASS="linenum">0764:</SPAN> 
+<SPAN CLASS="linenum">0765:</SPAN>             TVERTEX Vertex1[4] = {
+<SPAN CLASS="linenum">0766:</SPAN>                 <SPAN CLASS="comment">//   x         y         z     w       tu    tv</SPAN>
+<SPAN CLASS="linenum">0767:</SPAN>                 {        0.0f-0.5,         0.0f-0.5, 0.1f, 1.0f,   0, 0,},
+<SPAN CLASS="linenum">0768:</SPAN>                 {COLOR_MAP[0]-0.5,         0.0f-0.5, 0.1f, 1.0f,   1, 0,},
+<SPAN CLASS="linenum">0769:</SPAN>                 {COLOR_MAP[0]-0.5, COLOR_MAP[0]-0.5, 0.1f, 1.0f,   1, 1,},
+<SPAN CLASS="linenum">0770:</SPAN>                 {        0.0f-0.5, COLOR_MAP[0]-0.5, 0.1f, 1.0f,   0, 1,},
+<SPAN CLASS="linenum">0771:</SPAN>             };
+<SPAN CLASS="linenum">0772:</SPAN>             m_pd3dDevice-&gt;SetFVF( D3DFVF_XYZRHW | D3DFVF_TEX1 );
+<SPAN CLASS="linenum">0773:</SPAN>             m_pEffect-&gt;SetTexture( m_htSrcMap, m_pColorMap[0] );
+<SPAN CLASS="linenum">0774:</SPAN> 
+<SPAN CLASS="linenum">0775:</SPAN>             BEGIN_PASS(0);
+<SPAN CLASS="linenum">0776:</SPAN>             m_pd3dDevice-&gt;DrawPrimitiveUP( D3DPT_TRIANGLEFAN
+<SPAN CLASS="linenum">0777:</SPAN>                             , 2, Vertex1, <SPAN CLASS="keyword">sizeof</SPAN>( TVERTEX ) );
+<SPAN CLASS="linenum">0778:</SPAN>             END_PASS();
+<SPAN CLASS="linenum">0779:</SPAN> 
+<SPAN CLASS="linenum">0780:</SPAN>             m_pEffect-&gt;End();
+<SPAN CLASS="linenum">0781:</SPAN> 
+<SPAN CLASS="linenum">0782:</SPAN>             <SPAN CLASS="comment">//-------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0783:</SPAN>             <SPAN CLASS="comment">// Wavelet係数の計算</SPAN>
+<SPAN CLASS="linenum">0784:</SPAN>             <SPAN CLASS="comment">//-------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0785:</SPAN>             m_pEffect-&gt;SetTechnique( "<SPAN CLASS="string">WaveletTech</SPAN>" );
+<SPAN CLASS="linenum">0786:</SPAN>             m_pEffect-&gt;Begin( NULL, 0 );
+<SPAN CLASS="linenum">0787:</SPAN> 
+<SPAN CLASS="linenum">0788:</SPAN>             m_pEffect-&gt;SetFloat( "<SPAN CLASS="string">INV_TEXSIZE</SPAN>", 1.0f/(FLOAT)COLOR_MAP[0]);
+<SPAN CLASS="linenum">0789:</SPAN>             m_pEffect-&gt;SetTexture( "<SPAN CLASS="string">PointMap</SPAN>", m_pPostMap );
+<SPAN CLASS="linenum">0790:</SPAN>             m_pd3dDevice-&gt;SetFVF( D3DFVF_XYZ | D3DFVF_TEX1 );
+<SPAN CLASS="linenum">0791:</SPAN> 
+<SPAN CLASS="linenum">0792:</SPAN>             <SPAN CLASS="keyword">for</SPAN>( i=0;i&lt;4;i++ )
+<SPAN CLASS="linenum">0793:</SPAN>             {
+<SPAN CLASS="linenum">0794:</SPAN>                 m_pd3dDevice-&gt;SetRenderTarget(0, m_pCoeffMapSurf[0][i]);
+<SPAN CLASS="linenum">0795:</SPAN> 
+<SPAN CLASS="linenum">0796:</SPAN>                 <SPAN CLASS="keyword">static</SPAN> <SPAN CLASS="keyword">float</SPAN> Vertex[4][5] = {
+<SPAN CLASS="linenum">0797:</SPAN>                     <SPAN CLASS="comment">// x      y     z     tu tv</SPAN>
+<SPAN CLASS="linenum">0798:</SPAN>                     {-1.0f, -1.0f, 0.5f,   0, 0,},
+<SPAN CLASS="linenum">0799:</SPAN>                     {+1.0f, -1.0f, 0.5f,   1, 0,},
+<SPAN CLASS="linenum">0800:</SPAN>                     {+1.0f, +1.0f, 0.5f,   1, 1,},
+<SPAN CLASS="linenum">0801:</SPAN>                     {-1.0f, +1.0f, 0.5f,   0, 1,},
+<SPAN CLASS="linenum">0802:</SPAN>                 };
+<SPAN CLASS="linenum">0803:</SPAN>                 m_pEffect-&gt;SetTexture( "<SPAN CLASS="string">WaveletTexture</SPAN>", m_pWaveletMap[i] );
+<SPAN CLASS="linenum">0804:</SPAN>                 BEGIN_PASS(0);
+<SPAN CLASS="linenum">0805:</SPAN>                 m_pd3dDevice-&gt;DrawPrimitiveUP( D3DPT_TRIANGLEFAN
+<SPAN CLASS="linenum">0806:</SPAN>                                 , 2, Vertex, 5*<SPAN CLASS="keyword">sizeof</SPAN>( <SPAN CLASS="keyword">float</SPAN> ) );
+<SPAN CLASS="linenum">0807:</SPAN>                 END_PASS();
+<SPAN CLASS="linenum">0808:</SPAN>             }
+<SPAN CLASS="linenum">0809:</SPAN> 
+<SPAN CLASS="linenum">0810:</SPAN>             m_pEffect-&gt;End();
+<SPAN CLASS="linenum">0811:</SPAN> 
+<SPAN CLASS="linenum">0812:</SPAN> 
+<SPAN CLASS="linenum">0813:</SPAN> 
+<SPAN CLASS="linenum">0814:</SPAN>             <SPAN CLASS="comment">//-------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0815:</SPAN>             <SPAN CLASS="comment">// Wavelet係数の縮小化</SPAN>
+<SPAN CLASS="linenum">0816:</SPAN>             <SPAN CLASS="comment">//-------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0817:</SPAN>             m_pEffect-&gt;SetTechnique( "<SPAN CLASS="string">SmallTech4</SPAN>" );
+<SPAN CLASS="linenum">0818:</SPAN>             m_pEffect-&gt;Begin( NULL, 0 );
+<SPAN CLASS="linenum">0819:</SPAN>             
+<SPAN CLASS="linenum">0820:</SPAN>             <SPAN CLASS="keyword">for</SPAN>( i=0;i&lt;4;i++ )
+<SPAN CLASS="linenum">0821:</SPAN>             {
+<SPAN CLASS="linenum">0822:</SPAN>                 m_pd3dDevice-&gt;SetRenderTarget(0, m_pCoeffMapSurf[1][i]);
+<SPAN CLASS="linenum">0823:</SPAN> 
+<SPAN CLASS="linenum">0824:</SPAN>                 <SPAN CLASS="keyword">float</SPAN> Vertex1[4][5] = {
+<SPAN CLASS="linenum">0825:</SPAN>                     <SPAN CLASS="comment">// x      y     z      tu    tv</SPAN>
+<SPAN CLASS="linenum">0826:</SPAN>                     {-1.0f, -1.0f, 0.5f,   0, 0,},
+<SPAN CLASS="linenum">0827:</SPAN>                     {+1.0f, -1.0f, 0.5f,   1, 0,},
+<SPAN CLASS="linenum">0828:</SPAN>                     {+1.0f, +1.0f, 0.5f,   1, 1,},
+<SPAN CLASS="linenum">0829:</SPAN>                     {-1.0f, +1.0f, 0.5f,   0, 1,},
+<SPAN CLASS="linenum">0830:</SPAN>                 };
+<SPAN CLASS="linenum">0831:</SPAN>                 m_pd3dDevice-&gt;SetFVF( D3DFVF_XYZ | D3DFVF_TEX1 );
+<SPAN CLASS="linenum">0832:</SPAN>                 m_pEffect-&gt;SetTexture( "<SPAN CLASS="string">SrcMap</SPAN>", m_pCoeffMap[0][i]);
+<SPAN CLASS="linenum">0833:</SPAN>                 m_pEffect-&gt;SetFloat( "<SPAN CLASS="string">INV_TEXSIZE</SPAN>", 1.0f/(FLOAT)COLOR_MAP[0]);
+<SPAN CLASS="linenum">0834:</SPAN>                 BEGIN_PASS(0);
+<SPAN CLASS="linenum">0835:</SPAN>                 m_pd3dDevice-&gt;DrawPrimitiveUP( D3DPT_TRIANGLEFAN
+<SPAN CLASS="linenum">0836:</SPAN>                                 , 2, Vertex1, 5*<SPAN CLASS="keyword">sizeof</SPAN>( <SPAN CLASS="keyword">float</SPAN> ) );
+<SPAN CLASS="linenum">0837:</SPAN>                 END_PASS();
+<SPAN CLASS="linenum">0838:</SPAN> 
+<SPAN CLASS="linenum">0839:</SPAN>             }
+<SPAN CLASS="linenum">0840:</SPAN>             m_pEffect-&gt;End();
+<SPAN CLASS="linenum">0841:</SPAN> 
+<SPAN CLASS="linenum">0842:</SPAN>             <SPAN CLASS="comment">//-------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0843:</SPAN>             <SPAN CLASS="comment">// 各文字との係数の比較をする</SPAN>
+<SPAN CLASS="linenum">0844:</SPAN>             <SPAN CLASS="comment">//-------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0845:</SPAN>             {
+<SPAN CLASS="linenum">0846:</SPAN>             m_pEffect-&gt;SetTechnique( "<SPAN CLASS="string">DiffTech</SPAN>" );
+<SPAN CLASS="linenum">0847:</SPAN>             m_pEffect-&gt;Begin( NULL, 0 );
+<SPAN CLASS="linenum">0848:</SPAN>             
+<SPAN CLASS="linenum">0849:</SPAN>             m_pEffect-&gt;SetTexture( "<SPAN CLASS="string">PointMap</SPAN>", m_pAsciiCoeffMap );
+<SPAN CLASS="linenum">0850:</SPAN>             m_pEffect-&gt;SetTexture( "<SPAN CLASS="string">SrcMap0</SPAN>", m_pCoeffMap[1][0]);
+<SPAN CLASS="linenum">0851:</SPAN>             m_pEffect-&gt;SetTexture( "<SPAN CLASS="string">SrcMap1</SPAN>", m_pCoeffMap[1][1]);
+<SPAN CLASS="linenum">0852:</SPAN>             m_pEffect-&gt;SetTexture( "<SPAN CLASS="string">SrcMap2</SPAN>", m_pCoeffMap[1][2]);
+<SPAN CLASS="linenum">0853:</SPAN>             m_pEffect-&gt;SetTexture( "<SPAN CLASS="string">SrcMap3</SPAN>", m_pCoeffMap[1][3]);
+<SPAN CLASS="linenum">0854:</SPAN> 
+<SPAN CLASS="linenum">0855:</SPAN>             <SPAN CLASS="keyword">static</SPAN> <SPAN CLASS="keyword">const</SPAN> TVERTEX Vertex[4] = {
+<SPAN CLASS="linenum">0856:</SPAN>                 <SPAN CLASS="comment">//        x                 y         z     w     tu tv</SPAN>
+<SPAN CLASS="linenum">0857:</SPAN>                 {        0.0f-0.5,         0.0f-0.5, 0.1f, 1.0f,   0, 0,},
+<SPAN CLASS="linenum">0858:</SPAN>                 {COLOR_MAP[1]-0.5,         0.0f-0.5, 0.1f, 1.0f,   1, 0,},
+<SPAN CLASS="linenum">0859:</SPAN>                 {COLOR_MAP[1]-0.5, COLOR_MAP[1]-0.5, 0.1f, 1.0f,   1, 1,},
+<SPAN CLASS="linenum">0860:</SPAN>                 {        0.0f-0.5, COLOR_MAP[1]-0.5, 0.1f, 1.0f,   0, 1,},
+<SPAN CLASS="linenum">0861:</SPAN>             };
+<SPAN CLASS="linenum">0862:</SPAN> 
+<SPAN CLASS="linenum">0863:</SPAN>             m_pd3dDevice-&gt;SetFVF( D3DFVF_XYZRHW | D3DFVF_TEX1 );
+<SPAN CLASS="linenum">0864:</SPAN> 
+<SPAN CLASS="linenum">0865:</SPAN>             <SPAN CLASS="keyword">for</SPAN>( i=0;i&lt;13;i++ )
+<SPAN CLASS="linenum">0866:</SPAN>             {
+<SPAN CLASS="linenum">0867:</SPAN>                 m_pd3dDevice-&gt;SetRenderTarget( 0, m_pDiffMapSurf[i] );
+<SPAN CLASS="linenum">0868:</SPAN> 
+<SPAN CLASS="linenum">0869:</SPAN>                 <SPAN CLASS="keyword">for</SPAN>(j=0;j&lt;4;j++)
+<SPAN CLASS="linenum">0870:</SPAN>                 {
+<SPAN CLASS="linenum">0871:</SPAN>                     m_pEffect-&gt;SetFloat( "<SPAN CLASS="string">INV_TEXSIZE</SPAN>", (1.0/13.0)*(<SPAN CLASS="keyword">float</SPAN>)i + (1.0/52.0)*(<SPAN CLASS="keyword">float</SPAN>)j );
+<SPAN CLASS="linenum">0872:</SPAN>                     <SPAN CLASS="keyword">if</SPAN>(0==j) m_pd3dDevice-&gt;SetRenderState( D3DRS_COLORWRITEENABLE, D3DCOLORWRITEENABLE_RED ); <SPAN CLASS="keyword">else</SPAN>
+<SPAN CLASS="linenum">0873:</SPAN>                     <SPAN CLASS="keyword">if</SPAN>(1==j) m_pd3dDevice-&gt;SetRenderState( D3DRS_COLORWRITEENABLE, D3DCOLORWRITEENABLE_GREEN ); <SPAN CLASS="keyword">else</SPAN>
+<SPAN CLASS="linenum">0874:</SPAN>                     <SPAN CLASS="keyword">if</SPAN>(2==j) m_pd3dDevice-&gt;SetRenderState( D3DRS_COLORWRITEENABLE,  D3DCOLORWRITEENABLE_BLUE); <SPAN CLASS="keyword">else</SPAN>
+<SPAN CLASS="linenum">0875:</SPAN>                     <SPAN CLASS="keyword">if</SPAN>(3==j) m_pd3dDevice-&gt;SetRenderState( D3DRS_COLORWRITEENABLE, D3DCOLORWRITEENABLE_ALPHA );
+<SPAN CLASS="linenum">0876:</SPAN> 
+<SPAN CLASS="linenum">0877:</SPAN>                     BEGIN_PASS(0);
+<SPAN CLASS="linenum">0878:</SPAN>                     m_pd3dDevice-&gt;DrawPrimitiveUP( D3DPT_TRIANGLEFAN
+<SPAN CLASS="linenum">0879:</SPAN>                                         , 2, Vertex, <SPAN CLASS="keyword">sizeof</SPAN>( TVERTEX ) );
+<SPAN CLASS="linenum">0880:</SPAN>                     END_PASS();
+<SPAN CLASS="linenum">0881:</SPAN>                 }
+<SPAN CLASS="linenum">0882:</SPAN>             }
+<SPAN CLASS="linenum">0883:</SPAN>             m_pd3dDevice-&gt;SetRenderState( D3DRS_COLORWRITEENABLE, 0xf );
+<SPAN CLASS="linenum">0884:</SPAN>             m_pEffect-&gt;End();
+<SPAN CLASS="linenum">0885:</SPAN>             }
+<SPAN CLASS="linenum">0886:</SPAN> 
+<SPAN CLASS="linenum">0887:</SPAN>             <SPAN CLASS="comment">//-------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0888:</SPAN>             <SPAN CLASS="comment">// 係数を比較(52→13)</SPAN>
+<SPAN CLASS="linenum">0889:</SPAN>             <SPAN CLASS="comment">//-------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0890:</SPAN>             {
+<SPAN CLASS="linenum">0891:</SPAN>             m_pEffect-&gt;SetTechnique( "<SPAN CLASS="string">CompareTech</SPAN>" );
+<SPAN CLASS="linenum">0892:</SPAN>             m_pEffect-&gt;Begin( NULL, 0 );
+<SPAN CLASS="linenum">0893:</SPAN>             
+<SPAN CLASS="linenum">0894:</SPAN>             <SPAN CLASS="keyword">static</SPAN> <SPAN CLASS="keyword">const</SPAN> TVERTEX Vertex[4] = {
+<SPAN CLASS="linenum">0895:</SPAN>                 <SPAN CLASS="comment">//   x         y         z     w       tu    tv</SPAN>
+<SPAN CLASS="linenum">0896:</SPAN>                 {        0.0f-0.5,         0.0f-0.5, 0.1f, 1.0f,   0, 0,},
+<SPAN CLASS="linenum">0897:</SPAN>                 {COLOR_MAP[1]-0.5,         0.0f-0.5, 0.1f, 1.0f,   1, 0,},
+<SPAN CLASS="linenum">0898:</SPAN>                 {COLOR_MAP[1]-0.5, COLOR_MAP[1]-0.5, 0.1f, 1.0f,   1, 1,},
+<SPAN CLASS="linenum">0899:</SPAN>                 {        0.0f-0.5, COLOR_MAP[1]-0.5, 0.1f, 1.0f,   0, 1,},
+<SPAN CLASS="linenum">0900:</SPAN>             };
+<SPAN CLASS="linenum">0901:</SPAN> 
+<SPAN CLASS="linenum">0902:</SPAN>             m_pd3dDevice-&gt;SetFVF( D3DFVF_XYZRHW | D3DFVF_TEX1 );
+<SPAN CLASS="linenum">0903:</SPAN>             m_pd3dDevice-&gt;SetRenderTarget( 0, m_pValue0MapSurf );
+<SPAN CLASS="linenum">0904:</SPAN>             m_pd3dDevice-&gt;SetRenderTarget( 1, m_pIndex0MapSurf );
+<SPAN CLASS="linenum">0905:</SPAN> 
+<SPAN CLASS="linenum">0906:</SPAN>             <SPAN CLASS="keyword">for</SPAN>( i=0;i&lt;4;i++ )
+<SPAN CLASS="linenum">0907:</SPAN>             {
+<SPAN CLASS="linenum">0908:</SPAN>                 <SPAN CLASS="keyword">switch</SPAN>(i)
+<SPAN CLASS="linenum">0909:</SPAN>                 {
+<SPAN CLASS="linenum">0910:</SPAN>                 <SPAN CLASS="keyword">case</SPAN> 0:
+<SPAN CLASS="linenum">0911:</SPAN>                     m_pd3dDevice-&gt;SetRenderState(D3DRS_COLORWRITEENABLE,D3DCOLORWRITEENABLE_RED );
+<SPAN CLASS="linenum">0912:</SPAN>                     m_pd3dDevice-&gt;SetRenderState(D3DRS_COLORWRITEENABLE1,D3DCOLORWRITEENABLE_RED );
+<SPAN CLASS="linenum">0913:</SPAN>                     <SPAN CLASS="keyword">break</SPAN>;
+<SPAN CLASS="linenum">0914:</SPAN>                 <SPAN CLASS="keyword">case</SPAN> 1:
+<SPAN CLASS="linenum">0915:</SPAN>                     m_pd3dDevice-&gt;SetRenderState(D3DRS_COLORWRITEENABLE,D3DCOLORWRITEENABLE_GREEN);
+<SPAN CLASS="linenum">0916:</SPAN>                     m_pd3dDevice-&gt;SetRenderState(D3DRS_COLORWRITEENABLE1,D3DCOLORWRITEENABLE_GREEN);
+<SPAN CLASS="linenum">0917:</SPAN>                     <SPAN CLASS="keyword">break</SPAN>;
+<SPAN CLASS="linenum">0918:</SPAN>                 <SPAN CLASS="keyword">case</SPAN> 2:
+<SPAN CLASS="linenum">0919:</SPAN>                     m_pd3dDevice-&gt;SetRenderState(D3DRS_COLORWRITEENABLE,D3DCOLORWRITEENABLE_BLUE);
+<SPAN CLASS="linenum">0920:</SPAN>                     m_pd3dDevice-&gt;SetRenderState(D3DRS_COLORWRITEENABLE1,D3DCOLORWRITEENABLE_BLUE);
+<SPAN CLASS="linenum">0921:</SPAN>                     <SPAN CLASS="keyword">break</SPAN>;
+<SPAN CLASS="linenum">0922:</SPAN>                 <SPAN CLASS="keyword">case</SPAN> 3:
+<SPAN CLASS="linenum">0923:</SPAN>                     m_pd3dDevice-&gt;SetRenderState(D3DRS_COLORWRITEENABLE,D3DCOLORWRITEENABLE_ALPHA);
+<SPAN CLASS="linenum">0924:</SPAN>                     m_pd3dDevice-&gt;SetRenderState(D3DRS_COLORWRITEENABLE1,D3DCOLORWRITEENABLE_ALPHA);
+<SPAN CLASS="linenum">0925:</SPAN>                     <SPAN CLASS="keyword">break</SPAN>;
+<SPAN CLASS="linenum">0926:</SPAN>                 }
+<SPAN CLASS="linenum">0927:</SPAN> 
+<SPAN CLASS="linenum">0928:</SPAN>                 <SPAN CLASS="keyword">if</SPAN>( 3!=i )
+<SPAN CLASS="linenum">0929:</SPAN>                 {
+<SPAN CLASS="linenum">0930:</SPAN>                     m_pEffect-&gt;SetTexture( "<SPAN CLASS="string">SrcMap0</SPAN>", m_pDiffMap[i*4+0]);
+<SPAN CLASS="linenum">0931:</SPAN>                     m_pEffect-&gt;SetTexture( "<SPAN CLASS="string">SrcMap1</SPAN>", m_pDiffMap[i*4+1]);
+<SPAN CLASS="linenum">0932:</SPAN>                     m_pEffect-&gt;SetTexture( "<SPAN CLASS="string">SrcMap2</SPAN>", m_pDiffMap[i*4+2]);
+<SPAN CLASS="linenum">0933:</SPAN>                     m_pEffect-&gt;SetTexture( "<SPAN CLASS="string">SrcMap3</SPAN>", m_pDiffMap[i*4+3]);
+<SPAN CLASS="linenum">0934:</SPAN>                 }<SPAN CLASS="keyword">else</SPAN>{
+<SPAN CLASS="linenum">0935:</SPAN>                     m_pEffect-&gt;SetTexture( "<SPAN CLASS="string">SrcMap0</SPAN>", m_pDiffMap[i*4+0]);
+<SPAN CLASS="linenum">0936:</SPAN>                     m_pEffect-&gt;SetTexture( "<SPAN CLASS="string">SrcMap1</SPAN>", m_pDiffMap[i*4+0]);
+<SPAN CLASS="linenum">0937:</SPAN>                     m_pEffect-&gt;SetTexture( "<SPAN CLASS="string">SrcMap2</SPAN>", m_pDiffMap[i*4+0]);
+<SPAN CLASS="linenum">0938:</SPAN>                     m_pEffect-&gt;SetTexture( "<SPAN CLASS="string">SrcMap3</SPAN>", m_pDiffMap[i*4+0]);
+<SPAN CLASS="linenum">0939:</SPAN>                 }
+<SPAN CLASS="linenum">0940:</SPAN> 
+<SPAN CLASS="linenum">0941:</SPAN>                 m_pEffect-&gt;SetFloat( "<SPAN CLASS="string">INV_TEXSIZE</SPAN>", (16.0/52.0)*(<SPAN CLASS="keyword">float</SPAN>)i );
+<SPAN CLASS="linenum">0942:</SPAN> 
+<SPAN CLASS="linenum">0943:</SPAN>                 BEGIN_PASS(0);
+<SPAN CLASS="linenum">0944:</SPAN>                 m_pd3dDevice-&gt;DrawPrimitiveUP( D3DPT_TRIANGLEFAN
+<SPAN CLASS="linenum">0945:</SPAN>                                 , 2, Vertex, <SPAN CLASS="keyword">sizeof</SPAN>( TVERTEX ) );
+<SPAN CLASS="linenum">0946:</SPAN>                 END_PASS();
+<SPAN CLASS="linenum">0947:</SPAN>             }
+<SPAN CLASS="linenum">0948:</SPAN>             m_pd3dDevice-&gt;SetRenderState( D3DRS_COLORWRITEENABLE, 0xf );
+<SPAN CLASS="linenum">0949:</SPAN>             m_pd3dDevice-&gt;SetRenderState( D3DRS_COLORWRITEENABLE1, 0xf );
+<SPAN CLASS="linenum">0950:</SPAN>             m_pd3dDevice-&gt;SetRenderTarget( 1, NULL );
+<SPAN CLASS="linenum">0951:</SPAN>             m_pEffect-&gt;End();
+<SPAN CLASS="linenum">0952:</SPAN>             }
+<SPAN CLASS="linenum">0953:</SPAN>             <SPAN CLASS="comment">//-------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0954:</SPAN>             <SPAN CLASS="comment">// 係数を比較(13→1)</SPAN>
+<SPAN CLASS="linenum">0955:</SPAN>             <SPAN CLASS="comment">//-------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0956:</SPAN>             {
+<SPAN CLASS="linenum">0957:</SPAN>             m_pEffect-&gt;SetTechnique( "<SPAN CLASS="string">Compare2Tech</SPAN>" );
+<SPAN CLASS="linenum">0958:</SPAN>             m_pEffect-&gt;Begin( NULL, 0 );
+<SPAN CLASS="linenum">0959:</SPAN>             
+<SPAN CLASS="linenum">0960:</SPAN>             <SPAN CLASS="keyword">static</SPAN> <SPAN CLASS="keyword">const</SPAN> TVERTEX Vertex[4] = {
+<SPAN CLASS="linenum">0961:</SPAN>                 <SPAN CLASS="comment">//        x                 y         z     w     tu tv</SPAN>
+<SPAN CLASS="linenum">0962:</SPAN>                 {        0.0f-0.5,         0.0f-0.5, 0.1f, 1.0f,   0, 0,},
+<SPAN CLASS="linenum">0963:</SPAN>                 {COLOR_MAP[1]-0.5,         0.0f-0.5, 0.1f, 1.0f,   1, 0,},
+<SPAN CLASS="linenum">0964:</SPAN>                 {COLOR_MAP[1]-0.5, COLOR_MAP[1]-0.5, 0.1f, 1.0f,   1, 1,},
+<SPAN CLASS="linenum">0965:</SPAN>                 {        0.0f-0.5, COLOR_MAP[1]-0.5, 0.1f, 1.0f,   0, 1,},
+<SPAN CLASS="linenum">0966:</SPAN>             };
+<SPAN CLASS="linenum">0967:</SPAN> 
+<SPAN CLASS="linenum">0968:</SPAN>             m_pd3dDevice-&gt;SetFVF( D3DFVF_XYZRHW | D3DFVF_TEX1 );
+<SPAN CLASS="linenum">0969:</SPAN> 
+<SPAN CLASS="linenum">0970:</SPAN>             m_pd3dDevice-&gt;SetRenderTarget( 0, m_pIndex1MapSurf );
+<SPAN CLASS="linenum">0971:</SPAN>             
+<SPAN CLASS="linenum">0972:</SPAN>             m_pEffect-&gt;SetTexture( "<SPAN CLASS="string">SrcMap0</SPAN>",  m_pValue0Map );
+<SPAN CLASS="linenum">0973:</SPAN>             m_pEffect-&gt;SetTexture( "<SPAN CLASS="string">IndexMap</SPAN>", m_pIndex0Map);
+<SPAN CLASS="linenum">0974:</SPAN> 
+<SPAN CLASS="linenum">0975:</SPAN>             BEGIN_PASS(0);
+<SPAN CLASS="linenum">0976:</SPAN>             m_pd3dDevice-&gt;DrawPrimitiveUP( D3DPT_TRIANGLEFAN
+<SPAN CLASS="linenum">0977:</SPAN>                                 , 2, Vertex, <SPAN CLASS="keyword">sizeof</SPAN>( TVERTEX ) );
+<SPAN CLASS="linenum">0978:</SPAN>             END_PASS();
+<SPAN CLASS="linenum">0979:</SPAN> 
+<SPAN CLASS="linenum">0980:</SPAN>             m_pEffect-&gt;End();
+<SPAN CLASS="linenum">0981:</SPAN>             }
+<SPAN CLASS="linenum">0982:</SPAN> 
+<SPAN CLASS="linenum">0983:</SPAN>             <SPAN CLASS="comment">//-------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0984:</SPAN>             <SPAN CLASS="comment">// 最終合成</SPAN>
+<SPAN CLASS="linenum">0985:</SPAN>             <SPAN CLASS="comment">//-------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0986:</SPAN>             {
+<SPAN CLASS="linenum">0987:</SPAN>             m_pEffect-&gt;SetTechnique( "<SPAN CLASS="string">FinalTech</SPAN>" );
+<SPAN CLASS="linenum">0988:</SPAN>             m_pEffect-&gt;Begin( NULL, 0 );
+<SPAN CLASS="linenum">0989:</SPAN> 
+<SPAN CLASS="linenum">0990:</SPAN>             <SPAN CLASS="comment">//-------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0991:</SPAN>             <SPAN CLASS="comment">// フィルタリング</SPAN>
+<SPAN CLASS="linenum">0992:</SPAN>             <SPAN CLASS="comment">//-------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0993:</SPAN>             m_pd3dDevice-&gt;SetRenderTarget(0, m_pFinalMapSurf);
+<SPAN CLASS="linenum">0994:</SPAN> 
+<SPAN CLASS="linenum">0995:</SPAN>             <SPAN CLASS="keyword">static</SPAN> <SPAN CLASS="keyword">const</SPAN> TVERTEX Vertex[4] = {
+<SPAN CLASS="linenum">0996:</SPAN>                 <SPAN CLASS="comment">//      x               y         z     w     tu tv</SPAN>
+<SPAN CLASS="linenum">0997:</SPAN>                 {      0.0f-0.5,       0.0f-0.5, 0.1f, 1.0f,   0, 0,},
+<SPAN CLASS="linenum">0998:</SPAN>                 { MAP_WIDTH-0.5,       0.0f-0.5, 0.1f, 1.0f,   1, 0,},
+<SPAN CLASS="linenum">0999:</SPAN>                 { MAP_WIDTH-0.5, MAP_HEIGHT-0.5, 0.1f, 1.0f,   1, 1,},
+<SPAN CLASS="linenum">1000:</SPAN>                 {      0.0f-0.5, MAP_HEIGHT-0.5, 0.1f, 1.0f,   0, 1,},
+<SPAN CLASS="linenum">1001:</SPAN>             };
+<SPAN CLASS="linenum">1002:</SPAN>             m_pd3dDevice-&gt;SetFVF( D3DFVF_XYZRHW | D3DFVF_TEX1 );
+<SPAN CLASS="linenum">1003:</SPAN>             m_pEffect-&gt;SetTexture( m_htSrcMap, m_pAsciiMap );
+<SPAN CLASS="linenum">1004:</SPAN>             m_pEffect-&gt;SetTexture( "<SPAN CLASS="string">PointMap</SPAN>", m_pColorMap[1] );
+<SPAN CLASS="linenum">1005:</SPAN>             m_pEffect-&gt;SetTexture( "<SPAN CLASS="string">SrcMap0</SPAN>",  m_pIndex1Map );
+<SPAN CLASS="linenum">1006:</SPAN>             
+<SPAN CLASS="linenum">1007:</SPAN>             BEGIN_PASS(0);
+<SPAN CLASS="linenum">1008:</SPAN>             m_pd3dDevice-&gt;DrawPrimitiveUP( D3DPT_TRIANGLEFAN
+<SPAN CLASS="linenum">1009:</SPAN>                             , 2, Vertex, <SPAN CLASS="keyword">sizeof</SPAN>( TVERTEX ) );
+<SPAN CLASS="linenum">1010:</SPAN>             END_PASS();
+<SPAN CLASS="linenum">1011:</SPAN> 
+<SPAN CLASS="linenum">1012:</SPAN>             m_pEffect-&gt;End();
+<SPAN CLASS="linenum">1013:</SPAN>             }
+<SPAN CLASS="linenum">1014:</SPAN> 
+<SPAN CLASS="linenum">1015:</SPAN> 
+<SPAN CLASS="linenum">1016:</SPAN>         }
+<SPAN CLASS="linenum">1017:</SPAN> 
+<SPAN CLASS="linenum">1018:</SPAN>         <SPAN CLASS="comment">//-----------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">1019:</SPAN>         <SPAN CLASS="comment">// レンダリングターゲットを元に戻す</SPAN>
+<SPAN CLASS="linenum">1020:</SPAN>         <SPAN CLASS="comment">//-----------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">1021:</SPAN>         m_pd3dDevice-&gt;SetRenderTarget(0, pOldBackBuffer);
+<SPAN CLASS="linenum">1022:</SPAN>         m_pd3dDevice-&gt;SetDepthStencilSurface(pOldZBuffer);
+<SPAN CLASS="linenum">1023:</SPAN>         m_pd3dDevice-&gt;SetViewport(&amp;oldViewport);
+<SPAN CLASS="linenum">1024:</SPAN>         pOldBackBuffer-&gt;Release();
+<SPAN CLASS="linenum">1025:</SPAN>         pOldZBuffer-&gt;Release();
+<SPAN CLASS="linenum">1026:</SPAN> 
+<SPAN CLASS="linenum">1027:</SPAN>         <SPAN CLASS="comment">//-----------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">1028:</SPAN>         <SPAN CLASS="comment">// そのまま張る</SPAN>
+<SPAN CLASS="linenum">1029:</SPAN>         <SPAN CLASS="comment">//-----------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">1030:</SPAN>         FLOAT w = (FLOAT)oldViewport.Width;
+<SPAN CLASS="linenum">1031:</SPAN>         FLOAT h = (FLOAT)oldViewport.Height;
+<SPAN CLASS="linenum">1032:</SPAN>         TSS(0,D3DTSS_COLOROP,   D3DTOP_SELECTARG1);
+<SPAN CLASS="linenum">1033:</SPAN>         TSS(0,D3DTSS_COLORARG1, D3DTA_TEXTURE);
+<SPAN CLASS="linenum">1034:</SPAN>         TSS(1,D3DTSS_COLOROP,   D3DTOP_DISABLE);
+<SPAN CLASS="linenum">1035:</SPAN>             
+<SPAN CLASS="linenum">1036:</SPAN>         m_pd3dDevice-&gt;SetFVF( D3DFVF_XYZRHW | D3DFVF_TEX1 );
+<SPAN CLASS="linenum">1037:</SPAN> <SPAN CLASS="keyword">#if</SPAN> 0
+<SPAN CLASS="linenum">1038:</SPAN>         TVERTEX Vertex1[4] = {
+<SPAN CLASS="linenum">1039:</SPAN>             <SPAN CLASS="comment">//x  y   z    rhw  tu tv</SPAN>
+<SPAN CLASS="linenum">1040:</SPAN>             { 0 - 0.5f, 0 - 0.5f, 0.1f, 1.0f, 0, 0,},
+<SPAN CLASS="linenum">1041:</SPAN>             { w - 0.5f, 0 - 0.5f, 0.1f, 1.0f, 1, 0,},
+<SPAN CLASS="linenum">1042:</SPAN>             { w - 0.5f, h - 0.5f, 0.1f, 1.0f, 1, 1,},
+<SPAN CLASS="linenum">1043:</SPAN>             { 0 - 0.5f, h - 0.5f, 0.1f, 1.0f, 0, 1,},
+<SPAN CLASS="linenum">1044:</SPAN>         };
+<SPAN CLASS="linenum">1045:</SPAN>         m_pd3dDevice-&gt;SetTexture(0, m_pOriginalMap);
+<SPAN CLASS="linenum">1046:</SPAN>         m_pd3dDevice-&gt;DrawPrimitiveUP( D3DPT_TRIANGLEFAN
+<SPAN CLASS="linenum">1047:</SPAN>                             , 2, Vertex1, <SPAN CLASS="keyword">sizeof</SPAN>( TVERTEX ) );
+<SPAN CLASS="linenum">1048:</SPAN> <SPAN CLASS="keyword">#endif</SPAN>
+<SPAN CLASS="linenum">1049:</SPAN>         <SPAN CLASS="comment">//-----------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">1050:</SPAN>         <SPAN CLASS="comment">// 変換したものを張る</SPAN>
+<SPAN CLASS="linenum">1051:</SPAN>         <SPAN CLASS="comment">//-----------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">1052:</SPAN> 
+<SPAN CLASS="linenum">1053:</SPAN>         TVERTEX Vertex2[4] = {
+<SPAN CLASS="linenum">1054:</SPAN>             <SPAN CLASS="comment">//   x    y   z    rhw    tu    tv</SPAN>
+<SPAN CLASS="linenum">1055:</SPAN> <SPAN CLASS="keyword">#if</SPAN> 0
+<SPAN CLASS="linenum">1056:</SPAN>             { 0.0f - 0.5f,   0 - 0.5f, 0.1f, 1.0f, 0.0f, 0.0f,},
+<SPAN CLASS="linenum">1057:</SPAN>             { 0.5f*w - 0.5f, 0 - 0.5f, 0.1f, 1.0f, 0.5f, 0.0f,},
+<SPAN CLASS="linenum">1058:</SPAN>             { 0.5f*w - 0.5f, h - 0.5f, 0.1f, 1.0f, 0.5f, 1.0f,},
+<SPAN CLASS="linenum">1059:</SPAN>             { 0.0f - 0.5f,   h - 0.5f, 0.1f, 1.0f, 0.0f, 1.0f,},
+<SPAN CLASS="linenum">1060:</SPAN> <SPAN CLASS="keyword">#else</SPAN>
+<SPAN CLASS="linenum">1061:</SPAN>             { 0.0f - 0.5f, 0 - 0.5f, 0.1f, 1.0f, 0.0f, 0.0f,},
+<SPAN CLASS="linenum">1062:</SPAN>             {    w - 0.5f, 0 - 0.5f, 0.1f, 1.0f, 1.0f, 0.0f,},
+<SPAN CLASS="linenum">1063:</SPAN>             {    w - 0.5f, h - 0.5f, 0.1f, 1.0f, 1.0f, 1.0f,},
+<SPAN CLASS="linenum">1064:</SPAN>             { 0.0f - 0.5f, h - 0.5f, 0.1f, 1.0f, 0.0f, 1.0f,},
+<SPAN CLASS="linenum">1065:</SPAN> <SPAN CLASS="keyword">#endif</SPAN>
+<SPAN CLASS="linenum">1066:</SPAN>         };
+<SPAN CLASS="linenum">1067:</SPAN>         m_pd3dDevice-&gt;SetTexture(0, m_pFinalMap );
+<SPAN CLASS="linenum">1068:</SPAN> <SPAN CLASS="comment">//      m_pd3dDevice-&gt;SetTexture(0, m_pColorMap[1] );</SPAN>
+<SPAN CLASS="linenum">1069:</SPAN> <SPAN CLASS="comment">//      m_pd3dDevice-&gt;SetTexture(0, m_pPostMap);</SPAN>
+<SPAN CLASS="linenum">1070:</SPAN>         m_pd3dDevice-&gt;DrawPrimitiveUP( D3DPT_TRIANGLEFAN
+<SPAN CLASS="linenum">1071:</SPAN>                             , 2, Vertex2, <SPAN CLASS="keyword">sizeof</SPAN>( TVERTEX ) );
+<SPAN CLASS="linenum">1072:</SPAN> 
+<SPAN CLASS="linenum">1073:</SPAN>         {
+<SPAN CLASS="linenum">1074:</SPAN>         m_pd3dDevice-&gt;SetTextureStageState(0,D3DTSS_COLOROP,    D3DTOP_SELECTARG1);
+<SPAN CLASS="linenum">1075:</SPAN>         m_pd3dDevice-&gt;SetTextureStageState(0,D3DTSS_COLORARG1,  D3DTA_TEXTURE);
+<SPAN CLASS="linenum">1076:</SPAN>         m_pd3dDevice-&gt;SetTextureStageState(1,D3DTSS_COLOROP,    D3DTOP_DISABLE);
+<SPAN CLASS="linenum">1077:</SPAN>         m_pd3dDevice-&gt;SetVertexShader(NULL);
+<SPAN CLASS="linenum">1078:</SPAN>         m_pd3dDevice-&gt;SetFVF( D3DFVF_XYZRHW | D3DFVF_TEX1 );
+<SPAN CLASS="linenum">1079:</SPAN>         m_pd3dDevice-&gt;SetPixelShader(0);
+<SPAN CLASS="linenum">1080:</SPAN>         <SPAN CLASS="keyword">float</SPAN> scale = 64.0f;
+<SPAN CLASS="linenum">1081:</SPAN> <SPAN CLASS="keyword">#ifdef</SPAN> _DEBUG<SPAN CLASS="comment">// デバッグ用にテクスチャを表示する</SPAN>
+<SPAN CLASS="linenum">1082:</SPAN>         <SPAN CLASS="keyword">for</SPAN>(DWORD i=0; i&lt;8; i++){
+<SPAN CLASS="linenum">1083:</SPAN> <SPAN CLASS="keyword">#else</SPAN>
+<SPAN CLASS="linenum">1084:</SPAN>         <SPAN CLASS="keyword">for</SPAN>(DWORD i=0; i&lt;1; i++){
+<SPAN CLASS="linenum">1085:</SPAN> <SPAN CLASS="keyword">#endif</SPAN>
+<SPAN CLASS="linenum">1086:</SPAN>             TVERTEX Vertex[4] = {
+<SPAN CLASS="linenum">1087:</SPAN>                 <SPAN CLASS="comment">// x  y  z rhw tu tv</SPAN>
+<SPAN CLASS="linenum">1088:</SPAN>                 {    0,(i+0)*scale,0, 1, 0, 0,},
+<SPAN CLASS="linenum">1089:</SPAN>                 {scale,(i+0)*scale,0, 1, 1, 0,},
+<SPAN CLASS="linenum">1090:</SPAN>                 {scale,(i+1)*scale,0, 1, 1, 1,},
+<SPAN CLASS="linenum">1091:</SPAN>                 {    0,(i+1)*scale,0, 1, 0, 1,},
+<SPAN CLASS="linenum">1092:</SPAN>             };
+<SPAN CLASS="linenum">1093:</SPAN>             <SPAN CLASS="keyword">if</SPAN>(0==i) m_pd3dDevice-&gt;SetTexture( 0, m_pOriginalMap );
+<SPAN CLASS="linenum">1094:</SPAN>             <SPAN CLASS="keyword">if</SPAN>(1==i) m_pd3dDevice-&gt;SetTexture( 0, m_pPostMap );
+<SPAN CLASS="linenum">1095:</SPAN>             <SPAN CLASS="keyword">if</SPAN>(2==i) m_pd3dDevice-&gt;SetTexture( 0, m_pAsciiCoeffMap );
+<SPAN CLASS="linenum">1096:</SPAN>             <SPAN CLASS="keyword">if</SPAN>(3==i) m_pd3dDevice-&gt;SetTexture( 0, m_pColorMap[1] );
+<SPAN CLASS="linenum">1097:</SPAN> 
+<SPAN CLASS="linenum">1098:</SPAN>             <SPAN CLASS="keyword">if</SPAN>(4==i) m_pd3dDevice-&gt;SetTexture( 0, m_pValue0Map );
+<SPAN CLASS="linenum">1099:</SPAN>             <SPAN CLASS="keyword">if</SPAN>(5==i) m_pd3dDevice-&gt;SetTexture( 0, m_pIndex0Map );
+<SPAN CLASS="linenum">1100:</SPAN>             <SPAN CLASS="keyword">if</SPAN>(6==i) m_pd3dDevice-&gt;SetTexture( 0, m_pIndex1Map );
+<SPAN CLASS="linenum">1101:</SPAN>             <SPAN CLASS="keyword">if</SPAN>(4==i) m_pd3dDevice-&gt;SetTexture( 0, m_pDiffMap[0] );
+<SPAN CLASS="linenum">1102:</SPAN>             <SPAN CLASS="keyword">if</SPAN>(5==i) m_pd3dDevice-&gt;SetTexture( 0, m_pDiffMap[1] );
+<SPAN CLASS="linenum">1103:</SPAN>             <SPAN CLASS="keyword">if</SPAN>(6==i) m_pd3dDevice-&gt;SetTexture( 0, m_pDiffMap[2] );
+<SPAN CLASS="linenum">1104:</SPAN>             <SPAN CLASS="keyword">if</SPAN>(7==i) m_pd3dDevice-&gt;SetTexture( 0, m_pDiffMap[3] );
+<SPAN CLASS="linenum">1105:</SPAN> <SPAN CLASS="comment">//          if(4==i) m_pd3dDevice-&gt;SetTexture( 0, m_pCoeffMap[1][0] );</SPAN>
+<SPAN CLASS="linenum">1106:</SPAN> <SPAN CLASS="comment">//          if(5==i) m_pd3dDevice-&gt;SetTexture( 0, m_pCoeffMap[1][1] );</SPAN>
+<SPAN CLASS="linenum">1107:</SPAN> <SPAN CLASS="comment">//          if(6==i) m_pd3dDevice-&gt;SetTexture( 0, m_pCoeffMap[1][2] );</SPAN>
+<SPAN CLASS="linenum">1108:</SPAN> <SPAN CLASS="comment">//          if(7==i) m_pd3dDevice-&gt;SetTexture( 0, m_pCoeffMap[1][3] );</SPAN>
+<SPAN CLASS="linenum">1109:</SPAN> <SPAN CLASS="comment">//          if(4==i) m_pd3dDevice-&gt;SetTexture( 0, m_pWaveletMap[0] );</SPAN>
+<SPAN CLASS="linenum">1110:</SPAN> <SPAN CLASS="comment">//          if(5==i) m_pd3dDevice-&gt;SetTexture( 0, m_pWaveletMap[1] );</SPAN>
+<SPAN CLASS="linenum">1111:</SPAN> <SPAN CLASS="comment">//          if(6==i) m_pd3dDevice-&gt;SetTexture( 0, m_pWaveletMap[2] );</SPAN>
+<SPAN CLASS="linenum">1112:</SPAN> <SPAN CLASS="comment">//          if(7==i) m_pd3dDevice-&gt;SetTexture( 0, m_pWaveletMap[3] );</SPAN>
+<SPAN CLASS="linenum">1113:</SPAN>             m_pd3dDevice-&gt;DrawPrimitiveUP( D3DPT_TRIANGLEFAN, 2, Vertex, <SPAN CLASS="keyword">sizeof</SPAN>( TVERTEX ) );
+<SPAN CLASS="linenum">1114:</SPAN>         }
+<SPAN CLASS="linenum">1115:</SPAN>         }
+<SPAN CLASS="linenum">1116:</SPAN> 
+<SPAN CLASS="linenum">1117:</SPAN>         <SPAN CLASS="comment">// ヘルプの表示</SPAN>
+<SPAN CLASS="linenum">1118:</SPAN>         RenderText();
+<SPAN CLASS="linenum">1119:</SPAN> 
+<SPAN CLASS="linenum">1120:</SPAN>         RS( D3DRS_ZENABLE, TRUE );
+<SPAN CLASS="linenum">1121:</SPAN> 
+<SPAN CLASS="linenum">1122:</SPAN>         <SPAN CLASS="comment">// 描画の終了</SPAN>
+<SPAN CLASS="linenum">1123:</SPAN>         m_pd3dDevice-&gt;EndScene();
+<SPAN CLASS="linenum">1124:</SPAN>     }
+<SPAN CLASS="linenum">1125:</SPAN> 
+<SPAN CLASS="linenum">1126:</SPAN>     <SPAN CLASS="keyword">return</SPAN> S_OK;
+<SPAN CLASS="linenum">1127:</SPAN> }
+<SPAN CLASS="linenum">1128:</SPAN> 
+<SPAN CLASS="linenum">1129:</SPAN> 
+<SPAN CLASS="linenum">1130:</SPAN> 
+<SPAN CLASS="linenum">1131:</SPAN> 
+<SPAN CLASS="linenum">1132:</SPAN> <SPAN CLASS="comment">//-------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">1133:</SPAN> <SPAN CLASS="comment">// Name: RenderText()</SPAN>
+<SPAN CLASS="linenum">1134:</SPAN> <SPAN CLASS="comment">// Desc: 状態やヘルプを画面に表示する</SPAN>
+<SPAN CLASS="linenum">1135:</SPAN> <SPAN CLASS="comment">//-------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">1136:</SPAN> HRESULT CMyD3DApplication::RenderText()
+<SPAN CLASS="linenum">1137:</SPAN> {
+<SPAN CLASS="linenum">1138:</SPAN>     D3DCOLOR fontColor        = D3DCOLOR_ARGB(255,255,255,0);
+<SPAN CLASS="linenum">1139:</SPAN>     TCHAR szMsg[MAX_PATH] = TEXT("<SPAN CLASS="string"></SPAN>");
+<SPAN CLASS="linenum">1140:</SPAN> 
+<SPAN CLASS="linenum">1141:</SPAN>     FLOAT fNextLine = 40.0f; <SPAN CLASS="comment">// 表示する高さ</SPAN>
+<SPAN CLASS="linenum">1142:</SPAN> 
+<SPAN CLASS="linenum">1143:</SPAN>     <SPAN CLASS="comment">// 操作法やパラメータを表示する</SPAN>
+<SPAN CLASS="linenum">1144:</SPAN>     fNextLine = (FLOAT) m_d3dsdBackBuffer.Height; 
+<SPAN CLASS="linenum">1145:</SPAN> <SPAN CLASS="comment">//    lstrcpy( szMsg, TEXT("Press 'F2' to configure display") );</SPAN>
+<SPAN CLASS="linenum">1146:</SPAN> <SPAN CLASS="comment">//    fNextLine -= 20.0f;</SPAN>
+<SPAN CLASS="linenum">1147:</SPAN> <SPAN CLASS="comment">//    m_pFont-&gt;DrawText( 2, fNextLine, fontColor, szMsg );</SPAN>
+<SPAN CLASS="linenum">1148:</SPAN> 
+<SPAN CLASS="linenum">1149:</SPAN>     lstrcpy( szMsg, m_strDeviceStats );
+<SPAN CLASS="linenum">1150:</SPAN>     fNextLine -= 20.0f;
+<SPAN CLASS="linenum">1151:</SPAN>     m_pFont-&gt;DrawText( 2, fNextLine, fontColor, szMsg );
+<SPAN CLASS="linenum">1152:</SPAN>     lstrcpy( szMsg, m_strFrameStats );
+<SPAN CLASS="linenum">1153:</SPAN>     fNextLine -= 20.0f;
+<SPAN CLASS="linenum">1154:</SPAN>     m_pFont-&gt;DrawText( 2, fNextLine, fontColor, szMsg );
+<SPAN CLASS="linenum">1155:</SPAN>     
+<SPAN CLASS="linenum">1156:</SPAN> <SPAN CLASS="keyword">#ifndef</SPAN> _DEBUG
+<SPAN CLASS="linenum">1157:</SPAN>     fNextLine = (FLOAT) 2; 
+<SPAN CLASS="linenum">1158:</SPAN>     m_pFont-&gt;DrawText( m_d3dsdBackBuffer.Width-80+2, fNextLine+2, 0xff000000, TEXT("<SPAN CLASS="string">t-pot.com</SPAN>") );
+<SPAN CLASS="linenum">1159:</SPAN>     m_pFont-&gt;DrawText( m_d3dsdBackBuffer.Width-80+0, fNextLine,   0xffff8040, TEXT("<SPAN CLASS="string">t-pot.com</SPAN>") );
+<SPAN CLASS="linenum">1160:</SPAN> <SPAN CLASS="keyword">#endif</SPAN> <SPAN CLASS="comment">//! _DEBUG</SPAN>
+<SPAN CLASS="linenum">1161:</SPAN> 
+<SPAN CLASS="linenum">1162:</SPAN>     <SPAN CLASS="keyword">return</SPAN> S_OK;
+<SPAN CLASS="linenum">1163:</SPAN> }
+<SPAN CLASS="linenum">1164:</SPAN> 
+<SPAN CLASS="linenum">1165:</SPAN> 
+<SPAN CLASS="linenum">1166:</SPAN> 
+<SPAN CLASS="linenum">1167:</SPAN> 
+<SPAN CLASS="linenum">1168:</SPAN> <SPAN CLASS="comment">//-------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">1169:</SPAN> <SPAN CLASS="comment">// Name: MsgProc()</SPAN>
+<SPAN CLASS="linenum">1170:</SPAN> <SPAN CLASS="comment">// Desc: WndProc をオーバーライドしたもの</SPAN>
+<SPAN CLASS="linenum">1171:</SPAN> <SPAN CLASS="comment">//-------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">1172:</SPAN> LRESULT CMyD3DApplication::MsgProc( HWND hWnd, UINT msg,
+<SPAN CLASS="linenum">1173:</SPAN>                                  WPARAM wParam, LPARAM lParam )
+<SPAN CLASS="linenum">1174:</SPAN> {
+<SPAN CLASS="linenum">1175:</SPAN>     <SPAN CLASS="keyword">switch</SPAN>( msg )
+<SPAN CLASS="linenum">1176:</SPAN>     {
+<SPAN CLASS="linenum">1177:</SPAN>         <SPAN CLASS="keyword">case</SPAN> WM_PAINT:
+<SPAN CLASS="linenum">1178:</SPAN>         {
+<SPAN CLASS="linenum">1179:</SPAN>             <SPAN CLASS="keyword">if</SPAN>( m_bLoadingApp )
+<SPAN CLASS="linenum">1180:</SPAN>             {
+<SPAN CLASS="linenum">1181:</SPAN>                 <SPAN CLASS="comment">// ロード中</SPAN>
+<SPAN CLASS="linenum">1182:</SPAN>                 HDC hDC = GetDC( hWnd );
+<SPAN CLASS="linenum">1183:</SPAN>                 TCHAR strMsg[MAX_PATH];
+<SPAN CLASS="linenum">1184:</SPAN>                 wsprintf(strMsg, TEXT("<SPAN CLASS="string">Loading... Please wait</SPAN>"));
+<SPAN CLASS="linenum">1185:</SPAN>                 RECT rct;
+<SPAN CLASS="linenum">1186:</SPAN>                 GetClientRect( hWnd, &amp;rct );
+<SPAN CLASS="linenum">1187:</SPAN>                 DrawText( hDC, strMsg, -1, &amp;rct
+<SPAN CLASS="linenum">1188:</SPAN>                         , DT_CENTER|DT_VCENTER|DT_SINGLELINE );
+<SPAN CLASS="linenum">1189:</SPAN>                 ReleaseDC( hWnd, hDC );
+<SPAN CLASS="linenum">1190:</SPAN>             }
+<SPAN CLASS="linenum">1191:</SPAN>             <SPAN CLASS="keyword">break</SPAN>;
+<SPAN CLASS="linenum">1192:</SPAN>         }
+<SPAN CLASS="linenum">1193:</SPAN> 
+<SPAN CLASS="linenum">1194:</SPAN>     }
+<SPAN CLASS="linenum">1195:</SPAN> 
+<SPAN CLASS="linenum">1196:</SPAN>     <SPAN CLASS="keyword">return</SPAN> CD3DApplication::MsgProc( hWnd, msg, wParam, lParam );
+<SPAN CLASS="linenum">1197:</SPAN> }
+<SPAN CLASS="linenum">1198:</SPAN> 
+<SPAN CLASS="linenum">1199:</SPAN> 
+<SPAN CLASS="linenum">1200:</SPAN> 
+<SPAN CLASS="linenum">1201:</SPAN> 
+<SPAN CLASS="linenum">1202:</SPAN> <SPAN CLASS="comment">//-------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">1203:</SPAN> <SPAN CLASS="comment">// Name: InvalidateDeviceObjects()</SPAN>
+<SPAN CLASS="linenum">1204:</SPAN> <SPAN CLASS="comment">// Desc: RestoreDeviceObjects() で作成したオブジェクトの開放</SPAN>
+<SPAN CLASS="linenum">1205:</SPAN> <SPAN CLASS="comment">//-------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">1206:</SPAN> HRESULT CMyD3DApplication::InvalidateDeviceObjects()
+<SPAN CLASS="linenum">1207:</SPAN> {
+<SPAN CLASS="linenum">1208:</SPAN>     DWORD i, j;
+<SPAN CLASS="linenum">1209:</SPAN> 
+<SPAN CLASS="linenum">1210:</SPAN>     <SPAN CLASS="comment">// テクスチャ</SPAN>
+<SPAN CLASS="linenum">1211:</SPAN>     SAFE_RELEASE(m_pFinalMapSurf);
+<SPAN CLASS="linenum">1212:</SPAN>     SAFE_RELEASE(m_pFinalMap);
+<SPAN CLASS="linenum">1213:</SPAN>     SAFE_RELEASE(m_pPostMapSurf);
+<SPAN CLASS="linenum">1214:</SPAN>     SAFE_RELEASE(m_pPostMap);
+<SPAN CLASS="linenum">1215:</SPAN>     SAFE_RELEASE(m_pOriginalMapSurf);
+<SPAN CLASS="linenum">1216:</SPAN>     SAFE_RELEASE(m_pOriginalMap);
+<SPAN CLASS="linenum">1217:</SPAN>     SAFE_RELEASE(m_pMapZ);
+<SPAN CLASS="linenum">1218:</SPAN> 
+<SPAN CLASS="linenum">1219:</SPAN>     SAFE_RELEASE(m_pIndex1MapSurf);
+<SPAN CLASS="linenum">1220:</SPAN>     SAFE_RELEASE(m_pIndex1Map);
+<SPAN CLASS="linenum">1221:</SPAN>     SAFE_RELEASE(m_pValue0MapSurf);
+<SPAN CLASS="linenum">1222:</SPAN>     SAFE_RELEASE(m_pValue0Map);
+<SPAN CLASS="linenum">1223:</SPAN>     SAFE_RELEASE(m_pIndex0MapSurf);
+<SPAN CLASS="linenum">1224:</SPAN>     SAFE_RELEASE(m_pIndex0Map);
+<SPAN CLASS="linenum">1225:</SPAN> 
+<SPAN CLASS="linenum">1226:</SPAN>     <SPAN CLASS="keyword">for</SPAN>( i=0;i&lt;13;i++ )
+<SPAN CLASS="linenum">1227:</SPAN>     {
+<SPAN CLASS="linenum">1228:</SPAN>         SAFE_RELEASE(m_pDiffMapSurf[i]);
+<SPAN CLASS="linenum">1229:</SPAN>         SAFE_RELEASE(m_pDiffMap[i]);
+<SPAN CLASS="linenum">1230:</SPAN>     }
+<SPAN CLASS="linenum">1231:</SPAN> 
+<SPAN CLASS="linenum">1232:</SPAN>     <SPAN CLASS="keyword">for</SPAN>( i=0;i&lt;2;i++ )
+<SPAN CLASS="linenum">1233:</SPAN>     {
+<SPAN CLASS="linenum">1234:</SPAN>         SAFE_RELEASE(m_pColorMapSurf[i]);
+<SPAN CLASS="linenum">1235:</SPAN>         SAFE_RELEASE(m_pColorMap[i]);
+<SPAN CLASS="linenum">1236:</SPAN>     }
+<SPAN CLASS="linenum">1237:</SPAN> 
+<SPAN CLASS="linenum">1238:</SPAN>     <SPAN CLASS="comment">// テクスチャ</SPAN>
+<SPAN CLASS="linenum">1239:</SPAN>     <SPAN CLASS="keyword">for</SPAN>( i=0;i&lt;2;i++ )
+<SPAN CLASS="linenum">1240:</SPAN>     <SPAN CLASS="keyword">for</SPAN>( j=0;j&lt;4;j++ )
+<SPAN CLASS="linenum">1241:</SPAN>     {
+<SPAN CLASS="linenum">1242:</SPAN>         SAFE_RELEASE(m_pCoeffMapSurf[i][j]);
+<SPAN CLASS="linenum">1243:</SPAN>         SAFE_RELEASE(m_pCoeffMap[i][j]);
+<SPAN CLASS="linenum">1244:</SPAN>     }
+<SPAN CLASS="linenum">1245:</SPAN> 
+<SPAN CLASS="linenum">1246:</SPAN>     <SPAN CLASS="comment">// テクスチャ</SPAN>
+<SPAN CLASS="linenum">1247:</SPAN>     SAFE_RELEASE(m_pAsciiCoeffMap);
+<SPAN CLASS="linenum">1248:</SPAN>     SAFE_RELEASE(m_pAsciiMap);
+<SPAN CLASS="linenum">1249:</SPAN>     <SPAN CLASS="keyword">for</SPAN>( i=0;i&lt;4;i++ )
+<SPAN CLASS="linenum">1250:</SPAN>     {
+<SPAN CLASS="linenum">1251:</SPAN>         SAFE_RELEASE(m_pWaveletMap[i]);
+<SPAN CLASS="linenum">1252:</SPAN>     }
+<SPAN CLASS="linenum">1253:</SPAN> 
+<SPAN CLASS="linenum">1254:</SPAN>     m_pMesh  -&gt;InvalidateDeviceObjects(); <SPAN CLASS="comment">// メッシュ</SPAN>
+<SPAN CLASS="linenum">1255:</SPAN>     m_pMeshBg-&gt;InvalidateDeviceObjects();
+<SPAN CLASS="linenum">1256:</SPAN> 
+<SPAN CLASS="linenum">1257:</SPAN>     m_pFont-&gt;InvalidateDeviceObjects(); <SPAN CLASS="comment">// フォント</SPAN>
+<SPAN CLASS="linenum">1258:</SPAN> 
+<SPAN CLASS="linenum">1259:</SPAN>     <SPAN CLASS="comment">// シェーダ</SPAN>
+<SPAN CLASS="linenum">1260:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( m_pEffect != NULL ) m_pEffect-&gt;OnLostDevice();
+<SPAN CLASS="linenum">1261:</SPAN> 
+<SPAN CLASS="linenum">1262:</SPAN>     <SPAN CLASS="keyword">return</SPAN> S_OK;
+<SPAN CLASS="linenum">1263:</SPAN> }
+<SPAN CLASS="linenum">1264:</SPAN> 
+<SPAN CLASS="linenum">1265:</SPAN> 
+<SPAN CLASS="linenum">1266:</SPAN> 
+<SPAN CLASS="linenum">1267:</SPAN> 
+<SPAN CLASS="linenum">1268:</SPAN> <SPAN CLASS="comment">//-------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">1269:</SPAN> <SPAN CLASS="comment">// Name: DeleteDeviceObjects()</SPAN>
+<SPAN CLASS="linenum">1270:</SPAN> <SPAN CLASS="comment">// Desc: InitDeviceObjects() で作成したオブジェクトを開放する</SPAN>
+<SPAN CLASS="linenum">1271:</SPAN> <SPAN CLASS="comment">//-------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">1272:</SPAN> HRESULT CMyD3DApplication::DeleteDeviceObjects()
+<SPAN CLASS="linenum">1273:</SPAN> {
+<SPAN CLASS="linenum">1274:</SPAN>     <SPAN CLASS="comment">// シェーダ</SPAN>
+<SPAN CLASS="linenum">1275:</SPAN>     SAFE_RELEASE( m_pEffect );
+<SPAN CLASS="linenum">1276:</SPAN> 
+<SPAN CLASS="linenum">1277:</SPAN>     <SPAN CLASS="comment">// メッシュ</SPAN>
+<SPAN CLASS="linenum">1278:</SPAN>     m_pMesh  -&gt;Destroy();
+<SPAN CLASS="linenum">1279:</SPAN>     m_pMeshBg-&gt;Destroy();
+<SPAN CLASS="linenum">1280:</SPAN> 
+<SPAN CLASS="linenum">1281:</SPAN>     <SPAN CLASS="comment">// フォント</SPAN>
+<SPAN CLASS="linenum">1282:</SPAN>     m_pFont-&gt;DeleteDeviceObjects();
+<SPAN CLASS="linenum">1283:</SPAN> 
+<SPAN CLASS="linenum">1284:</SPAN>     <SPAN CLASS="keyword">return</SPAN> S_OK;
+<SPAN CLASS="linenum">1285:</SPAN> }
+<SPAN CLASS="linenum">1286:</SPAN> 
+<SPAN CLASS="linenum">1287:</SPAN> 
+<SPAN CLASS="linenum">1288:</SPAN> 
+<SPAN CLASS="linenum">1289:</SPAN> 
+<SPAN CLASS="linenum">1290:</SPAN> <SPAN CLASS="comment">//-------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">1291:</SPAN> <SPAN CLASS="comment">// Name: FinalCleanup()</SPAN>
+<SPAN CLASS="linenum">1292:</SPAN> <SPAN CLASS="comment">// Desc: 終了する直線に呼ばれる</SPAN>
+<SPAN CLASS="linenum">1293:</SPAN> <SPAN CLASS="comment">//-------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">1294:</SPAN> HRESULT CMyD3DApplication::FinalCleanup()
+<SPAN CLASS="linenum">1295:</SPAN> {
+<SPAN CLASS="linenum">1296:</SPAN>     SAFE_DELETE( m_pMeshBg ); <SPAN CLASS="comment">// メッシュ</SPAN>
+<SPAN CLASS="linenum">1297:</SPAN>     SAFE_DELETE( m_pMesh );
+<SPAN CLASS="linenum">1298:</SPAN> 
+<SPAN CLASS="linenum">1299:</SPAN>     SAFE_DELETE( m_pFont ); <SPAN CLASS="comment">// フォント</SPAN>
+<SPAN CLASS="linenum">1300:</SPAN> 
+<SPAN CLASS="linenum">1301:</SPAN>     <SPAN CLASS="keyword">return</SPAN> S_OK;
+<SPAN CLASS="linenum">1302:</SPAN> }
+<SPAN CLASS="linenum">1303:</SPAN> 
+<SPAN CLASS="linenum">1304:</SPAN> 
+<SPAN CLASS="linenum">1305:</SPAN> 
+<SPAN CLASS="linenum">1306:</SPAN> 
+<SPAN CLASS="linenum">1307:</SPAN> </PRE>
+</BODY>
+</HTML>

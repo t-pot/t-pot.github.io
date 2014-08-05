@@ -1,0 +1,301 @@
+<HTML>
+<HEAD>
+<TITLE>CSkinModel.h</TITLE>
+<meta name="GENERATOR" content="cpp2html 2.1 by Niisaka">
+<meta http-equiv="Content-Type" content="text/html">
+<meta http-equiv="Content-Style-Type" content="text/css">
+<STYLE TYPE="text/css">
+<!--
+SPAN.comment { color:#008000; font-weight:normal; font-style:normal;}
+SPAN.keyword { color:#0000FF; font-weight:normal; font-style:normal;}
+SPAN.string { color:#600000; font-weight:normal; font-style:normal;}
+SPAN.linenum { color:#A0A0A0; font-weight:normal; font-style:normal;}
+-->
+</STYLE>
+</HEAD>
+<BODY TEXT="#000000" BGCOLOR="#FFFFFF">
+<PRE><SPAN CLASS="linenum">0001:</SPAN> <SPAN CLASS="comment">// ----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0002:</SPAN> <SPAN CLASS="comment">//</SPAN>
+<SPAN CLASS="linenum">0003:</SPAN> <SPAN CLASS="comment">// CSkinModel.h - スキンメッシュ管理クラス</SPAN>
+<SPAN CLASS="linenum">0004:</SPAN> <SPAN CLASS="comment">// </SPAN>
+<SPAN CLASS="linenum">0005:</SPAN> <SPAN CLASS="comment">// Copyright (c) 2002 imagire (imagire@gmail.com)</SPAN>
+<SPAN CLASS="linenum">0006:</SPAN> <SPAN CLASS="comment">// All Rights Reserved.</SPAN>
+<SPAN CLASS="linenum">0007:</SPAN> <SPAN CLASS="comment">//</SPAN>
+<SPAN CLASS="linenum">0008:</SPAN> <SPAN CLASS="comment">// ----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0009:</SPAN> <SPAN CLASS="keyword">#include</SPAN> &lt;windows.h&gt;
+<SPAN CLASS="linenum">0010:</SPAN> <SPAN CLASS="keyword">#include</SPAN> &lt;d3d8.h&gt;
+<SPAN CLASS="linenum">0011:</SPAN> 
+<SPAN CLASS="linenum">0012:</SPAN> <SPAN CLASS="keyword">#ifndef</SPAN> _CSkinModel_h
+<SPAN CLASS="linenum">0013:</SPAN> <SPAN CLASS="keyword">#define</SPAN> _CSkinModel_h
+<SPAN CLASS="linenum">0014:</SPAN> 
+<SPAN CLASS="linenum">0015:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0016:</SPAN> <SPAN CLASS="comment">// 定数</SPAN>
+<SPAN CLASS="linenum">0017:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0018:</SPAN> <SPAN CLASS="keyword">enum</SPAN> METHOD { <SPAN CLASS="comment">// 実装方法</SPAN>
+<SPAN CLASS="linenum">0019:</SPAN>     D3DNONINDEXED,
+<SPAN CLASS="linenum">0020:</SPAN>     D3DINDEXED,
+<SPAN CLASS="linenum">0021:</SPAN>     SOFTWARE,
+<SPAN CLASS="linenum">0022:</SPAN>     D3DINDEXEDVS,
+<SPAN CLASS="linenum">0023:</SPAN>     NONE
+<SPAN CLASS="linenum">0024:</SPAN> };
+<SPAN CLASS="linenum">0025:</SPAN> 
+<SPAN CLASS="linenum">0026:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0027:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0028:</SPAN> <SPAN CLASS="comment">// 構造体</SPAN>
+<SPAN CLASS="linenum">0029:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0030:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0031:</SPAN> 
+<SPAN CLASS="linenum">0032:</SPAN> <SPAN CLASS="comment">// 定義前に参照されるので先に宣言</SPAN>
+<SPAN CLASS="linenum">0033:</SPAN> <SPAN CLASS="keyword">class</SPAN> SDrawElement; <SPAN CLASS="comment">// </SPAN>
+<SPAN CLASS="linenum">0034:</SPAN> <SPAN CLASS="keyword">class</SPAN> CSkinModel;
+<SPAN CLASS="linenum">0035:</SPAN> 
+<SPAN CLASS="linenum">0036:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0037:</SPAN> <SPAN CLASS="comment">// メッシュの情報が格納される</SPAN>
+<SPAN CLASS="linenum">0038:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0039:</SPAN> <SPAN CLASS="keyword">class</SPAN> SMeshContainer
+<SPAN CLASS="linenum">0040:</SPAN> {
+<SPAN CLASS="linenum">0041:</SPAN> <SPAN CLASS="keyword">public</SPAN>:
+<SPAN CLASS="linenum">0042:</SPAN>     ID3DXMesh *pMesh;
+<SPAN CLASS="linenum">0043:</SPAN>     D3DMATERIAL8 *rgMaterials;
+<SPAN CLASS="linenum">0044:</SPAN>     LPDIRECT3DTEXTURE8 *pTextures;
+<SPAN CLASS="linenum">0045:</SPAN>     DWORD cpattr;
+<SPAN CLASS="linenum">0046:</SPAN>     DWORD cMaterials;
+<SPAN CLASS="linenum">0047:</SPAN>     DWORD iAttrSplit;
+<SPAN CLASS="linenum">0048:</SPAN> 
+<SPAN CLASS="linenum">0049:</SPAN>     SMeshContainer *pmcNext;
+<SPAN CLASS="linenum">0050:</SPAN> 
+<SPAN CLASS="linenum">0051:</SPAN>     <SPAN CLASS="keyword">char</SPAN> *szName;
+<SPAN CLASS="linenum">0052:</SPAN> 
+<SPAN CLASS="linenum">0053:</SPAN>     <SPAN CLASS="comment">// スキンの情報</SPAN>
+<SPAN CLASS="linenum">0054:</SPAN>     LPD3DXSKINMESH      m_pSkinMesh;
+<SPAN CLASS="linenum">0055:</SPAN>     D3DXATTRIBUTERANGE* m_pAttrTable;
+<SPAN CLASS="linenum">0056:</SPAN>     D3DXMATRIX**        m_pBoneMatrix;
+<SPAN CLASS="linenum">0057:</SPAN>     LPD3DXBUFFER        m_pBoneNamesBuf;
+<SPAN CLASS="linenum">0058:</SPAN>     LPD3DXBUFFER        m_pBoneOffsetBuf;
+<SPAN CLASS="linenum">0059:</SPAN>     D3DXMATRIX*         m_pBoneOffsetMat;
+<SPAN CLASS="linenum">0060:</SPAN>     DWORD*              m_rgiAdjacency;
+<SPAN CLASS="linenum">0061:</SPAN>     DWORD               m_numBoneComb;
+<SPAN CLASS="linenum">0062:</SPAN>     DWORD               m_maxFaceInfl;
+<SPAN CLASS="linenum">0063:</SPAN>     LPD3DXBUFFER        m_pBoneCombinationBuf;
+<SPAN CLASS="linenum">0064:</SPAN>     METHOD              m_Method;
+<SPAN CLASS="linenum">0065:</SPAN>     DWORD               m_paletteSize;
+<SPAN CLASS="linenum">0066:</SPAN>     BOOL                m_bUseSW;
+<SPAN CLASS="linenum">0067:</SPAN> 
+<SPAN CLASS="linenum">0068:</SPAN>     SMeshContainer();
+<SPAN CLASS="linenum">0069:</SPAN>     ~SMeshContainer();
+<SPAN CLASS="linenum">0070:</SPAN> };
+<SPAN CLASS="linenum">0071:</SPAN> <SPAN CLASS="comment">// ----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0072:</SPAN> <SPAN CLASS="comment">// Xファイルの情報</SPAN>
+<SPAN CLASS="linenum">0073:</SPAN> <SPAN CLASS="comment">// ----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0074:</SPAN> <SPAN CLASS="keyword">struct</SPAN> SRotateKeyXFile
+<SPAN CLASS="linenum">0075:</SPAN> {
+<SPAN CLASS="linenum">0076:</SPAN>     DWORD           dwTime;
+<SPAN CLASS="linenum">0077:</SPAN>     DWORD           dwFloats;   
+<SPAN CLASS="linenum">0078:</SPAN>     <SPAN CLASS="keyword">float</SPAN>           w;
+<SPAN CLASS="linenum">0079:</SPAN>     <SPAN CLASS="keyword">float</SPAN>           x;
+<SPAN CLASS="linenum">0080:</SPAN>     <SPAN CLASS="keyword">float</SPAN>           y;
+<SPAN CLASS="linenum">0081:</SPAN>     <SPAN CLASS="keyword">float</SPAN>           z;
+<SPAN CLASS="linenum">0082:</SPAN> };
+<SPAN CLASS="linenum">0083:</SPAN> <SPAN CLASS="comment">// ----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0084:</SPAN> <SPAN CLASS="keyword">struct</SPAN> SScaleKeyXFile
+<SPAN CLASS="linenum">0085:</SPAN> {
+<SPAN CLASS="linenum">0086:</SPAN>     DWORD   dwTime;
+<SPAN CLASS="linenum">0087:</SPAN>     DWORD   dwFloats;   
+<SPAN CLASS="linenum">0088:</SPAN>     D3DXVECTOR3 vScale; 
+<SPAN CLASS="linenum">0089:</SPAN> };
+<SPAN CLASS="linenum">0090:</SPAN> <SPAN CLASS="comment">// ----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0091:</SPAN> <SPAN CLASS="keyword">struct</SPAN> SPositionKeyXFile
+<SPAN CLASS="linenum">0092:</SPAN> {
+<SPAN CLASS="linenum">0093:</SPAN>     DWORD   dwTime;
+<SPAN CLASS="linenum">0094:</SPAN>     DWORD   dwFloats;   
+<SPAN CLASS="linenum">0095:</SPAN>     D3DXVECTOR3 vPos;   
+<SPAN CLASS="linenum">0096:</SPAN> };
+<SPAN CLASS="linenum">0097:</SPAN> <SPAN CLASS="comment">// ----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0098:</SPAN> <SPAN CLASS="keyword">struct</SPAN> SMatrixKeyXFile
+<SPAN CLASS="linenum">0099:</SPAN> {
+<SPAN CLASS="linenum">0100:</SPAN>     DWORD   dwTime;
+<SPAN CLASS="linenum">0101:</SPAN>     DWORD   dwFloats;   
+<SPAN CLASS="linenum">0102:</SPAN>     D3DXMATRIX  mat;    
+<SPAN CLASS="linenum">0103:</SPAN> };
+<SPAN CLASS="linenum">0104:</SPAN> <SPAN CLASS="comment">// ----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0105:</SPAN> <SPAN CLASS="comment">// メモリに格納されるときのXファイルの情報</SPAN>
+<SPAN CLASS="linenum">0106:</SPAN> <SPAN CLASS="comment">// ----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0107:</SPAN> <SPAN CLASS="keyword">struct</SPAN> SRotateKey
+<SPAN CLASS="linenum">0108:</SPAN> {
+<SPAN CLASS="linenum">0109:</SPAN>     DWORD           dwTime;
+<SPAN CLASS="linenum">0110:</SPAN>     D3DXQUATERNION  quatRotate; 
+<SPAN CLASS="linenum">0111:</SPAN> };
+<SPAN CLASS="linenum">0112:</SPAN> <SPAN CLASS="comment">// ----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0113:</SPAN> <SPAN CLASS="keyword">struct</SPAN> SPositionKey
+<SPAN CLASS="linenum">0114:</SPAN> {
+<SPAN CLASS="linenum">0115:</SPAN>     DWORD   dwTime;
+<SPAN CLASS="linenum">0116:</SPAN>     D3DXVECTOR3 vPos;   
+<SPAN CLASS="linenum">0117:</SPAN> };
+<SPAN CLASS="linenum">0118:</SPAN> <SPAN CLASS="comment">// ----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0119:</SPAN> <SPAN CLASS="keyword">struct</SPAN> SScaleKey
+<SPAN CLASS="linenum">0120:</SPAN> {
+<SPAN CLASS="linenum">0121:</SPAN>     DWORD   dwTime;
+<SPAN CLASS="linenum">0122:</SPAN>     D3DXVECTOR3 vScale; 
+<SPAN CLASS="linenum">0123:</SPAN> };
+<SPAN CLASS="linenum">0124:</SPAN> <SPAN CLASS="comment">// ----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0125:</SPAN> <SPAN CLASS="keyword">struct</SPAN> SMatrixKey
+<SPAN CLASS="linenum">0126:</SPAN> {
+<SPAN CLASS="linenum">0127:</SPAN>     DWORD   dwTime;
+<SPAN CLASS="linenum">0128:</SPAN>     D3DXMATRIXA16   mat;    
+<SPAN CLASS="linenum">0129:</SPAN> };
+<SPAN CLASS="linenum">0130:</SPAN> <SPAN CLASS="comment">// ----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0131:</SPAN> 
+<SPAN CLASS="linenum">0132:</SPAN> <SPAN CLASS="comment">// ----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0133:</SPAN> <SPAN CLASS="comment">// メッシュのアニメーション管理</SPAN>
+<SPAN CLASS="linenum">0134:</SPAN> <SPAN CLASS="comment">// ----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0135:</SPAN> <SPAN CLASS="keyword">class</SPAN> SFrame
+<SPAN CLASS="linenum">0136:</SPAN> {
+<SPAN CLASS="linenum">0137:</SPAN> <SPAN CLASS="keyword">private</SPAN>:
+<SPAN CLASS="linenum">0138:</SPAN>     HRESULT _LoadMesh(LPDIRECTXFILEDATA pxofobjCur,
+<SPAN CLASS="linenum">0139:</SPAN>                     DWORD options, CSkinModel &amp;model);
+<SPAN CLASS="linenum">0140:</SPAN>     HRESULT _LoadAnimationSet(LPDIRECTXFILEDATA pxofobjCur, SDrawElement *pde,
+<SPAN CLASS="linenum">0141:</SPAN>                     DWORD options, CSkinModel &amp;model);
+<SPAN CLASS="linenum">0142:</SPAN>     HRESULT _LoadAnimation(LPDIRECTXFILEDATA pxofobjCur, SDrawElement *pde,
+<SPAN CLASS="linenum">0143:</SPAN>                     DWORD options, CSkinModel &amp;model);
+<SPAN CLASS="linenum">0144:</SPAN> <SPAN CLASS="keyword">public</SPAN>:
+<SPAN CLASS="linenum">0145:</SPAN>     SMeshContainer *pmcMesh;
+<SPAN CLASS="linenum">0146:</SPAN>     D3DXMATRIXA16 matRot;
+<SPAN CLASS="linenum">0147:</SPAN>     D3DXMATRIXA16 matTrans;
+<SPAN CLASS="linenum">0148:</SPAN>     D3DXMATRIXA16 matRotOrig;
+<SPAN CLASS="linenum">0149:</SPAN>     D3DXMATRIXA16 matCombined;
+<SPAN CLASS="linenum">0150:</SPAN> 
+<SPAN CLASS="linenum">0151:</SPAN>     <SPAN CLASS="comment">// アニメの情報</SPAN>
+<SPAN CLASS="linenum">0152:</SPAN>     SPositionKey *m_pPositionKeys;
+<SPAN CLASS="linenum">0153:</SPAN>     UINT m_cPositionKeys;
+<SPAN CLASS="linenum">0154:</SPAN>     SRotateKey *m_pRotateKeys;
+<SPAN CLASS="linenum">0155:</SPAN>     UINT m_cRotateKeys;
+<SPAN CLASS="linenum">0156:</SPAN>     SScaleKey *m_pScaleKeys;
+<SPAN CLASS="linenum">0157:</SPAN>     UINT m_cScaleKeys;
+<SPAN CLASS="linenum">0158:</SPAN>     SMatrixKey *m_pMatrixKeys;
+<SPAN CLASS="linenum">0159:</SPAN>     UINT m_cMatrixKeys;
+<SPAN CLASS="linenum">0160:</SPAN> 
+<SPAN CLASS="linenum">0161:</SPAN>     SFrame *pframeAnimNext;
+<SPAN CLASS="linenum">0162:</SPAN>     SFrame *pframeToAnimate;
+<SPAN CLASS="linenum">0163:</SPAN> 
+<SPAN CLASS="linenum">0164:</SPAN>     SFrame *pframeSibling;      <SPAN CLASS="comment">// きょうだい</SPAN>
+<SPAN CLASS="linenum">0165:</SPAN>     SFrame *pframeFirstChild;   <SPAN CLASS="comment">// 子供</SPAN>
+<SPAN CLASS="linenum">0166:</SPAN> 
+<SPAN CLASS="linenum">0167:</SPAN>     <SPAN CLASS="keyword">bool</SPAN> bAnimationFrame;
+<SPAN CLASS="linenum">0168:</SPAN>     <SPAN CLASS="keyword">char</SPAN> *szName;
+<SPAN CLASS="linenum">0169:</SPAN> 
+<SPAN CLASS="linenum">0170:</SPAN>     SFrame();
+<SPAN CLASS="linenum">0171:</SPAN>     ~SFrame();
+<SPAN CLASS="linenum">0172:</SPAN> 
+<SPAN CLASS="linenum">0173:</SPAN>     <SPAN CLASS="keyword">void</SPAN> ResetMatrix();                   <SPAN CLASS="comment">// 行列を単位行列に初期化する</SPAN>
+<SPAN CLASS="linenum">0174:</SPAN>     <SPAN CLASS="keyword">void</SPAN> AddFrame(SFrame *pframe);        <SPAN CLASS="comment">// フレームを追加する</SPAN>
+<SPAN CLASS="linenum">0175:</SPAN>     <SPAN CLASS="keyword">void</SPAN> AddMesh(SMeshContainer *pmc);    <SPAN CLASS="comment">// 先頭に新しいメッシュを追加する</SPAN>
+<SPAN CLASS="linenum">0176:</SPAN>     <SPAN CLASS="keyword">void</SPAN> SetTime(<SPAN CLASS="keyword">float</SPAN> fTime);
+<SPAN CLASS="linenum">0177:</SPAN> 
+<SPAN CLASS="linenum">0178:</SPAN>     SFrame *FindFrame(<SPAN CLASS="keyword">char</SPAN> *szFrame);     <SPAN CLASS="comment">// 自分の子兄弟でszFrameの名前をもったやつがいるか調べる</SPAN>
+<SPAN CLASS="linenum">0179:</SPAN>     HRESULT FindBones(SDrawElement *pde); <SPAN CLASS="comment">// 骨構造の行列を設定する</SPAN>
+<SPAN CLASS="linenum">0180:</SPAN>     
+<SPAN CLASS="linenum">0181:</SPAN>     HRESULT LoadFrames(LPDIRECTXFILEDATA pxofobjCur, SDrawElement *pde,
+<SPAN CLASS="linenum">0182:</SPAN>                       DWORD options, CSkinModel &amp;model);
+<SPAN CLASS="linenum">0183:</SPAN> 
+<SPAN CLASS="linenum">0184:</SPAN>     HRESULT CalculateRadius(D3DXMATRIX *pmatCur, D3DXVECTOR3 *pvCenter, <SPAN CLASS="keyword">float</SPAN> *pfRadiusSq); <SPAN CLASS="comment">// 半径の計算</SPAN>
+<SPAN CLASS="linenum">0185:</SPAN>     HRESULT CalculateSum(D3DXMATRIX *pmatCur, D3DXVECTOR3 *pvCenter, UINT *pcVertices); <SPAN CLASS="comment">// 重心を求める</SPAN>
+<SPAN CLASS="linenum">0186:</SPAN>     <SPAN CLASS="keyword">void</SPAN> ReleaseDeviceDependentMeshes();    <SPAN CLASS="comment">// メッシュとして確保したメモリを開放する</SPAN>
+<SPAN CLASS="linenum">0187:</SPAN>     HRESULT UpdateFrames(D3DXMATRIX &amp;matCur);
+<SPAN CLASS="linenum">0188:</SPAN> };
+<SPAN CLASS="linenum">0189:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0190:</SPAN> <SPAN CLASS="comment">// </SPAN>
+<SPAN CLASS="linenum">0191:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0192:</SPAN> <SPAN CLASS="keyword">class</SPAN> SDrawElement
+<SPAN CLASS="linenum">0193:</SPAN> {
+<SPAN CLASS="linenum">0194:</SPAN> <SPAN CLASS="keyword">private</SPAN>:
+<SPAN CLASS="linenum">0195:</SPAN> <SPAN CLASS="keyword">public</SPAN>:
+<SPAN CLASS="linenum">0196:</SPAN>     <SPAN CLASS="keyword">char</SPAN> *szName;                               <SPAN CLASS="comment">// エレメントの名前</SPAN>
+<SPAN CLASS="linenum">0197:</SPAN>     SFrame *pframeRoot;                         <SPAN CLASS="comment">// フレームの木の根元</SPAN>
+<SPAN CLASS="linenum">0198:</SPAN>     SFrame *pframeAnimHead;                     <SPAN CLASS="comment">// アニメーションのフレームをリストで管理する先頭</SPAN>
+<SPAN CLASS="linenum">0199:</SPAN>     D3DXVECTOR3 vCenter;                        <SPAN CLASS="comment">// ポリゴン全部の重心</SPAN>
+<SPAN CLASS="linenum">0200:</SPAN>     <SPAN CLASS="keyword">float</SPAN> fRadius;                              <SPAN CLASS="comment">// 大きさ</SPAN>
+<SPAN CLASS="linenum">0201:</SPAN> 
+<SPAN CLASS="linenum">0202:</SPAN>     <SPAN CLASS="keyword">float</SPAN> fCurTime;                             <SPAN CLASS="comment">// カウンタ</SPAN>
+<SPAN CLASS="linenum">0203:</SPAN> 
+<SPAN CLASS="linenum">0204:</SPAN>     SDrawElement();
+<SPAN CLASS="linenum">0205:</SPAN>     ~SDrawElement();
+<SPAN CLASS="linenum">0206:</SPAN> 
+<SPAN CLASS="linenum">0207:</SPAN>     <SPAN CLASS="keyword">void</SPAN> AddAnimationFrame(SFrame *pframeAnim); <SPAN CLASS="comment">// 先頭にアニメーションフレームを追加する</SPAN>
+<SPAN CLASS="linenum">0208:</SPAN>     SFrame *FindFrame(<SPAN CLASS="keyword">char</SPAN> *szName);            <SPAN CLASS="comment">// 名前からフレームを検索する</SPAN>
+<SPAN CLASS="linenum">0209:</SPAN>     HRESULT CalculateBoundingSphere();          <SPAN CLASS="comment">// バウンディング球の計算</SPAN>
+<SPAN CLASS="linenum">0210:</SPAN> };
+<SPAN CLASS="linenum">0211:</SPAN> 
+<SPAN CLASS="linenum">0212:</SPAN> 
+<SPAN CLASS="linenum">0213:</SPAN> <SPAN CLASS="keyword">class</SPAN> CSkinModel{
+<SPAN CLASS="linenum">0214:</SPAN> <SPAN CLASS="keyword">protected</SPAN>:
+<SPAN CLASS="linenum">0215:</SPAN>     TCHAR               m_szPath[MAX_PATH];     <SPAN CLASS="comment">// ファイル名</SPAN>
+<SPAN CLASS="linenum">0216:</SPAN>     LPDIRECT3DDEVICE8   m_pD3DDev;              <SPAN CLASS="comment">// いちいち指定するのは面倒なので保持しておく</SPAN>
+<SPAN CLASS="linenum">0217:</SPAN>     D3DSURFACE_DESC     m_d3dsdBackBuffer;      <SPAN CLASS="comment">// サーフェスの記述を取得する</SPAN>
+<SPAN CLASS="linenum">0218:</SPAN>     D3DCAPS8            m_d3dCaps;
+<SPAN CLASS="linenum">0219:</SPAN>     DWORD               m_1st_time;             <SPAN CLASS="comment">// 基準時間</SPAN>
+<SPAN CLASS="linenum">0220:</SPAN>     SDrawElement        *m_pdeMesh;             <SPAN CLASS="comment">// 読み込んだメッシュ</SPAN>
+<SPAN CLASS="linenum">0221:</SPAN>     DWORD               m_maxBones;             <SPAN CLASS="comment">// 各フレームで使っている骨の最大数</SPAN>
+<SPAN CLASS="linenum">0222:</SPAN>     DWORD               m_dwFVF;                <SPAN CLASS="comment">// フレキシブル頂点フォーマット</SPAN>
+<SPAN CLASS="linenum">0223:</SPAN>     METHOD              m_method;               <SPAN CLASS="comment">// 描画方法</SPAN>
+<SPAN CLASS="linenum">0224:</SPAN>     DWORD               m_dwIndexedVertexShader[4];
+<SPAN CLASS="linenum">0225:</SPAN> 
+<SPAN CLASS="linenum">0226:</SPAN>     D3DXMATRIXA16       m_Rot;                  <SPAN CLASS="comment">// 回転</SPAN>
+<SPAN CLASS="linenum">0227:</SPAN>     D3DXMATRIXA16       m_Trans;                <SPAN CLASS="comment">// 平行移動</SPAN>
+<SPAN CLASS="linenum">0228:</SPAN>     D3DXMATRIXA16       m_View;                 <SPAN CLASS="comment">// ビュー行列</SPAN>
+<SPAN CLASS="linenum">0229:</SPAN> 
+<SPAN CLASS="linenum">0230:</SPAN>     
+<SPAN CLASS="linenum">0231:</SPAN>     HRESULT _LoadMeshHierarchy(LPDIRECT3DDEVICE8 pD3DDev);
+<SPAN CLASS="linenum">0232:</SPAN>     <SPAN CLASS="keyword">void</SPAN> _SetDevice(LPDIRECT3DDEVICE8 pD3DDev){m_pD3DDev=pD3DDev;}
+<SPAN CLASS="linenum">0233:</SPAN>     HRESULT _SetProjectionMatrix();
+<SPAN CLASS="linenum">0234:</SPAN>     HRESULT _InvalidateDeviceObjects();
+<SPAN CLASS="linenum">0235:</SPAN>     HRESULT _DeleteDeviceObjects();
+<SPAN CLASS="linenum">0236:</SPAN>     HRESULT _DeleteSelectedMesh();
+<SPAN CLASS="linenum">0237:</SPAN>     
+<SPAN CLASS="linenum">0238:</SPAN>     HRESULT _GenerateMeshNonIndexed(SMeshContainer *pmcMesh);
+<SPAN CLASS="linenum">0239:</SPAN>     HRESULT _GenerateMeshIndexedVs (SMeshContainer *pmcMesh);
+<SPAN CLASS="linenum">0240:</SPAN>     HRESULT _GenerateMeshIndexed   (SMeshContainer *pmcMesh);
+<SPAN CLASS="linenum">0241:</SPAN>     HRESULT _GenerateMeshSoftware  (SMeshContainer *pmcMesh);
+<SPAN CLASS="linenum">0242:</SPAN> 
+<SPAN CLASS="linenum">0243:</SPAN>     HRESULT _DrawMeshContainerNoSkin(SMeshContainer *pmcMesh);
+<SPAN CLASS="linenum">0244:</SPAN>     HRESULT _DrawMeshContainerNonIndexed(SMeshContainer *pmcMesh);
+<SPAN CLASS="linenum">0245:</SPAN>     HRESULT _DrawMeshContainerIndexed(SMeshContainer *pmcMesh);
+<SPAN CLASS="linenum">0246:</SPAN>     HRESULT _DrawMeshContainerIndexedVs(SMeshContainer *pmcMesh);
+<SPAN CLASS="linenum">0247:</SPAN>     HRESULT _DrawMeshContainerSoftware(SMeshContainer *pmcMesh);
+<SPAN CLASS="linenum">0248:</SPAN>     HRESULT _DrawMeshContainer(SMeshContainer *pmcMesh);
+<SPAN CLASS="linenum">0249:</SPAN>     HRESULT _DrawFrames(SFrame *pframe, UINT &amp;cTriangles);
+<SPAN CLASS="linenum">0250:</SPAN> <SPAN CLASS="keyword">public</SPAN>:
+<SPAN CLASS="linenum">0251:</SPAN>     LPD3DXMATRIXA16     m_pBoneMatrices;        <SPAN CLASS="comment">// 骨の行列</SPAN>
+<SPAN CLASS="linenum">0252:</SPAN> 
+<SPAN CLASS="linenum">0253:</SPAN>     CSkinModel();
+<SPAN CLASS="linenum">0254:</SPAN>     <SPAN CLASS="keyword">virtual</SPAN> ~CSkinModel(){}
+<SPAN CLASS="linenum">0255:</SPAN>     
+<SPAN CLASS="linenum">0256:</SPAN>     <SPAN CLASS="comment">// 操作関数</SPAN>
+<SPAN CLASS="linenum">0257:</SPAN>     HRESULT Init(DWORD time, LPDIRECT3DDEVICE8 pD3DDev, D3DCAPS8 &amp;caps);<SPAN CLASS="comment">// 最初の初期化</SPAN>
+<SPAN CLASS="linenum">0258:</SPAN>     HRESULT _CreateVertexShader();                                      <SPAN CLASS="comment">// 頂点シェーダーの生成</SPAN>
+<SPAN CLASS="linenum">0259:</SPAN>     HRESULT RestoreDeviceObjects(LPDIRECT3DDEVICE8 pD3DDev);            <SPAN CLASS="comment">// シーンの初期化</SPAN>
+<SPAN CLASS="linenum">0260:</SPAN>     HRESULT Load(<SPAN CLASS="keyword">const</SPAN> TCHAR *filename);                                <SPAN CLASS="comment">// xFileのロード</SPAN>
+<SPAN CLASS="linenum">0261:</SPAN>     HRESULT GenerateMesh (SMeshContainer *pmcMesh);                     <SPAN CLASS="comment">// メッシュの生成</SPAN>
+<SPAN CLASS="linenum">0262:</SPAN>     HRESULT FrameMove(DWORD time);                                      <SPAN CLASS="comment">// 動かす</SPAN>
+<SPAN CLASS="linenum">0263:</SPAN>     HRESULT Render();                                                   <SPAN CLASS="comment">// 描画する</SPAN>
+<SPAN CLASS="linenum">0264:</SPAN>     HRESULT Release();                                                  <SPAN CLASS="comment">// 開放する</SPAN>
+<SPAN CLASS="linenum">0265:</SPAN>     
+<SPAN CLASS="linenum">0266:</SPAN>     <SPAN CLASS="comment">// 情報所得、操作系</SPAN>
+<SPAN CLASS="linenum">0267:</SPAN>     <SPAN CLASS="keyword">const</SPAN> TCHAR *     GetFileName() <SPAN CLASS="keyword">const</SPAN> {<SPAN CLASS="keyword">return</SPAN> m_szPath;}
+<SPAN CLASS="linenum">0268:</SPAN>     <SPAN CLASS="keyword">void</SPAN>              Set1stTime(DWORD time) {m_1st_time = time;}
+<SPAN CLASS="linenum">0269:</SPAN>     LPDIRECT3DDEVICE8 GetDevice()   <SPAN CLASS="keyword">const</SPAN> {<SPAN CLASS="keyword">return</SPAN> m_pD3DDev;}
+<SPAN CLASS="linenum">0270:</SPAN>     <SPAN CLASS="keyword">void</SPAN>              SetMaxBorns(DWORD num) {m_maxBones = num;}
+<SPAN CLASS="linenum">0271:</SPAN>     DWORD             GetMaxBorns() <SPAN CLASS="keyword">const</SPAN> {<SPAN CLASS="keyword">return</SPAN> m_maxBones;}
+<SPAN CLASS="linenum">0272:</SPAN>     <SPAN CLASS="keyword">const</SPAN> D3DCAPS8*   GetCaps ()    <SPAN CLASS="keyword">const</SPAN> {<SPAN CLASS="keyword">return</SPAN> &amp;m_d3dCaps;}
+<SPAN CLASS="linenum">0273:</SPAN>     <SPAN CLASS="keyword">void</SPAN>              SetMethod(METHOD method) {m_method = method;}
+<SPAN CLASS="linenum">0274:</SPAN>     METHOD            GetMethod()   <SPAN CLASS="keyword">const</SPAN> {<SPAN CLASS="keyword">return</SPAN> m_method;}
+<SPAN CLASS="linenum">0275:</SPAN>     <SPAN CLASS="keyword">float</SPAN>             GetRadius() <SPAN CLASS="keyword">const</SPAN> {<SPAN CLASS="keyword">return</SPAN> m_pdeMesh-&gt;fRadius;}    <SPAN CLASS="comment">// モデルのバウンディング球を求める</SPAN>
+<SPAN CLASS="linenum">0276:</SPAN>     <SPAN CLASS="keyword">void</SPAN>              SetRot  (<SPAN CLASS="keyword">const</SPAN> D3DXMATRIXA16 &amp;rot  ) {m_Rot   = rot;}
+<SPAN CLASS="linenum">0277:</SPAN>     <SPAN CLASS="keyword">void</SPAN>              SetTrans(<SPAN CLASS="keyword">const</SPAN> D3DXMATRIXA16 &amp;trans) {m_Trans = trans;}
+<SPAN CLASS="linenum">0278:</SPAN>     <SPAN CLASS="keyword">void</SPAN>              SetView (<SPAN CLASS="keyword">const</SPAN> D3DXMATRIXA16 &amp;view)  {m_View  = view;}
+<SPAN CLASS="linenum">0279:</SPAN> };
+<SPAN CLASS="linenum">0280:</SPAN> 
+<SPAN CLASS="linenum">0281:</SPAN> 
+<SPAN CLASS="linenum">0282:</SPAN> <SPAN CLASS="keyword">#endif</SPAN> <SPAN CLASS="comment">// _CSkinModel_h</SPAN>
+<SPAN CLASS="linenum">0283:</SPAN> </PRE>
+</BODY>
+</HTML>

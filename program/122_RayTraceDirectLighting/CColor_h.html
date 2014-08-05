@@ -1,0 +1,111 @@
+<HTML>
+<HEAD>
+<TITLE>CColor.h</TITLE>
+<meta name="GENERATOR" content="cpp2html 2.1 by Niisaka">
+<meta http-equiv="Content-Type" content="text/html">
+<meta http-equiv="Content-Style-Type" content="text/css">
+<STYLE TYPE="text/css">
+<!--
+SPAN.comment { color:#008000; font-weight:normal; font-style:normal;}
+SPAN.keyword { color:#0000FF; font-weight:normal; font-style:normal;}
+SPAN.string { color:#600000; font-weight:normal; font-style:normal;}
+SPAN.linenum { color:#A0A0A0; font-weight:normal; font-style:normal;}
+-->
+</STYLE>
+</HEAD>
+<BODY TEXT="#000000" BGCOLOR="#FFFFFF">
+<PRE><SPAN CLASS="linenum">0001:</SPAN> <SPAN CLASS="comment">//--------------------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0002:</SPAN> <SPAN CLASS="comment">// File: color.h</SPAN>
+<SPAN CLASS="linenum">0003:</SPAN> <SPAN CLASS="comment">//</SPAN>
+<SPAN CLASS="linenum">0004:</SPAN> <SPAN CLASS="comment">// êFÇàµÇ§ÇΩÇﬂÇÃÉNÉâÉX</SPAN>
+<SPAN CLASS="linenum">0005:</SPAN> <SPAN CLASS="comment">//</SPAN>
+<SPAN CLASS="linenum">0006:</SPAN> <SPAN CLASS="comment">// Copyright (c) Takashi Imagire. All rights reserved.</SPAN>
+<SPAN CLASS="linenum">0007:</SPAN> <SPAN CLASS="comment">//--------------------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0008:</SPAN> <SPAN CLASS="keyword">#ifndef</SPAN> __CCOLOR_H_
+<SPAN CLASS="linenum">0009:</SPAN> <SPAN CLASS="keyword">#define</SPAN> __CCOLOR_H_
+<SPAN CLASS="linenum">0010:</SPAN> 
+<SPAN CLASS="linenum">0011:</SPAN> <SPAN CLASS="keyword">#include</SPAN> &lt;assert.h&gt;
+<SPAN CLASS="linenum">0012:</SPAN> <SPAN CLASS="keyword">#include</SPAN> &lt;iostream&gt;
+<SPAN CLASS="linenum">0013:</SPAN> <SPAN CLASS="keyword">#include</SPAN> "<SPAN CLASS="string">common\my_types.h</SPAN>"
+<SPAN CLASS="linenum">0014:</SPAN> 
+<SPAN CLASS="linenum">0015:</SPAN> 
+<SPAN CLASS="linenum">0016:</SPAN> <SPAN CLASS="keyword">class</SPAN> CColor
+<SPAN CLASS="linenum">0017:</SPAN> {
+<SPAN CLASS="linenum">0018:</SPAN> <SPAN CLASS="keyword">private</SPAN>:
+<SPAN CLASS="linenum">0019:</SPAN> <SPAN CLASS="keyword">public</SPAN>:
+<SPAN CLASS="linenum">0020:</SPAN>     <SPAN CLASS="keyword">float</SPAN> r,g,b,a;
+<SPAN CLASS="linenum">0021:</SPAN>     
+<SPAN CLASS="linenum">0022:</SPAN>     CColor() {}
+<SPAN CLASS="linenum">0023:</SPAN>     CColor(<SPAN CLASS="keyword">float</SPAN> fr, <SPAN CLASS="keyword">float</SPAN> fg, <SPAN CLASS="keyword">float</SPAN> fb) { r = fr; g = fg; b = fb; a = 0.0f;}
+<SPAN CLASS="linenum">0024:</SPAN>     CColor(<SPAN CLASS="keyword">const</SPAN> CColor &amp;c) { r = c.r; g = c.g; b = c.b; a = c.b; }
+<SPAN CLASS="linenum">0025:</SPAN> 
+<SPAN CLASS="linenum">0026:</SPAN>     CColor <SPAN CLASS="keyword">operator</SPAN>+() <SPAN CLASS="keyword">const</SPAN> { <SPAN CLASS="keyword">return</SPAN> CColor( r, g, b); }
+<SPAN CLASS="linenum">0027:</SPAN>     CColor <SPAN CLASS="keyword">operator</SPAN>-() <SPAN CLASS="keyword">const</SPAN> { <SPAN CLASS="keyword">return</SPAN> CColor(-r,-g,-b); }
+<SPAN CLASS="linenum">0028:</SPAN> 
+<SPAN CLASS="linenum">0029:</SPAN>     CColor&amp; <SPAN CLASS="keyword">operator</SPAN>+=(<SPAN CLASS="keyword">const</SPAN> CColor &amp;c) { r += c.r; g += c.g; b += c.b; a += c.a; <SPAN CLASS="keyword">return</SPAN> *<SPAN CLASS="keyword">this</SPAN>; } 
+<SPAN CLASS="linenum">0030:</SPAN>     CColor&amp; <SPAN CLASS="keyword">operator</SPAN>-=(<SPAN CLASS="keyword">const</SPAN> CColor &amp;c) { r -= c.r; g -= c.g; b -= c.b; a -= c.a; <SPAN CLASS="keyword">return</SPAN> *<SPAN CLASS="keyword">this</SPAN>; } 
+<SPAN CLASS="linenum">0031:</SPAN>     CColor&amp; <SPAN CLASS="keyword">operator</SPAN>*=(<SPAN CLASS="keyword">const</SPAN> CColor &amp;c) { r *= c.r; g *= c.g; b *= c.b; a *= c.a; <SPAN CLASS="keyword">return</SPAN> *<SPAN CLASS="keyword">this</SPAN>; } 
+<SPAN CLASS="linenum">0032:</SPAN>     CColor&amp; <SPAN CLASS="keyword">operator</SPAN>/=(<SPAN CLASS="keyword">const</SPAN> CColor &amp;c) { r /= c.r; g /= c.g; b /= c.b; a /= c.a; <SPAN CLASS="keyword">return</SPAN> *<SPAN CLASS="keyword">this</SPAN>; } 
+<SPAN CLASS="linenum">0033:</SPAN>     CColor&amp; <SPAN CLASS="keyword">operator</SPAN>*=(<SPAN CLASS="keyword">float</SPAN> f) { r *= f; g *= f; b *= f; a *= f; <SPAN CLASS="keyword">return</SPAN> *<SPAN CLASS="keyword">this</SPAN>; } 
+<SPAN CLASS="linenum">0034:</SPAN>     CColor&amp; <SPAN CLASS="keyword">operator</SPAN>/=(<SPAN CLASS="keyword">float</SPAN> f) { r /= f; g /= f; b /= f; a /= f; <SPAN CLASS="keyword">return</SPAN> *<SPAN CLASS="keyword">this</SPAN>; } 
+<SPAN CLASS="linenum">0035:</SPAN> 
+<SPAN CLASS="linenum">0036:</SPAN> };
+<SPAN CLASS="linenum">0037:</SPAN> 
+<SPAN CLASS="linenum">0038:</SPAN> <SPAN CLASS="keyword">inline</SPAN> <SPAN CLASS="keyword">float</SPAN> dot( <SPAN CLASS="keyword">const</SPAN> CColor &amp;c1, <SPAN CLASS="keyword">const</SPAN> CColor &amp;c2 )
+<SPAN CLASS="linenum">0039:</SPAN> {
+<SPAN CLASS="linenum">0040:</SPAN>     <SPAN CLASS="keyword">return</SPAN> c1.r*c2.r + c1.g*c2.g + c1.b*c2.b;
+<SPAN CLASS="linenum">0041:</SPAN> }
+<SPAN CLASS="linenum">0042:</SPAN> 
+<SPAN CLASS="linenum">0043:</SPAN> 
+<SPAN CLASS="linenum">0044:</SPAN> <SPAN CLASS="comment">// ---------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0045:</SPAN> <SPAN CLASS="keyword">inline</SPAN> <SPAN CLASS="keyword">bool</SPAN> <SPAN CLASS="keyword">operator</SPAN>==(CColor c1, CColor c2)
+<SPAN CLASS="linenum">0046:</SPAN> {
+<SPAN CLASS="linenum">0047:</SPAN>     <SPAN CLASS="keyword">return</SPAN> (c1.r == c2.r &amp;&amp; c1.g == c2.g &amp;&amp; c1.b == c2.b);
+<SPAN CLASS="linenum">0048:</SPAN> }
+<SPAN CLASS="linenum">0049:</SPAN> <SPAN CLASS="comment">// ---------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0050:</SPAN> <SPAN CLASS="keyword">inline</SPAN> <SPAN CLASS="keyword">bool</SPAN> <SPAN CLASS="keyword">operator</SPAN>!=(CColor c1, CColor c2)
+<SPAN CLASS="linenum">0051:</SPAN> {
+<SPAN CLASS="linenum">0052:</SPAN>     <SPAN CLASS="keyword">return</SPAN> (c1.r != c2.r || c1.g != c2.g || c1.b != c2.b);
+<SPAN CLASS="linenum">0053:</SPAN> }
+<SPAN CLASS="linenum">0054:</SPAN> 
+<SPAN CLASS="linenum">0055:</SPAN> <SPAN CLASS="comment">// ---------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0056:</SPAN> <SPAN CLASS="keyword">inline</SPAN> CColor <SPAN CLASS="keyword">operator</SPAN>+(CColor c1, CColor c2)
+<SPAN CLASS="linenum">0057:</SPAN> {
+<SPAN CLASS="linenum">0058:</SPAN>     <SPAN CLASS="keyword">return</SPAN> CColor(c1.r+c2.r, c1.g+c2.g, c1.b+c2.b);
+<SPAN CLASS="linenum">0059:</SPAN> }
+<SPAN CLASS="linenum">0060:</SPAN> <SPAN CLASS="comment">// ---------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0061:</SPAN> <SPAN CLASS="keyword">inline</SPAN> CColor <SPAN CLASS="keyword">operator</SPAN>-(CColor c1, CColor c2)
+<SPAN CLASS="linenum">0062:</SPAN> {
+<SPAN CLASS="linenum">0063:</SPAN>     <SPAN CLASS="keyword">return</SPAN> CColor(c1.r-c2.r, c1.g-c2.g, c1.b-c2.b);
+<SPAN CLASS="linenum">0064:</SPAN> }
+<SPAN CLASS="linenum">0065:</SPAN> <SPAN CLASS="comment">// ---------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0066:</SPAN> <SPAN CLASS="keyword">inline</SPAN> CColor <SPAN CLASS="keyword">operator</SPAN>*(CColor c1, CColor c2)
+<SPAN CLASS="linenum">0067:</SPAN> {
+<SPAN CLASS="linenum">0068:</SPAN>     <SPAN CLASS="keyword">return</SPAN> CColor(c1.r*c2.r, c1.g*c2.g, c1.b*c2.b);
+<SPAN CLASS="linenum">0069:</SPAN> }
+<SPAN CLASS="linenum">0070:</SPAN> <SPAN CLASS="comment">// ---------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0071:</SPAN> <SPAN CLASS="keyword">inline</SPAN> CColor <SPAN CLASS="keyword">operator</SPAN>/(CColor c1, CColor c2)
+<SPAN CLASS="linenum">0072:</SPAN> {
+<SPAN CLASS="linenum">0073:</SPAN>     <SPAN CLASS="keyword">return</SPAN> CColor(c1.r/c2.r, c1.g/c2.g, c1.b/c2.b);
+<SPAN CLASS="linenum">0074:</SPAN> }
+<SPAN CLASS="linenum">0075:</SPAN> <SPAN CLASS="comment">// ---------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0076:</SPAN> <SPAN CLASS="keyword">inline</SPAN> CColor <SPAN CLASS="keyword">operator</SPAN>*(CColor c, <SPAN CLASS="keyword">float</SPAN> f)
+<SPAN CLASS="linenum">0077:</SPAN> {
+<SPAN CLASS="linenum">0078:</SPAN>     <SPAN CLASS="keyword">return</SPAN> CColor(f*c.r, f*c.g, f*c.b);
+<SPAN CLASS="linenum">0079:</SPAN> }
+<SPAN CLASS="linenum">0080:</SPAN> <SPAN CLASS="comment">// ---------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0081:</SPAN> <SPAN CLASS="keyword">inline</SPAN> CColor <SPAN CLASS="keyword">operator</SPAN>*(<SPAN CLASS="keyword">float</SPAN> f, CColor c)
+<SPAN CLASS="linenum">0082:</SPAN> {
+<SPAN CLASS="linenum">0083:</SPAN>     <SPAN CLASS="keyword">return</SPAN> CColor(c.r*f, c.g*f, c.b*f);
+<SPAN CLASS="linenum">0084:</SPAN> }
+<SPAN CLASS="linenum">0085:</SPAN> <SPAN CLASS="comment">// ---------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0086:</SPAN> <SPAN CLASS="keyword">inline</SPAN> CColor <SPAN CLASS="keyword">operator</SPAN>/(CColor c, <SPAN CLASS="keyword">float</SPAN> f)
+<SPAN CLASS="linenum">0087:</SPAN> {
+<SPAN CLASS="linenum">0088:</SPAN>     <SPAN CLASS="keyword">return</SPAN> CColor(c.r/f, c.g/f, c.b/f);
+<SPAN CLASS="linenum">0089:</SPAN> }
+<SPAN CLASS="linenum">0090:</SPAN> 
+<SPAN CLASS="linenum">0091:</SPAN> 
+<SPAN CLASS="linenum">0092:</SPAN> <SPAN CLASS="keyword">#endif</SPAN> <SPAN CLASS="comment">// !__CCOLOR_H_</SPAN>
+<SPAN CLASS="linenum">0093:</SPAN> </PRE>
+</BODY>
+</HTML>

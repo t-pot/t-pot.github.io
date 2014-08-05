@@ -1,0 +1,164 @@
+<HTML>
+<HEAD>
+<TITLE>d3dapp.h</TITLE>
+<meta name="GENERATOR" content="cpp2html 2.1 by Niisaka">
+<meta http-equiv="Content-Type" content="text/html">
+<meta http-equiv="Content-Style-Type" content="text/css">
+<STYLE TYPE="text/css">
+<!--
+SPAN.comment { color:#008000; font-weight:normal; font-style:normal;}
+SPAN.keyword { color:#0000FF; font-weight:normal; font-style:normal;}
+SPAN.string { color:#600000; font-weight:normal; font-style:normal;}
+SPAN.linenum { color:#A0A0A0; font-weight:normal; font-style:normal;}
+-->
+</STYLE>
+</HEAD>
+<BODY TEXT="#000000" BGCOLOR="#FFFFFF">
+<PRE><SPAN CLASS="linenum">0001:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0002:</SPAN> <SPAN CLASS="comment">// File: D3DApp.h</SPAN>
+<SPAN CLASS="linenum">0003:</SPAN> <SPAN CLASS="comment">//</SPAN>
+<SPAN CLASS="linenum">0004:</SPAN> <SPAN CLASS="comment">// Desc: Application class for the Direct3D samples framework library.</SPAN>
+<SPAN CLASS="linenum">0005:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0006:</SPAN> <SPAN CLASS="keyword">#ifndef</SPAN> D3DAPP_H
+<SPAN CLASS="linenum">0007:</SPAN> <SPAN CLASS="keyword">#define</SPAN> D3DAPP_H
+<SPAN CLASS="linenum">0008:</SPAN> 
+<SPAN CLASS="linenum">0009:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0010:</SPAN> <SPAN CLASS="comment">// Error codes</SPAN>
+<SPAN CLASS="linenum">0011:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0012:</SPAN> <SPAN CLASS="keyword">enum</SPAN> APPMSGTYPE { MSG_NONE, MSGERR_APPMUSTEXIT, MSGWARN_SWITCHEDTOREF };
+<SPAN CLASS="linenum">0013:</SPAN> 
+<SPAN CLASS="linenum">0014:</SPAN> <SPAN CLASS="keyword">#define</SPAN> D3DAPPERR_NODIRECT3D          0x82000001
+<SPAN CLASS="linenum">0015:</SPAN> <SPAN CLASS="keyword">#define</SPAN> D3DAPPERR_NOWINDOW            0x82000002
+<SPAN CLASS="linenum">0016:</SPAN> <SPAN CLASS="keyword">#define</SPAN> D3DAPPERR_NOCOMPATIBLEDEVICES 0x82000003
+<SPAN CLASS="linenum">0017:</SPAN> <SPAN CLASS="keyword">#define</SPAN> D3DAPPERR_NOWINDOWABLEDEVICES 0x82000004
+<SPAN CLASS="linenum">0018:</SPAN> <SPAN CLASS="keyword">#define</SPAN> D3DAPPERR_NOHARDWAREDEVICE    0x82000005
+<SPAN CLASS="linenum">0019:</SPAN> <SPAN CLASS="keyword">#define</SPAN> D3DAPPERR_HALNOTCOMPATIBLE    0x82000006
+<SPAN CLASS="linenum">0020:</SPAN> <SPAN CLASS="keyword">#define</SPAN> D3DAPPERR_NOWINDOWEDHAL       0x82000007
+<SPAN CLASS="linenum">0021:</SPAN> <SPAN CLASS="keyword">#define</SPAN> D3DAPPERR_NODESKTOPHAL        0x82000008
+<SPAN CLASS="linenum">0022:</SPAN> <SPAN CLASS="keyword">#define</SPAN> D3DAPPERR_NOHALTHISMODE       0x82000009
+<SPAN CLASS="linenum">0023:</SPAN> <SPAN CLASS="keyword">#define</SPAN> D3DAPPERR_NONZEROREFCOUNT     0x8200000a
+<SPAN CLASS="linenum">0024:</SPAN> <SPAN CLASS="keyword">#define</SPAN> D3DAPPERR_MEDIANOTFOUND       0x8200000b
+<SPAN CLASS="linenum">0025:</SPAN> <SPAN CLASS="keyword">#define</SPAN> D3DAPPERR_RESETFAILED         0x8200000c
+<SPAN CLASS="linenum">0026:</SPAN> <SPAN CLASS="keyword">#define</SPAN> D3DAPPERR_NULLREFDEVICE       0x8200000d
+<SPAN CLASS="linenum">0027:</SPAN> 
+<SPAN CLASS="linenum">0028:</SPAN> 
+<SPAN CLASS="linenum">0029:</SPAN> 
+<SPAN CLASS="linenum">0030:</SPAN> 
+<SPAN CLASS="linenum">0031:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0032:</SPAN> <SPAN CLASS="comment">// Name: class CD3DApplication</SPAN>
+<SPAN CLASS="linenum">0033:</SPAN> <SPAN CLASS="comment">// Desc: A base class for creating sample D3D9 applications. To create a simple</SPAN>
+<SPAN CLASS="linenum">0034:</SPAN> <SPAN CLASS="comment">//       Direct3D application, simply derive this class into a class (such as</SPAN>
+<SPAN CLASS="linenum">0035:</SPAN> <SPAN CLASS="comment">//       class CMyD3DApplication) and override the following functions, as </SPAN>
+<SPAN CLASS="linenum">0036:</SPAN> <SPAN CLASS="comment">//       needed:</SPAN>
+<SPAN CLASS="linenum">0037:</SPAN> <SPAN CLASS="comment">//          OneTimeSceneInit()    - To initialize app data (alloc mem, etc.)</SPAN>
+<SPAN CLASS="linenum">0038:</SPAN> <SPAN CLASS="comment">//          InitDeviceObjects()   - To initialize the 3D scene objects</SPAN>
+<SPAN CLASS="linenum">0039:</SPAN> <SPAN CLASS="comment">//          FrameMove()           - To animate the scene</SPAN>
+<SPAN CLASS="linenum">0040:</SPAN> <SPAN CLASS="comment">//          Render()              - To render the scene</SPAN>
+<SPAN CLASS="linenum">0041:</SPAN> <SPAN CLASS="comment">//          DeleteDeviceObjects() - To cleanup the 3D scene objects</SPAN>
+<SPAN CLASS="linenum">0042:</SPAN> <SPAN CLASS="comment">//          FinalCleanup()        - To cleanup app data (for exitting the app)</SPAN>
+<SPAN CLASS="linenum">0043:</SPAN> <SPAN CLASS="comment">//          MsgProc()             - To handle Windows messages</SPAN>
+<SPAN CLASS="linenum">0044:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0045:</SPAN> <SPAN CLASS="keyword">class</SPAN> CD3DApplication
+<SPAN CLASS="linenum">0046:</SPAN> {
+<SPAN CLASS="linenum">0047:</SPAN> <SPAN CLASS="keyword">protected</SPAN>:
+<SPAN CLASS="linenum">0048:</SPAN>     CD3DEnumeration   m_d3dEnumeration;
+<SPAN CLASS="linenum">0049:</SPAN>     CD3DSettings      m_d3dSettings;
+<SPAN CLASS="linenum">0050:</SPAN> 
+<SPAN CLASS="linenum">0051:</SPAN>     <SPAN CLASS="comment">// Internal variables for the state of the app</SPAN>
+<SPAN CLASS="linenum">0052:</SPAN>     <SPAN CLASS="keyword">bool</SPAN>              m_bWindowed;
+<SPAN CLASS="linenum">0053:</SPAN>     <SPAN CLASS="keyword">bool</SPAN>              m_bActive;
+<SPAN CLASS="linenum">0054:</SPAN>     <SPAN CLASS="keyword">bool</SPAN>              m_bDeviceLost;
+<SPAN CLASS="linenum">0055:</SPAN>     <SPAN CLASS="keyword">bool</SPAN>              m_bMinimized;
+<SPAN CLASS="linenum">0056:</SPAN>     <SPAN CLASS="keyword">bool</SPAN>              m_bMaximized;
+<SPAN CLASS="linenum">0057:</SPAN>     <SPAN CLASS="keyword">bool</SPAN>              m_bIgnoreSizeChange;
+<SPAN CLASS="linenum">0058:</SPAN>     <SPAN CLASS="keyword">bool</SPAN>              m_bDeviceObjectsInited;
+<SPAN CLASS="linenum">0059:</SPAN>     <SPAN CLASS="keyword">bool</SPAN>              m_bDeviceObjectsRestored;
+<SPAN CLASS="linenum">0060:</SPAN> 
+<SPAN CLASS="linenum">0061:</SPAN>     <SPAN CLASS="comment">// Internal variables used for timing</SPAN>
+<SPAN CLASS="linenum">0062:</SPAN>     <SPAN CLASS="keyword">bool</SPAN>              m_bFrameMoving;
+<SPAN CLASS="linenum">0063:</SPAN>     <SPAN CLASS="keyword">bool</SPAN>              m_bSingleStep;
+<SPAN CLASS="linenum">0064:</SPAN> 
+<SPAN CLASS="linenum">0065:</SPAN>     <SPAN CLASS="comment">// Internal error handling function</SPAN>
+<SPAN CLASS="linenum">0066:</SPAN>     HRESULT DisplayErrorMsg( HRESULT hr, DWORD dwType );
+<SPAN CLASS="linenum">0067:</SPAN> 
+<SPAN CLASS="linenum">0068:</SPAN>     <SPAN CLASS="comment">// Internal functions to manage and render the 3D scene</SPAN>
+<SPAN CLASS="linenum">0069:</SPAN>     <SPAN CLASS="keyword">static</SPAN> <SPAN CLASS="keyword">bool</SPAN> ConfirmDeviceHelper( D3DCAPS9* pCaps, 
+<SPAN CLASS="linenum">0070:</SPAN>         VertexProcessingType vertexProcessingType, D3DFORMAT backBufferFormat );
+<SPAN CLASS="linenum">0071:</SPAN>     <SPAN CLASS="keyword">void</SPAN>    BuildPresentParamsFromSettings();
+<SPAN CLASS="linenum">0072:</SPAN>     <SPAN CLASS="keyword">bool</SPAN>    FindBestWindowedMode( <SPAN CLASS="keyword">bool</SPAN> bRequireHAL, <SPAN CLASS="keyword">bool</SPAN> bRequireREF );
+<SPAN CLASS="linenum">0073:</SPAN>     <SPAN CLASS="keyword">bool</SPAN>    FindBestFullscreenMode( <SPAN CLASS="keyword">bool</SPAN> bRequireHAL, <SPAN CLASS="keyword">bool</SPAN> bRequireREF );
+<SPAN CLASS="linenum">0074:</SPAN>     HRESULT ChooseInitialD3DSettings();
+<SPAN CLASS="linenum">0075:</SPAN>     HRESULT Initialize3DEnvironment();
+<SPAN CLASS="linenum">0076:</SPAN>     HRESULT HandlePossibleSizeChange();
+<SPAN CLASS="linenum">0077:</SPAN>     HRESULT Reset3DEnvironment();
+<SPAN CLASS="linenum">0078:</SPAN>     HRESULT ToggleFullscreen();
+<SPAN CLASS="linenum">0079:</SPAN>     HRESULT ForceWindowed();
+<SPAN CLASS="linenum">0080:</SPAN>     HRESULT UserSelectNewDevice();
+<SPAN CLASS="linenum">0081:</SPAN>     <SPAN CLASS="keyword">void</SPAN>    Cleanup3DEnvironment();
+<SPAN CLASS="linenum">0082:</SPAN>     HRESULT Render3DEnvironment();
+<SPAN CLASS="linenum">0083:</SPAN>     <SPAN CLASS="keyword">virtual</SPAN> HRESULT AdjustWindowForChange();
+<SPAN CLASS="linenum">0084:</SPAN>     <SPAN CLASS="keyword">virtual</SPAN> <SPAN CLASS="keyword">void</SPAN> UpdateStats();
+<SPAN CLASS="linenum">0085:</SPAN> 
+<SPAN CLASS="linenum">0086:</SPAN> <SPAN CLASS="keyword">protected</SPAN>:
+<SPAN CLASS="linenum">0087:</SPAN>     <SPAN CLASS="comment">// Main objects used for creating and rendering the 3D scene</SPAN>
+<SPAN CLASS="linenum">0088:</SPAN>     D3DPRESENT_PARAMETERS m_d3dpp;         <SPAN CLASS="comment">// Parameters for CreateDevice/Reset</SPAN>
+<SPAN CLASS="linenum">0089:</SPAN>     HWND              m_hWnd;              <SPAN CLASS="comment">// The main app window</SPAN>
+<SPAN CLASS="linenum">0090:</SPAN>     HWND              m_hWndFocus;         <SPAN CLASS="comment">// The D3D focus window (usually same as m_hWnd)</SPAN>
+<SPAN CLASS="linenum">0091:</SPAN>     HMENU             m_hMenu;             <SPAN CLASS="comment">// App menu bar (stored here when fullscreen)</SPAN>
+<SPAN CLASS="linenum">0092:</SPAN>     LPDIRECT3D9       m_pD3D;              <SPAN CLASS="comment">// The main D3D object</SPAN>
+<SPAN CLASS="linenum">0093:</SPAN>     LPDIRECT3DDEVICE9 m_pd3dDevice;        <SPAN CLASS="comment">// The D3D rendering device</SPAN>
+<SPAN CLASS="linenum">0094:</SPAN>     D3DCAPS9          m_d3dCaps;           <SPAN CLASS="comment">// Caps for the device</SPAN>
+<SPAN CLASS="linenum">0095:</SPAN>     D3DSURFACE_DESC   m_d3dsdBackBuffer;   <SPAN CLASS="comment">// Surface desc of the backbuffer</SPAN>
+<SPAN CLASS="linenum">0096:</SPAN>     DWORD             m_dwCreateFlags;     <SPAN CLASS="comment">// Indicate sw or hw vertex processing</SPAN>
+<SPAN CLASS="linenum">0097:</SPAN>     DWORD             m_dwWindowStyle;     <SPAN CLASS="comment">// Saved window style for mode switches</SPAN>
+<SPAN CLASS="linenum">0098:</SPAN>     RECT              m_rcWindowBounds;    <SPAN CLASS="comment">// Saved window bounds for mode switches</SPAN>
+<SPAN CLASS="linenum">0099:</SPAN>     RECT              m_rcWindowClient;    <SPAN CLASS="comment">// Saved client area size for mode switches</SPAN>
+<SPAN CLASS="linenum">0100:</SPAN> 
+<SPAN CLASS="linenum">0101:</SPAN>     <SPAN CLASS="comment">// Variables for timing</SPAN>
+<SPAN CLASS="linenum">0102:</SPAN>     FLOAT             m_fTime;             <SPAN CLASS="comment">// Current time in seconds</SPAN>
+<SPAN CLASS="linenum">0103:</SPAN>     FLOAT             m_fElapsedTime;      <SPAN CLASS="comment">// Time elapsed since last frame</SPAN>
+<SPAN CLASS="linenum">0104:</SPAN>     FLOAT             m_fFPS;              <SPAN CLASS="comment">// Instanteous frame rate</SPAN>
+<SPAN CLASS="linenum">0105:</SPAN>     TCHAR             m_strDeviceStats[90];<SPAN CLASS="comment">// String to hold D3D device stats</SPAN>
+<SPAN CLASS="linenum">0106:</SPAN>     TCHAR             m_strFrameStats[90]; <SPAN CLASS="comment">// String to hold frame stats</SPAN>
+<SPAN CLASS="linenum">0107:</SPAN> 
+<SPAN CLASS="linenum">0108:</SPAN>     <SPAN CLASS="comment">// Overridable variables for the app</SPAN>
+<SPAN CLASS="linenum">0109:</SPAN>     TCHAR*            m_strWindowTitle;    <SPAN CLASS="comment">// Title for the app's window</SPAN>
+<SPAN CLASS="linenum">0110:</SPAN>     DWORD             m_dwCreationWidth;   <SPAN CLASS="comment">// Width used to create window</SPAN>
+<SPAN CLASS="linenum">0111:</SPAN>     DWORD             m_dwCreationHeight;  <SPAN CLASS="comment">// Height used to create window</SPAN>
+<SPAN CLASS="linenum">0112:</SPAN>     <SPAN CLASS="keyword">bool</SPAN>              m_bShowCursorWhenFullscreen; <SPAN CLASS="comment">// Whether to show cursor when fullscreen</SPAN>
+<SPAN CLASS="linenum">0113:</SPAN>     <SPAN CLASS="keyword">bool</SPAN>              m_bClipCursorWhenFullscreen; <SPAN CLASS="comment">// Whether to limit cursor pos when fullscreen</SPAN>
+<SPAN CLASS="linenum">0114:</SPAN>     <SPAN CLASS="keyword">bool</SPAN>              m_bStartFullscreen;  <SPAN CLASS="comment">// Whether to start up the app in fullscreen mode</SPAN>
+<SPAN CLASS="linenum">0115:</SPAN> 
+<SPAN CLASS="linenum">0116:</SPAN>     <SPAN CLASS="comment">// Overridable functions for the 3D scene created by the app</SPAN>
+<SPAN CLASS="linenum">0117:</SPAN>     <SPAN CLASS="keyword">virtual</SPAN> HRESULT ConfirmDevice(D3DCAPS9*,DWORD,D3DFORMAT)   { <SPAN CLASS="keyword">return</SPAN> S_OK; }
+<SPAN CLASS="linenum">0118:</SPAN>     <SPAN CLASS="keyword">virtual</SPAN> HRESULT OneTimeSceneInit()                         { <SPAN CLASS="keyword">return</SPAN> S_OK; }
+<SPAN CLASS="linenum">0119:</SPAN>     <SPAN CLASS="keyword">virtual</SPAN> HRESULT InitDeviceObjects()                        { <SPAN CLASS="keyword">return</SPAN> S_OK; }
+<SPAN CLASS="linenum">0120:</SPAN>     <SPAN CLASS="keyword">virtual</SPAN> HRESULT RestoreDeviceObjects()                     { <SPAN CLASS="keyword">return</SPAN> S_OK; }
+<SPAN CLASS="linenum">0121:</SPAN>     <SPAN CLASS="keyword">virtual</SPAN> HRESULT FrameMove()                                { <SPAN CLASS="keyword">return</SPAN> S_OK; }
+<SPAN CLASS="linenum">0122:</SPAN>     <SPAN CLASS="keyword">virtual</SPAN> HRESULT Render()                                   { <SPAN CLASS="keyword">return</SPAN> S_OK; }
+<SPAN CLASS="linenum">0123:</SPAN>     <SPAN CLASS="keyword">virtual</SPAN> HRESULT InvalidateDeviceObjects()                  { <SPAN CLASS="keyword">return</SPAN> S_OK; }
+<SPAN CLASS="linenum">0124:</SPAN>     <SPAN CLASS="keyword">virtual</SPAN> HRESULT DeleteDeviceObjects()                      { <SPAN CLASS="keyword">return</SPAN> S_OK; }
+<SPAN CLASS="linenum">0125:</SPAN>     <SPAN CLASS="keyword">virtual</SPAN> HRESULT FinalCleanup()                             { <SPAN CLASS="keyword">return</SPAN> S_OK; }
+<SPAN CLASS="linenum">0126:</SPAN> 
+<SPAN CLASS="linenum">0127:</SPAN> <SPAN CLASS="keyword">public</SPAN>:
+<SPAN CLASS="linenum">0128:</SPAN>     <SPAN CLASS="comment">// Functions to create, run, pause, and clean up the application</SPAN>
+<SPAN CLASS="linenum">0129:</SPAN>     <SPAN CLASS="keyword">virtual</SPAN> HRESULT Create( HINSTANCE hInstance );
+<SPAN CLASS="linenum">0130:</SPAN>     <SPAN CLASS="keyword">virtual</SPAN> INT     Run();
+<SPAN CLASS="linenum">0131:</SPAN>     <SPAN CLASS="keyword">virtual</SPAN> LRESULT MsgProc( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam );
+<SPAN CLASS="linenum">0132:</SPAN>     <SPAN CLASS="keyword">virtual</SPAN> <SPAN CLASS="keyword">void</SPAN>    Pause( <SPAN CLASS="keyword">bool</SPAN> bPause );
+<SPAN CLASS="linenum">0133:</SPAN>     <SPAN CLASS="keyword">virtual</SPAN>         ~CD3DApplication()                         { }
+<SPAN CLASS="linenum">0134:</SPAN> 
+<SPAN CLASS="linenum">0135:</SPAN>     <SPAN CLASS="comment">// Internal constructor</SPAN>
+<SPAN CLASS="linenum">0136:</SPAN>     CD3DApplication();
+<SPAN CLASS="linenum">0137:</SPAN> };
+<SPAN CLASS="linenum">0138:</SPAN> 
+<SPAN CLASS="linenum">0139:</SPAN> 
+<SPAN CLASS="linenum">0140:</SPAN> 
+<SPAN CLASS="linenum">0141:</SPAN> 
+<SPAN CLASS="linenum">0142:</SPAN> <SPAN CLASS="keyword">#endif</SPAN>
+<SPAN CLASS="linenum">0143:</SPAN> 
+<SPAN CLASS="linenum">0144:</SPAN> 
+<SPAN CLASS="linenum">0145:</SPAN> 
+<SPAN CLASS="linenum">0146:</SPAN> </PRE>
+</BODY>
+</HTML>

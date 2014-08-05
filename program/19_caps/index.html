@@ -1,0 +1,126 @@
+<head>
+	<title>t-pot 『Vertex Shader 入門:CAPSを用いて判定を詳細に』</title>
+	<link rel="stylesheet" type="text/css" href="../if.css">
+</head>
+<meta http-equiv=Content-Type content="text/html; charset=shift_jis">
+<body>
+
+<div class="contents">
+<center>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<h1>CAPSを用いて判定を詳細に</h1><br>
+<h3>～てへへ、おこられちった～</h3>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+</center>
+
+<h2>■今回は何なの?</h2>
+
+<p>
+皆さんこんにちは。最近、初めてのファンメールをもらいました。<br>
+<font size = 5>『おめ～のソースはうごかねぇんだよ!!』</font><br>
+という、心温かいお便りです<sup>1</sup>。<br>
+私は GeForce3 しかもっていなかったので
+（正確には、GeForce2MX を持っているのですが、部屋の中から発掘できません）、分からなかったのですが、
+GeForce1/2 では、ハードウェア Vertex Shader のバージョン1.0 をサポートしていないので、
+ソースを実行できないとのことです。
+本当は、DirectX がやるべきだと思うのですが、そうもいってられません。
+教えてもらった情報を元に、プログラムを修正します。<br>
+ということで、今回は、いわゆる機種依存性のお話です。<br>
+<br>
+<small>1:彼の名誉のためにことわっておきますが、
+本当は、とても暖かな応援のメールをいただきました。
+ここでは、とても、おおげさに脚色しています。<br>
+今後、とても汚い言葉を発するかも知れませんが、そんなキャラだと思って暖かく見守ってください。<br>
+なお、不愉快な思いをされた方はメールをお願いします。
+納得の上、誠意を持って対処させていただきます。
+</small>
+</p>
+
+<h2>■変更点は？</h2>
+
+<p>
+2001 年 7月 25 日以前にソースをダウンロードした人にしか分からないのですが、
+次のファイルをアップデートしました。
+</p>
+
+<ul style = "LIST-STYLE-TYPE:none">
+<li><a href="../16_vertexshader/vs.lzh">vs.lzh バーテックスシェーダーのサンプル)</a>
+<li><a href="../18_vslight/vsdiffuse.lzh">vsdiffuse.lzh 頂点色でポリゴンを表示するバーテックスシェーダーのサンプル)</a>
+<li><a href="../18_vslight/vslight.lzh">vslight.lzh 平行光源でポリゴンを照らすバーテックスシェーダーのサンプル)</a>
+<li><a href="../18_vslight/vsld.lzh">vsld.lzh 平行光源で頂点色付きポリゴンを照らすバーテックスシェーダーのサンプル)</a>
+</ul>
+
+<p>
+違いは、main.cpp です。
+全てのソースに関して同じファイルを使っています。<br>
+その中の、CreateDevice の周辺を修正しました。
+</p>
+
+<pre class="CodeBlock">
+<Font color = orange><b>    D3DCAPS8 caps;
+    pD3D->GetDeviceCaps(D3DADAPTER_DEFAULT, D3DDEVTYPE_HAL, &caps);
+    if(caps.VertexShaderVersion < D3DVS_VERSION(1,0)){
+        //vertex shader 1.0 をhwサポートしない場合はD3DCREATE_SOFTWARE_VERTEXPROCESSINGする必要があります
+        if(FAILED(pD3D->CreateDevice(D3DADAPTER_DEFAULT, D3DDEVTYPE_HAL,hWnd,D3DCREATE_SOFTWARE_VERTEXPROCESSING,&s_d3dpp,&s_lpD3DDEV))){
+            if(FAILED(pD3D->CreateDevice(D3DADAPTER_DEFAULT, D3DDEVTYPE_REF,hWnd,D3DCREATE_HARDWARE_VERTEXPROCESSING | D3DCREATE_PUREDEVICE,&s_d3dpp,&s_lpD3DDEV))){
+                return FALSE;
+            }
+        }
+    }else{</b></font>
+        // デバイスの作成 - T&L HAL
+        if (FAILED(s_lpD3D->CreateDevice(D3DADAPTER_DEFAULT, D3DDEVTYPE_HAL,hWnd,D3DCREATE_HARDWARE_VERTEXPROCESSING,&s_d3dpp,&s_lpD3DDEV))){
+            // 失敗したので HAL で試行
+            if (FAILED(s_lpD3D->CreateDevice(D3DADAPTER_DEFAULT, D3DDEVTYPE_HAL,hWnd,D3DCREATE_SOFTWARE_VERTEXPROCESSING,&s_d3dpp,&s_lpD3DDEV))){
+                // 失敗したので REF で試行
+                if (FAILED(s_lpD3D->CreateDevice(D3DADAPTER_DEFAULT, D3DDEVTYPE_REF,hWnd,D3DCREATE_SOFTWARE_VERTEXPROCESSING,&s_d3dpp,&s_lpD3DDEV))){
+                    // 結局失敗した
+                    MessageBox(NULL,"Direct3D の初期化に失敗しました。",CAPTION,MB_OK | MB_ICONSTOP);
+                    return E_FAIL;
+                }
+            }
+        }
+<Font color = orange><b>    }</b></font>
+</pre>
+<p>
+追加した場所は、いつもの様に、色を変えています。<br>
+まず、GetDeviceCaps を使って、環境を調べます。
+次に、ここで使っている vertex shader 1.0 がサポートされていなかった場合には、D3DCREATE_HARDWARE_VERTEXPROCESSING を使わないようにします。<br>
+これで、サポートしていないときには、ソフトウェアT&Lが働くので、今まで動かなかった環境でも動くと思います。
+</p>
+
+
+<h2>■ぐち</h2>
+
+<p>
+機種依存性は、ＰＣではとても大事なことです。<br>
+DirectX8 になって簡単になったとはいっても、
+全員の環境が異なるので、どうしても複雑になりがちです。
+これからもこの手の話題は発生するかとは思いますが、
+このページでは、できるだけ複雑にならないように、対応していきたいと思います。
+</p>
+
+<p>
+<br><br><br><br><br>
+こんなのは、やりたくないんじゃ～～～～<br>
+こんなのをユーザーが考えないようにＭＳは頑張れや～～～～（ほかもな）
+</p>
+
+<h2>■謝辞</h2>
+
+<p>
+今回は、山口様からのメールが元になっています。<br>
+至らない点をご指摘いただいて、ありがとうございました。
+</p>
+
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<center>
+<hr>
+<p><a href="../index.html">もどる</a></p>
+<p><a href="mailto:imagire@gmail.com">imagire@gmail.com</a></p>
+</body>
+</html>

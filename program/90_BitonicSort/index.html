@@ -1,0 +1,270 @@
+<head>
+	<title>t-pot『Bitonic sort』</title>
+	<link rel="stylesheet" type="text/css" href="../if.css">
+</head>
+<meta http-equiv=Content-Type content="text/html; charset=shift_jis">
+<body>
+
+
+<div class="contents">
+<center>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<h1>Bitonic sort</h1><br>
+<h3>～ Bitonic sort ～</h3>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<image src = "title.png">
+<br>
+<hr>
+<br>
+<p>
+下のムービーは、512x512=262144個をソートする様子です(2MB)。背景が赤くなると、ソートは完了しています。<br>
+<a href="movie.avi"><image src = "movie.png"></a>
+</p>
+<hr>
+</center>
+<div>
+
+
+<h2>■はじめに</h2>
+
+<p>
+もういい加減、順序を気にしなくてよい半透明表示をハードウェアで実装してもらいたいところですが、なかなかそんなものは実現していません。<br>
+半透明を正確に実現するためには、GPU によるソートが必要不可欠です。<br>
+ソートは、異なる位置のピクセルを入れ替えるという作業で、現在のGPUでは行いにくい方法の１つです。<br>
+そのような状況で、<a href="http://www.graphicshardware.org/">Graphics hardware 2003</a> において、Timothy J. Purcell, Craig Donner, Mike Cammarano, Henrik Wann Jensen, Pat Hanrahanによる<a href="http://graphics.stanford.edu/papers/photongfx/">Photon Mapping on Programmable Graphics Hardware</a>が公開されました。<br>この論文は、フォトンマップをGPUで実装するという野心的な論文です。<br>
+この論文で使われている手法の１つに Bitonic sort というソート法があります(<a href="http://www.iti.fh-flensburg.de/lang/algorithmen/sortieren/bitonic/bitonicen.htm">ここの説明が詳しいです</a>)。<br>
+Bitonic sort はO((logN)<sup>2</sup>)パス数でソートを実行するソート法です。<br>
+1024x1024=1048576 の要素に対して、210パス（ポリゴンを描画するだけなので、最近のGPUによる実行速度1000FPSを考えれば、0.2秒で終了します）。<br>
+ここでは、Bitonic sort をDirectX9で実装をしてみます（元の論文にCg版が乗っているので、ほとんど何もやっていないのですが…）。<br>
+実は、私もソート法を考えていたのですが、私の考えた方法は N/2-1 の描画回数で終了するもので、今回の Bitonic sort に N=32 を越えた時点で負けるので、おとなしく Bitonic sort を受け入れることにしました。<br>
+</p>
+<p>
+今回のプログラムは、次のものです。
+</p>
+<ul style = "LIST-STYLE-TYPE:none">
+<li><a href="src.zip">src.zip (Bitonic sort テクスチャ フィルタ:DirectX9(ピクセルシェーダ2.0)</a>
+</ul>
+
+<p>
+まぁ、いつものように適当にファイルが入っています。<br>
+APP WIZARD から出力されるフレームワークのファイルは紹介を省かせていただきます。
+</p>
+<table>
+<tr><td><a href="hlsl_fx.html">hlsl.fx</a></td><td>シェーダの入ったエフェクトファイル</td></tr>
+<tr><td><a href="main_h.html">main.h</a></td><td>アプリケーションのヘッダ</td></tr>
+<tr><td><a href="main_cpp.html">main.cpp</a></td><td>アプリケーションのソース</td></tr>
+</table>
+
+<p>
+あと、実行ファイル、プロジェクトファイルが入っています。
+</p>
+
+
+<h2>■何やってるの？</h2>
+
+
+<p>
+Bitonic sort は、最初に隣り合った２つのデータをソートします。<br>
+次に、ソートされた２つのブロック（４つのデータ）をソートします。<br>
+あとは、ソートする塊をゆきだるま式に大きくして、すべてのデータをソートするまで続けます。
+</p>
+
+<image src = "step.png">
+<p>
+ここで、矢印は、ソートする２つのデータを指し示します。<br>
+下を向いた赤い矢印は、小さな値のデータを上に、上を向いた青い矢印は、小さな値のデータを下に動かします。<br>
+また、赤いブロックは上のデータほど値が小さくなるようなソートで、青いブロックは下のデータの値が小さくなるような逆順のソートです。<br>
+Bitonic sort の特徴として、途中のソートでは、正順と逆順を交互に繰り返す方法であるということがあげられます。<br>
+どうして、１つおきに並び替えのデータをかえるのでしょうか？<br>
+上のデータを正順、下のデータを逆順に並べておくと次のステップでの並び替えがスムーズに行われます。<br>
+たとえば、４つの正順のデータと４つの逆順のデータを組み合わせてソートする時を考えます。
+</p>
+<image src = "8.png">
+<p>
+上の図で、小さな値1～4は白い色で、大きな値5～8は灰色にしました。<br>
+ここで、４個おきにデータを比較、ソートしてみると、小さな値のデータは全て上に、大きな値のデータは全て下に移動してしまいました。<br>
+また、ソートした後も、２個づつデータはソートされるので、（特に上の４つに注目すれば、２つづつ正順、逆順が並んだ全く同じ構造になっています。）
+同じステップをあと２回続ければ、データは完全にソートされます。
+</p>
+
+<p>
+Bitonic sort のそれぞれのブロックでのソートは、ブロックのデータを2<sup>n</sup>個として、
+最初に2<sup>n-1</sup>個おきのデータを比較、ソートして、
+次に 2<sup>n-2</sup>個おきの比較をします。<br>
+後は、2<sup>n-3</sup>、2<sup>n-4</sup>…個おきと、
+比較する間隔を数を減らしていけば、
+最後にとなりのデータの比較までたどり着いたところでソートが完了します。
+</p>
+<image src = "block.png">
+<p>
+それぞれ、右隣に移るのに１回のレンダリングパスで実現することができ、
+１つのブロックをソートするのに、n回のレンダリングパスが必要になります。<br>
+全体でN個のデータを持つ場合のソートは、それぞれのブロックのソートのパス数を合計して
+</p>
+<pre class="CodeBlock">
+  log<sub>2</sub>N + log<sub>2</sub>(N/2) + log<sub>2</sub>(N/4) + … + 1
+= log<sub>2</sub>N + log<sub>2</sub>N-1 + log<sub>2</sub>N-2 + … + 1
+= log<sub>2</sub>N (1+log<sub>2</sub>N)/2 
+</pre>
+<p>
+のパスで完了することになります。
+</p>
+
+
+
+<h2>■プログラム</h2>
+
+
+<p>
+ということで、今回のプログラムを紹介してきましょう。
+</p>
+<p>
+GPU でデータをソートするので、使えるバッファはテクスチャです。<br>
+テクスチャは２次元ですが、テクスチャを左から右に、また上から下の順に番号付けして、
+そのインデックスに関して、ソートをします。
+</p>
+<image src = "index.png">
+<p>
+１次元から２次元への変換は、次のようになります。
+</p>
+<pre class="CodeBlock">
+hlsl.fx
+<font color="deepskyblue">0039:</font> <font color="cyan">// ------------------------------------------------------------</font>
+<font color="deepskyblue">0040:</font> <font color="cyan">// 1次元のインデックスからテクスチャ座標を算出する</font>
+<font color="deepskyblue">0041:</font> <font color="cyan">// ------------------------------------------------------------</font>
+<font color="deepskyblue">0042:</font> float2 convert1dto2d(<font color="blue">float</font> index)
+<font color="deepskyblue">0043:</font> {
+<font color="deepskyblue">0044:</font>     float2 dst;
+<font color="deepskyblue">0045:</font>     
+<font color="deepskyblue">0046:</font>     dst.x = fmod (index,  BufInfo.x) / BufInfo.x;
+<font color="deepskyblue">0047:</font>     dst.y = floor(index / BufInfo.x) / BufInfo.y;
+<font color="deepskyblue">0048:</font>     
+<font color="deepskyblue">0049:</font>     <font color="blue">return</font> dst;
+<font color="deepskyblue">0050:</font> }
+</pre>
+<p>
+ここで、BufInfo.x と BufInfo.y は、テクスチャの幅と高さです。<br>
+index は、0～BufInfo.x * BufInfo.y - 1の範囲で、２次元のテクスチャ座標の値dstは、0～1の範囲を返します。
+</p>
+<p>
+ちなみに、この逆に２次元の座標からインデックスへの変換は、次のようになります。
+</p>
+<pre class="CodeBlock">
+hlsl.fx
+<font color="deepskyblue">0058:</font>     <font color="cyan">// 次のインデックス化のために小数部を切り取る</font>
+<font color="deepskyblue">0059:</font>     float2 elem2d = BufInfo * In.WPOS;
+<font color="deepskyblue">0060:</font>     elem2d = floor(elem2d);
+<font color="deepskyblue">0061:</font>     
+<font color="deepskyblue">0062:</font>     <font color="cyan">// 1次元のIndexを求める</font>
+<font color="deepskyblue">0063:</font>     <font color="blue">float</font>  elem1d = elem2d.y * BufInfo.x + elem2d.x;
+</pre>
+<p>
+In.WPOS は、0～1の範囲のテクスチャの座標、elem1d が１次元のインデックスになります。
+</p>
+
+<p>
+Timothy らによるシェーダのHLSL版は、次のようになります。
+</p>
+<pre class="CodeBlock">
+hlsl.fx
+<font color="deepskyblue">0051:</font> <font color="cyan">// ------------------------------------------------------------</font>
+<font color="deepskyblue">0052:</font> <font color="cyan">// Bitonic sort</font>
+<font color="deepskyblue">0053:</font> <font color="cyan">// ------------------------------------------------------------</font>
+<font color="deepskyblue">0054:</font> float4 BitonicSortPS(VS_OUTPUT In) : COLOR
+<font color="deepskyblue">0055:</font> {
+<font color="deepskyblue">0056:</font>     float4 dst;
+<font color="deepskyblue">0057:</font>     
+<font color="deepskyblue">0058:</font>     <font color="cyan">// 次のインデックス化のために小数部を切り取る</font>
+<font color="deepskyblue">0059:</font>     float2 elem2d = BufInfo * In.WPOS;
+<font color="deepskyblue">0060:</font>     elem2d = floor(elem2d);
+<font color="deepskyblue">0061:</font>     
+<font color="deepskyblue">0062:</font>     <font color="cyan">// 1次元のIndexを求める</font>
+<font color="deepskyblue">0063:</font>     <font color="blue">float</font>  elem1d = elem2d.y * BufInfo.x + elem2d.x;
+<font color="deepskyblue">0064:</font>     
+<font color="deepskyblue">0065:</font>     <font color="cyan">// 上と下のどちらのテクセルと比較するのか？</font>
+<font color="deepskyblue">0066:</font>     <font color="blue">float</font> csign = (fmod(elem1d, stage)&lt; offset) ? 1 : -1;
+<font color="deepskyblue">0067:</font>     <font color="cyan">// ソートの向き</font>
+<font color="deepskyblue">0068:</font>     <font color="blue">float</font> cdir  = (fmod(floor(elem1d/stepno),2)&lt;=0.5) ? 1 : -1;
+<font color="deepskyblue">0069:</font>     
+<font color="deepskyblue">0070:</font>     <font color="cyan">// レンダリング位置のテクセルを読み込む</font>
+<font color="deepskyblue">0071:</font>     float4 val0 = tex2D( SrcSamp, In.WPOS );
+<font color="deepskyblue">0072:</font>     
+<font color="deepskyblue">0073:</font>     <font color="cyan">// ソート対象のテクセルを読む込む</font>
+<font color="deepskyblue">0074:</font>     <font color="blue">float</font> adr1d = csign*offset + elem1d;<font color="cyan">// 比較対照のテクセル</font>
+<font color="deepskyblue">0075:</font>     float2 adr2d = convert1dto2d( adr1d );<font color="cyan">// インデックスからテクスチャ座標に変換</font>
+<font color="deepskyblue">0076:</font>     float4 val1 = tex2D( SrcSamp, adr2d );
+<font color="deepskyblue">0077:</font>     
+<font color="deepskyblue">0078:</font>     <font color="cyan">// y 成分をソートのキーとして使用</font>
+<font color="deepskyblue">0079:</font>     float4 cmin = (val0.y&lt;val1.y) ? val0: val1;<font color="cyan">// 小さいほう</font>
+<font color="deepskyblue">0080:</font>     float4 cmax = (val0.y&lt;val1.y) ? val1: val0;<font color="cyan">// 大きいほう</font>
+<font color="deepskyblue">0081:</font>     
+<font color="deepskyblue">0082:</font>     <font color="cyan">// ソートの向きとデータサンプルの向きを比較して、どちらの値を採用するか決める</font>
+<font color="deepskyblue">0083:</font>     dst = (csign==cdir) ? cmin : cmax;
+<font color="deepskyblue">0084:</font>     
+<font color="deepskyblue">0085:</font>     <font color="blue">return</font> dst;
+<font color="deepskyblue">0086:</font> }
+</pre>
+<p>
+最初に１次元のインデックス elem1d を計算します。<br>
+次に、比較対照のデータの位置に必要な参照するデータの向きcsignを計算します。csignが1なら、自分より後ろのインデックスのデータと比較して、-1なら、自分よりも前のインデックスのデータと比較します。csign*offset の位置が比較するデータになります。<br>
+次に、ソートする向きcdirを計算します。今までに出てきた図の赤い部分は1、青い部分は-1になります。
+Timothy らのシェーダでは、この部分は等号で比較していましたが、HLSLではきちんと動かなかったので、不等号を使って、cdirを計算しました。<br>
+あとは、それぞれのデータを読み込んで、小さなデータcminと大きいデータcmaxを計算し、ソートの向きとピクセルに格納するデータの位置からどちらのデータを出力するか決定します。
+</p>
+
+<p>
+パラメータ stepno, offset, stage は、HLSL内でグローバル変数（定数レジスタ）として扱います。それぞれのパスでのパラメータの値は、次のようになります。
+</p>
+<image src = "param.png">
+<p>
+アプリケーション側からパラメータを計算する部分は、次のようになります。<br>
+最初に、ソートするブロックの大きさ rank と、ブロック単位でのソートパス数stepを
+計算しておき、そこからパラメータの動きをよく考えて各パラメータを作りました。
+</p>
+<pre class="CodeBlock">
+main.cpp
+<font color="deepskyblue">0352:</font>     <font color="cyan">//-------------------------------------------------</font>
+<font color="deepskyblue">0353:</font>     <font color="cyan">// パラメータの計算</font>
+<font color="deepskyblue">0354:</font>     <font color="cyan">//-------------------------------------------------</font>
+<font color="deepskyblue">0355:</font>     <font color="blue">int</font> step = m_cnt;
+<font color="deepskyblue">0356:</font>     <font color="blue">int</font> rank;
+<font color="deepskyblue">0357:</font>     <font color="blue">for</font>(rank = 0; rank&lt;step ; rank++){
+<font color="deepskyblue">0358:</font>         step -= rank+1;
+<font color="deepskyblue">0359:</font>     }
+<font color="deepskyblue">0360:</font> 
+<font color="deepskyblue">0361:</font>     <font color="blue">float</font> stepno = (<font color="blue">float</font>)(1&lt;&lt;(rank+1));
+<font color="deepskyblue">0362:</font>     <font color="blue">float</font> offset = (<font color="blue">float</font>)(1&lt;&lt;(rank-step));
+<font color="deepskyblue">0363:</font>     <font color="blue">float</font> stage  = 2*offset;
+</pre>
+
+
+<h2>■最後に</h2>
+
+
+<p>
+いや、これすげーよ。<br>
+速い、速いって！！<br>
+210 回レンダリングは、ほとんどの人は非現実的だと思うでしょうが、
+1048576個のデータをソートするなら個人的には、これぐらいは全然許容範囲内だと思います。<br>
+HWによる正確なアルファレンダリングシステムは、今回の方法と、Per-Pixel Ordering Table(ピクセル単位のｚソート（俺用語）)を用いれば、ps3.0で実現できると考えているのですが、もう２世代先では実現できてほしいなぁ…
+</p>
+<p>
+ぜんぜん関係ないんだけど、9月号の<a href="http://www.wgn.co.jp/cgw/top/cgwr.cgi">CG WORLD</a>の倉地紀子さんの記事で bitonic sort が紹介されていたけど、「あれじゃ全然わかんねぇよ！！」と思ったのは、私だけですか…（この説明もわかりやすいかどうか疑問ですが）
+</p>
+
+
+</div>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<center>
+<hr>
+<p><a href="../index.html">もどる</a></p>
+<p><a href="mailto:imagire@gmail.com">imagire@gmail.com</a></p>
+</center>
+
+</body>
+</html>

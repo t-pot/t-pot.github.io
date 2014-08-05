@@ -1,0 +1,463 @@
+<head>
+	<title>t-pot『頂点ブレンド』</title>
+	<link rel="stylesheet" type="text/css" href="../../if.css">
+</head>
+<meta http-equiv=Content-Type content="text/html; charset=shift_jis">
+<body text=#ffffff>
+
+
+<div class="contents">
+<center>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<h1>頂点ブレンド</h1><br>
+<h3>～ぐねぐね～</h3>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+</center>
+
+
+<h2>■はじめに</h2>
+
+
+<p>
+まぁ、やっていないネタはいくつかあるのですが、
+頂点を動かしていろいろやる効果はまだやっていなかったので、やりましょう。
+</p>
+<image src = "../title.png">
+<p>
+いいかんじに矢印が別の方向を示しています（地球に意味はありません）。<br>
+今回のソースは、次のものです（DirectX8.1 & Cg言語 用です）。
+</p>
+<ul style = "LIST-STYLE-TYPE:none">
+<li><a href="src.lzh">src.lzh (頂点ブレンドのサンプル)</a>
+</ul>
+
+<p>
+今回は、いろいろといじくれます。<br>
+</p>
+<ul>
+<li>左ドラッグ:矢印の指す場所を変える</a>
+<li>右ドラッグ:土台を回したり、矢印をジャンプ</a>
+<li>「Ctrl」+右ドラッグ:土台の位置を変える</a>
+<li>「Shift」+左ドラッグ:カメラの向きを変える</a>
+<li>「Shift」+右ドラッグ:カメラの位置を変える</a>
+</ul>
+
+<p>
+まぁ、いつものように適当にファイルが入っています。<br>
+</p>
+<table>
+<tr><td><a href="vs_cg.html">vs.cg</a></td><td>頂点シェーダー。「Cg言語」</td></tr>
+<tr><td><a href="ps_cg.html">ps.cg</a></td><td>ピクセルシェーダー。「Cg言語」</td></tr>
+<tr><td><a href="draw_cpp.html">draw.cpp</a></td><td>メインの描画部分。</td></tr>
+<tr><td><a href="draw_h.html">draw.h</a></td><td>描画の各関数の定義。ひそかにカメラのソースが入ってる。</td></tr>
+<tr><td><a href="bgvs_cg.html">bgvs.cg</a></td><td>背景オブジェクト用頂点シェーダー。前回と同じ。</td></tr>
+<tr><td><a href="bgps_cg.html">bgps.cg</a></td><td>背景オブジェクト用ピクセルシェーダー。前回と同じ。</td></tr>
+<tr><td><a href="bg_cpp.html">bg.cpp</a></td><td>背景オブジェクトのメッシュを作ったり描画したり。</td></tr>
+<tr><td><a href="main_h.html">main.h</a></td><td>基本的な定数など。今回も出番無し。</td></tr>
+<tr><td><a href="main_cpp.html">main.cpp</a></td><td>描画に関係しないシステム的な部分。変更が無いので、出番無し。</td></tr>
+<tr><td><a href="load_cpp.html">load.cpp</a></td><td>ロード。頂点ブレンドのブレンドファクターの計算もする。</td></tr>
+<tr><td><a href="load_h.html">load.h</a></td><td>ロードのインターフェイス。</td></tr>
+
+</table>
+<image src = "../arrow.png" width = 64 height=64>arrow.bmp (矢印で使っている)<br>
+<image src = "../earth.png" width = 64 height=64>earth.bmp (地球テクスチャー)<br>
+<image src = "../tile_bmp.jpg" width = 64 height=64>tile.bmp (床デカール)<br>
+<image src = "../sky_bmp.jpg" width = 64 height=64>sky.bmp (空デカール)<br>
+
+<p>
+あと、モデルと、実行ファイル及び、プロジェクトファイルが入っています。
+</p>
+
+<h2>■やっていること</h2>
+
+
+<p>
+頂点ブレンディングの方法ですが、２つの状態を用意して、その間をつなぎます。<br>
+２つの状態とは、具体的には姿勢を制御する行列になります。<br>
+２つの行列を用意して、頂点ごとに重み付けした割合で行列を線形合成します。<br>
+例えば、下の例なら、上向きの矢印（単位行列）と左向きの矢印（ｚ軸回転した行列）を用意し、
+根元の行列は上向きに、先頭の行列は左向きに一致するように係数を決めます。<br>
+具体的には、根元は w0=1, w1=0 で先端は w0=0, w1=1 にして、途中は線形に係数を設定します。<br>
+
+</p>
+
+<image src = "../blend.gif" width = 640 height=480>
+
+<p>
+</p>
+
+
+<h2>■頂点シェーダー(vs.cg)</h2>
+
+
+<p>
+さて、それでは、プログラムを見ていきましょう。<br>
+要の頂点シェーダープログラムを見たいと思います。<br>
+入力頂点「appdata」に合成用のパラメータ「Weight」を追加しました（ライティング用のNormalも追加しましたが）。<br>
+実際には、この変数のx成分とy成分を合成の係数とします。
+</p>
+<pre class="CodeBlock">
+<font color = deepskyblue>0005:</font> <font color = cyan>// ----------------------------------------------------------------------------</font>
+<font color = deepskyblue>0006:</font> <font color = cyan>// 入力用構造体</font>
+<font color = deepskyblue>0007:</font> <font color = cyan>// ----------------------------------------------------------------------------</font>
+<font color = deepskyblue>0008:</font> struct appdata : application2vertex {
+<font color = deepskyblue>0009:</font>     float4 Position;
+<font color = deepskyblue>0010:</font>     <font color = yellow>float4 Weight;</font>
+<font color = deepskyblue>0011:</font>     float4 Normal;
+<font color = deepskyblue>0012:</font>     float2 Texcoord0;
+<font color = deepskyblue>0013:</font> };
+<font color = deepskyblue>0014:</font> 
+<font color = deepskyblue>0015:</font> <font color = cyan>// ----------------------------------------------------------------------------</font>
+<font color = deepskyblue>0016:</font> <font color = cyan>// 出力用構造体</font>
+<font color = deepskyblue>0017:</font> <font color = cyan>// ----------------------------------------------------------------------------</font>
+<font color = deepskyblue>0018:</font> <font color = blue>#pragma bind</font> vfconn.Position  = HPOS;
+<font color = deepskyblue>0019:</font> <font color = blue>#pragma bind</font> vfconn.Diffuse   = COL0;
+<font color = deepskyblue>0020:</font> <font color = blue>#pragma bind</font> vfconn.Texcoord0 = TEX0;
+<font color = deepskyblue>0021:</font> 
+<font color = deepskyblue>0022:</font> struct vfconn : vertex2fragment {
+<font color = deepskyblue>0023:</font>     float4 Position;
+<font color = deepskyblue>0024:</font>     float4 Diffuse;
+<font color = deepskyblue>0025:</font>     float2 Texcoord0;
+<font color = deepskyblue>0026:</font> };
+</pre>
+<p>
+入力頂点「appdata」に合成用のパラメータ「Weight」を追加しました（ライティング用のNormalも追加しましたが）。<br>
+実際には、この変数のx成分とy成分を合成の係数とします。<br>
+出力にも頂点色の「Diffuse」を追加しました。<br>
+また、今回は、頂点シェーダーとピクセルシェーダーの掛け橋になる命令である「<font color = blue>#pragma bind</font>」を使いました。
+この命令は、実際にどのようなレジスタに構造体の内容がコピーされるかをコンパイラに知らせるためのものです。<br>
+</p>
+<p>
+プログラムの関数部分ですが、座標計算が一番のポイントです。黄色の部分になります。<br>
+それぞれの行列で計算した座標を合成係数を使って合成します。<br>
+合成した行列に「ワールド」―「スクリーン」変換を施して、最終的な結果にします。
+</p>
+<pre class="CodeBlock">
+<font color = deepskyblue>0027:</font> <font color = cyan>// ----------------------------------------------------------------------------</font>
+<font color = deepskyblue>0028:</font> <font color = cyan>// 頂点シェーダープログラム</font>
+<font color = deepskyblue>0029:</font> <font color = cyan>// ----------------------------------------------------------------------------</font>
+<font color = deepskyblue>0030:</font> vfconn main(appdata IN
+<font color = deepskyblue>0031:</font>         , uniform float4x4 worldviewproj_matrix
+<font color = deepskyblue>0032:</font>         , uniform float3x4 m0
+<font color = deepskyblue>0033:</font>         , uniform float3x4 m1
+<font color = deepskyblue>0034:</font>         , uniform float4 light
+<font color = deepskyblue>0035:</font>         , uniform float4 diffuse
+<font color = deepskyblue>0036:</font> ) {
+<font color = deepskyblue>0037:</font>     vfconn OUT;
+<font color = deepskyblue>0038:</font>     float4 pos;
+<font color = deepskyblue>0039:</font> 
+<font color = deepskyblue>0040:</font>     <font color = cyan>/////////////////////////////////////////////////////////////////////</font>
+<font color = deepskyblue>0041:</font>     <font color = cyan>// 座標</font>
+<font color = deepskyblue>0042:</font>     <font color = yellow>float3 pos0 = mul(m0, IN.Position);</font>     <font color = cyan>// m0 で変換した座標</font>
+<font color = deepskyblue>0043:</font>     <font color = yellow>float3 pos1 = mul(m1, IN.Position);</font>     <font color = cyan>// m1 で変換した座標</font>
+<font color = deepskyblue>0044:</font>     
+<font color = deepskyblue>0045:</font>     <font color = cyan>// 座標を合成する</font>
+<font color = deepskyblue>0046:</font>     <font color = yellow>pos.xyz = IN.Weight.x * pos0</font>        <font color = cyan>// out = (w0*m0+w1*m1)*in</font>
+<font color = deepskyblue>0047:</font>     <font color = yellow>        + IN.Weight.y * pos1;</font>
+<font color = deepskyblue>0048:</font>     <font color = yellow>pos.w = 1.0f;</font>
+<font color = deepskyblue>0049:</font> 
+<font color = deepskyblue>0050:</font>     <font color = cyan>// 行列をかけて、頂点をスクリーン座標に変換する</font>
+<font color = deepskyblue>0051:</font>     <font color = yellow>OUT.Position = mul(worldviewproj_matrix, pos);</font>
+<font color = deepskyblue>0052:</font> 
+<font color = deepskyblue>0053:</font>     <font color = cyan>/////////////////////////////////////////////////////////////////////</font>
+<font color = deepskyblue>0054:</font>     <font color = cyan>// 頂点色座標</font>
+<font color = deepskyblue>0055:</font>     <font color = orange>float3 n0 = mul(m0, IN.Normal);</font>     <font color = cyan>// m0 で変換した座標</font>
+<font color = deepskyblue>0056:</font>     <font color = orange>float3 n1 = mul(m1, IN.Normal);</font>     <font color = cyan>// m1 で変換した座標</font>
+<font color = deepskyblue>0057:</font>     <font color = orange>float3 n = IN.Weight.x * n0 + IN.Weight.y * n1;</font>
+<font color = deepskyblue>0058:</font>     
+<font color = deepskyblue>0059:</font>     <font color = orange>float4 LN = max(dot(n, light.xyz), 0).xxxx + light.w;</font>
+<font color = deepskyblue>0060:</font> 
+<font color = deepskyblue>0061:</font>     <font color = orange>OUT.Diffuse = diffuse * LN;</font>         <font color = cyan>// 頂点の色をそのままコピー</font>
+<font color = deepskyblue>0062:</font> 
+<font color = deepskyblue>0063:</font>     <font color = cyan>/////////////////////////////////////////////////////////////////////</font>
+<font color = deepskyblue>0064:</font>     <font color = cyan>// テクスチャー座標</font>
+<font color = deepskyblue>0065:</font>     OUT.Texcoord0 = IN.Texcoord0;   <font color = cyan>// そのままコピーする</font>
+<font color = deepskyblue>0066:</font> 
+<font color = deepskyblue>0067:</font>     return OUT;
+<font color = deepskyblue>0068:</font> }
+</pre>
+<p>
+法線も同様の計算をして、ワールド座標での法線を求めてから、平行光源の計算を計算をして（元の頂点色の影響を考慮して）最終的な頂点色にします。<br>
+計算を見ても分かるとおり、法線の計算を頂点と同じ計算をしているので、スケールの入った光源計算には対応していないことになります。<br>
+ほんとに考慮するなら、逆転地行列を求めなければいけないですね（どうやるんだ？）。
+</p>
+
+<p>
+シェーダープログラムのコンパイル結果は、
+</p>
+<pre class="CodeBlock">
+vs.1.1
+//const c 12 = 1 0 0 0
+dp4 r0.x, c4, v0
+dp4 r0.y, c5, v0
+dp4 r0.z, c6, v0
+dp4 r1.x, c7, v0
+dp4 r1.y, c8, v0
+dp4 r1.z, c9, v0
+mul r1, v1.y, r1.xyz
+mad r0.xyz, v1.x, r0.xyz, r1.xyz
+mov r0.w, c12.x
+dp4 r1.x, c0, r0
+dp4 r1.y, c1, r0
+dp4 r1.z, c2, r0
+dp4 r1.w, c3, r0
+mov oPos, r1
+dp4 r0.x, c4, v2
+dp4 r0.y, c5, v2
+dp4 r0.z, c6, v2
+dp4 r1.x, c7, v2
+dp4 r1.y, c8, v2
+dp4 r1.z, c9, v2
+mul r1, v1.y, r1.xyz
+mad r0, v1.x, r0.xyz, r1.xyz
+dp3 r0, r0.xyz, c10.xyz
+max r0, r0.x, c12.y
+add r0, r0.x, c10.w
+mul r0, c11, r0
+mov oD0, r0
+mov oT0.xy, v3</pre>
+<p>
+でした。確かに説明したことを実行していますが、コメントつけないと何がなんだかわかりませんな。
+</p>
+
+
+
+<h2>■ピクセルシェーダー</h2>
+
+
+<p>
+ピクセルシェーダープログラムです。<br>
+やはり、「bind」を使って、レジスタと変数を結び付けます。
+</p>
+
+<pre class="CodeBlock">
+<font color = deepskyblue>0001:</font> <font color = cyan>// ----------------------------------------------------------------------------</font>
+<font color = deepskyblue>0002:</font> <font color = cyan>// 頂点シェーダーからの入力構造体</font>
+<font color = deepskyblue>0003:</font> <font color = cyan>// ----------------------------------------------------------------------------</font>
+<font color = deepskyblue>0004:</font> <font color = blue>#pragma bind</font> v2f_simple.position  = HPOS;
+<font color = deepskyblue>0005:</font> <font color = blue>#pragma bind</font> v2f_simple.diffuse   = COL0;
+<font color = deepskyblue>0006:</font> <font color = blue>#pragma bind</font> v2f_simple.texcoord0 = TEX0;
+<font color = deepskyblue>0007:</font> 
+<font color = deepskyblue>0008:</font> struct v2f_simple : vertex2fragment  {
+<font color = deepskyblue>0009:</font>     float4 position;
+<font color = deepskyblue>0010:</font>     float4 diffuse;
+<font color = deepskyblue>0011:</font>     float4 texcoord0;
+<font color = deepskyblue>0012:</font> };
+<font color = deepskyblue>0013:</font> <font color = cyan>// ----------------------------------------------------------------------------</font>
+<font color = deepskyblue>0014:</font> fragout main(v2f_simple I
+<font color = deepskyblue>0015:</font>                 , uniform sampler2D tex0
+<font color = deepskyblue>0016:</font> ) {
+<font color = deepskyblue>0017:</font>   fragout O;   
+<font color = deepskyblue>0018:</font> 
+<font color = deepskyblue>0019:</font>     <font color = cyan>// 出力 = 頂点色 x テクスチャー</font>
+<font color = deepskyblue>0020:</font>     O.col = I.diffuse * tex2D(tex0);
+<font color = deepskyblue>0021:</font> 
+<font color = deepskyblue>0022:</font>   return O;
+<font color = deepskyblue>0023:</font> } 
+</pre>
+
+<p>
+内容は頂点色とテクスチャーの色を反映させている簡単なものです。
+</p>
+<p>
+シェーダープログラムのコンパイル結果は、
+</p>
+<pre class="CodeBlock">
+ps.1.1
+
+tex t0
+mul r0, v0, t0
+</pre>
+<p>
+になりました。
+</p>
+
+
+
+<h2>■C言語</h2>
+
+
+<p>
+それでは、残った部分で重要な部分に関して説明しましょう。<br>
+重みデータの作成ですが、メッシュのデータを加工するときに同時に設定します。<br>
+ロードしたデータは、
+</p>
+<pre class="CodeBlock">
+load.cpp
+<font color = deepskyblue>0018:</font> <font color = blue>typedef struct</font> {
+<font color = deepskyblue>0019:</font>     float x,y,z;
+<font color = deepskyblue>0020:</font>     float nx,ny,nz;
+<font color = deepskyblue>0021:</font>     float tu0,tv0;
+<font color = deepskyblue>0022:</font> }D3DVERTEX;
+</pre>
+<p>
+です、一方、シェーダーに送るデータは、
+</p>
+<pre class="CodeBlock">
+load.h
+<font color = deepskyblue>0018:</font> <font color = blue>typedef struct</font> {
+<font color = deepskyblue>0019:</font>     D3DXVECTOR4  position;
+<font color = deepskyblue>0020:</font>     D3DXVECTOR4  weight;
+<font color = deepskyblue>0021:</font>     D3DXVECTOR4  normal;
+<font color = deepskyblue>0022:</font>     D3DXVECTOR2  texcoord0;
+<font color = deepskyblue>0023:</font> }D3D_CUSTOMVERTEX;
+</pre>
+<p>
+の、形式になります。<br>
+ロードした後にシェーダーに送るデータを作るときに、次のようにデータを作成します。
+</p>
+<pre class="CodeBlock">
+load.cpp
+<font color = deepskyblue>0092:</font>     for(i=0;i&ltnMeshVertices;i++){
+<font color = deepskyblue>0093:</font>         pDest->position[0] = pSrc->x;
+<font color = deepskyblue>0094:</font>         pDest->position[1] = pSrc->y;
+<font color = deepskyblue>0095:</font>         pDest->position[2] = pSrc->z;
+<font color = deepskyblue>0096:</font>         pDest->position[3] = 1.0f;
+<font color = deepskyblue>0097:</font>         pDest->normal[0] = pSrc->nx;
+<font color = deepskyblue>0098:</font>         pDest->normal[1] = pSrc->ny;
+<font color = deepskyblue>0099:</font>         pDest->normal[2] = pSrc->nz;
+<font color = deepskyblue>0100:</font>         pDest->normal[3] = 0.0f;
+<font color = deepskyblue>0101:</font>         pDest->texcoord0[0] = pSrc->tu0;
+<font color = deepskyblue>0102:</font>         pDest->texcoord0[1] = pSrc->tv0;
+<font color = deepskyblue>0103:</font>         
+<font color = deepskyblue>0104:</font>         <font color = yellow>pDest->weight[1] = pSrc->y;</font>
+<font color = deepskyblue>0105:</font>         <font color = yellow>pDest->weight[0] = 1.0f-pDest->weight[1];</font>
+<font color = deepskyblue>0106:</font> 
+<font color = deepskyblue>0107:</font>         pSrc++;
+<font color = deepskyblue>0108:</font>         pDest++;
+<font color = deepskyblue>0109:</font>     }
+</pre>
+<p>
+肝心の「重み」部分ですが、元のモデルをｙ軸方向に大きさ１で作りました。<br>
+そこで、高さをそのまま重みにします。<br>
+また、２つめの重みは「足した結果は１」になるように決定しました。<br>
+「足した結果は１」２つの行列を「線形に」合成するための条件です。<br>
+あえて、この条件を取り外して、面白い演出を狙うのも手だと思います。
+</p>
+
+<p>
+後は、実際にブレンドする行列の求め方です。<br>
+根元の行列は、角度と位置をグローバル変数としてもって、設定しています。<br>
+先端の行列は、根元より0.4(半分より少し下の位置)だけ上の位置に指し示す中心となる位置を決めておき、そこから方向を求めます。<br>
+あとは、D3DXMatrixLookAtLH が内部で行っているのと同じように規定行列 e1,e2,e3 を求め、
+先端の位置を中心に回転させます。<br>
+先端の位置を中心に回転するのは、平行移動で、先端の位置を中心に平行移動してから回転（基底行列の変換）をします。<br>
+計算はごちゃごちゃしていますが、いい感じになるように適当に動かしていると思ってください。
+</p>
+
+<pre class="CodeBlock">
+draw.cpp
+<font color = deepskyblue>0211:</font> VOID Render(LPDIRECT3DDEVICE8 lpD3DDev)
+<font color = deepskyblue>0212:</font> {
+<font color = deepskyblue>0213:</font>     D3DXMATRIX mWorld, mProj, m, m0, m1;
+<font color = deepskyblue>0214:</font>     
+<font color = deepskyblue>0215:</font>     <font color = cyan>// 射影行列</font>
+<font color = deepskyblue>0216:</font>     D3DXMatrixPerspectiveFovLH(&mProj
+<font color = deepskyblue>0217:</font>         ,60.0f*D3DX_PI/180.0f                   <font color = cyan>// 視野角</font>
+<font color = deepskyblue>0218:</font>         ,(float)WIDTH/(float)HEIGHT             <font color = cyan>// アスペクト比</font>
+<font color = deepskyblue>0219:</font>         ,0.01f,100.0f                           <font color = cyan>// 最近接距離,最遠方距離</font>
+<font color = deepskyblue>0220:</font>         );
+<font color = deepskyblue>0221:</font>     D3DXMATRIX mWS = view.Get() * mProj;
+
+<font color = deepskyblue>0230:</font>     FrameMove(lpD3DDev, mWS); <font color = cyan>// 動かす</font>
+<font color = deepskyblue>0231:</font>     
+<font color = deepskyblue>0232:</font>     lpD3DDev->SetTextureStageState(0,D3DTSS_COLOROP,    D3DTOP_MODULATE);
+<font color = deepskyblue>0233:</font>     lpD3DDev->SetTextureStageState(0,D3DTSS_COLORARG1,  D3DTA_TEXTURE);
+<font color = deepskyblue>0234:</font>     lpD3DDev->SetTextureStageState(0,D3DTSS_COLORARG2,  D3DTA_DIFFUSE);
+<font color = deepskyblue>0235:</font>     lpD3DDev->SetTextureStageState(1,D3DTSS_COLOROP,    D3DTOP_DISABLE);
+<font color = deepskyblue>0236:</font> 
+<font color = deepskyblue>0237:</font>     <font color = cyan>// プログラマぶるシェーダーを有効にする</font>
+<font color = deepskyblue>0238:</font>     pVs->SetShaderActive();
+<font color = deepskyblue>0239:</font>     pPs->SetShaderActive();
+<font color = deepskyblue>0240:</font>     
+<font color = deepskyblue>0241:</font>     <font color = yellow>D3DXMatrixTranslation(&m0 , position.x, position.y, position.z);</font>
+<font color = deepskyblue>0242:</font>     <font color = yellow>D3DXMatrixRotationX(&m, angle.x );  m0 = m * m0;</font>
+<font color = deepskyblue>0243:</font>     <font color = yellow>D3DXMatrixRotationY(&m, angle.y );  m0 = m * m0;</font>
+<font color = deepskyblue>0244:</font>     <font color = yellow>D3DXMatrixRotationZ(&m, angle.z );  m0 = m * m0;</font>
+<font color = deepskyblue>0245:</font> 
+<font color = deepskyblue>0246:</font>     <font color = orange>D3DXMATRIX mT, mTi, mR;</font>
+<font color = deepskyblue>0247:</font>     <font color = orange>D3DXVECTOR3 up = D3DXVECTOR3(0.0f,1.0f,0.0f);</font>
+<font color = deepskyblue>0248:</font>     <font color = orange>D3DXVECTOR3 v = *(D3DXVECTOR3*)&position1-D3DXVECTOR3(0.0f,0.4f,0.0f);</font>
+<font color = deepskyblue>0249:</font>     <font color = orange>D3DXVECTOR3 e1, e2, e3;</font>
+<font color = deepskyblue>0250:</font>     <font color = orange>D3DXVec3Cross(&e1, &v,  &up);D3DXVec3Normalize(&e1,&e1);</font>
+<font color = deepskyblue>0251:</font>     <font color = orange>D3DXVec3Cross(&e2, &e1, &v );D3DXVec3Normalize(&e2,&e2);</font>
+<font color = deepskyblue>0252:</font>     <font color = orange>D3DXVec3Cross(&e3, &e1, &e2);D3DXVec3Normalize(&e3,&e3);</font>
+<font color = deepskyblue>0253:</font>     <font color = orange>D3DXMatrixIdentity(&mR);</font>
+<font color = deepskyblue>0254:</font>     <font color = orange>mR._11 = e1.x;  mR._12 = e1.y;  mR._13 = e1.z;</font>
+<font color = deepskyblue>0255:</font>     <font color = orange>mR._21 =-e3.x;  mR._22 =-e3.y;  mR._23 =-e3.z;</font>
+<font color = deepskyblue>0256:</font>     <font color = orange>mR._31 = e2.x;  mR._32 = e2.y;  mR._33 = e2.z;</font>
+<font color = deepskyblue>0257:</font>     <font color = orange>D3DXMatrixTranslation(&mT , 0.0f, 1.0f, 0.0f);</font>
+<font color = deepskyblue>0258:</font>     <font color = orange>D3DXMatrixTranslation(&mTi, 0.0f,-1.0f, 0.0f);</font>
+<font color = deepskyblue>0259:</font>     <font color = orange>D3DXMatrixTranslation(&m1, position1.x, position1.y, position1.z);</font>
+<font color = deepskyblue>0260:</font>     <font color = orange>m1 = mTi*mR*mT*m1;</font>
+<font color = deepskyblue>0261:</font> 
+<font color = deepskyblue>0262:</font>     <font color = cyan>// 行列を設定</font>
+<font color = deepskyblue>0263:</font>     pVs->SetShaderConstant( vertex_mat_iter,D3DXMatrixTranspose( &m, &mWS )  );
+<font color = deepskyblue>0264:</font>     pVs->SetShaderConstant( mat0_iter,      D3DXMatrixTranspose( &m, &m0 )  );
+<font color = deepskyblue>0265:</font>     pVs->SetShaderConstant( mat1_iter,      D3DXMatrixTranspose( &m, &m1 )  );
+<font color = deepskyblue>0266:</font> 
+<font color = deepskyblue>0267:</font>     lpD3DDev->SetStreamSource(0, mesh.pVB, sizeof(D3D_CUSTOMVERTEX));
+<font color = deepskyblue>0268:</font>     lpD3DDev->SetIndices(mesh.pIndex,0);
+<font color = deepskyblue>0269:</font>     
+<font color = deepskyblue>0270:</font>     for(DWORD i=0;i<mesh.dwNumMaterials;i++){
+<font color = deepskyblue>0271:</font>         <font color = cyan>//色をセット</font>
+<font color = deepskyblue>0272:</font>         D3DXVECTOR4 vl(
+<font color = deepskyblue>0273:</font>             mesh.pMaterials[i].Diffuse.r,
+<font color = deepskyblue>0274:</font>             mesh.pMaterials[i].Diffuse.g,
+<font color = deepskyblue>0275:</font>             mesh.pMaterials[i].Diffuse.b,
+<font color = deepskyblue>0276:</font>             1.0f);
+<font color = deepskyblue>0277:</font>         pVs->SetShaderConstant( diffuse_iter, &vl  );
+<font color = deepskyblue>0278:</font>         pPs->SetTexture(tex0_iter, mesh.pTextures[i]);
+<font color = deepskyblue>0279:</font> 
+<font color = deepskyblue>0280:</font>         lpD3DDev->DrawIndexedPrimitive(D3DPT_TRIANGLELIST, 
+<font color = deepskyblue>0281:</font>                                         mesh.pSubsetTable[i].VertexStart,
+<font color = deepskyblue>0282:</font>                                         mesh.pSubsetTable[i].VertexCount,
+<font color = deepskyblue>0283:</font>                                         mesh.pSubsetTable[i].FaceStart * 3,
+<font color = deepskyblue>0284:</font>                                         mesh.pSubsetTable[i].FaceCount);
+<font color = deepskyblue>0285:</font>     }
+<font color = deepskyblue>0287:</font> }
+</pre>
+
+
+
+
+
+
+
+<h2>■問題点などなど</h2>
+
+<p>
+実は、今回の矢印のモデルは、ポリゴン数が非常に多いです(3700トライアングルぐらい)。<br>
+これだけポリゴン数があると、まげても綺麗に見えます。<br>
+こんなプログラムを書くと、曲面レンダリングをしてるんじゃないかと誤解されるので、
+ポリゴン数を削ったモデルで表示すると、次のようになります。
+</p>
+<image src = "../lopoly.png"><br>
+<p>
+さすがに、ポリゴンがひん曲がっているようにしか見えません。<br>
+今回のプログラムは、モデルのポリゴンの形を気をつけないといけません。
+</p>
+
+
+<h2>■最後に</h2>
+
+
+<p>
+まぁ、聡明な方はお分かりだと思うのですが、とあるもの（DirectXの質問でタブーになってるやつですな）の前振りです。<br>
+今回のものでも、モーフィング等に使えたりするのではないでしょうか。<br>
+さて、次回はすんなりいくかどうか・・・
+</p>
+
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<center>
+<p><a href="../index.html">もどる</a></p>
+<p><a href="mailto:imagire@gmail.com">imagire@gmail.com</a></p>
+</center>
+
+</body>
+</html>

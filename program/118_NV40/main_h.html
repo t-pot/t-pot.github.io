@@ -1,0 +1,81 @@
+<HTML>
+<HEAD>
+<TITLE>main.h</TITLE>
+<meta name="GENERATOR" content="cpp2html 2.1 by Niisaka">
+<meta http-equiv="Content-Type" content="text/html">
+<meta http-equiv="Content-Style-Type" content="text/css">
+<STYLE TYPE="text/css">
+<!--
+SPAN.comment { color:#008000; font-weight:normal; font-style:normal;}
+SPAN.keyword { color:#0000FF; font-weight:normal; font-style:normal;}
+SPAN.string { color:#600000; font-weight:normal; font-style:normal;}
+SPAN.linenum { color:#A0A0A0; font-weight:normal; font-style:normal;}
+-->
+</STYLE>
+</HEAD>
+<BODY TEXT="#000000" BGCOLOR="#FFFFFF">
+<PRE><SPAN CLASS="linenum">0001:</SPAN> <SPAN CLASS="comment">//-------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0002:</SPAN> <SPAN CLASS="comment">// File: main.h</SPAN>
+<SPAN CLASS="linenum">0003:</SPAN> <SPAN CLASS="comment">//</SPAN>
+<SPAN CLASS="linenum">0004:</SPAN> <SPAN CLASS="comment">// Desc: NV40 test</SPAN>
+<SPAN CLASS="linenum">0005:</SPAN> <SPAN CLASS="comment">// Copyright (c) 2004 IMAGIRE Takashi. All rights reserved.</SPAN>
+<SPAN CLASS="linenum">0006:</SPAN> <SPAN CLASS="comment">//-------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0007:</SPAN> <SPAN CLASS="keyword">#pragma</SPAN> once
+<SPAN CLASS="linenum">0008:</SPAN> 
+<SPAN CLASS="linenum">0009:</SPAN> <SPAN CLASS="keyword">#define</SPAN> DX9C
+<SPAN CLASS="linenum">0010:</SPAN> 
+<SPAN CLASS="linenum">0011:</SPAN> <SPAN CLASS="keyword">#ifdef</SPAN> DX9C
+<SPAN CLASS="linenum">0012:</SPAN>     <SPAN CLASS="keyword">#define</SPAN> BEGIN_PASS(n) m_pEffect-&gt;BeginPass(n)
+<SPAN CLASS="linenum">0013:</SPAN>     <SPAN CLASS="keyword">#define</SPAN> END_PASS()    m_pEffect-&gt;EndPass()
+<SPAN CLASS="linenum">0014:</SPAN> <SPAN CLASS="keyword">#else</SPAN>// DX9C
+<SPAN CLASS="linenum">0015:</SPAN>     <SPAN CLASS="keyword">#define</SPAN> BEGIN_PASS(n) m_pEffect-&gt;Pass(n)
+<SPAN CLASS="linenum">0016:</SPAN>     <SPAN CLASS="keyword">#define</SPAN> END_PASS()
+<SPAN CLASS="linenum">0017:</SPAN> <SPAN CLASS="keyword">#endif</SPAN> <SPAN CLASS="comment">// DX9C</SPAN>
+<SPAN CLASS="linenum">0018:</SPAN> 
+<SPAN CLASS="linenum">0019:</SPAN> 
+<SPAN CLASS="linenum">0020:</SPAN> <SPAN CLASS="comment">//-------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0021:</SPAN> <SPAN CLASS="comment">// Name: class CMyD3DApplication</SPAN>
+<SPAN CLASS="linenum">0022:</SPAN> <SPAN CLASS="comment">// Desc: Main class to run this application. Most functionality is inherited</SPAN>
+<SPAN CLASS="linenum">0023:</SPAN> <SPAN CLASS="comment">//       from the CD3DApplication base class.</SPAN>
+<SPAN CLASS="linenum">0024:</SPAN> <SPAN CLASS="comment">//       (アプリケーションのクラス)</SPAN>
+<SPAN CLASS="linenum">0025:</SPAN> <SPAN CLASS="comment">//-------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0026:</SPAN> <SPAN CLASS="keyword">class</SPAN> CMyD3DApplication : <SPAN CLASS="keyword">public</SPAN> CD3DApplication
+<SPAN CLASS="linenum">0027:</SPAN> {
+<SPAN CLASS="linenum">0028:</SPAN>     <SPAN CLASS="comment">// Shader</SPAN>
+<SPAN CLASS="linenum">0029:</SPAN>     LPD3DXEFFECT            m_pEffect;      <SPAN CLASS="comment">// Effect for the sample(エフェクト)</SPAN>
+<SPAN CLASS="linenum">0030:</SPAN>     D3DXHANDLE              m_hTechnique;   <SPAN CLASS="comment">// Technique handle for RenderScene(テクニック)</SPAN>
+<SPAN CLASS="linenum">0031:</SPAN>     D3DXHANDLE              m_htSrcTex;     <SPAN CLASS="comment">// Handle for the scene texture in effect(テクスチャ)</SPAN>
+<SPAN CLASS="linenum">0032:</SPAN>     D3DXHANDLE              m_fWidth;       <SPAN CLASS="comment">// Handle for the texture width in effect(テクスチャ幅)</SPAN>
+<SPAN CLASS="linenum">0033:</SPAN>     D3DXHANDLE              m_fHeight;      <SPAN CLASS="comment">// Handle for the texture height in effect(テクスチャ高さ)</SPAN>
+<SPAN CLASS="linenum">0034:</SPAN> 
+<SPAN CLASS="linenum">0035:</SPAN>     LPDIRECT3DTEXTURE9      m_pJacobianTex; <SPAN CLASS="comment">// SH coefficient of incoming light</SPAN>
+<SPAN CLASS="linenum">0036:</SPAN> 
+<SPAN CLASS="linenum">0037:</SPAN>     <SPAN CLASS="comment">// Rendering targets (レンダリングターゲット)</SPAN>
+<SPAN CLASS="linenum">0038:</SPAN>     LPDIRECT3DTEXTURE9      m_pReductionTex [2];<SPAN CLASS="comment">// Reduction buffer</SPAN>
+<SPAN CLASS="linenum">0039:</SPAN>     LPDIRECT3DSURFACE9      m_pReductionSurf[2];
+<SPAN CLASS="linenum">0040:</SPAN> 
+<SPAN CLASS="linenum">0041:</SPAN>     BOOL                    m_bLoadingApp;  <SPAN CLASS="comment">// TRUE, if the app is loading(ロード中？)</SPAN>
+<SPAN CLASS="linenum">0042:</SPAN>     CD3DFont*               m_pFont;        <SPAN CLASS="comment">// Font for drawing text(フォント)</SPAN>
+<SPAN CLASS="linenum">0043:</SPAN> 
+<SPAN CLASS="linenum">0044:</SPAN> <SPAN CLASS="keyword">protected</SPAN>:
+<SPAN CLASS="linenum">0045:</SPAN>     <SPAN CLASS="keyword">virtual</SPAN> HRESULT OneTimeSceneInit();
+<SPAN CLASS="linenum">0046:</SPAN>     <SPAN CLASS="keyword">virtual</SPAN> HRESULT InitDeviceObjects();
+<SPAN CLASS="linenum">0047:</SPAN>     <SPAN CLASS="keyword">virtual</SPAN> HRESULT RestoreDeviceObjects();
+<SPAN CLASS="linenum">0048:</SPAN>     <SPAN CLASS="keyword">virtual</SPAN> HRESULT InvalidateDeviceObjects();
+<SPAN CLASS="linenum">0049:</SPAN>     <SPAN CLASS="keyword">virtual</SPAN> HRESULT DeleteDeviceObjects();
+<SPAN CLASS="linenum">0050:</SPAN>     <SPAN CLASS="keyword">virtual</SPAN> HRESULT Render();
+<SPAN CLASS="linenum">0051:</SPAN>     <SPAN CLASS="keyword">virtual</SPAN> HRESULT FrameMove();
+<SPAN CLASS="linenum">0052:</SPAN>     <SPAN CLASS="keyword">virtual</SPAN> HRESULT FinalCleanup();
+<SPAN CLASS="linenum">0053:</SPAN>     <SPAN CLASS="keyword">virtual</SPAN> HRESULT ConfirmDevice( D3DCAPS9*, DWORD, D3DFORMAT );
+<SPAN CLASS="linenum">0054:</SPAN> 
+<SPAN CLASS="linenum">0055:</SPAN>     HRESULT RenderText();
+<SPAN CLASS="linenum">0056:</SPAN> 
+<SPAN CLASS="linenum">0057:</SPAN> <SPAN CLASS="keyword">public</SPAN>:
+<SPAN CLASS="linenum">0058:</SPAN>     LRESULT MsgProc( HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam );
+<SPAN CLASS="linenum">0059:</SPAN>     CMyD3DApplication();
+<SPAN CLASS="linenum">0060:</SPAN>     <SPAN CLASS="keyword">virtual</SPAN> ~CMyD3DApplication();
+<SPAN CLASS="linenum">0061:</SPAN> };
+<SPAN CLASS="linenum">0062:</SPAN> 
+<SPAN CLASS="linenum">0063:</SPAN> </PRE>
+</BODY>
+</HTML>

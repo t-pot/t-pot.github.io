@@ -1,0 +1,991 @@
+<HTML>
+<HEAD>
+<TITLE>dmutil.cpp</TITLE>
+<meta name="GENERATOR" content="cpp2html 2.1 by Niisaka">
+<meta http-equiv="Content-Type" content="text/html">
+<meta http-equiv="Content-Style-Type" content="text/css">
+<STYLE TYPE="text/css">
+<!--
+SPAN.comment { color:#008000; font-weight:normal; font-style:normal;}
+SPAN.keyword { color:#0000FF; font-weight:normal; font-style:normal;}
+SPAN.string { color:#600000; font-weight:normal; font-style:normal;}
+SPAN.linenum { color:#A0A0A0; font-weight:normal; font-style:normal;}
+-->
+</STYLE>
+</HEAD>
+<BODY TEXT="#000000" BGCOLOR="#FFFFFF">
+<PRE><SPAN CLASS="linenum">0001:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0002:</SPAN> <SPAN CLASS="comment">// File: DMUtil.cpp</SPAN>
+<SPAN CLASS="linenum">0003:</SPAN> <SPAN CLASS="comment">//</SPAN>
+<SPAN CLASS="linenum">0004:</SPAN> <SPAN CLASS="comment">// Desc: DirectMusic framework classes for playing DirectMusic segments and</SPAN>
+<SPAN CLASS="linenum">0005:</SPAN> <SPAN CLASS="comment">//       DirectMusic scripts. Feel free to use this class as a starting point </SPAN>
+<SPAN CLASS="linenum">0006:</SPAN> <SPAN CLASS="comment">//       for adding extra functionality.</SPAN>
+<SPAN CLASS="linenum">0007:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0008:</SPAN> <SPAN CLASS="keyword">#define</SPAN> STRICT
+<SPAN CLASS="linenum">0009:</SPAN> <SPAN CLASS="keyword">#include</SPAN> &lt;dmusicc.h&gt;
+<SPAN CLASS="linenum">0010:</SPAN> <SPAN CLASS="keyword">#include</SPAN> &lt;dmusici.h&gt;
+<SPAN CLASS="linenum">0011:</SPAN> <SPAN CLASS="keyword">#include</SPAN> &lt;dsound.h&gt;
+<SPAN CLASS="linenum">0012:</SPAN> <SPAN CLASS="keyword">#include</SPAN> &lt;dxerr9.h&gt;
+<SPAN CLASS="linenum">0013:</SPAN> <SPAN CLASS="keyword">#include</SPAN> "<SPAN CLASS="string">DMUtil.h</SPAN>"
+<SPAN CLASS="linenum">0014:</SPAN> <SPAN CLASS="keyword">#include</SPAN> "<SPAN CLASS="string">DXUtil.h</SPAN>"
+<SPAN CLASS="linenum">0015:</SPAN> 
+<SPAN CLASS="linenum">0016:</SPAN> 
+<SPAN CLASS="linenum">0017:</SPAN> 
+<SPAN CLASS="linenum">0018:</SPAN> 
+<SPAN CLASS="linenum">0019:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0020:</SPAN> <SPAN CLASS="comment">// Name: CMusicManager::CMusicManager()</SPAN>
+<SPAN CLASS="linenum">0021:</SPAN> <SPAN CLASS="comment">// Desc: Constructs the class</SPAN>
+<SPAN CLASS="linenum">0022:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0023:</SPAN> CMusicManager::CMusicManager()
+<SPAN CLASS="linenum">0024:</SPAN> {
+<SPAN CLASS="linenum">0025:</SPAN>     m_pLoader       = NULL;
+<SPAN CLASS="linenum">0026:</SPAN>     m_pPerformance  = NULL;
+<SPAN CLASS="linenum">0027:</SPAN>     m_pDSListener   = NULL;
+<SPAN CLASS="linenum">0028:</SPAN>     
+<SPAN CLASS="linenum">0029:</SPAN>     <SPAN CLASS="comment">// Initialize COM</SPAN>
+<SPAN CLASS="linenum">0030:</SPAN>     HRESULT hr = CoInitialize(NULL);
+<SPAN CLASS="linenum">0031:</SPAN>     m_bCleanupCOM = SUCCEEDED(hr);
+<SPAN CLASS="linenum">0032:</SPAN> }
+<SPAN CLASS="linenum">0033:</SPAN> 
+<SPAN CLASS="linenum">0034:</SPAN> 
+<SPAN CLASS="linenum">0035:</SPAN> 
+<SPAN CLASS="linenum">0036:</SPAN> 
+<SPAN CLASS="linenum">0037:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0038:</SPAN> <SPAN CLASS="comment">// Name: CMusicManager::~CMusicManager()</SPAN>
+<SPAN CLASS="linenum">0039:</SPAN> <SPAN CLASS="comment">// Desc: Destroys the class</SPAN>
+<SPAN CLASS="linenum">0040:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0041:</SPAN> CMusicManager::~CMusicManager()
+<SPAN CLASS="linenum">0042:</SPAN> {
+<SPAN CLASS="linenum">0043:</SPAN>     SAFE_RELEASE( m_pLoader ); 
+<SPAN CLASS="linenum">0044:</SPAN>     SAFE_RELEASE( m_pDSListener );
+<SPAN CLASS="linenum">0045:</SPAN> 
+<SPAN CLASS="linenum">0046:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( m_pPerformance )
+<SPAN CLASS="linenum">0047:</SPAN>     {
+<SPAN CLASS="linenum">0048:</SPAN>         <SPAN CLASS="comment">// If there is any music playing, stop it.</SPAN>
+<SPAN CLASS="linenum">0049:</SPAN>         m_pPerformance-&gt;Stop( NULL, NULL, 0, 0 );
+<SPAN CLASS="linenum">0050:</SPAN>         m_pPerformance-&gt;CloseDown();
+<SPAN CLASS="linenum">0051:</SPAN> 
+<SPAN CLASS="linenum">0052:</SPAN>         SAFE_RELEASE( m_pPerformance );
+<SPAN CLASS="linenum">0053:</SPAN>     }
+<SPAN CLASS="linenum">0054:</SPAN> 
+<SPAN CLASS="linenum">0055:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( m_bCleanupCOM )
+<SPAN CLASS="linenum">0056:</SPAN>         CoUninitialize();
+<SPAN CLASS="linenum">0057:</SPAN> }
+<SPAN CLASS="linenum">0058:</SPAN> 
+<SPAN CLASS="linenum">0059:</SPAN> 
+<SPAN CLASS="linenum">0060:</SPAN> 
+<SPAN CLASS="linenum">0061:</SPAN> 
+<SPAN CLASS="linenum">0062:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0063:</SPAN> <SPAN CLASS="comment">// Name: CMusicManager::Initialize()</SPAN>
+<SPAN CLASS="linenum">0064:</SPAN> <SPAN CLASS="comment">// Desc: Inits DirectMusic using a standard audio path</SPAN>
+<SPAN CLASS="linenum">0065:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0066:</SPAN> HRESULT CMusicManager::Initialize( HWND hWnd, DWORD dwPChannels, DWORD dwDefaultPathType, LPDIRECTSOUND pDS )
+<SPAN CLASS="linenum">0067:</SPAN> {
+<SPAN CLASS="linenum">0068:</SPAN>     HRESULT hr;
+<SPAN CLASS="linenum">0069:</SPAN>     IDirectSound** ppDirectSound;
+<SPAN CLASS="linenum">0070:</SPAN> 
+<SPAN CLASS="linenum">0071:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( pDS )
+<SPAN CLASS="linenum">0072:</SPAN>         ppDirectSound = &amp;pDS;
+<SPAN CLASS="linenum">0073:</SPAN>     <SPAN CLASS="keyword">else</SPAN>
+<SPAN CLASS="linenum">0074:</SPAN>         ppDirectSound = NULL;
+<SPAN CLASS="linenum">0075:</SPAN>  
+<SPAN CLASS="linenum">0076:</SPAN>     <SPAN CLASS="comment">// Create loader object</SPAN>
+<SPAN CLASS="linenum">0077:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( FAILED( hr = CoCreateInstance( CLSID_DirectMusicLoader, NULL, CLSCTX_INPROC, 
+<SPAN CLASS="linenum">0078:</SPAN>                                        IID_IDirectMusicLoader8, (<SPAN CLASS="keyword">void</SPAN>**)&amp;m_pLoader ) ) )
+<SPAN CLASS="linenum">0079:</SPAN>         <SPAN CLASS="keyword">return</SPAN> DXTRACE_ERR_MSGBOX( TEXT("<SPAN CLASS="string">CoCreateInstance</SPAN>"), hr );
+<SPAN CLASS="linenum">0080:</SPAN> 
+<SPAN CLASS="linenum">0081:</SPAN>     <SPAN CLASS="comment">// Create performance object</SPAN>
+<SPAN CLASS="linenum">0082:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( FAILED( hr = CoCreateInstance( CLSID_DirectMusicPerformance, NULL, CLSCTX_INPROC, 
+<SPAN CLASS="linenum">0083:</SPAN>                                        IID_IDirectMusicPerformance8, (<SPAN CLASS="keyword">void</SPAN>**)&amp;m_pPerformance ) ) )
+<SPAN CLASS="linenum">0084:</SPAN>         <SPAN CLASS="keyword">return</SPAN> DXTRACE_ERR_MSGBOX( TEXT("<SPAN CLASS="string">CoCreateInstance</SPAN>"), hr );
+<SPAN CLASS="linenum">0085:</SPAN> 
+<SPAN CLASS="linenum">0086:</SPAN>     <SPAN CLASS="comment">// Initialize the performance with the standard audio path.</SPAN>
+<SPAN CLASS="linenum">0087:</SPAN>     <SPAN CLASS="comment">// This initializes both DirectMusic and DirectSound and </SPAN>
+<SPAN CLASS="linenum">0088:</SPAN>     <SPAN CLASS="comment">// sets up the synthesizer. Typcially its easist to use an </SPAN>
+<SPAN CLASS="linenum">0089:</SPAN>     <SPAN CLASS="comment">// audio path for playing music and sound effects.</SPAN>
+<SPAN CLASS="linenum">0090:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( FAILED( hr = m_pPerformance-&gt;InitAudio( NULL, ppDirectSound, hWnd, dwDefaultPathType, 
+<SPAN CLASS="linenum">0091:</SPAN>                                                 dwPChannels, DMUS_AUDIOF_ALL, NULL ) ) )
+<SPAN CLASS="linenum">0092:</SPAN>     {
+<SPAN CLASS="linenum">0093:</SPAN>         <SPAN CLASS="keyword">if</SPAN>( hr == DSERR_NODRIVER )
+<SPAN CLASS="linenum">0094:</SPAN>         {
+<SPAN CLASS="linenum">0095:</SPAN>             DXTRACE( TEXT("<SPAN CLASS="string">Warning: No sound card found\n</SPAN>") );
+<SPAN CLASS="linenum">0096:</SPAN>             <SPAN CLASS="keyword">return</SPAN> hr;
+<SPAN CLASS="linenum">0097:</SPAN>         }
+<SPAN CLASS="linenum">0098:</SPAN> 
+<SPAN CLASS="linenum">0099:</SPAN>         <SPAN CLASS="keyword">return</SPAN> DXTRACE_ERR_MSGBOX( TEXT("<SPAN CLASS="string">InitAudio</SPAN>"), hr );
+<SPAN CLASS="linenum">0100:</SPAN>     }
+<SPAN CLASS="linenum">0101:</SPAN> 
+<SPAN CLASS="linenum">0102:</SPAN>     <SPAN CLASS="comment">// Get the listener from the in the default audio path.</SPAN>
+<SPAN CLASS="linenum">0103:</SPAN>     IDirectMusicAudioPath8* pAudioPath = GetDefaultAudioPath();
+<SPAN CLASS="linenum">0104:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( pAudioPath ) <SPAN CLASS="comment">// might be NULL if dwDefaultPathType == 0</SPAN>
+<SPAN CLASS="linenum">0105:</SPAN>     {
+<SPAN CLASS="linenum">0106:</SPAN>         <SPAN CLASS="keyword">if</SPAN>( SUCCEEDED( hr = pAudioPath-&gt;GetObjectInPath( 0, DMUS_PATH_PRIMARY_BUFFER, 0,
+<SPAN CLASS="linenum">0107:</SPAN>                                                         GUID_NULL, 0, IID_IDirectSound3DListener, 
+<SPAN CLASS="linenum">0108:</SPAN>                                                         (LPVOID*) &amp;m_pDSListener ) ) )
+<SPAN CLASS="linenum">0109:</SPAN>         {
+<SPAN CLASS="linenum">0110:</SPAN>             <SPAN CLASS="comment">// Get listener parameters</SPAN>
+<SPAN CLASS="linenum">0111:</SPAN>             m_dsListenerParams.dwSize = <SPAN CLASS="keyword">sizeof</SPAN>(DS3DLISTENER);
+<SPAN CLASS="linenum">0112:</SPAN>             m_pDSListener-&gt;GetAllParameters( &amp;m_dsListenerParams );
+<SPAN CLASS="linenum">0113:</SPAN>         }
+<SPAN CLASS="linenum">0114:</SPAN>     }
+<SPAN CLASS="linenum">0115:</SPAN> 
+<SPAN CLASS="linenum">0116:</SPAN>     <SPAN CLASS="keyword">return</SPAN> S_OK;
+<SPAN CLASS="linenum">0117:</SPAN> }
+<SPAN CLASS="linenum">0118:</SPAN> 
+<SPAN CLASS="linenum">0119:</SPAN> 
+<SPAN CLASS="linenum">0120:</SPAN> 
+<SPAN CLASS="linenum">0121:</SPAN> 
+<SPAN CLASS="linenum">0122:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0123:</SPAN> <SPAN CLASS="comment">// Name: CMusicManager::SetSearchDirectory()</SPAN>
+<SPAN CLASS="linenum">0124:</SPAN> <SPAN CLASS="comment">// Desc: Sets the search directory.  If not called, the current working</SPAN>
+<SPAN CLASS="linenum">0125:</SPAN> <SPAN CLASS="comment">//       directory is used to load content.</SPAN>
+<SPAN CLASS="linenum">0126:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0127:</SPAN> HRESULT CMusicManager::SetSearchDirectory( <SPAN CLASS="keyword">const</SPAN> TCHAR* strMediaPath )
+<SPAN CLASS="linenum">0128:</SPAN> {
+<SPAN CLASS="linenum">0129:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( NULL == m_pLoader )
+<SPAN CLASS="linenum">0130:</SPAN>         <SPAN CLASS="keyword">return</SPAN> E_UNEXPECTED;
+<SPAN CLASS="linenum">0131:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( NULL == strMediaPath )
+<SPAN CLASS="linenum">0132:</SPAN>         <SPAN CLASS="keyword">return</SPAN> E_INVALIDARG;
+<SPAN CLASS="linenum">0133:</SPAN> 
+<SPAN CLASS="linenum">0134:</SPAN>     <SPAN CLASS="comment">// DMusic only takes wide strings</SPAN>
+<SPAN CLASS="linenum">0135:</SPAN>     WCHAR wstrMediaPath[MAX_PATH];
+<SPAN CLASS="linenum">0136:</SPAN>     DXUtil_ConvertGenericStringToWideCb( wstrMediaPath, strMediaPath, <SPAN CLASS="keyword">sizeof</SPAN>(wstrMediaPath) );
+<SPAN CLASS="linenum">0137:</SPAN> 
+<SPAN CLASS="linenum">0138:</SPAN>     <SPAN CLASS="keyword">return</SPAN> m_pLoader-&gt;SetSearchDirectory( GUID_DirectMusicAllTypes, 
+<SPAN CLASS="linenum">0139:</SPAN>                                           wstrMediaPath, FALSE );
+<SPAN CLASS="linenum">0140:</SPAN> 
+<SPAN CLASS="linenum">0141:</SPAN> }
+<SPAN CLASS="linenum">0142:</SPAN> 
+<SPAN CLASS="linenum">0143:</SPAN> 
+<SPAN CLASS="linenum">0144:</SPAN> 
+<SPAN CLASS="linenum">0145:</SPAN> 
+<SPAN CLASS="linenum">0146:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0147:</SPAN> <SPAN CLASS="comment">// Name: CMusicManager::GetDefaultAudioPath()</SPAN>
+<SPAN CLASS="linenum">0148:</SPAN> <SPAN CLASS="comment">// Desc: </SPAN>
+<SPAN CLASS="linenum">0149:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0150:</SPAN> IDirectMusicAudioPath8* CMusicManager::GetDefaultAudioPath()
+<SPAN CLASS="linenum">0151:</SPAN> {
+<SPAN CLASS="linenum">0152:</SPAN>     IDirectMusicAudioPath8* pAudioPath = NULL;
+<SPAN CLASS="linenum">0153:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( NULL == m_pPerformance )
+<SPAN CLASS="linenum">0154:</SPAN>         <SPAN CLASS="keyword">return</SPAN> NULL;
+<SPAN CLASS="linenum">0155:</SPAN> 
+<SPAN CLASS="linenum">0156:</SPAN>     m_pPerformance-&gt;GetDefaultAudioPath( &amp;pAudioPath );
+<SPAN CLASS="linenum">0157:</SPAN>     <SPAN CLASS="keyword">return</SPAN> pAudioPath;
+<SPAN CLASS="linenum">0158:</SPAN> }
+<SPAN CLASS="linenum">0159:</SPAN> 
+<SPAN CLASS="linenum">0160:</SPAN> 
+<SPAN CLASS="linenum">0161:</SPAN> 
+<SPAN CLASS="linenum">0162:</SPAN> 
+<SPAN CLASS="linenum">0163:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0164:</SPAN> <SPAN CLASS="comment">// Name: CMusicManager::CollectGarbage()</SPAN>
+<SPAN CLASS="linenum">0165:</SPAN> <SPAN CLASS="comment">// Desc: Tells the loader to cleanup any garbage from previously </SPAN>
+<SPAN CLASS="linenum">0166:</SPAN> <SPAN CLASS="comment">//       released objects.</SPAN>
+<SPAN CLASS="linenum">0167:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0168:</SPAN> VOID CMusicManager::CollectGarbage()
+<SPAN CLASS="linenum">0169:</SPAN> {
+<SPAN CLASS="linenum">0170:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( m_pLoader )
+<SPAN CLASS="linenum">0171:</SPAN>         m_pLoader-&gt;CollectGarbage();
+<SPAN CLASS="linenum">0172:</SPAN> }
+<SPAN CLASS="linenum">0173:</SPAN> 
+<SPAN CLASS="linenum">0174:</SPAN> 
+<SPAN CLASS="linenum">0175:</SPAN> 
+<SPAN CLASS="linenum">0176:</SPAN> 
+<SPAN CLASS="linenum">0177:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0178:</SPAN> <SPAN CLASS="comment">// Name: CMusicManager::StopAll()</SPAN>
+<SPAN CLASS="linenum">0179:</SPAN> <SPAN CLASS="comment">// Desc: Stops all segments.  Also simply calling Stop() on the segment won't </SPAN>
+<SPAN CLASS="linenum">0180:</SPAN> <SPAN CLASS="comment">//       stop any MIDI sustain pedals, but calling StopAll() will.</SPAN>
+<SPAN CLASS="linenum">0181:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0182:</SPAN> VOID CMusicManager::StopAll()
+<SPAN CLASS="linenum">0183:</SPAN> {
+<SPAN CLASS="linenum">0184:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( m_pPerformance )
+<SPAN CLASS="linenum">0185:</SPAN>         m_pPerformance-&gt;Stop( NULL, NULL, 0, 0 );
+<SPAN CLASS="linenum">0186:</SPAN> }
+<SPAN CLASS="linenum">0187:</SPAN> 
+<SPAN CLASS="linenum">0188:</SPAN> 
+<SPAN CLASS="linenum">0189:</SPAN> 
+<SPAN CLASS="linenum">0190:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0191:</SPAN> <SPAN CLASS="comment">// Name: CMusicManager::CreateSegmentFromFile()</SPAN>
+<SPAN CLASS="linenum">0192:</SPAN> <SPAN CLASS="comment">// Desc: </SPAN>
+<SPAN CLASS="linenum">0193:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0194:</SPAN> HRESULT CMusicManager::CreateSegmentFromFile( CMusicSegment** ppSegment, 
+<SPAN CLASS="linenum">0195:</SPAN>                                               TCHAR* strFileName, 
+<SPAN CLASS="linenum">0196:</SPAN>                                               BOOL bDownloadNow,
+<SPAN CLASS="linenum">0197:</SPAN>                                               BOOL bIsMidiFile )
+<SPAN CLASS="linenum">0198:</SPAN> {
+<SPAN CLASS="linenum">0199:</SPAN>     HRESULT               hr;
+<SPAN CLASS="linenum">0200:</SPAN>     IDirectMusicSegment8* pSegment = NULL;
+<SPAN CLASS="linenum">0201:</SPAN> 
+<SPAN CLASS="linenum">0202:</SPAN>     <SPAN CLASS="comment">// DMusic only takes wide strings</SPAN>
+<SPAN CLASS="linenum">0203:</SPAN>     WCHAR wstrFileName[MAX_PATH];
+<SPAN CLASS="linenum">0204:</SPAN>     DXUtil_ConvertGenericStringToWideCb( wstrFileName, strFileName, <SPAN CLASS="keyword">sizeof</SPAN>(wstrFileName) );
+<SPAN CLASS="linenum">0205:</SPAN> 
+<SPAN CLASS="linenum">0206:</SPAN>     <SPAN CLASS="keyword">if</SPAN> ( FAILED( hr = m_pLoader-&gt;LoadObjectFromFile( CLSID_DirectMusicSegment,
+<SPAN CLASS="linenum">0207:</SPAN>                                                      IID_IDirectMusicSegment8,
+<SPAN CLASS="linenum">0208:</SPAN>                                                      wstrFileName,
+<SPAN CLASS="linenum">0209:</SPAN>                                                      (LPVOID*) &amp;pSegment ) ) )
+<SPAN CLASS="linenum">0210:</SPAN>     {
+<SPAN CLASS="linenum">0211:</SPAN>         <SPAN CLASS="keyword">if</SPAN>( hr == DMUS_E_LOADER_FAILEDOPEN )
+<SPAN CLASS="linenum">0212:</SPAN>             <SPAN CLASS="keyword">return</SPAN> hr;
+<SPAN CLASS="linenum">0213:</SPAN>         <SPAN CLASS="keyword">return</SPAN> DXTRACE_ERR_MSGBOX( TEXT("<SPAN CLASS="string">LoadObjectFromFile</SPAN>"), hr );
+<SPAN CLASS="linenum">0214:</SPAN>     }
+<SPAN CLASS="linenum">0215:</SPAN> 
+<SPAN CLASS="linenum">0216:</SPAN>     *ppSegment = <SPAN CLASS="keyword">new</SPAN> CMusicSegment( m_pPerformance, m_pLoader, pSegment );
+<SPAN CLASS="linenum">0217:</SPAN>     <SPAN CLASS="keyword">if</SPAN> (!*ppSegment)
+<SPAN CLASS="linenum">0218:</SPAN>         <SPAN CLASS="keyword">return</SPAN> E_OUTOFMEMORY;
+<SPAN CLASS="linenum">0219:</SPAN> 
+<SPAN CLASS="linenum">0220:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( bIsMidiFile )
+<SPAN CLASS="linenum">0221:</SPAN>     {
+<SPAN CLASS="linenum">0222:</SPAN>         <SPAN CLASS="keyword">if</SPAN>( FAILED( hr = pSegment-&gt;SetParam( GUID_StandardMIDIFile, 
+<SPAN CLASS="linenum">0223:</SPAN>                                              0xFFFFFFFF, 0, 0, NULL ) ) )
+<SPAN CLASS="linenum">0224:</SPAN>             <SPAN CLASS="keyword">return</SPAN> DXTRACE_ERR_MSGBOX( TEXT("<SPAN CLASS="string">SetParam</SPAN>"), hr );
+<SPAN CLASS="linenum">0225:</SPAN>     }
+<SPAN CLASS="linenum">0226:</SPAN> 
+<SPAN CLASS="linenum">0227:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( bDownloadNow )
+<SPAN CLASS="linenum">0228:</SPAN>     {
+<SPAN CLASS="linenum">0229:</SPAN>         <SPAN CLASS="keyword">if</SPAN>( FAILED( hr = (*ppSegment)-&gt;Download() ) )
+<SPAN CLASS="linenum">0230:</SPAN>             <SPAN CLASS="keyword">return</SPAN> DXTRACE_ERR_MSGBOX( TEXT("<SPAN CLASS="string">Download</SPAN>"), hr );
+<SPAN CLASS="linenum">0231:</SPAN>     }
+<SPAN CLASS="linenum">0232:</SPAN> 
+<SPAN CLASS="linenum">0233:</SPAN>     <SPAN CLASS="keyword">return</SPAN> S_OK;
+<SPAN CLASS="linenum">0234:</SPAN> }
+<SPAN CLASS="linenum">0235:</SPAN> 
+<SPAN CLASS="linenum">0236:</SPAN> 
+<SPAN CLASS="linenum">0237:</SPAN> 
+<SPAN CLASS="linenum">0238:</SPAN> 
+<SPAN CLASS="linenum">0239:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0240:</SPAN> <SPAN CLASS="comment">// Name: CMusicManager::CreateSegmentFromResource()</SPAN>
+<SPAN CLASS="linenum">0241:</SPAN> <SPAN CLASS="comment">// Desc: </SPAN>
+<SPAN CLASS="linenum">0242:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0243:</SPAN> HRESULT CMusicManager::CreateSegmentFromResource( CMusicSegment** ppSegment, 
+<SPAN CLASS="linenum">0244:</SPAN>                                                   TCHAR* strResource,
+<SPAN CLASS="linenum">0245:</SPAN>                                                   TCHAR* strResourceType,
+<SPAN CLASS="linenum">0246:</SPAN>                                                   BOOL bDownloadNow,
+<SPAN CLASS="linenum">0247:</SPAN>                                                   BOOL bIsMidiFile )
+<SPAN CLASS="linenum">0248:</SPAN> {
+<SPAN CLASS="linenum">0249:</SPAN>     HRESULT               hr;
+<SPAN CLASS="linenum">0250:</SPAN>     IDirectMusicSegment8* pSegment      = NULL;
+<SPAN CLASS="linenum">0251:</SPAN>     HRSRC                 hres          = NULL;
+<SPAN CLASS="linenum">0252:</SPAN>     <SPAN CLASS="keyword">void</SPAN>*                 pMem          = NULL;
+<SPAN CLASS="linenum">0253:</SPAN>     DWORD                 dwSize        = 0;
+<SPAN CLASS="linenum">0254:</SPAN>     DMUS_OBJECTDESC       objdesc;
+<SPAN CLASS="linenum">0255:</SPAN> 
+<SPAN CLASS="linenum">0256:</SPAN>     <SPAN CLASS="comment">// Find the resource</SPAN>
+<SPAN CLASS="linenum">0257:</SPAN>     hres = FindResource( NULL,strResource,strResourceType );
+<SPAN CLASS="linenum">0258:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( NULL == hres ) 
+<SPAN CLASS="linenum">0259:</SPAN>         <SPAN CLASS="keyword">return</SPAN> E_FAIL;
+<SPAN CLASS="linenum">0260:</SPAN> 
+<SPAN CLASS="linenum">0261:</SPAN>     <SPAN CLASS="comment">// Load the resource</SPAN>
+<SPAN CLASS="linenum">0262:</SPAN>     pMem = (<SPAN CLASS="keyword">void</SPAN>*)LoadResource( NULL, hres );
+<SPAN CLASS="linenum">0263:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( NULL == pMem ) 
+<SPAN CLASS="linenum">0264:</SPAN>         <SPAN CLASS="keyword">return</SPAN> E_FAIL;
+<SPAN CLASS="linenum">0265:</SPAN> 
+<SPAN CLASS="linenum">0266:</SPAN>     <SPAN CLASS="comment">// Store the size of the resource</SPAN>
+<SPAN CLASS="linenum">0267:</SPAN>     dwSize = SizeofResource( NULL, hres ); 
+<SPAN CLASS="linenum">0268:</SPAN>     
+<SPAN CLASS="linenum">0269:</SPAN>     <SPAN CLASS="comment">// Set up our object description </SPAN>
+<SPAN CLASS="linenum">0270:</SPAN>     ZeroMemory(&amp;objdesc,<SPAN CLASS="keyword">sizeof</SPAN>(DMUS_OBJECTDESC));
+<SPAN CLASS="linenum">0271:</SPAN>     objdesc.dwSize = <SPAN CLASS="keyword">sizeof</SPAN>(DMUS_OBJECTDESC);
+<SPAN CLASS="linenum">0272:</SPAN>     objdesc.dwValidData = DMUS_OBJ_MEMORY | DMUS_OBJ_CLASS;
+<SPAN CLASS="linenum">0273:</SPAN>     objdesc.guidClass = CLSID_DirectMusicSegment;
+<SPAN CLASS="linenum">0274:</SPAN>     objdesc.llMemLength =(LONGLONG)dwSize;
+<SPAN CLASS="linenum">0275:</SPAN>     objdesc.pbMemData = (BYTE*)pMem;
+<SPAN CLASS="linenum">0276:</SPAN>     
+<SPAN CLASS="linenum">0277:</SPAN>     <SPAN CLASS="keyword">if</SPAN> (FAILED ( hr = m_pLoader-&gt;GetObject( &amp;objdesc,
+<SPAN CLASS="linenum">0278:</SPAN>                                             IID_IDirectMusicSegment8,
+<SPAN CLASS="linenum">0279:</SPAN>                                             (<SPAN CLASS="keyword">void</SPAN>**)&amp;pSegment ) ) )
+<SPAN CLASS="linenum">0280:</SPAN>     {
+<SPAN CLASS="linenum">0281:</SPAN>         <SPAN CLASS="keyword">if</SPAN>( hr == DMUS_E_LOADER_FAILEDOPEN )
+<SPAN CLASS="linenum">0282:</SPAN>             <SPAN CLASS="keyword">return</SPAN> hr;
+<SPAN CLASS="linenum">0283:</SPAN>         <SPAN CLASS="keyword">return</SPAN> DXTRACE_ERR_MSGBOX( TEXT("<SPAN CLASS="string">LoadObjectFromFile</SPAN>"), hr );
+<SPAN CLASS="linenum">0284:</SPAN>     }
+<SPAN CLASS="linenum">0285:</SPAN> 
+<SPAN CLASS="linenum">0286:</SPAN>     *ppSegment = <SPAN CLASS="keyword">new</SPAN> CMusicSegment( m_pPerformance, m_pLoader, pSegment );
+<SPAN CLASS="linenum">0287:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( NULL == *ppSegment )
+<SPAN CLASS="linenum">0288:</SPAN>         <SPAN CLASS="keyword">return</SPAN> E_OUTOFMEMORY;
+<SPAN CLASS="linenum">0289:</SPAN> 
+<SPAN CLASS="linenum">0290:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( bIsMidiFile )
+<SPAN CLASS="linenum">0291:</SPAN>     {
+<SPAN CLASS="linenum">0292:</SPAN>         <SPAN CLASS="comment">// Do this to make sure that the default General MIDI set </SPAN>
+<SPAN CLASS="linenum">0293:</SPAN>         <SPAN CLASS="comment">// is connected appropriately to the MIDI file and </SPAN>
+<SPAN CLASS="linenum">0294:</SPAN>         <SPAN CLASS="comment">// all instruments sound correct.                  </SPAN>
+<SPAN CLASS="linenum">0295:</SPAN>         <SPAN CLASS="keyword">if</SPAN>( FAILED( hr = pSegment-&gt;SetParam( GUID_StandardMIDIFile, 
+<SPAN CLASS="linenum">0296:</SPAN>                                              0xFFFFFFFF, 0, 0, NULL ) ) )
+<SPAN CLASS="linenum">0297:</SPAN>             <SPAN CLASS="keyword">return</SPAN> DXTRACE_ERR_MSGBOX( TEXT("<SPAN CLASS="string">SetParam</SPAN>"), hr );
+<SPAN CLASS="linenum">0298:</SPAN>     }
+<SPAN CLASS="linenum">0299:</SPAN> 
+<SPAN CLASS="linenum">0300:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( bDownloadNow )
+<SPAN CLASS="linenum">0301:</SPAN>     {
+<SPAN CLASS="linenum">0302:</SPAN>         <SPAN CLASS="comment">// The segment needs to be download first before playing.  </SPAN>
+<SPAN CLASS="linenum">0303:</SPAN>         <SPAN CLASS="comment">// However, some apps may want to wait before calling this </SPAN>
+<SPAN CLASS="linenum">0304:</SPAN>         <SPAN CLASS="comment">// to because the download allocates memory for the </SPAN>
+<SPAN CLASS="linenum">0305:</SPAN>         <SPAN CLASS="comment">// instruments. The more instruments currently downloaded, </SPAN>
+<SPAN CLASS="linenum">0306:</SPAN>         <SPAN CLASS="comment">// the more memory is in use by the synthesizer.</SPAN>
+<SPAN CLASS="linenum">0307:</SPAN>         <SPAN CLASS="keyword">if</SPAN>( FAILED( hr = (*ppSegment)-&gt;Download() ) )
+<SPAN CLASS="linenum">0308:</SPAN>             <SPAN CLASS="keyword">return</SPAN> DXTRACE_ERR_MSGBOX( TEXT("<SPAN CLASS="string">Download</SPAN>"), hr );
+<SPAN CLASS="linenum">0309:</SPAN>     }
+<SPAN CLASS="linenum">0310:</SPAN> 
+<SPAN CLASS="linenum">0311:</SPAN>     <SPAN CLASS="keyword">return</SPAN> S_OK;
+<SPAN CLASS="linenum">0312:</SPAN> }
+<SPAN CLASS="linenum">0313:</SPAN> 
+<SPAN CLASS="linenum">0314:</SPAN> 
+<SPAN CLASS="linenum">0315:</SPAN> 
+<SPAN CLASS="linenum">0316:</SPAN> 
+<SPAN CLASS="linenum">0317:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0318:</SPAN> <SPAN CLASS="comment">// Name: CMusicManager::Create3DSegmentFromFile()</SPAN>
+<SPAN CLASS="linenum">0319:</SPAN> <SPAN CLASS="comment">// Desc: </SPAN>
+<SPAN CLASS="linenum">0320:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0321:</SPAN> HRESULT CMusicManager::Create3DSegmentFromFile( C3DMusicSegment** pp3DMusicSegment, 
+<SPAN CLASS="linenum">0322:</SPAN>                                               TCHAR* strFileName, 
+<SPAN CLASS="linenum">0323:</SPAN>                                               BOOL bDownloadNow,
+<SPAN CLASS="linenum">0324:</SPAN>                                               BOOL bIsMidiFile,
+<SPAN CLASS="linenum">0325:</SPAN>                                               IDirectMusicAudioPath8* p3DAudioPath )
+<SPAN CLASS="linenum">0326:</SPAN> {
+<SPAN CLASS="linenum">0327:</SPAN>     HRESULT               hr;
+<SPAN CLASS="linenum">0328:</SPAN>     IDirectMusicSegment8* pSegment = NULL;
+<SPAN CLASS="linenum">0329:</SPAN> 
+<SPAN CLASS="linenum">0330:</SPAN>     <SPAN CLASS="comment">// DMusic only takes wide strings</SPAN>
+<SPAN CLASS="linenum">0331:</SPAN>     WCHAR wstrFileName[MAX_PATH];
+<SPAN CLASS="linenum">0332:</SPAN>     DXUtil_ConvertGenericStringToWideCb( wstrFileName, strFileName, <SPAN CLASS="keyword">sizeof</SPAN>(wstrFileName) );
+<SPAN CLASS="linenum">0333:</SPAN> 
+<SPAN CLASS="linenum">0334:</SPAN>     <SPAN CLASS="keyword">if</SPAN> ( FAILED( hr = m_pLoader-&gt;LoadObjectFromFile( CLSID_DirectMusicSegment,
+<SPAN CLASS="linenum">0335:</SPAN>                                                      IID_IDirectMusicSegment8,
+<SPAN CLASS="linenum">0336:</SPAN>                                                      wstrFileName,
+<SPAN CLASS="linenum">0337:</SPAN>                                                      (LPVOID*) &amp;pSegment ) ) )
+<SPAN CLASS="linenum">0338:</SPAN>     {
+<SPAN CLASS="linenum">0339:</SPAN>         <SPAN CLASS="keyword">if</SPAN>( hr == DMUS_E_LOADER_FAILEDOPEN )
+<SPAN CLASS="linenum">0340:</SPAN>             <SPAN CLASS="keyword">return</SPAN> hr;
+<SPAN CLASS="linenum">0341:</SPAN>         <SPAN CLASS="keyword">return</SPAN> DXTRACE_ERR( TEXT("<SPAN CLASS="string">LoadObjectFromFile</SPAN>"), hr );
+<SPAN CLASS="linenum">0342:</SPAN>     }
+<SPAN CLASS="linenum">0343:</SPAN> 
+<SPAN CLASS="linenum">0344:</SPAN>     *pp3DMusicSegment = <SPAN CLASS="keyword">new</SPAN> C3DMusicSegment( m_pPerformance, m_pLoader, pSegment, p3DAudioPath );
+<SPAN CLASS="linenum">0345:</SPAN>     <SPAN CLASS="keyword">if</SPAN> (!*pp3DMusicSegment)
+<SPAN CLASS="linenum">0346:</SPAN>         <SPAN CLASS="keyword">return</SPAN> E_OUTOFMEMORY;
+<SPAN CLASS="linenum">0347:</SPAN> 
+<SPAN CLASS="linenum">0348:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( FAILED( hr = (*pp3DMusicSegment)-&gt;Init() ) ) 
+<SPAN CLASS="linenum">0349:</SPAN>         <SPAN CLASS="keyword">return</SPAN> DXTRACE_ERR( TEXT("<SPAN CLASS="string">SetParam</SPAN>"), hr );
+<SPAN CLASS="linenum">0350:</SPAN> 
+<SPAN CLASS="linenum">0351:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( bIsMidiFile )
+<SPAN CLASS="linenum">0352:</SPAN>     {
+<SPAN CLASS="linenum">0353:</SPAN>         <SPAN CLASS="keyword">if</SPAN>( FAILED( hr = pSegment-&gt;SetParam( GUID_StandardMIDIFile, 
+<SPAN CLASS="linenum">0354:</SPAN>                                              0xFFFFFFFF, 0, 0, NULL ) ) )
+<SPAN CLASS="linenum">0355:</SPAN>             <SPAN CLASS="keyword">return</SPAN> DXTRACE_ERR( TEXT("<SPAN CLASS="string">SetParam</SPAN>"), hr );
+<SPAN CLASS="linenum">0356:</SPAN>     }
+<SPAN CLASS="linenum">0357:</SPAN> 
+<SPAN CLASS="linenum">0358:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( bDownloadNow )
+<SPAN CLASS="linenum">0359:</SPAN>     {
+<SPAN CLASS="linenum">0360:</SPAN>         <SPAN CLASS="keyword">if</SPAN>( FAILED( hr = (*pp3DMusicSegment)-&gt;Download() ) )
+<SPAN CLASS="linenum">0361:</SPAN>             <SPAN CLASS="keyword">return</SPAN> DXTRACE_ERR( TEXT("<SPAN CLASS="string">Download</SPAN>"), hr );
+<SPAN CLASS="linenum">0362:</SPAN>     }
+<SPAN CLASS="linenum">0363:</SPAN> 
+<SPAN CLASS="linenum">0364:</SPAN>     <SPAN CLASS="keyword">return</SPAN> S_OK;
+<SPAN CLASS="linenum">0365:</SPAN> }
+<SPAN CLASS="linenum">0366:</SPAN> 
+<SPAN CLASS="linenum">0367:</SPAN> 
+<SPAN CLASS="linenum">0368:</SPAN> 
+<SPAN CLASS="linenum">0369:</SPAN> 
+<SPAN CLASS="linenum">0370:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0371:</SPAN> <SPAN CLASS="comment">// Name: CMusicManager::CreateScriptFromFile()</SPAN>
+<SPAN CLASS="linenum">0372:</SPAN> <SPAN CLASS="comment">// Desc: </SPAN>
+<SPAN CLASS="linenum">0373:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0374:</SPAN> HRESULT CMusicManager::CreateScriptFromFile( CMusicScript** ppScript, 
+<SPAN CLASS="linenum">0375:</SPAN>                                              TCHAR* strFileName )
+<SPAN CLASS="linenum">0376:</SPAN> {
+<SPAN CLASS="linenum">0377:</SPAN>     HRESULT               hr;
+<SPAN CLASS="linenum">0378:</SPAN>     IDirectMusicScript* pScript = NULL;
+<SPAN CLASS="linenum">0379:</SPAN> 
+<SPAN CLASS="linenum">0380:</SPAN>     <SPAN CLASS="comment">// DMusic only takes wide strings</SPAN>
+<SPAN CLASS="linenum">0381:</SPAN>     WCHAR wstrFileName[MAX_PATH];
+<SPAN CLASS="linenum">0382:</SPAN>     DXUtil_ConvertGenericStringToWideCb( wstrFileName, strFileName, <SPAN CLASS="keyword">sizeof</SPAN>(wstrFileName) );
+<SPAN CLASS="linenum">0383:</SPAN>     
+<SPAN CLASS="linenum">0384:</SPAN>     <SPAN CLASS="keyword">if</SPAN> ( FAILED( hr = m_pLoader-&gt;LoadObjectFromFile( CLSID_DirectMusicScript,
+<SPAN CLASS="linenum">0385:</SPAN>                                                      IID_IDirectMusicScript8,
+<SPAN CLASS="linenum">0386:</SPAN>                                                      wstrFileName,
+<SPAN CLASS="linenum">0387:</SPAN>                                                      (LPVOID*) &amp;pScript ) ) )
+<SPAN CLASS="linenum">0388:</SPAN>         <SPAN CLASS="keyword">return</SPAN> DXTRACE_ERR( TEXT("<SPAN CLASS="string">LoadObjectFromFile</SPAN>"), hr );
+<SPAN CLASS="linenum">0389:</SPAN> 
+<SPAN CLASS="linenum">0390:</SPAN>     <SPAN CLASS="keyword">if</SPAN> ( FAILED( hr = pScript-&gt;Init( m_pPerformance, NULL ) ) )
+<SPAN CLASS="linenum">0391:</SPAN>         <SPAN CLASS="keyword">return</SPAN> DXTRACE_ERR_MSGBOX( TEXT("<SPAN CLASS="string">Init</SPAN>"), hr );
+<SPAN CLASS="linenum">0392:</SPAN> 
+<SPAN CLASS="linenum">0393:</SPAN>     *ppScript = <SPAN CLASS="keyword">new</SPAN> CMusicScript( m_pPerformance, m_pLoader, pScript );
+<SPAN CLASS="linenum">0394:</SPAN>     <SPAN CLASS="keyword">if</SPAN> (!*ppScript)
+<SPAN CLASS="linenum">0395:</SPAN>         <SPAN CLASS="keyword">return</SPAN> E_OUTOFMEMORY;
+<SPAN CLASS="linenum">0396:</SPAN> 
+<SPAN CLASS="linenum">0397:</SPAN>     <SPAN CLASS="keyword">return</SPAN> hr;
+<SPAN CLASS="linenum">0398:</SPAN> }
+<SPAN CLASS="linenum">0399:</SPAN> 
+<SPAN CLASS="linenum">0400:</SPAN> 
+<SPAN CLASS="linenum">0401:</SPAN> 
+<SPAN CLASS="linenum">0402:</SPAN> 
+<SPAN CLASS="linenum">0403:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0404:</SPAN> <SPAN CLASS="comment">// Name: CMusicManager::CreateChordMapFromFile()</SPAN>
+<SPAN CLASS="linenum">0405:</SPAN> <SPAN CLASS="comment">// Desc: </SPAN>
+<SPAN CLASS="linenum">0406:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0407:</SPAN> HRESULT CMusicManager::CreateChordMapFromFile( IDirectMusicChordMap8** ppChordMap, 
+<SPAN CLASS="linenum">0408:</SPAN>                                                TCHAR* strFileName )
+<SPAN CLASS="linenum">0409:</SPAN> {
+<SPAN CLASS="linenum">0410:</SPAN>     <SPAN CLASS="comment">// DMusic only takes wide strings</SPAN>
+<SPAN CLASS="linenum">0411:</SPAN>     WCHAR wstrFileName[MAX_PATH];
+<SPAN CLASS="linenum">0412:</SPAN>     DXUtil_ConvertGenericStringToWideCb( wstrFileName, strFileName, <SPAN CLASS="keyword">sizeof</SPAN>(wstrFileName) );
+<SPAN CLASS="linenum">0413:</SPAN> 
+<SPAN CLASS="linenum">0414:</SPAN>     <SPAN CLASS="keyword">return</SPAN> m_pLoader-&gt;LoadObjectFromFile( CLSID_DirectMusicChordMap,
+<SPAN CLASS="linenum">0415:</SPAN>                                           IID_IDirectMusicChordMap8,
+<SPAN CLASS="linenum">0416:</SPAN>                                           wstrFileName, (LPVOID*) ppChordMap );
+<SPAN CLASS="linenum">0417:</SPAN> }
+<SPAN CLASS="linenum">0418:</SPAN> 
+<SPAN CLASS="linenum">0419:</SPAN> 
+<SPAN CLASS="linenum">0420:</SPAN> 
+<SPAN CLASS="linenum">0421:</SPAN> 
+<SPAN CLASS="linenum">0422:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0423:</SPAN> <SPAN CLASS="comment">// Name: CMusicManager::CreateChordMapFromFile()</SPAN>
+<SPAN CLASS="linenum">0424:</SPAN> <SPAN CLASS="comment">// Desc: </SPAN>
+<SPAN CLASS="linenum">0425:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0426:</SPAN> HRESULT CMusicManager::CreateStyleFromFile( IDirectMusicStyle8** ppStyle, 
+<SPAN CLASS="linenum">0427:</SPAN>                                             TCHAR* strFileName )
+<SPAN CLASS="linenum">0428:</SPAN> {
+<SPAN CLASS="linenum">0429:</SPAN>     <SPAN CLASS="comment">// DMusic only takes wide strings</SPAN>
+<SPAN CLASS="linenum">0430:</SPAN>     WCHAR wstrFileName[MAX_PATH];
+<SPAN CLASS="linenum">0431:</SPAN>     DXUtil_ConvertGenericStringToWideCb( wstrFileName, strFileName, <SPAN CLASS="keyword">sizeof</SPAN>(wstrFileName) );
+<SPAN CLASS="linenum">0432:</SPAN> 
+<SPAN CLASS="linenum">0433:</SPAN>     <SPAN CLASS="keyword">return</SPAN> m_pLoader-&gt;LoadObjectFromFile( CLSID_DirectMusicStyle,
+<SPAN CLASS="linenum">0434:</SPAN>                                           IID_IDirectMusicStyle8,
+<SPAN CLASS="linenum">0435:</SPAN>                                           wstrFileName, (LPVOID*) ppStyle );
+<SPAN CLASS="linenum">0436:</SPAN> }
+<SPAN CLASS="linenum">0437:</SPAN> 
+<SPAN CLASS="linenum">0438:</SPAN> 
+<SPAN CLASS="linenum">0439:</SPAN> 
+<SPAN CLASS="linenum">0440:</SPAN> 
+<SPAN CLASS="linenum">0441:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0442:</SPAN> <SPAN CLASS="comment">// Name: CMusicManager::GetMotifFromStyle()</SPAN>
+<SPAN CLASS="linenum">0443:</SPAN> <SPAN CLASS="comment">// Desc: </SPAN>
+<SPAN CLASS="linenum">0444:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0445:</SPAN> HRESULT CMusicManager::GetMotifFromStyle( IDirectMusicSegment8** ppMotif8, 
+<SPAN CLASS="linenum">0446:</SPAN>                                           TCHAR* strStyle, TCHAR* strMotif )
+<SPAN CLASS="linenum">0447:</SPAN> {       
+<SPAN CLASS="linenum">0448:</SPAN>     UNREFERENCED_PARAMETER( strMotif );
+<SPAN CLASS="linenum">0449:</SPAN>     
+<SPAN CLASS="linenum">0450:</SPAN>     HRESULT              hr;
+<SPAN CLASS="linenum">0451:</SPAN>     IDirectMusicStyle8*  pStyle = NULL;
+<SPAN CLASS="linenum">0452:</SPAN>     IDirectMusicSegment* pMotif = NULL;
+<SPAN CLASS="linenum">0453:</SPAN> 
+<SPAN CLASS="linenum">0454:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( FAILED( hr = CreateStyleFromFile( &amp;pStyle, strStyle ) ) )
+<SPAN CLASS="linenum">0455:</SPAN>         <SPAN CLASS="keyword">return</SPAN> DXTRACE_ERR_MSGBOX( TEXT("<SPAN CLASS="string">CreateStyleFromFile</SPAN>"), hr );
+<SPAN CLASS="linenum">0456:</SPAN> 
+<SPAN CLASS="linenum">0457:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( pStyle )
+<SPAN CLASS="linenum">0458:</SPAN>     {
+<SPAN CLASS="linenum">0459:</SPAN>         <SPAN CLASS="comment">// DMusic only takes wide strings</SPAN>
+<SPAN CLASS="linenum">0460:</SPAN>         WCHAR wstrMotif[MAX_PATH];
+<SPAN CLASS="linenum">0461:</SPAN>         DXUtil_ConvertGenericStringToWideCb( wstrMotif, strStyle, <SPAN CLASS="keyword">sizeof</SPAN>(wstrMotif) );
+<SPAN CLASS="linenum">0462:</SPAN> 
+<SPAN CLASS="linenum">0463:</SPAN>         hr = pStyle-&gt;GetMotif( wstrMotif, &amp;pMotif );
+<SPAN CLASS="linenum">0464:</SPAN>         SAFE_RELEASE( pStyle );
+<SPAN CLASS="linenum">0465:</SPAN> 
+<SPAN CLASS="linenum">0466:</SPAN>         <SPAN CLASS="keyword">if</SPAN>( FAILED( hr ) )
+<SPAN CLASS="linenum">0467:</SPAN>             <SPAN CLASS="keyword">return</SPAN> DXTRACE_ERR_MSGBOX( TEXT("<SPAN CLASS="string">GetMotif</SPAN>"), hr );
+<SPAN CLASS="linenum">0468:</SPAN> 
+<SPAN CLASS="linenum">0469:</SPAN>         pMotif-&gt;QueryInterface( IID_IDirectMusicSegment8, (LPVOID*) ppMotif8 );
+<SPAN CLASS="linenum">0470:</SPAN>     }
+<SPAN CLASS="linenum">0471:</SPAN> 
+<SPAN CLASS="linenum">0472:</SPAN>     <SPAN CLASS="keyword">return</SPAN> S_OK;
+<SPAN CLASS="linenum">0473:</SPAN> }
+<SPAN CLASS="linenum">0474:</SPAN> 
+<SPAN CLASS="linenum">0475:</SPAN> 
+<SPAN CLASS="linenum">0476:</SPAN> 
+<SPAN CLASS="linenum">0477:</SPAN> 
+<SPAN CLASS="linenum">0478:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0479:</SPAN> <SPAN CLASS="comment">// Name: Set3DParameters</SPAN>
+<SPAN CLASS="linenum">0480:</SPAN> <SPAN CLASS="comment">// Desc: </SPAN>
+<SPAN CLASS="linenum">0481:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0482:</SPAN> VOID CMusicManager::Set3DParameters( FLOAT fDistanceFactor, FLOAT fDopplerFactor, FLOAT fRolloffFactor )
+<SPAN CLASS="linenum">0483:</SPAN> {
+<SPAN CLASS="linenum">0484:</SPAN>     m_dsListenerParams.flDistanceFactor = fDistanceFactor;
+<SPAN CLASS="linenum">0485:</SPAN>     m_dsListenerParams.flDopplerFactor = fDopplerFactor;
+<SPAN CLASS="linenum">0486:</SPAN>     m_dsListenerParams.flRolloffFactor = fRolloffFactor;
+<SPAN CLASS="linenum">0487:</SPAN> 
+<SPAN CLASS="linenum">0488:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( m_pDSListener )
+<SPAN CLASS="linenum">0489:</SPAN>         m_pDSListener-&gt;SetAllParameters( &amp;m_dsListenerParams, DS3D_IMMEDIATE );
+<SPAN CLASS="linenum">0490:</SPAN> }
+<SPAN CLASS="linenum">0491:</SPAN> 
+<SPAN CLASS="linenum">0492:</SPAN> 
+<SPAN CLASS="linenum">0493:</SPAN> 
+<SPAN CLASS="linenum">0494:</SPAN> 
+<SPAN CLASS="linenum">0495:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0496:</SPAN> <SPAN CLASS="comment">// Name: CMusicSegment::CMusicSegment()</SPAN>
+<SPAN CLASS="linenum">0497:</SPAN> <SPAN CLASS="comment">// Desc: Constructs the class</SPAN>
+<SPAN CLASS="linenum">0498:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0499:</SPAN> CMusicSegment::CMusicSegment( IDirectMusicPerformance8* pPerformance, 
+<SPAN CLASS="linenum">0500:</SPAN>                               IDirectMusicLoader8*      pLoader,
+<SPAN CLASS="linenum">0501:</SPAN>                               IDirectMusicSegment8*     pSegment )
+<SPAN CLASS="linenum">0502:</SPAN> {
+<SPAN CLASS="linenum">0503:</SPAN>     m_pPerformance          = pPerformance;
+<SPAN CLASS="linenum">0504:</SPAN>     m_pLoader               = pLoader;
+<SPAN CLASS="linenum">0505:</SPAN>     m_pSegment              = pSegment;
+<SPAN CLASS="linenum">0506:</SPAN>     m_pEmbeddedAudioPath    = NULL;
+<SPAN CLASS="linenum">0507:</SPAN>     m_bDownloaded           = FALSE;
+<SPAN CLASS="linenum">0508:</SPAN>     
+<SPAN CLASS="linenum">0509:</SPAN>     <SPAN CLASS="comment">// Try to pull out an audio path from the segment itself if there is one.</SPAN>
+<SPAN CLASS="linenum">0510:</SPAN>     <SPAN CLASS="comment">// This embedded audio path will be used instead of the default</SPAN>
+<SPAN CLASS="linenum">0511:</SPAN>     <SPAN CLASS="comment">// audio path if the app doesn't wish to use an overriding audio path.</SPAN>
+<SPAN CLASS="linenum">0512:</SPAN>     IUnknown* pConfig = NULL;
+<SPAN CLASS="linenum">0513:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( SUCCEEDED( m_pSegment-&gt;GetAudioPathConfig( &amp;pConfig ) ) )
+<SPAN CLASS="linenum">0514:</SPAN>     {
+<SPAN CLASS="linenum">0515:</SPAN>         m_pPerformance-&gt;CreateAudioPath( pConfig, TRUE, &amp;m_pEmbeddedAudioPath );
+<SPAN CLASS="linenum">0516:</SPAN>         SAFE_RELEASE( pConfig );
+<SPAN CLASS="linenum">0517:</SPAN>     } 
+<SPAN CLASS="linenum">0518:</SPAN> 
+<SPAN CLASS="linenum">0519:</SPAN> }
+<SPAN CLASS="linenum">0520:</SPAN> 
+<SPAN CLASS="linenum">0521:</SPAN> 
+<SPAN CLASS="linenum">0522:</SPAN> 
+<SPAN CLASS="linenum">0523:</SPAN> 
+<SPAN CLASS="linenum">0524:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0525:</SPAN> <SPAN CLASS="comment">// Name: CMusicSegment::~CMusicSegment()</SPAN>
+<SPAN CLASS="linenum">0526:</SPAN> <SPAN CLASS="comment">// Desc: Destroys the class</SPAN>
+<SPAN CLASS="linenum">0527:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0528:</SPAN> CMusicSegment::~CMusicSegment()
+<SPAN CLASS="linenum">0529:</SPAN> {
+<SPAN CLASS="linenum">0530:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( m_pSegment )
+<SPAN CLASS="linenum">0531:</SPAN>     {
+<SPAN CLASS="linenum">0532:</SPAN>         <SPAN CLASS="comment">// Tell the loader that this object should now be released</SPAN>
+<SPAN CLASS="linenum">0533:</SPAN>         <SPAN CLASS="keyword">if</SPAN>( m_pLoader )
+<SPAN CLASS="linenum">0534:</SPAN>             m_pLoader-&gt;ReleaseObjectByUnknown( m_pSegment );
+<SPAN CLASS="linenum">0535:</SPAN> 
+<SPAN CLASS="linenum">0536:</SPAN>         <SPAN CLASS="keyword">if</SPAN>( m_bDownloaded )
+<SPAN CLASS="linenum">0537:</SPAN>         {
+<SPAN CLASS="linenum">0538:</SPAN>             <SPAN CLASS="keyword">if</SPAN>( m_pEmbeddedAudioPath )
+<SPAN CLASS="linenum">0539:</SPAN>                 m_pSegment-&gt;Unload( m_pEmbeddedAudioPath );
+<SPAN CLASS="linenum">0540:</SPAN>             <SPAN CLASS="keyword">else</SPAN>
+<SPAN CLASS="linenum">0541:</SPAN>                 m_pSegment-&gt;Unload( m_pPerformance );
+<SPAN CLASS="linenum">0542:</SPAN>         }
+<SPAN CLASS="linenum">0543:</SPAN> 
+<SPAN CLASS="linenum">0544:</SPAN>         SAFE_RELEASE( m_pEmbeddedAudioPath ); 
+<SPAN CLASS="linenum">0545:</SPAN>         SAFE_RELEASE( m_pSegment ); 
+<SPAN CLASS="linenum">0546:</SPAN>     }
+<SPAN CLASS="linenum">0547:</SPAN> 
+<SPAN CLASS="linenum">0548:</SPAN>     m_pPerformance = NULL;
+<SPAN CLASS="linenum">0549:</SPAN> }
+<SPAN CLASS="linenum">0550:</SPAN> 
+<SPAN CLASS="linenum">0551:</SPAN> 
+<SPAN CLASS="linenum">0552:</SPAN> 
+<SPAN CLASS="linenum">0553:</SPAN> 
+<SPAN CLASS="linenum">0554:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0555:</SPAN> <SPAN CLASS="comment">// Name: CMusicSegment::Play()</SPAN>
+<SPAN CLASS="linenum">0556:</SPAN> <SPAN CLASS="comment">// Desc: Plays the sound using voice management flags.  Pass in DSBPLAY_LOOPING</SPAN>
+<SPAN CLASS="linenum">0557:</SPAN> <SPAN CLASS="comment">//       in the dwFlags to loop the sound</SPAN>
+<SPAN CLASS="linenum">0558:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0559:</SPAN> HRESULT CMusicSegment::Play( DWORD dwFlags, IDirectMusicAudioPath8* pAudioPath )
+<SPAN CLASS="linenum">0560:</SPAN> {
+<SPAN CLASS="linenum">0561:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( m_pSegment == NULL || m_pPerformance == NULL )
+<SPAN CLASS="linenum">0562:</SPAN>         <SPAN CLASS="keyword">return</SPAN> CO_E_NOTINITIALIZED;
+<SPAN CLASS="linenum">0563:</SPAN> 
+<SPAN CLASS="linenum">0564:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( !m_bDownloaded )
+<SPAN CLASS="linenum">0565:</SPAN>         <SPAN CLASS="keyword">return</SPAN> E_FAIL;
+<SPAN CLASS="linenum">0566:</SPAN> 
+<SPAN CLASS="linenum">0567:</SPAN>     <SPAN CLASS="comment">// If an audio path was passed in then use it, otherwise</SPAN>
+<SPAN CLASS="linenum">0568:</SPAN>     <SPAN CLASS="comment">// use the embedded audio path if there was one.</SPAN>
+<SPAN CLASS="linenum">0569:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( pAudioPath == NULL &amp;&amp; m_pEmbeddedAudioPath != NULL )
+<SPAN CLASS="linenum">0570:</SPAN>         pAudioPath = m_pEmbeddedAudioPath;
+<SPAN CLASS="linenum">0571:</SPAN>         
+<SPAN CLASS="linenum">0572:</SPAN>     <SPAN CLASS="comment">// If pAudioPath is NULL then this plays on the default audio path.</SPAN>
+<SPAN CLASS="linenum">0573:</SPAN>     <SPAN CLASS="keyword">return</SPAN> m_pPerformance-&gt;PlaySegmentEx( m_pSegment, 0, NULL, dwFlags, 
+<SPAN CLASS="linenum">0574:</SPAN>                                           0, 0, NULL, pAudioPath );
+<SPAN CLASS="linenum">0575:</SPAN> }
+<SPAN CLASS="linenum">0576:</SPAN> 
+<SPAN CLASS="linenum">0577:</SPAN> 
+<SPAN CLASS="linenum">0578:</SPAN> 
+<SPAN CLASS="linenum">0579:</SPAN> 
+<SPAN CLASS="linenum">0580:</SPAN> 
+<SPAN CLASS="linenum">0581:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0582:</SPAN> <SPAN CLASS="comment">// Name: CMusicSegment::Download()</SPAN>
+<SPAN CLASS="linenum">0583:</SPAN> <SPAN CLASS="comment">// Desc: </SPAN>
+<SPAN CLASS="linenum">0584:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0585:</SPAN> HRESULT CMusicSegment::Download( IDirectMusicAudioPath8* pAudioPath )
+<SPAN CLASS="linenum">0586:</SPAN> {
+<SPAN CLASS="linenum">0587:</SPAN>     HRESULT hr;
+<SPAN CLASS="linenum">0588:</SPAN>     
+<SPAN CLASS="linenum">0589:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( m_pSegment == NULL )
+<SPAN CLASS="linenum">0590:</SPAN>         <SPAN CLASS="keyword">return</SPAN> CO_E_NOTINITIALIZED;
+<SPAN CLASS="linenum">0591:</SPAN> 
+<SPAN CLASS="linenum">0592:</SPAN>     <SPAN CLASS="comment">// If no audio path was passed in, then download</SPAN>
+<SPAN CLASS="linenum">0593:</SPAN>     <SPAN CLASS="comment">// to the embedded audio path if it exists </SPAN>
+<SPAN CLASS="linenum">0594:</SPAN>     <SPAN CLASS="comment">// else download to the performance</SPAN>
+<SPAN CLASS="linenum">0595:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( pAudioPath == NULL )
+<SPAN CLASS="linenum">0596:</SPAN>     {
+<SPAN CLASS="linenum">0597:</SPAN>         <SPAN CLASS="keyword">if</SPAN>( m_pEmbeddedAudioPath )
+<SPAN CLASS="linenum">0598:</SPAN>             hr = m_pSegment-&gt;Download( m_pEmbeddedAudioPath );
+<SPAN CLASS="linenum">0599:</SPAN>         <SPAN CLASS="keyword">else</SPAN>    
+<SPAN CLASS="linenum">0600:</SPAN>             hr = m_pSegment-&gt;Download( m_pPerformance );
+<SPAN CLASS="linenum">0601:</SPAN>     }
+<SPAN CLASS="linenum">0602:</SPAN>     <SPAN CLASS="keyword">else</SPAN>
+<SPAN CLASS="linenum">0603:</SPAN>     {
+<SPAN CLASS="linenum">0604:</SPAN>         hr = m_pSegment-&gt;Download( pAudioPath );
+<SPAN CLASS="linenum">0605:</SPAN>     }
+<SPAN CLASS="linenum">0606:</SPAN>     
+<SPAN CLASS="linenum">0607:</SPAN>     <SPAN CLASS="keyword">if</SPAN> ( SUCCEEDED( hr ) )
+<SPAN CLASS="linenum">0608:</SPAN>         m_bDownloaded = TRUE;
+<SPAN CLASS="linenum">0609:</SPAN>         
+<SPAN CLASS="linenum">0610:</SPAN>     <SPAN CLASS="keyword">return</SPAN> hr;
+<SPAN CLASS="linenum">0611:</SPAN> }
+<SPAN CLASS="linenum">0612:</SPAN> 
+<SPAN CLASS="linenum">0613:</SPAN> 
+<SPAN CLASS="linenum">0614:</SPAN> 
+<SPAN CLASS="linenum">0615:</SPAN> 
+<SPAN CLASS="linenum">0616:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0617:</SPAN> <SPAN CLASS="comment">// Name: CMusicSegment::Unload()</SPAN>
+<SPAN CLASS="linenum">0618:</SPAN> <SPAN CLASS="comment">// Desc: </SPAN>
+<SPAN CLASS="linenum">0619:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0620:</SPAN> HRESULT CMusicSegment::Unload( IDirectMusicAudioPath8* pAudioPath )
+<SPAN CLASS="linenum">0621:</SPAN> {
+<SPAN CLASS="linenum">0622:</SPAN>     HRESULT hr;
+<SPAN CLASS="linenum">0623:</SPAN>     
+<SPAN CLASS="linenum">0624:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( m_pSegment == NULL )
+<SPAN CLASS="linenum">0625:</SPAN>         <SPAN CLASS="keyword">return</SPAN> CO_E_NOTINITIALIZED;
+<SPAN CLASS="linenum">0626:</SPAN> 
+<SPAN CLASS="linenum">0627:</SPAN>     <SPAN CLASS="comment">// If no audio path was passed in, then unload </SPAN>
+<SPAN CLASS="linenum">0628:</SPAN>     <SPAN CLASS="comment">// from the embedded audio path if it exists </SPAN>
+<SPAN CLASS="linenum">0629:</SPAN>     <SPAN CLASS="comment">// else unload from the performance</SPAN>
+<SPAN CLASS="linenum">0630:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( pAudioPath == NULL )
+<SPAN CLASS="linenum">0631:</SPAN>     {
+<SPAN CLASS="linenum">0632:</SPAN>         <SPAN CLASS="keyword">if</SPAN>( m_pEmbeddedAudioPath )
+<SPAN CLASS="linenum">0633:</SPAN>             hr = m_pSegment-&gt;Unload( m_pEmbeddedAudioPath );
+<SPAN CLASS="linenum">0634:</SPAN>         <SPAN CLASS="keyword">else</SPAN>    
+<SPAN CLASS="linenum">0635:</SPAN>             hr = m_pSegment-&gt;Unload( m_pPerformance );
+<SPAN CLASS="linenum">0636:</SPAN>     }
+<SPAN CLASS="linenum">0637:</SPAN>     <SPAN CLASS="keyword">else</SPAN>
+<SPAN CLASS="linenum">0638:</SPAN>     {
+<SPAN CLASS="linenum">0639:</SPAN>         hr = m_pSegment-&gt;Unload( pAudioPath );
+<SPAN CLASS="linenum">0640:</SPAN>     }
+<SPAN CLASS="linenum">0641:</SPAN>         
+<SPAN CLASS="linenum">0642:</SPAN>     <SPAN CLASS="keyword">if</SPAN> ( SUCCEEDED( hr ) )
+<SPAN CLASS="linenum">0643:</SPAN>         m_bDownloaded = FALSE;
+<SPAN CLASS="linenum">0644:</SPAN> 
+<SPAN CLASS="linenum">0645:</SPAN>     <SPAN CLASS="keyword">return</SPAN> hr;
+<SPAN CLASS="linenum">0646:</SPAN> }
+<SPAN CLASS="linenum">0647:</SPAN> 
+<SPAN CLASS="linenum">0648:</SPAN> 
+<SPAN CLASS="linenum">0649:</SPAN> 
+<SPAN CLASS="linenum">0650:</SPAN> 
+<SPAN CLASS="linenum">0651:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0652:</SPAN> <SPAN CLASS="comment">// Name: CMusicSegment::IsPlaying()</SPAN>
+<SPAN CLASS="linenum">0653:</SPAN> <SPAN CLASS="comment">// Desc: </SPAN>
+<SPAN CLASS="linenum">0654:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0655:</SPAN> BOOL CMusicSegment::IsPlaying()
+<SPAN CLASS="linenum">0656:</SPAN> {
+<SPAN CLASS="linenum">0657:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( m_pSegment == NULL || m_pPerformance == NULL )
+<SPAN CLASS="linenum">0658:</SPAN>         <SPAN CLASS="keyword">return</SPAN> FALSE;
+<SPAN CLASS="linenum">0659:</SPAN> 
+<SPAN CLASS="linenum">0660:</SPAN>     <SPAN CLASS="keyword">return</SPAN> ( m_pPerformance-&gt;IsPlaying( m_pSegment, NULL ) == S_OK );
+<SPAN CLASS="linenum">0661:</SPAN> }
+<SPAN CLASS="linenum">0662:</SPAN> 
+<SPAN CLASS="linenum">0663:</SPAN> 
+<SPAN CLASS="linenum">0664:</SPAN> 
+<SPAN CLASS="linenum">0665:</SPAN> 
+<SPAN CLASS="linenum">0666:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0667:</SPAN> <SPAN CLASS="comment">// Name: CMusicSegment::Stop()</SPAN>
+<SPAN CLASS="linenum">0668:</SPAN> <SPAN CLASS="comment">// Desc: Stops the sound from playing</SPAN>
+<SPAN CLASS="linenum">0669:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0670:</SPAN> HRESULT CMusicSegment::Stop( DWORD dwFlags )
+<SPAN CLASS="linenum">0671:</SPAN> {
+<SPAN CLASS="linenum">0672:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( m_pSegment == NULL || m_pPerformance == NULL )
+<SPAN CLASS="linenum">0673:</SPAN>         <SPAN CLASS="keyword">return</SPAN> CO_E_NOTINITIALIZED;
+<SPAN CLASS="linenum">0674:</SPAN> 
+<SPAN CLASS="linenum">0675:</SPAN>     <SPAN CLASS="keyword">return</SPAN> m_pPerformance-&gt;Stop( m_pSegment, NULL, 0, dwFlags );;
+<SPAN CLASS="linenum">0676:</SPAN> }
+<SPAN CLASS="linenum">0677:</SPAN> 
+<SPAN CLASS="linenum">0678:</SPAN> 
+<SPAN CLASS="linenum">0679:</SPAN> 
+<SPAN CLASS="linenum">0680:</SPAN> 
+<SPAN CLASS="linenum">0681:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0682:</SPAN> <SPAN CLASS="comment">// Name: CMusicSegment::SetRepeats()</SPAN>
+<SPAN CLASS="linenum">0683:</SPAN> <SPAN CLASS="comment">// Desc: </SPAN>
+<SPAN CLASS="linenum">0684:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0685:</SPAN> HRESULT CMusicSegment::SetRepeats( DWORD dwRepeats )
+<SPAN CLASS="linenum">0686:</SPAN> {
+<SPAN CLASS="linenum">0687:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( m_pSegment == NULL )
+<SPAN CLASS="linenum">0688:</SPAN>         <SPAN CLASS="keyword">return</SPAN> CO_E_NOTINITIALIZED;
+<SPAN CLASS="linenum">0689:</SPAN> 
+<SPAN CLASS="linenum">0690:</SPAN>     <SPAN CLASS="keyword">return</SPAN> m_pSegment-&gt;SetRepeats( dwRepeats );
+<SPAN CLASS="linenum">0691:</SPAN> }
+<SPAN CLASS="linenum">0692:</SPAN> 
+<SPAN CLASS="linenum">0693:</SPAN> 
+<SPAN CLASS="linenum">0694:</SPAN> 
+<SPAN CLASS="linenum">0695:</SPAN> 
+<SPAN CLASS="linenum">0696:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0697:</SPAN> <SPAN CLASS="comment">// Name: CMusicSegment::GetStyle()</SPAN>
+<SPAN CLASS="linenum">0698:</SPAN> <SPAN CLASS="comment">// Desc: </SPAN>
+<SPAN CLASS="linenum">0699:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0700:</SPAN> HRESULT CMusicSegment::GetStyle( IDirectMusicStyle8** ppStyle, DWORD dwStyleIndex )
+<SPAN CLASS="linenum">0701:</SPAN> {
+<SPAN CLASS="linenum">0702:</SPAN>     <SPAN CLASS="comment">// Get the Style from the Segment by calling the Segment's GetData() with</SPAN>
+<SPAN CLASS="linenum">0703:</SPAN>     <SPAN CLASS="comment">// the data type GUID_StyleTrackStyle. 0xffffffff indicates to look at</SPAN>
+<SPAN CLASS="linenum">0704:</SPAN>     <SPAN CLASS="comment">// tracks in all TrackGroups in the segment. The first 0 indicates to</SPAN>
+<SPAN CLASS="linenum">0705:</SPAN>     <SPAN CLASS="comment">// retrieve the Style from the first Track  in the indicated TrackGroup.</SPAN>
+<SPAN CLASS="linenum">0706:</SPAN>     <SPAN CLASS="comment">// The second 0 indicates to retrieve the Style from the beginning of the</SPAN>
+<SPAN CLASS="linenum">0707:</SPAN>     <SPAN CLASS="comment">// segment, i.e. time 0 in Segment time. If this Segment was loaded from a</SPAN>
+<SPAN CLASS="linenum">0708:</SPAN>     <SPAN CLASS="comment">// section file, there is only one Style and it is at time 0.</SPAN>
+<SPAN CLASS="linenum">0709:</SPAN>     <SPAN CLASS="keyword">return</SPAN> m_pSegment-&gt;GetParam( GUID_IDirectMusicStyle, 0xffffffff, dwStyleIndex, 
+<SPAN CLASS="linenum">0710:</SPAN>                                  0, NULL, (VOID*)ppStyle );
+<SPAN CLASS="linenum">0711:</SPAN> }
+<SPAN CLASS="linenum">0712:</SPAN> 
+<SPAN CLASS="linenum">0713:</SPAN> 
+<SPAN CLASS="linenum">0714:</SPAN> 
+<SPAN CLASS="linenum">0715:</SPAN> 
+<SPAN CLASS="linenum">0716:</SPAN> 
+<SPAN CLASS="linenum">0717:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0718:</SPAN> <SPAN CLASS="comment">// Name: C3DMusicSegment::C3DMusicSegment()</SPAN>
+<SPAN CLASS="linenum">0719:</SPAN> <SPAN CLASS="comment">// Desc: Constructs the class</SPAN>
+<SPAN CLASS="linenum">0720:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0721:</SPAN> C3DMusicSegment::C3DMusicSegment( IDirectMusicPerformance8* pPerformance, 
+<SPAN CLASS="linenum">0722:</SPAN>                               IDirectMusicLoader8*      pLoader,
+<SPAN CLASS="linenum">0723:</SPAN>                               IDirectMusicSegment8*     pSegment,
+<SPAN CLASS="linenum">0724:</SPAN>                               IDirectMusicAudioPath8* pAudioPath ) :
+<SPAN CLASS="linenum">0725:</SPAN>     CMusicSegment( pPerformance, pLoader, pSegment )
+<SPAN CLASS="linenum">0726:</SPAN> {
+<SPAN CLASS="linenum">0727:</SPAN>     m_p3DAudioPath      = pAudioPath;
+<SPAN CLASS="linenum">0728:</SPAN>     m_pDS3DBuffer       = NULL;
+<SPAN CLASS="linenum">0729:</SPAN>     m_bDeferSettings    = FALSE;
+<SPAN CLASS="linenum">0730:</SPAN>     m_bCleanupAudioPath = FALSE;
+<SPAN CLASS="linenum">0731:</SPAN> }
+<SPAN CLASS="linenum">0732:</SPAN> 
+<SPAN CLASS="linenum">0733:</SPAN> 
+<SPAN CLASS="linenum">0734:</SPAN> 
+<SPAN CLASS="linenum">0735:</SPAN> 
+<SPAN CLASS="linenum">0736:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0737:</SPAN> <SPAN CLASS="comment">// Name: C3DMusicSegment::~C3DMusicSegment()</SPAN>
+<SPAN CLASS="linenum">0738:</SPAN> <SPAN CLASS="comment">// Desc: Destroys the class</SPAN>
+<SPAN CLASS="linenum">0739:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0740:</SPAN> C3DMusicSegment::~C3DMusicSegment()
+<SPAN CLASS="linenum">0741:</SPAN> {
+<SPAN CLASS="linenum">0742:</SPAN>     SAFE_RELEASE( m_pDS3DBuffer );
+<SPAN CLASS="linenum">0743:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( m_bCleanupAudioPath )
+<SPAN CLASS="linenum">0744:</SPAN>         SAFE_RELEASE( m_p3DAudioPath );
+<SPAN CLASS="linenum">0745:</SPAN> }
+<SPAN CLASS="linenum">0746:</SPAN> 
+<SPAN CLASS="linenum">0747:</SPAN> 
+<SPAN CLASS="linenum">0748:</SPAN> 
+<SPAN CLASS="linenum">0749:</SPAN> 
+<SPAN CLASS="linenum">0750:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0751:</SPAN> <SPAN CLASS="comment">// Name: Init()</SPAN>
+<SPAN CLASS="linenum">0752:</SPAN> <SPAN CLASS="comment">// Desc: </SPAN>
+<SPAN CLASS="linenum">0753:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0754:</SPAN> HRESULT C3DMusicSegment::Init()
+<SPAN CLASS="linenum">0755:</SPAN> {
+<SPAN CLASS="linenum">0756:</SPAN>     HRESULT hr;
+<SPAN CLASS="linenum">0757:</SPAN> 
+<SPAN CLASS="linenum">0758:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( NULL == m_p3DAudioPath )
+<SPAN CLASS="linenum">0759:</SPAN>     {
+<SPAN CLASS="linenum">0760:</SPAN>         <SPAN CLASS="comment">// Create a 3D audiopath with a 3d buffer.</SPAN>
+<SPAN CLASS="linenum">0761:</SPAN>         <SPAN CLASS="comment">// We can then play all segments into this buffer and directly control its</SPAN>
+<SPAN CLASS="linenum">0762:</SPAN>         <SPAN CLASS="comment">// 3D parameters.</SPAN>
+<SPAN CLASS="linenum">0763:</SPAN>         <SPAN CLASS="keyword">if</SPAN>( FAILED( hr = m_pPerformance-&gt;CreateStandardAudioPath( DMUS_APATH_DYNAMIC_3D, 
+<SPAN CLASS="linenum">0764:</SPAN>                                                                 64, TRUE, &amp;m_p3DAudioPath ) ) )
+<SPAN CLASS="linenum">0765:</SPAN>             <SPAN CLASS="keyword">return</SPAN> DXTRACE_ERR( TEXT("<SPAN CLASS="string">CreateStandardAudioPath</SPAN>"), hr );
+<SPAN CLASS="linenum">0766:</SPAN>         m_bCleanupAudioPath = TRUE;
+<SPAN CLASS="linenum">0767:</SPAN>     }
+<SPAN CLASS="linenum">0768:</SPAN> 
+<SPAN CLASS="linenum">0769:</SPAN>     <SPAN CLASS="comment">// Get the 3D buffer in the audio path.</SPAN>
+<SPAN CLASS="linenum">0770:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( FAILED( hr = m_p3DAudioPath-&gt;GetObjectInPath( 0, DMUS_PATH_BUFFER, 0,
+<SPAN CLASS="linenum">0771:</SPAN>                                                       GUID_NULL, 0, IID_IDirectSound3DBuffer, 
+<SPAN CLASS="linenum">0772:</SPAN>                                                       (LPVOID*) &amp;m_pDS3DBuffer ) ) )
+<SPAN CLASS="linenum">0773:</SPAN>         <SPAN CLASS="keyword">return</SPAN> DXTRACE_ERR( TEXT("<SPAN CLASS="string">GetObjectInPath</SPAN>"), hr );
+<SPAN CLASS="linenum">0774:</SPAN> 
+<SPAN CLASS="linenum">0775:</SPAN>     <SPAN CLASS="comment">// Get the 3D buffer parameters</SPAN>
+<SPAN CLASS="linenum">0776:</SPAN>     m_dsBufferParams.dwSize = <SPAN CLASS="keyword">sizeof</SPAN>(DS3DBUFFER);
+<SPAN CLASS="linenum">0777:</SPAN>     m_pDS3DBuffer-&gt;GetAllParameters( &amp;m_dsBufferParams );
+<SPAN CLASS="linenum">0778:</SPAN> 
+<SPAN CLASS="linenum">0779:</SPAN>     <SPAN CLASS="comment">// Set new 3D buffer parameters</SPAN>
+<SPAN CLASS="linenum">0780:</SPAN>     m_dsBufferParams.dwMode = DS3DMODE_HEADRELATIVE;
+<SPAN CLASS="linenum">0781:</SPAN>     m_pDS3DBuffer-&gt;SetAllParameters( &amp;m_dsBufferParams, DS3D_IMMEDIATE );
+<SPAN CLASS="linenum">0782:</SPAN>    
+<SPAN CLASS="linenum">0783:</SPAN>     <SPAN CLASS="keyword">return</SPAN> S_OK;
+<SPAN CLASS="linenum">0784:</SPAN> }
+<SPAN CLASS="linenum">0785:</SPAN> 
+<SPAN CLASS="linenum">0786:</SPAN> 
+<SPAN CLASS="linenum">0787:</SPAN> 
+<SPAN CLASS="linenum">0788:</SPAN> 
+<SPAN CLASS="linenum">0789:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0790:</SPAN> <SPAN CLASS="comment">// Name: Play</SPAN>
+<SPAN CLASS="linenum">0791:</SPAN> <SPAN CLASS="comment">// Desc: </SPAN>
+<SPAN CLASS="linenum">0792:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0793:</SPAN> HRESULT C3DMusicSegment::Play( DWORD dwFlags, IDirectMusicAudioPath8* pAudioPath )
+<SPAN CLASS="linenum">0794:</SPAN> {
+<SPAN CLASS="linenum">0795:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( pAudioPath ) 
+<SPAN CLASS="linenum">0796:</SPAN>         <SPAN CLASS="keyword">return</SPAN> CMusicSegment::Play( dwFlags, pAudioPath );
+<SPAN CLASS="linenum">0797:</SPAN>     <SPAN CLASS="keyword">else</SPAN>
+<SPAN CLASS="linenum">0798:</SPAN>         <SPAN CLASS="keyword">return</SPAN> CMusicSegment::Play( dwFlags, m_p3DAudioPath );
+<SPAN CLASS="linenum">0799:</SPAN> }
+<SPAN CLASS="linenum">0800:</SPAN> 
+<SPAN CLASS="linenum">0801:</SPAN> 
+<SPAN CLASS="linenum">0802:</SPAN> 
+<SPAN CLASS="linenum">0803:</SPAN> 
+<SPAN CLASS="linenum">0804:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0805:</SPAN> <SPAN CLASS="comment">// Name: Set3DParameters</SPAN>
+<SPAN CLASS="linenum">0806:</SPAN> <SPAN CLASS="comment">// Desc: </SPAN>
+<SPAN CLASS="linenum">0807:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0808:</SPAN> VOID C3DMusicSegment::Set3DParameters( FLOAT fMinDistance, FLOAT fMaxDistance )
+<SPAN CLASS="linenum">0809:</SPAN> {
+<SPAN CLASS="linenum">0810:</SPAN>     <SPAN CLASS="comment">// Every change to 3-D sound buffer and listener settings causes </SPAN>
+<SPAN CLASS="linenum">0811:</SPAN>     <SPAN CLASS="comment">// DirectSound to remix, at the expense of CPU cycles. </SPAN>
+<SPAN CLASS="linenum">0812:</SPAN>     <SPAN CLASS="comment">// To minimize the performance impact of changing 3-D settings, </SPAN>
+<SPAN CLASS="linenum">0813:</SPAN>     <SPAN CLASS="comment">// use the DS3D_DEFERRED flag in the dwApply parameter of any of </SPAN>
+<SPAN CLASS="linenum">0814:</SPAN>     <SPAN CLASS="comment">// the IDirectSound3DListener or IDirectSound3DBuffer methods that </SPAN>
+<SPAN CLASS="linenum">0815:</SPAN>     <SPAN CLASS="comment">// change 3-D settings. Then call the IDirectSound3DListener::CommitDeferredSettings </SPAN>
+<SPAN CLASS="linenum">0816:</SPAN>     <SPAN CLASS="comment">// method to execute all of the deferred commands at once.</SPAN>
+<SPAN CLASS="linenum">0817:</SPAN>     DWORD dwApplyFlag = ( m_bDeferSettings ) ? DS3D_DEFERRED : DS3D_IMMEDIATE;
+<SPAN CLASS="linenum">0818:</SPAN> 
+<SPAN CLASS="linenum">0819:</SPAN>     m_dsBufferParams.flMinDistance = fMinDistance;
+<SPAN CLASS="linenum">0820:</SPAN>     m_dsBufferParams.flMaxDistance = fMaxDistance;
+<SPAN CLASS="linenum">0821:</SPAN> 
+<SPAN CLASS="linenum">0822:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( m_pDS3DBuffer )
+<SPAN CLASS="linenum">0823:</SPAN>         m_pDS3DBuffer-&gt;SetAllParameters( &amp;m_dsBufferParams, dwApplyFlag );
+<SPAN CLASS="linenum">0824:</SPAN> }
+<SPAN CLASS="linenum">0825:</SPAN> 
+<SPAN CLASS="linenum">0826:</SPAN> 
+<SPAN CLASS="linenum">0827:</SPAN> 
+<SPAN CLASS="linenum">0828:</SPAN> 
+<SPAN CLASS="linenum">0829:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0830:</SPAN> <SPAN CLASS="comment">// Name: SetObjectProperties</SPAN>
+<SPAN CLASS="linenum">0831:</SPAN> <SPAN CLASS="comment">// Desc: </SPAN>
+<SPAN CLASS="linenum">0832:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0833:</SPAN> VOID C3DMusicSegment::SetObjectProperties( D3DVECTOR* pvPosition, D3DVECTOR* pvVelocity )
+<SPAN CLASS="linenum">0834:</SPAN> {
+<SPAN CLASS="linenum">0835:</SPAN>     DWORD dwApplyFlag = ( m_bDeferSettings ) ? DS3D_DEFERRED : DS3D_IMMEDIATE;
+<SPAN CLASS="linenum">0836:</SPAN> 
+<SPAN CLASS="linenum">0837:</SPAN>     <SPAN CLASS="comment">// Every change to 3-D sound buffer and listener settings causes </SPAN>
+<SPAN CLASS="linenum">0838:</SPAN>     <SPAN CLASS="comment">// DirectSound to remix, at the expense of CPU cycles. </SPAN>
+<SPAN CLASS="linenum">0839:</SPAN>     <SPAN CLASS="comment">// To minimize the performance impact of changing 3-D settings, </SPAN>
+<SPAN CLASS="linenum">0840:</SPAN>     <SPAN CLASS="comment">// use the DS3D_DEFERRED flag in the dwApply parameter of any of </SPAN>
+<SPAN CLASS="linenum">0841:</SPAN>     <SPAN CLASS="comment">// the IDirectSound3DListener or IDirectSound3DBuffer methods that </SPAN>
+<SPAN CLASS="linenum">0842:</SPAN>     <SPAN CLASS="comment">// change 3-D settings. Then call the IDirectSound3DListener::CommitDeferredSettings </SPAN>
+<SPAN CLASS="linenum">0843:</SPAN>     <SPAN CLASS="comment">// method to execute all of the deferred commands at once.</SPAN>
+<SPAN CLASS="linenum">0844:</SPAN>     memcpy( &amp;m_dsBufferParams.vPosition, pvPosition, <SPAN CLASS="keyword">sizeof</SPAN>(D3DVECTOR) );
+<SPAN CLASS="linenum">0845:</SPAN>     memcpy( &amp;m_dsBufferParams.vVelocity, pvVelocity, <SPAN CLASS="keyword">sizeof</SPAN>(D3DVECTOR) );
+<SPAN CLASS="linenum">0846:</SPAN> 
+<SPAN CLASS="linenum">0847:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( m_pDS3DBuffer )
+<SPAN CLASS="linenum">0848:</SPAN>     {
+<SPAN CLASS="linenum">0849:</SPAN>         m_pDS3DBuffer-&gt;SetPosition( m_dsBufferParams.vPosition.x,
+<SPAN CLASS="linenum">0850:</SPAN>                                     m_dsBufferParams.vPosition.y,
+<SPAN CLASS="linenum">0851:</SPAN>                                     m_dsBufferParams.vPosition.z, dwApplyFlag );
+<SPAN CLASS="linenum">0852:</SPAN> 
+<SPAN CLASS="linenum">0853:</SPAN>         m_pDS3DBuffer-&gt;SetVelocity( m_dsBufferParams.vVelocity.x,
+<SPAN CLASS="linenum">0854:</SPAN>                                     m_dsBufferParams.vVelocity.y,
+<SPAN CLASS="linenum">0855:</SPAN>                                     m_dsBufferParams.vVelocity.z, dwApplyFlag );
+<SPAN CLASS="linenum">0856:</SPAN>     }
+<SPAN CLASS="linenum">0857:</SPAN> }
+<SPAN CLASS="linenum">0858:</SPAN> 
+<SPAN CLASS="linenum">0859:</SPAN> 
+<SPAN CLASS="linenum">0860:</SPAN> 
+<SPAN CLASS="linenum">0861:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0862:</SPAN> <SPAN CLASS="comment">// Name: CMusicScript::CMusicScript()</SPAN>
+<SPAN CLASS="linenum">0863:</SPAN> <SPAN CLASS="comment">// Desc: Constructs the class</SPAN>
+<SPAN CLASS="linenum">0864:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0865:</SPAN> CMusicScript::CMusicScript( IDirectMusicPerformance8* pPerformance, 
+<SPAN CLASS="linenum">0866:</SPAN>                             IDirectMusicLoader8* pLoader,                   
+<SPAN CLASS="linenum">0867:</SPAN>                             IDirectMusicScript8* pScript )
+<SPAN CLASS="linenum">0868:</SPAN> {
+<SPAN CLASS="linenum">0869:</SPAN>     m_pPerformance = pPerformance;
+<SPAN CLASS="linenum">0870:</SPAN>     m_pLoader      = pLoader;
+<SPAN CLASS="linenum">0871:</SPAN>     m_pScript      = pScript;
+<SPAN CLASS="linenum">0872:</SPAN> }
+<SPAN CLASS="linenum">0873:</SPAN> 
+<SPAN CLASS="linenum">0874:</SPAN> 
+<SPAN CLASS="linenum">0875:</SPAN> 
+<SPAN CLASS="linenum">0876:</SPAN> 
+<SPAN CLASS="linenum">0877:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0878:</SPAN> <SPAN CLASS="comment">// Name: CMusicScript::~CMusicScript()</SPAN>
+<SPAN CLASS="linenum">0879:</SPAN> <SPAN CLASS="comment">// Desc: Destroys the class</SPAN>
+<SPAN CLASS="linenum">0880:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0881:</SPAN> CMusicScript::~CMusicScript()
+<SPAN CLASS="linenum">0882:</SPAN> {
+<SPAN CLASS="linenum">0883:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( m_pLoader )
+<SPAN CLASS="linenum">0884:</SPAN>     {
+<SPAN CLASS="linenum">0885:</SPAN>         <SPAN CLASS="comment">// Tell the loader that this object should now be released</SPAN>
+<SPAN CLASS="linenum">0886:</SPAN>         m_pLoader-&gt;ReleaseObjectByUnknown( m_pScript );
+<SPAN CLASS="linenum">0887:</SPAN>         m_pLoader = NULL;
+<SPAN CLASS="linenum">0888:</SPAN>     }
+<SPAN CLASS="linenum">0889:</SPAN> 
+<SPAN CLASS="linenum">0890:</SPAN>     SAFE_RELEASE( m_pScript ); 
+<SPAN CLASS="linenum">0891:</SPAN>     m_pPerformance = NULL;
+<SPAN CLASS="linenum">0892:</SPAN> }
+<SPAN CLASS="linenum">0893:</SPAN> 
+<SPAN CLASS="linenum">0894:</SPAN> 
+<SPAN CLASS="linenum">0895:</SPAN> 
+<SPAN CLASS="linenum">0896:</SPAN> 
+<SPAN CLASS="linenum">0897:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0898:</SPAN> <SPAN CLASS="comment">// Name: CMusicScript::Play()</SPAN>
+<SPAN CLASS="linenum">0899:</SPAN> <SPAN CLASS="comment">// Desc: Calls a routine in the script</SPAN>
+<SPAN CLASS="linenum">0900:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0901:</SPAN> HRESULT CMusicScript::CallRoutine( TCHAR* strRoutine )
+<SPAN CLASS="linenum">0902:</SPAN> {
+<SPAN CLASS="linenum">0903:</SPAN>     <SPAN CLASS="comment">// DMusic only takes wide strings</SPAN>
+<SPAN CLASS="linenum">0904:</SPAN>     WCHAR wstrRoutine[MAX_PATH];
+<SPAN CLASS="linenum">0905:</SPAN>     DXUtil_ConvertGenericStringToWideCb( wstrRoutine, strRoutine, <SPAN CLASS="keyword">sizeof</SPAN>(wstrRoutine) );
+<SPAN CLASS="linenum">0906:</SPAN> 
+<SPAN CLASS="linenum">0907:</SPAN>     <SPAN CLASS="keyword">return</SPAN> m_pScript-&gt;CallRoutine( wstrRoutine, NULL );
+<SPAN CLASS="linenum">0908:</SPAN> }
+<SPAN CLASS="linenum">0909:</SPAN> 
+<SPAN CLASS="linenum">0910:</SPAN> 
+<SPAN CLASS="linenum">0911:</SPAN> 
+<SPAN CLASS="linenum">0912:</SPAN> 
+<SPAN CLASS="linenum">0913:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0914:</SPAN> <SPAN CLASS="comment">// Name: CMusicScript::SetVariableNumber()</SPAN>
+<SPAN CLASS="linenum">0915:</SPAN> <SPAN CLASS="comment">// Desc: Sets the value of a variable in the script</SPAN>
+<SPAN CLASS="linenum">0916:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0917:</SPAN> HRESULT CMusicScript::SetVariableNumber( TCHAR* strVariable, LONG lValue )
+<SPAN CLASS="linenum">0918:</SPAN> {
+<SPAN CLASS="linenum">0919:</SPAN>     <SPAN CLASS="comment">// DMusic only takes wide strings</SPAN>
+<SPAN CLASS="linenum">0920:</SPAN>     WCHAR wstrVariable[MAX_PATH];
+<SPAN CLASS="linenum">0921:</SPAN>     DXUtil_ConvertGenericStringToWideCb( wstrVariable, strVariable, <SPAN CLASS="keyword">sizeof</SPAN>(wstrVariable) );
+<SPAN CLASS="linenum">0922:</SPAN> 
+<SPAN CLASS="linenum">0923:</SPAN>     <SPAN CLASS="keyword">return</SPAN> m_pScript-&gt;SetVariableNumber( wstrVariable, lValue, NULL );
+<SPAN CLASS="linenum">0924:</SPAN> }
+<SPAN CLASS="linenum">0925:</SPAN> 
+<SPAN CLASS="linenum">0926:</SPAN> 
+<SPAN CLASS="linenum">0927:</SPAN> 
+<SPAN CLASS="linenum">0928:</SPAN> 
+<SPAN CLASS="linenum">0929:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0930:</SPAN> <SPAN CLASS="comment">// Name: CMusicScript::GetVariableNumber()</SPAN>
+<SPAN CLASS="linenum">0931:</SPAN> <SPAN CLASS="comment">// Desc: Gets the value of a variable in the script</SPAN>
+<SPAN CLASS="linenum">0932:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0933:</SPAN> HRESULT CMusicScript::GetVariableNumber( TCHAR* strVariable, LONG* plValue )
+<SPAN CLASS="linenum">0934:</SPAN> {
+<SPAN CLASS="linenum">0935:</SPAN>     <SPAN CLASS="comment">// DMusic only takes wide strings</SPAN>
+<SPAN CLASS="linenum">0936:</SPAN>     WCHAR wstrVariable[MAX_PATH];
+<SPAN CLASS="linenum">0937:</SPAN>     DXUtil_ConvertGenericStringToWideCb( wstrVariable, strVariable, <SPAN CLASS="keyword">sizeof</SPAN>(wstrVariable) );
+<SPAN CLASS="linenum">0938:</SPAN> 
+<SPAN CLASS="linenum">0939:</SPAN>     <SPAN CLASS="keyword">return</SPAN> m_pScript-&gt;GetVariableNumber( wstrVariable, plValue, NULL );
+<SPAN CLASS="linenum">0940:</SPAN> }
+<SPAN CLASS="linenum">0941:</SPAN> 
+<SPAN CLASS="linenum">0942:</SPAN> 
+<SPAN CLASS="linenum">0943:</SPAN> 
+<SPAN CLASS="linenum">0944:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0945:</SPAN> <SPAN CLASS="comment">// Name: CMusicScript::SetVariableObject()</SPAN>
+<SPAN CLASS="linenum">0946:</SPAN> <SPAN CLASS="comment">// Desc: Sets an object in the script</SPAN>
+<SPAN CLASS="linenum">0947:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0948:</SPAN> HRESULT CMusicScript::SetVariableObject( TCHAR* strVariable, IUnknown *punkValue )
+<SPAN CLASS="linenum">0949:</SPAN> {
+<SPAN CLASS="linenum">0950:</SPAN>     <SPAN CLASS="comment">// DMusic only takes wide strings</SPAN>
+<SPAN CLASS="linenum">0951:</SPAN>     WCHAR wstrVariable[MAX_PATH];
+<SPAN CLASS="linenum">0952:</SPAN>     DXUtil_ConvertGenericStringToWideCb( wstrVariable, strVariable, <SPAN CLASS="keyword">sizeof</SPAN>(wstrVariable) );
+<SPAN CLASS="linenum">0953:</SPAN> 
+<SPAN CLASS="linenum">0954:</SPAN>     <SPAN CLASS="keyword">return</SPAN> m_pScript-&gt;SetVariableObject( wstrVariable, punkValue, NULL );
+<SPAN CLASS="linenum">0955:</SPAN> }
+<SPAN CLASS="linenum">0956:</SPAN> 
+<SPAN CLASS="linenum">0957:</SPAN> 
+<SPAN CLASS="linenum">0958:</SPAN> 
+<SPAN CLASS="linenum">0959:</SPAN> 
+<SPAN CLASS="linenum">0960:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0961:</SPAN> <SPAN CLASS="comment">// Name: CMusicScript::GetVariableObject()</SPAN>
+<SPAN CLASS="linenum">0962:</SPAN> <SPAN CLASS="comment">// Desc: Gets an object from the script</SPAN>
+<SPAN CLASS="linenum">0963:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0964:</SPAN> HRESULT CMusicScript::GetVariableObject( TCHAR* strVariable, REFIID riid, LPVOID FAR *ppv )
+<SPAN CLASS="linenum">0965:</SPAN> {
+<SPAN CLASS="linenum">0966:</SPAN>     <SPAN CLASS="comment">// DMusic only takes wide strings</SPAN>
+<SPAN CLASS="linenum">0967:</SPAN>     WCHAR wstrVariable[MAX_PATH];
+<SPAN CLASS="linenum">0968:</SPAN>     DXUtil_ConvertGenericStringToWideCb( wstrVariable, strVariable, <SPAN CLASS="keyword">sizeof</SPAN>(wstrVariable) );
+<SPAN CLASS="linenum">0969:</SPAN> 
+<SPAN CLASS="linenum">0970:</SPAN>     <SPAN CLASS="keyword">return</SPAN> m_pScript-&gt;GetVariableObject( wstrVariable, riid, ppv, NULL );
+<SPAN CLASS="linenum">0971:</SPAN> }
+<SPAN CLASS="linenum">0972:</SPAN> 
+<SPAN CLASS="linenum">0973:</SPAN> </PRE>
+</BODY>
+</HTML>

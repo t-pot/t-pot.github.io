@@ -1,0 +1,72 @@
+<HTML>
+<HEAD>
+<TITLE>CBitmap.h</TITLE>
+<meta name="GENERATOR" content="cpp2html 2.1 by Niisaka">
+<meta http-equiv="Content-Type" content="text/html">
+<meta http-equiv="Content-Style-Type" content="text/css">
+<STYLE TYPE="text/css">
+<!--
+SPAN.comment { color:#008000; font-weight:normal; font-style:normal;}
+SPAN.keyword { color:#0000FF; font-weight:normal; font-style:normal;}
+SPAN.string { color:#600000; font-weight:normal; font-style:normal;}
+SPAN.linenum { color:#A0A0A0; font-weight:normal; font-style:normal;}
+-->
+</STYLE>
+</HEAD>
+<BODY TEXT="#000000" BGCOLOR="#FFFFFF">
+<PRE><SPAN CLASS="linenum">0001:</SPAN> <SPAN CLASS="keyword">#ifndef</SPAN> _CBITMAP_H_
+<SPAN CLASS="linenum">0002:</SPAN> <SPAN CLASS="keyword">#define</SPAN> _CBITMAP_H_
+<SPAN CLASS="linenum">0003:</SPAN> 
+<SPAN CLASS="linenum">0004:</SPAN> <SPAN CLASS="keyword">#include</SPAN> &lt;stdio.h&gt;
+<SPAN CLASS="linenum">0005:</SPAN> <SPAN CLASS="keyword">#include</SPAN> &lt;stdlib.h&gt;
+<SPAN CLASS="linenum">0006:</SPAN> 
+<SPAN CLASS="linenum">0007:</SPAN> <SPAN CLASS="comment">///////////////////////////////////////////////////////////////////////////////</SPAN>
+<SPAN CLASS="linenum">0008:</SPAN> <SPAN CLASS="comment">//Bitmapファイル</SPAN>
+<SPAN CLASS="linenum">0009:</SPAN> <SPAN CLASS="comment">//BitmapHeader構造体</SPAN>
+<SPAN CLASS="linenum">0010:</SPAN> <SPAN CLASS="keyword">typedef</SPAN> <SPAN CLASS="keyword">struct</SPAN> _BitmapHeader{
+<SPAN CLASS="linenum">0011:</SPAN>     <SPAN CLASS="keyword">char</SPAN>    distinct1;
+<SPAN CLASS="linenum">0012:</SPAN>     <SPAN CLASS="keyword">char</SPAN>    distinct2;
+<SPAN CLASS="linenum">0013:</SPAN>     <SPAN CLASS="keyword">int</SPAN>     filesize;
+<SPAN CLASS="linenum">0014:</SPAN>     <SPAN CLASS="keyword">short</SPAN>   reserve1;
+<SPAN CLASS="linenum">0015:</SPAN>     <SPAN CLASS="keyword">short</SPAN>   reserve2;
+<SPAN CLASS="linenum">0016:</SPAN>     <SPAN CLASS="keyword">int</SPAN>     offset;
+<SPAN CLASS="linenum">0017:</SPAN> }BitmapHeader;
+<SPAN CLASS="linenum">0018:</SPAN> 
+<SPAN CLASS="linenum">0019:</SPAN> <SPAN CLASS="comment">//BitmapInfoHeader構造体</SPAN>
+<SPAN CLASS="linenum">0020:</SPAN> <SPAN CLASS="keyword">typedef</SPAN> <SPAN CLASS="keyword">struct</SPAN> _BitmapInfoHeader{
+<SPAN CLASS="linenum">0021:</SPAN>     <SPAN CLASS="keyword">int</SPAN>     header;
+<SPAN CLASS="linenum">0022:</SPAN>     <SPAN CLASS="keyword">int</SPAN>     width;
+<SPAN CLASS="linenum">0023:</SPAN>     <SPAN CLASS="keyword">int</SPAN>     height;
+<SPAN CLASS="linenum">0024:</SPAN>     <SPAN CLASS="keyword">short</SPAN>   plane;
+<SPAN CLASS="linenum">0025:</SPAN>     <SPAN CLASS="keyword">short</SPAN>   bits;
+<SPAN CLASS="linenum">0026:</SPAN>     <SPAN CLASS="keyword">int</SPAN>     compression;
+<SPAN CLASS="linenum">0027:</SPAN>     <SPAN CLASS="keyword">int</SPAN>     comp_image_size;
+<SPAN CLASS="linenum">0028:</SPAN>     <SPAN CLASS="keyword">int</SPAN>     x_resolution;
+<SPAN CLASS="linenum">0029:</SPAN>     <SPAN CLASS="keyword">int</SPAN>     y_resolution;
+<SPAN CLASS="linenum">0030:</SPAN>     <SPAN CLASS="keyword">int</SPAN>     pallet_num;
+<SPAN CLASS="linenum">0031:</SPAN>     <SPAN CLASS="keyword">int</SPAN>     important_pallet_num;
+<SPAN CLASS="linenum">0032:</SPAN> }BitmapInfoHeader;
+<SPAN CLASS="linenum">0033:</SPAN> 
+<SPAN CLASS="linenum">0034:</SPAN> 
+<SPAN CLASS="linenum">0035:</SPAN> <SPAN CLASS="keyword">class</SPAN> CBitmap{
+<SPAN CLASS="linenum">0036:</SPAN> <SPAN CLASS="keyword">private</SPAN>:
+<SPAN CLASS="linenum">0037:</SPAN>     <SPAN CLASS="keyword">static</SPAN> <SPAN CLASS="keyword">int</SPAN> _ReadHeader( BitmapHeader *header, FILE *fp );
+<SPAN CLASS="linenum">0038:</SPAN>     <SPAN CLASS="keyword">static</SPAN> <SPAN CLASS="keyword">int</SPAN> _ReadInfoHeader( BitmapInfoHeader *info, FILE *fp );
+<SPAN CLASS="linenum">0039:</SPAN>     <SPAN CLASS="keyword">static</SPAN> <SPAN CLASS="keyword">int</SPAN> _CheckHeaders (<SPAN CLASS="keyword">const</SPAN> BitmapHeader *pBH, <SPAN CLASS="keyword">const</SPAN> BitmapInfoHeader *pBIH );
+<SPAN CLASS="linenum">0040:</SPAN>     <SPAN CLASS="keyword">static</SPAN> <SPAN CLASS="keyword">int</SPAN> _CheckSize(<SPAN CLASS="keyword">unsigned</SPAN> <SPAN CLASS="keyword">int</SPAN> pict_size);
+<SPAN CLASS="linenum">0041:</SPAN>     
+<SPAN CLASS="linenum">0042:</SPAN>     <SPAN CLASS="keyword">static</SPAN> <SPAN CLASS="keyword">unsigned</SPAN> <SPAN CLASS="keyword">int</SPAN> _Analize8bit ( <SPAN CLASS="keyword">const</SPAN> BitmapInfoHeader *pBIH, FILE *fp );
+<SPAN CLASS="linenum">0043:</SPAN>     <SPAN CLASS="keyword">static</SPAN> <SPAN CLASS="keyword">unsigned</SPAN> <SPAN CLASS="keyword">int</SPAN> _Analize24bit( <SPAN CLASS="keyword">const</SPAN> BitmapInfoHeader *pBIH, FILE *fp );
+<SPAN CLASS="linenum">0044:</SPAN> <SPAN CLASS="keyword">public</SPAN>:
+<SPAN CLASS="linenum">0045:</SPAN>     <SPAN CLASS="keyword">static</SPAN> <SPAN CLASS="keyword">unsigned</SPAN> <SPAN CLASS="keyword">int</SPAN> Load( <SPAN CLASS="keyword">const</SPAN> <SPAN CLASS="keyword">char</SPAN> *filename );
+<SPAN CLASS="linenum">0046:</SPAN> };
+<SPAN CLASS="linenum">0047:</SPAN> 
+<SPAN CLASS="linenum">0048:</SPAN> 
+<SPAN CLASS="linenum">0049:</SPAN> 
+<SPAN CLASS="linenum">0050:</SPAN> 
+<SPAN CLASS="linenum">0051:</SPAN> 
+<SPAN CLASS="linenum">0052:</SPAN> 
+<SPAN CLASS="linenum">0053:</SPAN> <SPAN CLASS="keyword">#endif</SPAN> _CBITMAP_H_
+<SPAN CLASS="linenum">0054:</SPAN> </PRE>
+</BODY>
+</HTML>

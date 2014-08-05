@@ -1,0 +1,123 @@
+<head>
+	<title>t-pot『Unsharp Masking』</title>
+	<link rel="stylesheet" type="text/css" href="../if.css">
+</head>
+<meta http-equiv=Content-Type content="text/html; charset=shift_jis">
+<body>
+
+
+<div class="contents">
+<center>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<h1>ぼけ輪郭</h1><br>
+<h3>～ Unsharp Masking ～</h3>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<image src = "title.png">
+<br>
+<hr>
+</center>
+<div>
+
+
+<h2>■はじめに</h2>
+
+
+<p>
+SIGGRAPH 2006 のコンスタンツ大の Thomas Luft、Carsten Colditz と Oliver Deussen による
+<a href="http://www.cgmi.inf.uni-konstanz.de/publications/2006/image_enhancement/index.html">Image Enhancement by Unsharp Masking the Depth Buffer</a>が楽そうだったので実装してみました。
+</p>
+<p>
+ダリ、ピカソ、スーラ 、マティスとか一流の人の絵を見ると、人物の後ろのふちの部分は暗く描くのが多いそうで、それを<s>パクって</s>リスペクトしてみたようです。
+</p>
+<image src = "teaser3.jpg">
+
+
+<p>
+今回のプログラムは、次のものです。
+</p>
+<ul style = "LIST-STYLE-TYPE:none">
+<li><a href="src.zip">src.zip (Unsharp Masking:Microsoft DirectX 9.0 SDK (August 2006), vs_1_1, ps_2_0)</a>
+</ul>
+
+<p>
+まぁ、いつものように適当にファイルが入っています。
+大事な部分だけを抜粋すると、次のファイルだけに注目すればいいことになります。
+</p>
+<table>
+<tr><td><a href="main_cpp.html">main.cpp</a></td><td>メイン関数</td></tr>
+<tr><td><a href="main_fx.html">main.fx</a></td><td>シェーダプログラム</td></tr>
+</table>
+
+<p>
+他にも、実行ファイル、リソースファイル、プロジェクトファイルが入っています。
+</p>
+
+
+<h2>■何やってるの？</h2>
+
+<p>
+まず、普通に描画して、あと、深度も保存します。
+</p>
+<image src = "color.png">色
+<image src = "z.png">深度
+
+<p>
+次に深度をぼかします。今回は、２パスのガウスぼかしを使いました。
+</p>
+<image src = "z.png">オリジナルZ
+<image src = "blur_x.png">よこぼかし
+<image src = "blur_y.png">たてぼかし
+<p>
+ここで、「元の深度-ぼかした深度」を見ると次のようになります（赤は負）。
+</p>
+<image src = "diff.png">元の深度-ぼかした深度
+<p>
+白い部分は奥まったとこだから、暗くするといい感じに見やすくなるんじゃない？と、いうのが元の考え方です。
+</p>
+<p>
+今回のプログラムでは、具体的には次のように組んでいます。
+</p>
+
+<pre class="CodeBlock">
+main.fx
+<font color="deepskyblue">0227:</font> float4 FinalPS( in float2 OriginalUV : TEXCOORD0 ) : COLOR 
+<font color="deepskyblue">0228:</font> {
+<font color="deepskyblue">0229:</font>     float4 color = tex2D(RenderTargetSampler, OriginalUV);<font color="cyan">// 元画像</font>
+<font color="deepskyblue">0230:</font>     <font color="blue">float</font>  depth      = tex2D(DepthSampler, OriginalUV).r;<font color="cyan">// オリジナルの深度</font>
+<font color="deepskyblue">0231:</font>     <font color="blue">float</font>  depth_blur = tex2D(MeshTextureSampler, OriginalUV).r; <font color="cyan">// ぼかした深度</font>
+<font color="deepskyblue">0232:</font> 
+<font color="deepskyblue">0233:</font>     <font color="blue">float</font> diff = depth - depth_blur;
+<font color="deepskyblue">0234:</font>     diff = max(0, diff);
+<font color="deepskyblue">0235:</font> 
+<font color="deepskyblue">0236:</font>     <font color="blue">return</font> color * (1 - fIntensity * diff);
+<font color="deepskyblue">0237:</font> }
+</pre>
+<p>
+アルファブレンディングの方が高速かもね。
+</p>
+
+
+<h2>■最後に</h2>
+
+
+<p>
+擬似アンビエントオクルージョンに使えるらしいですが、どうもそう見えません。<br>
+パラメータが悪い？？？
+</p>
+
+
+</div>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<center>
+<hr>
+<p><a href="../index.html">もどる</a></p>
+<p><a href="mailto:imagire@gmail.com">imagire@gmail.com</a></p>
+</center>
+
+</body>
+</html>

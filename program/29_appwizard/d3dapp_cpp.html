@@ -1,0 +1,2013 @@
+<HTML>
+<HEAD>
+<TITLE>d3dapp.cpp</TITLE>
+<meta name="GENERATOR" content="cpp2html 2.0 by Niisaka">
+<meta http-equiv="Content-Type" content="text/html">
+<meta http-equiv="Content-Style-Type" content="text/css">
+<STYLE TYPE="text/css">
+<!--
+SPAN.comment { color:#008000; font-weight:normal; font-style:normal;}
+SPAN.keyword { color:#0000FF; font-weight:normal; font-style:normal;}
+SPAN.string { color:#600000; font-weight:normal; font-style:normal;}
+SPAN.linenum { color:#A0A0A0; font-weight:normal; font-style:normal;}
+-->
+</STYLE>
+</HEAD>
+<BODY TEXT="#000000" BGCOLOR="#FFFFFF">
+<PRE><SPAN CLASS="linenum">0001:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0002:</SPAN> <SPAN CLASS="comment">// File: D3DApp.cpp</SPAN>
+<SPAN CLASS="linenum">0003:</SPAN> <SPAN CLASS="comment">//</SPAN>
+<SPAN CLASS="linenum">0004:</SPAN> <SPAN CLASS="comment">// Desc: Application class for the Direct3D samples framework library.</SPAN>
+<SPAN CLASS="linenum">0005:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0006:</SPAN> <SPAN CLASS="keyword">#define</SPAN> STRICT
+<SPAN CLASS="linenum">0007:</SPAN> <SPAN CLASS="keyword">#include</SPAN> &lt;windows.h&gt;
+<SPAN CLASS="linenum">0008:</SPAN> <SPAN CLASS="keyword">#include</SPAN> &lt;windowsx.h&gt;
+<SPAN CLASS="linenum">0009:</SPAN> <SPAN CLASS="keyword">#include</SPAN> &lt;basetsd.h&gt;
+<SPAN CLASS="linenum">0010:</SPAN> <SPAN CLASS="keyword">#include</SPAN> &lt;mmsystem.h&gt;
+<SPAN CLASS="linenum">0011:</SPAN> <SPAN CLASS="keyword">#include</SPAN> &lt;stdio.h&gt;
+<SPAN CLASS="linenum">0012:</SPAN> <SPAN CLASS="keyword">#include</SPAN> &lt;tchar.h&gt;
+<SPAN CLASS="linenum">0013:</SPAN> <SPAN CLASS="keyword">#include</SPAN> &lt;D3D8.h&gt;
+<SPAN CLASS="linenum">0014:</SPAN> <SPAN CLASS="keyword">#include</SPAN> "<SPAN CLASS="string">D3DApp.h</SPAN>"
+<SPAN CLASS="linenum">0015:</SPAN> <SPAN CLASS="keyword">#include</SPAN> "<SPAN CLASS="string">D3DUtil.h</SPAN>"
+<SPAN CLASS="linenum">0016:</SPAN> <SPAN CLASS="keyword">#include</SPAN> "<SPAN CLASS="string">DXUtil.h</SPAN>"
+<SPAN CLASS="linenum">0017:</SPAN> <SPAN CLASS="keyword">#include</SPAN> "<SPAN CLASS="string">D3DRes.h</SPAN>"
+<SPAN CLASS="linenum">0018:</SPAN> 
+<SPAN CLASS="linenum">0019:</SPAN> 
+<SPAN CLASS="linenum">0020:</SPAN> 
+<SPAN CLASS="linenum">0021:</SPAN> 
+<SPAN CLASS="linenum">0022:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0023:</SPAN> <SPAN CLASS="comment">// Global access to the app (needed for the global WndProc())</SPAN>
+<SPAN CLASS="linenum">0024:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0025:</SPAN> <SPAN CLASS="keyword">static</SPAN> CD3DApplication* g_pD3DApp = NULL;
+<SPAN CLASS="linenum">0026:</SPAN> 
+<SPAN CLASS="linenum">0027:</SPAN> 
+<SPAN CLASS="linenum">0028:</SPAN> 
+<SPAN CLASS="linenum">0029:</SPAN> 
+<SPAN CLASS="linenum">0030:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0031:</SPAN> <SPAN CLASS="comment">// Name: CD3DApplication()</SPAN>
+<SPAN CLASS="linenum">0032:</SPAN> <SPAN CLASS="comment">// Desc: Constructor</SPAN>
+<SPAN CLASS="linenum">0033:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0034:</SPAN> CD3DApplication::CD3DApplication()
+<SPAN CLASS="linenum">0035:</SPAN> {
+<SPAN CLASS="linenum">0036:</SPAN>     g_pD3DApp           = <SPAN CLASS="keyword">this</SPAN>;
+<SPAN CLASS="linenum">0037:</SPAN> 
+<SPAN CLASS="linenum">0038:</SPAN>     m_dwNumAdapters     = 0;
+<SPAN CLASS="linenum">0039:</SPAN>     m_dwAdapter         = 0L;
+<SPAN CLASS="linenum">0040:</SPAN>     m_pD3D              = NULL;
+<SPAN CLASS="linenum">0041:</SPAN>     m_pd3dDevice        = NULL;
+<SPAN CLASS="linenum">0042:</SPAN>     m_hWnd              = NULL;
+<SPAN CLASS="linenum">0043:</SPAN>     m_hWndFocus         = NULL;
+<SPAN CLASS="linenum">0044:</SPAN>     m_bActive           = FALSE;
+<SPAN CLASS="linenum">0045:</SPAN>     m_bReady            = FALSE;
+<SPAN CLASS="linenum">0046:</SPAN>     m_bHasFocus     = FALSE;
+<SPAN CLASS="linenum">0047:</SPAN>     m_dwCreateFlags     = 0L;
+<SPAN CLASS="linenum">0048:</SPAN> 
+<SPAN CLASS="linenum">0049:</SPAN>     m_bFrameMoving      = TRUE;
+<SPAN CLASS="linenum">0050:</SPAN>     m_bSingleStep       = FALSE;
+<SPAN CLASS="linenum">0051:</SPAN>     m_fFPS              = 0.0f;
+<SPAN CLASS="linenum">0052:</SPAN>     m_strDeviceStats[0] = _T('<SPAN CLASS="string">\0</SPAN>');
+<SPAN CLASS="linenum">0053:</SPAN>     m_strFrameStats[0]  = _T('<SPAN CLASS="string">\0</SPAN>');
+<SPAN CLASS="linenum">0054:</SPAN> 
+<SPAN CLASS="linenum">0055:</SPAN>     m_strWindowTitle    = _T("<SPAN CLASS="string">D3D8 Application</SPAN>");
+<SPAN CLASS="linenum">0056:</SPAN>     m_dwCreationWidth   = 400;
+<SPAN CLASS="linenum">0057:</SPAN>     m_dwCreationHeight  = 300;
+<SPAN CLASS="linenum">0058:</SPAN>     m_bUseDepthBuffer   = FALSE;
+<SPAN CLASS="linenum">0059:</SPAN>     m_dwMinDepthBits    = 16;
+<SPAN CLASS="linenum">0060:</SPAN>     m_dwMinStencilBits  = 0;
+<SPAN CLASS="linenum">0061:</SPAN>     m_bShowCursorWhenFullscreen = FALSE;
+<SPAN CLASS="linenum">0062:</SPAN> 
+<SPAN CLASS="linenum">0063:</SPAN>     <SPAN CLASS="comment">// When m_bClipCursorWhenFullscreen is TRUE, the cursor is limited to</SPAN>
+<SPAN CLASS="linenum">0064:</SPAN>     <SPAN CLASS="comment">// the device window when the app goes fullscreen.  This prevents users</SPAN>
+<SPAN CLASS="linenum">0065:</SPAN>     <SPAN CLASS="comment">// from accidentally clicking outside the app window on a multimon system.</SPAN>
+<SPAN CLASS="linenum">0066:</SPAN>     <SPAN CLASS="comment">// This flag is turned off by default for debug builds, since it makes </SPAN>
+<SPAN CLASS="linenum">0067:</SPAN>     <SPAN CLASS="comment">// multimon debugging difficult.</SPAN>
+<SPAN CLASS="linenum">0068:</SPAN> <SPAN CLASS="keyword">#if</SPAN> defined(_DEBUG) || defined(DEBUG)
+<SPAN CLASS="linenum">0069:</SPAN>     m_bClipCursorWhenFullscreen = FALSE;
+<SPAN CLASS="linenum">0070:</SPAN> <SPAN CLASS="keyword">#else</SPAN>
+<SPAN CLASS="linenum">0071:</SPAN>     m_bClipCursorWhenFullscreen = TRUE;
+<SPAN CLASS="linenum">0072:</SPAN> <SPAN CLASS="keyword">#endif</SPAN>
+<SPAN CLASS="linenum">0073:</SPAN> }
+<SPAN CLASS="linenum">0074:</SPAN> 
+<SPAN CLASS="linenum">0075:</SPAN> 
+<SPAN CLASS="linenum">0076:</SPAN> 
+<SPAN CLASS="linenum">0077:</SPAN> 
+<SPAN CLASS="linenum">0078:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0079:</SPAN> <SPAN CLASS="comment">// Name: WndProc()</SPAN>
+<SPAN CLASS="linenum">0080:</SPAN> <SPAN CLASS="comment">// Desc: Static msg handler which passes messages to the application class.</SPAN>
+<SPAN CLASS="linenum">0081:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0082:</SPAN> LRESULT CALLBACK WndProc( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam )
+<SPAN CLASS="linenum">0083:</SPAN> {
+<SPAN CLASS="linenum">0084:</SPAN>     <SPAN CLASS="keyword">return</SPAN> g_pD3DApp-&gt;MsgProc( hWnd, uMsg, wParam, lParam );
+<SPAN CLASS="linenum">0085:</SPAN> }
+<SPAN CLASS="linenum">0086:</SPAN> 
+<SPAN CLASS="linenum">0087:</SPAN> 
+<SPAN CLASS="linenum">0088:</SPAN> 
+<SPAN CLASS="linenum">0089:</SPAN> 
+<SPAN CLASS="linenum">0090:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0091:</SPAN> <SPAN CLASS="comment">// Name: Create()</SPAN>
+<SPAN CLASS="linenum">0092:</SPAN> <SPAN CLASS="comment">// Desc:</SPAN>
+<SPAN CLASS="linenum">0093:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0094:</SPAN> HRESULT CD3DApplication::Create( HINSTANCE hInstance )
+<SPAN CLASS="linenum">0095:</SPAN> {
+<SPAN CLASS="linenum">0096:</SPAN>     HRESULT hr;
+<SPAN CLASS="linenum">0097:</SPAN> 
+<SPAN CLASS="linenum">0098:</SPAN>     <SPAN CLASS="comment">// Create the Direct3D object</SPAN>
+<SPAN CLASS="linenum">0099:</SPAN>     m_pD3D = Direct3DCreate8( D3D_SDK_VERSION );
+<SPAN CLASS="linenum">0100:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( m_pD3D == NULL )
+<SPAN CLASS="linenum">0101:</SPAN>         <SPAN CLASS="keyword">return</SPAN> DisplayErrorMsg( D3DAPPERR_NODIRECT3D, MSGERR_APPMUSTEXIT );
+<SPAN CLASS="linenum">0102:</SPAN> 
+<SPAN CLASS="linenum">0103:</SPAN>     <SPAN CLASS="comment">// Build a list of Direct3D adapters, modes and devices. The</SPAN>
+<SPAN CLASS="linenum">0104:</SPAN>     <SPAN CLASS="comment">// ConfirmDevice() callback is used to confirm that only devices that</SPAN>
+<SPAN CLASS="linenum">0105:</SPAN>     <SPAN CLASS="comment">// meet the app's requirements are considered.</SPAN>
+<SPAN CLASS="linenum">0106:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( FAILED( hr = BuildDeviceList() ) )
+<SPAN CLASS="linenum">0107:</SPAN>     {
+<SPAN CLASS="linenum">0108:</SPAN>         SAFE_RELEASE( m_pD3D );
+<SPAN CLASS="linenum">0109:</SPAN>         <SPAN CLASS="keyword">return</SPAN> DisplayErrorMsg( hr, MSGERR_APPMUSTEXIT );
+<SPAN CLASS="linenum">0110:</SPAN>     }
+<SPAN CLASS="linenum">0111:</SPAN> 
+<SPAN CLASS="linenum">0112:</SPAN>     <SPAN CLASS="comment">// Unless a substitute hWnd has been specified, create a window to</SPAN>
+<SPAN CLASS="linenum">0113:</SPAN>     <SPAN CLASS="comment">// render into</SPAN>
+<SPAN CLASS="linenum">0114:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( m_hWnd == NULL)
+<SPAN CLASS="linenum">0115:</SPAN>     {
+<SPAN CLASS="linenum">0116:</SPAN>         <SPAN CLASS="comment">// Register the windows class</SPAN>
+<SPAN CLASS="linenum">0117:</SPAN>         WNDCLASS wndClass = { 0, WndProc, 0, 0, hInstance,
+<SPAN CLASS="linenum">0118:</SPAN>                               LoadIcon( hInstance, MAKEINTRESOURCE(IDI_MAIN_ICON) ),
+<SPAN CLASS="linenum">0119:</SPAN>                               LoadCursor( NULL, IDC_ARROW ),
+<SPAN CLASS="linenum">0120:</SPAN>                               (HBRUSH)GetStockObject(WHITE_BRUSH),
+<SPAN CLASS="linenum">0121:</SPAN>                               NULL, _T("<SPAN CLASS="string">D3D Window</SPAN>") };
+<SPAN CLASS="linenum">0122:</SPAN>         RegisterClass( &amp;wndClass );
+<SPAN CLASS="linenum">0123:</SPAN> 
+<SPAN CLASS="linenum">0124:</SPAN>         <SPAN CLASS="comment">// Set the window's initial style</SPAN>
+<SPAN CLASS="linenum">0125:</SPAN>         m_dwWindowStyle = WS_OVERLAPPED|WS_CAPTION|WS_SYSMENU|WS_THICKFRAME|
+<SPAN CLASS="linenum">0126:</SPAN>                           WS_MINIMIZEBOX|WS_VISIBLE;
+<SPAN CLASS="linenum">0127:</SPAN> 
+<SPAN CLASS="linenum">0128:</SPAN>         <SPAN CLASS="comment">// Set the window's initial width</SPAN>
+<SPAN CLASS="linenum">0129:</SPAN>         RECT rc;
+<SPAN CLASS="linenum">0130:</SPAN>         SetRect( &amp;rc, 0, 0, m_dwCreationWidth, m_dwCreationHeight );
+<SPAN CLASS="linenum">0131:</SPAN>         AdjustWindowRect( &amp;rc, m_dwWindowStyle, TRUE );
+<SPAN CLASS="linenum">0132:</SPAN> 
+<SPAN CLASS="linenum">0133:</SPAN>         <SPAN CLASS="comment">// Create the render window</SPAN>
+<SPAN CLASS="linenum">0134:</SPAN>         m_hWnd = CreateWindow( _T("<SPAN CLASS="string">D3D Window</SPAN>"), m_strWindowTitle, m_dwWindowStyle,
+<SPAN CLASS="linenum">0135:</SPAN>                                CW_USEDEFAULT, CW_USEDEFAULT,
+<SPAN CLASS="linenum">0136:</SPAN>                                (rc.right-rc.left), (rc.bottom-rc.top), 0L,
+<SPAN CLASS="linenum">0137:</SPAN>                                LoadMenu( hInstance, MAKEINTRESOURCE(IDR_MENU) ),
+<SPAN CLASS="linenum">0138:</SPAN>                                hInstance, 0L );
+<SPAN CLASS="linenum">0139:</SPAN>     }
+<SPAN CLASS="linenum">0140:</SPAN> 
+<SPAN CLASS="linenum">0141:</SPAN>     <SPAN CLASS="comment">// The focus window can be a specified to be a different window than the</SPAN>
+<SPAN CLASS="linenum">0142:</SPAN>     <SPAN CLASS="comment">// device window.  If not, use the device window as the focus window.</SPAN>
+<SPAN CLASS="linenum">0143:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( m_hWndFocus == NULL )
+<SPAN CLASS="linenum">0144:</SPAN>         m_hWndFocus = m_hWnd;
+<SPAN CLASS="linenum">0145:</SPAN> 
+<SPAN CLASS="linenum">0146:</SPAN>     <SPAN CLASS="comment">// Save window properties</SPAN>
+<SPAN CLASS="linenum">0147:</SPAN>     m_dwWindowStyle = GetWindowLong( m_hWnd, GWL_STYLE );
+<SPAN CLASS="linenum">0148:</SPAN>     GetWindowRect( m_hWnd, &amp;m_rcWindowBounds );
+<SPAN CLASS="linenum">0149:</SPAN>     GetClientRect( m_hWnd, &amp;m_rcWindowClient );
+<SPAN CLASS="linenum">0150:</SPAN> 
+<SPAN CLASS="linenum">0151:</SPAN>     <SPAN CLASS="comment">// Initialize the application timer</SPAN>
+<SPAN CLASS="linenum">0152:</SPAN>     DXUtil_Timer( TIMER_START );
+<SPAN CLASS="linenum">0153:</SPAN> 
+<SPAN CLASS="linenum">0154:</SPAN>     <SPAN CLASS="comment">// Initialize the app's custom scene stuff</SPAN>
+<SPAN CLASS="linenum">0155:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( FAILED( hr = OneTimeSceneInit() ) )
+<SPAN CLASS="linenum">0156:</SPAN>     {
+<SPAN CLASS="linenum">0157:</SPAN>         SAFE_RELEASE( m_pD3D );
+<SPAN CLASS="linenum">0158:</SPAN>         <SPAN CLASS="keyword">return</SPAN> DisplayErrorMsg( hr, MSGERR_APPMUSTEXIT );
+<SPAN CLASS="linenum">0159:</SPAN>     }
+<SPAN CLASS="linenum">0160:</SPAN> 
+<SPAN CLASS="linenum">0161:</SPAN>     <SPAN CLASS="comment">// Initialize the 3D environment for the app</SPAN>
+<SPAN CLASS="linenum">0162:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( FAILED( hr = Initialize3DEnvironment() ) )
+<SPAN CLASS="linenum">0163:</SPAN>     {
+<SPAN CLASS="linenum">0164:</SPAN>         SAFE_RELEASE( m_pD3D );
+<SPAN CLASS="linenum">0165:</SPAN>         <SPAN CLASS="keyword">return</SPAN> DisplayErrorMsg( hr, MSGERR_APPMUSTEXIT );
+<SPAN CLASS="linenum">0166:</SPAN>     }
+<SPAN CLASS="linenum">0167:</SPAN> 
+<SPAN CLASS="linenum">0168:</SPAN>     <SPAN CLASS="comment">// The app is ready to go</SPAN>
+<SPAN CLASS="linenum">0169:</SPAN>     m_bReady = TRUE;
+<SPAN CLASS="linenum">0170:</SPAN> 
+<SPAN CLASS="linenum">0171:</SPAN>     <SPAN CLASS="keyword">return</SPAN> S_OK;
+<SPAN CLASS="linenum">0172:</SPAN> }
+<SPAN CLASS="linenum">0173:</SPAN> 
+<SPAN CLASS="linenum">0174:</SPAN> 
+<SPAN CLASS="linenum">0175:</SPAN> 
+<SPAN CLASS="linenum">0176:</SPAN> 
+<SPAN CLASS="linenum">0177:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0178:</SPAN> <SPAN CLASS="comment">// Name: SortModesCallback()</SPAN>
+<SPAN CLASS="linenum">0179:</SPAN> <SPAN CLASS="comment">// Desc: Callback function for sorting display modes (used by BuildDeviceList).</SPAN>
+<SPAN CLASS="linenum">0180:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0181:</SPAN> <SPAN CLASS="keyword">static</SPAN> <SPAN CLASS="keyword">int</SPAN> SortModesCallback( <SPAN CLASS="keyword">const</SPAN> VOID* arg1, <SPAN CLASS="keyword">const</SPAN> VOID* arg2 )
+<SPAN CLASS="linenum">0182:</SPAN> {
+<SPAN CLASS="linenum">0183:</SPAN>     D3DDISPLAYMODE* p1 = (D3DDISPLAYMODE*)arg1;
+<SPAN CLASS="linenum">0184:</SPAN>     D3DDISPLAYMODE* p2 = (D3DDISPLAYMODE*)arg2;
+<SPAN CLASS="linenum">0185:</SPAN> 
+<SPAN CLASS="linenum">0186:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( p1-&gt;Format &gt; p2-&gt;Format )   <SPAN CLASS="keyword">return</SPAN> -1;
+<SPAN CLASS="linenum">0187:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( p1-&gt;Format &lt; p2-&gt;Format )   <SPAN CLASS="keyword">return</SPAN> +1;
+<SPAN CLASS="linenum">0188:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( p1-&gt;Width  &lt; p2-&gt;Width )    <SPAN CLASS="keyword">return</SPAN> -1;
+<SPAN CLASS="linenum">0189:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( p1-&gt;Width  &gt; p2-&gt;Width )    <SPAN CLASS="keyword">return</SPAN> +1;
+<SPAN CLASS="linenum">0190:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( p1-&gt;Height &lt; p2-&gt;Height )   <SPAN CLASS="keyword">return</SPAN> -1;
+<SPAN CLASS="linenum">0191:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( p1-&gt;Height &gt; p2-&gt;Height )   <SPAN CLASS="keyword">return</SPAN> +1;
+<SPAN CLASS="linenum">0192:</SPAN> 
+<SPAN CLASS="linenum">0193:</SPAN>     <SPAN CLASS="keyword">return</SPAN> 0;
+<SPAN CLASS="linenum">0194:</SPAN> }
+<SPAN CLASS="linenum">0195:</SPAN> 
+<SPAN CLASS="linenum">0196:</SPAN> 
+<SPAN CLASS="linenum">0197:</SPAN> 
+<SPAN CLASS="linenum">0198:</SPAN> 
+<SPAN CLASS="linenum">0199:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0200:</SPAN> <SPAN CLASS="comment">// Name: BuildDeviceList()</SPAN>
+<SPAN CLASS="linenum">0201:</SPAN> <SPAN CLASS="comment">// Desc:</SPAN>
+<SPAN CLASS="linenum">0202:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0203:</SPAN> HRESULT CD3DApplication::BuildDeviceList()
+<SPAN CLASS="linenum">0204:</SPAN> {
+<SPAN CLASS="linenum">0205:</SPAN>     <SPAN CLASS="keyword">const</SPAN> DWORD dwNumDeviceTypes = 2;
+<SPAN CLASS="linenum">0206:</SPAN>     <SPAN CLASS="keyword">const</SPAN> TCHAR* strDeviceDescs[] = { _T("<SPAN CLASS="string">HAL</SPAN>"), _T("<SPAN CLASS="string">REF</SPAN>") };
+<SPAN CLASS="linenum">0207:</SPAN>     <SPAN CLASS="keyword">const</SPAN> D3DDEVTYPE DeviceTypes[] = { D3DDEVTYPE_HAL, D3DDEVTYPE_REF };
+<SPAN CLASS="linenum">0208:</SPAN> 
+<SPAN CLASS="linenum">0209:</SPAN>     BOOL bHALExists = FALSE;
+<SPAN CLASS="linenum">0210:</SPAN>     BOOL bHALIsWindowedCompatible = FALSE;
+<SPAN CLASS="linenum">0211:</SPAN>     BOOL bHALIsDesktopCompatible = FALSE;
+<SPAN CLASS="linenum">0212:</SPAN>     BOOL bHALIsSampleCompatible = FALSE;
+<SPAN CLASS="linenum">0213:</SPAN> 
+<SPAN CLASS="linenum">0214:</SPAN>     <SPAN CLASS="comment">// Loop through all the adapters on the system (usually, there's just one</SPAN>
+<SPAN CLASS="linenum">0215:</SPAN>     <SPAN CLASS="comment">// unless more than one graphics card is present).</SPAN>
+<SPAN CLASS="linenum">0216:</SPAN>     <SPAN CLASS="keyword">for</SPAN>( UINT iAdapter = 0; iAdapter &lt; m_pD3D-&gt;GetAdapterCount(); iAdapter++ )
+<SPAN CLASS="linenum">0217:</SPAN>     {
+<SPAN CLASS="linenum">0218:</SPAN>         <SPAN CLASS="comment">// Fill in adapter info</SPAN>
+<SPAN CLASS="linenum">0219:</SPAN>         D3DAdapterInfo* pAdapter  = &amp;m_Adapters[m_dwNumAdapters];
+<SPAN CLASS="linenum">0220:</SPAN>         m_pD3D-&gt;GetAdapterIdentifier( iAdapter, D3DENUM_NO_WHQL_LEVEL, &amp;pAdapter-&gt;d3dAdapterIdentifier );
+<SPAN CLASS="linenum">0221:</SPAN>         m_pD3D-&gt;GetAdapterDisplayMode( iAdapter, &amp;pAdapter-&gt;d3ddmDesktop );
+<SPAN CLASS="linenum">0222:</SPAN>         pAdapter-&gt;dwNumDevices    = 0;
+<SPAN CLASS="linenum">0223:</SPAN>         pAdapter-&gt;dwCurrentDevice = 0;
+<SPAN CLASS="linenum">0224:</SPAN> 
+<SPAN CLASS="linenum">0225:</SPAN>         <SPAN CLASS="comment">// Enumerate all display modes on this adapter</SPAN>
+<SPAN CLASS="linenum">0226:</SPAN>         D3DDISPLAYMODE modes[100];
+<SPAN CLASS="linenum">0227:</SPAN>         D3DFORMAT      formats[20];
+<SPAN CLASS="linenum">0228:</SPAN>         DWORD dwNumFormats      = 0;
+<SPAN CLASS="linenum">0229:</SPAN>         DWORD dwNumModes        = 0;
+<SPAN CLASS="linenum">0230:</SPAN>         DWORD dwNumAdapterModes = m_pD3D-&gt;GetAdapterModeCount( iAdapter );
+<SPAN CLASS="linenum">0231:</SPAN> 
+<SPAN CLASS="linenum">0232:</SPAN>         <SPAN CLASS="comment">// Add the adapter's current desktop format to the list of formats</SPAN>
+<SPAN CLASS="linenum">0233:</SPAN>         formats[dwNumFormats++] = pAdapter-&gt;d3ddmDesktop.Format;
+<SPAN CLASS="linenum">0234:</SPAN> 
+<SPAN CLASS="linenum">0235:</SPAN>         <SPAN CLASS="keyword">for</SPAN>( UINT iMode = 0; iMode &lt; dwNumAdapterModes; iMode++ )
+<SPAN CLASS="linenum">0236:</SPAN>         {
+<SPAN CLASS="linenum">0237:</SPAN>             <SPAN CLASS="comment">// Get the display mode attributes</SPAN>
+<SPAN CLASS="linenum">0238:</SPAN>             D3DDISPLAYMODE DisplayMode;
+<SPAN CLASS="linenum">0239:</SPAN>             m_pD3D-&gt;EnumAdapterModes( iAdapter, iMode, &amp;DisplayMode );
+<SPAN CLASS="linenum">0240:</SPAN> 
+<SPAN CLASS="linenum">0241:</SPAN>             <SPAN CLASS="comment">// Filter out low-resolution modes</SPAN>
+<SPAN CLASS="linenum">0242:</SPAN>             <SPAN CLASS="keyword">if</SPAN>( DisplayMode.Width  &lt; 640 || DisplayMode.Height &lt; 400 )
+<SPAN CLASS="linenum">0243:</SPAN>                 <SPAN CLASS="keyword">continue</SPAN>;
+<SPAN CLASS="linenum">0244:</SPAN> 
+<SPAN CLASS="linenum">0245:</SPAN>             <SPAN CLASS="comment">// Check if the mode already exists (to filter out refresh rates)</SPAN>
+<SPAN CLASS="linenum">0246:</SPAN>             <SPAN CLASS="keyword">for</SPAN>( DWORD m=0L; m&lt;dwNumModes; m++ )
+<SPAN CLASS="linenum">0247:</SPAN>             {
+<SPAN CLASS="linenum">0248:</SPAN>                 <SPAN CLASS="keyword">if</SPAN>( ( modes[m].Width  == DisplayMode.Width  ) &amp;&amp;
+<SPAN CLASS="linenum">0249:</SPAN>                     ( modes[m].Height == DisplayMode.Height ) &amp;&amp;
+<SPAN CLASS="linenum">0250:</SPAN>                     ( modes[m].Format == DisplayMode.Format ) )
+<SPAN CLASS="linenum">0251:</SPAN>                     <SPAN CLASS="keyword">break</SPAN>;
+<SPAN CLASS="linenum">0252:</SPAN>             }
+<SPAN CLASS="linenum">0253:</SPAN> 
+<SPAN CLASS="linenum">0254:</SPAN>             <SPAN CLASS="comment">// If we found a new mode, add it to the list of modes</SPAN>
+<SPAN CLASS="linenum">0255:</SPAN>             <SPAN CLASS="keyword">if</SPAN>( m == dwNumModes )
+<SPAN CLASS="linenum">0256:</SPAN>             {
+<SPAN CLASS="linenum">0257:</SPAN>                 modes[dwNumModes].Width       = DisplayMode.Width;
+<SPAN CLASS="linenum">0258:</SPAN>                 modes[dwNumModes].Height      = DisplayMode.Height;
+<SPAN CLASS="linenum">0259:</SPAN>                 modes[dwNumModes].Format      = DisplayMode.Format;
+<SPAN CLASS="linenum">0260:</SPAN>                 modes[dwNumModes].RefreshRate = 0;
+<SPAN CLASS="linenum">0261:</SPAN>                 dwNumModes++;
+<SPAN CLASS="linenum">0262:</SPAN> 
+<SPAN CLASS="linenum">0263:</SPAN>                 <SPAN CLASS="comment">// Check if the mode's format already exists</SPAN>
+<SPAN CLASS="linenum">0264:</SPAN>                 <SPAN CLASS="keyword">for</SPAN>( DWORD f=0; f&lt;dwNumFormats; f++ )
+<SPAN CLASS="linenum">0265:</SPAN>                 {
+<SPAN CLASS="linenum">0266:</SPAN>                     <SPAN CLASS="keyword">if</SPAN>( DisplayMode.Format == formats[f] )
+<SPAN CLASS="linenum">0267:</SPAN>                         <SPAN CLASS="keyword">break</SPAN>;
+<SPAN CLASS="linenum">0268:</SPAN>                 }
+<SPAN CLASS="linenum">0269:</SPAN> 
+<SPAN CLASS="linenum">0270:</SPAN>                 <SPAN CLASS="comment">// If the format is new, add it to the list</SPAN>
+<SPAN CLASS="linenum">0271:</SPAN>                 <SPAN CLASS="keyword">if</SPAN>( f== dwNumFormats )
+<SPAN CLASS="linenum">0272:</SPAN>                     formats[dwNumFormats++] = DisplayMode.Format;
+<SPAN CLASS="linenum">0273:</SPAN>             }
+<SPAN CLASS="linenum">0274:</SPAN>         }
+<SPAN CLASS="linenum">0275:</SPAN> 
+<SPAN CLASS="linenum">0276:</SPAN>         <SPAN CLASS="comment">// Sort the list of display modes (by format, then width, then height)</SPAN>
+<SPAN CLASS="linenum">0277:</SPAN>         qsort( modes, dwNumModes, <SPAN CLASS="keyword">sizeof</SPAN>(D3DDISPLAYMODE), SortModesCallback );
+<SPAN CLASS="linenum">0278:</SPAN> 
+<SPAN CLASS="linenum">0279:</SPAN>         <SPAN CLASS="comment">// Add devices to adapter</SPAN>
+<SPAN CLASS="linenum">0280:</SPAN>         <SPAN CLASS="keyword">for</SPAN>( UINT iDevice = 0; iDevice &lt; dwNumDeviceTypes; iDevice++ )
+<SPAN CLASS="linenum">0281:</SPAN>         {
+<SPAN CLASS="linenum">0282:</SPAN>             <SPAN CLASS="comment">// Fill in device info</SPAN>
+<SPAN CLASS="linenum">0283:</SPAN>             D3DDeviceInfo* pDevice;
+<SPAN CLASS="linenum">0284:</SPAN>             pDevice                 = &amp;pAdapter-&gt;devices[pAdapter-&gt;dwNumDevices];
+<SPAN CLASS="linenum">0285:</SPAN>             pDevice-&gt;DeviceType     = DeviceTypes[iDevice];
+<SPAN CLASS="linenum">0286:</SPAN>             m_pD3D-&gt;GetDeviceCaps( iAdapter, DeviceTypes[iDevice], &amp;pDevice-&gt;d3dCaps );
+<SPAN CLASS="linenum">0287:</SPAN>             pDevice-&gt;strDesc        = strDeviceDescs[iDevice];
+<SPAN CLASS="linenum">0288:</SPAN>             pDevice-&gt;dwNumModes     = 0;
+<SPAN CLASS="linenum">0289:</SPAN>             pDevice-&gt;dwCurrentMode  = 0;
+<SPAN CLASS="linenum">0290:</SPAN>             pDevice-&gt;bCanDoWindowed = FALSE;
+<SPAN CLASS="linenum">0291:</SPAN>             pDevice-&gt;bWindowed      = FALSE;
+<SPAN CLASS="linenum">0292:</SPAN>             pDevice-&gt;MultiSampleTypeFullscreen = D3DMULTISAMPLE_NONE;
+<SPAN CLASS="linenum">0293:</SPAN>             pDevice-&gt;MultiSampleTypeWindowed = D3DMULTISAMPLE_NONE;
+<SPAN CLASS="linenum">0294:</SPAN> 
+<SPAN CLASS="linenum">0295:</SPAN>             <SPAN CLASS="comment">// Examine each format supported by the adapter to see if it will</SPAN>
+<SPAN CLASS="linenum">0296:</SPAN>             <SPAN CLASS="comment">// work with this device and meets the needs of the application.</SPAN>
+<SPAN CLASS="linenum">0297:</SPAN>             BOOL  bFormatConfirmed[20];
+<SPAN CLASS="linenum">0298:</SPAN>             DWORD dwBehavior[20];
+<SPAN CLASS="linenum">0299:</SPAN>             D3DFORMAT fmtDepthStencil[20];
+<SPAN CLASS="linenum">0300:</SPAN> 
+<SPAN CLASS="linenum">0301:</SPAN>             <SPAN CLASS="keyword">for</SPAN>( DWORD f=0; f&lt;dwNumFormats; f++ )
+<SPAN CLASS="linenum">0302:</SPAN>             {
+<SPAN CLASS="linenum">0303:</SPAN>                 bFormatConfirmed[f] = FALSE;
+<SPAN CLASS="linenum">0304:</SPAN>                 fmtDepthStencil[f] = D3DFMT_UNKNOWN;
+<SPAN CLASS="linenum">0305:</SPAN> 
+<SPAN CLASS="linenum">0306:</SPAN>                 <SPAN CLASS="comment">// Skip formats that cannot be used as render targets on this device</SPAN>
+<SPAN CLASS="linenum">0307:</SPAN>                 <SPAN CLASS="keyword">if</SPAN>( FAILED( m_pD3D-&gt;CheckDeviceType( iAdapter, pDevice-&gt;DeviceType,
+<SPAN CLASS="linenum">0308:</SPAN>                                                      formats[f], formats[f], FALSE ) ) )
+<SPAN CLASS="linenum">0309:</SPAN>                     <SPAN CLASS="keyword">continue</SPAN>;
+<SPAN CLASS="linenum">0310:</SPAN> 
+<SPAN CLASS="linenum">0311:</SPAN>                 <SPAN CLASS="keyword">if</SPAN>( pDevice-&gt;DeviceType == D3DDEVTYPE_HAL )
+<SPAN CLASS="linenum">0312:</SPAN>                 {
+<SPAN CLASS="linenum">0313:</SPAN>                     <SPAN CLASS="comment">// This system has a HAL device</SPAN>
+<SPAN CLASS="linenum">0314:</SPAN>                     bHALExists = TRUE;
+<SPAN CLASS="linenum">0315:</SPAN> 
+<SPAN CLASS="linenum">0316:</SPAN>                     <SPAN CLASS="keyword">if</SPAN>( pDevice-&gt;d3dCaps.Caps2 &amp; D3DCAPS2_CANRENDERWINDOWED )
+<SPAN CLASS="linenum">0317:</SPAN>                     {
+<SPAN CLASS="linenum">0318:</SPAN>                         <SPAN CLASS="comment">// HAL can run in a window for some mode</SPAN>
+<SPAN CLASS="linenum">0319:</SPAN>                         bHALIsWindowedCompatible = TRUE;
+<SPAN CLASS="linenum">0320:</SPAN> 
+<SPAN CLASS="linenum">0321:</SPAN>                         <SPAN CLASS="keyword">if</SPAN>( f == 0 )
+<SPAN CLASS="linenum">0322:</SPAN>                         {
+<SPAN CLASS="linenum">0323:</SPAN>                             <SPAN CLASS="comment">// HAL can run in a window for the current desktop mode</SPAN>
+<SPAN CLASS="linenum">0324:</SPAN>                             bHALIsDesktopCompatible = TRUE;
+<SPAN CLASS="linenum">0325:</SPAN>                         }
+<SPAN CLASS="linenum">0326:</SPAN>                     }
+<SPAN CLASS="linenum">0327:</SPAN>                 }
+<SPAN CLASS="linenum">0328:</SPAN> 
+<SPAN CLASS="linenum">0329:</SPAN>                 <SPAN CLASS="comment">// Confirm the device/format for HW vertex processing</SPAN>
+<SPAN CLASS="linenum">0330:</SPAN>                 <SPAN CLASS="keyword">if</SPAN>( pDevice-&gt;d3dCaps.DevCaps&amp;D3DDEVCAPS_HWTRANSFORMANDLIGHT )
+<SPAN CLASS="linenum">0331:</SPAN>                 {
+<SPAN CLASS="linenum">0332:</SPAN>                     <SPAN CLASS="keyword">if</SPAN>( pDevice-&gt;d3dCaps.DevCaps&amp;D3DDEVCAPS_PUREDEVICE )
+<SPAN CLASS="linenum">0333:</SPAN>                     {
+<SPAN CLASS="linenum">0334:</SPAN>                         dwBehavior[f] = D3DCREATE_HARDWARE_VERTEXPROCESSING |
+<SPAN CLASS="linenum">0335:</SPAN>                                         D3DCREATE_PUREDEVICE;
+<SPAN CLASS="linenum">0336:</SPAN> 
+<SPAN CLASS="linenum">0337:</SPAN>                         <SPAN CLASS="keyword">if</SPAN>( SUCCEEDED( ConfirmDevice( &amp;pDevice-&gt;d3dCaps, dwBehavior[f],
+<SPAN CLASS="linenum">0338:</SPAN>                                                       formats[f] ) ) )
+<SPAN CLASS="linenum">0339:</SPAN>                             bFormatConfirmed[f] = TRUE;
+<SPAN CLASS="linenum">0340:</SPAN>                     }
+<SPAN CLASS="linenum">0341:</SPAN> 
+<SPAN CLASS="linenum">0342:</SPAN>                     <SPAN CLASS="keyword">if</SPAN> ( FALSE == bFormatConfirmed[f] )
+<SPAN CLASS="linenum">0343:</SPAN>                     {
+<SPAN CLASS="linenum">0344:</SPAN>                         dwBehavior[f] = D3DCREATE_HARDWARE_VERTEXPROCESSING;
+<SPAN CLASS="linenum">0345:</SPAN> 
+<SPAN CLASS="linenum">0346:</SPAN>                         <SPAN CLASS="keyword">if</SPAN>( SUCCEEDED( ConfirmDevice( &amp;pDevice-&gt;d3dCaps, dwBehavior[f],
+<SPAN CLASS="linenum">0347:</SPAN>                                                       formats[f] ) ) )
+<SPAN CLASS="linenum">0348:</SPAN>                             bFormatConfirmed[f] = TRUE;
+<SPAN CLASS="linenum">0349:</SPAN>                     }
+<SPAN CLASS="linenum">0350:</SPAN> 
+<SPAN CLASS="linenum">0351:</SPAN>                     <SPAN CLASS="keyword">if</SPAN> ( FALSE == bFormatConfirmed[f] )
+<SPAN CLASS="linenum">0352:</SPAN>                     {
+<SPAN CLASS="linenum">0353:</SPAN>                         dwBehavior[f] = D3DCREATE_MIXED_VERTEXPROCESSING;
+<SPAN CLASS="linenum">0354:</SPAN> 
+<SPAN CLASS="linenum">0355:</SPAN>                         <SPAN CLASS="keyword">if</SPAN>( SUCCEEDED( ConfirmDevice( &amp;pDevice-&gt;d3dCaps, dwBehavior[f],
+<SPAN CLASS="linenum">0356:</SPAN>                                                       formats[f] ) ) )
+<SPAN CLASS="linenum">0357:</SPAN>                             bFormatConfirmed[f] = TRUE;
+<SPAN CLASS="linenum">0358:</SPAN>                     }
+<SPAN CLASS="linenum">0359:</SPAN>                 }
+<SPAN CLASS="linenum">0360:</SPAN> 
+<SPAN CLASS="linenum">0361:</SPAN>                 <SPAN CLASS="comment">// Confirm the device/format for SW vertex processing</SPAN>
+<SPAN CLASS="linenum">0362:</SPAN>                 <SPAN CLASS="keyword">if</SPAN>( FALSE == bFormatConfirmed[f] )
+<SPAN CLASS="linenum">0363:</SPAN>                 {
+<SPAN CLASS="linenum">0364:</SPAN>                     dwBehavior[f] = D3DCREATE_SOFTWARE_VERTEXPROCESSING;
+<SPAN CLASS="linenum">0365:</SPAN> 
+<SPAN CLASS="linenum">0366:</SPAN>                     <SPAN CLASS="keyword">if</SPAN>( SUCCEEDED( ConfirmDevice( &amp;pDevice-&gt;d3dCaps, dwBehavior[f],
+<SPAN CLASS="linenum">0367:</SPAN>                                                   formats[f] ) ) )
+<SPAN CLASS="linenum">0368:</SPAN>                         bFormatConfirmed[f] = TRUE;
+<SPAN CLASS="linenum">0369:</SPAN>                 }
+<SPAN CLASS="linenum">0370:</SPAN> 
+<SPAN CLASS="linenum">0371:</SPAN>                 <SPAN CLASS="comment">// Find a suitable depth/stencil buffer format for this device/format</SPAN>
+<SPAN CLASS="linenum">0372:</SPAN>                 <SPAN CLASS="keyword">if</SPAN>( bFormatConfirmed[f] &amp;&amp; m_bUseDepthBuffer )
+<SPAN CLASS="linenum">0373:</SPAN>                 {
+<SPAN CLASS="linenum">0374:</SPAN>                     <SPAN CLASS="keyword">if</SPAN>( !FindDepthStencilFormat( iAdapter, pDevice-&gt;DeviceType,
+<SPAN CLASS="linenum">0375:</SPAN>                         formats[f], &amp;fmtDepthStencil[f] ) )
+<SPAN CLASS="linenum">0376:</SPAN>                     {
+<SPAN CLASS="linenum">0377:</SPAN>                         bFormatConfirmed[f] = FALSE;
+<SPAN CLASS="linenum">0378:</SPAN>                     }
+<SPAN CLASS="linenum">0379:</SPAN>                 }
+<SPAN CLASS="linenum">0380:</SPAN>             }
+<SPAN CLASS="linenum">0381:</SPAN> 
+<SPAN CLASS="linenum">0382:</SPAN>             <SPAN CLASS="comment">// Add all enumerated display modes with confirmed formats to the</SPAN>
+<SPAN CLASS="linenum">0383:</SPAN>             <SPAN CLASS="comment">// device's list of valid modes</SPAN>
+<SPAN CLASS="linenum">0384:</SPAN>             <SPAN CLASS="keyword">for</SPAN>( DWORD m=0L; m&lt;dwNumModes; m++ )
+<SPAN CLASS="linenum">0385:</SPAN>             {
+<SPAN CLASS="linenum">0386:</SPAN>                 <SPAN CLASS="keyword">for</SPAN>( DWORD f=0; f&lt;dwNumFormats; f++ )
+<SPAN CLASS="linenum">0387:</SPAN>                 {
+<SPAN CLASS="linenum">0388:</SPAN>                     <SPAN CLASS="keyword">if</SPAN>( modes[m].Format == formats[f] )
+<SPAN CLASS="linenum">0389:</SPAN>                     {
+<SPAN CLASS="linenum">0390:</SPAN>                         <SPAN CLASS="keyword">if</SPAN>( bFormatConfirmed[f] == TRUE )
+<SPAN CLASS="linenum">0391:</SPAN>                         {
+<SPAN CLASS="linenum">0392:</SPAN>                             <SPAN CLASS="comment">// Add this mode to the device's list of valid modes</SPAN>
+<SPAN CLASS="linenum">0393:</SPAN>                             pDevice-&gt;modes[pDevice-&gt;dwNumModes].Width      = modes[m].Width;
+<SPAN CLASS="linenum">0394:</SPAN>                             pDevice-&gt;modes[pDevice-&gt;dwNumModes].Height     = modes[m].Height;
+<SPAN CLASS="linenum">0395:</SPAN>                             pDevice-&gt;modes[pDevice-&gt;dwNumModes].Format     = modes[m].Format;
+<SPAN CLASS="linenum">0396:</SPAN>                             pDevice-&gt;modes[pDevice-&gt;dwNumModes].dwBehavior = dwBehavior[f];
+<SPAN CLASS="linenum">0397:</SPAN>                             pDevice-&gt;modes[pDevice-&gt;dwNumModes].DepthStencilFormat = fmtDepthStencil[f];
+<SPAN CLASS="linenum">0398:</SPAN>                             pDevice-&gt;dwNumModes++;
+<SPAN CLASS="linenum">0399:</SPAN> 
+<SPAN CLASS="linenum">0400:</SPAN>                             <SPAN CLASS="keyword">if</SPAN>( pDevice-&gt;DeviceType == D3DDEVTYPE_HAL )
+<SPAN CLASS="linenum">0401:</SPAN>                                 bHALIsSampleCompatible = TRUE;
+<SPAN CLASS="linenum">0402:</SPAN>                         }
+<SPAN CLASS="linenum">0403:</SPAN>                     }
+<SPAN CLASS="linenum">0404:</SPAN>                 }
+<SPAN CLASS="linenum">0405:</SPAN>             }
+<SPAN CLASS="linenum">0406:</SPAN> 
+<SPAN CLASS="linenum">0407:</SPAN>             <SPAN CLASS="comment">// Select any 640x480 mode for default (but prefer a 16-bit mode)</SPAN>
+<SPAN CLASS="linenum">0408:</SPAN>             <SPAN CLASS="keyword">for</SPAN>( m=0; m&lt;pDevice-&gt;dwNumModes; m++ )
+<SPAN CLASS="linenum">0409:</SPAN>             {
+<SPAN CLASS="linenum">0410:</SPAN>                 <SPAN CLASS="keyword">if</SPAN>( pDevice-&gt;modes[m].Width==640 &amp;&amp; pDevice-&gt;modes[m].Height==480 )
+<SPAN CLASS="linenum">0411:</SPAN>                 {
+<SPAN CLASS="linenum">0412:</SPAN>                     pDevice-&gt;dwCurrentMode = m;
+<SPAN CLASS="linenum">0413:</SPAN>                     <SPAN CLASS="keyword">if</SPAN>( pDevice-&gt;modes[m].Format == D3DFMT_R5G6B5 ||
+<SPAN CLASS="linenum">0414:</SPAN>                         pDevice-&gt;modes[m].Format == D3DFMT_X1R5G5B5 ||
+<SPAN CLASS="linenum">0415:</SPAN>                         pDevice-&gt;modes[m].Format == D3DFMT_A1R5G5B5 )
+<SPAN CLASS="linenum">0416:</SPAN>                     {
+<SPAN CLASS="linenum">0417:</SPAN>                         <SPAN CLASS="keyword">break</SPAN>;
+<SPAN CLASS="linenum">0418:</SPAN>                     }
+<SPAN CLASS="linenum">0419:</SPAN>                 }
+<SPAN CLASS="linenum">0420:</SPAN>             }
+<SPAN CLASS="linenum">0421:</SPAN> 
+<SPAN CLASS="linenum">0422:</SPAN>             <SPAN CLASS="comment">// Check if the device is compatible with the desktop display mode</SPAN>
+<SPAN CLASS="linenum">0423:</SPAN>             <SPAN CLASS="comment">// (which was added initially as formats[0])</SPAN>
+<SPAN CLASS="linenum">0424:</SPAN>             <SPAN CLASS="keyword">if</SPAN>( bFormatConfirmed[0] &amp;&amp; (pDevice-&gt;d3dCaps.Caps2 &amp; D3DCAPS2_CANRENDERWINDOWED) )
+<SPAN CLASS="linenum">0425:</SPAN>             {
+<SPAN CLASS="linenum">0426:</SPAN>                 pDevice-&gt;bCanDoWindowed = TRUE;
+<SPAN CLASS="linenum">0427:</SPAN>                 pDevice-&gt;bWindowed      = TRUE;
+<SPAN CLASS="linenum">0428:</SPAN>             }
+<SPAN CLASS="linenum">0429:</SPAN> 
+<SPAN CLASS="linenum">0430:</SPAN>             <SPAN CLASS="comment">// If valid modes were found, keep this device</SPAN>
+<SPAN CLASS="linenum">0431:</SPAN>             <SPAN CLASS="keyword">if</SPAN>( pDevice-&gt;dwNumModes &gt; 0 )
+<SPAN CLASS="linenum">0432:</SPAN>                 pAdapter-&gt;dwNumDevices++;
+<SPAN CLASS="linenum">0433:</SPAN>         }
+<SPAN CLASS="linenum">0434:</SPAN> 
+<SPAN CLASS="linenum">0435:</SPAN>         <SPAN CLASS="comment">// If valid devices were found, keep this adapter</SPAN>
+<SPAN CLASS="linenum">0436:</SPAN>         <SPAN CLASS="keyword">if</SPAN>( pAdapter-&gt;dwNumDevices &gt; 0 )
+<SPAN CLASS="linenum">0437:</SPAN>             m_dwNumAdapters++;
+<SPAN CLASS="linenum">0438:</SPAN>     }
+<SPAN CLASS="linenum">0439:</SPAN> 
+<SPAN CLASS="linenum">0440:</SPAN>     <SPAN CLASS="comment">// Return an error if no compatible devices were found</SPAN>
+<SPAN CLASS="linenum">0441:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( 0L == m_dwNumAdapters )
+<SPAN CLASS="linenum">0442:</SPAN>         <SPAN CLASS="keyword">return</SPAN> D3DAPPERR_NOCOMPATIBLEDEVICES;
+<SPAN CLASS="linenum">0443:</SPAN> 
+<SPAN CLASS="linenum">0444:</SPAN>     <SPAN CLASS="comment">// Pick a default device that can render into a window</SPAN>
+<SPAN CLASS="linenum">0445:</SPAN>     <SPAN CLASS="comment">// (This code assumes that the HAL device comes before the REF</SPAN>
+<SPAN CLASS="linenum">0446:</SPAN>     <SPAN CLASS="comment">// device in the device array).</SPAN>
+<SPAN CLASS="linenum">0447:</SPAN>     <SPAN CLASS="keyword">for</SPAN>( DWORD a=0; a&lt;m_dwNumAdapters; a++ )
+<SPAN CLASS="linenum">0448:</SPAN>     {
+<SPAN CLASS="linenum">0449:</SPAN>         <SPAN CLASS="keyword">for</SPAN>( DWORD d=0; d &lt; m_Adapters[a].dwNumDevices; d++ )
+<SPAN CLASS="linenum">0450:</SPAN>         {
+<SPAN CLASS="linenum">0451:</SPAN>             <SPAN CLASS="keyword">if</SPAN>( m_Adapters[a].devices[d].bWindowed )
+<SPAN CLASS="linenum">0452:</SPAN>             {
+<SPAN CLASS="linenum">0453:</SPAN>                 m_Adapters[a].dwCurrentDevice = d;
+<SPAN CLASS="linenum">0454:</SPAN>                 m_dwAdapter = a;
+<SPAN CLASS="linenum">0455:</SPAN>                 m_bWindowed = TRUE;
+<SPAN CLASS="linenum">0456:</SPAN> 
+<SPAN CLASS="linenum">0457:</SPAN>                 <SPAN CLASS="comment">// Display a warning message</SPAN>
+<SPAN CLASS="linenum">0458:</SPAN>                 <SPAN CLASS="keyword">if</SPAN>( m_Adapters[a].devices[d].DeviceType == D3DDEVTYPE_REF )
+<SPAN CLASS="linenum">0459:</SPAN>                 {
+<SPAN CLASS="linenum">0460:</SPAN>                     <SPAN CLASS="keyword">if</SPAN>( !bHALExists )
+<SPAN CLASS="linenum">0461:</SPAN>                         DisplayErrorMsg( D3DAPPERR_NOHARDWAREDEVICE, MSGWARN_SWITCHEDTOREF );
+<SPAN CLASS="linenum">0462:</SPAN>                     <SPAN CLASS="keyword">else</SPAN> <SPAN CLASS="keyword">if</SPAN>( !bHALIsSampleCompatible )
+<SPAN CLASS="linenum">0463:</SPAN>                         DisplayErrorMsg( D3DAPPERR_HALNOTCOMPATIBLE, MSGWARN_SWITCHEDTOREF );
+<SPAN CLASS="linenum">0464:</SPAN>                     <SPAN CLASS="keyword">else</SPAN> <SPAN CLASS="keyword">if</SPAN>( !bHALIsWindowedCompatible )
+<SPAN CLASS="linenum">0465:</SPAN>                         DisplayErrorMsg( D3DAPPERR_NOWINDOWEDHAL, MSGWARN_SWITCHEDTOREF );
+<SPAN CLASS="linenum">0466:</SPAN>                     <SPAN CLASS="keyword">else</SPAN> <SPAN CLASS="keyword">if</SPAN>( !bHALIsDesktopCompatible )
+<SPAN CLASS="linenum">0467:</SPAN>                         DisplayErrorMsg( D3DAPPERR_NODESKTOPHAL, MSGWARN_SWITCHEDTOREF );
+<SPAN CLASS="linenum">0468:</SPAN>                     <SPAN CLASS="keyword">else</SPAN> <SPAN CLASS="comment">// HAL is desktop compatible, but not sample compatible</SPAN>
+<SPAN CLASS="linenum">0469:</SPAN>                         DisplayErrorMsg( D3DAPPERR_NOHALTHISMODE, MSGWARN_SWITCHEDTOREF );
+<SPAN CLASS="linenum">0470:</SPAN>                 }
+<SPAN CLASS="linenum">0471:</SPAN> 
+<SPAN CLASS="linenum">0472:</SPAN>                 <SPAN CLASS="keyword">return</SPAN> S_OK;
+<SPAN CLASS="linenum">0473:</SPAN>             }
+<SPAN CLASS="linenum">0474:</SPAN>         }
+<SPAN CLASS="linenum">0475:</SPAN>     }
+<SPAN CLASS="linenum">0476:</SPAN> 
+<SPAN CLASS="linenum">0477:</SPAN>     <SPAN CLASS="keyword">return</SPAN> D3DAPPERR_NOWINDOWABLEDEVICES;
+<SPAN CLASS="linenum">0478:</SPAN> }
+<SPAN CLASS="linenum">0479:</SPAN> 
+<SPAN CLASS="linenum">0480:</SPAN> 
+<SPAN CLASS="linenum">0481:</SPAN> 
+<SPAN CLASS="linenum">0482:</SPAN> 
+<SPAN CLASS="linenum">0483:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0484:</SPAN> <SPAN CLASS="comment">// Name: FindDepthStencilFormat()</SPAN>
+<SPAN CLASS="linenum">0485:</SPAN> <SPAN CLASS="comment">// Desc: Finds a depth/stencil format for the given device that is compatible</SPAN>
+<SPAN CLASS="linenum">0486:</SPAN> <SPAN CLASS="comment">//       with the render target format and meets the needs of the app.</SPAN>
+<SPAN CLASS="linenum">0487:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0488:</SPAN> BOOL CD3DApplication::FindDepthStencilFormat( UINT iAdapter, D3DDEVTYPE DeviceType,
+<SPAN CLASS="linenum">0489:</SPAN>     D3DFORMAT TargetFormat, D3DFORMAT* pDepthStencilFormat )
+<SPAN CLASS="linenum">0490:</SPAN> {
+<SPAN CLASS="linenum">0491:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( m_dwMinDepthBits &lt;= 16 &amp;&amp; m_dwMinStencilBits == 0 )
+<SPAN CLASS="linenum">0492:</SPAN>     {
+<SPAN CLASS="linenum">0493:</SPAN>         <SPAN CLASS="keyword">if</SPAN>( SUCCEEDED( m_pD3D-&gt;CheckDeviceFormat( iAdapter, DeviceType,
+<SPAN CLASS="linenum">0494:</SPAN>             TargetFormat, D3DUSAGE_DEPTHSTENCIL, D3DRTYPE_SURFACE, D3DFMT_D16 ) ) )
+<SPAN CLASS="linenum">0495:</SPAN>         {
+<SPAN CLASS="linenum">0496:</SPAN>             <SPAN CLASS="keyword">if</SPAN>( SUCCEEDED( m_pD3D-&gt;CheckDepthStencilMatch( iAdapter, DeviceType,
+<SPAN CLASS="linenum">0497:</SPAN>                 TargetFormat, TargetFormat, D3DFMT_D16 ) ) )
+<SPAN CLASS="linenum">0498:</SPAN>             {
+<SPAN CLASS="linenum">0499:</SPAN>                 *pDepthStencilFormat = D3DFMT_D16;
+<SPAN CLASS="linenum">0500:</SPAN>                 <SPAN CLASS="keyword">return</SPAN> TRUE;
+<SPAN CLASS="linenum">0501:</SPAN>             }
+<SPAN CLASS="linenum">0502:</SPAN>         }
+<SPAN CLASS="linenum">0503:</SPAN>     }
+<SPAN CLASS="linenum">0504:</SPAN> 
+<SPAN CLASS="linenum">0505:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( m_dwMinDepthBits &lt;= 15 &amp;&amp; m_dwMinStencilBits &lt;= 1 )
+<SPAN CLASS="linenum">0506:</SPAN>     {
+<SPAN CLASS="linenum">0507:</SPAN>         <SPAN CLASS="keyword">if</SPAN>( SUCCEEDED( m_pD3D-&gt;CheckDeviceFormat( iAdapter, DeviceType,
+<SPAN CLASS="linenum">0508:</SPAN>             TargetFormat, D3DUSAGE_DEPTHSTENCIL, D3DRTYPE_SURFACE, D3DFMT_D15S1 ) ) )
+<SPAN CLASS="linenum">0509:</SPAN>         {
+<SPAN CLASS="linenum">0510:</SPAN>             <SPAN CLASS="keyword">if</SPAN>( SUCCEEDED( m_pD3D-&gt;CheckDepthStencilMatch( iAdapter, DeviceType,
+<SPAN CLASS="linenum">0511:</SPAN>                 TargetFormat, TargetFormat, D3DFMT_D15S1 ) ) )
+<SPAN CLASS="linenum">0512:</SPAN>             {
+<SPAN CLASS="linenum">0513:</SPAN>                 *pDepthStencilFormat = D3DFMT_D15S1;
+<SPAN CLASS="linenum">0514:</SPAN>                 <SPAN CLASS="keyword">return</SPAN> TRUE;
+<SPAN CLASS="linenum">0515:</SPAN>             }
+<SPAN CLASS="linenum">0516:</SPAN>         }
+<SPAN CLASS="linenum">0517:</SPAN>     }
+<SPAN CLASS="linenum">0518:</SPAN> 
+<SPAN CLASS="linenum">0519:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( m_dwMinDepthBits &lt;= 24 &amp;&amp; m_dwMinStencilBits == 0 )
+<SPAN CLASS="linenum">0520:</SPAN>     {
+<SPAN CLASS="linenum">0521:</SPAN>         <SPAN CLASS="keyword">if</SPAN>( SUCCEEDED( m_pD3D-&gt;CheckDeviceFormat( iAdapter, DeviceType,
+<SPAN CLASS="linenum">0522:</SPAN>             TargetFormat, D3DUSAGE_DEPTHSTENCIL, D3DRTYPE_SURFACE, D3DFMT_D24X8 ) ) )
+<SPAN CLASS="linenum">0523:</SPAN>         {
+<SPAN CLASS="linenum">0524:</SPAN>             <SPAN CLASS="keyword">if</SPAN>( SUCCEEDED( m_pD3D-&gt;CheckDepthStencilMatch( iAdapter, DeviceType,
+<SPAN CLASS="linenum">0525:</SPAN>                 TargetFormat, TargetFormat, D3DFMT_D24X8 ) ) )
+<SPAN CLASS="linenum">0526:</SPAN>             {
+<SPAN CLASS="linenum">0527:</SPAN>                 *pDepthStencilFormat = D3DFMT_D24X8;
+<SPAN CLASS="linenum">0528:</SPAN>                 <SPAN CLASS="keyword">return</SPAN> TRUE;
+<SPAN CLASS="linenum">0529:</SPAN>             }
+<SPAN CLASS="linenum">0530:</SPAN>         }
+<SPAN CLASS="linenum">0531:</SPAN>     }
+<SPAN CLASS="linenum">0532:</SPAN> 
+<SPAN CLASS="linenum">0533:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( m_dwMinDepthBits &lt;= 24 &amp;&amp; m_dwMinStencilBits &lt;= 8 )
+<SPAN CLASS="linenum">0534:</SPAN>     {
+<SPAN CLASS="linenum">0535:</SPAN>         <SPAN CLASS="keyword">if</SPAN>( SUCCEEDED( m_pD3D-&gt;CheckDeviceFormat( iAdapter, DeviceType,
+<SPAN CLASS="linenum">0536:</SPAN>             TargetFormat, D3DUSAGE_DEPTHSTENCIL, D3DRTYPE_SURFACE, D3DFMT_D24S8 ) ) )
+<SPAN CLASS="linenum">0537:</SPAN>         {
+<SPAN CLASS="linenum">0538:</SPAN>             <SPAN CLASS="keyword">if</SPAN>( SUCCEEDED( m_pD3D-&gt;CheckDepthStencilMatch( iAdapter, DeviceType,
+<SPAN CLASS="linenum">0539:</SPAN>                 TargetFormat, TargetFormat, D3DFMT_D24S8 ) ) )
+<SPAN CLASS="linenum">0540:</SPAN>             {
+<SPAN CLASS="linenum">0541:</SPAN>                 *pDepthStencilFormat = D3DFMT_D24S8;
+<SPAN CLASS="linenum">0542:</SPAN>                 <SPAN CLASS="keyword">return</SPAN> TRUE;
+<SPAN CLASS="linenum">0543:</SPAN>             }
+<SPAN CLASS="linenum">0544:</SPAN>         }
+<SPAN CLASS="linenum">0545:</SPAN>     }
+<SPAN CLASS="linenum">0546:</SPAN> 
+<SPAN CLASS="linenum">0547:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( m_dwMinDepthBits &lt;= 24 &amp;&amp; m_dwMinStencilBits &lt;= 4 )
+<SPAN CLASS="linenum">0548:</SPAN>     {
+<SPAN CLASS="linenum">0549:</SPAN>         <SPAN CLASS="keyword">if</SPAN>( SUCCEEDED( m_pD3D-&gt;CheckDeviceFormat( iAdapter, DeviceType,
+<SPAN CLASS="linenum">0550:</SPAN>             TargetFormat, D3DUSAGE_DEPTHSTENCIL, D3DRTYPE_SURFACE, D3DFMT_D24X4S4 ) ) )
+<SPAN CLASS="linenum">0551:</SPAN>         {
+<SPAN CLASS="linenum">0552:</SPAN>             <SPAN CLASS="keyword">if</SPAN>( SUCCEEDED( m_pD3D-&gt;CheckDepthStencilMatch( iAdapter, DeviceType,
+<SPAN CLASS="linenum">0553:</SPAN>                 TargetFormat, TargetFormat, D3DFMT_D24X4S4 ) ) )
+<SPAN CLASS="linenum">0554:</SPAN>             {
+<SPAN CLASS="linenum">0555:</SPAN>                 *pDepthStencilFormat = D3DFMT_D24X4S4;
+<SPAN CLASS="linenum">0556:</SPAN>                 <SPAN CLASS="keyword">return</SPAN> TRUE;
+<SPAN CLASS="linenum">0557:</SPAN>             }
+<SPAN CLASS="linenum">0558:</SPAN>         }
+<SPAN CLASS="linenum">0559:</SPAN>     }
+<SPAN CLASS="linenum">0560:</SPAN> 
+<SPAN CLASS="linenum">0561:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( m_dwMinDepthBits &lt;= 32 &amp;&amp; m_dwMinStencilBits == 0 )
+<SPAN CLASS="linenum">0562:</SPAN>     {
+<SPAN CLASS="linenum">0563:</SPAN>         <SPAN CLASS="keyword">if</SPAN>( SUCCEEDED( m_pD3D-&gt;CheckDeviceFormat( iAdapter, DeviceType,
+<SPAN CLASS="linenum">0564:</SPAN>             TargetFormat, D3DUSAGE_DEPTHSTENCIL, D3DRTYPE_SURFACE, D3DFMT_D32 ) ) )
+<SPAN CLASS="linenum">0565:</SPAN>         {
+<SPAN CLASS="linenum">0566:</SPAN>             <SPAN CLASS="keyword">if</SPAN>( SUCCEEDED( m_pD3D-&gt;CheckDepthStencilMatch( iAdapter, DeviceType,
+<SPAN CLASS="linenum">0567:</SPAN>                 TargetFormat, TargetFormat, D3DFMT_D32 ) ) )
+<SPAN CLASS="linenum">0568:</SPAN>             {
+<SPAN CLASS="linenum">0569:</SPAN>                 *pDepthStencilFormat = D3DFMT_D32;
+<SPAN CLASS="linenum">0570:</SPAN>                 <SPAN CLASS="keyword">return</SPAN> TRUE;
+<SPAN CLASS="linenum">0571:</SPAN>             }
+<SPAN CLASS="linenum">0572:</SPAN>         }
+<SPAN CLASS="linenum">0573:</SPAN>     }
+<SPAN CLASS="linenum">0574:</SPAN> 
+<SPAN CLASS="linenum">0575:</SPAN>     <SPAN CLASS="keyword">return</SPAN> FALSE;
+<SPAN CLASS="linenum">0576:</SPAN> }
+<SPAN CLASS="linenum">0577:</SPAN> 
+<SPAN CLASS="linenum">0578:</SPAN> 
+<SPAN CLASS="linenum">0579:</SPAN> 
+<SPAN CLASS="linenum">0580:</SPAN> 
+<SPAN CLASS="linenum">0581:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0582:</SPAN> <SPAN CLASS="comment">// Name: MsgProc()</SPAN>
+<SPAN CLASS="linenum">0583:</SPAN> <SPAN CLASS="comment">// Desc: Message handling function.</SPAN>
+<SPAN CLASS="linenum">0584:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0585:</SPAN> LRESULT CD3DApplication::MsgProc( HWND hWnd, UINT uMsg, WPARAM wParam,
+<SPAN CLASS="linenum">0586:</SPAN>                                   LPARAM lParam )
+<SPAN CLASS="linenum">0587:</SPAN> {
+<SPAN CLASS="linenum">0588:</SPAN>     HRESULT hr;
+<SPAN CLASS="linenum">0589:</SPAN> 
+<SPAN CLASS="linenum">0590:</SPAN>     <SPAN CLASS="keyword">switch</SPAN>( uMsg )
+<SPAN CLASS="linenum">0591:</SPAN>     {
+<SPAN CLASS="linenum">0592:</SPAN>         <SPAN CLASS="keyword">case</SPAN> WM_PAINT:
+<SPAN CLASS="linenum">0593:</SPAN>             <SPAN CLASS="comment">// Handle paint messages when the app is not ready</SPAN>
+<SPAN CLASS="linenum">0594:</SPAN>             <SPAN CLASS="keyword">if</SPAN>( m_pd3dDevice &amp;&amp; !m_bReady )
+<SPAN CLASS="linenum">0595:</SPAN>             {
+<SPAN CLASS="linenum">0596:</SPAN>                 <SPAN CLASS="keyword">if</SPAN>( m_bWindowed )
+<SPAN CLASS="linenum">0597:</SPAN>                 {
+<SPAN CLASS="linenum">0598:</SPAN>                     Render();
+<SPAN CLASS="linenum">0599:</SPAN>                     m_pd3dDevice-&gt;Present( NULL, NULL, NULL, NULL );
+<SPAN CLASS="linenum">0600:</SPAN>                 }
+<SPAN CLASS="linenum">0601:</SPAN>             }
+<SPAN CLASS="linenum">0602:</SPAN>             <SPAN CLASS="keyword">break</SPAN>;
+<SPAN CLASS="linenum">0603:</SPAN> 
+<SPAN CLASS="linenum">0604:</SPAN>         <SPAN CLASS="keyword">case</SPAN> WM_ACTIVATEAPP:
+<SPAN CLASS="linenum">0605:</SPAN>             m_bHasFocus = (BOOL) wParam;
+<SPAN CLASS="linenum">0606:</SPAN>             <SPAN CLASS="keyword">break</SPAN>;
+<SPAN CLASS="linenum">0607:</SPAN> 
+<SPAN CLASS="linenum">0608:</SPAN>         <SPAN CLASS="keyword">case</SPAN> WM_GETMINMAXINFO:
+<SPAN CLASS="linenum">0609:</SPAN>             ((MINMAXINFO*)lParam)-&gt;ptMinTrackSize.x = 100;
+<SPAN CLASS="linenum">0610:</SPAN>             ((MINMAXINFO*)lParam)-&gt;ptMinTrackSize.y = 100;
+<SPAN CLASS="linenum">0611:</SPAN>             <SPAN CLASS="keyword">break</SPAN>;
+<SPAN CLASS="linenum">0612:</SPAN> 
+<SPAN CLASS="linenum">0613:</SPAN>         <SPAN CLASS="keyword">case</SPAN> WM_ENTERSIZEMOVE:
+<SPAN CLASS="linenum">0614:</SPAN>             <SPAN CLASS="comment">// Halt frame movement while the app is sizing or moving</SPAN>
+<SPAN CLASS="linenum">0615:</SPAN>             Pause( TRUE );
+<SPAN CLASS="linenum">0616:</SPAN>             <SPAN CLASS="keyword">break</SPAN>;
+<SPAN CLASS="linenum">0617:</SPAN> 
+<SPAN CLASS="linenum">0618:</SPAN>         <SPAN CLASS="keyword">case</SPAN> WM_SIZE:
+<SPAN CLASS="linenum">0619:</SPAN>             <SPAN CLASS="comment">// Check to see if we are losing our window...</SPAN>
+<SPAN CLASS="linenum">0620:</SPAN>             <SPAN CLASS="keyword">if</SPAN>( SIZE_MAXHIDE==wParam || SIZE_MINIMIZED==wParam )
+<SPAN CLASS="linenum">0621:</SPAN>             {
+<SPAN CLASS="linenum">0622:</SPAN>                 <SPAN CLASS="keyword">if</SPAN>( m_bClipCursorWhenFullscreen &amp;&amp; !m_bWindowed )
+<SPAN CLASS="linenum">0623:</SPAN>                     ClipCursor( NULL );
+<SPAN CLASS="linenum">0624:</SPAN>                 m_bActive = FALSE;
+<SPAN CLASS="linenum">0625:</SPAN>             }
+<SPAN CLASS="linenum">0626:</SPAN>             <SPAN CLASS="keyword">else</SPAN>
+<SPAN CLASS="linenum">0627:</SPAN>             {
+<SPAN CLASS="linenum">0628:</SPAN>                 m_bActive = TRUE;
+<SPAN CLASS="linenum">0629:</SPAN>             }
+<SPAN CLASS="linenum">0630:</SPAN>             <SPAN CLASS="keyword">break</SPAN>;
+<SPAN CLASS="linenum">0631:</SPAN> 
+<SPAN CLASS="linenum">0632:</SPAN>         <SPAN CLASS="keyword">case</SPAN> WM_EXITSIZEMOVE:
+<SPAN CLASS="linenum">0633:</SPAN>             Pause( FALSE );
+<SPAN CLASS="linenum">0634:</SPAN> 
+<SPAN CLASS="linenum">0635:</SPAN>             <SPAN CLASS="keyword">if</SPAN>( m_bActive &amp;&amp; m_bWindowed )
+<SPAN CLASS="linenum">0636:</SPAN>             {
+<SPAN CLASS="linenum">0637:</SPAN>                 RECT rcClientOld;
+<SPAN CLASS="linenum">0638:</SPAN>                 rcClientOld = m_rcWindowClient;
+<SPAN CLASS="linenum">0639:</SPAN> 
+<SPAN CLASS="linenum">0640:</SPAN>                 <SPAN CLASS="comment">// Update window properties</SPAN>
+<SPAN CLASS="linenum">0641:</SPAN>                 GetWindowRect( m_hWnd, &amp;m_rcWindowBounds );
+<SPAN CLASS="linenum">0642:</SPAN>                 GetClientRect( m_hWnd, &amp;m_rcWindowClient );
+<SPAN CLASS="linenum">0643:</SPAN> 
+<SPAN CLASS="linenum">0644:</SPAN>                 <SPAN CLASS="keyword">if</SPAN>( rcClientOld.right - rcClientOld.left !=
+<SPAN CLASS="linenum">0645:</SPAN>                     m_rcWindowClient.right - m_rcWindowClient.left ||
+<SPAN CLASS="linenum">0646:</SPAN>                     rcClientOld.bottom - rcClientOld.top !=
+<SPAN CLASS="linenum">0647:</SPAN>                     m_rcWindowClient.bottom - m_rcWindowClient.top)
+<SPAN CLASS="linenum">0648:</SPAN>                 {
+<SPAN CLASS="linenum">0649:</SPAN>                     <SPAN CLASS="comment">// A new window size will require a new backbuffer</SPAN>
+<SPAN CLASS="linenum">0650:</SPAN>                     <SPAN CLASS="comment">// size, so the 3D structures must be changed accordingly.</SPAN>
+<SPAN CLASS="linenum">0651:</SPAN>                     m_bReady = FALSE;
+<SPAN CLASS="linenum">0652:</SPAN> 
+<SPAN CLASS="linenum">0653:</SPAN>                     m_d3dpp.BackBufferWidth  = m_rcWindowClient.right - m_rcWindowClient.left;
+<SPAN CLASS="linenum">0654:</SPAN>                     m_d3dpp.BackBufferHeight = m_rcWindowClient.bottom - m_rcWindowClient.top;
+<SPAN CLASS="linenum">0655:</SPAN> 
+<SPAN CLASS="linenum">0656:</SPAN>                     <SPAN CLASS="comment">// Resize the 3D environment</SPAN>
+<SPAN CLASS="linenum">0657:</SPAN>                     <SPAN CLASS="keyword">if</SPAN>( FAILED( hr = Resize3DEnvironment() ) )
+<SPAN CLASS="linenum">0658:</SPAN>                     {
+<SPAN CLASS="linenum">0659:</SPAN>                         DisplayErrorMsg( D3DAPPERR_RESIZEFAILED, MSGERR_APPMUSTEXIT );
+<SPAN CLASS="linenum">0660:</SPAN>                         <SPAN CLASS="keyword">return</SPAN> 0;
+<SPAN CLASS="linenum">0661:</SPAN>                     }
+<SPAN CLASS="linenum">0662:</SPAN> 
+<SPAN CLASS="linenum">0663:</SPAN>                     m_bReady = TRUE;
+<SPAN CLASS="linenum">0664:</SPAN>                 }
+<SPAN CLASS="linenum">0665:</SPAN>             }
+<SPAN CLASS="linenum">0666:</SPAN> 
+<SPAN CLASS="linenum">0667:</SPAN>             <SPAN CLASS="keyword">break</SPAN>;
+<SPAN CLASS="linenum">0668:</SPAN> 
+<SPAN CLASS="linenum">0669:</SPAN>         <SPAN CLASS="keyword">case</SPAN> WM_SETCURSOR:
+<SPAN CLASS="linenum">0670:</SPAN>             <SPAN CLASS="comment">// Turn off Windows cursor in fullscreen mode</SPAN>
+<SPAN CLASS="linenum">0671:</SPAN>             <SPAN CLASS="keyword">if</SPAN>( m_bActive &amp;&amp; m_bReady &amp;&amp; !m_bWindowed )
+<SPAN CLASS="linenum">0672:</SPAN>             {
+<SPAN CLASS="linenum">0673:</SPAN>                 SetCursor( NULL );
+<SPAN CLASS="linenum">0674:</SPAN>                 <SPAN CLASS="keyword">if</SPAN>( m_bShowCursorWhenFullscreen )
+<SPAN CLASS="linenum">0675:</SPAN>                     m_pd3dDevice-&gt;ShowCursor( TRUE );
+<SPAN CLASS="linenum">0676:</SPAN>                 <SPAN CLASS="keyword">return</SPAN> TRUE; <SPAN CLASS="comment">// prevent Windows from setting cursor to window class cursor</SPAN>
+<SPAN CLASS="linenum">0677:</SPAN>             }
+<SPAN CLASS="linenum">0678:</SPAN>             <SPAN CLASS="keyword">break</SPAN>;
+<SPAN CLASS="linenum">0679:</SPAN> 
+<SPAN CLASS="linenum">0680:</SPAN>          <SPAN CLASS="keyword">case</SPAN> WM_MOUSEMOVE:
+<SPAN CLASS="linenum">0681:</SPAN>             <SPAN CLASS="keyword">if</SPAN>( m_bActive &amp;&amp; m_bReady &amp;&amp; m_pd3dDevice != NULL )
+<SPAN CLASS="linenum">0682:</SPAN>             {
+<SPAN CLASS="linenum">0683:</SPAN>                 POINT ptCursor;
+<SPAN CLASS="linenum">0684:</SPAN>                 GetCursorPos( &amp;ptCursor );
+<SPAN CLASS="linenum">0685:</SPAN>                 <SPAN CLASS="keyword">if</SPAN>( !m_bWindowed )
+<SPAN CLASS="linenum">0686:</SPAN>                     ScreenToClient( m_hWnd, &amp;ptCursor );
+<SPAN CLASS="linenum">0687:</SPAN>                 m_pd3dDevice-&gt;SetCursorPosition( ptCursor.x, ptCursor.y, 0L );
+<SPAN CLASS="linenum">0688:</SPAN>             }
+<SPAN CLASS="linenum">0689:</SPAN>             <SPAN CLASS="keyword">break</SPAN>;
+<SPAN CLASS="linenum">0690:</SPAN> 
+<SPAN CLASS="linenum">0691:</SPAN>        <SPAN CLASS="keyword">case</SPAN> WM_ENTERMENULOOP:
+<SPAN CLASS="linenum">0692:</SPAN>             <SPAN CLASS="comment">// Pause the app when menus are displayed</SPAN>
+<SPAN CLASS="linenum">0693:</SPAN>             Pause(TRUE);
+<SPAN CLASS="linenum">0694:</SPAN>             <SPAN CLASS="keyword">break</SPAN>;
+<SPAN CLASS="linenum">0695:</SPAN> 
+<SPAN CLASS="linenum">0696:</SPAN>         <SPAN CLASS="keyword">case</SPAN> WM_EXITMENULOOP:
+<SPAN CLASS="linenum">0697:</SPAN>             Pause(FALSE);
+<SPAN CLASS="linenum">0698:</SPAN>             <SPAN CLASS="keyword">break</SPAN>;
+<SPAN CLASS="linenum">0699:</SPAN> 
+<SPAN CLASS="linenum">0700:</SPAN>         <SPAN CLASS="keyword">case</SPAN> WM_CONTEXTMENU:
+<SPAN CLASS="linenum">0701:</SPAN>             <SPAN CLASS="comment">// No context menus allowed in fullscreen mode</SPAN>
+<SPAN CLASS="linenum">0702:</SPAN>             <SPAN CLASS="keyword">if</SPAN>( m_bWindowed == FALSE )
+<SPAN CLASS="linenum">0703:</SPAN>                 <SPAN CLASS="keyword">break</SPAN>;
+<SPAN CLASS="linenum">0704:</SPAN> 
+<SPAN CLASS="linenum">0705:</SPAN>             <SPAN CLASS="comment">// Handle the app's context menu (via right mouse click)</SPAN>
+<SPAN CLASS="linenum">0706:</SPAN>             TrackPopupMenuEx( GetSubMenu( LoadMenu( 0, MAKEINTRESOURCE(IDR_POPUP) ), 0 ),
+<SPAN CLASS="linenum">0707:</SPAN>                               TPM_VERTICAL, LOWORD(lParam), HIWORD(lParam), hWnd, NULL );
+<SPAN CLASS="linenum">0708:</SPAN>             <SPAN CLASS="keyword">break</SPAN>;
+<SPAN CLASS="linenum">0709:</SPAN> 
+<SPAN CLASS="linenum">0710:</SPAN>         <SPAN CLASS="keyword">case</SPAN> WM_NCHITTEST:
+<SPAN CLASS="linenum">0711:</SPAN>             <SPAN CLASS="comment">// Prevent the user from selecting the menu in fullscreen mode</SPAN>
+<SPAN CLASS="linenum">0712:</SPAN>             <SPAN CLASS="keyword">if</SPAN>( !m_bWindowed )
+<SPAN CLASS="linenum">0713:</SPAN>                 <SPAN CLASS="keyword">return</SPAN> HTCLIENT;
+<SPAN CLASS="linenum">0714:</SPAN> 
+<SPAN CLASS="linenum">0715:</SPAN>             <SPAN CLASS="keyword">break</SPAN>;
+<SPAN CLASS="linenum">0716:</SPAN> 
+<SPAN CLASS="linenum">0717:</SPAN>         <SPAN CLASS="keyword">case</SPAN> WM_POWERBROADCAST:
+<SPAN CLASS="linenum">0718:</SPAN>             <SPAN CLASS="keyword">switch</SPAN>( wParam )
+<SPAN CLASS="linenum">0719:</SPAN>             {
+<SPAN CLASS="linenum">0720:</SPAN>                 <SPAN CLASS="keyword">#ifndef</SPAN> PBT_APMQUERYSUSPEND
+<SPAN CLASS="linenum">0721:</SPAN>                     <SPAN CLASS="keyword">#define</SPAN> PBT_APMQUERYSUSPEND 0x0000
+<SPAN CLASS="linenum">0722:</SPAN>                 <SPAN CLASS="keyword">#endif</SPAN>
+<SPAN CLASS="linenum">0723:</SPAN>                 <SPAN CLASS="keyword">case</SPAN> PBT_APMQUERYSUSPEND:
+<SPAN CLASS="linenum">0724:</SPAN>                     <SPAN CLASS="comment">// At this point, the app should save any data for open</SPAN>
+<SPAN CLASS="linenum">0725:</SPAN>                     <SPAN CLASS="comment">// network connections, files, etc., and prepare to go into</SPAN>
+<SPAN CLASS="linenum">0726:</SPAN>                     <SPAN CLASS="comment">// a suspended mode.</SPAN>
+<SPAN CLASS="linenum">0727:</SPAN>                     <SPAN CLASS="keyword">return</SPAN> TRUE;
+<SPAN CLASS="linenum">0728:</SPAN> 
+<SPAN CLASS="linenum">0729:</SPAN>                 <SPAN CLASS="keyword">#ifndef</SPAN> PBT_APMRESUMESUSPEND
+<SPAN CLASS="linenum">0730:</SPAN>                     <SPAN CLASS="keyword">#define</SPAN> PBT_APMRESUMESUSPEND 0x0007
+<SPAN CLASS="linenum">0731:</SPAN>                 <SPAN CLASS="keyword">#endif</SPAN>
+<SPAN CLASS="linenum">0732:</SPAN>                 <SPAN CLASS="keyword">case</SPAN> PBT_APMRESUMESUSPEND:
+<SPAN CLASS="linenum">0733:</SPAN>                     <SPAN CLASS="comment">// At this point, the app should recover any data, network</SPAN>
+<SPAN CLASS="linenum">0734:</SPAN>                     <SPAN CLASS="comment">// connections, files, etc., and resume running from when</SPAN>
+<SPAN CLASS="linenum">0735:</SPAN>                     <SPAN CLASS="comment">// the app was suspended.</SPAN>
+<SPAN CLASS="linenum">0736:</SPAN>                     <SPAN CLASS="keyword">return</SPAN> TRUE;
+<SPAN CLASS="linenum">0737:</SPAN>             }
+<SPAN CLASS="linenum">0738:</SPAN>             <SPAN CLASS="keyword">break</SPAN>;
+<SPAN CLASS="linenum">0739:</SPAN> 
+<SPAN CLASS="linenum">0740:</SPAN>         <SPAN CLASS="keyword">case</SPAN> WM_SYSCOMMAND:
+<SPAN CLASS="linenum">0741:</SPAN>             <SPAN CLASS="comment">// Prevent moving/sizing and power loss in fullscreen mode</SPAN>
+<SPAN CLASS="linenum">0742:</SPAN>             <SPAN CLASS="keyword">switch</SPAN>( wParam )
+<SPAN CLASS="linenum">0743:</SPAN>             {
+<SPAN CLASS="linenum">0744:</SPAN>                 <SPAN CLASS="keyword">case</SPAN> SC_MOVE:
+<SPAN CLASS="linenum">0745:</SPAN>                 <SPAN CLASS="keyword">case</SPAN> SC_SIZE:
+<SPAN CLASS="linenum">0746:</SPAN>                 <SPAN CLASS="keyword">case</SPAN> SC_MAXIMIZE:
+<SPAN CLASS="linenum">0747:</SPAN>                 <SPAN CLASS="keyword">case</SPAN> SC_KEYMENU:
+<SPAN CLASS="linenum">0748:</SPAN>                 <SPAN CLASS="keyword">case</SPAN> SC_MONITORPOWER:
+<SPAN CLASS="linenum">0749:</SPAN>                     <SPAN CLASS="keyword">if</SPAN>( FALSE == m_bWindowed )
+<SPAN CLASS="linenum">0750:</SPAN>                         <SPAN CLASS="keyword">return</SPAN> 1;
+<SPAN CLASS="linenum">0751:</SPAN>                     <SPAN CLASS="keyword">break</SPAN>;
+<SPAN CLASS="linenum">0752:</SPAN>             }
+<SPAN CLASS="linenum">0753:</SPAN>             <SPAN CLASS="keyword">break</SPAN>;
+<SPAN CLASS="linenum">0754:</SPAN> 
+<SPAN CLASS="linenum">0755:</SPAN>         <SPAN CLASS="keyword">case</SPAN> WM_COMMAND:
+<SPAN CLASS="linenum">0756:</SPAN>             <SPAN CLASS="keyword">switch</SPAN>( LOWORD(wParam) )
+<SPAN CLASS="linenum">0757:</SPAN>             {
+<SPAN CLASS="linenum">0758:</SPAN>                 <SPAN CLASS="keyword">case</SPAN> IDM_CHANGEDEVICE:
+<SPAN CLASS="linenum">0759:</SPAN>                     <SPAN CLASS="comment">// Prompt the user to select a new device or mode</SPAN>
+<SPAN CLASS="linenum">0760:</SPAN>                     <SPAN CLASS="keyword">if</SPAN>( m_bActive &amp;&amp; m_bReady )
+<SPAN CLASS="linenum">0761:</SPAN>                     {
+<SPAN CLASS="linenum">0762:</SPAN>                         Pause(TRUE);
+<SPAN CLASS="linenum">0763:</SPAN> 
+<SPAN CLASS="linenum">0764:</SPAN>                         <SPAN CLASS="keyword">if</SPAN>( FAILED( hr = UserSelectNewDevice() ) )
+<SPAN CLASS="linenum">0765:</SPAN>                             <SPAN CLASS="keyword">return</SPAN> 0;
+<SPAN CLASS="linenum">0766:</SPAN> 
+<SPAN CLASS="linenum">0767:</SPAN>                         Pause(FALSE);
+<SPAN CLASS="linenum">0768:</SPAN>                     }
+<SPAN CLASS="linenum">0769:</SPAN>                     <SPAN CLASS="keyword">return</SPAN> 0;
+<SPAN CLASS="linenum">0770:</SPAN> 
+<SPAN CLASS="linenum">0771:</SPAN>                 <SPAN CLASS="keyword">case</SPAN> IDM_TOGGLEFULLSCREEN:
+<SPAN CLASS="linenum">0772:</SPAN>                     <SPAN CLASS="comment">// Toggle the fullscreen/window mode</SPAN>
+<SPAN CLASS="linenum">0773:</SPAN>                     <SPAN CLASS="keyword">if</SPAN>( m_bActive &amp;&amp; m_bReady )
+<SPAN CLASS="linenum">0774:</SPAN>                     {
+<SPAN CLASS="linenum">0775:</SPAN>                         Pause( TRUE );
+<SPAN CLASS="linenum">0776:</SPAN>                         
+<SPAN CLASS="linenum">0777:</SPAN>                         <SPAN CLASS="keyword">if</SPAN>( FAILED( ToggleFullscreen() ) )
+<SPAN CLASS="linenum">0778:</SPAN>                         {
+<SPAN CLASS="linenum">0779:</SPAN>                             DisplayErrorMsg( D3DAPPERR_RESIZEFAILED, MSGERR_APPMUSTEXIT );
+<SPAN CLASS="linenum">0780:</SPAN>                             <SPAN CLASS="keyword">return</SPAN> 0;
+<SPAN CLASS="linenum">0781:</SPAN>                         }
+<SPAN CLASS="linenum">0782:</SPAN> 
+<SPAN CLASS="linenum">0783:</SPAN>                         Pause( FALSE );                        
+<SPAN CLASS="linenum">0784:</SPAN>                     }
+<SPAN CLASS="linenum">0785:</SPAN>                     <SPAN CLASS="keyword">return</SPAN> 0;
+<SPAN CLASS="linenum">0786:</SPAN> 
+<SPAN CLASS="linenum">0787:</SPAN>                 <SPAN CLASS="keyword">case</SPAN> IDM_EXIT:
+<SPAN CLASS="linenum">0788:</SPAN>                     <SPAN CLASS="comment">// Recieved key/menu command to exit app</SPAN>
+<SPAN CLASS="linenum">0789:</SPAN>                     SendMessage( hWnd, WM_CLOSE, 0, 0 );
+<SPAN CLASS="linenum">0790:</SPAN>                     <SPAN CLASS="keyword">return</SPAN> 0;
+<SPAN CLASS="linenum">0791:</SPAN>             }
+<SPAN CLASS="linenum">0792:</SPAN>             <SPAN CLASS="keyword">break</SPAN>;
+<SPAN CLASS="linenum">0793:</SPAN> 
+<SPAN CLASS="linenum">0794:</SPAN>         <SPAN CLASS="keyword">case</SPAN> WM_CLOSE:
+<SPAN CLASS="linenum">0795:</SPAN>             Cleanup3DEnvironment();
+<SPAN CLASS="linenum">0796:</SPAN>             DestroyMenu( GetMenu(hWnd) );
+<SPAN CLASS="linenum">0797:</SPAN>             DestroyWindow( hWnd );
+<SPAN CLASS="linenum">0798:</SPAN>             PostQuitMessage(0);
+<SPAN CLASS="linenum">0799:</SPAN>             <SPAN CLASS="keyword">return</SPAN> 0;
+<SPAN CLASS="linenum">0800:</SPAN>     }
+<SPAN CLASS="linenum">0801:</SPAN> 
+<SPAN CLASS="linenum">0802:</SPAN>     <SPAN CLASS="keyword">return</SPAN> DefWindowProc( hWnd, uMsg, wParam, lParam );
+<SPAN CLASS="linenum">0803:</SPAN> }
+<SPAN CLASS="linenum">0804:</SPAN> 
+<SPAN CLASS="linenum">0805:</SPAN> 
+<SPAN CLASS="linenum">0806:</SPAN> 
+<SPAN CLASS="linenum">0807:</SPAN> 
+<SPAN CLASS="linenum">0808:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0809:</SPAN> <SPAN CLASS="comment">// Name: Initialize3DEnvironment()</SPAN>
+<SPAN CLASS="linenum">0810:</SPAN> <SPAN CLASS="comment">// Desc:</SPAN>
+<SPAN CLASS="linenum">0811:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0812:</SPAN> HRESULT CD3DApplication::Initialize3DEnvironment()
+<SPAN CLASS="linenum">0813:</SPAN> {
+<SPAN CLASS="linenum">0814:</SPAN>     HRESULT hr;
+<SPAN CLASS="linenum">0815:</SPAN> 
+<SPAN CLASS="linenum">0816:</SPAN>     D3DAdapterInfo* pAdapterInfo = &amp;m_Adapters[m_dwAdapter];
+<SPAN CLASS="linenum">0817:</SPAN>     D3DDeviceInfo*  pDeviceInfo  = &amp;pAdapterInfo-&gt;devices[pAdapterInfo-&gt;dwCurrentDevice];
+<SPAN CLASS="linenum">0818:</SPAN>     D3DModeInfo*    pModeInfo    = &amp;pDeviceInfo-&gt;modes[pDeviceInfo-&gt;dwCurrentMode];
+<SPAN CLASS="linenum">0819:</SPAN> 
+<SPAN CLASS="linenum">0820:</SPAN>     <SPAN CLASS="comment">// Prepare window for possible windowed/fullscreen change</SPAN>
+<SPAN CLASS="linenum">0821:</SPAN>     AdjustWindowForChange();
+<SPAN CLASS="linenum">0822:</SPAN> 
+<SPAN CLASS="linenum">0823:</SPAN>     <SPAN CLASS="comment">// Set up the presentation parameters</SPAN>
+<SPAN CLASS="linenum">0824:</SPAN>     ZeroMemory( &amp;m_d3dpp, <SPAN CLASS="keyword">sizeof</SPAN>(m_d3dpp) );
+<SPAN CLASS="linenum">0825:</SPAN>     m_d3dpp.Windowed               = pDeviceInfo-&gt;bWindowed;
+<SPAN CLASS="linenum">0826:</SPAN>     m_d3dpp.BackBufferCount        = 1;
+<SPAN CLASS="linenum">0827:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( pDeviceInfo-&gt;bWindowed )
+<SPAN CLASS="linenum">0828:</SPAN>         m_d3dpp.MultiSampleType    = pDeviceInfo-&gt;MultiSampleTypeWindowed;
+<SPAN CLASS="linenum">0829:</SPAN>     <SPAN CLASS="keyword">else</SPAN>
+<SPAN CLASS="linenum">0830:</SPAN>         m_d3dpp.MultiSampleType    = pDeviceInfo-&gt;MultiSampleTypeFullscreen;
+<SPAN CLASS="linenum">0831:</SPAN>     m_d3dpp.SwapEffect             = D3DSWAPEFFECT_DISCARD;
+<SPAN CLASS="linenum">0832:</SPAN>     m_d3dpp.EnableAutoDepthStencil = m_bUseDepthBuffer;
+<SPAN CLASS="linenum">0833:</SPAN>     m_d3dpp.AutoDepthStencilFormat = pModeInfo-&gt;DepthStencilFormat;
+<SPAN CLASS="linenum">0834:</SPAN>     m_d3dpp.hDeviceWindow          = m_hWnd;
+<SPAN CLASS="linenum">0835:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( m_bWindowed )
+<SPAN CLASS="linenum">0836:</SPAN>     {
+<SPAN CLASS="linenum">0837:</SPAN>         m_d3dpp.BackBufferWidth  = m_rcWindowClient.right - m_rcWindowClient.left;
+<SPAN CLASS="linenum">0838:</SPAN>         m_d3dpp.BackBufferHeight = m_rcWindowClient.bottom - m_rcWindowClient.top;
+<SPAN CLASS="linenum">0839:</SPAN>         m_d3dpp.BackBufferFormat = pAdapterInfo-&gt;d3ddmDesktop.Format;
+<SPAN CLASS="linenum">0840:</SPAN>     }
+<SPAN CLASS="linenum">0841:</SPAN>     <SPAN CLASS="keyword">else</SPAN>
+<SPAN CLASS="linenum">0842:</SPAN>     {
+<SPAN CLASS="linenum">0843:</SPAN>         m_d3dpp.BackBufferWidth  = pModeInfo-&gt;Width;
+<SPAN CLASS="linenum">0844:</SPAN>         m_d3dpp.BackBufferHeight = pModeInfo-&gt;Height;
+<SPAN CLASS="linenum">0845:</SPAN>         m_d3dpp.BackBufferFormat = pModeInfo-&gt;Format;
+<SPAN CLASS="linenum">0846:</SPAN>     }
+<SPAN CLASS="linenum">0847:</SPAN> 
+<SPAN CLASS="linenum">0848:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( pDeviceInfo-&gt;d3dCaps.PrimitiveMiscCaps &amp; D3DPMISCCAPS_NULLREFERENCE )
+<SPAN CLASS="linenum">0849:</SPAN>     {
+<SPAN CLASS="linenum">0850:</SPAN>         <SPAN CLASS="comment">// Warn user about null ref device that can't render anything</SPAN>
+<SPAN CLASS="linenum">0851:</SPAN>         DisplayErrorMsg( D3DAPPERR_NULLREFDEVICE, 0 );
+<SPAN CLASS="linenum">0852:</SPAN>     }
+<SPAN CLASS="linenum">0853:</SPAN> 
+<SPAN CLASS="linenum">0854:</SPAN>     <SPAN CLASS="comment">// Create the device</SPAN>
+<SPAN CLASS="linenum">0855:</SPAN>     hr = m_pD3D-&gt;CreateDevice( m_dwAdapter, pDeviceInfo-&gt;DeviceType,
+<SPAN CLASS="linenum">0856:</SPAN>                                m_hWndFocus, pModeInfo-&gt;dwBehavior, &amp;m_d3dpp,
+<SPAN CLASS="linenum">0857:</SPAN>                                &amp;m_pd3dDevice );
+<SPAN CLASS="linenum">0858:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( SUCCEEDED(hr) )
+<SPAN CLASS="linenum">0859:</SPAN>     {
+<SPAN CLASS="linenum">0860:</SPAN>         <SPAN CLASS="comment">// When moving from fullscreen to windowed mode, it is important to</SPAN>
+<SPAN CLASS="linenum">0861:</SPAN>         <SPAN CLASS="comment">// adjust the window size after recreating the device rather than</SPAN>
+<SPAN CLASS="linenum">0862:</SPAN>         <SPAN CLASS="comment">// beforehand to ensure that you get the window size you want.  For</SPAN>
+<SPAN CLASS="linenum">0863:</SPAN>         <SPAN CLASS="comment">// example, when switching from 640x480 fullscreen to windowed with</SPAN>
+<SPAN CLASS="linenum">0864:</SPAN>         <SPAN CLASS="comment">// a 1000x600 window on a 1024x768 desktop, it is impossible to set</SPAN>
+<SPAN CLASS="linenum">0865:</SPAN>         <SPAN CLASS="comment">// the window size to 1000x600 until after the display mode has</SPAN>
+<SPAN CLASS="linenum">0866:</SPAN>         <SPAN CLASS="comment">// changed to 1024x768, because windows cannot be larger than the</SPAN>
+<SPAN CLASS="linenum">0867:</SPAN>         <SPAN CLASS="comment">// desktop.</SPAN>
+<SPAN CLASS="linenum">0868:</SPAN>         <SPAN CLASS="keyword">if</SPAN>( m_bWindowed )
+<SPAN CLASS="linenum">0869:</SPAN>         {
+<SPAN CLASS="linenum">0870:</SPAN>             SetWindowPos( m_hWnd, HWND_NOTOPMOST,
+<SPAN CLASS="linenum">0871:</SPAN>                           m_rcWindowBounds.left, m_rcWindowBounds.top,
+<SPAN CLASS="linenum">0872:</SPAN>                           ( m_rcWindowBounds.right - m_rcWindowBounds.left ),
+<SPAN CLASS="linenum">0873:</SPAN>                           ( m_rcWindowBounds.bottom - m_rcWindowBounds.top ),
+<SPAN CLASS="linenum">0874:</SPAN>                           SWP_SHOWWINDOW );
+<SPAN CLASS="linenum">0875:</SPAN>         }
+<SPAN CLASS="linenum">0876:</SPAN> 
+<SPAN CLASS="linenum">0877:</SPAN>         <SPAN CLASS="comment">// Store device Caps</SPAN>
+<SPAN CLASS="linenum">0878:</SPAN>         m_pd3dDevice-&gt;GetDeviceCaps( &amp;m_d3dCaps );
+<SPAN CLASS="linenum">0879:</SPAN>         m_dwCreateFlags = pModeInfo-&gt;dwBehavior;
+<SPAN CLASS="linenum">0880:</SPAN> 
+<SPAN CLASS="linenum">0881:</SPAN>         <SPAN CLASS="comment">// Store device description</SPAN>
+<SPAN CLASS="linenum">0882:</SPAN>         <SPAN CLASS="keyword">if</SPAN>( pDeviceInfo-&gt;DeviceType == D3DDEVTYPE_REF )
+<SPAN CLASS="linenum">0883:</SPAN>             lstrcpy( m_strDeviceStats, TEXT("<SPAN CLASS="string">REF</SPAN>") );
+<SPAN CLASS="linenum">0884:</SPAN>         <SPAN CLASS="keyword">else</SPAN> <SPAN CLASS="keyword">if</SPAN>( pDeviceInfo-&gt;DeviceType == D3DDEVTYPE_HAL )
+<SPAN CLASS="linenum">0885:</SPAN>             lstrcpy( m_strDeviceStats, TEXT("<SPAN CLASS="string">HAL</SPAN>") );
+<SPAN CLASS="linenum">0886:</SPAN>         <SPAN CLASS="keyword">else</SPAN> <SPAN CLASS="keyword">if</SPAN>( pDeviceInfo-&gt;DeviceType == D3DDEVTYPE_SW )
+<SPAN CLASS="linenum">0887:</SPAN>             lstrcpy( m_strDeviceStats, TEXT("<SPAN CLASS="string">SW</SPAN>") );
+<SPAN CLASS="linenum">0888:</SPAN> 
+<SPAN CLASS="linenum">0889:</SPAN>         <SPAN CLASS="keyword">if</SPAN>( pModeInfo-&gt;dwBehavior &amp; D3DCREATE_HARDWARE_VERTEXPROCESSING &amp;&amp;
+<SPAN CLASS="linenum">0890:</SPAN>             pModeInfo-&gt;dwBehavior &amp; D3DCREATE_PUREDEVICE )
+<SPAN CLASS="linenum">0891:</SPAN>         {
+<SPAN CLASS="linenum">0892:</SPAN>             <SPAN CLASS="keyword">if</SPAN>( pDeviceInfo-&gt;DeviceType == D3DDEVTYPE_HAL )
+<SPAN CLASS="linenum">0893:</SPAN>                 lstrcat( m_strDeviceStats, TEXT("<SPAN CLASS="string"> (pure hw vp)</SPAN>") );
+<SPAN CLASS="linenum">0894:</SPAN>             <SPAN CLASS="keyword">else</SPAN>
+<SPAN CLASS="linenum">0895:</SPAN>                 lstrcat( m_strDeviceStats, TEXT("<SPAN CLASS="string"> (simulated pure hw vp)</SPAN>") );
+<SPAN CLASS="linenum">0896:</SPAN>         }
+<SPAN CLASS="linenum">0897:</SPAN>         <SPAN CLASS="keyword">else</SPAN> <SPAN CLASS="keyword">if</SPAN>( pModeInfo-&gt;dwBehavior &amp; D3DCREATE_HARDWARE_VERTEXPROCESSING )
+<SPAN CLASS="linenum">0898:</SPAN>         {
+<SPAN CLASS="linenum">0899:</SPAN>             <SPAN CLASS="keyword">if</SPAN>( pDeviceInfo-&gt;DeviceType == D3DDEVTYPE_HAL )
+<SPAN CLASS="linenum">0900:</SPAN>                 lstrcat( m_strDeviceStats, TEXT("<SPAN CLASS="string"> (hw vp)</SPAN>") );
+<SPAN CLASS="linenum">0901:</SPAN>             <SPAN CLASS="keyword">else</SPAN>
+<SPAN CLASS="linenum">0902:</SPAN>                 lstrcat( m_strDeviceStats, TEXT("<SPAN CLASS="string"> (simulated hw vp)</SPAN>") );
+<SPAN CLASS="linenum">0903:</SPAN>         }
+<SPAN CLASS="linenum">0904:</SPAN>         <SPAN CLASS="keyword">else</SPAN> <SPAN CLASS="keyword">if</SPAN>( pModeInfo-&gt;dwBehavior &amp; D3DCREATE_MIXED_VERTEXPROCESSING )
+<SPAN CLASS="linenum">0905:</SPAN>         {
+<SPAN CLASS="linenum">0906:</SPAN>             <SPAN CLASS="keyword">if</SPAN>( pDeviceInfo-&gt;DeviceType == D3DDEVTYPE_HAL )
+<SPAN CLASS="linenum">0907:</SPAN>                 lstrcat( m_strDeviceStats, TEXT("<SPAN CLASS="string"> (mixed vp)</SPAN>") );
+<SPAN CLASS="linenum">0908:</SPAN>             <SPAN CLASS="keyword">else</SPAN>
+<SPAN CLASS="linenum">0909:</SPAN>                 lstrcat( m_strDeviceStats, TEXT("<SPAN CLASS="string"> (simulated mixed vp)</SPAN>") );
+<SPAN CLASS="linenum">0910:</SPAN>         }
+<SPAN CLASS="linenum">0911:</SPAN>         <SPAN CLASS="keyword">else</SPAN> <SPAN CLASS="keyword">if</SPAN>( pModeInfo-&gt;dwBehavior &amp; D3DCREATE_SOFTWARE_VERTEXPROCESSING )
+<SPAN CLASS="linenum">0912:</SPAN>         {
+<SPAN CLASS="linenum">0913:</SPAN>             lstrcat( m_strDeviceStats, TEXT("<SPAN CLASS="string"> (sw vp)</SPAN>") );
+<SPAN CLASS="linenum">0914:</SPAN>         }
+<SPAN CLASS="linenum">0915:</SPAN> 
+<SPAN CLASS="linenum">0916:</SPAN>         <SPAN CLASS="keyword">if</SPAN>( pDeviceInfo-&gt;DeviceType == D3DDEVTYPE_HAL )
+<SPAN CLASS="linenum">0917:</SPAN>         {
+<SPAN CLASS="linenum">0918:</SPAN>             lstrcat( m_strDeviceStats, TEXT("<SPAN CLASS="string">: </SPAN>") );
+<SPAN CLASS="linenum">0919:</SPAN>             lstrcat( m_strDeviceStats, pAdapterInfo-&gt;d3dAdapterIdentifier.Description );
+<SPAN CLASS="linenum">0920:</SPAN>         }
+<SPAN CLASS="linenum">0921:</SPAN> 
+<SPAN CLASS="linenum">0922:</SPAN>         <SPAN CLASS="comment">// Store render target surface desc</SPAN>
+<SPAN CLASS="linenum">0923:</SPAN>         LPDIRECT3DSURFACE8 pBackBuffer;
+<SPAN CLASS="linenum">0924:</SPAN>         m_pd3dDevice-&gt;GetBackBuffer( 0, D3DBACKBUFFER_TYPE_MONO, &amp;pBackBuffer );
+<SPAN CLASS="linenum">0925:</SPAN>         pBackBuffer-&gt;GetDesc( &amp;m_d3dsdBackBuffer );
+<SPAN CLASS="linenum">0926:</SPAN>         pBackBuffer-&gt;Release();
+<SPAN CLASS="linenum">0927:</SPAN> 
+<SPAN CLASS="linenum">0928:</SPAN>         <SPAN CLASS="comment">// Set up the fullscreen cursor</SPAN>
+<SPAN CLASS="linenum">0929:</SPAN>         <SPAN CLASS="keyword">if</SPAN>( m_bShowCursorWhenFullscreen &amp;&amp; !m_bWindowed )
+<SPAN CLASS="linenum">0930:</SPAN>         {
+<SPAN CLASS="linenum">0931:</SPAN>             HCURSOR hCursor;
+<SPAN CLASS="linenum">0932:</SPAN> <SPAN CLASS="keyword">#ifdef</SPAN> _WIN64
+<SPAN CLASS="linenum">0933:</SPAN>             hCursor = (HCURSOR)GetClassLongPtr( m_hWnd, GCLP_HCURSOR );
+<SPAN CLASS="linenum">0934:</SPAN> <SPAN CLASS="keyword">#else</SPAN>
+<SPAN CLASS="linenum">0935:</SPAN>             hCursor = (HCURSOR)GetClassLong( m_hWnd, GCL_HCURSOR );
+<SPAN CLASS="linenum">0936:</SPAN> <SPAN CLASS="keyword">#endif</SPAN>
+<SPAN CLASS="linenum">0937:</SPAN>             D3DUtil_SetDeviceCursor( m_pd3dDevice, hCursor, TRUE );
+<SPAN CLASS="linenum">0938:</SPAN>             m_pd3dDevice-&gt;ShowCursor( TRUE );
+<SPAN CLASS="linenum">0939:</SPAN>         }
+<SPAN CLASS="linenum">0940:</SPAN> 
+<SPAN CLASS="linenum">0941:</SPAN>         <SPAN CLASS="comment">// Confine cursor to fullscreen window</SPAN>
+<SPAN CLASS="linenum">0942:</SPAN>         <SPAN CLASS="keyword">if</SPAN>( m_bClipCursorWhenFullscreen )
+<SPAN CLASS="linenum">0943:</SPAN>         {
+<SPAN CLASS="linenum">0944:</SPAN>             <SPAN CLASS="keyword">if</SPAN> (!m_bWindowed )
+<SPAN CLASS="linenum">0945:</SPAN>             {
+<SPAN CLASS="linenum">0946:</SPAN>                 RECT rcWindow;
+<SPAN CLASS="linenum">0947:</SPAN>                 GetWindowRect( m_hWnd, &amp;rcWindow );
+<SPAN CLASS="linenum">0948:</SPAN>                 ClipCursor( &amp;rcWindow );
+<SPAN CLASS="linenum">0949:</SPAN>             }
+<SPAN CLASS="linenum">0950:</SPAN>             <SPAN CLASS="keyword">else</SPAN>
+<SPAN CLASS="linenum">0951:</SPAN>             {
+<SPAN CLASS="linenum">0952:</SPAN>                 ClipCursor( NULL );
+<SPAN CLASS="linenum">0953:</SPAN>             }
+<SPAN CLASS="linenum">0954:</SPAN>         }
+<SPAN CLASS="linenum">0955:</SPAN> 
+<SPAN CLASS="linenum">0956:</SPAN>         <SPAN CLASS="comment">// Initialize the app's device-dependent objects</SPAN>
+<SPAN CLASS="linenum">0957:</SPAN>         hr = InitDeviceObjects();
+<SPAN CLASS="linenum">0958:</SPAN>         <SPAN CLASS="keyword">if</SPAN>( SUCCEEDED(hr) )
+<SPAN CLASS="linenum">0959:</SPAN>         {
+<SPAN CLASS="linenum">0960:</SPAN>             hr = RestoreDeviceObjects();
+<SPAN CLASS="linenum">0961:</SPAN>             <SPAN CLASS="keyword">if</SPAN>( SUCCEEDED(hr) )
+<SPAN CLASS="linenum">0962:</SPAN>             {
+<SPAN CLASS="linenum">0963:</SPAN>                 m_bActive = TRUE;
+<SPAN CLASS="linenum">0964:</SPAN>                 <SPAN CLASS="keyword">return</SPAN> S_OK;
+<SPAN CLASS="linenum">0965:</SPAN>             }
+<SPAN CLASS="linenum">0966:</SPAN>         }
+<SPAN CLASS="linenum">0967:</SPAN> 
+<SPAN CLASS="linenum">0968:</SPAN>         <SPAN CLASS="comment">// Cleanup before we try again</SPAN>
+<SPAN CLASS="linenum">0969:</SPAN>         InvalidateDeviceObjects();
+<SPAN CLASS="linenum">0970:</SPAN>         DeleteDeviceObjects();
+<SPAN CLASS="linenum">0971:</SPAN>         SAFE_RELEASE( m_pd3dDevice );
+<SPAN CLASS="linenum">0972:</SPAN>     }
+<SPAN CLASS="linenum">0973:</SPAN> 
+<SPAN CLASS="linenum">0974:</SPAN>     <SPAN CLASS="comment">// If that failed, fall back to the reference rasterizer</SPAN>
+<SPAN CLASS="linenum">0975:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( pDeviceInfo-&gt;DeviceType == D3DDEVTYPE_HAL )
+<SPAN CLASS="linenum">0976:</SPAN>     {
+<SPAN CLASS="linenum">0977:</SPAN>         <SPAN CLASS="comment">// Select the default adapter</SPAN>
+<SPAN CLASS="linenum">0978:</SPAN>         m_dwAdapter = 0L;
+<SPAN CLASS="linenum">0979:</SPAN>         pAdapterInfo = &amp;m_Adapters[m_dwAdapter];
+<SPAN CLASS="linenum">0980:</SPAN> 
+<SPAN CLASS="linenum">0981:</SPAN>         <SPAN CLASS="comment">// Look for a software device</SPAN>
+<SPAN CLASS="linenum">0982:</SPAN>         <SPAN CLASS="keyword">for</SPAN>( UINT i=0L; i&lt;pAdapterInfo-&gt;dwNumDevices; i++ )
+<SPAN CLASS="linenum">0983:</SPAN>         {
+<SPAN CLASS="linenum">0984:</SPAN>             <SPAN CLASS="keyword">if</SPAN>( pAdapterInfo-&gt;devices[i].DeviceType == D3DDEVTYPE_REF )
+<SPAN CLASS="linenum">0985:</SPAN>             {
+<SPAN CLASS="linenum">0986:</SPAN>                 pAdapterInfo-&gt;dwCurrentDevice = i;
+<SPAN CLASS="linenum">0987:</SPAN>                 pDeviceInfo = &amp;pAdapterInfo-&gt;devices[i];
+<SPAN CLASS="linenum">0988:</SPAN>                 m_bWindowed = pDeviceInfo-&gt;bWindowed;
+<SPAN CLASS="linenum">0989:</SPAN>                 <SPAN CLASS="keyword">break</SPAN>;
+<SPAN CLASS="linenum">0990:</SPAN>             }
+<SPAN CLASS="linenum">0991:</SPAN>         }
+<SPAN CLASS="linenum">0992:</SPAN> 
+<SPAN CLASS="linenum">0993:</SPAN>         <SPAN CLASS="comment">// Try again, this time with the reference rasterizer</SPAN>
+<SPAN CLASS="linenum">0994:</SPAN>         <SPAN CLASS="keyword">if</SPAN>( pAdapterInfo-&gt;devices[pAdapterInfo-&gt;dwCurrentDevice].DeviceType ==
+<SPAN CLASS="linenum">0995:</SPAN>             D3DDEVTYPE_REF )
+<SPAN CLASS="linenum">0996:</SPAN>         {
+<SPAN CLASS="linenum">0997:</SPAN>             <SPAN CLASS="comment">// Make sure main window isn't topmost, so error message is visible</SPAN>
+<SPAN CLASS="linenum">0998:</SPAN>             SetWindowPos( m_hWnd, HWND_NOTOPMOST,
+<SPAN CLASS="linenum">0999:</SPAN>                           m_rcWindowBounds.left, m_rcWindowBounds.top,
+<SPAN CLASS="linenum">1000:</SPAN>                           ( m_rcWindowBounds.right - m_rcWindowBounds.left ),
+<SPAN CLASS="linenum">1001:</SPAN>                           ( m_rcWindowBounds.bottom - m_rcWindowBounds.top ),
+<SPAN CLASS="linenum">1002:</SPAN>                           SWP_SHOWWINDOW );
+<SPAN CLASS="linenum">1003:</SPAN>             AdjustWindowForChange();
+<SPAN CLASS="linenum">1004:</SPAN> 
+<SPAN CLASS="linenum">1005:</SPAN>             <SPAN CLASS="comment">// Let the user know we are switching from HAL to the reference rasterizer</SPAN>
+<SPAN CLASS="linenum">1006:</SPAN>             DisplayErrorMsg( hr, MSGWARN_SWITCHEDTOREF );
+<SPAN CLASS="linenum">1007:</SPAN> 
+<SPAN CLASS="linenum">1008:</SPAN>             hr = Initialize3DEnvironment();
+<SPAN CLASS="linenum">1009:</SPAN>         }
+<SPAN CLASS="linenum">1010:</SPAN>     }
+<SPAN CLASS="linenum">1011:</SPAN> 
+<SPAN CLASS="linenum">1012:</SPAN>     <SPAN CLASS="keyword">return</SPAN> hr;
+<SPAN CLASS="linenum">1013:</SPAN> }
+<SPAN CLASS="linenum">1014:</SPAN> 
+<SPAN CLASS="linenum">1015:</SPAN> 
+<SPAN CLASS="linenum">1016:</SPAN> 
+<SPAN CLASS="linenum">1017:</SPAN> 
+<SPAN CLASS="linenum">1018:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">1019:</SPAN> <SPAN CLASS="comment">// Name:</SPAN>
+<SPAN CLASS="linenum">1020:</SPAN> <SPAN CLASS="comment">// Desc:</SPAN>
+<SPAN CLASS="linenum">1021:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">1022:</SPAN> HRESULT CD3DApplication::Resize3DEnvironment()
+<SPAN CLASS="linenum">1023:</SPAN> {
+<SPAN CLASS="linenum">1024:</SPAN>     HRESULT hr;
+<SPAN CLASS="linenum">1025:</SPAN> 
+<SPAN CLASS="linenum">1026:</SPAN>     <SPAN CLASS="comment">// Release all vidmem objects</SPAN>
+<SPAN CLASS="linenum">1027:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( FAILED( hr = InvalidateDeviceObjects() ) )
+<SPAN CLASS="linenum">1028:</SPAN>         <SPAN CLASS="keyword">return</SPAN> hr;
+<SPAN CLASS="linenum">1029:</SPAN> 
+<SPAN CLASS="linenum">1030:</SPAN>     <SPAN CLASS="comment">// Reset the device</SPAN>
+<SPAN CLASS="linenum">1031:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( FAILED( hr = m_pd3dDevice-&gt;Reset( &amp;m_d3dpp ) ) )
+<SPAN CLASS="linenum">1032:</SPAN>         <SPAN CLASS="keyword">return</SPAN> hr;
+<SPAN CLASS="linenum">1033:</SPAN> 
+<SPAN CLASS="linenum">1034:</SPAN>     <SPAN CLASS="comment">// Store render target surface desc</SPAN>
+<SPAN CLASS="linenum">1035:</SPAN>     LPDIRECT3DSURFACE8 pBackBuffer;
+<SPAN CLASS="linenum">1036:</SPAN>     m_pd3dDevice-&gt;GetBackBuffer( 0, D3DBACKBUFFER_TYPE_MONO, &amp;pBackBuffer );
+<SPAN CLASS="linenum">1037:</SPAN>     pBackBuffer-&gt;GetDesc( &amp;m_d3dsdBackBuffer );
+<SPAN CLASS="linenum">1038:</SPAN>     pBackBuffer-&gt;Release();
+<SPAN CLASS="linenum">1039:</SPAN> 
+<SPAN CLASS="linenum">1040:</SPAN>     <SPAN CLASS="comment">// Set up the fullscreen cursor</SPAN>
+<SPAN CLASS="linenum">1041:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( m_bShowCursorWhenFullscreen &amp;&amp; !m_bWindowed )
+<SPAN CLASS="linenum">1042:</SPAN>     {
+<SPAN CLASS="linenum">1043:</SPAN>         HCURSOR hCursor;
+<SPAN CLASS="linenum">1044:</SPAN> <SPAN CLASS="keyword">#ifdef</SPAN> _WIN64
+<SPAN CLASS="linenum">1045:</SPAN>         hCursor = (HCURSOR)GetClassLongPtr( m_hWnd, GCLP_HCURSOR );
+<SPAN CLASS="linenum">1046:</SPAN> <SPAN CLASS="keyword">#else</SPAN>
+<SPAN CLASS="linenum">1047:</SPAN>         hCursor = (HCURSOR)GetClassLong( m_hWnd, GCL_HCURSOR );
+<SPAN CLASS="linenum">1048:</SPAN> <SPAN CLASS="keyword">#endif</SPAN>
+<SPAN CLASS="linenum">1049:</SPAN>         D3DUtil_SetDeviceCursor( m_pd3dDevice, hCursor, TRUE );
+<SPAN CLASS="linenum">1050:</SPAN>         m_pd3dDevice-&gt;ShowCursor( TRUE );
+<SPAN CLASS="linenum">1051:</SPAN>     }
+<SPAN CLASS="linenum">1052:</SPAN> 
+<SPAN CLASS="linenum">1053:</SPAN>     <SPAN CLASS="comment">// Confine cursor to fullscreen window</SPAN>
+<SPAN CLASS="linenum">1054:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( m_bClipCursorWhenFullscreen )
+<SPAN CLASS="linenum">1055:</SPAN>     {
+<SPAN CLASS="linenum">1056:</SPAN>         <SPAN CLASS="keyword">if</SPAN> (!m_bWindowed )
+<SPAN CLASS="linenum">1057:</SPAN>         {
+<SPAN CLASS="linenum">1058:</SPAN>             RECT rcWindow;
+<SPAN CLASS="linenum">1059:</SPAN>             GetWindowRect( m_hWnd, &amp;rcWindow );
+<SPAN CLASS="linenum">1060:</SPAN>             ClipCursor( &amp;rcWindow );
+<SPAN CLASS="linenum">1061:</SPAN>         }
+<SPAN CLASS="linenum">1062:</SPAN>         <SPAN CLASS="keyword">else</SPAN>
+<SPAN CLASS="linenum">1063:</SPAN>         {
+<SPAN CLASS="linenum">1064:</SPAN>             ClipCursor( NULL );
+<SPAN CLASS="linenum">1065:</SPAN>         }
+<SPAN CLASS="linenum">1066:</SPAN>     }
+<SPAN CLASS="linenum">1067:</SPAN> 
+<SPAN CLASS="linenum">1068:</SPAN>     <SPAN CLASS="comment">// Initialize the app's device-dependent objects</SPAN>
+<SPAN CLASS="linenum">1069:</SPAN>     hr = RestoreDeviceObjects();
+<SPAN CLASS="linenum">1070:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( FAILED(hr) )
+<SPAN CLASS="linenum">1071:</SPAN>         <SPAN CLASS="keyword">return</SPAN> hr;
+<SPAN CLASS="linenum">1072:</SPAN> 
+<SPAN CLASS="linenum">1073:</SPAN>     <SPAN CLASS="comment">// If the app is paused, trigger the rendering of the current frame</SPAN>
+<SPAN CLASS="linenum">1074:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( FALSE == m_bFrameMoving )
+<SPAN CLASS="linenum">1075:</SPAN>     {
+<SPAN CLASS="linenum">1076:</SPAN>         m_bSingleStep = TRUE;
+<SPAN CLASS="linenum">1077:</SPAN>         DXUtil_Timer( TIMER_START );
+<SPAN CLASS="linenum">1078:</SPAN>         DXUtil_Timer( TIMER_STOP );
+<SPAN CLASS="linenum">1079:</SPAN>     }
+<SPAN CLASS="linenum">1080:</SPAN> 
+<SPAN CLASS="linenum">1081:</SPAN>     <SPAN CLASS="keyword">return</SPAN> S_OK;
+<SPAN CLASS="linenum">1082:</SPAN> }
+<SPAN CLASS="linenum">1083:</SPAN> 
+<SPAN CLASS="linenum">1084:</SPAN> 
+<SPAN CLASS="linenum">1085:</SPAN> 
+<SPAN CLASS="linenum">1086:</SPAN> 
+<SPAN CLASS="linenum">1087:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">1088:</SPAN> <SPAN CLASS="comment">// Name: ToggleFullScreen()</SPAN>
+<SPAN CLASS="linenum">1089:</SPAN> <SPAN CLASS="comment">// Desc: Called when user toggles between fullscreen mode and windowed mode</SPAN>
+<SPAN CLASS="linenum">1090:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">1091:</SPAN> HRESULT CD3DApplication::ToggleFullscreen()
+<SPAN CLASS="linenum">1092:</SPAN> {
+<SPAN CLASS="linenum">1093:</SPAN>     <SPAN CLASS="comment">// Get access to current adapter, device, and mode</SPAN>
+<SPAN CLASS="linenum">1094:</SPAN>     D3DAdapterInfo* pAdapterInfo = &amp;m_Adapters[m_dwAdapter];
+<SPAN CLASS="linenum">1095:</SPAN>     D3DDeviceInfo*  pDeviceInfo  = &amp;pAdapterInfo-&gt;devices[pAdapterInfo-&gt;dwCurrentDevice];
+<SPAN CLASS="linenum">1096:</SPAN>     D3DModeInfo*    pModeInfo    = &amp;pDeviceInfo-&gt;modes[pDeviceInfo-&gt;dwCurrentMode];
+<SPAN CLASS="linenum">1097:</SPAN> 
+<SPAN CLASS="linenum">1098:</SPAN>     <SPAN CLASS="comment">// Need device change if going windowed and the current device</SPAN>
+<SPAN CLASS="linenum">1099:</SPAN>     <SPAN CLASS="comment">// can only be fullscreen</SPAN>
+<SPAN CLASS="linenum">1100:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( !m_bWindowed &amp;&amp; !pDeviceInfo-&gt;bCanDoWindowed )
+<SPAN CLASS="linenum">1101:</SPAN>         <SPAN CLASS="keyword">return</SPAN> ForceWindowed();
+<SPAN CLASS="linenum">1102:</SPAN> 
+<SPAN CLASS="linenum">1103:</SPAN>     m_bReady = FALSE;
+<SPAN CLASS="linenum">1104:</SPAN> 
+<SPAN CLASS="linenum">1105:</SPAN>     <SPAN CLASS="comment">// Toggle the windowed state</SPAN>
+<SPAN CLASS="linenum">1106:</SPAN>     m_bWindowed = !m_bWindowed;
+<SPAN CLASS="linenum">1107:</SPAN>     pDeviceInfo-&gt;bWindowed = m_bWindowed;
+<SPAN CLASS="linenum">1108:</SPAN> 
+<SPAN CLASS="linenum">1109:</SPAN>     <SPAN CLASS="comment">// Prepare window for windowed/fullscreen change</SPAN>
+<SPAN CLASS="linenum">1110:</SPAN>     AdjustWindowForChange();
+<SPAN CLASS="linenum">1111:</SPAN> 
+<SPAN CLASS="linenum">1112:</SPAN>     <SPAN CLASS="comment">// Set up the presentation parameters</SPAN>
+<SPAN CLASS="linenum">1113:</SPAN>     m_d3dpp.Windowed               = pDeviceInfo-&gt;bWindowed;
+<SPAN CLASS="linenum">1114:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( m_bWindowed )
+<SPAN CLASS="linenum">1115:</SPAN>         m_d3dpp.MultiSampleType    = pDeviceInfo-&gt;MultiSampleTypeWindowed;
+<SPAN CLASS="linenum">1116:</SPAN>     <SPAN CLASS="keyword">else</SPAN>
+<SPAN CLASS="linenum">1117:</SPAN>         m_d3dpp.MultiSampleType    = pDeviceInfo-&gt;MultiSampleTypeFullscreen;
+<SPAN CLASS="linenum">1118:</SPAN>     m_d3dpp.AutoDepthStencilFormat = pModeInfo-&gt;DepthStencilFormat;
+<SPAN CLASS="linenum">1119:</SPAN>     m_d3dpp.hDeviceWindow          = m_hWnd;
+<SPAN CLASS="linenum">1120:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( m_bWindowed )
+<SPAN CLASS="linenum">1121:</SPAN>     {
+<SPAN CLASS="linenum">1122:</SPAN>         m_d3dpp.BackBufferWidth  = m_rcWindowClient.right - m_rcWindowClient.left;
+<SPAN CLASS="linenum">1123:</SPAN>         m_d3dpp.BackBufferHeight = m_rcWindowClient.bottom - m_rcWindowClient.top;
+<SPAN CLASS="linenum">1124:</SPAN>         m_d3dpp.BackBufferFormat = pAdapterInfo-&gt;d3ddmDesktop.Format;
+<SPAN CLASS="linenum">1125:</SPAN>     }
+<SPAN CLASS="linenum">1126:</SPAN>     <SPAN CLASS="keyword">else</SPAN>
+<SPAN CLASS="linenum">1127:</SPAN>     {
+<SPAN CLASS="linenum">1128:</SPAN>         m_d3dpp.BackBufferWidth  = pModeInfo-&gt;Width;
+<SPAN CLASS="linenum">1129:</SPAN>         m_d3dpp.BackBufferHeight = pModeInfo-&gt;Height;
+<SPAN CLASS="linenum">1130:</SPAN>         m_d3dpp.BackBufferFormat = pModeInfo-&gt;Format;
+<SPAN CLASS="linenum">1131:</SPAN>     }
+<SPAN CLASS="linenum">1132:</SPAN> 
+<SPAN CLASS="linenum">1133:</SPAN>     <SPAN CLASS="comment">// Resize the 3D device</SPAN>
+<SPAN CLASS="linenum">1134:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( FAILED( Resize3DEnvironment() ) )
+<SPAN CLASS="linenum">1135:</SPAN>     {
+<SPAN CLASS="linenum">1136:</SPAN>         <SPAN CLASS="keyword">if</SPAN>( m_bWindowed )
+<SPAN CLASS="linenum">1137:</SPAN>             <SPAN CLASS="keyword">return</SPAN> ForceWindowed();
+<SPAN CLASS="linenum">1138:</SPAN>         <SPAN CLASS="keyword">else</SPAN>
+<SPAN CLASS="linenum">1139:</SPAN>             <SPAN CLASS="keyword">return</SPAN> E_FAIL;
+<SPAN CLASS="linenum">1140:</SPAN>     }
+<SPAN CLASS="linenum">1141:</SPAN> 
+<SPAN CLASS="linenum">1142:</SPAN>     <SPAN CLASS="comment">// When moving from fullscreen to windowed mode, it is important to</SPAN>
+<SPAN CLASS="linenum">1143:</SPAN>     <SPAN CLASS="comment">// adjust the window size after resetting the device rather than</SPAN>
+<SPAN CLASS="linenum">1144:</SPAN>     <SPAN CLASS="comment">// beforehand to ensure that you get the window size you want.  For</SPAN>
+<SPAN CLASS="linenum">1145:</SPAN>     <SPAN CLASS="comment">// example, when switching from 640x480 fullscreen to windowed with</SPAN>
+<SPAN CLASS="linenum">1146:</SPAN>     <SPAN CLASS="comment">// a 1000x600 window on a 1024x768 desktop, it is impossible to set</SPAN>
+<SPAN CLASS="linenum">1147:</SPAN>     <SPAN CLASS="comment">// the window size to 1000x600 until after the display mode has</SPAN>
+<SPAN CLASS="linenum">1148:</SPAN>     <SPAN CLASS="comment">// changed to 1024x768, because windows cannot be larger than the</SPAN>
+<SPAN CLASS="linenum">1149:</SPAN>     <SPAN CLASS="comment">// desktop.</SPAN>
+<SPAN CLASS="linenum">1150:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( m_bWindowed )
+<SPAN CLASS="linenum">1151:</SPAN>     {
+<SPAN CLASS="linenum">1152:</SPAN>         SetWindowPos( m_hWnd, HWND_NOTOPMOST,
+<SPAN CLASS="linenum">1153:</SPAN>                       m_rcWindowBounds.left, m_rcWindowBounds.top,
+<SPAN CLASS="linenum">1154:</SPAN>                       ( m_rcWindowBounds.right - m_rcWindowBounds.left ),
+<SPAN CLASS="linenum">1155:</SPAN>                       ( m_rcWindowBounds.bottom - m_rcWindowBounds.top ),
+<SPAN CLASS="linenum">1156:</SPAN>                       SWP_SHOWWINDOW );
+<SPAN CLASS="linenum">1157:</SPAN>     }
+<SPAN CLASS="linenum">1158:</SPAN> 
+<SPAN CLASS="linenum">1159:</SPAN>     m_bReady = TRUE;
+<SPAN CLASS="linenum">1160:</SPAN> 
+<SPAN CLASS="linenum">1161:</SPAN>     <SPAN CLASS="keyword">return</SPAN> S_OK;
+<SPAN CLASS="linenum">1162:</SPAN> }
+<SPAN CLASS="linenum">1163:</SPAN> 
+<SPAN CLASS="linenum">1164:</SPAN> 
+<SPAN CLASS="linenum">1165:</SPAN> 
+<SPAN CLASS="linenum">1166:</SPAN> 
+<SPAN CLASS="linenum">1167:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">1168:</SPAN> <SPAN CLASS="comment">// Name: ForceWindowed()</SPAN>
+<SPAN CLASS="linenum">1169:</SPAN> <SPAN CLASS="comment">// Desc: Switch to a windowed mode, even if that means picking a new device</SPAN>
+<SPAN CLASS="linenum">1170:</SPAN> <SPAN CLASS="comment">//       and/or adapter</SPAN>
+<SPAN CLASS="linenum">1171:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">1172:</SPAN> HRESULT CD3DApplication::ForceWindowed()
+<SPAN CLASS="linenum">1173:</SPAN> {
+<SPAN CLASS="linenum">1174:</SPAN>     HRESULT hr;
+<SPAN CLASS="linenum">1175:</SPAN>     D3DAdapterInfo* pAdapterInfoCur = &amp;m_Adapters[m_dwAdapter];
+<SPAN CLASS="linenum">1176:</SPAN>     D3DDeviceInfo*  pDeviceInfoCur  = &amp;pAdapterInfoCur-&gt;devices[pAdapterInfoCur-&gt;dwCurrentDevice];
+<SPAN CLASS="linenum">1177:</SPAN>     BOOL bFoundDevice = FALSE;
+<SPAN CLASS="linenum">1178:</SPAN> 
+<SPAN CLASS="linenum">1179:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( pDeviceInfoCur-&gt;bCanDoWindowed )
+<SPAN CLASS="linenum">1180:</SPAN>     {
+<SPAN CLASS="linenum">1181:</SPAN>         bFoundDevice = TRUE;
+<SPAN CLASS="linenum">1182:</SPAN>     }
+<SPAN CLASS="linenum">1183:</SPAN>     <SPAN CLASS="keyword">else</SPAN>
+<SPAN CLASS="linenum">1184:</SPAN>     {
+<SPAN CLASS="linenum">1185:</SPAN>         <SPAN CLASS="comment">// Look for a windowable device on any adapter</SPAN>
+<SPAN CLASS="linenum">1186:</SPAN>         D3DAdapterInfo* pAdapterInfo;
+<SPAN CLASS="linenum">1187:</SPAN>         DWORD dwAdapter;
+<SPAN CLASS="linenum">1188:</SPAN>         D3DDeviceInfo* pDeviceInfo;
+<SPAN CLASS="linenum">1189:</SPAN>         DWORD dwDevice;
+<SPAN CLASS="linenum">1190:</SPAN>         <SPAN CLASS="keyword">for</SPAN>( dwAdapter = 0; dwAdapter &lt; m_dwNumAdapters; dwAdapter++ )
+<SPAN CLASS="linenum">1191:</SPAN>         {
+<SPAN CLASS="linenum">1192:</SPAN>             pAdapterInfo = &amp;m_Adapters[dwAdapter];
+<SPAN CLASS="linenum">1193:</SPAN>             <SPAN CLASS="keyword">for</SPAN>( dwDevice = 0; dwDevice &lt; pAdapterInfo-&gt;dwNumDevices; dwDevice++ )
+<SPAN CLASS="linenum">1194:</SPAN>             {
+<SPAN CLASS="linenum">1195:</SPAN>                 pDeviceInfo = &amp;pAdapterInfo-&gt;devices[dwDevice];
+<SPAN CLASS="linenum">1196:</SPAN>                 <SPAN CLASS="keyword">if</SPAN>( pDeviceInfo-&gt;bCanDoWindowed )
+<SPAN CLASS="linenum">1197:</SPAN>                 {
+<SPAN CLASS="linenum">1198:</SPAN>                     m_dwAdapter = dwAdapter;
+<SPAN CLASS="linenum">1199:</SPAN>                     pDeviceInfoCur = pDeviceInfo;
+<SPAN CLASS="linenum">1200:</SPAN>                     pAdapterInfo-&gt;dwCurrentDevice = dwDevice;
+<SPAN CLASS="linenum">1201:</SPAN>                     bFoundDevice = TRUE;
+<SPAN CLASS="linenum">1202:</SPAN>                     <SPAN CLASS="keyword">break</SPAN>;
+<SPAN CLASS="linenum">1203:</SPAN>                 }
+<SPAN CLASS="linenum">1204:</SPAN>             }
+<SPAN CLASS="linenum">1205:</SPAN>             <SPAN CLASS="keyword">if</SPAN>( bFoundDevice )
+<SPAN CLASS="linenum">1206:</SPAN>                 <SPAN CLASS="keyword">break</SPAN>;
+<SPAN CLASS="linenum">1207:</SPAN>         }
+<SPAN CLASS="linenum">1208:</SPAN>     }
+<SPAN CLASS="linenum">1209:</SPAN> 
+<SPAN CLASS="linenum">1210:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( !bFoundDevice )
+<SPAN CLASS="linenum">1211:</SPAN>         <SPAN CLASS="keyword">return</SPAN> E_FAIL;
+<SPAN CLASS="linenum">1212:</SPAN> 
+<SPAN CLASS="linenum">1213:</SPAN>     pDeviceInfoCur-&gt;bWindowed = TRUE;
+<SPAN CLASS="linenum">1214:</SPAN>     m_bWindowed = TRUE;
+<SPAN CLASS="linenum">1215:</SPAN> 
+<SPAN CLASS="linenum">1216:</SPAN>     <SPAN CLASS="comment">// Now destroy the current 3D device objects, then reinitialize</SPAN>
+<SPAN CLASS="linenum">1217:</SPAN> 
+<SPAN CLASS="linenum">1218:</SPAN>     m_bReady = FALSE;
+<SPAN CLASS="linenum">1219:</SPAN> 
+<SPAN CLASS="linenum">1220:</SPAN>     <SPAN CLASS="comment">// Release all scene objects that will be re-created for the new device</SPAN>
+<SPAN CLASS="linenum">1221:</SPAN>     InvalidateDeviceObjects();
+<SPAN CLASS="linenum">1222:</SPAN>     DeleteDeviceObjects();
+<SPAN CLASS="linenum">1223:</SPAN> 
+<SPAN CLASS="linenum">1224:</SPAN>     <SPAN CLASS="comment">// Release display objects, so a new device can be created</SPAN>
+<SPAN CLASS="linenum">1225:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( m_pd3dDevice-&gt;Release() &gt; 0L )
+<SPAN CLASS="linenum">1226:</SPAN>         <SPAN CLASS="keyword">return</SPAN> DisplayErrorMsg( D3DAPPERR_NONZEROREFCOUNT, MSGERR_APPMUSTEXIT );
+<SPAN CLASS="linenum">1227:</SPAN> 
+<SPAN CLASS="linenum">1228:</SPAN>     <SPAN CLASS="comment">// Create the new device</SPAN>
+<SPAN CLASS="linenum">1229:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( FAILED( hr = Initialize3DEnvironment() ) )
+<SPAN CLASS="linenum">1230:</SPAN>         <SPAN CLASS="keyword">return</SPAN> DisplayErrorMsg( hr, MSGERR_APPMUSTEXIT );
+<SPAN CLASS="linenum">1231:</SPAN>     m_bReady = TRUE;
+<SPAN CLASS="linenum">1232:</SPAN> 
+<SPAN CLASS="linenum">1233:</SPAN>     <SPAN CLASS="keyword">return</SPAN> S_OK;
+<SPAN CLASS="linenum">1234:</SPAN> }
+<SPAN CLASS="linenum">1235:</SPAN> 
+<SPAN CLASS="linenum">1236:</SPAN> 
+<SPAN CLASS="linenum">1237:</SPAN> 
+<SPAN CLASS="linenum">1238:</SPAN> 
+<SPAN CLASS="linenum">1239:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">1240:</SPAN> <SPAN CLASS="comment">// Name: AdjustWindowForChange()</SPAN>
+<SPAN CLASS="linenum">1241:</SPAN> <SPAN CLASS="comment">// Desc: Prepare the window for a possible change between windowed mode and</SPAN>
+<SPAN CLASS="linenum">1242:</SPAN> <SPAN CLASS="comment">//       fullscreen mode.  This function is virtual and thus can be overridden</SPAN>
+<SPAN CLASS="linenum">1243:</SPAN> <SPAN CLASS="comment">//       to provide different behavior, such as switching to an entirely</SPAN>
+<SPAN CLASS="linenum">1244:</SPAN> <SPAN CLASS="comment">//       different window for fullscreen mode (as in the MFC sample apps).</SPAN>
+<SPAN CLASS="linenum">1245:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">1246:</SPAN> HRESULT CD3DApplication::AdjustWindowForChange()
+<SPAN CLASS="linenum">1247:</SPAN> {
+<SPAN CLASS="linenum">1248:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( m_bWindowed )
+<SPAN CLASS="linenum">1249:</SPAN>     {
+<SPAN CLASS="linenum">1250:</SPAN>         <SPAN CLASS="comment">// Set windowed-mode style</SPAN>
+<SPAN CLASS="linenum">1251:</SPAN>         SetWindowLong( m_hWnd, GWL_STYLE, m_dwWindowStyle );
+<SPAN CLASS="linenum">1252:</SPAN>     }
+<SPAN CLASS="linenum">1253:</SPAN>     <SPAN CLASS="keyword">else</SPAN>
+<SPAN CLASS="linenum">1254:</SPAN>     {
+<SPAN CLASS="linenum">1255:</SPAN>         <SPAN CLASS="comment">// Set fullscreen-mode style</SPAN>
+<SPAN CLASS="linenum">1256:</SPAN>         SetWindowLong( m_hWnd, GWL_STYLE, WS_POPUP|WS_SYSMENU|WS_VISIBLE );
+<SPAN CLASS="linenum">1257:</SPAN>     }
+<SPAN CLASS="linenum">1258:</SPAN>     <SPAN CLASS="keyword">return</SPAN> S_OK;
+<SPAN CLASS="linenum">1259:</SPAN> }
+<SPAN CLASS="linenum">1260:</SPAN> 
+<SPAN CLASS="linenum">1261:</SPAN> 
+<SPAN CLASS="linenum">1262:</SPAN> 
+<SPAN CLASS="linenum">1263:</SPAN> 
+<SPAN CLASS="linenum">1264:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">1265:</SPAN> <SPAN CLASS="comment">// Name: UserSelectNewDevice()</SPAN>
+<SPAN CLASS="linenum">1266:</SPAN> <SPAN CLASS="comment">// Desc: Displays a dialog so the user can select a new adapter, device, or</SPAN>
+<SPAN CLASS="linenum">1267:</SPAN> <SPAN CLASS="comment">//       display mode, and then recreates the 3D environment if needed</SPAN>
+<SPAN CLASS="linenum">1268:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">1269:</SPAN> HRESULT CD3DApplication::UserSelectNewDevice()
+<SPAN CLASS="linenum">1270:</SPAN> {
+<SPAN CLASS="linenum">1271:</SPAN>     HRESULT hr;
+<SPAN CLASS="linenum">1272:</SPAN> 
+<SPAN CLASS="linenum">1273:</SPAN>     <SPAN CLASS="comment">// Can't display dialogs in fullscreen mode</SPAN>
+<SPAN CLASS="linenum">1274:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( m_bWindowed == FALSE )
+<SPAN CLASS="linenum">1275:</SPAN>     {
+<SPAN CLASS="linenum">1276:</SPAN>         <SPAN CLASS="keyword">if</SPAN>( FAILED( ToggleFullscreen() ) )
+<SPAN CLASS="linenum">1277:</SPAN>         {
+<SPAN CLASS="linenum">1278:</SPAN>             DisplayErrorMsg( D3DAPPERR_RESIZEFAILED, MSGERR_APPMUSTEXIT );
+<SPAN CLASS="linenum">1279:</SPAN>             <SPAN CLASS="keyword">return</SPAN> E_FAIL;
+<SPAN CLASS="linenum">1280:</SPAN>         }
+<SPAN CLASS="linenum">1281:</SPAN>     }
+<SPAN CLASS="linenum">1282:</SPAN> 
+<SPAN CLASS="linenum">1283:</SPAN>     <SPAN CLASS="comment">// Prompt the user to change the mode</SPAN>
+<SPAN CLASS="linenum">1284:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( IDOK != DialogBoxParam( (HINSTANCE)GetModuleHandle(NULL),
+<SPAN CLASS="linenum">1285:</SPAN>                                 MAKEINTRESOURCE(IDD_SELECTDEVICE), m_hWnd,
+<SPAN CLASS="linenum">1286:</SPAN>                                 SelectDeviceProc, (LPARAM)<SPAN CLASS="keyword">this</SPAN> ) )
+<SPAN CLASS="linenum">1287:</SPAN>         <SPAN CLASS="keyword">return</SPAN> S_OK;
+<SPAN CLASS="linenum">1288:</SPAN> 
+<SPAN CLASS="linenum">1289:</SPAN>     <SPAN CLASS="comment">// Get access to the newly selected adapter, device, and mode</SPAN>
+<SPAN CLASS="linenum">1290:</SPAN>     DWORD dwDevice;
+<SPAN CLASS="linenum">1291:</SPAN>     dwDevice  = m_Adapters[m_dwAdapter].dwCurrentDevice;
+<SPAN CLASS="linenum">1292:</SPAN>     m_bWindowed = m_Adapters[m_dwAdapter].devices[dwDevice].bWindowed;
+<SPAN CLASS="linenum">1293:</SPAN> 
+<SPAN CLASS="linenum">1294:</SPAN>     <SPAN CLASS="comment">// Release all scene objects that will be re-created for the new device</SPAN>
+<SPAN CLASS="linenum">1295:</SPAN>     InvalidateDeviceObjects();
+<SPAN CLASS="linenum">1296:</SPAN>     DeleteDeviceObjects();
+<SPAN CLASS="linenum">1297:</SPAN> 
+<SPAN CLASS="linenum">1298:</SPAN>     <SPAN CLASS="comment">// Release display objects, so a new device can be created</SPAN>
+<SPAN CLASS="linenum">1299:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( m_pd3dDevice-&gt;Release() &gt; 0L )
+<SPAN CLASS="linenum">1300:</SPAN>         <SPAN CLASS="keyword">return</SPAN> DisplayErrorMsg( D3DAPPERR_NONZEROREFCOUNT, MSGERR_APPMUSTEXIT );
+<SPAN CLASS="linenum">1301:</SPAN> 
+<SPAN CLASS="linenum">1302:</SPAN>     <SPAN CLASS="comment">// Inform the display class of the change. It will internally</SPAN>
+<SPAN CLASS="linenum">1303:</SPAN>     <SPAN CLASS="comment">// re-create valid surfaces, a d3ddevice, etc.</SPAN>
+<SPAN CLASS="linenum">1304:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( FAILED( hr = Initialize3DEnvironment() ) )
+<SPAN CLASS="linenum">1305:</SPAN>         <SPAN CLASS="keyword">return</SPAN> DisplayErrorMsg( hr, MSGERR_APPMUSTEXIT );
+<SPAN CLASS="linenum">1306:</SPAN> 
+<SPAN CLASS="linenum">1307:</SPAN>     <SPAN CLASS="comment">// If the app is paused, trigger the rendering of the current frame</SPAN>
+<SPAN CLASS="linenum">1308:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( FALSE == m_bFrameMoving )
+<SPAN CLASS="linenum">1309:</SPAN>     {
+<SPAN CLASS="linenum">1310:</SPAN>         m_bSingleStep = TRUE;
+<SPAN CLASS="linenum">1311:</SPAN>         DXUtil_Timer( TIMER_START );
+<SPAN CLASS="linenum">1312:</SPAN>         DXUtil_Timer( TIMER_STOP );
+<SPAN CLASS="linenum">1313:</SPAN>     }
+<SPAN CLASS="linenum">1314:</SPAN> 
+<SPAN CLASS="linenum">1315:</SPAN>     <SPAN CLASS="keyword">return</SPAN> S_OK;
+<SPAN CLASS="linenum">1316:</SPAN> }
+<SPAN CLASS="linenum">1317:</SPAN> 
+<SPAN CLASS="linenum">1318:</SPAN> 
+<SPAN CLASS="linenum">1319:</SPAN> 
+<SPAN CLASS="linenum">1320:</SPAN> 
+<SPAN CLASS="linenum">1321:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">1322:</SPAN> <SPAN CLASS="comment">// Name: SelectDeviceProc()</SPAN>
+<SPAN CLASS="linenum">1323:</SPAN> <SPAN CLASS="comment">// Desc: Windows message handling function for the device select dialog</SPAN>
+<SPAN CLASS="linenum">1324:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">1325:</SPAN> INT_PTR CALLBACK CD3DApplication::SelectDeviceProc( HWND hDlg, UINT msg,
+<SPAN CLASS="linenum">1326:</SPAN>                                                     WPARAM wParam, LPARAM lParam )
+<SPAN CLASS="linenum">1327:</SPAN> {
+<SPAN CLASS="linenum">1328:</SPAN>     <SPAN CLASS="comment">// Get access to the UI controls</SPAN>
+<SPAN CLASS="linenum">1329:</SPAN>     HWND hwndAdapterList        = GetDlgItem( hDlg, IDC_ADAPTER_COMBO );
+<SPAN CLASS="linenum">1330:</SPAN>     HWND hwndDeviceList         = GetDlgItem( hDlg, IDC_DEVICE_COMBO );
+<SPAN CLASS="linenum">1331:</SPAN>     HWND hwndFullscreenModeList = GetDlgItem( hDlg, IDC_FULLSCREENMODES_COMBO );
+<SPAN CLASS="linenum">1332:</SPAN>     HWND hwndWindowedRadio      = GetDlgItem( hDlg, IDC_WINDOW );
+<SPAN CLASS="linenum">1333:</SPAN>     HWND hwndFullscreenRadio    = GetDlgItem( hDlg, IDC_FULLSCREEN );
+<SPAN CLASS="linenum">1334:</SPAN>     HWND hwndMultiSampleList    = GetDlgItem( hDlg, IDC_MULTISAMPLE_COMBO );
+<SPAN CLASS="linenum">1335:</SPAN>     BOOL bUpdateDlgControls     = FALSE;
+<SPAN CLASS="linenum">1336:</SPAN> 
+<SPAN CLASS="linenum">1337:</SPAN>     <SPAN CLASS="comment">// Static state for adapter/device/mode selection</SPAN>
+<SPAN CLASS="linenum">1338:</SPAN>     <SPAN CLASS="keyword">static</SPAN> CD3DApplication* pd3dApp;
+<SPAN CLASS="linenum">1339:</SPAN>     <SPAN CLASS="keyword">static</SPAN> DWORD  dwOldAdapter, dwNewAdapter;
+<SPAN CLASS="linenum">1340:</SPAN>     <SPAN CLASS="keyword">static</SPAN> DWORD  dwOldDevice,  dwNewDevice;
+<SPAN CLASS="linenum">1341:</SPAN>     <SPAN CLASS="keyword">static</SPAN> DWORD  dwOldMode,    dwNewMode;
+<SPAN CLASS="linenum">1342:</SPAN>     <SPAN CLASS="keyword">static</SPAN> BOOL   bOldWindowed, bNewWindowed;
+<SPAN CLASS="linenum">1343:</SPAN>     <SPAN CLASS="keyword">static</SPAN> D3DMULTISAMPLE_TYPE OldMultiSampleTypeWindowed, NewMultiSampleTypeWindowed;
+<SPAN CLASS="linenum">1344:</SPAN>     <SPAN CLASS="keyword">static</SPAN> D3DMULTISAMPLE_TYPE OldMultiSampleTypeFullscreen, NewMultiSampleTypeFullscreen;
+<SPAN CLASS="linenum">1345:</SPAN> 
+<SPAN CLASS="linenum">1346:</SPAN>     <SPAN CLASS="comment">// Working variables</SPAN>
+<SPAN CLASS="linenum">1347:</SPAN>     D3DAdapterInfo* pAdapter;
+<SPAN CLASS="linenum">1348:</SPAN>     D3DDeviceInfo*  pDevice;
+<SPAN CLASS="linenum">1349:</SPAN> 
+<SPAN CLASS="linenum">1350:</SPAN>     <SPAN CLASS="comment">// Handle the initialization message</SPAN>
+<SPAN CLASS="linenum">1351:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( WM_INITDIALOG == msg )
+<SPAN CLASS="linenum">1352:</SPAN>     {
+<SPAN CLASS="linenum">1353:</SPAN>         <SPAN CLASS="comment">// Old state</SPAN>
+<SPAN CLASS="linenum">1354:</SPAN>         pd3dApp      = (CD3DApplication*)lParam;
+<SPAN CLASS="linenum">1355:</SPAN>         dwOldAdapter = pd3dApp-&gt;m_dwAdapter;
+<SPAN CLASS="linenum">1356:</SPAN>         pAdapter     = &amp;pd3dApp-&gt;m_Adapters[dwOldAdapter];
+<SPAN CLASS="linenum">1357:</SPAN> 
+<SPAN CLASS="linenum">1358:</SPAN>         dwOldDevice  = pAdapter-&gt;dwCurrentDevice;
+<SPAN CLASS="linenum">1359:</SPAN>         pDevice      = &amp;pAdapter-&gt;devices[dwOldDevice];
+<SPAN CLASS="linenum">1360:</SPAN> 
+<SPAN CLASS="linenum">1361:</SPAN>         dwOldMode    = pDevice-&gt;dwCurrentMode;
+<SPAN CLASS="linenum">1362:</SPAN>         bOldWindowed = pDevice-&gt;bWindowed;
+<SPAN CLASS="linenum">1363:</SPAN>         OldMultiSampleTypeWindowed = pDevice-&gt;MultiSampleTypeWindowed;
+<SPAN CLASS="linenum">1364:</SPAN>         OldMultiSampleTypeFullscreen = pDevice-&gt;MultiSampleTypeFullscreen;
+<SPAN CLASS="linenum">1365:</SPAN> 
+<SPAN CLASS="linenum">1366:</SPAN>         <SPAN CLASS="comment">// New state is initially the same as the old state</SPAN>
+<SPAN CLASS="linenum">1367:</SPAN>         dwNewAdapter = dwOldAdapter;
+<SPAN CLASS="linenum">1368:</SPAN>         dwNewDevice  = dwOldDevice;
+<SPAN CLASS="linenum">1369:</SPAN>         dwNewMode    = dwOldMode;
+<SPAN CLASS="linenum">1370:</SPAN>         bNewWindowed = bOldWindowed;
+<SPAN CLASS="linenum">1371:</SPAN>         NewMultiSampleTypeWindowed = OldMultiSampleTypeWindowed;
+<SPAN CLASS="linenum">1372:</SPAN>         NewMultiSampleTypeFullscreen = OldMultiSampleTypeFullscreen;
+<SPAN CLASS="linenum">1373:</SPAN> 
+<SPAN CLASS="linenum">1374:</SPAN>         <SPAN CLASS="comment">// Set flag to update dialog controls below</SPAN>
+<SPAN CLASS="linenum">1375:</SPAN>         bUpdateDlgControls = TRUE;
+<SPAN CLASS="linenum">1376:</SPAN>     }
+<SPAN CLASS="linenum">1377:</SPAN> 
+<SPAN CLASS="linenum">1378:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( WM_COMMAND == msg )
+<SPAN CLASS="linenum">1379:</SPAN>     {
+<SPAN CLASS="linenum">1380:</SPAN>         <SPAN CLASS="comment">// Get current UI state</SPAN>
+<SPAN CLASS="linenum">1381:</SPAN>         bNewWindowed  = Button_GetCheck( hwndWindowedRadio );
+<SPAN CLASS="linenum">1382:</SPAN> 
+<SPAN CLASS="linenum">1383:</SPAN>         <SPAN CLASS="keyword">if</SPAN>( IDOK == LOWORD(wParam) )
+<SPAN CLASS="linenum">1384:</SPAN>         {
+<SPAN CLASS="linenum">1385:</SPAN>             <SPAN CLASS="comment">// Handle the case when the user hits the OK button. Check if any</SPAN>
+<SPAN CLASS="linenum">1386:</SPAN>             <SPAN CLASS="comment">// of the options were changed</SPAN>
+<SPAN CLASS="linenum">1387:</SPAN>             <SPAN CLASS="keyword">if</SPAN>( dwNewAdapter != dwOldAdapter || dwNewDevice  != dwOldDevice  ||
+<SPAN CLASS="linenum">1388:</SPAN>                 dwNewMode    != dwOldMode    || bNewWindowed != bOldWindowed ||
+<SPAN CLASS="linenum">1389:</SPAN>                 NewMultiSampleTypeWindowed != OldMultiSampleTypeWindowed ||
+<SPAN CLASS="linenum">1390:</SPAN>                 NewMultiSampleTypeFullscreen != OldMultiSampleTypeFullscreen )
+<SPAN CLASS="linenum">1391:</SPAN>             {
+<SPAN CLASS="linenum">1392:</SPAN>                 pd3dApp-&gt;m_dwAdapter = dwNewAdapter;
+<SPAN CLASS="linenum">1393:</SPAN> 
+<SPAN CLASS="linenum">1394:</SPAN>                 pAdapter = &amp;pd3dApp-&gt;m_Adapters[dwNewAdapter];
+<SPAN CLASS="linenum">1395:</SPAN>                 pAdapter-&gt;dwCurrentDevice = dwNewDevice;
+<SPAN CLASS="linenum">1396:</SPAN> 
+<SPAN CLASS="linenum">1397:</SPAN>                 pAdapter-&gt;devices[dwNewDevice].dwCurrentMode = dwNewMode;
+<SPAN CLASS="linenum">1398:</SPAN>                 pAdapter-&gt;devices[dwNewDevice].bWindowed     = bNewWindowed;
+<SPAN CLASS="linenum">1399:</SPAN>                 pAdapter-&gt;devices[dwNewDevice].MultiSampleTypeWindowed = NewMultiSampleTypeWindowed;
+<SPAN CLASS="linenum">1400:</SPAN>                 pAdapter-&gt;devices[dwNewDevice].MultiSampleTypeFullscreen = NewMultiSampleTypeFullscreen;
+<SPAN CLASS="linenum">1401:</SPAN> 
+<SPAN CLASS="linenum">1402:</SPAN>                 EndDialog( hDlg, IDOK );
+<SPAN CLASS="linenum">1403:</SPAN>             }
+<SPAN CLASS="linenum">1404:</SPAN>             <SPAN CLASS="keyword">else</SPAN>
+<SPAN CLASS="linenum">1405:</SPAN>                 EndDialog( hDlg, IDCANCEL );
+<SPAN CLASS="linenum">1406:</SPAN> 
+<SPAN CLASS="linenum">1407:</SPAN>             <SPAN CLASS="keyword">return</SPAN> TRUE;
+<SPAN CLASS="linenum">1408:</SPAN>         }
+<SPAN CLASS="linenum">1409:</SPAN>         <SPAN CLASS="keyword">else</SPAN> <SPAN CLASS="keyword">if</SPAN>( IDCANCEL == LOWORD(wParam) )
+<SPAN CLASS="linenum">1410:</SPAN>         {
+<SPAN CLASS="linenum">1411:</SPAN>             <SPAN CLASS="comment">// Handle the case when the user hits the Cancel button</SPAN>
+<SPAN CLASS="linenum">1412:</SPAN>             EndDialog( hDlg, IDCANCEL );
+<SPAN CLASS="linenum">1413:</SPAN>             <SPAN CLASS="keyword">return</SPAN> TRUE;
+<SPAN CLASS="linenum">1414:</SPAN>         }
+<SPAN CLASS="linenum">1415:</SPAN>         <SPAN CLASS="keyword">else</SPAN> <SPAN CLASS="keyword">if</SPAN>( CBN_SELENDOK == HIWORD(wParam) )
+<SPAN CLASS="linenum">1416:</SPAN>         {
+<SPAN CLASS="linenum">1417:</SPAN>             <SPAN CLASS="keyword">if</SPAN>( LOWORD(wParam) == IDC_ADAPTER_COMBO )
+<SPAN CLASS="linenum">1418:</SPAN>             {
+<SPAN CLASS="linenum">1419:</SPAN>                 dwNewAdapter = ComboBox_GetCurSel( hwndAdapterList );
+<SPAN CLASS="linenum">1420:</SPAN>                 pAdapter     = &amp;pd3dApp-&gt;m_Adapters[dwNewAdapter];
+<SPAN CLASS="linenum">1421:</SPAN> 
+<SPAN CLASS="linenum">1422:</SPAN>                 dwNewDevice  = pAdapter-&gt;dwCurrentDevice;
+<SPAN CLASS="linenum">1423:</SPAN>                 dwNewMode    = pAdapter-&gt;devices[dwNewDevice].dwCurrentMode;
+<SPAN CLASS="linenum">1424:</SPAN>                 bNewWindowed = pAdapter-&gt;devices[dwNewDevice].bWindowed;
+<SPAN CLASS="linenum">1425:</SPAN>             }
+<SPAN CLASS="linenum">1426:</SPAN>             <SPAN CLASS="keyword">else</SPAN> <SPAN CLASS="keyword">if</SPAN>( LOWORD(wParam) == IDC_DEVICE_COMBO )
+<SPAN CLASS="linenum">1427:</SPAN>             {
+<SPAN CLASS="linenum">1428:</SPAN>                 pAdapter     = &amp;pd3dApp-&gt;m_Adapters[dwNewAdapter];
+<SPAN CLASS="linenum">1429:</SPAN> 
+<SPAN CLASS="linenum">1430:</SPAN>                 dwNewDevice  = ComboBox_GetCurSel( hwndDeviceList );
+<SPAN CLASS="linenum">1431:</SPAN>                 dwNewMode    = pAdapter-&gt;devices[dwNewDevice].dwCurrentMode;
+<SPAN CLASS="linenum">1432:</SPAN>                 bNewWindowed = pAdapter-&gt;devices[dwNewDevice].bWindowed;
+<SPAN CLASS="linenum">1433:</SPAN>             }
+<SPAN CLASS="linenum">1434:</SPAN>             <SPAN CLASS="keyword">else</SPAN> <SPAN CLASS="keyword">if</SPAN>( LOWORD(wParam) == IDC_FULLSCREENMODES_COMBO )
+<SPAN CLASS="linenum">1435:</SPAN>             {
+<SPAN CLASS="linenum">1436:</SPAN>                 dwNewMode = ComboBox_GetCurSel( hwndFullscreenModeList );
+<SPAN CLASS="linenum">1437:</SPAN>             }
+<SPAN CLASS="linenum">1438:</SPAN>             <SPAN CLASS="keyword">else</SPAN> <SPAN CLASS="keyword">if</SPAN>( LOWORD(wParam) == IDC_MULTISAMPLE_COMBO )
+<SPAN CLASS="linenum">1439:</SPAN>             {
+<SPAN CLASS="linenum">1440:</SPAN>                 DWORD dwItem = ComboBox_GetCurSel( hwndMultiSampleList );
+<SPAN CLASS="linenum">1441:</SPAN>                 <SPAN CLASS="keyword">if</SPAN>( bNewWindowed )
+<SPAN CLASS="linenum">1442:</SPAN>                     NewMultiSampleTypeWindowed = (D3DMULTISAMPLE_TYPE)ComboBox_GetItemData( hwndMultiSampleList, dwItem );
+<SPAN CLASS="linenum">1443:</SPAN>                 <SPAN CLASS="keyword">else</SPAN>
+<SPAN CLASS="linenum">1444:</SPAN>                     NewMultiSampleTypeFullscreen = (D3DMULTISAMPLE_TYPE)ComboBox_GetItemData( hwndMultiSampleList, dwItem );
+<SPAN CLASS="linenum">1445:</SPAN>             }
+<SPAN CLASS="linenum">1446:</SPAN>         }
+<SPAN CLASS="linenum">1447:</SPAN>         <SPAN CLASS="comment">// Keep the UI current</SPAN>
+<SPAN CLASS="linenum">1448:</SPAN>         bUpdateDlgControls = TRUE;
+<SPAN CLASS="linenum">1449:</SPAN>     }
+<SPAN CLASS="linenum">1450:</SPAN> 
+<SPAN CLASS="linenum">1451:</SPAN>     <SPAN CLASS="comment">// Update the dialog controls</SPAN>
+<SPAN CLASS="linenum">1452:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( bUpdateDlgControls )
+<SPAN CLASS="linenum">1453:</SPAN>     {
+<SPAN CLASS="linenum">1454:</SPAN>         <SPAN CLASS="comment">// Reset the content in each of the combo boxes</SPAN>
+<SPAN CLASS="linenum">1455:</SPAN>         ComboBox_ResetContent( hwndAdapterList );
+<SPAN CLASS="linenum">1456:</SPAN>         ComboBox_ResetContent( hwndDeviceList );
+<SPAN CLASS="linenum">1457:</SPAN>         ComboBox_ResetContent( hwndFullscreenModeList );
+<SPAN CLASS="linenum">1458:</SPAN>         ComboBox_ResetContent( hwndMultiSampleList );
+<SPAN CLASS="linenum">1459:</SPAN> 
+<SPAN CLASS="linenum">1460:</SPAN>         pAdapter = &amp;pd3dApp-&gt;m_Adapters[dwNewAdapter];
+<SPAN CLASS="linenum">1461:</SPAN>         pDevice  = &amp;pAdapter-&gt;devices[dwNewDevice];
+<SPAN CLASS="linenum">1462:</SPAN> 
+<SPAN CLASS="linenum">1463:</SPAN>         <SPAN CLASS="comment">// Add a list of adapters to the adapter combo box</SPAN>
+<SPAN CLASS="linenum">1464:</SPAN>         <SPAN CLASS="keyword">for</SPAN>( DWORD a=0; a &lt; pd3dApp-&gt;m_dwNumAdapters; a++ )
+<SPAN CLASS="linenum">1465:</SPAN>         {
+<SPAN CLASS="linenum">1466:</SPAN>             <SPAN CLASS="comment">// Add device name to the combo box</SPAN>
+<SPAN CLASS="linenum">1467:</SPAN>             DWORD dwItem = ComboBox_AddString( hwndAdapterList,
+<SPAN CLASS="linenum">1468:</SPAN>                              pd3dApp-&gt;m_Adapters[a].d3dAdapterIdentifier.Description );
+<SPAN CLASS="linenum">1469:</SPAN> 
+<SPAN CLASS="linenum">1470:</SPAN>             <SPAN CLASS="comment">// Set the item data to identify this adapter</SPAN>
+<SPAN CLASS="linenum">1471:</SPAN>             ComboBox_SetItemData( hwndAdapterList, dwItem, a );
+<SPAN CLASS="linenum">1472:</SPAN> 
+<SPAN CLASS="linenum">1473:</SPAN>             <SPAN CLASS="comment">// Set the combobox selection on the current adapater</SPAN>
+<SPAN CLASS="linenum">1474:</SPAN>             <SPAN CLASS="keyword">if</SPAN>( a == dwNewAdapter )
+<SPAN CLASS="linenum">1475:</SPAN>                 ComboBox_SetCurSel( hwndAdapterList, dwItem );
+<SPAN CLASS="linenum">1476:</SPAN>         }
+<SPAN CLASS="linenum">1477:</SPAN> 
+<SPAN CLASS="linenum">1478:</SPAN>         <SPAN CLASS="comment">// Add a list of devices to the device combo box</SPAN>
+<SPAN CLASS="linenum">1479:</SPAN>         <SPAN CLASS="keyword">for</SPAN>( DWORD d=0; d &lt; pAdapter-&gt;dwNumDevices; d++ )
+<SPAN CLASS="linenum">1480:</SPAN>         {
+<SPAN CLASS="linenum">1481:</SPAN>             <SPAN CLASS="comment">// Add device name to the combo box</SPAN>
+<SPAN CLASS="linenum">1482:</SPAN>             DWORD dwItem = ComboBox_AddString( hwndDeviceList,
+<SPAN CLASS="linenum">1483:</SPAN>                                                pAdapter-&gt;devices[d].strDesc );
+<SPAN CLASS="linenum">1484:</SPAN> 
+<SPAN CLASS="linenum">1485:</SPAN>             <SPAN CLASS="comment">// Set the item data to identify this device</SPAN>
+<SPAN CLASS="linenum">1486:</SPAN>             ComboBox_SetItemData( hwndDeviceList, dwItem, d );
+<SPAN CLASS="linenum">1487:</SPAN> 
+<SPAN CLASS="linenum">1488:</SPAN>             <SPAN CLASS="comment">// Set the combobox selection on the current device</SPAN>
+<SPAN CLASS="linenum">1489:</SPAN>             <SPAN CLASS="keyword">if</SPAN>( d == dwNewDevice )
+<SPAN CLASS="linenum">1490:</SPAN>                 ComboBox_SetCurSel( hwndDeviceList, dwItem );
+<SPAN CLASS="linenum">1491:</SPAN>         }
+<SPAN CLASS="linenum">1492:</SPAN> 
+<SPAN CLASS="linenum">1493:</SPAN>         <SPAN CLASS="comment">// Add a list of modes to the mode combo box</SPAN>
+<SPAN CLASS="linenum">1494:</SPAN>         <SPAN CLASS="keyword">for</SPAN>( DWORD m=0; m &lt; pDevice-&gt;dwNumModes; m++ )
+<SPAN CLASS="linenum">1495:</SPAN>         {
+<SPAN CLASS="linenum">1496:</SPAN>             DWORD BitDepth = 16;
+<SPAN CLASS="linenum">1497:</SPAN>             <SPAN CLASS="keyword">if</SPAN>( pDevice-&gt;modes[m].Format == D3DFMT_X8R8G8B8 ||
+<SPAN CLASS="linenum">1498:</SPAN>                 pDevice-&gt;modes[m].Format == D3DFMT_A8R8G8B8 ||
+<SPAN CLASS="linenum">1499:</SPAN>                 pDevice-&gt;modes[m].Format == D3DFMT_R8G8B8 )
+<SPAN CLASS="linenum">1500:</SPAN>             {
+<SPAN CLASS="linenum">1501:</SPAN>                 BitDepth = 32;
+<SPAN CLASS="linenum">1502:</SPAN>             }
+<SPAN CLASS="linenum">1503:</SPAN> 
+<SPAN CLASS="linenum">1504:</SPAN>             <SPAN CLASS="comment">// Add mode desc to the combo box</SPAN>
+<SPAN CLASS="linenum">1505:</SPAN>             TCHAR strMode[80];
+<SPAN CLASS="linenum">1506:</SPAN>             _stprintf( strMode, _T("<SPAN CLASS="string">%ld x %ld x %ld</SPAN>"), pDevice-&gt;modes[m].Width,
+<SPAN CLASS="linenum">1507:</SPAN>                                                        pDevice-&gt;modes[m].Height,
+<SPAN CLASS="linenum">1508:</SPAN>                                                        BitDepth );
+<SPAN CLASS="linenum">1509:</SPAN>             DWORD dwItem = ComboBox_AddString( hwndFullscreenModeList, strMode );
+<SPAN CLASS="linenum">1510:</SPAN> 
+<SPAN CLASS="linenum">1511:</SPAN>             <SPAN CLASS="comment">// Set the item data to identify this mode</SPAN>
+<SPAN CLASS="linenum">1512:</SPAN>             ComboBox_SetItemData( hwndFullscreenModeList, dwItem, m );
+<SPAN CLASS="linenum">1513:</SPAN> 
+<SPAN CLASS="linenum">1514:</SPAN>             <SPAN CLASS="comment">// Set the combobox selection on the current mode</SPAN>
+<SPAN CLASS="linenum">1515:</SPAN>             <SPAN CLASS="keyword">if</SPAN>( m == dwNewMode )
+<SPAN CLASS="linenum">1516:</SPAN>                 ComboBox_SetCurSel( hwndFullscreenModeList, dwItem );
+<SPAN CLASS="linenum">1517:</SPAN>         }
+<SPAN CLASS="linenum">1518:</SPAN> 
+<SPAN CLASS="linenum">1519:</SPAN>         <SPAN CLASS="comment">// Add a list of multisample modes to the multisample combo box</SPAN>
+<SPAN CLASS="linenum">1520:</SPAN>         <SPAN CLASS="keyword">for</SPAN>( m=0; m &lt;= 16; m++ )
+<SPAN CLASS="linenum">1521:</SPAN>         {
+<SPAN CLASS="linenum">1522:</SPAN>             TCHAR strDesc[50];
+<SPAN CLASS="linenum">1523:</SPAN> 
+<SPAN CLASS="linenum">1524:</SPAN>             D3DFORMAT fmt;
+<SPAN CLASS="linenum">1525:</SPAN>             <SPAN CLASS="keyword">if</SPAN>( bNewWindowed )
+<SPAN CLASS="linenum">1526:</SPAN>                 fmt = pd3dApp-&gt;m_Adapters[dwNewAdapter].d3ddmDesktop.Format;
+<SPAN CLASS="linenum">1527:</SPAN>             <SPAN CLASS="keyword">else</SPAN>
+<SPAN CLASS="linenum">1528:</SPAN>                 fmt = pDevice-&gt;modes[dwNewMode].Format;
+<SPAN CLASS="linenum">1529:</SPAN> 
+<SPAN CLASS="linenum">1530:</SPAN>             <SPAN CLASS="keyword">if</SPAN> ( m == 1 ) <SPAN CLASS="comment">// 1 is not a valid multisample type</SPAN>
+<SPAN CLASS="linenum">1531:</SPAN>                 <SPAN CLASS="keyword">continue</SPAN>;
+<SPAN CLASS="linenum">1532:</SPAN> 
+<SPAN CLASS="linenum">1533:</SPAN>             <SPAN CLASS="keyword">if</SPAN>( SUCCEEDED( pd3dApp-&gt;m_pD3D-&gt;CheckDeviceMultiSampleType( dwNewAdapter,
+<SPAN CLASS="linenum">1534:</SPAN>                 pDevice-&gt;DeviceType, fmt, bNewWindowed, (D3DMULTISAMPLE_TYPE)m ) ) )
+<SPAN CLASS="linenum">1535:</SPAN>             {
+<SPAN CLASS="linenum">1536:</SPAN>                 <SPAN CLASS="keyword">if</SPAN>( m == 0 )
+<SPAN CLASS="linenum">1537:</SPAN>                     lstrcpy( strDesc, _T("<SPAN CLASS="string">none</SPAN>") );
+<SPAN CLASS="linenum">1538:</SPAN>                 <SPAN CLASS="keyword">else</SPAN>
+<SPAN CLASS="linenum">1539:</SPAN>                     wsprintf( strDesc, _T("<SPAN CLASS="string">%d samples</SPAN>"), m );
+<SPAN CLASS="linenum">1540:</SPAN> 
+<SPAN CLASS="linenum">1541:</SPAN>                 <SPAN CLASS="comment">// Add device name to the combo box</SPAN>
+<SPAN CLASS="linenum">1542:</SPAN>                 DWORD dwItem = ComboBox_AddString( hwndMultiSampleList, strDesc );
+<SPAN CLASS="linenum">1543:</SPAN> 
+<SPAN CLASS="linenum">1544:</SPAN>                 <SPAN CLASS="comment">// Set the item data to identify this multisample type</SPAN>
+<SPAN CLASS="linenum">1545:</SPAN>                 ComboBox_SetItemData( hwndMultiSampleList, dwItem, m );
+<SPAN CLASS="linenum">1546:</SPAN> 
+<SPAN CLASS="linenum">1547:</SPAN>                 <SPAN CLASS="comment">// Set the combobox selection on the current multisample type</SPAN>
+<SPAN CLASS="linenum">1548:</SPAN>                 <SPAN CLASS="keyword">if</SPAN>( bNewWindowed )
+<SPAN CLASS="linenum">1549:</SPAN>                 {
+<SPAN CLASS="linenum">1550:</SPAN>                     <SPAN CLASS="keyword">if</SPAN>( (D3DMULTISAMPLE_TYPE)m == NewMultiSampleTypeWindowed || m == 0 )
+<SPAN CLASS="linenum">1551:</SPAN>                         ComboBox_SetCurSel( hwndMultiSampleList, dwItem );
+<SPAN CLASS="linenum">1552:</SPAN>                 }
+<SPAN CLASS="linenum">1553:</SPAN>                 <SPAN CLASS="keyword">else</SPAN>
+<SPAN CLASS="linenum">1554:</SPAN>                 {
+<SPAN CLASS="linenum">1555:</SPAN>                     <SPAN CLASS="keyword">if</SPAN>( (D3DMULTISAMPLE_TYPE)m == NewMultiSampleTypeFullscreen || m == 0 )
+<SPAN CLASS="linenum">1556:</SPAN>                         ComboBox_SetCurSel( hwndMultiSampleList, dwItem );
+<SPAN CLASS="linenum">1557:</SPAN>                 }
+<SPAN CLASS="linenum">1558:</SPAN>             }
+<SPAN CLASS="linenum">1559:</SPAN>         }
+<SPAN CLASS="linenum">1560:</SPAN>         DWORD dwItem = ComboBox_GetCurSel( hwndMultiSampleList );
+<SPAN CLASS="linenum">1561:</SPAN>         <SPAN CLASS="keyword">if</SPAN>( bNewWindowed )
+<SPAN CLASS="linenum">1562:</SPAN>             NewMultiSampleTypeWindowed = (D3DMULTISAMPLE_TYPE)ComboBox_GetItemData( hwndMultiSampleList, dwItem );
+<SPAN CLASS="linenum">1563:</SPAN>         <SPAN CLASS="keyword">else</SPAN>
+<SPAN CLASS="linenum">1564:</SPAN>             NewMultiSampleTypeFullscreen = (D3DMULTISAMPLE_TYPE)ComboBox_GetItemData( hwndMultiSampleList, dwItem );
+<SPAN CLASS="linenum">1565:</SPAN>         EnableWindow( hwndMultiSampleList, ComboBox_GetCount( hwndMultiSampleList ) &gt; 1);
+<SPAN CLASS="linenum">1566:</SPAN>         EnableWindow( hwndWindowedRadio, pDevice-&gt;bCanDoWindowed );
+<SPAN CLASS="linenum">1567:</SPAN> 
+<SPAN CLASS="linenum">1568:</SPAN>         <SPAN CLASS="keyword">if</SPAN>( bNewWindowed )
+<SPAN CLASS="linenum">1569:</SPAN>         {
+<SPAN CLASS="linenum">1570:</SPAN>             Button_SetCheck( hwndWindowedRadio,   TRUE );
+<SPAN CLASS="linenum">1571:</SPAN>             Button_SetCheck( hwndFullscreenRadio, FALSE );
+<SPAN CLASS="linenum">1572:</SPAN>             EnableWindow( hwndFullscreenModeList, FALSE );
+<SPAN CLASS="linenum">1573:</SPAN>         }
+<SPAN CLASS="linenum">1574:</SPAN>         <SPAN CLASS="keyword">else</SPAN>
+<SPAN CLASS="linenum">1575:</SPAN>         {
+<SPAN CLASS="linenum">1576:</SPAN>             Button_SetCheck( hwndWindowedRadio,   FALSE );
+<SPAN CLASS="linenum">1577:</SPAN>             Button_SetCheck( hwndFullscreenRadio, TRUE );
+<SPAN CLASS="linenum">1578:</SPAN>             EnableWindow( hwndFullscreenModeList, TRUE );
+<SPAN CLASS="linenum">1579:</SPAN>         }
+<SPAN CLASS="linenum">1580:</SPAN>         <SPAN CLASS="keyword">return</SPAN> TRUE;
+<SPAN CLASS="linenum">1581:</SPAN>     }
+<SPAN CLASS="linenum">1582:</SPAN> 
+<SPAN CLASS="linenum">1583:</SPAN>     <SPAN CLASS="keyword">return</SPAN> FALSE;
+<SPAN CLASS="linenum">1584:</SPAN> }
+<SPAN CLASS="linenum">1585:</SPAN> 
+<SPAN CLASS="linenum">1586:</SPAN> 
+<SPAN CLASS="linenum">1587:</SPAN> 
+<SPAN CLASS="linenum">1588:</SPAN> 
+<SPAN CLASS="linenum">1589:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">1590:</SPAN> <SPAN CLASS="comment">// Name: Run()</SPAN>
+<SPAN CLASS="linenum">1591:</SPAN> <SPAN CLASS="comment">// Desc:</SPAN>
+<SPAN CLASS="linenum">1592:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">1593:</SPAN> INT CD3DApplication::Run()
+<SPAN CLASS="linenum">1594:</SPAN> {
+<SPAN CLASS="linenum">1595:</SPAN>     <SPAN CLASS="comment">// Load keyboard accelerators</SPAN>
+<SPAN CLASS="linenum">1596:</SPAN>     HACCEL hAccel = LoadAccelerators( NULL, MAKEINTRESOURCE(IDR_MAIN_ACCEL) );
+<SPAN CLASS="linenum">1597:</SPAN> 
+<SPAN CLASS="linenum">1598:</SPAN>     <SPAN CLASS="comment">// Now we're ready to recieve and process Windows messages.</SPAN>
+<SPAN CLASS="linenum">1599:</SPAN>     BOOL bGotMsg;
+<SPAN CLASS="linenum">1600:</SPAN>     MSG  msg;
+<SPAN CLASS="linenum">1601:</SPAN>     msg.message = WM_NULL;
+<SPAN CLASS="linenum">1602:</SPAN>     PeekMessage( &amp;msg, NULL, 0U, 0U, PM_NOREMOVE );
+<SPAN CLASS="linenum">1603:</SPAN> 
+<SPAN CLASS="linenum">1604:</SPAN>     <SPAN CLASS="keyword">while</SPAN>( WM_QUIT != msg.message  )
+<SPAN CLASS="linenum">1605:</SPAN>     {
+<SPAN CLASS="linenum">1606:</SPAN>         <SPAN CLASS="comment">// Use PeekMessage() if the app is active, so we can use idle time to</SPAN>
+<SPAN CLASS="linenum">1607:</SPAN>         <SPAN CLASS="comment">// render the scene. Else, use GetMessage() to avoid eating CPU time.</SPAN>
+<SPAN CLASS="linenum">1608:</SPAN>         <SPAN CLASS="keyword">if</SPAN>( m_bActive )
+<SPAN CLASS="linenum">1609:</SPAN>             bGotMsg = PeekMessage( &amp;msg, NULL, 0U, 0U, PM_REMOVE );
+<SPAN CLASS="linenum">1610:</SPAN>         <SPAN CLASS="keyword">else</SPAN>
+<SPAN CLASS="linenum">1611:</SPAN>             bGotMsg = GetMessage( &amp;msg, NULL, 0U, 0U );
+<SPAN CLASS="linenum">1612:</SPAN> 
+<SPAN CLASS="linenum">1613:</SPAN>         <SPAN CLASS="keyword">if</SPAN>( bGotMsg )
+<SPAN CLASS="linenum">1614:</SPAN>         {
+<SPAN CLASS="linenum">1615:</SPAN>             <SPAN CLASS="comment">// Translate and dispatch the message</SPAN>
+<SPAN CLASS="linenum">1616:</SPAN>             <SPAN CLASS="keyword">if</SPAN>( 0 == TranslateAccelerator( m_hWnd, hAccel, &amp;msg ) )
+<SPAN CLASS="linenum">1617:</SPAN>             {
+<SPAN CLASS="linenum">1618:</SPAN>                 TranslateMessage( &amp;msg );
+<SPAN CLASS="linenum">1619:</SPAN>                 DispatchMessage( &amp;msg );
+<SPAN CLASS="linenum">1620:</SPAN>             }
+<SPAN CLASS="linenum">1621:</SPAN>         }
+<SPAN CLASS="linenum">1622:</SPAN>         <SPAN CLASS="keyword">else</SPAN>
+<SPAN CLASS="linenum">1623:</SPAN>         {
+<SPAN CLASS="linenum">1624:</SPAN>             <SPAN CLASS="comment">// Render a frame during idle time (no messages are waiting)</SPAN>
+<SPAN CLASS="linenum">1625:</SPAN>             <SPAN CLASS="keyword">if</SPAN>( m_bActive &amp;&amp; m_bReady )
+<SPAN CLASS="linenum">1626:</SPAN>             {
+<SPAN CLASS="linenum">1627:</SPAN>                 <SPAN CLASS="keyword">if</SPAN>( FAILED( Render3DEnvironment() ) )
+<SPAN CLASS="linenum">1628:</SPAN>                     SendMessage( m_hWnd, WM_CLOSE, 0, 0 );
+<SPAN CLASS="linenum">1629:</SPAN>             }
+<SPAN CLASS="linenum">1630:</SPAN>         }
+<SPAN CLASS="linenum">1631:</SPAN>     }
+<SPAN CLASS="linenum">1632:</SPAN> 
+<SPAN CLASS="linenum">1633:</SPAN>     <SPAN CLASS="keyword">return</SPAN> (INT)msg.wParam;
+<SPAN CLASS="linenum">1634:</SPAN> }
+<SPAN CLASS="linenum">1635:</SPAN> 
+<SPAN CLASS="linenum">1636:</SPAN> 
+<SPAN CLASS="linenum">1637:</SPAN> 
+<SPAN CLASS="linenum">1638:</SPAN> 
+<SPAN CLASS="linenum">1639:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">1640:</SPAN> <SPAN CLASS="comment">// Name: Render3DEnvironment()</SPAN>
+<SPAN CLASS="linenum">1641:</SPAN> <SPAN CLASS="comment">// Desc: Draws the scene.</SPAN>
+<SPAN CLASS="linenum">1642:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">1643:</SPAN> HRESULT CD3DApplication::Render3DEnvironment()
+<SPAN CLASS="linenum">1644:</SPAN> {
+<SPAN CLASS="linenum">1645:</SPAN>     HRESULT hr;
+<SPAN CLASS="linenum">1646:</SPAN> 
+<SPAN CLASS="linenum">1647:</SPAN>     <SPAN CLASS="comment">// Test the cooperative level to see if it's okay to render</SPAN>
+<SPAN CLASS="linenum">1648:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( FAILED( hr = m_pd3dDevice-&gt;TestCooperativeLevel() ) )
+<SPAN CLASS="linenum">1649:</SPAN>     {
+<SPAN CLASS="linenum">1650:</SPAN>         <SPAN CLASS="comment">// If the device was lost, do not render until we get it back</SPAN>
+<SPAN CLASS="linenum">1651:</SPAN>         <SPAN CLASS="keyword">if</SPAN>( D3DERR_DEVICELOST == hr )
+<SPAN CLASS="linenum">1652:</SPAN>             <SPAN CLASS="keyword">return</SPAN> S_OK;
+<SPAN CLASS="linenum">1653:</SPAN> 
+<SPAN CLASS="linenum">1654:</SPAN>         <SPAN CLASS="comment">// Check if the device needs to be resized.</SPAN>
+<SPAN CLASS="linenum">1655:</SPAN>         <SPAN CLASS="keyword">if</SPAN>( D3DERR_DEVICENOTRESET == hr )
+<SPAN CLASS="linenum">1656:</SPAN>         {
+<SPAN CLASS="linenum">1657:</SPAN>             <SPAN CLASS="comment">// If we are windowed, read the desktop mode and use the same format for</SPAN>
+<SPAN CLASS="linenum">1658:</SPAN>             <SPAN CLASS="comment">// the back buffer</SPAN>
+<SPAN CLASS="linenum">1659:</SPAN>             <SPAN CLASS="keyword">if</SPAN>( m_bWindowed )
+<SPAN CLASS="linenum">1660:</SPAN>             {
+<SPAN CLASS="linenum">1661:</SPAN>                 D3DAdapterInfo* pAdapterInfo = &amp;m_Adapters[m_dwAdapter];
+<SPAN CLASS="linenum">1662:</SPAN>                 m_pD3D-&gt;GetAdapterDisplayMode( m_dwAdapter, &amp;pAdapterInfo-&gt;d3ddmDesktop );
+<SPAN CLASS="linenum">1663:</SPAN>                 m_d3dpp.BackBufferFormat = pAdapterInfo-&gt;d3ddmDesktop.Format;
+<SPAN CLASS="linenum">1664:</SPAN>             }
+<SPAN CLASS="linenum">1665:</SPAN> 
+<SPAN CLASS="linenum">1666:</SPAN>             <SPAN CLASS="keyword">if</SPAN>( FAILED( hr = Resize3DEnvironment() ) )
+<SPAN CLASS="linenum">1667:</SPAN>                 <SPAN CLASS="keyword">return</SPAN> hr;
+<SPAN CLASS="linenum">1668:</SPAN>         }
+<SPAN CLASS="linenum">1669:</SPAN>         <SPAN CLASS="keyword">return</SPAN> hr;
+<SPAN CLASS="linenum">1670:</SPAN>     }
+<SPAN CLASS="linenum">1671:</SPAN> 
+<SPAN CLASS="linenum">1672:</SPAN>     <SPAN CLASS="comment">// Get the app's time, in seconds. Skip rendering if no time elapsed</SPAN>
+<SPAN CLASS="linenum">1673:</SPAN>     FLOAT fAppTime        = DXUtil_Timer( TIMER_GETAPPTIME );
+<SPAN CLASS="linenum">1674:</SPAN>     FLOAT fElapsedAppTime = DXUtil_Timer( TIMER_GETELAPSEDTIME );
+<SPAN CLASS="linenum">1675:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( ( 0.0f == fElapsedAppTime ) &amp;&amp; m_bFrameMoving )
+<SPAN CLASS="linenum">1676:</SPAN>         <SPAN CLASS="keyword">return</SPAN> S_OK;
+<SPAN CLASS="linenum">1677:</SPAN> 
+<SPAN CLASS="linenum">1678:</SPAN>     <SPAN CLASS="comment">// FrameMove (animate) the scene</SPAN>
+<SPAN CLASS="linenum">1679:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( m_bFrameMoving || m_bSingleStep )
+<SPAN CLASS="linenum">1680:</SPAN>     {
+<SPAN CLASS="linenum">1681:</SPAN>         <SPAN CLASS="comment">// Store the time for the app</SPAN>
+<SPAN CLASS="linenum">1682:</SPAN>         m_fTime        = fAppTime;
+<SPAN CLASS="linenum">1683:</SPAN>         m_fElapsedTime = fElapsedAppTime;
+<SPAN CLASS="linenum">1684:</SPAN> 
+<SPAN CLASS="linenum">1685:</SPAN>         <SPAN CLASS="comment">// Frame move the scene</SPAN>
+<SPAN CLASS="linenum">1686:</SPAN>         <SPAN CLASS="keyword">if</SPAN>( FAILED( hr = FrameMove() ) )
+<SPAN CLASS="linenum">1687:</SPAN>             <SPAN CLASS="keyword">return</SPAN> hr;
+<SPAN CLASS="linenum">1688:</SPAN> 
+<SPAN CLASS="linenum">1689:</SPAN>         m_bSingleStep = FALSE;
+<SPAN CLASS="linenum">1690:</SPAN>     }
+<SPAN CLASS="linenum">1691:</SPAN> 
+<SPAN CLASS="linenum">1692:</SPAN>     <SPAN CLASS="comment">// Render the scene as normal</SPAN>
+<SPAN CLASS="linenum">1693:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( FAILED( hr = Render() ) )
+<SPAN CLASS="linenum">1694:</SPAN>         <SPAN CLASS="keyword">return</SPAN> hr;
+<SPAN CLASS="linenum">1695:</SPAN> 
+<SPAN CLASS="linenum">1696:</SPAN>     <SPAN CLASS="comment">// Keep track of the frame count</SPAN>
+<SPAN CLASS="linenum">1697:</SPAN>     {
+<SPAN CLASS="linenum">1698:</SPAN>         <SPAN CLASS="keyword">static</SPAN> FLOAT fLastTime = 0.0f;
+<SPAN CLASS="linenum">1699:</SPAN>         <SPAN CLASS="keyword">static</SPAN> DWORD dwFrames  = 0L;
+<SPAN CLASS="linenum">1700:</SPAN>         FLOAT fTime = DXUtil_Timer( TIMER_GETABSOLUTETIME );
+<SPAN CLASS="linenum">1701:</SPAN>         ++dwFrames;
+<SPAN CLASS="linenum">1702:</SPAN> 
+<SPAN CLASS="linenum">1703:</SPAN>         <SPAN CLASS="comment">// Update the scene stats once per second</SPAN>
+<SPAN CLASS="linenum">1704:</SPAN>         <SPAN CLASS="keyword">if</SPAN>( fTime - fLastTime &gt; 1.0f )
+<SPAN CLASS="linenum">1705:</SPAN>         {
+<SPAN CLASS="linenum">1706:</SPAN>             m_fFPS    = dwFrames / (fTime - fLastTime);
+<SPAN CLASS="linenum">1707:</SPAN>             fLastTime = fTime;
+<SPAN CLASS="linenum">1708:</SPAN>             dwFrames  = 0L;
+<SPAN CLASS="linenum">1709:</SPAN> 
+<SPAN CLASS="linenum">1710:</SPAN>             <SPAN CLASS="comment">// Get adapter's current mode so we can report</SPAN>
+<SPAN CLASS="linenum">1711:</SPAN>             <SPAN CLASS="comment">// bit depth (back buffer depth may be unknown)</SPAN>
+<SPAN CLASS="linenum">1712:</SPAN>             D3DDISPLAYMODE mode;
+<SPAN CLASS="linenum">1713:</SPAN>             m_pD3D-&gt;GetAdapterDisplayMode(m_dwAdapter, &amp;mode);
+<SPAN CLASS="linenum">1714:</SPAN> 
+<SPAN CLASS="linenum">1715:</SPAN>             _stprintf( m_strFrameStats, _T("<SPAN CLASS="string">%.02f fps (%dx%dx%d)</SPAN>"), m_fFPS,
+<SPAN CLASS="linenum">1716:</SPAN>                        m_d3dsdBackBuffer.Width, m_d3dsdBackBuffer.Height,
+<SPAN CLASS="linenum">1717:</SPAN>                        mode.Format==D3DFMT_X8R8G8B8?32:16 );
+<SPAN CLASS="linenum">1718:</SPAN>             D3DAdapterInfo* pAdapterInfo = &amp;m_Adapters[m_dwAdapter];
+<SPAN CLASS="linenum">1719:</SPAN>             D3DDeviceInfo*  pDeviceInfo  = &amp;pAdapterInfo-&gt;devices[pAdapterInfo-&gt;dwCurrentDevice];
+<SPAN CLASS="linenum">1720:</SPAN>             D3DModeInfo*    pModeInfo    = &amp;pDeviceInfo-&gt;modes[pDeviceInfo-&gt;dwCurrentMode];
+<SPAN CLASS="linenum">1721:</SPAN>             <SPAN CLASS="keyword">if</SPAN>( m_bUseDepthBuffer )
+<SPAN CLASS="linenum">1722:</SPAN>             {
+<SPAN CLASS="linenum">1723:</SPAN> 
+<SPAN CLASS="linenum">1724:</SPAN>                 <SPAN CLASS="keyword">switch</SPAN>( pModeInfo-&gt;DepthStencilFormat )
+<SPAN CLASS="linenum">1725:</SPAN>                 {
+<SPAN CLASS="linenum">1726:</SPAN>                 <SPAN CLASS="keyword">case</SPAN> D3DFMT_D16:
+<SPAN CLASS="linenum">1727:</SPAN>                     lstrcat( m_strFrameStats, _T("<SPAN CLASS="string"> (D16)</SPAN>") );
+<SPAN CLASS="linenum">1728:</SPAN>                     <SPAN CLASS="keyword">break</SPAN>;
+<SPAN CLASS="linenum">1729:</SPAN>                 <SPAN CLASS="keyword">case</SPAN> D3DFMT_D15S1:
+<SPAN CLASS="linenum">1730:</SPAN>                     lstrcat( m_strFrameStats, _T("<SPAN CLASS="string"> (D15S1)</SPAN>") );
+<SPAN CLASS="linenum">1731:</SPAN>                     <SPAN CLASS="keyword">break</SPAN>;
+<SPAN CLASS="linenum">1732:</SPAN>                 <SPAN CLASS="keyword">case</SPAN> D3DFMT_D24X8:
+<SPAN CLASS="linenum">1733:</SPAN>                     lstrcat( m_strFrameStats, _T("<SPAN CLASS="string"> (D24X8)</SPAN>") );
+<SPAN CLASS="linenum">1734:</SPAN>                     <SPAN CLASS="keyword">break</SPAN>;
+<SPAN CLASS="linenum">1735:</SPAN>                 <SPAN CLASS="keyword">case</SPAN> D3DFMT_D24S8:
+<SPAN CLASS="linenum">1736:</SPAN>                     lstrcat( m_strFrameStats, _T("<SPAN CLASS="string"> (D24S8)</SPAN>") );
+<SPAN CLASS="linenum">1737:</SPAN>                     <SPAN CLASS="keyword">break</SPAN>;
+<SPAN CLASS="linenum">1738:</SPAN>                 <SPAN CLASS="keyword">case</SPAN> D3DFMT_D24X4S4:
+<SPAN CLASS="linenum">1739:</SPAN>                     lstrcat( m_strFrameStats, _T("<SPAN CLASS="string"> (D24X4S4)</SPAN>") );
+<SPAN CLASS="linenum">1740:</SPAN>                     <SPAN CLASS="keyword">break</SPAN>;
+<SPAN CLASS="linenum">1741:</SPAN>                 <SPAN CLASS="keyword">case</SPAN> D3DFMT_D32:
+<SPAN CLASS="linenum">1742:</SPAN>                     lstrcat( m_strFrameStats, _T("<SPAN CLASS="string"> (D32)</SPAN>") );
+<SPAN CLASS="linenum">1743:</SPAN>                     <SPAN CLASS="keyword">break</SPAN>;
+<SPAN CLASS="linenum">1744:</SPAN>                 }
+<SPAN CLASS="linenum">1745:</SPAN>             }
+<SPAN CLASS="linenum">1746:</SPAN> 
+<SPAN CLASS="linenum">1747:</SPAN>             D3DMULTISAMPLE_TYPE MultiSampleType;
+<SPAN CLASS="linenum">1748:</SPAN>             <SPAN CLASS="keyword">if</SPAN>( m_bWindowed )
+<SPAN CLASS="linenum">1749:</SPAN>                 MultiSampleType = pDeviceInfo-&gt;MultiSampleTypeWindowed;
+<SPAN CLASS="linenum">1750:</SPAN>             <SPAN CLASS="keyword">else</SPAN>
+<SPAN CLASS="linenum">1751:</SPAN>                 MultiSampleType = pDeviceInfo-&gt;MultiSampleTypeFullscreen;
+<SPAN CLASS="linenum">1752:</SPAN>             <SPAN CLASS="keyword">switch</SPAN>( MultiSampleType )
+<SPAN CLASS="linenum">1753:</SPAN>             {
+<SPAN CLASS="linenum">1754:</SPAN>             <SPAN CLASS="keyword">case</SPAN> D3DMULTISAMPLE_2_SAMPLES:
+<SPAN CLASS="linenum">1755:</SPAN>                 lstrcat( m_strFrameStats, _T("<SPAN CLASS="string"> (2x Multisample)</SPAN>") );
+<SPAN CLASS="linenum">1756:</SPAN>                 <SPAN CLASS="keyword">break</SPAN>;
+<SPAN CLASS="linenum">1757:</SPAN>             <SPAN CLASS="keyword">case</SPAN> D3DMULTISAMPLE_3_SAMPLES:
+<SPAN CLASS="linenum">1758:</SPAN>                 lstrcat( m_strFrameStats, _T("<SPAN CLASS="string"> (3x Multisample)</SPAN>") );
+<SPAN CLASS="linenum">1759:</SPAN>                 <SPAN CLASS="keyword">break</SPAN>;
+<SPAN CLASS="linenum">1760:</SPAN>             <SPAN CLASS="keyword">case</SPAN> D3DMULTISAMPLE_4_SAMPLES:
+<SPAN CLASS="linenum">1761:</SPAN>                 lstrcat( m_strFrameStats, _T("<SPAN CLASS="string"> (4x Multisample)</SPAN>") );
+<SPAN CLASS="linenum">1762:</SPAN>                 <SPAN CLASS="keyword">break</SPAN>;
+<SPAN CLASS="linenum">1763:</SPAN>             <SPAN CLASS="keyword">case</SPAN> D3DMULTISAMPLE_5_SAMPLES:
+<SPAN CLASS="linenum">1764:</SPAN>                 lstrcat( m_strFrameStats, _T("<SPAN CLASS="string"> (5x Multisample)</SPAN>") );
+<SPAN CLASS="linenum">1765:</SPAN>                 <SPAN CLASS="keyword">break</SPAN>;
+<SPAN CLASS="linenum">1766:</SPAN>             <SPAN CLASS="keyword">case</SPAN> D3DMULTISAMPLE_6_SAMPLES:
+<SPAN CLASS="linenum">1767:</SPAN>                 lstrcat( m_strFrameStats, _T("<SPAN CLASS="string"> (6x Multisample)</SPAN>") );
+<SPAN CLASS="linenum">1768:</SPAN>                 <SPAN CLASS="keyword">break</SPAN>;
+<SPAN CLASS="linenum">1769:</SPAN>             <SPAN CLASS="keyword">case</SPAN> D3DMULTISAMPLE_7_SAMPLES:
+<SPAN CLASS="linenum">1770:</SPAN>                 lstrcat( m_strFrameStats, _T("<SPAN CLASS="string"> (7x Multisample)</SPAN>") );
+<SPAN CLASS="linenum">1771:</SPAN>                 <SPAN CLASS="keyword">break</SPAN>;
+<SPAN CLASS="linenum">1772:</SPAN>             <SPAN CLASS="keyword">case</SPAN> D3DMULTISAMPLE_8_SAMPLES:
+<SPAN CLASS="linenum">1773:</SPAN>                 lstrcat( m_strFrameStats, _T("<SPAN CLASS="string"> (8x Multisample)</SPAN>") );
+<SPAN CLASS="linenum">1774:</SPAN>                 <SPAN CLASS="keyword">break</SPAN>;
+<SPAN CLASS="linenum">1775:</SPAN>             <SPAN CLASS="keyword">case</SPAN> D3DMULTISAMPLE_9_SAMPLES:
+<SPAN CLASS="linenum">1776:</SPAN>                 lstrcat( m_strFrameStats, _T("<SPAN CLASS="string"> (9x Multisample)</SPAN>") );
+<SPAN CLASS="linenum">1777:</SPAN>                 <SPAN CLASS="keyword">break</SPAN>;
+<SPAN CLASS="linenum">1778:</SPAN>             <SPAN CLASS="keyword">case</SPAN> D3DMULTISAMPLE_10_SAMPLES:
+<SPAN CLASS="linenum">1779:</SPAN>                 lstrcat( m_strFrameStats, _T("<SPAN CLASS="string"> (10x Multisample)</SPAN>") );
+<SPAN CLASS="linenum">1780:</SPAN>                 <SPAN CLASS="keyword">break</SPAN>;
+<SPAN CLASS="linenum">1781:</SPAN>             <SPAN CLASS="keyword">case</SPAN> D3DMULTISAMPLE_11_SAMPLES:
+<SPAN CLASS="linenum">1782:</SPAN>                 lstrcat( m_strFrameStats, _T("<SPAN CLASS="string"> (11x Multisample)</SPAN>") );
+<SPAN CLASS="linenum">1783:</SPAN>                 <SPAN CLASS="keyword">break</SPAN>;
+<SPAN CLASS="linenum">1784:</SPAN>             <SPAN CLASS="keyword">case</SPAN> D3DMULTISAMPLE_12_SAMPLES:
+<SPAN CLASS="linenum">1785:</SPAN>                 lstrcat( m_strFrameStats, _T("<SPAN CLASS="string"> (12x Multisample)</SPAN>") );
+<SPAN CLASS="linenum">1786:</SPAN>                 <SPAN CLASS="keyword">break</SPAN>;
+<SPAN CLASS="linenum">1787:</SPAN>             <SPAN CLASS="keyword">case</SPAN> D3DMULTISAMPLE_13_SAMPLES:
+<SPAN CLASS="linenum">1788:</SPAN>                 lstrcat( m_strFrameStats, _T("<SPAN CLASS="string"> (13x Multisample)</SPAN>") );
+<SPAN CLASS="linenum">1789:</SPAN>                 <SPAN CLASS="keyword">break</SPAN>;
+<SPAN CLASS="linenum">1790:</SPAN>             <SPAN CLASS="keyword">case</SPAN> D3DMULTISAMPLE_14_SAMPLES:
+<SPAN CLASS="linenum">1791:</SPAN>                 lstrcat( m_strFrameStats, _T("<SPAN CLASS="string"> (14x Multisample)</SPAN>") );
+<SPAN CLASS="linenum">1792:</SPAN>                 <SPAN CLASS="keyword">break</SPAN>;
+<SPAN CLASS="linenum">1793:</SPAN>             <SPAN CLASS="keyword">case</SPAN> D3DMULTISAMPLE_15_SAMPLES:
+<SPAN CLASS="linenum">1794:</SPAN>                 lstrcat( m_strFrameStats, _T("<SPAN CLASS="string"> (15x Multisample)</SPAN>") );
+<SPAN CLASS="linenum">1795:</SPAN>                 <SPAN CLASS="keyword">break</SPAN>;
+<SPAN CLASS="linenum">1796:</SPAN>             <SPAN CLASS="keyword">case</SPAN> D3DMULTISAMPLE_16_SAMPLES:
+<SPAN CLASS="linenum">1797:</SPAN>                 lstrcat( m_strFrameStats, _T("<SPAN CLASS="string"> (16x Multisample)</SPAN>") );
+<SPAN CLASS="linenum">1798:</SPAN>                 <SPAN CLASS="keyword">break</SPAN>;
+<SPAN CLASS="linenum">1799:</SPAN>             }
+<SPAN CLASS="linenum">1800:</SPAN>         }
+<SPAN CLASS="linenum">1801:</SPAN>     }
+<SPAN CLASS="linenum">1802:</SPAN> 
+<SPAN CLASS="linenum">1803:</SPAN>     <SPAN CLASS="comment">// Show the frame on the primary surface.</SPAN>
+<SPAN CLASS="linenum">1804:</SPAN>     m_pd3dDevice-&gt;Present( NULL, NULL, NULL, NULL );
+<SPAN CLASS="linenum">1805:</SPAN> 
+<SPAN CLASS="linenum">1806:</SPAN>     <SPAN CLASS="keyword">return</SPAN> S_OK;
+<SPAN CLASS="linenum">1807:</SPAN> }
+<SPAN CLASS="linenum">1808:</SPAN> 
+<SPAN CLASS="linenum">1809:</SPAN> 
+<SPAN CLASS="linenum">1810:</SPAN> 
+<SPAN CLASS="linenum">1811:</SPAN> 
+<SPAN CLASS="linenum">1812:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">1813:</SPAN> <SPAN CLASS="comment">// Name: Pause()</SPAN>
+<SPAN CLASS="linenum">1814:</SPAN> <SPAN CLASS="comment">// Desc: Called in to toggle the pause state of the app.</SPAN>
+<SPAN CLASS="linenum">1815:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">1816:</SPAN> VOID CD3DApplication::Pause( BOOL bPause )
+<SPAN CLASS="linenum">1817:</SPAN> {
+<SPAN CLASS="linenum">1818:</SPAN>     <SPAN CLASS="keyword">static</SPAN> DWORD dwAppPausedCount = 0L;
+<SPAN CLASS="linenum">1819:</SPAN> 
+<SPAN CLASS="linenum">1820:</SPAN>     dwAppPausedCount += ( bPause ? +1 : -1 );
+<SPAN CLASS="linenum">1821:</SPAN>     m_bReady          = ( dwAppPausedCount ? FALSE : TRUE );
+<SPAN CLASS="linenum">1822:</SPAN> 
+<SPAN CLASS="linenum">1823:</SPAN>     <SPAN CLASS="comment">// Handle the first pause request (of many, nestable pause requests)</SPAN>
+<SPAN CLASS="linenum">1824:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( bPause &amp;&amp; ( 1 == dwAppPausedCount ) )
+<SPAN CLASS="linenum">1825:</SPAN>     {
+<SPAN CLASS="linenum">1826:</SPAN>         <SPAN CLASS="comment">// Stop the scene from animating</SPAN>
+<SPAN CLASS="linenum">1827:</SPAN>         <SPAN CLASS="keyword">if</SPAN>( m_bFrameMoving )
+<SPAN CLASS="linenum">1828:</SPAN>             DXUtil_Timer( TIMER_STOP );
+<SPAN CLASS="linenum">1829:</SPAN>     }
+<SPAN CLASS="linenum">1830:</SPAN> 
+<SPAN CLASS="linenum">1831:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( 0 == dwAppPausedCount )
+<SPAN CLASS="linenum">1832:</SPAN>     {
+<SPAN CLASS="linenum">1833:</SPAN>         <SPAN CLASS="comment">// Restart the timers</SPAN>
+<SPAN CLASS="linenum">1834:</SPAN>         <SPAN CLASS="keyword">if</SPAN>( m_bFrameMoving )
+<SPAN CLASS="linenum">1835:</SPAN>             DXUtil_Timer( TIMER_START );
+<SPAN CLASS="linenum">1836:</SPAN>     }
+<SPAN CLASS="linenum">1837:</SPAN> }
+<SPAN CLASS="linenum">1838:</SPAN> 
+<SPAN CLASS="linenum">1839:</SPAN> 
+<SPAN CLASS="linenum">1840:</SPAN> 
+<SPAN CLASS="linenum">1841:</SPAN> 
+<SPAN CLASS="linenum">1842:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">1843:</SPAN> <SPAN CLASS="comment">// Name: Cleanup3DEnvironment()</SPAN>
+<SPAN CLASS="linenum">1844:</SPAN> <SPAN CLASS="comment">// Desc: Cleanup scene objects</SPAN>
+<SPAN CLASS="linenum">1845:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">1846:</SPAN> VOID CD3DApplication::Cleanup3DEnvironment()
+<SPAN CLASS="linenum">1847:</SPAN> {
+<SPAN CLASS="linenum">1848:</SPAN>     m_bActive = FALSE;
+<SPAN CLASS="linenum">1849:</SPAN>     m_bReady  = FALSE;
+<SPAN CLASS="linenum">1850:</SPAN> 
+<SPAN CLASS="linenum">1851:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( m_pd3dDevice )
+<SPAN CLASS="linenum">1852:</SPAN>     {
+<SPAN CLASS="linenum">1853:</SPAN>         InvalidateDeviceObjects();
+<SPAN CLASS="linenum">1854:</SPAN>         DeleteDeviceObjects();
+<SPAN CLASS="linenum">1855:</SPAN> 
+<SPAN CLASS="linenum">1856:</SPAN>         m_pd3dDevice-&gt;Release();
+<SPAN CLASS="linenum">1857:</SPAN>         m_pD3D-&gt;Release();
+<SPAN CLASS="linenum">1858:</SPAN> 
+<SPAN CLASS="linenum">1859:</SPAN>         m_pd3dDevice = NULL;
+<SPAN CLASS="linenum">1860:</SPAN>         m_pD3D       = NULL;
+<SPAN CLASS="linenum">1861:</SPAN>     }
+<SPAN CLASS="linenum">1862:</SPAN> 
+<SPAN CLASS="linenum">1863:</SPAN>     FinalCleanup();
+<SPAN CLASS="linenum">1864:</SPAN> }
+<SPAN CLASS="linenum">1865:</SPAN> 
+<SPAN CLASS="linenum">1866:</SPAN> 
+<SPAN CLASS="linenum">1867:</SPAN> 
+<SPAN CLASS="linenum">1868:</SPAN> 
+<SPAN CLASS="linenum">1869:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">1870:</SPAN> <SPAN CLASS="comment">// Name: DisplayErrorMsg()</SPAN>
+<SPAN CLASS="linenum">1871:</SPAN> <SPAN CLASS="comment">// Desc: Displays error messages in a message box</SPAN>
+<SPAN CLASS="linenum">1872:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">1873:</SPAN> HRESULT CD3DApplication::DisplayErrorMsg( HRESULT hr, DWORD dwType )
+<SPAN CLASS="linenum">1874:</SPAN> {
+<SPAN CLASS="linenum">1875:</SPAN>     TCHAR strMsg[512];
+<SPAN CLASS="linenum">1876:</SPAN> 
+<SPAN CLASS="linenum">1877:</SPAN>     <SPAN CLASS="keyword">switch</SPAN>( hr )
+<SPAN CLASS="linenum">1878:</SPAN>     {
+<SPAN CLASS="linenum">1879:</SPAN>         <SPAN CLASS="keyword">case</SPAN> D3DAPPERR_NODIRECT3D:
+<SPAN CLASS="linenum">1880:</SPAN>             _tcscpy( strMsg, _T("<SPAN CLASS="string">Could not initialize Direct3D. You may\n</SPAN>")
+<SPAN CLASS="linenum">1881:</SPAN>                              _T("<SPAN CLASS="string">want to check that the latest version of\n</SPAN>")
+<SPAN CLASS="linenum">1882:</SPAN>                              _T("<SPAN CLASS="string">DirectX is correctly installed on your\n</SPAN>")
+<SPAN CLASS="linenum">1883:</SPAN>                              _T("<SPAN CLASS="string">system.  Also make sure that this program\n</SPAN>")
+<SPAN CLASS="linenum">1884:</SPAN>                              _T("<SPAN CLASS="string">was compiled with header files that match\n</SPAN>")
+<SPAN CLASS="linenum">1885:</SPAN>                              _T("<SPAN CLASS="string">the installed DirectX DLLs.</SPAN>") );
+<SPAN CLASS="linenum">1886:</SPAN>             <SPAN CLASS="keyword">break</SPAN>;
+<SPAN CLASS="linenum">1887:</SPAN> 
+<SPAN CLASS="linenum">1888:</SPAN>         <SPAN CLASS="keyword">case</SPAN> D3DAPPERR_NOCOMPATIBLEDEVICES:
+<SPAN CLASS="linenum">1889:</SPAN>             _tcscpy( strMsg, _T("<SPAN CLASS="string">Could not find any compatible Direct3D\n</SPAN>")
+<SPAN CLASS="linenum">1890:</SPAN>                              _T("<SPAN CLASS="string">devices.</SPAN>") );
+<SPAN CLASS="linenum">1891:</SPAN>             <SPAN CLASS="keyword">break</SPAN>;
+<SPAN CLASS="linenum">1892:</SPAN> 
+<SPAN CLASS="linenum">1893:</SPAN>         <SPAN CLASS="keyword">case</SPAN> D3DAPPERR_NOWINDOWABLEDEVICES:
+<SPAN CLASS="linenum">1894:</SPAN>             _tcscpy( strMsg, _T("<SPAN CLASS="string">This sample cannot run in a desktop\n</SPAN>")
+<SPAN CLASS="linenum">1895:</SPAN>                              _T("<SPAN CLASS="string">window with the current display settings.\n</SPAN>")
+<SPAN CLASS="linenum">1896:</SPAN>                              _T("<SPAN CLASS="string">Please change your desktop settings to a\n</SPAN>")
+<SPAN CLASS="linenum">1897:</SPAN>                              _T("<SPAN CLASS="string">16- or 32-bit display mode and re-run this\n</SPAN>")
+<SPAN CLASS="linenum">1898:</SPAN>                              _T("<SPAN CLASS="string">sample.</SPAN>") );
+<SPAN CLASS="linenum">1899:</SPAN>             <SPAN CLASS="keyword">break</SPAN>;
+<SPAN CLASS="linenum">1900:</SPAN> 
+<SPAN CLASS="linenum">1901:</SPAN>         <SPAN CLASS="keyword">case</SPAN> D3DAPPERR_NOHARDWAREDEVICE:
+<SPAN CLASS="linenum">1902:</SPAN>             _tcscpy( strMsg, _T("<SPAN CLASS="string">No hardware-accelerated Direct3D devices\n</SPAN>")
+<SPAN CLASS="linenum">1903:</SPAN>                              _T("<SPAN CLASS="string">were found.</SPAN>") );
+<SPAN CLASS="linenum">1904:</SPAN>             <SPAN CLASS="keyword">break</SPAN>;
+<SPAN CLASS="linenum">1905:</SPAN> 
+<SPAN CLASS="linenum">1906:</SPAN>         <SPAN CLASS="keyword">case</SPAN> D3DAPPERR_HALNOTCOMPATIBLE:
+<SPAN CLASS="linenum">1907:</SPAN>             _tcscpy( strMsg, _T("<SPAN CLASS="string">This sample requires functionality that is\n</SPAN>")
+<SPAN CLASS="linenum">1908:</SPAN>                              _T("<SPAN CLASS="string">not available on your Direct3D hardware\n</SPAN>")
+<SPAN CLASS="linenum">1909:</SPAN>                              _T("<SPAN CLASS="string">accelerator.</SPAN>") );
+<SPAN CLASS="linenum">1910:</SPAN>             <SPAN CLASS="keyword">break</SPAN>;
+<SPAN CLASS="linenum">1911:</SPAN> 
+<SPAN CLASS="linenum">1912:</SPAN>         <SPAN CLASS="keyword">case</SPAN> D3DAPPERR_NOWINDOWEDHAL:
+<SPAN CLASS="linenum">1913:</SPAN>             _tcscpy( strMsg, _T("<SPAN CLASS="string">Your Direct3D hardware accelerator cannot\n</SPAN>")
+<SPAN CLASS="linenum">1914:</SPAN>                              _T("<SPAN CLASS="string">render into a window.\n</SPAN>")
+<SPAN CLASS="linenum">1915:</SPAN>                              _T("<SPAN CLASS="string">Press F2 while the app is running to see a\n</SPAN>")
+<SPAN CLASS="linenum">1916:</SPAN>                              _T("<SPAN CLASS="string">list of available devices and modes.</SPAN>") );
+<SPAN CLASS="linenum">1917:</SPAN>             <SPAN CLASS="keyword">break</SPAN>;
+<SPAN CLASS="linenum">1918:</SPAN> 
+<SPAN CLASS="linenum">1919:</SPAN>         <SPAN CLASS="keyword">case</SPAN> D3DAPPERR_NODESKTOPHAL:
+<SPAN CLASS="linenum">1920:</SPAN>             _tcscpy( strMsg, _T("<SPAN CLASS="string">Your Direct3D hardware accelerator cannot\n</SPAN>")
+<SPAN CLASS="linenum">1921:</SPAN>                              _T("<SPAN CLASS="string">render into a window with the current\n</SPAN>")
+<SPAN CLASS="linenum">1922:</SPAN>                              _T("<SPAN CLASS="string">desktop display settings.\n</SPAN>")
+<SPAN CLASS="linenum">1923:</SPAN>                              _T("<SPAN CLASS="string">Press F2 while the app is running to see a\n</SPAN>")
+<SPAN CLASS="linenum">1924:</SPAN>                              _T("<SPAN CLASS="string">list of available devices and modes.</SPAN>") );
+<SPAN CLASS="linenum">1925:</SPAN>             <SPAN CLASS="keyword">break</SPAN>;
+<SPAN CLASS="linenum">1926:</SPAN> 
+<SPAN CLASS="linenum">1927:</SPAN>         <SPAN CLASS="keyword">case</SPAN> D3DAPPERR_NOHALTHISMODE:
+<SPAN CLASS="linenum">1928:</SPAN>             _tcscpy( strMsg, _T("<SPAN CLASS="string">This sample requires functionality that is\n</SPAN>")
+<SPAN CLASS="linenum">1929:</SPAN>                              _T("<SPAN CLASS="string">not available on your Direct3D hardware\n</SPAN>")
+<SPAN CLASS="linenum">1930:</SPAN>                              _T("<SPAN CLASS="string">accelerator with the current desktop display\n</SPAN>")
+<SPAN CLASS="linenum">1931:</SPAN>                              _T("<SPAN CLASS="string">settings.\n</SPAN>")
+<SPAN CLASS="linenum">1932:</SPAN>                              _T("<SPAN CLASS="string">Press F2 while the app is running to see a\n</SPAN>")
+<SPAN CLASS="linenum">1933:</SPAN>                              _T("<SPAN CLASS="string">list of available devices and modes.</SPAN>") );
+<SPAN CLASS="linenum">1934:</SPAN>             <SPAN CLASS="keyword">break</SPAN>;
+<SPAN CLASS="linenum">1935:</SPAN> 
+<SPAN CLASS="linenum">1936:</SPAN>         <SPAN CLASS="keyword">case</SPAN> D3DAPPERR_MEDIANOTFOUND:
+<SPAN CLASS="linenum">1937:</SPAN>             _tcscpy( strMsg, _T("<SPAN CLASS="string">Could not load required media.</SPAN>" ) );
+<SPAN CLASS="linenum">1938:</SPAN>             <SPAN CLASS="keyword">break</SPAN>;
+<SPAN CLASS="linenum">1939:</SPAN> 
+<SPAN CLASS="linenum">1940:</SPAN>         <SPAN CLASS="keyword">case</SPAN> D3DAPPERR_RESIZEFAILED:
+<SPAN CLASS="linenum">1941:</SPAN>             _tcscpy( strMsg, _T("<SPAN CLASS="string">Could not reset the Direct3D device.</SPAN>" ) );
+<SPAN CLASS="linenum">1942:</SPAN>             <SPAN CLASS="keyword">break</SPAN>;
+<SPAN CLASS="linenum">1943:</SPAN> 
+<SPAN CLASS="linenum">1944:</SPAN>         <SPAN CLASS="keyword">case</SPAN> D3DAPPERR_NONZEROREFCOUNT:
+<SPAN CLASS="linenum">1945:</SPAN>             _tcscpy( strMsg, _T("<SPAN CLASS="string">A D3D object has a non-zero reference\n</SPAN>")
+<SPAN CLASS="linenum">1946:</SPAN>                              _T("<SPAN CLASS="string">count (meaning things were not properly\n</SPAN>")
+<SPAN CLASS="linenum">1947:</SPAN>                              _T("<SPAN CLASS="string">cleaned up).</SPAN>") );
+<SPAN CLASS="linenum">1948:</SPAN>             <SPAN CLASS="keyword">break</SPAN>;
+<SPAN CLASS="linenum">1949:</SPAN> 
+<SPAN CLASS="linenum">1950:</SPAN>         <SPAN CLASS="keyword">case</SPAN> D3DAPPERR_NULLREFDEVICE:
+<SPAN CLASS="linenum">1951:</SPAN>             _tcscpy( strMsg, _T("<SPAN CLASS="string">Warning: Nothing will be rendered.\n</SPAN>")
+<SPAN CLASS="linenum">1952:</SPAN>                              _T("<SPAN CLASS="string">The reference rendering device was selected, but your\n</SPAN>")
+<SPAN CLASS="linenum">1953:</SPAN>                              _T("<SPAN CLASS="string">computer only has a reduced-functionality reference device\n</SPAN>")
+<SPAN CLASS="linenum">1954:</SPAN>                              _T("<SPAN CLASS="string">installed.  Install the DirectX SDK to get the full\n</SPAN>")
+<SPAN CLASS="linenum">1955:</SPAN>                              _T("<SPAN CLASS="string">reference device.\n</SPAN>") );
+<SPAN CLASS="linenum">1956:</SPAN>             <SPAN CLASS="keyword">break</SPAN>;
+<SPAN CLASS="linenum">1957:</SPAN> 
+<SPAN CLASS="linenum">1958:</SPAN>         <SPAN CLASS="keyword">case</SPAN> E_OUTOFMEMORY:
+<SPAN CLASS="linenum">1959:</SPAN>             _tcscpy( strMsg, _T("<SPAN CLASS="string">Not enough memory.</SPAN>") );
+<SPAN CLASS="linenum">1960:</SPAN>             <SPAN CLASS="keyword">break</SPAN>;
+<SPAN CLASS="linenum">1961:</SPAN> 
+<SPAN CLASS="linenum">1962:</SPAN>         <SPAN CLASS="keyword">case</SPAN> D3DERR_OUTOFVIDEOMEMORY:
+<SPAN CLASS="linenum">1963:</SPAN>             _tcscpy( strMsg, _T("<SPAN CLASS="string">Not enough video memory.</SPAN>") );
+<SPAN CLASS="linenum">1964:</SPAN>             <SPAN CLASS="keyword">break</SPAN>;
+<SPAN CLASS="linenum">1965:</SPAN> 
+<SPAN CLASS="linenum">1966:</SPAN>         <SPAN CLASS="keyword">default</SPAN>:
+<SPAN CLASS="linenum">1967:</SPAN>             _tcscpy( strMsg, _T("<SPAN CLASS="string">Generic application error. Enable\n</SPAN>")
+<SPAN CLASS="linenum">1968:</SPAN>                              _T("<SPAN CLASS="string">debug output for detailed information.</SPAN>") );
+<SPAN CLASS="linenum">1969:</SPAN>     }
+<SPAN CLASS="linenum">1970:</SPAN> 
+<SPAN CLASS="linenum">1971:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( MSGERR_APPMUSTEXIT == dwType )
+<SPAN CLASS="linenum">1972:</SPAN>     {
+<SPAN CLASS="linenum">1973:</SPAN>         _tcscat( strMsg, _T("<SPAN CLASS="string">\n\nThis sample will now exit.</SPAN>") );
+<SPAN CLASS="linenum">1974:</SPAN>         MessageBox( NULL, strMsg, m_strWindowTitle, MB_ICONERROR|MB_OK );
+<SPAN CLASS="linenum">1975:</SPAN> 
+<SPAN CLASS="linenum">1976:</SPAN>         <SPAN CLASS="comment">// Close the window, which shuts down the app</SPAN>
+<SPAN CLASS="linenum">1977:</SPAN>         <SPAN CLASS="keyword">if</SPAN>( m_hWnd )
+<SPAN CLASS="linenum">1978:</SPAN>             SendMessage( m_hWnd, WM_CLOSE, 0, 0 );
+<SPAN CLASS="linenum">1979:</SPAN>     }
+<SPAN CLASS="linenum">1980:</SPAN>     <SPAN CLASS="keyword">else</SPAN>
+<SPAN CLASS="linenum">1981:</SPAN>     {
+<SPAN CLASS="linenum">1982:</SPAN>         <SPAN CLASS="keyword">if</SPAN>( MSGWARN_SWITCHEDTOREF == dwType )
+<SPAN CLASS="linenum">1983:</SPAN>             _tcscat( strMsg, _T("<SPAN CLASS="string">\n\nSwitching to the reference rasterizer,\n</SPAN>")
+<SPAN CLASS="linenum">1984:</SPAN>                              _T("<SPAN CLASS="string">a software device that implements the entire\n</SPAN>")
+<SPAN CLASS="linenum">1985:</SPAN>                              _T("<SPAN CLASS="string">Direct3D feature set, but runs very slowly.</SPAN>") );
+<SPAN CLASS="linenum">1986:</SPAN>         MessageBox( NULL, strMsg, m_strWindowTitle, MB_ICONWARNING|MB_OK );
+<SPAN CLASS="linenum">1987:</SPAN>     }
+<SPAN CLASS="linenum">1988:</SPAN> 
+<SPAN CLASS="linenum">1989:</SPAN>     <SPAN CLASS="keyword">return</SPAN> hr;
+<SPAN CLASS="linenum">1990:</SPAN> }
+<SPAN CLASS="linenum">1991:</SPAN> 
+<SPAN CLASS="linenum">1992:</SPAN> 
+<SPAN CLASS="linenum">1993:</SPAN> 
+<SPAN CLASS="linenum">1994:</SPAN> 
+<SPAN CLASS="linenum">1995:</SPAN> </PRE>
+</BODY>
+</HTML>

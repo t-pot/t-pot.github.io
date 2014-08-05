@@ -1,0 +1,91 @@
+<HTML>
+<HEAD>
+<TITLE>MyRender.cpp</TITLE>
+<meta name="GENERATOR" content="cpp2html 2.1 by Niisaka">
+<meta http-equiv="Content-Type" content="text/html">
+<meta http-equiv="Content-Style-Type" content="text/css">
+<STYLE TYPE="text/css">
+<!--
+SPAN.comment { color:#008000; font-weight:normal; font-style:normal;}
+SPAN.keyword { color:#0000FF; font-weight:normal; font-style:normal;}
+SPAN.string { color:#600000; font-weight:normal; font-style:normal;}
+SPAN.linenum { color:#A0A0A0; font-weight:normal; font-style:normal;}
+-->
+</STYLE>
+</HEAD>
+<BODY TEXT="#000000" BGCOLOR="#FFFFFF">
+<PRE><SPAN CLASS="linenum">0001:</SPAN> <SPAN CLASS="comment">// ---------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0002:</SPAN> <SPAN CLASS="comment">// File: MyRender.coo</SPAN>
+<SPAN CLASS="linenum">0003:</SPAN> <SPAN CLASS="comment">//</SPAN>
+<SPAN CLASS="linenum">0004:</SPAN> <SPAN CLASS="comment">// OpenGLによるテスト描画</SPAN>
+<SPAN CLASS="linenum">0005:</SPAN> <SPAN CLASS="comment">//</SPAN>
+<SPAN CLASS="linenum">0006:</SPAN> <SPAN CLASS="comment">// Copyright (c) 2005 IMAGIRE Takashi. All rights reserved.</SPAN>
+<SPAN CLASS="linenum">0007:</SPAN> <SPAN CLASS="comment">// ---------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0008:</SPAN> <SPAN CLASS="keyword">#include</SPAN> "<SPAN CLASS="string">stdafx.h</SPAN>"
+<SPAN CLASS="linenum">0009:</SPAN> <SPAN CLASS="keyword">#include</SPAN> &lt;windows.h&gt;
+<SPAN CLASS="linenum">0010:</SPAN> <SPAN CLASS="keyword">#include</SPAN> &lt;GL/gl.h&gt;
+<SPAN CLASS="linenum">0011:</SPAN> <SPAN CLASS="keyword">#include</SPAN> &lt;GL/glu.h&gt;
+<SPAN CLASS="linenum">0012:</SPAN> <SPAN CLASS="keyword">#include</SPAN> "<SPAN CLASS="string">tpotCGL.h</SPAN>"
+<SPAN CLASS="linenum">0013:</SPAN> 
+<SPAN CLASS="linenum">0014:</SPAN> <SPAN CLASS="keyword">void</SPAN> MyInitRender( <SPAN CLASS="keyword">void</SPAN> *p )
+<SPAN CLASS="linenum">0015:</SPAN> {
+<SPAN CLASS="linenum">0016:</SPAN>     tpot::CGl *pGL = (tpot::CGl*)p;
+<SPAN CLASS="linenum">0017:</SPAN>     
+<SPAN CLASS="linenum">0018:</SPAN>     <SPAN CLASS="comment">// レンダリング コンテキストをカレントにする</SPAN>
+<SPAN CLASS="linenum">0019:</SPAN>     pGL-&gt;SetCurrent();
+<SPAN CLASS="linenum">0020:</SPAN> 
+<SPAN CLASS="linenum">0021:</SPAN>     <SPAN CLASS="comment">// 背景色</SPAN>
+<SPAN CLASS="linenum">0022:</SPAN>     glClearColor(1.0f, 1.0f, 1.0f, 1.0f) ;
+<SPAN CLASS="linenum">0023:</SPAN> 
+<SPAN CLASS="linenum">0024:</SPAN>     <SPAN CLASS="comment">/// 深度バッファ</SPAN>
+<SPAN CLASS="linenum">0025:</SPAN>     glEnable(GL_DEPTH_TEST);
+<SPAN CLASS="linenum">0026:</SPAN>     glDepthFunc(GL_LEQUAL);
+<SPAN CLASS="linenum">0027:</SPAN> }
+<SPAN CLASS="linenum">0028:</SPAN> 
+<SPAN CLASS="linenum">0029:</SPAN> <SPAN CLASS="keyword">void</SPAN> MyRender( <SPAN CLASS="keyword">void</SPAN> *p, <SPAN CLASS="keyword">float</SPAN> dt, <SPAN CLASS="keyword">int</SPAN> w, <SPAN CLASS="keyword">int</SPAN> h )
+<SPAN CLASS="linenum">0030:</SPAN> {
+<SPAN CLASS="linenum">0031:</SPAN>     tpot::CGl *pGL = (tpot::CGl*)p;
+<SPAN CLASS="linenum">0032:</SPAN>     
+<SPAN CLASS="linenum">0033:</SPAN>     <SPAN CLASS="comment">// 描画開始</SPAN>
+<SPAN CLASS="linenum">0034:</SPAN>     pGL-&gt;BeginRender();
+<SPAN CLASS="linenum">0035:</SPAN> 
+<SPAN CLASS="linenum">0036:</SPAN>     <SPAN CLASS="comment">// 描画範囲の設定</SPAN>
+<SPAN CLASS="linenum">0037:</SPAN>     glViewport(0, 0, w, h);
+<SPAN CLASS="linenum">0038:</SPAN> 
+<SPAN CLASS="linenum">0039:</SPAN>     <SPAN CLASS="comment">// 最初の塗りつぶし</SPAN>
+<SPAN CLASS="linenum">0040:</SPAN>     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT) ;
+<SPAN CLASS="linenum">0041:</SPAN> 
+<SPAN CLASS="linenum">0042:</SPAN>     <SPAN CLASS="comment">// 射影行列の設定</SPAN>
+<SPAN CLASS="linenum">0043:</SPAN>     glMatrixMode(GL_PROJECTION);
+<SPAN CLASS="linenum">0044:</SPAN>     glLoadIdentity();
+<SPAN CLASS="linenum">0045:</SPAN>     gluPerspective(40, (<SPAN CLASS="keyword">float</SPAN>)w/(<SPAN CLASS="keyword">float</SPAN>)h, 0.1, 200);
+<SPAN CLASS="linenum">0046:</SPAN> 
+<SPAN CLASS="linenum">0047:</SPAN>     <SPAN CLASS="comment">// カメラの設定</SPAN>
+<SPAN CLASS="linenum">0048:</SPAN>     glMatrixMode(GL_MODELVIEW);
+<SPAN CLASS="linenum">0049:</SPAN>     glLoadIdentity();
+<SPAN CLASS="linenum">0050:</SPAN>     glTranslated( 0.0, 0.0, -5.0 );
+<SPAN CLASS="linenum">0051:</SPAN> 
+<SPAN CLASS="linenum">0052:</SPAN>     <SPAN CLASS="comment">// 回転</SPAN>
+<SPAN CLASS="linenum">0053:</SPAN>     <SPAN CLASS="keyword">static</SPAN> <SPAN CLASS="keyword">float</SPAN> angle = 0;
+<SPAN CLASS="linenum">0054:</SPAN>     angle += 360.0f * dt / 10.0f;
+<SPAN CLASS="linenum">0055:</SPAN>     <SPAN CLASS="keyword">if</SPAN>(360&lt;angle)angle-=360;
+<SPAN CLASS="linenum">0056:</SPAN>     glRotatef( angle, 0.0f, 0.0f, 1.0f );
+<SPAN CLASS="linenum">0057:</SPAN> 
+<SPAN CLASS="linenum">0058:</SPAN>     <SPAN CLASS="comment">// 四角形を描く</SPAN>
+<SPAN CLASS="linenum">0059:</SPAN>     glBegin(GL_QUADS);
+<SPAN CLASS="linenum">0060:</SPAN> 
+<SPAN CLASS="linenum">0061:</SPAN>         glColor3f(1.0, 0.0, 0.0);
+<SPAN CLASS="linenum">0062:</SPAN>         glVertex3f(-1,-1,1);
+<SPAN CLASS="linenum">0063:</SPAN>         glVertex3f( 1,-1,1);
+<SPAN CLASS="linenum">0064:</SPAN>         glVertex3f( 1, 1,1);
+<SPAN CLASS="linenum">0065:</SPAN>         glVertex3f(-1, 1,1);
+<SPAN CLASS="linenum">0066:</SPAN> 
+<SPAN CLASS="linenum">0067:</SPAN>     glEnd();    
+<SPAN CLASS="linenum">0068:</SPAN>     
+<SPAN CLASS="linenum">0069:</SPAN>     <SPAN CLASS="comment">// 終了</SPAN>
+<SPAN CLASS="linenum">0070:</SPAN>     glFlush();
+<SPAN CLASS="linenum">0071:</SPAN>     pGL-&gt;EndRender();
+<SPAN CLASS="linenum">0072:</SPAN> }
+<SPAN CLASS="linenum">0073:</SPAN> </PRE>
+</BODY>
+</HTML>

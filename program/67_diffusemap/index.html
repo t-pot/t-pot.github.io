@@ -1,0 +1,803 @@
+<head>
+	<title>t-pot『半リアルタイム確率拡散光/鏡面光マップ』</title>
+	<link rel="stylesheet" type="text/css" href="../if.css">
+</head>
+<meta http-equiv=Content-Type content="text/html; charset=shift_jis">
+<body>
+
+
+<div class="contents">
+<center>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<h1>半リアルタイム確率拡散光/鏡面光マップ</h1><br>
+<h3>～ Semi-realtime stochastic diffuse/specular map ～</h3>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<image src = "title.jpg">
+<br>
+<hr>
+</center>
+<div>
+
+
+<h2>■最初に追記事項</h2>
+
+
+<p>
+<a href="http://members.jcom.home.ne.jp/himatsubushi/">Beeさん</a>から、助言をいただきました。<br>
+07:14から、19:40ごろの更新の違いは、
+</p>
+
+<table>
+<tr><td>半リアルタイムにIrradiance Mapの生成</td></tr>
+<tr><td>等方的にサンプリング</td></tr>
+<tr><td>解説の一部変更</td></tr>
+</table>
+<p>
+です。
+</p>
+
+<h2>■はじめに</h2>
+
+
+<p>
+今回は、キューブマップの応用例として、拡散光マップや鏡面光マップを作成しました。<br>
+拡散光マップは最近よく見ますが、どうやって皆さん用意していますか？<br>
+ひょっとして、著作権無視してパクってきていませんか？<br>
+作れるなら自分で作りましょう。<br>
+今回は、半リアルタイムに放射マップを作成します。
+</p>
+<ul style = "LIST-STYLE-TYPE:none">
+<li><a href="src.lzh">src.lzh (拡散光マップのサンプル:DirectX8.1)</a>
+</ul>
+
+<p>
+まぁ、いつものように適当にファイルが入っています。<br>
+今回は、天球を半球にしてみました。
+</p>
+<table>
+<tr><td><a href="diffuse_vsh.html">diffuse.vsh</a></td><td>拡散光マップ作成の頂点シェーダー。</td></tr>
+<tr><td><a href="diffuse_psh.html">diffuse.psh</a></td><td>拡散光マップ作成のピクセルシェーダー。</td></tr>
+<tr><td><a href="vs_vsh.html">vs.vsh</a></td><td>深度描画の頂点シェーダー。</td></tr>
+<tr><td><a href="ps_psh.html">ps.psh</a></td><td>深度描画のピクセルシェーダー。</td></tr>
+<tr><td><a href="draw_cpp.html">draw.cpp</a></td><td>メインの描画部分。</td></tr>
+<tr><td><a href="draw_h.html">draw.h</a></td><td>描画の各関数の定義。</td></tr>
+<tr><td><a href="bg_cpp.html">bg.cpp</a></td><td>背景の描画。</td></tr>
+<tr><td><a href="main_h.html">main.h</a></td><td>基本的な定数など。</td></tr>
+<tr><td><a href="main_cpp.html">main.cpp</a></td><td>描画に関係しないシステム的な部分。</td></tr>
+<tr><td><a href="load_cpp.html">load.cpp</a></td><td>ロード。</td></tr>
+<tr><td><a href="load_h.html">load.h</a></td><td>ロードのインターフェイス。</td></tr>
+</table>
+<image src = "../media/tile_bmp.jpg" width = 64 height=64>tile.bmp (床デカール)<br>
+<image src = "./sky_bmp.jpg" width = 64 height=64>sky.bmp (空デカール)<br>
+<p>
+あと、実行ファイル及び、プロジェクトファイルが入っています。
+</p>
+
+
+<h2>■やっていること</h2>
+
+
+<p>
+拡散光マップとは、環境マップとして得られた放射照度のテクスチャをぼかすことによって、
+各法線ベクトルに関する入射光の強さを前計算し、テクスチャによって拡散光を表現しようとする方法です。
+</p>
+<p>
+基本的には、キューブマップにレンダリングした画像に関して、
+光源ベクトルについてLambertの余弦則に応じてた明るさで合成します。<br>
+１度のサンプリングでは、キューブマップの１点に関しての合成しかできませんので、
+何度もサンプリングして、最終的なキューブマップを作成します。<br>
+下の図では、L=(0,1,0)のy軸を向いた光源ベクトルに関した拡散光が１回のサンプリング例としてかかれています。
+</p>
+<image src = "sampling.png">
+<p>
+さて、サンプリングの方法ですが、方向ベクトルをランダムに選んでサンプリングします。<br>
+元のキューブテクスチャの各点は確率的にサンプリングされ、最終的な色はアンサンブル平均（乱数が違う状態での多くのサンプルの平均）として決定されます。<br>
+確率的なサンプリングでは、サンプリング数を多くしたときに正確な答えに近づきます。今回は、４つのテクスチャを２５６回レンダリングして、なおかつ反対向きのベクトルに関して同時にサンプリングを行うので、
+計２０４８個の平行光線が周りから照射されたのと同じ効果が得られます。<br>
+結果は合っていると思うのですが、これがどのくらいよくできているのかわかりません・・・。
+</p>
+<p>
+さらに、Beeさんに教えていただいたのですが、
+等方的なサンプリングを行うために、立方体の中で一様に選ばれた乱数の中から、
+単位球の中に収まるものだけを光源ベクトルに使うことによって、等方的なサンプリングを実現しています。
+</p>
+<image src = "direction.png">
+<p>
+さて、256回レンダリングというわざとらしい回数ですが、
+これは、特殊な合成法の限界のところからきています。<br>
+今回は、プログラムの合成に線形合成を使っています。<br>
+サンプリングのときに行いたい合成は、
+</p>
+<pre class="CodeBlock">
+      1    <sub> </sub> 1           <sub> </sub>1
+col = - a<sub>1</sub> + - a<sub>2</sub> + ･･･ + - a<sub>n</sub>
+      n   <sub> </sub>  n           <sub> </sub>n
+</pre>
+<p>
+なので、加算合成すればよいかと思いますが、フレームバッファの値も利用して、
+</p>
+<pre class="CodeBlock">
+          1   <sub>   </sub>    1   <sub> </sub>  n-1   <sub>   </sub>  1
+a<sub>n</sub> = (1 - - ) a<sub>n-1</sub> + - b<sub>n</sub> = --- a<sub>n-1</sub> + - b<sub>n</sub>
+          n   <sub>   </sub>    n   <sub> </sub>   n    <sub>   </sub>  n
+</pre>
+<p>
+の合成をします。この結果は、
+</p>
+<pre class="CodeBlock">
+ <sub> </sub>   n-1  <sub>   </sub>   1  <sub> </sub>   n-1  n-2  <sub>   </sub>   1   <sub>   </sub>    1  <sub> </sub>   1  <sub> </sub>   1  n 
+a<sub>n</sub> = --- a<sub>n-1</sub> + - b<sub>n</sub> = --- (--- a<sub>n-2</sub>+ --- b<sub>n-1</sub>) + - b<sub>n</sub> = - a<sub>1</sub> + -  Σ b<sub>i</sub>
+ <sub> </sub>    n   <sub>   </sub>   n  <sub> </sub>    n   n-1  <sub>   </sub>  n-1  <sub>   </sub>    n  <sub> </sub>   n  <sub> </sub>   n i=2
+</pre>
+<p>
+になるので、a<sub>1</sub>に１回目のレンダリング結果を代入するならば、最終的に求めたい答えと同じものが得られます。
+ただし、現在が8bitsフォーマットで計算をしているので、1/256以上は0になってしまうので、256枚以上は合成できません。また、後の合成になればなるほど係数の誤差が大きくなるので、注意が必要です。
+</p>
+
+
+<h2>■テクスチャの作成</h2>
+<p>
+さて、テクスチャを作りましょう。<br>
+最初にキューブマップの環境マップを作成します。<br>
+最初にキューブテクスチャを用意します。
+</p>
+<pre class="CodeBlock">
+draw.cpp
+<font color="deepskyblue">0251:</font>     <font color="cyan">// 環境キューブマップの作成</font>
+<font color="deepskyblue">0252:</font>     hr = lpD3DDev-&gt;CreateCubeTexture( 512, 1, D3DUSAGE_RENDERTARGET, D3DFMT_A8R8G8B8,
+<font color="deepskyblue">0253:</font>                                 D3DPOOL_DEFAULT , &amp;pCubeMap );
+<font color="deepskyblue">0254:</font>     <font color="blue">if</font> ( FAILED(hr) ) <font color="blue">return</font> hr;
+</pre>
+<p>
+レンダリングするときは、GetCubeMapSurfaceでレンダリングする面を６面の中から指定してサーフェスを確保します。確保したサーフェスは、SetRenderTarget でレンダリングターゲットに指定してレンダリングします。<br>
+このとき、ビュー行列を適当なものを指定する必要があります。
+この行列は、ヘルプにも書いてあるので、そのまま使いましょう。
+</p>
+<pre class="CodeBlock">
+draw.cpp
+<font color="deepskyblue">0408:</font> <font color="cyan">//-----------------------------------------------------------------------------</font>
+<font color="deepskyblue">0409:</font> <font color="cyan">// Name: MakeCubeMap()</font>
+<font color="deepskyblue">0410:</font> <font color="cyan">// Desc: 環境マップを作成する</font>
+<font color="deepskyblue">0411:</font> <font color="cyan">//-----------------------------------------------------------------------------</font>
+<font color="deepskyblue">0412:</font> VOID MakeCubeMap(LPDIRECT3DDEVICE8 lpD3DDev )
+<font color="deepskyblue">0413:</font> {
+<font color="deepskyblue">0414:</font>     <font color="cyan">// デバイスのトランスフォーム行列を保存する。</font>
+<font color="deepskyblue">0415:</font>     D3DXMATRIX matProjSave, matViewSave;
+<font color="deepskyblue">0416:</font>     lpD3DDev-&gt;GetTransform( D3DTS_VIEW,       &amp;matViewSave );
+<font color="deepskyblue">0417:</font>     lpD3DDev-&gt;GetTransform( D3DTS_PROJECTION, &amp;matProjSave );
+<font color="deepskyblue">0418:</font> 
+<font color="deepskyblue">0419:</font>     <font color="cyan">// 現在のバック バッファと z バッファを格納する。</font>
+<font color="deepskyblue">0420:</font>     LPDIRECT3DSURFACE8 pBackBuffer, pZBuffer;
+<font color="deepskyblue">0421:</font>     lpD3DDev-&gt;GetRenderTarget( &amp;pBackBuffer );
+<font color="deepskyblue">0422:</font>     lpD3DDev-&gt;GetDepthStencilSurface( &amp;pZBuffer );
+<font color="deepskyblue">0423:</font> 
+<font color="deepskyblue">0424:</font>     <font color="cyan">// 90°の視野を射影に使用する。</font>
+<font color="deepskyblue">0425:</font>     D3DXMATRIX matProj;
+<font color="deepskyblue">0426:</font>     D3DXMatrixPerspectiveFovLH( &amp;matProj, D3DX_PI/2, 1.0f, 0.5f, 1000.0f );
+<font color="deepskyblue">0427:</font>     lpD3DDev-&gt;SetTransform( D3DTS_PROJECTION, &amp;matProj );
+<font color="deepskyblue">0428:</font> 
+<font color="deepskyblue">0429:</font>     <font color="cyan">// キューブ マップの 6 つのサーフェスに対してループ処理を実行する。</font>
+<font color="deepskyblue">0430:</font>     <font color="blue">for</font>( DWORD i=0 ; i&lt;6 ; i++ ) {
+<font color="deepskyblue">0431:</font>         D3DXVECTOR3 vEnvEyePt = D3DXVECTOR3( 0.0f, 10.0f, 0.0f );
+<font color="deepskyblue">0432:</font>         D3DXVECTOR3 vLookatPt, vUpVec;
+<font color="deepskyblue">0433:</font> 
+<font color="deepskyblue">0434:</font>         <font color="blue">switch</font>( i ){
+<font color="deepskyblue">0435:</font>         <font color="blue">case</font> D3DCUBEMAP_FACE_POSITIVE_X:
+<font color="deepskyblue">0436:</font>             vLookatPt = D3DXVECTOR3( 1.0f, 0.0f, 0.0f )+vEnvEyePt;
+<font color="deepskyblue">0437:</font>             vUpVec    = D3DXVECTOR3( 0.0f, 1.0f, 0.0f );
+<font color="deepskyblue">0438:</font>             <font color="blue">break</font>;
+<font color="deepskyblue">0439:</font>         <font color="blue">case</font> D3DCUBEMAP_FACE_NEGATIVE_X:
+<font color="deepskyblue">0440:</font>             vLookatPt = D3DXVECTOR3(-1.0f, 0.0f, 0.0f )+vEnvEyePt;
+<font color="deepskyblue">0441:</font>             vUpVec    = D3DXVECTOR3( 0.0f, 1.0f, 0.0f );
+<font color="deepskyblue">0442:</font>             <font color="blue">break</font>;
+<font color="deepskyblue">0443:</font>         <font color="blue">case</font> D3DCUBEMAP_FACE_POSITIVE_Y:
+<font color="deepskyblue">0444:</font>             vLookatPt = D3DXVECTOR3( 0.0f, 1.0f, 0.0f )+vEnvEyePt;
+<font color="deepskyblue">0445:</font>             vUpVec    = D3DXVECTOR3( 0.0f, 0.0f,-1.0f );
+<font color="deepskyblue">0446:</font>             <font color="blue">break</font>;
+<font color="deepskyblue">0447:</font>         <font color="blue">case</font> D3DCUBEMAP_FACE_NEGATIVE_Y:
+<font color="deepskyblue">0448:</font>             vLookatPt = D3DXVECTOR3( 0.0f,-1.0f, 0.0f )+vEnvEyePt;
+<font color="deepskyblue">0449:</font>             vUpVec    = D3DXVECTOR3( 0.0f, 0.0f, 1.0f );
+<font color="deepskyblue">0450:</font>             <font color="blue">break</font>;
+<font color="deepskyblue">0451:</font>         <font color="blue">case</font> D3DCUBEMAP_FACE_POSITIVE_Z:
+<font color="deepskyblue">0452:</font>             vLookatPt = D3DXVECTOR3( 0.0f, 0.0f, 1.0f )+vEnvEyePt;
+<font color="deepskyblue">0453:</font>             vUpVec    = D3DXVECTOR3( 0.0f, 1.0f, 0.0f );
+<font color="deepskyblue">0454:</font>             <font color="blue">break</font>;
+<font color="deepskyblue">0455:</font>         <font color="blue">case</font> D3DCUBEMAP_FACE_NEGATIVE_Z:
+<font color="deepskyblue">0456:</font>             vLookatPt = D3DXVECTOR3( 0.0f, 0.0f,-1.0f )+vEnvEyePt;
+<font color="deepskyblue">0457:</font>             vUpVec    = D3DXVECTOR3( 0.0f, 1.0f, 0.0f );
+<font color="deepskyblue">0458:</font>             <font color="blue">break</font>;
+<font color="deepskyblue">0459:</font>         }
+<font color="deepskyblue">0460:</font> 
+<font color="deepskyblue">0461:</font>         D3DXMATRIX matView;
+<font color="deepskyblue">0462:</font>         D3DXMatrixLookAtLH( &amp;matView, &amp;vEnvEyePt, &amp;vLookatPt, &amp;vUpVec );
+<font color="deepskyblue">0463:</font>         lpD3DDev-&gt;SetTransform( D3DTS_VIEW, &amp;matView );
+<font color="deepskyblue">0464:</font> 
+<font color="deepskyblue">0465:</font>         <font color="cyan">//レンダリングするサーフェスへのポインタを取得する。</font><font color="yellow">
+<font color="deepskyblue">0466:</font>         LPDIRECT3DSURFACE8 pFace;
+<font color="deepskyblue">0467:</font>         pCubeMap-&gt;GetCubeMapSurface( (D3DCUBEMAP_FACES)i, 0, &amp;pFace );
+<font color="deepskyblue">0468:</font>         lpD3DDev-&gt;SetRenderTarget ( pFace , pZBuffer );
+<font color="deepskyblue">0469:</font>         pFace-&gt;Release();</font>
+<font color="deepskyblue">0470:</font> 
+<font color="deepskyblue">0471:</font>         lpD3DDev-&gt;Clear(0, NULL, D3DCLEAR_TARGET | D3DCLEAR_ZBUFFER, 0x000000, 1.0f, 0L);
+<font color="deepskyblue">0472:</font>         lpD3DDev-&gt;BeginScene();
+<font color="deepskyblue">0473:</font>         <font color="cyan">// ここで、シーンをレンダリングする。</font>
+<font color="deepskyblue">0474:</font>         DrawBg(lpD3DDev);
+<font color="deepskyblue">0475:</font>         lpD3DDev-&gt;EndScene();
+<font color="deepskyblue">0476:</font>     }
+<font color="deepskyblue">0477:</font> 
+<font color="deepskyblue">0478:</font>     <font color="cyan">// レンダリング ターゲットをメイン バック バッファに戻す。</font>
+<font color="deepskyblue">0479:</font>     lpD3DDev-&gt;SetRenderTarget( pBackBuffer, pZBuffer );
+<font color="deepskyblue">0480:</font>     pBackBuffer-&gt;Release();
+<font color="deepskyblue">0481:</font>     pZBuffer-&gt;Release();
+<font color="deepskyblue">0482:</font> 
+<font color="deepskyblue">0483:</font>     <font color="cyan">// 元のトランスフォーム行列をリストアする。</font>
+<font color="deepskyblue">0484:</font>     lpD3DDev-&gt;SetTransform( D3DTS_VIEW,       &amp;matViewSave );
+<font color="deepskyblue">0485:</font>     lpD3DDev-&gt;SetTransform( D3DTS_PROJECTION, &amp;matProjSave );
+<font color="deepskyblue">0486:</font> }
+</pre>
+<p>
+その後に、ディフューズマップを作ります。同じようにキューブマップを確保します。
+</p>
+<pre class="CodeBlock">
+draw.cpp
+<font color="deepskyblue">0255:</font>     <font color="cyan">// ディフューズマップの作成</font>
+<font color="deepskyblue">0256:</font>     hr = lpD3DDev-&gt;CreateCubeTexture( 512, 1, D3DUSAGE_RENDERTARGET, D3DFMT_A8R8G8B8,
+<font color="deepskyblue">0257:</font>                                 D3DPOOL_DEFAULT , &amp;pDiffuseMap );
+<font color="deepskyblue">0258:</font>     <font color="blue">if</font> ( FAILED(hr) ) <font color="blue">return</font> hr;
+</pre>
+<p>
+いよいよ拡散光マップの作成です。<br>
+環境マップと同じようにレンダリングの環境を整えたます。<br>
+違うのは、レンダリングするポリゴンです。<br>
+レンダリングするポリゴンは、画面全面に張る分割したポリゴンです。<br>
+同時に、頂点シェーダの定数レジスタ32～35に規格化した光源ベクトルを代入します。<br>
+具体的には、次の方法で４つの光源ベクトルを作ります。<br>
+中身は、単位球の中に入るベクトルが得られるまで、何度もベクトルを作る方法です。
+</p>
+<pre class="CodeBlock">
+<font color="deepskyblue">0585:</font>         <font color="cyan">// 等方的サンプリング (Thanks Bee さん)</font>
+<font color="deepskyblue">0586:</font>         D3DXVECTOR4 l[4];
+<font color="deepskyblue">0587:</font>         <font color="blue">for</font>(<font color="blue">int</font> k=0;k&lt;4;k++){
+<font color="deepskyblue">0588:</font>             <font color="blue">float</font> d;
+<font color="deepskyblue">0589:</font>             l[k].w = 0;
+<font color="deepskyblue">0590:</font>             <font color="blue">do</font>{
+<font color="deepskyblue">0591:</font>                 l[k].x = 2.0f*frand()-1.0f; 
+<font color="deepskyblue">0592:</font>                 l[k].y = 2.0f*frand()-1.0f; 
+<font color="deepskyblue">0593:</font>                 l[k].z = 2.0f*frand()-1.0f;
+<font color="deepskyblue">0594:</font>                 d = D3DXVec4LengthSq(&amp;l[k]);
+<font color="deepskyblue">0595:</font>             }<font color="blue">while</font>(1.0f&lt;d);
+<font color="deepskyblue">0596:</font>         }
+<font color="deepskyblue">0597:</font>         D3DXVec4Normalize(&amp;l[0], &amp;l[0]);
+<font color="deepskyblue">0598:</font>         D3DXVec4Normalize(&amp;l[1], &amp;l[1]);
+<font color="deepskyblue">0599:</font>         D3DXVec4Normalize(&amp;l[2], &amp;l[2]);
+<font color="deepskyblue">0600:</font>         D3DXVec4Normalize(&amp;l[3], &amp;l[3]);
+</pre>
+<p>
+また、ピクセルシェーダの定数レジスタに1/nの定数を入力します。
+</p>
+<pre class="CodeBlock">
+draw.cpp
+<font color="deepskyblue">0487:</font> <font color="cyan">//-----------------------------------------------------------------------------</font>
+<font color="deepskyblue">0488:</font> <font color="cyan">// Name: MakeDiffuseMap()</font>
+<font color="deepskyblue">0489:</font> <font color="cyan">// Desc: 拡散マップを作成する</font>
+<font color="deepskyblue">0490:</font> <font color="cyan">//-----------------------------------------------------------------------------</font>
+<font color="deepskyblue">0491:</font> VOID MakeDiffuseMap(LPDIRECT3DDEVICE8 lpD3DDev
+<font color="deepskyblue">0492:</font>                     , LPDIRECT3DCUBETEXTURE8 pDiffuseMap
+<font color="deepskyblue">0493:</font>                     , LPDIRECT3DCUBETEXTURE8 pEnvMap )
+<font color="deepskyblue">0494:</font> {
+<font color="deepskyblue">0495:</font>     <font color="yellow"> <font color="blue">static</font> <font color="blue">int</font> n = 0;
+<font color="deepskyblue">0496:</font>     
+<font color="deepskyblue">0497:</font>     <font color="blue">if</font>(256&lt;=n)<font color="blue">return</font>;
+<font color="deepskyblue">0498:</font>     n++;</font>
+<font color="deepskyblue">0499:</font> 
+<font color="deepskyblue">0500:</font>     lpD3DDev-&gt;SetTextureStageState(0, D3DTSS_COLORARG1, D3DTA_DIFFUSE );
+<font color="deepskyblue">0501:</font>     lpD3DDev-&gt;SetTextureStageState(0, D3DTSS_COLOROP,   D3DTOP_SELECTARG1);
+<font color="deepskyblue">0502:</font>     lpD3DDev-&gt;SetTextureStageState(1, D3DTSS_COLORARG1, D3DTA_TEXTURE );
+<font color="deepskyblue">0503:</font>     lpD3DDev-&gt;SetTextureStageState(1, D3DTSS_COLOROP,   D3DTOP_SELECTARG1);
+<font color="deepskyblue">0504:</font>     lpD3DDev-&gt;SetTextureStageState(2, D3DTSS_COLORARG1, D3DTA_TEXTURE );
+<font color="deepskyblue">0505:</font>     lpD3DDev-&gt;SetTextureStageState(2, D3DTSS_COLOROP,   D3DTOP_SELECTARG1);
+<font color="deepskyblue">0506:</font>     lpD3DDev-&gt;SetTextureStageState(3, D3DTSS_COLORARG1, D3DTA_TEXTURE );
+<font color="deepskyblue">0507:</font>     lpD3DDev-&gt;SetTextureStageState(3, D3DTSS_COLOROP,   D3DTOP_SELECTARG1);
+<font color="deepskyblue">0508:</font> 
+<font color="deepskyblue">0509:</font>     lpD3DDev-&gt;SetRenderState(D3DRS_ALPHABLENDENABLE, TRUE);
+<font color="deepskyblue">0510:</font>     lpD3DDev-&gt;SetRenderState(D3DRS_DESTBLEND, D3DBLEND_INVSRCALPHA);
+<font color="deepskyblue">0511:</font>     lpD3DDev-&gt;SetRenderState(D3DRS_SRCBLEND, D3DBLEND_SRCALPHA);
+<font color="deepskyblue">0512:</font>     lpD3DDev-&gt;SetVertexShader( hDiffuseVertexShader );
+<font color="deepskyblue">0513:</font>     lpD3DDev-&gt;SetPixelShader ( hDiffusePixelShader );
+<font color="deepskyblue">0514:</font>     lpD3DDev-&gt;SetTexture( 0, pEnvMap );
+<font color="deepskyblue">0515:</font>     lpD3DDev-&gt;SetTexture( 1, pEnvMap );
+<font color="deepskyblue">0516:</font>     lpD3DDev-&gt;SetTexture( 2, pEnvMap );
+<font color="deepskyblue">0517:</font>     lpD3DDev-&gt;SetTexture( 3, pEnvMap );
+<font color="deepskyblue">0518:</font> 
+<font color="deepskyblue">0519:</font>     <font color="cyan">// デバイスのトランスフォーム行列を保存する。</font>
+<font color="deepskyblue">0520:</font>     D3DXMATRIX matProjSave, matViewSave;
+<font color="deepskyblue">0521:</font>     lpD3DDev-&gt;GetTransform( D3DTS_VIEW,       &amp;matViewSave );
+<font color="deepskyblue">0522:</font>     lpD3DDev-&gt;GetTransform( D3DTS_PROJECTION, &amp;matProjSave );
+<font color="deepskyblue">0523:</font> 
+<font color="deepskyblue">0524:</font>     <font color="cyan">// 現在のバック バッファと z バッファを格納する。</font>
+<font color="deepskyblue">0525:</font>     LPDIRECT3DSURFACE8 pBackBuffer, pZBuffer;
+<font color="deepskyblue">0526:</font>     lpD3DDev-&gt;GetRenderTarget( &amp;pBackBuffer );
+<font color="deepskyblue">0527:</font>     lpD3DDev-&gt;GetDepthStencilSurface( &amp;pZBuffer );
+<font color="deepskyblue">0528:</font> 
+<font color="deepskyblue">0529:</font>     <font color="cyan">// 90°の視野を射影に使用する。</font>
+<font color="deepskyblue">0530:</font>     D3DXMATRIX matProj;
+<font color="deepskyblue">0531:</font>     D3DXMatrixPerspectiveFovLH( &amp;matProj, D3DX_PI/2, 1.0f, 0.5f, 1000.0f );
+<font color="deepskyblue">0532:</font>     lpD3DDev-&gt;SetTransform( D3DTS_PROJECTION, &amp;matProj );
+<font color="deepskyblue">0533:</font> 
+<font color="deepskyblue">0534:</font>     <font color="cyan">// キューブ マップの 6 つのサーフェスに対してループ処理を実行する。</font>
+<font color="deepskyblue">0535:</font>     <font color="blue">for</font>( DWORD i=0 ; i&lt;6 ; i++ ) {
+<font color="deepskyblue">0536:</font>         D3DXVECTOR3 vEnvEyePt = D3DXVECTOR3( 0.0f, 10.0f, 0.0f );
+<font color="deepskyblue">0537:</font>         D3DXVECTOR3 vLookatPt, vUpVec;
+<font color="deepskyblue">0538:</font> 
+<font color="deepskyblue">0539:</font>         <font color="blue">switch</font>( i ){
+<font color="deepskyblue">0540:</font>         <font color="blue">case</font> D3DCUBEMAP_FACE_POSITIVE_X:
+<font color="deepskyblue">0541:</font>             vLookatPt = D3DXVECTOR3( 1.0f, 0.0f, 0.0f )+vEnvEyePt;
+<font color="deepskyblue">0542:</font>             vUpVec    = D3DXVECTOR3( 0.0f, 1.0f, 0.0f );
+<font color="deepskyblue">0543:</font>             <font color="blue">break</font>;
+<font color="deepskyblue">0544:</font>         <font color="blue">case</font> D3DCUBEMAP_FACE_NEGATIVE_X:
+<font color="deepskyblue">0545:</font>             vLookatPt = D3DXVECTOR3(-1.0f, 0.0f, 0.0f )+vEnvEyePt;
+<font color="deepskyblue">0546:</font>             vUpVec    = D3DXVECTOR3( 0.0f, 1.0f, 0.0f );
+<font color="deepskyblue">0547:</font>             <font color="blue">break</font>;
+<font color="deepskyblue">0548:</font>         <font color="blue">case</font> D3DCUBEMAP_FACE_POSITIVE_Y:
+<font color="deepskyblue">0549:</font>             vLookatPt = D3DXVECTOR3( 0.0f, 1.0f, 0.0f )+vEnvEyePt;
+<font color="deepskyblue">0550:</font>             vUpVec    = D3DXVECTOR3( 0.0f, 0.0f,-1.0f );
+<font color="deepskyblue">0551:</font>             <font color="blue">break</font>;
+<font color="deepskyblue">0552:</font>         <font color="blue">case</font> D3DCUBEMAP_FACE_NEGATIVE_Y:
+<font color="deepskyblue">0553:</font>             vLookatPt = D3DXVECTOR3( 0.0f,-1.0f, 0.0f )+vEnvEyePt;
+<font color="deepskyblue">0554:</font>             vUpVec    = D3DXVECTOR3( 0.0f, 0.0f, 1.0f );
+<font color="deepskyblue">0555:</font>             <font color="blue">break</font>;
+<font color="deepskyblue">0556:</font>         <font color="blue">case</font> D3DCUBEMAP_FACE_POSITIVE_Z:
+<font color="deepskyblue">0557:</font>             vLookatPt = D3DXVECTOR3( 0.0f, 0.0f, 1.0f )+vEnvEyePt;
+<font color="deepskyblue">0558:</font>             vUpVec    = D3DXVECTOR3( 0.0f, 1.0f, 0.0f );
+<font color="deepskyblue">0559:</font>             <font color="blue">break</font>;
+<font color="deepskyblue">0560:</font>         <font color="blue">case</font> D3DCUBEMAP_FACE_NEGATIVE_Z:
+<font color="deepskyblue">0561:</font>             vLookatPt = D3DXVECTOR3( 0.0f, 0.0f,-1.0f )+vEnvEyePt;
+<font color="deepskyblue">0562:</font>             vUpVec    = D3DXVECTOR3( 0.0f, 1.0f, 0.0f );
+<font color="deepskyblue">0563:</font>             <font color="blue">break</font>;
+<font color="deepskyblue">0564:</font>         }
+<font color="deepskyblue">0565:</font> 
+<font color="deepskyblue">0566:</font>         D3DXMATRIX matView;
+<font color="deepskyblue">0567:</font>         D3DXMatrixLookAtLH( &amp;matView, &amp;vEnvEyePt, &amp;vLookatPt, &amp;vUpVec );
+<font color="deepskyblue">0568:</font>         lpD3DDev-&gt;SetTransform( D3DTS_VIEW, &amp;matView );
+<font color="deepskyblue">0569:</font> 
+<font color="deepskyblue">0570:</font>         D3DXMATRIX m = matView * matProj;
+<font color="deepskyblue">0571:</font>         D3DXMatrixInverse( &amp;m,  NULL, &amp;m);
+<font color="deepskyblue">0572:</font>         lpD3DDev-&gt;SetVertexShaderConstant( 8, D3DXMatrixTranspose(&amp;m,&amp;m), 4);
+<font color="deepskyblue">0573:</font> 
+<font color="deepskyblue">0574:</font>         <font color="cyan">//レンダリングするサーフェスへのポインタを取得する。</font>
+<font color="deepskyblue">0575:</font>         LPDIRECT3DSURFACE8 pFace;
+<font color="deepskyblue">0576:</font>         pDiffuseMap-&gt;GetCubeMapSurface( (D3DCUBEMAP_FACES)i, 0, &amp;pFace );
+<font color="deepskyblue">0577:</font>         lpD3DDev-&gt;SetRenderTarget ( pFace , pZBuffer );
+<font color="deepskyblue">0578:</font>         pFace-&gt;Release();
+<font color="deepskyblue">0579:</font> 
+<font color="deepskyblue">0580:</font>         <font color="blue">if</font>(1==n){
+<font color="deepskyblue">0581:</font>             lpD3DDev-&gt;Clear(0, NULL, D3DCLEAR_TARGET | D3DCLEAR_ZBUFFER, 0x000000, 1.0f, 0L);
+<font color="deepskyblue">0582:</font>         }
+<font color="deepskyblue">0583:</font>         lpD3DDev-&gt;BeginScene();
+<font color="deepskyblue">0584:</font>         <font color="yellow">
+<font color="deepskyblue">0585:</font>         <font color="cyan">// 等方的サンプリング (Thanks Bee さん)</font>
+<font color="deepskyblue">0586:</font>         D3DXVECTOR4 l[4];
+<font color="deepskyblue">0587:</font>         <font color="blue">for</font>(<font color="blue">int</font> k=0;k&lt;4;k++){
+<font color="deepskyblue">0588:</font>             <font color="blue">float</font> d;
+<font color="deepskyblue">0589:</font>             l[k].w = 0;
+<font color="deepskyblue">0590:</font>             <font color="blue">do</font>{
+<font color="deepskyblue">0591:</font>                 l[k].x = 2.0f*frand()-1.0f; 
+<font color="deepskyblue">0592:</font>                 l[k].y = 2.0f*frand()-1.0f; 
+<font color="deepskyblue">0593:</font>                 l[k].z = 2.0f*frand()-1.0f;
+<font color="deepskyblue">0594:</font>                 d = D3DXVec4LengthSq(&amp;l[k]);
+<font color="deepskyblue">0595:</font>             }<font color="blue">while</font>(1.0f&lt;d);
+<font color="deepskyblue">0596:</font>         }
+<font color="deepskyblue">0597:</font>         D3DXVec4Normalize(&amp;l[0], &amp;l[0]);
+<font color="deepskyblue">0598:</font>         D3DXVec4Normalize(&amp;l[1], &amp;l[1]);
+<font color="deepskyblue">0599:</font>         D3DXVec4Normalize(&amp;l[2], &amp;l[2]);
+<font color="deepskyblue">0600:</font>         D3DXVec4Normalize(&amp;l[3], &amp;l[3]);
+<font color="deepskyblue">0601:</font>         lpD3DDev-&gt;SetVertexShaderConstant(32, l, 4);
+<font color="deepskyblue">0602:</font>         lpD3DDev-&gt;SetPixelShaderConstant(1, &amp;D3DXVECTOR4(0,0,0,1.0f/n), 1);
+<font color="deepskyblue">0603:</font> 
+<font color="deepskyblue">0604:</font>         lpD3DDev-&gt;SetStreamSource( 0, pBlurVB, <font color="blue">sizeof</font>(D3D_BLUR_VERTEX) );
+<font color="deepskyblue">0605:</font>         lpD3DDev-&gt;SetIndices(pBlurIB,0);
+<font color="deepskyblue">0606:</font>         lpD3DDev-&gt;DrawIndexedPrimitive( D3DPT_TRIANGLELIST, 0,
+<font color="deepskyblue">0607:</font>                             (BLUR_GRID+1)*(BLUR_GRID+1), 0, 2*BLUR_GRID*BLUR_GRID );
+<font color="deepskyblue">0608:</font> </font>
+<font color="deepskyblue">0609:</font>         lpD3DDev-&gt;EndScene();
+<font color="deepskyblue">0610:</font>     }
+<font color="deepskyblue">0611:</font>     lpD3DDev-&gt;SetTexture( 0, NULL );
+<font color="deepskyblue">0612:</font>     lpD3DDev-&gt;SetTexture( 1, NULL );
+<font color="deepskyblue">0613:</font>     lpD3DDev-&gt;SetTexture( 2, NULL );
+<font color="deepskyblue">0614:</font>     lpD3DDev-&gt;SetTexture( 3, NULL );
+<font color="deepskyblue">0615:</font> 
+<font color="deepskyblue">0616:</font>     <font color="cyan">// レンダリング ターゲットをメイン バック バッファに戻す。</font>
+<font color="deepskyblue">0617:</font>     lpD3DDev-&gt;SetRenderTarget( pBackBuffer, pZBuffer );
+<font color="deepskyblue">0618:</font>     pBackBuffer-&gt;Release();
+<font color="deepskyblue">0619:</font>     pZBuffer-&gt;Release();
+<font color="deepskyblue">0620:</font> 
+<font color="deepskyblue">0621:</font>     <font color="cyan">// 元のトランスフォーム行列をリストアする。</font>
+<font color="deepskyblue">0622:</font>     lpD3DDev-&gt;SetTransform( D3DTS_VIEW,       &amp;matViewSave );
+<font color="deepskyblue">0623:</font>     lpD3DDev-&gt;SetTransform( D3DTS_PROJECTION, &amp;matProjSave );
+<font color="deepskyblue">0624:</font>     lpD3DDev-&gt;SetRenderState(D3DRS_ALPHABLENDENABLE, FALSE);
+<font color="deepskyblue">0625:</font> }
+</pre>
+<p>
+さて、作成するシェーダプログラムです。<br>
+座標は、入力された座標をそのまま出力します。<br>
+法線ベクトルは、射影空間の位置座標をワールド座標に直して、規格化することによって算出します。
+後は、内積を計算して、Lambert 余弦則の係数cosθを求めつつ、その値の正負によって、
+光源に対して表と裏のどちらのベクトルを使うのか選択します。<br>
+</p>
+cosθは、絶対値をmax命令で求めておいて、色の出力として出力します。
+</p>
+<pre class="CodeBlock">
+<font color="deepskyblue">0001:</font> <font color="cyan">; diffuse.vsh</font>
+<font color="deepskyblue">0003:</font> <font color="cyan">; c8-11  -- 逆（ビュー + 透視変換）行列</font>
+<font color="deepskyblue">0004:</font> <font color="cyan">; c12    -- {0.0, 0.5, 1.0, 2.0}</font>
+<font color="deepskyblue">****:</font> <font color="cyan">; c32-35 -- 規格化された光源ベクトル</font>
+<font color="deepskyblue">0005:</font> <font color="cyan">;</font>
+<font color="deepskyblue">0006:</font> <font color="cyan">; v0    頂点の座標値</font>
+<font color="deepskyblue">0008:</font> 
+<font color="deepskyblue">0009:</font> vs.1.1
+<font color="deepskyblue">0010:</font> 
+<font color="deepskyblue">0011:</font> <font color="cyan">;座標変換</font>
+<font color="deepskyblue">0012:</font> mov oPos,  v0
+<font color="deepskyblue">0013:</font> 
+<font color="deepskyblue">0014:</font> m4x4 r3, v0, c8
+<font color="deepskyblue">0015:</font> <font color="cyan">// 正規化</font>
+<font color="deepskyblue">0016:</font> dp3 r3.w, r3, r3
+<font color="deepskyblue">0017:</font> rsq r3.w, r3.w
+<font color="deepskyblue">0018:</font> mul r3, r3, r3.w
+<font color="deepskyblue">0019:</font> 
+<font color="deepskyblue">0020:</font> <font color="cyan">// oT0 = (0<=(N･L1))?L1:-L1</font>
+<font color="deepskyblue">0021:</font> dp3 r0,   r3, c32           <font color="cyan">; (N･L1)</font>
+<font color="deepskyblue">0022:</font> sge   r1,  r0,  c12.x
+<font color="deepskyblue">0023:</font> add   r2,  c32, c32
+<font color="deepskyblue">0024:</font> mad  oT0,  r1,  r2, -c32
+<font color="deepskyblue">0025:</font> 
+<font color="deepskyblue">0026:</font> <font color="cyan">// oT1 = (0<=(N･L2))?L2:-L2</font>
+<font color="deepskyblue">0027:</font> dp3 r0.a,  r3, c33          <font color="cyan">; (N･L2)</font>
+<font color="deepskyblue">0028:</font> sge   r1,  r0.a,  c12.x
+<font color="deepskyblue">0029:</font> add   r2,  c33, c33
+<font color="deepskyblue">0030:</font> mad  oT1,  r1,  r2, -c33
+<font color="deepskyblue">0031:</font> 
+<font color="deepskyblue">0032:</font> <font color="cyan">// (|N･L1|, |N･L1|, |N･L1|, |N･L2|)</font>
+<font color="deepskyblue">0033:</font> max oD0, r0, -r0
+<font color="deepskyblue">0034:</font> 
+<font color="deepskyblue">0035:</font> 
+<font color="deepskyblue">0036:</font> <font color="cyan">// oT2 = (0<=(N･L3))?L3:-L3</font>
+<font color="deepskyblue">0037:</font> dp3 r0,   r3, c34           <font color="cyan">; (N･L3)</font>
+<font color="deepskyblue">0038:</font> sge   r1,  r0,  c12.x
+<font color="deepskyblue">0039:</font> add   r2,  c34, c34
+<font color="deepskyblue">0040:</font> mad  oT2,  r1,  r2, -c34
+<font color="deepskyblue">0041:</font> 
+<font color="deepskyblue">0042:</font> <font color="cyan">// oT3 = (0<=(N･L4))?L4:-L4</font>
+<font color="deepskyblue">0043:</font> dp3 r0.a,  r3, c35          <font color="cyan">; (N･L4)</font>
+<font color="deepskyblue">0044:</font> sge   r1,  r0.a,  c12.x
+<font color="deepskyblue">0045:</font> add   r2,  c35, c35
+<font color="deepskyblue">0046:</font> mad  oT3,  r1,  r2, -c35
+<font color="deepskyblue">0047:</font> 
+<font color="deepskyblue">0048:</font> <font color="cyan">// (|N･L3|, |N･L3|, |N･L3|, |N･L4|)</font>
+<font color="deepskyblue">0049:</font> max oD1, r0, -r0
+</pre>
+<p>
+ピクセルシェーダプログラムでは、環境マップから色をサンプリングしておいて、
+それらをcosθの係数で掛けて、平均を取って出力します。<br>
+ただし、実際に平均をとってみたら、結果が暗かったので、
+２倍の明るさに強めて平均をとりました。<br>
+わざとらしくコメントアウトしてある部分のコメントをはずして、下の２行をコメントアウトすると、平均化した結果が得られます。
+この辺は、テクスチャにもよると思いますので、適当に係数付けてください。<br>
+</p>
+<p>
+α成分には、合成の強さ1/nを入れます。
+</p>
+<pre class="CodeBlock">
+<font color="deepskyblue">0001:</font> <font color="cyan">; diffuse.psh</font>
+<font color="deepskyblue">0002:</font> 
+<font color="deepskyblue">0003:</font> ps.1.1
+<font color="deepskyblue">0004:</font> 
+<font color="deepskyblue">0005:</font> def c0, 0.5f, 0.5f, 0.5f, 0.5f
+<font color="deepskyblue">0006:</font> 
+<font color="deepskyblue">0007:</font> tex t0
+<font color="deepskyblue">0008:</font> tex t1
+<font color="deepskyblue">0009:</font> tex t2
+<font color="deepskyblue">0010:</font> tex t3
+<font color="deepskyblue">0011:</font> 
+<font color="deepskyblue">0012:</font> mul t0, t0, v0          <font color="cyan">; (N･L1)*tex(L1)</font>
+<font color="deepskyblue">0013:</font> mul t1, t1, v0.a        <font color="cyan">; (N･L2)*tex(L2)</font>
+<font color="deepskyblue">0014:</font> mul t2, t2, v1          <font color="cyan">; (N･L3)*tex(L3)</font>
+<font color="deepskyblue">0015:</font> mul t3, t3, v1.a        <font color="cyan">; (N･L4)*tex(L4)</font>
+<font color="deepskyblue">0016:</font> 
+<font color="deepskyblue">0017:</font> <font color="cyan">;lrp t0, c0, t0, t1     </font>
+<font color="deepskyblue">0018:</font> <font color="cyan">;lrp t2, c0, t2, t3     </font>
+<font color="deepskyblue">0019:</font> 
+<font color="deepskyblue">0020:</font> add t0, t0, t1
+<font color="deepskyblue">0021:</font> add t2, t2, t3
+<font color="deepskyblue">0022:</font> 
+<font color="deepskyblue">0023:</font> lrp r0.rgb, c0, t0, t2  <font color="cyan">; r0.rgb = ((N･L1)*tex(L1) + (N･L2)*tex(L2)</font>
+<font color="deepskyblue">0024:</font>                         <font color="cyan">;          +(N･L3)*tex(L3) + (N･L4)*tex(L4))/4</font>
+<font color="deepskyblue">0025:</font> +mov r0.a, c1.a         <font color="cyan">; r0.a = c1.a = 1/n</font>
+<font color="deepskyblue">0026:</font> 
+</pre>
+
+
+<h2>■マッピング</h2>
+
+<p>
+実際の環境マップを張るのは非常に簡単です。<br>
+頂点シェーダでは、テクスチャ座標にワールド座標の位置座標を出力します。
+</p>
+<pre class="CodeBlock">
+vs.vsh
+<font color="deepskyblue">0001:</font> <font color="cyan">; c0-3   -- world + ビュー + 透視変換行列</font>
+<font color="deepskyblue">0002:</font> <font color="cyan">; c4-7   -- world</font>
+<font color="deepskyblue">****:</font> <font color="cyan">; c14    -- メッシュの色</font>
+<font color="deepskyblue">0004:</font> <font color="cyan">;</font>
+<font color="deepskyblue">0005:</font> <font color="cyan">; v0    頂点の座標値</font>
+<font color="deepskyblue">0006:</font> <font color="cyan">; v3    法線ベクトル (w成分は1.0f)</font>
+<font color="deepskyblue">0007:</font> 
+<font color="deepskyblue">0008:</font> vs.1.0
+<font color="deepskyblue">0009:</font> 
+<font color="deepskyblue">0010:</font> <font color="cyan">;座標変換</font>
+<font color="deepskyblue">0011:</font> m4x4 oPos,  v0,   c0
+<font color="deepskyblue">0035:</font> 
+<font color="deepskyblue">0036:</font> mov oD0, c14
+<font color="deepskyblue">0037:</font> 
+<font color="deepskyblue">0038:</font> <font color="cyan">; ワールド座標での法線ベクトル</font>
+<font color="deepskyblue">0039:</font> m3x3 oT0,  v3,   c4
+</pre>
+<p>
+ピクセルシェーダでは、重み付けしてから、メッシュの色に積算して拡散光成分を求めます。
+</p>
+<pre class="CodeBlock">
+vs.vsh
+<font color="deepskyblue">0001:</font> <font color="cyan">; ps.psh</font>
+<font color="deepskyblue">0002:</font> 
+<font color="deepskyblue">0003:</font> ps.1.1
+<font color="deepskyblue">0004:</font> 
+<font color="deepskyblue">0020:</font> def c0, 1.00f, 1.00f, 1.00f, 1.0f   <font color="cyan">; 拡散反射係数</font>
+<font color="deepskyblue">0021:</font> def c1, 0.04f, 0.04f, 0.04f, 1.0f   <font color="cyan">; 環境反射係数</font>
+<font color="deepskyblue">0022:</font> 
+<font color="deepskyblue">0023:</font> tex t0  <font color="cyan">; diffuse マップ</font>
+<font color="deepskyblue">0024:</font> 
+<font color="deepskyblue">0025:</font> mul t0, t0, c0
+<font color="deepskyblue">0026:</font> add t0, t0, c1
+<font color="deepskyblue">0027:</font> mul r0, t0, v0
+</pre>
+
+
+<h2>■鏡面反射光マップ</h2>
+
+
+<image src = "./specular/title.jpg">
+
+<p>
+では、次は、鏡面反射光です。<br>
+画面は jpeg で圧縮してるので汚いですね。<br>
+環境マップのときに気が付いているかもしれませんが、環境マップは遠くの景色がはっきりと移りこみます。<br>
+ですが、実際には、移り込みは鏡面反射の結果であるので、
+表面のざらつき具合に応じてぼやけるはずです。<br>
+これをマップとして表現したものが鏡面反射光マップです。
+鏡面反射光マップは環境マップの進化系といってよいでしょう。
+</p>
+
+<ul style = "LIST-STYLE-TYPE:none">
+<li><a href="./specular/src.lzh">src.lzh (鏡面反射光マップのサンプル:DirectX8.1)</a>
+</ul>
+
+<table>
+<tr><td><a href="./specular/specular_vsh.html">specular.vsh</a></td><td>鏡面反射光マップ作成の頂点シェーダー。</td></tr>
+<tr><td><a href="./specular/specular_psh.html">specular.psh</a></td><td>鏡面反射光マップ作成のピクセルシェーダー。</td></tr>
+<tr><td><a href="./specular/vs_vsh.html">vs.vsh</a></td><td>深度描画の頂点シェーダー。</td></tr>
+<tr><td><a href="./specular/ps_psh.html">ps.psh</a></td><td>深度描画のピクセルシェーダー。</td></tr>
+<tr><td><a href="./specular/draw_cpp.html">draw.cpp</a></td><td>メインの描画部分。</td></tr>
+<tr><td><a href="./specular/draw_h.html">draw.h</a></td><td>描画の各関数の定義。</td></tr>
+<tr><td><a href="./specular/bg_cpp.html">bg.cpp</a></td><td>背景の描画。</td></tr>
+<tr><td><a href="./specular/main_h.html">main.h</a></td><td>基本的な定数など。</td></tr>
+<tr><td><a href="./specular/main_cpp.html">main.cpp</a></td><td>描画に関係しないシステム的な部分。</td></tr>
+<tr><td><a href="./specular/load_cpp.html">load.cpp</a></td><td>ロード。</td></tr>
+<tr><td><a href="./specular/load_h.html">load.h</a></td><td>ロードのインターフェイス。</td></tr>
+</table>
+<image src = "../media/tile_bmp.jpg" width = 64 height=64>tile.bmp (床デカール)<br>
+<image src = "../media/sky_bmp.jpg" width = 64 height=64>sky.bmp (空デカール)<br>
+<p>
+あと、実行ファイル及び、プロジェクトファイルが入っています。
+</p>
+
+
+<h2>■やってること</h2>
+
+
+<p>
+鏡面反射光マップが拡散光マップと違うところは、
+環境マップをサンプリングするときの法則がLambertではなくて、Phong のシェーディングであることです。<br>
+拡散光マップよりも、局所的に色をサンプリングします。
+</p>
+<image src = "./specular/y.jpg">
+<p>
+頂点シェーダのプログラムの出力する係数を8乗して出力します。
+</p>
+
+<pre class="CodeBlock">
+<font color="deepskyblue">0001:</font> <font color="cyan">; specular.vsh</font>
+<font color="deepskyblue">0002:</font> <font color="cyan">; c0-3   -- world + ビュー + 透視変換行列</font>
+<font color="deepskyblue">0003:</font> <font color="cyan">; c8-11  -- 逆（ビュー + 透視変換）行列</font>
+<font color="deepskyblue">0004:</font> <font color="cyan">; c12    -- {0.0, 0.5, 1.0, 2.0}</font>
+<font color="deepskyblue">0005:</font> <font color="cyan">;</font>
+<font color="deepskyblue">0006:</font> <font color="cyan">; v0    頂点の座標値</font>
+<font color="deepskyblue">0007:</font> <font color="cyan">; v3    法線ベクトル (w成分は1.0f)</font>
+<font color="deepskyblue">0008:</font> 
+<font color="deepskyblue">0009:</font> vs.1.1
+<font color="deepskyblue">0010:</font> 
+<font color="deepskyblue">0011:</font> <font color="cyan">;座標変換</font>
+<font color="deepskyblue">0012:</font> mov oPos,  v0
+<font color="deepskyblue">0013:</font> 
+<font color="deepskyblue">0014:</font> m4x4 r3, v0, c8
+<font color="deepskyblue">0015:</font> <font color="cyan">// 正規化</font>
+<font color="deepskyblue">0016:</font> dp3 r3.w, r3, r3
+<font color="deepskyblue">0017:</font> rsq r3.w, r3.w
+<font color="deepskyblue">0018:</font> mul r3, r3, r3.w
+<font color="deepskyblue">0019:</font> 
+<font color="deepskyblue">0020:</font> <font color="cyan">// oT0 = (0&lt;=(N･L1))?L1:-L1</font>
+<font color="deepskyblue">0021:</font> dp3 r0,   r3, c32           <font color="cyan">; (N･L1)</font>
+<font color="deepskyblue">0022:</font> sge   r1,  r0,  c12.x
+<font color="deepskyblue">0023:</font> add   r2,  c32, c32
+<font color="deepskyblue">0024:</font> mad  oT0,  r1,  r2, -c32
+<font color="deepskyblue">0025:</font> 
+<font color="deepskyblue">0026:</font> <font color="cyan">// oT1 = (0&lt;=(N･L2))?L2:-L2</font>
+<font color="deepskyblue">0027:</font> dp3 r0.a,  r3, c33          <font color="cyan">; (N･L2)</font>
+<font color="deepskyblue">0028:</font> sge   r1,  r0.a,  c12.x
+<font color="deepskyblue">0029:</font> add   r2,  c33, c33
+<font color="deepskyblue">0030:</font> mad  oT1,  r1,  r2, -c33
+<font color="deepskyblue">0031:</font> 
+<font color="deepskyblue">0032:</font> <font color="cyan">// (|N･L1|^8, |N･L1|^8, |N･L1|^8, |N･L2|^8)</font><font color="yellow">
+<font color="deepskyblue">0033:</font> max r0, r0, -r0
+<font color="deepskyblue">0034:</font> mul r0, r0, r0
+<font color="deepskyblue">0035:</font> mul r0, r0, r0
+<font color="deepskyblue">0036:</font> mul oD0, r0, r0</font>
+<font color="deepskyblue">0037:</font> 
+<font color="deepskyblue">0038:</font> <font color="cyan">// oT2 = (0&lt;=(N･L3))?L3:-L3</font>
+<font color="deepskyblue">0039:</font> dp3 r0,   r3, c34           <font color="cyan">; (N･L3)</font>
+<font color="deepskyblue">0040:</font> sge   r1,  r0,  c12.x
+<font color="deepskyblue">0041:</font> add   r2,  c34, c34
+<font color="deepskyblue">0042:</font> mad  oT2,  r1,  r2, -c34
+<font color="deepskyblue">0043:</font> 
+<font color="deepskyblue">0044:</font> <font color="cyan">// oT3 = (0&lt;=(N･L4))?L4:-L4</font>
+<font color="deepskyblue">0045:</font> dp3 r0.a,  r3, c35          <font color="cyan">; (N･L4)</font>
+<font color="deepskyblue">0046:</font> sge   r1,  r0.a,  c12.x
+<font color="deepskyblue">0047:</font> add   r2,  c35, c35
+<font color="deepskyblue">0048:</font> mad  oT3,  r1,  r2, -c35
+<font color="deepskyblue">0049:</font> 
+<font color="deepskyblue">0050:</font> <font color="cyan">// (|N･L3|^8, |N･L3|^8, |N･L3|^8, |N･L4|^8)</font><font color="yellow">
+<font color="deepskyblue">0051:</font> max r0, r0, -r0
+<font color="deepskyblue">0052:</font> mul r0, r0, r0
+<font color="deepskyblue">0053:</font> mul r0, r0, r0
+<font color="deepskyblue">0054:</font> mul oD1, r0, r0</font>
+</pre>
+<p>
+また、実際に計算してみたら、色が弱かったので、ピクセルシェーダを加算合成することによって、色を強めて出力しました。
+</p>
+<pre class="CodeBlock">
+<font color="deepskyblue">0001:</font> <font color="cyan">; specular.psh</font>
+<font color="deepskyblue">0002:</font> 
+<font color="deepskyblue">0003:</font> ps.1.1
+<font color="deepskyblue">0004:</font> 
+<font color="deepskyblue">0005:</font> def c0, 0.5f, 0.5f, 0.5f, 0.5f
+<font color="deepskyblue">0006:</font> 
+<font color="deepskyblue">0007:</font> tex t0
+<font color="deepskyblue">0008:</font> tex t1
+<font color="deepskyblue">0009:</font> tex t2
+<font color="deepskyblue">0010:</font> tex t3
+<font color="deepskyblue">0011:</font> 
+<font color="deepskyblue">0012:</font> mul t0, t0, v0          <font color="cyan">; (N･L1)^8*tex(L1)</font>
+<font color="deepskyblue">0013:</font> mul t1, t1, v0.a        <font color="cyan">; (N･L2)^8*tex(L2)</font>
+<font color="deepskyblue">0014:</font> mul t2, t2, v1          <font color="cyan">; (N･L3)^8*tex(L3)</font>
+<font color="deepskyblue">0015:</font> mul t3, t3, v1.a        <font color="cyan">; (N･L4)^8*tex(L4)</font>
+<font color="deepskyblue">0016:</font> <font color="yellow">
+<font color="deepskyblue">0017:</font> add t0, t0, t1
+<font color="deepskyblue">0018:</font> add t2, t2, t3
+<font color="deepskyblue">0019:</font> 
+<font color="deepskyblue">0020:</font> add r0.rgb, t0, t2      <font color="cyan">; r0.rgb = ((N･L1)^8*tex(L1) + (N･L2)^8*tex(L2)</font>
+<font color="deepskyblue">0021:</font>                         <font color="cyan">;          +(N･L3)^8*tex(L3) + (N･L4)^8*tex(L4))/4</font></font>
+<font color="deepskyblue">0022:</font> +mov r0.a, c1.a         <font color="cyan">; r0.a = c1.a = 1/n</font>
+</pre>
+
+<p>
+後は、レンダリング時のマッピングは環境マップと同じように、反射ベクトルでマッピングします。
+</p>
+<pre class="CodeBlock">
+<font color="deepskyblue">0001:</font> <font color="cyan">; c0-3   -- world + ビュー + 透視変換行列</font>
+<font color="deepskyblue">0002:</font> <font color="cyan">; c4-7   -- world</font>
+<font color="deepskyblue">0003:</font> <font color="cyan">; c12    -- {0.0, 0.5, 1.0, 2.0}</font>
+<font color="deepskyblue">0004:</font> <font color="cyan">;</font>
+<font color="deepskyblue">0005:</font> <font color="cyan">; v0    頂点の座標値</font>
+<font color="deepskyblue">0006:</font> <font color="cyan">; v3    法線ベクトル (w成分は1.0f)</font>
+<font color="deepskyblue">0007:</font> 
+<font color="deepskyblue">0008:</font> vs.1.0
+<font color="deepskyblue">0009:</font> 
+<font color="deepskyblue">0010:</font> <font color="cyan">;座標変換</font>
+<font color="deepskyblue">0011:</font> m4x4 oPos,  v0,   c0
+<font color="deepskyblue">0012:</font> 
+<font color="deepskyblue">0013:</font> <font color="cyan">; Lambert 拡散</font>
+<font color="deepskyblue">0014:</font> dp4 r0, v3, c13
+<font color="deepskyblue">0015:</font> max r0, r0, c13.w
+<font color="deepskyblue">0016:</font> mul oD0, r0, c14
+<font color="deepskyblue">0017:</font> 
+<font color="deepskyblue">0018:</font> <font color="cyan">; ワールド座標での法線ベクトル</font>
+<font color="deepskyblue">0019:</font> m3x3 r1,  v3,   c4
+<font color="deepskyblue">0020:</font> mov oT1, r1
+<font color="deepskyblue">0021:</font> 
+<font color="deepskyblue">0022:</font> <font color="cyan">; 視線ベクトル</font>
+<font color="deepskyblue">0023:</font> m4x4 r0,  v0,   c4
+<font color="deepskyblue">0024:</font> add r0, c15, -r0
+<font color="deepskyblue">0025:</font> mov oT2, r0
+<font color="deepskyblue">0026:</font> 
+<font color="deepskyblue">0027:</font> dp3 r0.w, r0, r0    <font color="cyan">; 正規化</font>
+<font color="deepskyblue">0028:</font> rsq r0.w, r0.w
+<font color="deepskyblue">0029:</font> mul r0, r0, r0.w
+<font color="deepskyblue">0030:</font> 
+<font color="deepskyblue">0031:</font> dp3 r0.w, r0, r1
+<font color="deepskyblue">0032:</font> mul r0.w, r0.w, c12.w
+<font color="deepskyblue">0033:</font> mad oT0.xyz, r0.w, r1, -r0  <font color="cyan">; r=2(N･E)N-E</font>
+</pre>
+
+<p>
+ピクセルシェーダでは、フレネル項を追加しました。
+</p>
+
+<pre class="CodeBlock">
+<font color="deepskyblue">0001:</font> <font color="cyan">; ps.psh</font>
+<font color="deepskyblue">0002:</font> 
+<font color="deepskyblue">0003:</font> ps.1.1
+<font color="deepskyblue">0004:</font> 
+<font color="deepskyblue">0005:</font> def c0, 1.00f, 1.00f, 1.00f, 1.0f   <font color="cyan">; フレネル スケール</font>
+<font color="deepskyblue">0006:</font> def c1, 0.30f, 0.30f, 0.30f, 1.0f   <font color="cyan">; フレネル バイアス</font>
+<font color="deepskyblue">0007:</font> 
+<font color="deepskyblue">0008:</font> tex t0  <font color="cyan">; 環境マップ</font>
+<font color="deepskyblue">0009:</font> tex t1  <font color="cyan">; normal</font>
+<font color="deepskyblue">0010:</font> tex t2  <font color="cyan">; eye</font>
+<font color="deepskyblue">0011:</font> 
+<font color="deepskyblue">0012:</font> dp3_sat r0, t1_bx2, t2_bx2
+<font color="deepskyblue">0013:</font> mul r0, 1-r0, 1-r0
+<font color="deepskyblue">0014:</font> mul r0, r0, r0      <font color="cyan">; (1-N･E)^4</font>
+<font color="deepskyblue">0015:</font> mul r0, r0, c0
+<font color="deepskyblue">0016:</font> add r0, r0, c1      <font color="cyan">; r = s*(1-N･E)^4 + b</font>
+<font color="deepskyblue">0017:</font> 
+<font color="deepskyblue">0018:</font> lrp r0, r0, t0, v0  <font color="cyan">; 線形補間で環境マップを張り詰ける</font>
+</pre>
+
+<h2>■最後に</h2>
+
+
+<p>
+今回は、拡散光のマップに関しては、テクスチャを一部だけがオレンジの夕闇のようなテクスチャにして見ました。<br>
+青空にしてしまうと、ほとんど明るくなってしまうので、陰になる部分がわからなくなってしまいます。<br>
+ということで、閉鎖空間で一部が明るくないと、効果的ではありませんね。
+</p>
+<p>
+鏡面反射光の場合には、光の鋭さが見られません。<br>
+もっと冪をあげればよいのでしょうけれど、それならば、
+ピクセルシェーダで計算すべきでしょう。
+といっても、命令数が残ってないので、DirectX9を待たなければなりませんが。<br>
+<s>あと、立体角単位の確率分布で考えていないので、キューブマップの各面の隅の部分が
+光が強くなってしまっていますね。これは修正すべきですね。</s>修正済み
+</p>
+<p>
+<s>今回は、最初のフレームでテクスチャを作成していますが、
+待たせたくないようならば、各フレームに計算を分離することができます。
+30フレーム/秒の画面でも、256回ならば８秒程度で完成しますし、
+数フレーム計算しただけで、それなりの結果が出ると思うので、
+半リアルタイムに作成できると思います。</s>対応済み
+</p>
+
+</div>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<center>
+<hr>
+<p><a href="../index.html">もどる</a></p>
+<p><a href="mailto:imagire@gmail.com">imagire@gmail.com</a></p>
+</center>
+
+</body>
+</html>

@@ -1,0 +1,84 @@
+<HTML>
+<HEAD>
+<TITLE>diutil.h</TITLE>
+<meta name="GENERATOR" content="cpp2html 2.1 by Niisaka">
+<meta http-equiv="Content-Type" content="text/html">
+<meta http-equiv="Content-Style-Type" content="text/css">
+<STYLE TYPE="text/css">
+<!--
+SPAN.comment { color:#008000; font-weight:normal; font-style:normal;}
+SPAN.keyword { color:#0000FF; font-weight:normal; font-style:normal;}
+SPAN.string { color:#600000; font-weight:normal; font-style:normal;}
+SPAN.linenum { color:#A0A0A0; font-weight:normal; font-style:normal;}
+-->
+</STYLE>
+</HEAD>
+<BODY TEXT="#000000" BGCOLOR="#FFFFFF">
+<PRE><SPAN CLASS="linenum">0001:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0002:</SPAN> <SPAN CLASS="comment">// File: DIUtil.h</SPAN>
+<SPAN CLASS="linenum">0003:</SPAN> <SPAN CLASS="comment">//</SPAN>
+<SPAN CLASS="linenum">0004:</SPAN> <SPAN CLASS="comment">// Desc: DirectInput support using action mapping</SPAN>
+<SPAN CLASS="linenum">0005:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0006:</SPAN> <SPAN CLASS="keyword">#ifndef</SPAN> DIUTIL_H
+<SPAN CLASS="linenum">0007:</SPAN> <SPAN CLASS="keyword">#define</SPAN> DIUTIL_H
+<SPAN CLASS="linenum">0008:</SPAN> 
+<SPAN CLASS="linenum">0009:</SPAN> <SPAN CLASS="keyword">#ifndef</SPAN> DIRECTINPUT_VERSION
+<SPAN CLASS="linenum">0010:</SPAN> <SPAN CLASS="keyword">#define</SPAN> DIRECTINPUT_VERSION 0x0800
+<SPAN CLASS="linenum">0011:</SPAN> <SPAN CLASS="keyword">#endif</SPAN>
+<SPAN CLASS="linenum">0012:</SPAN> 
+<SPAN CLASS="linenum">0013:</SPAN> <SPAN CLASS="keyword">#include</SPAN> &lt;dinput.h&gt;
+<SPAN CLASS="linenum">0014:</SPAN> 
+<SPAN CLASS="linenum">0015:</SPAN> 
+<SPAN CLASS="linenum">0016:</SPAN> 
+<SPAN CLASS="linenum">0017:</SPAN> 
+<SPAN CLASS="linenum">0018:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0019:</SPAN> <SPAN CLASS="comment">// Name: class CInputDeviceManager</SPAN>
+<SPAN CLASS="linenum">0020:</SPAN> <SPAN CLASS="comment">// Desc: Input device manager using DX8 action mapping</SPAN>
+<SPAN CLASS="linenum">0021:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0022:</SPAN> <SPAN CLASS="keyword">class</SPAN> CInputDeviceManager
+<SPAN CLASS="linenum">0023:</SPAN> {
+<SPAN CLASS="linenum">0024:</SPAN> <SPAN CLASS="keyword">public</SPAN>:
+<SPAN CLASS="linenum">0025:</SPAN>     <SPAN CLASS="keyword">struct</SPAN> DeviceInfo
+<SPAN CLASS="linenum">0026:</SPAN>     {
+<SPAN CLASS="linenum">0027:</SPAN>         LPDIRECTINPUTDEVICE8 pdidDevice;
+<SPAN CLASS="linenum">0028:</SPAN>         LPVOID               pParam;
+<SPAN CLASS="linenum">0029:</SPAN>     };
+<SPAN CLASS="linenum">0030:</SPAN> 
+<SPAN CLASS="linenum">0031:</SPAN>     <SPAN CLASS="keyword">typedef</SPAN> HRESULT (CALLBACK *LPDIMANAGERCALLBACK)(CInputDeviceManager::DeviceInfo* pDeviceInfo, <SPAN CLASS="keyword">const</SPAN> DIDEVICEINSTANCE* pdidi, LPVOID);
+<SPAN CLASS="linenum">0032:</SPAN> 
+<SPAN CLASS="linenum">0033:</SPAN> <SPAN CLASS="keyword">private</SPAN>:
+<SPAN CLASS="linenum">0034:</SPAN>     BOOL                    m_bCleanupCOM;
+<SPAN CLASS="linenum">0035:</SPAN>     HWND                    m_hWnd;
+<SPAN CLASS="linenum">0036:</SPAN>     TCHAR*                  m_strUserName;
+<SPAN CLASS="linenum">0037:</SPAN> 
+<SPAN CLASS="linenum">0038:</SPAN>     LPDIRECTINPUT8          m_pDI;
+<SPAN CLASS="linenum">0039:</SPAN>     DeviceInfo*             m_pDevices;
+<SPAN CLASS="linenum">0040:</SPAN>     DWORD                   m_dwMaxDevices;
+<SPAN CLASS="linenum">0041:</SPAN>     DWORD                   m_dwNumDevices;
+<SPAN CLASS="linenum">0042:</SPAN>     DIACTIONFORMAT          m_diaf;
+<SPAN CLASS="linenum">0043:</SPAN> 
+<SPAN CLASS="linenum">0044:</SPAN>     LPDIMANAGERCALLBACK  m_AddDeviceCallback;
+<SPAN CLASS="linenum">0045:</SPAN>     LPVOID               m_AddDeviceCallbackParam;
+<SPAN CLASS="linenum">0046:</SPAN> 
+<SPAN CLASS="linenum">0047:</SPAN> <SPAN CLASS="keyword">public</SPAN>:
+<SPAN CLASS="linenum">0048:</SPAN>     <SPAN CLASS="comment">// Device control</SPAN>
+<SPAN CLASS="linenum">0049:</SPAN>     HRESULT AddDevice( <SPAN CLASS="keyword">const</SPAN> DIDEVICEINSTANCE* pdidi, LPDIRECTINPUTDEVICE8 pdidDevice );
+<SPAN CLASS="linenum">0050:</SPAN>     HRESULT GetDevices( DeviceInfo** ppDeviceInfo, DWORD* pdwNumDevices );
+<SPAN CLASS="linenum">0051:</SPAN>     HRESULT ConfigureDevices( HWND hWnd, IUnknown* pSurface, VOID* pCallback, DWORD dwFlags, LPVOID pvCBParam );
+<SPAN CLASS="linenum">0052:</SPAN>     VOID UnacquireDevices();
+<SPAN CLASS="linenum">0053:</SPAN>     VOID SetFocus( HWND hWnd );
+<SPAN CLASS="linenum">0054:</SPAN> 
+<SPAN CLASS="linenum">0055:</SPAN>     <SPAN CLASS="comment">// Construction</SPAN>
+<SPAN CLASS="linenum">0056:</SPAN>     HRESULT SetActionFormat( DIACTIONFORMAT&amp; diaf, BOOL bReenumerate );
+<SPAN CLASS="linenum">0057:</SPAN>     HRESULT Create( HWND hWnd, TCHAR* strUserName, DIACTIONFORMAT&amp; diaf, LPDIMANAGERCALLBACK AddDeviceCallback, LPVOID pCallbackParam );
+<SPAN CLASS="linenum">0058:</SPAN> 
+<SPAN CLASS="linenum">0059:</SPAN>     CInputDeviceManager();
+<SPAN CLASS="linenum">0060:</SPAN>     ~CInputDeviceManager();
+<SPAN CLASS="linenum">0061:</SPAN> };
+<SPAN CLASS="linenum">0062:</SPAN> 
+<SPAN CLASS="linenum">0063:</SPAN> <SPAN CLASS="keyword">#endif</SPAN>
+<SPAN CLASS="linenum">0064:</SPAN> 
+<SPAN CLASS="linenum">0065:</SPAN> 
+<SPAN CLASS="linenum">0066:</SPAN> </PRE>
+</BODY>
+</HTML>

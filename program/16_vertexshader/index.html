@@ -1,0 +1,315 @@
+<head>
+	<title>t-pot 『DirectX8.0 入門:Vertex Shader 入門』</title>
+	<link rel="stylesheet" type="text/css" href="../if.css">
+</head>
+<meta http-equiv=Content-Type content="text/html; charset=shift_jis">
+<body>
+
+<div class="contents">
+<center>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<h1>Vertex Shader 入門</h1><br>
+<h3>～自分でT&L～</h3>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+</center>
+<h2>■今回のファイルは</h2>
+
+<p>
+Pixel Shader を既に取り扱いましたが、より、幅を広げるために、
+ここで、バーテックスシェーダーをやっておこうと思います。<br>
+バーテックスシェーダーは、自前で座標計算と、ライティングをするための仕組みです。<br>
+Pixel Shader では、形の変形は出来ませんが、バーテックスシェーダーはポリゴンそのものをゆがませることができます。<br>
+まぁ、最終的には Displacement Mapping すなわち Per Vertex( & Pixel) Shader に統合されるでしょうが、
+数世代先の話をしてもしょうがないので、今できることをします。
+</p>
+<p>
+次のソースを、ダウンロードしてください。
+<p>
+
+<ul style = "LIST-STYLE-TYPE:none">
+<li><a href="vs.lzh">vs.lzh バーテックスシェーダーを使用するサンプルのソース)</a>
+</ul>
+
+<p>
+今回は、テクスチャーを張った３次元ポリゴンを表示します。<br>
+既に取り扱った例題ですが、その分バーテックスシェーダーの使い方が分かると思います。
+</p>
+
+<right><image src = "vs.gif"></right>
+
+<h2>■今回のオブジェクト</h2>
+
+<p>
+例によって、draw.cpp を見ていきます。<br>
+今回追加したオブジェクトは、hVertexShader です。
+いわゆるハンドルと言う奴で、バーテックスシェーダーを識別するのに Windows の内部で使われます。
+<br>
+</p>
+<pre class="CodeBlock">
+LPDIRECT3DVERTEXBUFFER8     pVB            = NULL; // 頂点バッファ
+LPDIRECT3DTEXTURE8          pTexture       = NULL; // テクスチャー
+<Font color = orange><b>DWORD                    hVertexShader  = ~0; // シェーダープログラムの情報</b></Font>
+</pre>
+<p>
+hVertexShader は ~0 (=0xffffffff) で初期化します。
+他のサンプルなどを見ると、どうやら、これが無効なハンドルの値らしいです。
+このまま使いましょう。
+</p>
+
+<h2>■初期化</h2>
+
+<p>
+今回は、頂点バッファや、テクスチャーを設定した後に、バーテックスシェーダーの初期化が入ります。<br>
+</p>
+
+<pre class="CodeBlock">
+HRESULT InitRender(LPDIRECT3DDEVICE8 lpD3DDEV)
+{
+    CUSTOMVERTEX vertices[] =
+    {
+        // x,     y,    z,     tu   tv
+        {-16.0f, 12.0f, 0.0f, 0.0f,0.0f,},
+        { 16.0f, 12.0f, 0.0f, 1.0f,0.0f,},
+        {-16.0f,-12.0f, 0.0f, 0.0f,1.0f,},
+        { 16.0f,-12.0f, 0.0f, 1.0f,1.0f,},
+    };
+    HRESULT hr;
+    
+    hr = lpD3DDEV->CreateVertexBuffer( 4*sizeof(CUSTOMVERTEX),0,
+                    D3DFVF_CUSTOMVERTEX, D3DPOOL_DEFAULT, &pVB);
+    if(FAILED(hr)) return E_FAIL;
+
+    VOID* pVertices;
+    hr = pVB->Lock( 0, sizeof(vertices), (BYTE**)&pVertices, 0);
+    if(FAILED(hr)) return E_FAIL;
+    memcpy( pVertices, vertices, sizeof(vertices) );
+    pVB->Unlock();
+    
+    D3DXCreateTextureFromFileEx(lpD3DDEV, "sakura.bmp",0,0,0,0,D3DFMT_A8R8G8B8,
+                                D3DPOOL_MANAGED, D3DX_FILTER_LINEAR, D3DX_FILTER_LINEAR,
+                                0, NULL, NULL, &pTexture);
+<Font color = orange><b>
+    // バーテックスシェーダーを作成する
+    DWORD dwDecl[] =
+    {
+        D3DVSD_STREAM(0),
+        D3DVSD_REG(D3DVSDE_POSITION, D3DVSDT_FLOAT3 ),            //D3DVSDE_POSITION,  0  
+        D3DVSD_REG(D3DVSDE_TEXCOORD0,D3DVSDT_FLOAT2 ),            //D3DVSDE_TEXCOORD0, 7  
+        D3DVSD_END()
+    };
+    ID3DXBuffer*    pshader;
+    hr = D3DXAssembleShader( VertexShader , sizeof(VertexShader) - 1, 0 , NULL , &pshader , NULL );
+    if ( FAILED(hr) ) return hr;
+    hr = lpD3DDEV->CreateVertexShader( dwDecl, (DWORD*)pshader->GetBufferPointer(), &hVertexShader, 0 );
+    RELEASE(pshader);
+    if ( FAILED(hr) ) return hr;
+</b></font>
+    lpD3DDEV->SetRenderState( D3DRS_ZENABLE,  TRUE );
+    lpD3DDEV->SetRenderState( D3DRS_LIGHTING, FALSE );        // 頂点の色を使うので、ライトは使わない
+    lpD3DDEV->SetRenderState( D3DRS_CULLMODE, D3DCULL_NONE );    // 両面表示
+    
+    return S_OK;
+}
+</pre>
+<p>
+D3DXAssembleShader から後が、バーテックスシェーダーの部分です。<br>
+D3DXAssembleShader でプログラムを読み込みます。読んだ情報が pshader に入ります。<br>
+今回は、ソース中の文字列である、const char VertexShader[] を使いました。
+プログラムが、何をやるかは、次に説明します。
+ここでは、D3DXAssembleShader がバーテックスシェーダーのプログラムを読み込むところだと覚えてください。
+</p>
+<p>
+読み込んだら、CreateVertexShader でプログラムからシェーダーを生成します。
+できたシェーダーは、CreateVertexShader で設定すれば、使えるようになります。
+ウィンドウズから割り当てられたメモリが、ハンドルとして hVertexShader に渡されます。
+後で設定するときに、このハンドルを使います。
+</p>
+
+<p>
+CreateVertexShader で、dwDecl という、DWORD 配列を使っています。
+これは、ポリゴンのフォーマットをバーテックスシェーダーのプログラムに教えます。<br>
+バーテックスシェーダーは、今回使っている頂点フォーマット
+</p>
+<pre class="CodeBlock">
+struct CUSTOMVERTEX
+{
+    FLOAT x, y, z;  // 位置
+    FLOAT tu, tv;	// テクスチャーの画像の位置
+};
+</pre>
+<p>
+を、構造体としての CUSTOMVERTEX や、
+</p>
+<pre class="CodeBlock">
+#define D3DFVF_CUSTOMVERTEX (D3DFVF_XYZ | D3DFVF_TEX1)
+</pre>
+<p>
+の形で、理解することが出来ません。はっきりいって、おバカさんです。<br>
+われわれが調教しなくてはいけなせん。
+それが、dwDecl です。
+</p>
+<pre class="CodeBlock">
+DWORD dwDecl[] = {
+    D3DVSD_STREAM(0),
+    D3DVSD_REG(D3DVSDE_POSITION, D3DVSDT_FLOAT3 ),            //D3DVSDE_POSITION,  0  
+    D3DVSD_REG(D3DVSDE_TEXCOORD0,D3DVSDT_FLOAT2 ),            //D3DVSDE_TEXCOORD0, 7  
+    D3DVSD_END()
+};
+</pre>
+<p>
+dwDecl は、D3DVSD_STREAM(0) で始まり、D3DVSD_END() で終わります。
+まぁ、いつも使う時は、コピー＆ペーストしましょう。<br>
+その間が、頂点フォーマットの指定です。
+CUSTOMVERTEX の中身の順番通りに指定します。<br>
+最初は、座標の x, y, z です。float 型 3 つを、D3DVSDT_FLOAT3 として指定します。
+こいつらは、座標なので、D3DVSDE_POSITION で指定します。<br>
+あとはテクスチャー座標です。tu, tv のfloat 型 2 つなので、D3DVSDT_FLOAT2 で指定します。
+１つ目の（１つしかないですが、）テクスチャー座標なので、D3DVSDE_TEXCOORD0 に設定します。<br>
+以上です。<br>
+ここで、D3DVSDE_POSITION及び、D3DVSDE_TEXCOORD0 を使いましたが、
+これは、DirectX が勝手に定義している定義名です。直接数字で、D3DVSD_REG(3, D3DVSDT_FLOAT3 ) と
+しても構いません。
+その場合は、バーテックスシェーダープログラムでは、v3 に座標が入るので、v3 をポリゴンの頂点座標として扱えばバッチリです。
+まぁ、読みやすさの点から言っても、定義名を使っていくほうがいい事が多いとは思います。
+</p>
+<p>
+と言うわけで、VertexShader[] や、dwDecl を使って、バーテックスシェーダーを作成したので、この後の描画で使いましょう。
+</p>
+
+<h2>■シェーダープログラム (VertexShader[])</h2>
+
+<p>
+ここで、シェーダープログラムを見ましょう。<br>
+プログラムコードは、次のようになっています。
+文字列がそのままプログラムになっています。
+" や \n がないと考えて、プログラムを考えてください。
+</p>
+
+<pre class="CodeBlock">
+const char VertexShader[] =
+"vs.1.0                             // バージョン情報            \n"\
+"dp4     oPos.x , v0   , c4         // x成分の透視変換           \n"\
+"dp4     oPos.y , v0   , c5         // y成分の透視変換           \n"\
+"dp4     oPos.z , v0   , c6         // z成分の透視変換           \n"\
+"dp4     oPos.w , v0   , c7         // w成分の透視変換           \n"\
+"mov     oT0.xy , v7                // テクスチャーのUV値をコピー\n";
+</pre>
+
+<p>
+1 行目は バーテックスシェーダーのバージョン設定です。<br>
+2 行目から、3行目で、透視変換をします。
+v0 にポリゴンの座標が入るように D3DVSD_REG で、D3DVSDE_POSITION(=0) に設定しました。
+oPos が透視変換した後に出力する場所です。あとで、c4～c7 に変換行列を入れます。
+行列計算として記すと、次のようになります。
+</p>
+<pre class="CodeBlock">
+                                                     ┌c4.x c5.x c6.x c7.x ┐
+[oPos.x oPos.y oPos.z oPos.w] = [v0.x v0.y v0.z v0.w]｜c4.y c5.y c6.y c7.y │
+                                                     │c4.z c5.z c6.z c7.z │
+                                                     └c4.w c5.w c6.w c7.w ┘
+
+</pre>
+<p>
+あとは、テクスチャーで、mov 命令で、v7 の xy 成分だけを、そのままコピーします。
+v7 は初期化の時点で、テクスチャーのuv値が入るように、(D3DVSDE_TEXCOORD0(=7))として設定しました。<br>
+以上が、バーテックスシェーダーの計算です。後々、くわしくやっていきましょう。
+</p>
+
+<h2>■描画</h2>
+
+<p>
+いよいよ、表示の部分です。<br>
+今回は、３次元ポリゴンを表示した時のように、mWorld, mView, mProj を求めますが、
+その後、SetTransform はしません。<br>
+全てを掛けて、１つの行列にした後、SetVertexShaderConstant で、バーテックスシェーダーの定数レジスタにほおりこみます。
+実は、通常のポリゴンの計算も、内部で、mWorld, mView, mProj を同じように掛けて、一つにまとめて計算します。<br>
+なぜ、SetTransform で３つを別々にするかと言えば、人間にわかりやすいからです
+(他にも、カメラを複数持つのに便利だとか、スポットライトの計算に便利だとかありますが、本質的に１つの行列で十分です)。
+</p>
+<p>
+そんなこんなで、SetVertexShaderConstant で、変換に使う行列を設定した後、
+SetVertexShader で、バーテックスシェーダープログラムを透視変換に使うように設定します。<br>
+あとは、普通に表示すれば、バーテックスシェーダーを使った結果が得られます。
+</p>
+
+<pre class="CodeBlock">
+void Render(LPDIRECT3DDEVICE8 lpD3DDEV)
+{
+    D3DXMATRIX mWorld, mRotX, mRotY, mTrans;
+    D3DXMatrixTranslation(&mTrans, 0,0,0);
+    float time = (float)timeGetTime();
+    D3DXMatrixRotationY(&mRotY, time/600.0f);
+    D3DXMatrixRotationX(&mRotX, 0.0f);
+    mWorld = mRotX * mRotY * mTrans;
+    
+    // ワールド、ビュー座標系の変換
+    D3DXMATRIX mView, mProj;
+    D3DXMatrixLookAtLH(&mView
+                    ,&D3DXVECTOR3(0,0.0f,-50.0f)  // カメラ位置
+                    ,&D3DXVECTOR3(0,0,0)          // カメラの注目点
+                    ,&D3DXVECTOR3(0,1,0)          // 上の向き
+                    );
+    
+    // ビュー、スクリーン座標系の変換
+    D3DXMatrixPerspectiveFovLH(&mProj
+        ,60.0f*D3DX_PI/180.0f                   // 視野角
+        ,(float)WIDTH/(float)HEIGHT             // アスペクト比
+        ,0.01f                                  // 最近接距離
+        ,100.0f                                 // 最遠方距離
+        );
+    <Font color = orange><b>
+    D3DXMATRIX  m = mWorld * mView * mProj;
+    D3DXMATRIX  trans;
+    D3DXMatrixTranspose( &trans ,  &m);
+    lpD3DDEV->SetVertexShaderConstant( 4 , &trans , 4 );    // バーテックスシェーダーの c4 ～ c7 レジスタの設定
+    lpD3DDEV->SetVertexShader( hVertexShader );
+    </b></font>
+    lpD3DDEV->SetTexture( 0, pTexture);
+    lpD3DDEV->SetTextureStageState( 0, D3DTSS_COLOROP,   D3DTOP_SELECTARG1 );
+    lpD3DDEV->SetStreamSource( 0, pVB, sizeof(CUSTOMVERTEX) );
+    lpD3DDEV->DrawPrimitive( D3DPT_TRIANGLESTRIP, 0, 2);
+
+}
+</pre>
+
+<h2>■後片付け</h2>
+
+<p>
+後片付けに、hVertexShader で使ったメモリの開放を追加します。
+</p>
+
+<pre class="CodeBlock">
+void CleanRender(LPDIRECT3DDEVICE8 lpD3DDEV)
+{<Font color = orange><b>
+    if ( hVertexShader != ~0 ){
+        lpD3DDEV->DeleteVertexShader( hVertexShader );
+        hVertexShader = ~0;
+    }</b></font>
+    RELEASE(pTexture);
+    RELEASE(pVB);
+}
+</pre>
+
+<p>
+あとは、いつもと変わりありません。
+</p>
+
+<h2>■今後</h2>
+
+<p>
+さぁ、バーテックスシェーダーが使えるようになりました。
+今後、(Pixel Shader との複合技を含めて)バリエーションを増やしていきましょう 。
+</p>
+
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<center>
+<hr>
+<p><a href="../index.html">もどる</a></p>
+<p><a href="mailto:imagire@gmail.com">imagire@gmail.com</a></p>
+</body>
+</html>

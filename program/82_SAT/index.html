@@ -1,0 +1,445 @@
+<head>
+	<title>t-pot『範囲総和テーブル』</title>
+	<link rel="stylesheet" type="text/css" href="../if.css">
+</head>
+<meta http-equiv=Content-Type content="text/html; charset=shift_jis">
+<body>
+
+
+<div class="contents">
+<center>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<h1>範囲総和テーブル</h1><br>
+<h3>～ Summed Area Tables ～</h3>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<image src = "title.jpg">
+<br>
+<hr>
+</center>
+<div>
+
+
+<h2>■はじめに</h2>
+
+
+<p>
+今回は、Simon Green氏がGDC2003で発表された（らしい。行ってないので知らない）、Summed Area Table(SAT)を実装してみました。
+</p>
+<ul style = "LIST-STYLE-TYPE:none">
+<li><a href="src.zip">src.zip (範囲総和テーブル:DirectX9)</a>
+</ul>
+
+<p>
+まぁ、いつものように適当にファイルが入っています。<br>
+APP WIZARD から出力されるフレームワークのファイルは紹介を省かせていただきます。
+</p>
+<table>
+<tr><td><a href="hlsl_fx.html">hlsl.fx</a></td><td>シェーダの入ったエフェクトファイル</td></tr>
+<tr><td><a href="main_h.html">main.h</a></td><td>アプリケーションのヘッダ</td></tr>
+<tr><td><a href="main_cpp.html">main.cpp</a></td><td>アプリケーションのソース</td></tr>
+</table>
+
+<p>
+あと、実行ファイル、モデル及び、プロジェクトファイルが入っています。
+</p>
+
+
+<h2>■範囲総和テーブルとは</h2>
+
+
+<p>
+さて、今回の元資料は、NVIDIA社の<a href="http://developer.nvidia.com/view.asp?IO=presentations">GDC 2003 Presentationsのページ</a>の「Advanced OpenGL Game Programming」の項目にある「Summed Area Tables using Graphics Hardware」です。<br>
+範囲総和テーブルとは、1984年にFrank Crowが考案した積分計算したテクスチャを用いたフィルタリングの方法です。
+</p>
+<p>
+値が１の元のテクスチャからSATを作って見ましょう。<br>
+最初に、横方向に現在のピクセルの色に、そのピクセルの左にあるピクセルの合計を足します。
+この手順で、ピクセルの値は、そのピクセルのU座標の値になります。<br>
+次に、縦方向に現在のピクセルの値に、そのピクセルの上のピクセルの合計を足します。<br>
+この結果、ピクセルの値は、そのピクセルのU座標*V座標になります。<br>
+この値は、ｘ軸とｙ軸に関して対称なので、実は縦方向と横方向の合成の順番を入れ替えても結果は変わりません。
+</p>
+<image src = "how2.png">
+<p>
+例えば、32x32の大きさのSATは次のようになります（ただし、(赤、緑、青)=(3,2,1)の割合で色をつけています）。
+</p>
+<image src = "sat.jpg">
+<p>
+さて、テクスチャの値は、T[U,V] = U * V になるのですが、
+このテクスチャを使った計算に、次の等式が成り立ちます。
+</p>
+<pre class="CodeBlock">
+S[U+a, V+b] - S[U+a, V] - S[U, V+b] + S[U, V]
+= (U+a)(V+b) - (U+a)V - U(V+b) + UV
+=   UV + aV + bU + ab
+ - (UV + aV)
+ - (UV + bU)
+ + UV
+= ab
+</pre>
+<p>
+つまり、
+</p>
+<pre class="CodeBlock">
+S[U+a, V+b] - S[U+a, V] - S[U, V+b] + S[U, V] = [U+a, V+b]から[U, V]の範囲の面積
+</pre>
+<p>
+が成り立ちます。<br>
+次に、元のテクスチャの値がt<sub>UV</sub>で与えられる場合を考えて見ましょう。<br>
+この時、例えば、４ｘ４のサイズのSATの端の値を計算すると、
+</p>
+<pre class="CodeBlock">
+S[3, 3] = t<sub>00</sub> + t<sub>01</sub> + t<sub>02</sub> + t<sub>03</sub>
+        + t<sub>10</sub> + t<sub>11</sub> + t<sub>12</sub> + t<sub>13</sub>
+        + t<sub>20</sub> + t<sub>21</sub> + t<sub>22</sub> + t<sub>23</sub>
+        + t<sub>30</sub> + t<sub>31</sub> + t<sub>32</sub> + t<sub>33</sub>
+S[3, 0] = t<sub>00</sub> + t<sub>10</sub> + t<sub>20</sub> + t<sub>30</sub>
+S[0, 3] = t<sub>00</sub> + t<sub>01</sub> + t<sub>02</sub> + t<sub>03</sub>
+S[0, 0] = t<sub>00</sub>
+</pre>
+<p>
+になるので、(U,V)=(0,0)、(a,b)=(3,3)の場合に、先ほどの計算は、
+</p>
+<pre class="CodeBlock">
+S[U+a, V+b] - S[U+a, V] - S[U, V+b] + S[U, V]
+ = t<sub>11</sub> + t<sub>12</sub> + t<sub>13</sub>
+ + t<sub>21</sub> + t<sub>22</sub> + t<sub>23</sub>
+ + t<sub>31</sub> + t<sub>32</sub> + t<sub>33</sub>
+</pre>
+<p>
+となります。この値は、選択した範囲の合計なので、範囲の面積で割ると、範囲の平均値が求められます。一般化して、式としてまとめると、
+</p>
+<pre class="CodeBlock">
+(S[U+a, V+b] - S[U+a, V] - S[U, V+b] + S[U, V])/(a*b) = [U+a, V+b]から[U, V]のテクスチャの平均
+</pre>
+<p>
+と、書くことができます。<br>
+一度SATを求めてしまえば、４点をサンプリングするだけで、箱型の平均を取ることができます。<br>
+さらに、(a,b)の値は自由に取れるので、ぼかす量をピクセル単位に自由に調整することも簡単にできます。
+</p>
+
+
+<h2>■範囲総和テーブルの作成</h2>
+
+
+<p>
+SATは、浮動小数点数バッファが使えるようになって初めて実現できた手法です。<br>
+今回使用するのは、IEEE フォーマットの一番贅沢なD3DFMT_A32B32G32R32Fです。<br>
+これ以外のD3DFMT_A16B16G16R16F等のフォーマットでは、精度が不足して十分な結果が得られませんでした(GeForce FXでどのような結果が得られるのかはわかりませんが（缶持ってる人ためして～）)。<br>
+ということで、最初にするのは、レンダリングターゲットを確保することです。<br>
+浮動小数点数のレンダリングターゲットを作成します。
+</p>
+<pre class="CodeBlock">
+main.cpp
+<font color="deepskyblue">0262:</font>     <font color="cyan">// レンダリングターゲットの生成</font>
+<font color="deepskyblue">0263:</font>     <font color="blue">if</font> (FAILED(m_pd3dDevice-&gt;CreateDepthStencilSurface(MAP_WIDTH, MAP_HEIGHT, 
+<font color="deepskyblue">0264:</font>         D3DFMT_D16, D3DMULTISAMPLE_NONE, 0, TRUE, &amp;m_pMapZ, NULL)))
+<font color="deepskyblue">0265:</font>         <font color="blue">return</font> E_FAIL;
+<font color="deepskyblue">0266:</font>     <font color="cyan">// SAT</font>
+<font color="deepskyblue">0267:</font>     <font color="blue">if</font> (FAILED(m_pd3dDevice-&gt;CreateTexture(MAP_WIDTH, MAP_HEIGHT, 1,
+<font color="deepskyblue">0268:</font>         D3DUSAGE_RENDERTARGET, <font color="yellow">D3DFMT_A32B32G32R32F</font>, D3DPOOL_DEFAULT, &amp;m_pSatTex, NULL)))
+<font color="deepskyblue">0269:</font>         <font color="blue">return</font> E_FAIL;
+<font color="deepskyblue">0270:</font>     <font color="blue">if</font> (FAILED(m_pSatTex-&gt;GetSurfaceLevel(0, &amp;m_pSatSurf)))
+<font color="deepskyblue">0271:</font>         <font color="blue">return</font> E_FAIL;
+</pre>
+<p>
+描画の最初の手順は元になる画像を作成することです。<br>
+基本的には、環境マップ作成時のように、レンダリングターゲットを切り替えて、普通に描画します。
+</p>
+<pre class="CodeBlock">
+main.cpp
+<font color="deepskyblue">0029:</font> <font color="cyan">// 長いから短縮形を作ってみた</font>
+<font color="deepskyblue">0030:</font> <font color="blue">#define</font> RS   m_pd3dDevice-&gt;SetRenderState
+<font color="deepskyblue">0031:</font> <font color="blue">#define</font> TSS  m_pd3dDevice-&gt;SetTextureStageState
+<font color="deepskyblue">0032:</font> <font color="blue">#define</font> SAMP m_pd3dDevice-&gt;SetSamplerState
+<font color="deepskyblue">0362:</font>         <font color="cyan">//-----------------------------------------------------</font>
+<font color="deepskyblue">0363:</font>         <font color="cyan">// レンダリングターゲットの保存</font>
+<font color="deepskyblue">0364:</font>         <font color="cyan">//-----------------------------------------------------</font>
+<font color="deepskyblue">0365:</font>         m_pd3dDevice-&gt;GetRenderTarget(0, &amp;pOldBackBuffer);
+<font color="deepskyblue">0366:</font>         m_pd3dDevice-&gt;GetDepthStencilSurface(&amp;pOldZBuffer);
+<font color="deepskyblue">0367:</font>         m_pd3dDevice-&gt;GetViewport(&amp;oldViewport);
+<font color="deepskyblue">0368:</font> 
+<font color="deepskyblue">0369:</font>         <font color="cyan">//-----------------------------------------------------</font>
+<font color="deepskyblue">0370:</font>         <font color="cyan">// レンダリングターゲットの変更</font>
+<font color="deepskyblue">0371:</font>         <font color="cyan">//-----------------------------------------------------</font>
+<font color="deepskyblue">0372:</font>         m_pd3dDevice-&gt;SetRenderTarget(0, m_pSatSurf);
+<font color="deepskyblue">0373:</font>         m_pd3dDevice-&gt;SetDepthStencilSurface(m_pMapZ);
+<font color="deepskyblue">0374:</font>         <font color="cyan">// ビューポートの変更</font>
+<font color="deepskyblue">0375:</font>         D3DVIEWPORT9 viewport = {0,0 <font color="cyan">// 左上の座標</font>
+<font color="deepskyblue">0376:</font>                         , MAP_WIDTH  <font color="cyan">// 幅</font>
+<font color="deepskyblue">0377:</font>                         , MAP_HEIGHT <font color="cyan">// 高さ</font>
+<font color="deepskyblue">0378:</font>                         , 0.0f,1.0f};<font color="cyan">// 前面、後面</font>
+<font color="deepskyblue">0379:</font>         m_pd3dDevice-&gt;SetViewport(&amp;viewport);
+<font color="deepskyblue">0380:</font> 
+<font color="deepskyblue">0381:</font>         <font color="cyan">// クリア</font>
+<font color="deepskyblue">0382:</font>         m_pd3dDevice-&gt;Clear(0L, NULL
+<font color="deepskyblue">0383:</font>                         , D3DCLEAR_TARGET | D3DCLEAR_ZBUFFER
+<font color="deepskyblue">0384:</font>                         , 0, 1.0f, 0L);
+
+普通に描画
+
+<font color="deepskyblue">0410:</font>         m_pd3dDevice-&gt;EndScene();
+</pre>
+<p>
+さて、いよいよSTAの作成です。<br>
+今回は、x方向のぼかしのために、縦線をテクスチャのサイズの数だけ引き、
+隣のピクセルを加算することで、その左にあるピクセルの合計を計算しました。<br>
+y方向のぼかしには、横線を同じように引きます。
+</p>
+<image src = "step.png">
+<p>
+基本的には、前の線の描画の完了を待たなくてはいけないので、BeginScene/EndSceneで描画の終了を待ちます。<br>
+いちいち頂点情報を作成していますが、頂点バッファを用意しておいて描画すると早くなるかもしれませんね。
+</p>
+<pre class="CodeBlock">
+main.cpp
+<font color="deepskyblue">0412:</font>         <font color="cyan">// ----------------------------------------------------</font>
+<font color="deepskyblue">0413:</font>         <font color="cyan">// SAT 計算</font>
+<font color="deepskyblue">0414:</font>         <font color="cyan">// ----------------------------------------------------</font>
+<font color="deepskyblue">0415:</font>         RS( D3DRS_ZENABLE, FALSE );
+<font color="deepskyblue">0416:</font>         RS( D3DRS_LIGHTING, FALSE );
+<font color="deepskyblue">0417:</font> 
+<font color="deepskyblue">0418:</font>         TSS(0,D3DTSS_COLOROP,   D3DTOP_SELECTARG1);
+<font color="deepskyblue">0419:</font>         TSS(0,D3DTSS_COLORARG1, D3DTA_TEXTURE);
+<font color="deepskyblue">0420:</font>         TSS(1,D3DTSS_COLOROP,   D3DTOP_ADD);
+<font color="deepskyblue">0421:</font>         TSS(1,D3DTSS_COLORARG1, D3DTA_CURRENT);
+<font color="deepskyblue">0422:</font>         TSS(1,D3DTSS_COLORARG2, D3DTA_TEXTURE);
+<font color="deepskyblue">0423:</font>         TSS(2,D3DTSS_COLOROP,   D3DTOP_DISABLE);
+<font color="deepskyblue">0424:</font> 
+<font color="deepskyblue">0425:</font>         m_pEffect-&gt;SetTechnique( m_hTechnique );
+<font color="deepskyblue">0426:</font>         m_pEffect-&gt;Begin( NULL, 0 );
+<font color="deepskyblue">0427:</font>         m_pd3dDevice-&gt;SetVertexDeclaration( m_pDecl );
+<font color="deepskyblue">0428:</font>         m_pEffect-&gt;SetTexture(m_htSrcMap, m_pSatTex );
+<font color="deepskyblue">0429:</font> <font color="yellow">
+<font color="deepskyblue">0430:</font>         m_pEffect-&gt;Pass( 0 );
+<font color="deepskyblue">0431:</font>         <font color="blue">for</font>(i=0;i&lt;MAP_WIDTH;i++){
+<font color="deepskyblue">0432:</font>             FLOAT dx = (1.0f/MAP_WIDTH);
+<font color="deepskyblue">0433:</font>             VERTEX Vertex[4] = {
+<font color="deepskyblue">0434:</font>                 <font color="cyan">//       x                y     z        tu       tv</font>
+<font color="deepskyblue">0435:</font>                 {{ -1+2.0f*dx*(FLOAT)i, +1.0f, 0.1f}, dx*(FLOAT)i, 0,},
+<font color="deepskyblue">0436:</font>                 {{ -1+2.0f*dx*(FLOAT)i, -1.0f, 0.1f}, dx*(FLOAT)i, 1,},
+<font color="deepskyblue">0437:</font>             };
+<font color="deepskyblue">0438:</font>             m_pd3dDevice-&gt;BeginScene();
+<font color="deepskyblue">0439:</font>             m_pd3dDevice-&gt;DrawPrimitiveUP( D3DPT_LINELIST, 1, Vertex, <font color="blue">sizeof</font>( VERTEX ) );
+<font color="deepskyblue">0440:</font>             m_pd3dDevice-&gt;EndScene();
+<font color="deepskyblue">0441:</font>         }</font><font color="orange">
+<font color="deepskyblue">0442:</font>         m_pEffect-&gt;Pass( 1 );
+<font color="deepskyblue">0443:</font>         <font color="blue">for</font>(i=0;i&lt;MAP_HEIGHT;i++){
+<font color="deepskyblue">0444:</font>             FLOAT dy = (1.0f/MAP_WIDTH);
+<font color="deepskyblue">0445:</font>             VERTEX Vertex[4] = {
+<font color="deepskyblue">0446:</font>                 <font color="cyan">//   x            y              z     tu    tv</font>
+<font color="deepskyblue">0447:</font>                 {{ -1.0f,  +1-2.0f*dy*(FLOAT)i, 0.1f}, 0, dy*(FLOAT)i },
+<font color="deepskyblue">0448:</font>                 {{ +1.0f,  +1-2.0f*dy*(FLOAT)i, 0.1f}, 1, dy*(FLOAT)i },
+<font color="deepskyblue">0449:</font>             };
+<font color="deepskyblue">0450:</font>             m_pd3dDevice-&gt;BeginScene();
+<font color="deepskyblue">0451:</font>             m_pd3dDevice-&gt;DrawPrimitiveUP( D3DPT_LINELIST, 1, Vertex, <font color="blue">sizeof</font>( VERTEX ) );
+<font color="deepskyblue">0452:</font>             m_pd3dDevice-&gt;EndScene();
+<font color="deepskyblue">0453:</font>         }</font>
+<font color="deepskyblue">0454:</font>         m_pEffect-&gt;End();
+</pre>
+<p>
+頂点シェーダでは、頂点位置のテクセルと、１つとなりのテクセルをテクスチャ座標として指定して出力します。<br>
+テクセル中心をテクスチャ座標にきちんと合わせて出力します。
+</p>
+<pre class="CodeBlock">
+hlsl.fx
+<font color="deepskyblue">0047:</font> <font color="cyan">// -------------------------------------------------------------</font>
+<font color="deepskyblue">0048:</font> <font color="cyan">// 頂点シェーダプログラム</font>
+<font color="deepskyblue">0049:</font> <font color="cyan">// -------------------------------------------------------------</font>
+<font color="deepskyblue">0050:</font> VS_OUTPUT VS_sat_x (
+<font color="deepskyblue">0051:</font>       float4 Pos    : POSITION,          <font color="cyan">// モデルの頂点</font>
+<font color="deepskyblue">0052:</font>       float4 Tex    : TEXCOORD0          <font color="cyan">// テクスチャ座標</font>
+<font color="deepskyblue">0053:</font> ){
+<font color="deepskyblue">0054:</font>     VS_OUTPUT Out = (VS_OUTPUT)0;        <font color="cyan">// 出力データ</font>
+<font color="deepskyblue">0055:</font>     
+<font color="deepskyblue">0056:</font>     <font color="cyan">// 位置座標</font>
+<font color="deepskyblue">0057:</font>     Out.Pos = Pos;
+<font color="deepskyblue">0058:</font>     
+<font color="deepskyblue">0059:</font>     Out.Tex0 = Tex + float2( 0.5f/MAP_WIDTH, 0.5f/MAP_HEIGHT );
+<font color="deepskyblue">0060:</font>     Out.Tex1 = Tex + float2(-0.5f/MAP_WIDTH, 0.5f/MAP_HEIGHT );
+<font color="deepskyblue">0061:</font>     
+<font color="deepskyblue">0062:</font>     <font color="blue">return</font> Out;
+<font color="deepskyblue">0063:</font> }
+</pre>
+<p>
+ピクセルシェーダでは、レンダリングターゲット自身をテクスチャとして、
+それぞれのテクセルを読み出します。<br>
+今回のプログラムでは、誤差を減らすように、色の値0.5を中心に上下に平等に値が変化するようにしました。
+</p>
+<pre class="CodeBlock">
+hlsl.fx
+<font color="deepskyblue">0083:</font> <font color="cyan">// -------------------------------------------------------------</font>
+<font color="deepskyblue">0084:</font> <font color="cyan">// ピクセルシェーダプログラム</font>
+<font color="deepskyblue">0085:</font> <font color="cyan">// -------------------------------------------------------------</font>
+<font color="deepskyblue">0086:</font> float4 PS_sat(VS_OUTPUT In) : COLOR
+<font color="deepskyblue">0087:</font> {   
+<font color="deepskyblue">0088:</font>     float4 Color;
+<font color="deepskyblue">0089:</font>     
+<font color="deepskyblue">0090:</font>     Color  = tex2D( SrcSamp, In.Tex0 ) + tex2D( SrcSamp, In.Tex1 );
+<font color="deepskyblue">0091:</font>     
+<font color="deepskyblue">0092:</font>     <font color="blue">return</font> Color-0.5f;
+<font color="deepskyblue">0093:</font> }
+</pre>
+<p>
+ｙ軸方向のぼかしの場合には、ずらす位置を変えるように頂点シェーダを変更します。<br>
+頂点データを元から持っておけば、シェーダを切り替えることなく（固定機能も使えるでしょう）実行することもできるでしょう。
+</p>
+<pre class="CodeBlock">
+hlsl.fx
+<font color="deepskyblue">0065:</font> <font color="cyan">// -------------------------------------------------------------</font>
+<font color="deepskyblue">0066:</font> <font color="cyan">// 頂点シェーダプログラム</font>
+<font color="deepskyblue">0067:</font> <font color="cyan">// -------------------------------------------------------------</font>
+<font color="deepskyblue">0068:</font> VS_OUTPUT VS_sat_y (
+<font color="deepskyblue">0069:</font>       float4 Pos    : POSITION,          <font color="cyan">// モデルの頂点</font>
+<font color="deepskyblue">0070:</font>       float4 Tex    : TEXCOORD0          <font color="cyan">// テクスチャ座標</font>
+<font color="deepskyblue">0071:</font> ){
+<font color="deepskyblue">0072:</font>     VS_OUTPUT Out = (VS_OUTPUT)0;        <font color="cyan">// 出力データ</font>
+<font color="deepskyblue">0073:</font>     
+<font color="deepskyblue">0074:</font>     <font color="cyan">// 位置座標</font>
+<font color="deepskyblue">0075:</font>     Out.Pos = Pos;
+<font color="deepskyblue">0076:</font>     
+<font color="deepskyblue">0077:</font>     Out.Tex0 = Tex + float2( 0.5f/MAP_WIDTH, 0.5f/MAP_HEIGHT );
+<font color="deepskyblue">0078:</font>     Out.Tex1 = Tex + float2( 0.5f/MAP_WIDTH,<font color="yellow">-0.5f/MAP_HEIGHT</font> );
+<font color="deepskyblue">0079:</font>     
+<font color="deepskyblue">0080:</font>     <font color="blue">return</font> Out;
+<font color="deepskyblue">0081:</font> }
+</pre>
+<p>
+この工程の結果、SATは、次のような画像になります(浮動小数点数バッファの値をそのまま出力しているので、値が１より大きな部分は飽和しています)。
+</p>
+<image src = "pass01.png">
+<p>
+
+
+<h2>■範囲総和テーブルを使ったぼかし</h2>
+
+
+<p>
+SATができたら、それを使ってぼかした画像を使います。<br>
+基本的には、レンダリングターゲットをフレームバッファに戻してから、四角形を描画するだけです。
+</p>
+<pre class="CodeBlock">
+<font color="deepskyblue">0456:</font>         <font color="cyan">//-----------------------------------------------------</font>
+<font color="deepskyblue">0457:</font>         <font color="cyan">// レンダリングターゲットを元に戻す</font>
+<font color="deepskyblue">0458:</font>         <font color="cyan">//-----------------------------------------------------</font>
+<font color="deepskyblue">0459:</font>         m_pd3dDevice-&gt;SetRenderTarget(0, pOldBackBuffer);
+<font color="deepskyblue">0460:</font>         m_pd3dDevice-&gt;SetDepthStencilSurface(pOldZBuffer);
+<font color="deepskyblue">0461:</font>         m_pd3dDevice-&gt;SetViewport(&amp;oldViewport);
+<font color="deepskyblue">0462:</font>         pOldBackBuffer-&gt;Release();
+<font color="deepskyblue">0463:</font>         pOldZBuffer-&gt;Release();
+<font color="deepskyblue">0464:</font>     }
+<font color="deepskyblue">0465:</font>     <font color="blue">if</font>( SUCCEEDED( m_pd3dDevice-&gt;BeginScene() ) )
+<font color="deepskyblue">0466:</font>     {
+<font color="deepskyblue">0467:</font>         <font color="cyan">// バッファのクリア</font>
+<font color="deepskyblue">0468:</font>         m_pd3dDevice-&gt;Clear( 0L, NULL
+<font color="deepskyblue">0469:</font>                         , D3DCLEAR_TARGET|D3DCLEAR_ZBUFFER
+<font color="deepskyblue">0470:</font>                         , 0x00404080, 1.0f, 0L );
+<font color="deepskyblue">0471:</font> 
+<font color="deepskyblue">0472:</font>         <font color="blue">if</font>( m_pEffect != NULL ) 
+<font color="deepskyblue">0473:</font>         {
+<font color="deepskyblue">0474:</font>             <font color="cyan">//-------------------------------------------------</font>
+<font color="deepskyblue">0475:</font>             <font color="cyan">// シェーダの設定</font>
+<font color="deepskyblue">0476:</font>             <font color="cyan">//-------------------------------------------------</font>
+<font color="deepskyblue">0477:</font>             m_pEffect-&gt;SetTechnique( m_hTechnique );
+<font color="deepskyblue">0478:</font>             m_pEffect-&gt;Begin( NULL, 0 );
+<font color="deepskyblue">0479:</font>             m_pEffect-&gt;Pass( 2 );
+<font color="deepskyblue">0480:</font> 
+<font color="deepskyblue">0481:</font>             TSS(0,D3DTSS_COLOROP,   D3DTOP_SELECTARG1);
+<font color="deepskyblue">0482:</font>             TSS(0,D3DTSS_COLORARG1, D3DTA_TEXTURE);
+<font color="deepskyblue">0483:</font>             TSS(1,D3DTSS_COLOROP,    D3DTOP_DISABLE);
+<font color="deepskyblue">0484:</font> 
+<font color="deepskyblue">0485:</font>             VERTEX Vertex[4] = {
+<font color="deepskyblue">0486:</font>                 <font color="cyan">//   x      y     z      tu tv</font>
+<font color="deepskyblue">0487:</font>                 {{  1.0f, -1.0f, 0.1f},   1, 1,},
+<font color="deepskyblue">0488:</font>                 {{ -1.0f, -1.0f, 0.1f},   0, 1,},
+<font color="deepskyblue">0489:</font>                 {{ -1.0f,  1.0f, 0.1f},   0, 0,},
+<font color="deepskyblue">0490:</font>                 {{  1.0f,  1.0f, 0.1f},   1, 0,},
+<font color="deepskyblue">0491:</font>             };
+<font color="deepskyblue">0492:</font>             m_pd3dDevice-&gt;SetVertexDeclaration( m_pDecl );
+<font color="deepskyblue">0493:</font>             m_pEffect-&gt;SetTexture(m_htSrcMap, m_pSatTex );
+<font color="deepskyblue">0494:</font>             m_pd3dDevice-&gt;DrawPrimitiveUP( D3DPT_TRIANGLEFAN
+<font color="deepskyblue">0495:</font>                             , 2, Vertex, <font color="blue">sizeof</font>( VERTEX ) );
+<font color="deepskyblue">0496:</font> 
+<font color="deepskyblue">0497:</font>             m_pEffect-&gt;End();
+<font color="deepskyblue">0498:</font>         }
+</pre>
+<p>
+今回は、40x40テクセル分をぼかして出力します。<br>
+頂点シェーダでは、テクセルの上下左右の隅のテクセルを指定します。
+</p>
+<pre class="CodeBlock">
+hlsl.fx
+<font color="deepskyblue">0101:</font> <font color="cyan">// -------------------------------------------------------------</font>
+<font color="deepskyblue">0102:</font> <font color="cyan">// 頂点シェーダプログラム</font>
+<font color="deepskyblue">0103:</font> <font color="cyan">// -------------------------------------------------------------</font>
+<font color="deepskyblue">0104:</font> VS_OUTPUT VS_out (
+<font color="deepskyblue">0105:</font>       float4 Pos    : POSITION,          <font color="cyan">// モデルの頂点</font>
+<font color="deepskyblue">0106:</font>       float4 Tex    : TEXCOORD0          <font color="cyan">// テクスチャ座標</font>
+<font color="deepskyblue">0107:</font> ){
+<font color="deepskyblue">0108:</font>     VS_OUTPUT Out = (VS_OUTPUT)0;        <font color="cyan">// 出力データ</font>
+<font color="deepskyblue">0109:</font>     
+<font color="deepskyblue">0110:</font>     <font color="cyan">// 位置座標</font>
+<font color="deepskyblue">0111:</font>     Out.Pos = Pos;
+<font color="deepskyblue">0112:</font>     
+<font color="deepskyblue">0113:</font>     Out.Tex0 = Tex + float2( - 19.5f/MAP_WIDTH, -19.5f/MAP_HEIGHT );
+<font color="deepskyblue">0114:</font>     Out.Tex1 = Tex + float2( - 19.5f/MAP_WIDTH, +20.5f/MAP_HEIGHT );
+<font color="deepskyblue">0115:</font>     Out.Tex2 = Tex + float2( + 20.5f/MAP_WIDTH, -19.5f/MAP_HEIGHT );
+<font color="deepskyblue">0116:</font>     Out.Tex3 = Tex + float2( + 20.5f/MAP_WIDTH, +20.5f/MAP_HEIGHT );
+<font color="deepskyblue">0117:</font>     
+<font color="deepskyblue">0118:</font>     <font color="blue">return</font> Out;
+<font color="deepskyblue">0119:</font> }
+</pre>
+<p>
+ピクセルシェーダでは、公式に沿ってテクセルをサンプリングすると共に、
+サンプリングした範囲の面積で結果を割ります。<br>
+最後に、差っぴいた0.5の分を加えるのを忘れないようにしましょう。
+</p>
+<pre class="CodeBlock">
+hlsl.fx
+<font color="deepskyblue">0121:</font> <font color="cyan">// -------------------------------------------------------------</font>
+<font color="deepskyblue">0122:</font> <font color="cyan">// ピクセルシェーダプログラム</font>
+<font color="deepskyblue">0123:</font> <font color="cyan">// -------------------------------------------------------------</font>
+<font color="deepskyblue">0124:</font> float4 PS_out(VS_OUTPUT In) : COLOR
+<font color="deepskyblue">0125:</font> {   
+<font color="deepskyblue">0126:</font>     float4 Color;
+<font color="deepskyblue">0127:</font>     
+<font color="deepskyblue">0128:</font>     Color  =( tex2D( SrcSamp, In.Tex0 )
+<font color="deepskyblue">0129:</font>             - tex2D( SrcSamp, In.Tex1 )
+<font color="deepskyblue">0130:</font>             - tex2D( SrcSamp, In.Tex2 )
+<font color="deepskyblue">0131:</font>             + tex2D( SrcSamp, In.Tex3 ))/(40.0f*40.0f);
+<font color="deepskyblue">0132:</font> 
+<font color="deepskyblue">0133:</font>     <font color="blue">return</font> Color+0.5f;
+<font color="deepskyblue">0134:</font> }
+</pre>
+
+
+
+<h2>■最後に</h2>
+
+
+<p>
+さすがに何度もBeginScene/EndSceneしてるので、重いですね。
+重いと思っていたガウスフィルタよりも重たいです…<br>
+でも、積分計算してると思えばバク速の範囲でしょうか。
+</p>
+<p>
+今回のプログラムは、不動小数点数バッファを使いますが、シェーダ自体はvs_1_1、ps_1_1で可能になっています。<br>
+結局はポストエフェクトなので、描画順序に依存するような処理に使うのは難しそうですね。<br>
+ということで、アンチエイリアスに使うのは難しい気がしますが…
+</p>
+
+</div>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<center>
+<hr>
+<p><a href="../index.html">もどる</a></p>
+<p><a href="mailto:imagire@gmail.com">imagire@gmail.com</a></p>
+</center>
+
+</body>
+</html>

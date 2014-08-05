@@ -1,0 +1,286 @@
+<head>
+	<title>t-pot『計算済み拡散光放射輝度伝達』</title>
+	<link rel="stylesheet" type="text/css" href="../if.css">
+</head>
+<meta http-equiv=Content-Type content="text/html; charset=shift_jis">
+<body>
+
+
+<div class="contents">
+<center>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<h1>計算済み拡散光放射輝度伝達</h1><br>
+<h3>～ Precomputed Diffuse Radiance Transfer ～</h3>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<image src = "title.png">
+<br>
+<hr>
+<br>
+<p>
+下の画像をクリックすると、影が動くアニメーションが見られます(注意:3.2MB)。<br>
+<a href="anim.gif"><image src = "01.gif" width = "64" height = "64"></a>
+</p>
+<hr>
+</center>
+<div>
+
+
+<h2>■はじめに</h2>
+
+
+<p>
+ということで、PRTです。PRTとは、<a href="http://research.microsoft.com/~ppsloan">Peter-Pilke Sloan</a> らがSIGGRAPH 2002 の論文<a href="http://research.microsoft.com/copyright/accept.asp?path=http://research.microsoft.com/~ppsloan/shillum_final23.pdf&pub=ACM">Precomputed Radiance Transfer for Real-Time Rendering in Dynamic, Low-Frequency Lighting Environments</a>で提案したグローバルイルミネーションを高速に反映させる手法です。物体表面から反射される光を任意の入射光に関してあらかじめ求めておいて、その結果を球面調和関数の係数として展開することによって、現在のGPUにとってはそれほど負荷を掛けることなくグローバルイルミネーションを実現します。
+</p>
+
+<p>
+ただし、ここでは拡散光しか扱いませんし、相互反射もありません。さらに言えば、光源も平行光源なので、非常に手抜きをしたものになっています。
+</p>
+<p>
+で、いつものようにプログラムです。大事なファイルは次のものです。<br>
+</p>
+<ul style = "LIST-STYLE-TYPE:none">
+<li><a href="src.zip">src.zip (PRT:DirectX9)</a>
+</ul>
+<p>
+
+</p>
+<p>
+ソースには、いつものように適当にファイルが入っています。
+</p>
+<table>
+<tr><td><a href="main_h.html">main.h</a></td><td>アプリケーションのヘッダ</td></tr>
+<tr><td><a href="main_cpp.html">main.cpp</a></td><td>アプリケーションのソース</td></tr>
+<tr><td><a href="hlsl_fx.html">hlsl.fx</a></td><td>シェーダプログラム</td></tr>
+</table>
+<p>
+カーソルキーで、カメラが回って、zやxでズームが変えられます。
+また、aキーで「イラディアンスのみ」、「デカールのみ」、「デカール*イラディアンス」の切り替えができます。
+</p>
+<p>
+なお、実行すると、Athron 2000+ と RADEON 9700 Proの環境で６分ぐらい待たされると思います。これが前計算の放射輝度伝達を計算してる部分です。<br>
+実際のアプリケーションを組む場合には、あらかじめ処理しておいてテクスチャとして持つのがよいでしょう。
+</p>
+
+
+<h2>■概要</h2>
+
+
+<p>
+さて、実際にＰＲＴを実現するにはどうするのかということですが、拡散光に関するレンダリング方程式を思い浮かべてみましょう。
+</p>
+<image src = "eq1.png">
+<p>
+この式は、点xで反射された光L(x)を求めるための式です。<br>
+L(ω)は入射光で、V(ω)は、ω方向がさえぎられていたら0、遮られていなかったら1となる遮蔽項です。Nは、xでの法線の向きで、積分はxを取り囲む全天球で行います。ρは拡散反射係数です。
+</p>
+<p>
+ここで、入射光L(ω)が球面調和関数展開されていた
+</p>
+<image src = "eq2.png">
+<p>
+としましょう。<br>
+ちなみに、入射光L(ω)が分かっているときには、球面調和関数展開の係数l<sub>l</sub><sup>m</sup>は、
+</p>
+<image src = "eq3.png">
+<p>
+によって求めることができます。
+</p>
+<p>
+この球面調和関数展開を利用すると、レンダリング方程式は、
+</p>
+<image src = "eq4.png">
+<p>
+のような線型結合で記述することができます。<br>
+ここでM<sub>l</sub><sup>m</sup>は、伝達ベクトル（Transfer vector）と呼ばれる量で、
+</p>
+<image src = "eq5.png">
+<p>
+になります。<br>
+伝達ベクトルは、遮蔽項と法線ベクトルという物体の幾何学的な情報だけで決まる量なので、あらかじめ計算してしまうことができます。これがPRTの前計算です。
+一度この量を計算しておけば、任意のライティングに対して、その球面調和関数展開の係数を求めて線型合成することによって、射出放射輝度を計算することができます。
+</p>
+<p>
+ちなみに、拡散光でないBRDFの場合には、反射分布が向きに依存するようになりますが、このときには、反射方向に関してさらに球面調和関数展開することによって、任意の角度から見たときの放射輝度を簡単に計算することができます。ただし、伝達ベクトルは、入射方向と反射方向に関する２つの係数を持つようになるので行列（伝達行列：Transfer matrix）に拡張する必要があります。
+</p>
+
+
+
+<h2>■伝達ベクトルの計算</h2>
+
+
+<p>
+今回、どのような方法を用いて伝達ベクトルを計算しているのか解説しましょう。<br>
+伝達ベクトルは、物体表面の位置に応じて決まるデータ列なので、テクスチャに保存するのが便利です。<br>
+テクスチャのR,G,B,A各成分に伝達ベクトルの１つの係数を記録します。より細かく説明すると、球面調和関数の２次元のインデックス(l,m)を「n=l*(l+1) + m」によって１次元のインデックスに変換することができます。この１次元のインデックスの並びを、RGBAの各４成分とテクスチャの番号によって対応させて、テクスチャに情報を記録します。ちなみに、０次から３次までの球面調和関数展開のインデックス数は１６個になるので、４枚のテクスチャで記録することができます。ちなみに、このレベルならば、ピクセルシェーダ1_Xの世代のＧＰＵでもリアルタイムに展開することができます（他のテクスチャは張れないけどね）。
+</p>
+<p>
+なお、伝達ベクトルの各テクセルの計算は、法線方向をｚ軸にしたサーフェス空間で半球をレンダリングして、それをミップマップの要領で１テクセルまで縮小して張り付けます。
+</p>
+
+<image src = "fig1.png">
+<p>
+ここで、外側のがくがくしたのが自分自身をレンダリングした効果による遮蔽項で、その中のグラデーションが球面調和関数のそれぞれの(l,m)値に応じた関数値になります。
+その向きは、全てのサーフェス表面に関して共通でなくてはならないので、ワールド座標系の値を用いらなくてはなりません（ワールドは動かないので、ここではローカル座標系を使います）。その計算は、ローカル座標系からサーフェス座標系への変換の逆変換をかましてやればよく、サーフェス座標系のテクセル座標から大きさが１になるように３次元ベクトルを作成し、それをローカル-サーフェス座標系の変換行列の逆行列で変換してやればローカル座標系での向きを求めることができます（実際には、法線ベクトルの変換なので、転置行列を使います）。
+</p>
+<image src = "fig2.png">
+<p>
+ちなみに、球面調和関数の値ですが、単位ベクトルを用意しておくと簡単に求めることができます。球面調和関数の３角関数とルジャンドル倍関数の部分は、単位ベクトルを使うと、それぞれの係数の積和で表現することができます。
+これらは、PS_2_0レベルで計算することができるので、per-pixelで球面調和関数の値を求めることができます。
+残りの規格化の部分は定数としてあらかじめ求めておけばよいです。なお、今回の場合は計算結果が0～1の範囲に収まるような規格化を行っています。
+</p>
+<image src = "fig3.png">
+
+
+
+
+<h2>■PRTテクスチャの作成</h2>
+
+
+<p>
+今回の伝達ベクトルのテクスチャを作成するのが、イラディアンスを計算したときと違うのは、遮蔽項を曲面座標系でレンダリングする前のマスクとなるテクスチャを描画する部分に球面調和関数の値を乗算することです（また、今回は球面調和関数の値が負になるので、色の強さが0.5の部分を光が届いていない遮蔽された部分とみなすよう変更しました）。
+</p>
+<p>
+たとえば、l=2,m=-1の球面調和関数の値を乗算してマスクを作成するピクセルシェーダは次のようになります。<br>
+マスクのテクスチャを張る位置のテクスチャ座標からサーフェス座標系に置ける方向Nを求めておき、それをローカル座標系に変換してから、その値をピクセルの見ている向きとして球面調和関数の値を計算します。<br>
+なお、使っている球面調和関数の値は黄色の部分で、先ほど紹介した方向ベクトルを使った球面調和関数の値を利用しています。<br>
+</p>
+
+<pre class="CodeBlock">
+hlsl.fx
+<font color="deepskyblue">0484:</font> <font color="cyan">// ------------------------------------------------------------</font>
+<font color="deepskyblue">0485:</font> <font color="cyan">// SH(2,-1)</font>
+<font color="deepskyblue">0486:</font> <font color="cyan">// ------------------------------------------------------------</font>
+<font color="deepskyblue">0487:</font> float4 PS_SH21 (VS_OUTPUT_SH In) : COLOR0
+<font color="deepskyblue">0488:</font> {
+<font color="deepskyblue">0489:</font>     float4 N = In.Position;
+<font color="deepskyblue">0490:</font>     
+<font color="deepskyblue">0491:</font>     <font color="blue">float</font> l = dot(N,N);
+<font color="deepskyblue">0492:</font>     <font color="blue">if</font>(1.0&lt;l) N *= rsqrt(l);
+<font color="deepskyblue">0493:</font>     N.z = sqrt(1-dot(N,N));
+<font color="deepskyblue">0494:</font>     <font color="cyan">// サーフェス座標系からローカル座標系に変換</font>
+<font color="deepskyblue">0495:</font>     N = mul( N, mST );
+<font color="deepskyblue">0496:</font>     
+<font color="deepskyblue">0497:</font>     <font color="yellow"><font color="blue">float</font> val = -N.y * N.z;</font>
+<font color="deepskyblue">0498:</font> 
+<font color="deepskyblue">0499:</font>     <font color="blue">return</font> 0.5+0.5 * (val * tex2D( SrcSamp, In.Tex ));
+<font color="deepskyblue">0500:</font> }
+</pre>
+
+<p>
+この計算では、計算した球面調和関数の値の絶対値が1を超えないように規格化定数を調整しています。具体的には、普段つけている規格化定数はつけずに、さらに(2l-1)!!で割った値を使います。ルジャンドル倍関数を評価すると、この値が1を超えないことが分かるので（さらにsinやcosを掛けるが、これらを掛けても絶対値が１以下の数字は１以下である）この規格化定数を用いれば値が飽和して計算がおかしくなることがないと保証できます。<br>
+この規格化定数を変えたしわ寄せは入射光を球面調和関数展開するときに現れて、このときには逆に今省いた規格化定数を余計に掛ける処理が必要になります。<br>
+なお、できたテクスチャを良く見ると、lの次数が上がるにつれて色の変化が少なくなっているように見えます。これは、「今回の計算では高次になるとアンダーフローが置きやすくなる」とみなす事ができるので、今回の規格化定数も完璧なものではないことが分かります（浮動小数点バッファを使えばいいですが、あれば双線型フィルタリングができないですしねぇ…）。
+</p>
+
+
+<h2>■PRTテクスチャの展開</h2>
+
+
+<p>
+前計算したラディアンス伝達を反映させるのは、次のような方法で行います。<br>
+ベクトルの配列vSHをfloat型の配列とみなして平行光源を球面調和関数で展開した係数を代入します。平行光源は方向に関してはDiracのデルタ関数で処理できるので、球面調和関数のその向きでの値を使えばよいことになります（光の強さや反射係数に関する定数倍は必要ですが）。<br>
+ここで、l=2や3の時には球面調和関数の係数を定数倍します。これは、テクスチャに書き込んだ球面調和関数の非対称な規格化定数の部分(2l-1)!!を元に戻すための処理です。<br>
+あとはテクスチャを設定した後描画します。
+</p>
+<pre class="CodeBlock">
+main.cpp
+<font color="deepskyblue">0975:</font>             D3DXVECTOR4 vSH[TEX_MAX];
+<font color="deepskyblue">0976:</font>             
+<font color="deepskyblue">0977:</font>             <font color="blue">float</font> ref = 3.0f;
+<font color="deepskyblue">0978:</font>             
+<font color="deepskyblue">0979:</font>             <font color="blue">float</font> phi = atan2f(LightDir.z, LightDir.x);
+<font color="deepskyblue">0980:</font>             <font color="blue">float</font> theta = acosf(LightDir.y);
+<font color="deepskyblue">0981:</font> 
+<font color="deepskyblue">0982:</font>             <font color="blue">for</font>(<font color="blue">int</font> l=0; l&lt;=L_MAX; l++){
+<font color="deepskyblue">0983:</font>                 <font color="blue">for</font>(<font color="blue">int</font> m=-l; m&lt;=l; m++){
+<font color="deepskyblue">0984:</font>                     <font color="blue">int</font> n = l*(l+1) + m;
+<font color="deepskyblue">0985:</font>                     ((<font color="blue">float</font>*)&amp;vSH[0])[n] = ref * SphericalHarmonics(l, m, theta, phi);
+<font color="deepskyblue">0986:</font>                     <font color="cyan">// テクスチャの展開の補正のため、(2l-1)!! の補正をつける</font>
+<font color="deepskyblue">0987:</font>                     <font color="yellow"><font color="blue">if</font>(2==l){
+<font color="deepskyblue">0988:</font>                         ((<font color="blue">float</font>*)&amp;vSH[0])[n] *= 3;
+<font color="deepskyblue">0989:</font>                     }
+<font color="deepskyblue">0990:</font>                     <font color="blue">if</font>(3==l){
+<font color="deepskyblue">0991:</font>                         ((<font color="blue">float</font>*)&amp;vSH[0])[n] *= 15;
+<font color="deepskyblue">0992:</font>                     }</font>
+<font color="deepskyblue">0993:</font>                 }
+<font color="deepskyblue">0994:</font>             }
+<font color="deepskyblue">0995:</font> 
+<font color="deepskyblue">0996:</font>             m_pEffect-&gt;SetVectorArray("<font color="blue">vSH</font>", vSH, (L_MAX+1)*(L_MAX+1)/4);
+<font color="deepskyblue">0997:</font> 
+<font color="deepskyblue">0998:</font>             <font color="cyan">// PRT テクスチャの設定</font>
+<font color="deepskyblue">0999:</font>             <font color="blue">for</font>(<font color="blue">int</font> tex = 0; tex &lt; TEX_MAX; tex++){
+<font color="deepskyblue">1000:</font>                 <font color="blue">char</font> str[256];
+<font color="deepskyblue">1001:</font>                 sprintf(str, "<font color="blue">PrtTex%d</font>", tex);
+<font color="deepskyblue">1002:</font>                 m_pEffect-&gt;SetTexture(str, <font color="blue">this</font>-&gt;m_pFinalTex[tex] );
+<font color="deepskyblue">1003:</font>             }
+<font color="deepskyblue">1004:</font>             <font color="cyan">// 背景の描画</font>
+<font color="deepskyblue">1005:</font>             pMtrl = m_pMeshBg-&gt;m_pMaterials;
+<font color="deepskyblue">1006:</font>             <font color="blue">for</font>( i=0; i&lt;m_pMeshBg-&gt;m_dwNumMaterials; i++ ) {
+<font color="deepskyblue">1007:</font>                 m_pEffect-&gt;SetTexture(m_htSrcTex, m_pMeshBg-&gt;m_pTextures[i] );
+<font color="deepskyblue">1008:</font>                 m_pMeshBg-&gt;m_pLocalMesh-&gt;DrawSubset( i );   <font color="cyan">// 描画</font>
+<font color="deepskyblue">1009:</font>                 pMtrl++;
+<font color="deepskyblue">1010:</font>             }
+</pre>
+
+<p>
+シェーダプログラムでは、0～1の範囲で記録されたPRTテクスチャを-1～1の範囲に復元し、先ほど求めた入射光の球面調和関数に関する係数を掛けて放射ラディアンスを計算します。<br>
+あとはデカールを張るなら、デカールの色にラディアンスの強さを掛けたりします。
+</p>
+<pre class="CodeBlock">
+hlsl.fx
+<font color="deepskyblue">0107:</font> <font color="cyan">// ------------------------------------------------------------</font>
+<font color="deepskyblue">0108:</font> <font color="cyan">// PRT テクスチャから入射光を復元する</font>
+<font color="deepskyblue">0109:</font> <font color="cyan">// ------------------------------------------------------------</font>
+<font color="deepskyblue">0110:</font> <font color="blue">float</font> GetPRT(float2 Tex)
+<font color="deepskyblue">0111:</font> {
+<font color="deepskyblue">0112:</font>     <font color="blue">return</font> dot(2.0*tex2D( PrtSamp0, Tex )-1.0, vSH[0])
+<font color="deepskyblue">0113:</font>          + dot(2.0*tex2D( PrtSamp1, Tex )-1.0, vSH[1])
+<font color="deepskyblue">0114:</font>          + dot(2.0*tex2D( PrtSamp2, Tex )-1.0, vSH[2])
+<font color="deepskyblue">0115:</font>          + dot(2.0*tex2D( PrtSamp3, Tex )-1.0, vSH[3])
+<font color="deepskyblue">0116:</font>          ;
+<font color="deepskyblue">0117:</font> }
+<font color="deepskyblue">0118:</font> 
+<font color="deepskyblue">0119:</font> <font color="cyan">// ------------------------------------------------------------</font>
+<font color="deepskyblue">0120:</font> <font color="cyan">// 全部込みピクセルシェーダプログラム</font>
+<font color="deepskyblue">0121:</font> <font color="cyan">// ------------------------------------------------------------</font>
+<font color="deepskyblue">0122:</font> float4 PS (VS_OUTPUT In) : COLOR
+<font color="deepskyblue">0123:</font> {
+<font color="deepskyblue">0124:</font>     float4 Out;
+<font color="deepskyblue">0125:</font>     
+<font color="deepskyblue">0126:</font>     <font color="cyan">// 色</font>
+<font color="deepskyblue">0127:</font>     Out = tex2D( SrcSamp, In.Tex0 ) * GetPRT(In.Tex0);
+<font color="deepskyblue">0128:</font>     
+<font color="deepskyblue">0129:</font>     <font color="blue">return</font> Out;
+<font color="deepskyblue">0130:</font> }
+</pre>
+
+
+<h2>■最後に</h2>
+
+
+<p>
+やってみて実感したのが、球面調和関数展開では鋭い影を作るのが難しいということでしょうかねぇ。<br>
+考えてみれば３次程度では４５度ぐらいの広がりを持った光までしか表現できないので当たり前なのですが、地平線マップと比較してもあまりにもボケボケなので、ちょっと面食らってしまいました。
+</p>
+<p>
+入射光をHDRにしたり、光沢反射とか、相互反射とかまだまだまだまだやらなきゃいけないことは多いですな。
+</p>
+
+
+
+
+</div>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<center>
+<hr>
+<p><a href="../index.html">もどる</a></p>
+<p><a href="mailto:imagire@gmail.com">imagire@gmail.com</a></p>
+</center>
+
+</body>
+</html>

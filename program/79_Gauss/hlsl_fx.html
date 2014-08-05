@@ -1,0 +1,185 @@
+<HTML>
+<HEAD>
+<TITLE>hlsl.fx</TITLE>
+<meta name="GENERATOR" content="cpp2html 2.1 by Niisaka">
+<meta http-equiv="Content-Type" content="text/html">
+<meta http-equiv="Content-Style-Type" content="text/css">
+<STYLE TYPE="text/css">
+<!--
+SPAN.comment { color:#008000; font-weight:normal; font-style:normal;}
+SPAN.keyword { color:#0000FF; font-weight:normal; font-style:normal;}
+SPAN.string { color:#600000; font-weight:normal; font-style:normal;}
+SPAN.linenum { color:#A0A0A0; font-weight:normal; font-style:normal;}
+-->
+</STYLE>
+</HEAD>
+<BODY TEXT="#000000" BGCOLOR="#FFFFFF">
+<PRE><SPAN CLASS="linenum">0001:</SPAN> <SPAN CLASS="comment">// -------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0002:</SPAN> <SPAN CLASS="comment">// ガウスフィルタ</SPAN>
+<SPAN CLASS="linenum">0003:</SPAN> <SPAN CLASS="comment">// </SPAN>
+<SPAN CLASS="linenum">0004:</SPAN> <SPAN CLASS="comment">// Copyright (c) 2003 IMAGIRE Takashi. All rights reserved.</SPAN>
+<SPAN CLASS="linenum">0005:</SPAN> <SPAN CLASS="comment">// -------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0006:</SPAN> 
+<SPAN CLASS="linenum">0007:</SPAN> <SPAN CLASS="comment">// -------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0008:</SPAN> <SPAN CLASS="comment">// グローバル変数</SPAN>
+<SPAN CLASS="linenum">0009:</SPAN> <SPAN CLASS="comment">// -------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0010:</SPAN> 
+<SPAN CLASS="linenum">0011:</SPAN> <SPAN CLASS="keyword">float</SPAN> MAP_WIDTH;
+<SPAN CLASS="linenum">0012:</SPAN> <SPAN CLASS="keyword">float</SPAN> MAP_HEIGHT;
+<SPAN CLASS="linenum">0013:</SPAN> <SPAN CLASS="keyword">float</SPAN> weight[8];
+<SPAN CLASS="linenum">0014:</SPAN> 
+<SPAN CLASS="linenum">0015:</SPAN> <SPAN CLASS="comment">// -------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0016:</SPAN> <SPAN CLASS="comment">// テクスチャ</SPAN>
+<SPAN CLASS="linenum">0017:</SPAN> <SPAN CLASS="comment">// -------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0018:</SPAN> texture SrcMap;
+<SPAN CLASS="linenum">0019:</SPAN> sampler SrcSamp = sampler_state
+<SPAN CLASS="linenum">0020:</SPAN> {
+<SPAN CLASS="linenum">0021:</SPAN>     Texture = &lt;SrcMap&gt;;
+<SPAN CLASS="linenum">0022:</SPAN>     MinFilter = LINEAR;
+<SPAN CLASS="linenum">0023:</SPAN>     MagFilter = LINEAR;
+<SPAN CLASS="linenum">0024:</SPAN>     MipFilter = NONE;
+<SPAN CLASS="linenum">0025:</SPAN> 
+<SPAN CLASS="linenum">0026:</SPAN>     AddressU = Clamp;
+<SPAN CLASS="linenum">0027:</SPAN>     AddressV = Clamp;
+<SPAN CLASS="linenum">0028:</SPAN> };
+<SPAN CLASS="linenum">0029:</SPAN> <SPAN CLASS="comment">// -------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0030:</SPAN> <SPAN CLASS="comment">// 頂点シェーダからピクセルシェーダに渡すデータ</SPAN>
+<SPAN CLASS="linenum">0031:</SPAN> <SPAN CLASS="comment">// -------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0032:</SPAN> <SPAN CLASS="keyword">struct</SPAN> VS_OUTPUT
+<SPAN CLASS="linenum">0033:</SPAN> {
+<SPAN CLASS="linenum">0034:</SPAN>     float4 Pos          : POSITION;
+<SPAN CLASS="linenum">0035:</SPAN>     float2 Tex          : TEXCOORD0;
+<SPAN CLASS="linenum">0036:</SPAN> };
+<SPAN CLASS="linenum">0037:</SPAN> 
+<SPAN CLASS="linenum">0038:</SPAN> <SPAN CLASS="comment">// -------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0039:</SPAN> <SPAN CLASS="comment">// Xぼかす</SPAN>
+<SPAN CLASS="linenum">0040:</SPAN> <SPAN CLASS="comment">// -------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0041:</SPAN> 
+<SPAN CLASS="linenum">0042:</SPAN> <SPAN CLASS="comment">// -------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0043:</SPAN> <SPAN CLASS="comment">// 頂点シェーダプログラム</SPAN>
+<SPAN CLASS="linenum">0044:</SPAN> <SPAN CLASS="comment">// -------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0045:</SPAN> VS_OUTPUT VS_pass1 (
+<SPAN CLASS="linenum">0046:</SPAN>       float4 Pos    : POSITION,          <SPAN CLASS="comment">// モデルの頂点</SPAN>
+<SPAN CLASS="linenum">0047:</SPAN>       float4 Tex    : TEXCOORD0          <SPAN CLASS="comment">// テクスチャ座標</SPAN>
+<SPAN CLASS="linenum">0048:</SPAN> ){
+<SPAN CLASS="linenum">0049:</SPAN>     VS_OUTPUT Out = (VS_OUTPUT)0;        <SPAN CLASS="comment">// 出力データ</SPAN>
+<SPAN CLASS="linenum">0050:</SPAN>     
+<SPAN CLASS="linenum">0051:</SPAN>     <SPAN CLASS="comment">// 位置座標</SPAN>
+<SPAN CLASS="linenum">0052:</SPAN>     Out.Pos = Pos;
+<SPAN CLASS="linenum">0053:</SPAN>     
+<SPAN CLASS="linenum">0054:</SPAN>     Out.Tex = Tex + float2( 0, 0.5f/MAP_HEIGHT );
+<SPAN CLASS="linenum">0055:</SPAN>     
+<SPAN CLASS="linenum">0056:</SPAN>     <SPAN CLASS="keyword">return</SPAN> Out;
+<SPAN CLASS="linenum">0057:</SPAN> }
+<SPAN CLASS="linenum">0058:</SPAN> 
+<SPAN CLASS="linenum">0059:</SPAN> <SPAN CLASS="comment">// -------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0060:</SPAN> <SPAN CLASS="comment">// ピクセルシェーダプログラム</SPAN>
+<SPAN CLASS="linenum">0061:</SPAN> <SPAN CLASS="comment">// -------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0062:</SPAN> float4 PS_pass1(VS_OUTPUT In) : COLOR
+<SPAN CLASS="linenum">0063:</SPAN> {   
+<SPAN CLASS="linenum">0064:</SPAN>     float4 Color;
+<SPAN CLASS="linenum">0065:</SPAN>     
+<SPAN CLASS="linenum">0066:</SPAN>     Color  = weight[0] *  tex2D( SrcSamp, In.Tex );
+<SPAN CLASS="linenum">0067:</SPAN>     Color += weight[1]
+<SPAN CLASS="linenum">0068:</SPAN>      * (tex2D( SrcSamp, In.Tex + float2( + 2.0f/MAP_WIDTH, 0 ) )
+<SPAN CLASS="linenum">0069:</SPAN>      +  tex2D( SrcSamp, In.Tex + float2( - 2.0f/MAP_WIDTH, 0 ) ));
+<SPAN CLASS="linenum">0070:</SPAN>     Color += weight[2]
+<SPAN CLASS="linenum">0071:</SPAN>      * (tex2D( SrcSamp, In.Tex + float2( + 4.0f/MAP_WIDTH, 0 ) )
+<SPAN CLASS="linenum">0072:</SPAN>      +  tex2D( SrcSamp, In.Tex + float2( - 4.0f/MAP_WIDTH, 0 ) ));
+<SPAN CLASS="linenum">0073:</SPAN>     Color += weight[3]
+<SPAN CLASS="linenum">0074:</SPAN>      * (tex2D( SrcSamp, In.Tex + float2( + 6.0f/MAP_WIDTH, 0 ) )
+<SPAN CLASS="linenum">0075:</SPAN>      +  tex2D( SrcSamp, In.Tex + float2( - 6.0f/MAP_WIDTH, 0 ) ));
+<SPAN CLASS="linenum">0076:</SPAN>     Color += weight[4]
+<SPAN CLASS="linenum">0077:</SPAN>      * (tex2D( SrcSamp, In.Tex + float2( + 8.0f/MAP_WIDTH, 0 ) )
+<SPAN CLASS="linenum">0078:</SPAN>      +  tex2D( SrcSamp, In.Tex + float2( - 8.0f/MAP_WIDTH, 0 ) ));
+<SPAN CLASS="linenum">0079:</SPAN>     Color += weight[5]
+<SPAN CLASS="linenum">0080:</SPAN>      * (tex2D( SrcSamp, In.Tex + float2( +10.0f/MAP_WIDTH, 0 ) )
+<SPAN CLASS="linenum">0081:</SPAN>      +  tex2D( SrcSamp, In.Tex + float2( -10.0f/MAP_WIDTH, 0 ) ));
+<SPAN CLASS="linenum">0082:</SPAN>     Color += weight[6]
+<SPAN CLASS="linenum">0083:</SPAN>      * (tex2D( SrcSamp, In.Tex + float2( +12.0f/MAP_WIDTH, 0 ) )
+<SPAN CLASS="linenum">0084:</SPAN>      +  tex2D( SrcSamp, In.Tex + float2( -12.0f/MAP_WIDTH, 0 ) ));
+<SPAN CLASS="linenum">0085:</SPAN>     Color += weight[7]
+<SPAN CLASS="linenum">0086:</SPAN>      * (tex2D( SrcSamp, In.Tex + float2( +14.0f/MAP_WIDTH, 0 ) )
+<SPAN CLASS="linenum">0087:</SPAN>      +  tex2D( SrcSamp, In.Tex + float2( -14.0f/MAP_WIDTH, 0 ) ));
+<SPAN CLASS="linenum">0088:</SPAN>     
+<SPAN CLASS="linenum">0089:</SPAN>     <SPAN CLASS="keyword">return</SPAN> Color;
+<SPAN CLASS="linenum">0090:</SPAN> }
+<SPAN CLASS="linenum">0091:</SPAN> <SPAN CLASS="comment">// -------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0092:</SPAN> <SPAN CLASS="comment">// Yぼかす</SPAN>
+<SPAN CLASS="linenum">0093:</SPAN> <SPAN CLASS="comment">// -------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0094:</SPAN> 
+<SPAN CLASS="linenum">0095:</SPAN> <SPAN CLASS="comment">// -------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0096:</SPAN> <SPAN CLASS="comment">// 頂点シェーダプログラム</SPAN>
+<SPAN CLASS="linenum">0097:</SPAN> <SPAN CLASS="comment">// -------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0098:</SPAN> VS_OUTPUT VS_pass2 (
+<SPAN CLASS="linenum">0099:</SPAN>       float4 Pos    : POSITION,          <SPAN CLASS="comment">// モデルの頂点</SPAN>
+<SPAN CLASS="linenum">0100:</SPAN>       float4 Tex    : TEXCOORD0          <SPAN CLASS="comment">// テクスチャ座標</SPAN>
+<SPAN CLASS="linenum">0101:</SPAN> ){
+<SPAN CLASS="linenum">0102:</SPAN>     VS_OUTPUT Out = (VS_OUTPUT)0;        <SPAN CLASS="comment">// 出力データ</SPAN>
+<SPAN CLASS="linenum">0103:</SPAN>     
+<SPAN CLASS="linenum">0104:</SPAN>     <SPAN CLASS="comment">// 位置座標</SPAN>
+<SPAN CLASS="linenum">0105:</SPAN>     Out.Pos = Pos;
+<SPAN CLASS="linenum">0106:</SPAN>     
+<SPAN CLASS="linenum">0107:</SPAN>     Out.Tex = Tex + float2( 0.5f/MAP_WIDTH, 0 );
+<SPAN CLASS="linenum">0108:</SPAN>     
+<SPAN CLASS="linenum">0109:</SPAN>     <SPAN CLASS="keyword">return</SPAN> Out;
+<SPAN CLASS="linenum">0110:</SPAN> }
+<SPAN CLASS="linenum">0111:</SPAN> 
+<SPAN CLASS="linenum">0112:</SPAN> <SPAN CLASS="comment">// -------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0113:</SPAN> <SPAN CLASS="comment">// ピクセルシェーダプログラム</SPAN>
+<SPAN CLASS="linenum">0114:</SPAN> <SPAN CLASS="comment">// -------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0115:</SPAN> float4 PS_pass2(VS_OUTPUT In) : COLOR
+<SPAN CLASS="linenum">0116:</SPAN> {   
+<SPAN CLASS="linenum">0117:</SPAN>     float4 Color;
+<SPAN CLASS="linenum">0118:</SPAN>     
+<SPAN CLASS="linenum">0119:</SPAN>     Color  = weight[0] *  tex2D( SrcSamp, In.Tex );
+<SPAN CLASS="linenum">0120:</SPAN>     Color += weight[1]
+<SPAN CLASS="linenum">0121:</SPAN>      * (tex2D( SrcSamp, In.Tex + float2( 0, + 2.0f/MAP_HEIGHT) )
+<SPAN CLASS="linenum">0122:</SPAN>      +  tex2D( SrcSamp, In.Tex + float2( 0, - 2.0f/MAP_HEIGHT) ));
+<SPAN CLASS="linenum">0123:</SPAN>     Color += weight[2]
+<SPAN CLASS="linenum">0124:</SPAN>      * (tex2D( SrcSamp, In.Tex + float2( 0, + 4.0f/MAP_HEIGHT) )
+<SPAN CLASS="linenum">0125:</SPAN>      +  tex2D( SrcSamp, In.Tex + float2( 0, - 4.0f/MAP_HEIGHT) ));
+<SPAN CLASS="linenum">0126:</SPAN>     Color += weight[3]
+<SPAN CLASS="linenum">0127:</SPAN>      * (tex2D( SrcSamp, In.Tex + float2( 0, + 6.0f/MAP_HEIGHT) )
+<SPAN CLASS="linenum">0128:</SPAN>      +  tex2D( SrcSamp, In.Tex + float2( 0, - 6.0f/MAP_HEIGHT) ));
+<SPAN CLASS="linenum">0129:</SPAN>     Color += weight[4]
+<SPAN CLASS="linenum">0130:</SPAN>      * (tex2D( SrcSamp, In.Tex + float2( 0, + 8.0f/MAP_HEIGHT) )
+<SPAN CLASS="linenum">0131:</SPAN>      +  tex2D( SrcSamp, In.Tex + float2( 0, - 8.0f/MAP_HEIGHT) ));
+<SPAN CLASS="linenum">0132:</SPAN>     Color += weight[5]
+<SPAN CLASS="linenum">0133:</SPAN>      * (tex2D( SrcSamp, In.Tex + float2( 0, +10.0f/MAP_HEIGHT) )
+<SPAN CLASS="linenum">0134:</SPAN>      +  tex2D( SrcSamp, In.Tex + float2( 0, -10.0f/MAP_HEIGHT) ));
+<SPAN CLASS="linenum">0135:</SPAN>     Color += weight[6]
+<SPAN CLASS="linenum">0136:</SPAN>      * (tex2D( SrcSamp, In.Tex + float2( 0, +12.0f/MAP_HEIGHT) )
+<SPAN CLASS="linenum">0137:</SPAN>      +  tex2D( SrcSamp, In.Tex + float2( 0, -12.0f/MAP_HEIGHT) ));
+<SPAN CLASS="linenum">0138:</SPAN>     Color += weight[7]
+<SPAN CLASS="linenum">0139:</SPAN>      * (tex2D( SrcSamp, In.Tex + float2( 0, +14.0f/MAP_HEIGHT) )
+<SPAN CLASS="linenum">0140:</SPAN>      +  tex2D( SrcSamp, In.Tex + float2( 0, -14.0f/MAP_HEIGHT) ));
+<SPAN CLASS="linenum">0141:</SPAN>     
+<SPAN CLASS="linenum">0142:</SPAN>     <SPAN CLASS="keyword">return</SPAN> Color;
+<SPAN CLASS="linenum">0143:</SPAN> }
+<SPAN CLASS="linenum">0144:</SPAN> 
+<SPAN CLASS="linenum">0145:</SPAN> <SPAN CLASS="comment">// -------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0146:</SPAN> <SPAN CLASS="comment">// テクニック</SPAN>
+<SPAN CLASS="linenum">0147:</SPAN> <SPAN CLASS="comment">// -------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0148:</SPAN> technique TShader
+<SPAN CLASS="linenum">0149:</SPAN> {
+<SPAN CLASS="linenum">0150:</SPAN>     pass P0
+<SPAN CLASS="linenum">0151:</SPAN>     {
+<SPAN CLASS="linenum">0152:</SPAN>         <SPAN CLASS="comment">// シェーダ</SPAN>
+<SPAN CLASS="linenum">0153:</SPAN>         VertexShader = compile vs_1_1 VS_pass1();
+<SPAN CLASS="linenum">0154:</SPAN>         PixelShader  = compile ps_2_0 PS_pass1();
+<SPAN CLASS="linenum">0155:</SPAN>         
+<SPAN CLASS="linenum">0156:</SPAN>         Sampler[0] = (SrcSamp);
+<SPAN CLASS="linenum">0157:</SPAN>     }
+<SPAN CLASS="linenum">0158:</SPAN>     pass P1
+<SPAN CLASS="linenum">0159:</SPAN>     {
+<SPAN CLASS="linenum">0160:</SPAN>         <SPAN CLASS="comment">// シェーダ</SPAN>
+<SPAN CLASS="linenum">0161:</SPAN>         VertexShader = compile vs_1_1 VS_pass2();
+<SPAN CLASS="linenum">0162:</SPAN>         PixelShader  = compile ps_2_0 PS_pass2();
+<SPAN CLASS="linenum">0163:</SPAN>         
+<SPAN CLASS="linenum">0164:</SPAN>         Sampler[0] = (SrcSamp);
+<SPAN CLASS="linenum">0165:</SPAN>     }
+<SPAN CLASS="linenum">0166:</SPAN> }
+<SPAN CLASS="linenum">0167:</SPAN> </PRE>
+</BODY>
+</HTML>

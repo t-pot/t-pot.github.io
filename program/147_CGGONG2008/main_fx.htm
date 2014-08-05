@@ -1,0 +1,639 @@
+<PRE>   1: <FONT COLOR="#008040">//--------------------------------------------------------------------------------------</FONT>
+   2: <FONT COLOR="#008040">// File: main.fx</FONT>
+   3: <FONT COLOR="#008040">//</FONT>
+   4: <FONT COLOR="#008040">//--------------------------------------------------------------------------------------</FONT>
+   5: 
+   6: 
+   7: <FONT COLOR="#008040">//--------------------------------------------------------------------------------------</FONT>
+   8: <FONT COLOR="#008040">// Global variables</FONT>
+   9: <FONT COLOR="#008040">//--------------------------------------------------------------------------------------</FONT>
+  10: cbuffer cb0
+  11: {
+  12: 	float4 g_MaterialAmbientColor;      <FONT COLOR="#008040">// Material's ambient color</FONT>
+  13: 	float4 g_MaterialDiffuseColor;      <FONT COLOR="#008040">// Material's diffuse color</FONT>
+  14: 	float3 g_LightDir;                  <FONT COLOR="#008040">// Light's direction in world space</FONT>
+  15: 	float4 g_LightDiffuse;              <FONT COLOR="#008040">// Light's diffuse color</FONT>
+  16: 
+  17: 	float4x4 g_mWorld;                  <FONT COLOR="#008040">// World matrix for object</FONT>
+  18: 	float4x4 g_mWorldView;              <FONT COLOR="#008040">// World * View matrix</FONT>
+  19: 	float4x4 g_mWorldViewProjection;    <FONT COLOR="#008040">// World * View * Projection matrix</FONT>
+  20: }
+  21: 
+  22: cbuffer cb1
+  23: {
+  24: 	<FONT COLOR="#0000FF">float</FONT> g_fZmin;              <FONT COLOR="#008040">// </FONT>
+  25: 	<FONT COLOR="#0000FF">float</FONT> g_fZmid;              <FONT COLOR="#008040">// </FONT>
+  26: 	<FONT COLOR="#0000FF">float</FONT> g_fZmax;              <FONT COLOR="#008040">// </FONT>
+  27: 	<FONT COLOR="#0000FF">float</FONT> g_fBaseValue;
+  28: 	<FONT COLOR="#0000FF">float</FONT> g_fCompValue;<FONT COLOR="#008040">// 0.00002 - 0.00002</FONT>
+  29: }
+  30: 
+  31: Texture2D g_MeshTexture;              <FONT COLOR="#008040">// Color texture for mesh</FONT>
+  32: 
+  33: <FONT COLOR="#008040">//--------------------------------------------------------------------------------------</FONT>
+  34: <FONT COLOR="#008040">// Texture samplers</FONT>
+  35: <FONT COLOR="#008040">//--------------------------------------------------------------------------------------</FONT>
+  36: SamplerState MeshTextureSampler
+  37: {
+  38:     Filter = MIN_MAG_MIP_LINEAR;
+  39:     AddressU = Wrap;
+  40:     AddressV = Wrap;
+  41: };
+  42: 
+  43: <FONT COLOR="#008040">//--------------------------------------------------------------------------------------</FONT>
+  44: <FONT COLOR="#008040">// BlendState</FONT>
+  45: <FONT COLOR="#008040">//--------------------------------------------------------------------------------------</FONT>
+  46: BlendState SrcAlphaBlending
+  47: {
+  48:     AlphaToCoverageEnable = FALSE;
+  49:     BlendEnable[<FONT COLOR="#FF0000">0</FONT>] = TRUE;
+  50:     SrcBlend = SRC_ALPHA;
+  51:     DestBlend = INV_SRC_ALPHA;
+  52:     BlendOp = ADD;
+  53:     SrcBlendAlpha = ZERO;
+  54:     DestBlendAlpha = ZERO;
+  55:     BlendOpAlpha = ADD;
+  56:     RenderTargetWriteMask[<FONT COLOR="#FF0000">0</FONT>] = <FONT COLOR="#FF0000">0x0F</FONT>;
+  57: };
+  58: BlendState DisableAlphaBlending
+  59: {
+  60:     AlphaToCoverageEnable = FALSE;
+  61:     BlendEnable[<FONT COLOR="#FF0000">0</FONT>] = FALSE;
+  62:     RenderTargetWriteMask[<FONT COLOR="#FF0000">0</FONT>] = <FONT COLOR="#FF0000">0x0F</FONT>;
+  63: };
+  64: 
+  65: DepthStencilState DisableDepth
+  66: {
+  67:     DepthEnable = FALSE;
+  68:     DepthWriteMask = ZERO;
+  69: };
+  70: 
+  71: DepthStencilState EnableDepth
+  72: {
+  73:     DepthEnable = TRUE;
+  74:     DepthWriteMask = ALL;
+  75: };
+  76: 
+  77: DepthStencilState NoWriteDepth
+  78: {
+  79:     DepthEnable = TRUE;
+  80:     DepthWriteMask = ZERO;
+  81: };
+  82: 
+  83: RasterizerState CullNone
+  84: {
+  85: 	FillMode = SOLID;
+  86: 	CullMode = NONE;
+  87: };
+  88: 
+  89: <FONT COLOR="#008040">//--------------------------------------------------------------------------------------</FONT>
+  90: <FONT COLOR="#008040">// Vertex shader output structure</FONT>
+  91: <FONT COLOR="#008040">//--------------------------------------------------------------------------------------</FONT>
+  92: <FONT COLOR="#0000FF">struct</FONT> VS_OUTPUT
+  93: {
+  94:     float4 Position   : SV_Position;   <FONT COLOR="#008040">// vertex position </FONT>
+  95:     float4 Diffuse    : COLOR0;     <FONT COLOR="#008040">// vertex diffuse color (note that COLOR0 is clamped from 0..1)</FONT>
+  96:     float2 TextureUV  : TEXCOORD0;  <FONT COLOR="#008040">// vertex texture coords </FONT>
+  97: };
+  98: 
+  99: <FONT COLOR="#0000FF">struct</FONT> VS_OUTPUT_CLIPPING
+ 100: {
+ 101:     float4 Position   : SV_Position;   <FONT COLOR="#008040">// vertex position </FONT>
+ 102:     float4 Diffuse    : COLOR0;     <FONT COLOR="#008040">// vertex diffuse color (note that COLOR0 is clamped from 0..1)</FONT>
+ 103:     float2 TextureUV  : TEXCOORD0;  <FONT COLOR="#008040">// vertex texture coords </FONT>
+ 104:     float1 depth      : TEXCOORD1;
+ 105: };
+ 106: 
+ 107: <FONT COLOR="#008040">//--------------------------------------------------------------------------------------</FONT>
+ 108: <FONT COLOR="#008040">// This shader computes standard transform and lighting</FONT>
+ 109: <FONT COLOR="#008040">//--------------------------------------------------------------------------------------</FONT>
+ 110: VS_OUTPUT RenderSceneVS( float4 vPos : POSITION, 
+ 111:                          float3 vNormal : NORMAL,
+ 112:                          float2 vTexCoord0 : TEXCOORD0 )
+ 113: {
+ 114:     VS_OUTPUT Output;
+ 115:     float3 vNormalWorldSpace;
+ 116:     
+ 117:     <FONT COLOR="#008040">// Transform the position from object space to homogeneous projection space</FONT>
+ 118:     Output<FONT COLOR="#FF0000">.</FONT>Position = mul(vPos, g_mWorldViewProjection);
+ 119:     
+ 120:     <FONT COLOR="#008040">// Transform the normal from object space to world space    </FONT>
+ 121:     vNormalWorldSpace = normalize(mul(vNormal, (float3x3)g_mWorld)); <FONT COLOR="#008040">// normal (world space)</FONT>
+ 122: 
+ 123:     <FONT COLOR="#008040">// Calc diffuse color    </FONT>
+ 124:     Output<FONT COLOR="#FF0000">.</FONT>Diffuse = g_MaterialDiffuseColor * g_LightDiffuse * max(<FONT COLOR="#FF0000">0</FONT>,dot(vNormalWorldSpace, g_LightDir)) + 
+ 125:                      g_MaterialAmbientColor;   
+ 126:     
+ 127:     <FONT COLOR="#008040">// Just copy the texture coordinate through</FONT>
+ 128:     Output<FONT COLOR="#FF0000">.</FONT>TextureUV = vTexCoord0; 
+ 129:     
+ 130:     <FONT COLOR="#0000FF">return</FONT> Output;    
+ 131: }
+ 132: 
+ 133: <FONT COLOR="#008040">//--------------------------------------------------------------------------------------</FONT>
+ 134: <FONT COLOR="#008040">// This shader outputs the pixel's color by modulating the texture's</FONT>
+ 135: <FONT COLOR="#008040">// color with diffuse material color</FONT>
+ 136: <FONT COLOR="#008040">//--------------------------------------------------------------------------------------</FONT>
+ 137: float4 RenderScenePS( VS_OUTPUT In ) : SV_Target
+ 138: { 
+ 139:     <FONT COLOR="#008040">// Lookup mesh texture and modulate it with diffuse</FONT>
+ 140:     <FONT COLOR="#0000FF">return</FONT> g_MeshTexture<FONT COLOR="#FF0000">.</FONT>Sample(MeshTextureSampler, In<FONT COLOR="#FF0000">.</FONT>TextureUV) * In<FONT COLOR="#FF0000">.</FONT>Diffuse;
+ 141: }
+ 142: 
+ 143: <FONT COLOR="#008040">//--------------------------------------------------------------------------------------</FONT>
+ 144: <FONT COLOR="#008040">// Renders scene </FONT>
+ 145: <FONT COLOR="#008040">//--------------------------------------------------------------------------------------</FONT>
+ 146: technique10 RenderScene
+ 147: {
+ 148:     pass P0
+ 149:     {       
+ 150: 		SetVertexShader( CompileShader( vs_4_0, RenderSceneVS() ) );
+ 151:         SetGeometryShader( NULL );
+ 152:         SetPixelShader( CompileShader( ps_4_0, RenderScenePS() ) );
+ 153:         
+ 154:         SetBlendState( SrcAlphaBlending, float4( <FONT COLOR="#FF0000">0.0</FONT>f, <FONT COLOR="#FF0000">0.0</FONT>f, <FONT COLOR="#FF0000">0.0</FONT>f, <FONT COLOR="#FF0000">0.0</FONT>f ), <FONT COLOR="#FF0000">0xFFFFFFFF</FONT> );
+ 155:         SetDepthStencilState( EnableDepth, <FONT COLOR="#FF0000">0</FONT> );
+ 156:         SetRasterizerState( CullNone );  
+ 157:     }
+ 158: }
+ 159: 
+ 160: <FONT COLOR="#008040">//--------------------------------------------------------------------------------------</FONT>
+ 161: <FONT COLOR="#008040">// This shader computes standard transform and lighting</FONT>
+ 162: <FONT COLOR="#008040">//--------------------------------------------------------------------------------------</FONT>
+ 163: VS_OUTPUT_CLIPPING RenderSceneClippingVS( float4 vPos : POSITION, 
+ 164:                          float3 vNormal : NORMAL,
+ 165:                          float2 vTexCoord0 : TEXCOORD0 )
+ 166: {
+ 167:     VS_OUTPUT_CLIPPING Output;
+ 168:     float3 vNormalWorldSpace;
+ 169:     
+ 170:     <FONT COLOR="#008040">// Transform the position from object space to homogeneous projection space</FONT>
+ 171:     Output<FONT COLOR="#FF0000">.</FONT>Position = mul(vPos, g_mWorldViewProjection);
+ 172:     Output<FONT COLOR="#FF0000">.</FONT>depth = Output<FONT COLOR="#FF0000">.</FONT>Position<FONT COLOR="#FF0000">.</FONT>w;
+ 173:     
+ 174:     <FONT COLOR="#008040">// Transform the normal from object space to world space    </FONT>
+ 175:     vNormalWorldSpace = normalize(mul(vNormal, (float3x3)g_mWorld)); <FONT COLOR="#008040">// normal (world space)</FONT>
+ 176: 
+ 177:     <FONT COLOR="#008040">// Calc diffuse color    </FONT>
+ 178:     Output<FONT COLOR="#FF0000">.</FONT>Diffuse = g_MaterialDiffuseColor * g_LightDiffuse * max(<FONT COLOR="#FF0000">0</FONT>,dot(vNormalWorldSpace, g_LightDir)) + 
+ 179:                      g_MaterialAmbientColor;   
+ 180:     
+ 181:     <FONT COLOR="#008040">// Just copy the texture coordinate through</FONT>
+ 182:     Output<FONT COLOR="#FF0000">.</FONT>TextureUV = vTexCoord0; 
+ 183:     
+ 184:     <FONT COLOR="#0000FF">return</FONT> Output;    
+ 185: }
+ 186: 
+ 187: <FONT COLOR="#008040">//--------------------------------------------------------------------------------------</FONT>
+ 188: <FONT COLOR="#008040">// This shader outputs the pixel's color by modulating the texture's</FONT>
+ 189: <FONT COLOR="#008040">// color with diffuse material color</FONT>
+ 190: <FONT COLOR="#008040">//--------------------------------------------------------------------------------------</FONT>
+ 191: float4 RenderSceneClippingPS( VS_OUTPUT_CLIPPING In ) : SV_Target
+ 192: { 
+ 193: 	clip(In<FONT COLOR="#FF0000">.</FONT>depth<FONT COLOR="#FF0000">.</FONT>x - g_fZmin );
+ 194: 	clip(g_fZmax - In<FONT COLOR="#FF0000">.</FONT>depth<FONT COLOR="#FF0000">.</FONT>x );
+ 195: 
+ 196:     <FONT COLOR="#008040">// Lookup mesh texture and modulate it with diffuse</FONT>
+ 197:     <FONT COLOR="#0000FF">return</FONT> g_MeshTexture<FONT COLOR="#FF0000">.</FONT>Sample(MeshTextureSampler, In<FONT COLOR="#FF0000">.</FONT>TextureUV) * In<FONT COLOR="#FF0000">.</FONT>Diffuse;
+ 198: }
+ 199: 
+ 200: <FONT COLOR="#008040">//--------------------------------------------------------------------------------------</FONT>
+ 201: <FONT COLOR="#008040">// Renders scene with Clipping</FONT>
+ 202: <FONT COLOR="#008040">//--------------------------------------------------------------------------------------</FONT>
+ 203: technique10 RenderSceneClipping
+ 204: {
+ 205:     pass P0
+ 206:     {       
+ 207: 		SetVertexShader( CompileShader( vs_4_0, RenderSceneClippingVS() ) );
+ 208:         SetGeometryShader( NULL );
+ 209:         SetPixelShader( CompileShader( ps_4_0, RenderSceneClippingPS() ) );
+ 210:         
+ 211:         SetBlendState( SrcAlphaBlending, float4( <FONT COLOR="#FF0000">0.0</FONT>f, <FONT COLOR="#FF0000">0.0</FONT>f, <FONT COLOR="#FF0000">0.0</FONT>f, <FONT COLOR="#FF0000">0.0</FONT>f ), <FONT COLOR="#FF0000">0xFFFFFFFF</FONT> );
+ 212:         SetDepthStencilState( EnableDepth, <FONT COLOR="#FF0000">0</FONT> );
+ 213:         SetRasterizerState( CullNone );  
+ 214:     }
+ 215: }
+ 216: 
+ 217: <FONT COLOR="#008040">//--------------------------------------------------------------------------------------</FONT>
+ 218: <FONT COLOR="#008040">// Partial sort</FONT>
+ 219: <FONT COLOR="#008040">//--------------------------------------------------------------------------------------</FONT>
+ 220: <FONT COLOR="#0000FF">struct</FONT> GS_SORT_IN
+ 221: {
+ 222:     float3 Position   : POSITION;   <FONT COLOR="#008040">// vertex position </FONT>
+ 223:     float3 Normal     : NORMAL;     <FONT COLOR="#008040">// vertex normal</FONT>
+ 224:     float2 TextureUV  : TEXCOORD0;  <FONT COLOR="#008040">// vertex texture coords </FONT>
+ 225: };
+ 226: 
+ 227: GS_SORT_IN PartialSortVS( GS_SORT_IN input )
+ 228: {
+ 229: 	<FONT COLOR="#0000FF">return</FONT> input;
+ 230: }
+ 231: 
+ 232: GS_SORT_IN InterpolateVertex(GS_SORT_IN s0, GS_SORT_IN s1, <FONT COLOR="#0000FF">float</FONT> rate)
+ 233: {
+ 234: 	GS_SORT_IN output;
+ 235: 	
+ 236: 	output<FONT COLOR="#FF0000">.</FONT>Position  = lerp(s0<FONT COLOR="#FF0000">.</FONT>Position,  s1<FONT COLOR="#FF0000">.</FONT>Position,  rate);
+ 237: 	output<FONT COLOR="#FF0000">.</FONT>Normal    = lerp(s0<FONT COLOR="#FF0000">.</FONT>Normal,    s1<FONT COLOR="#FF0000">.</FONT>Normal,    rate);
+ 238: 	output<FONT COLOR="#FF0000">.</FONT>TextureUV = lerp(s0<FONT COLOR="#FF0000">.</FONT>TextureUV, s1<FONT COLOR="#FF0000">.</FONT>TextureUV, rate);
+ 239: 	
+ 240: 	<FONT COLOR="#0000FF">return</FONT> output;
+ 241: }
+ 242: 
+ 243: [maxvertexcount(<FONT COLOR="#FF0000">6</FONT>)]
+ 244: <FONT COLOR="#0000FF">void</FONT> PartialSortFrontGS( triangle GS_SORT_IN input[<FONT COLOR="#FF0000">3</FONT>], inout TriangleStream&lt;GS_SORT_IN&gt; OutputStream )
+ 245: {
+ 246: <FONT COLOR="#0000FF">#if</FONT> <FONT COLOR="#FF0000">0</FONT>
+ 247:     OutputStream<FONT COLOR="#FF0000">.</FONT>Append( input[<FONT COLOR="#FF0000">0</FONT>] );
+ 248:     OutputStream<FONT COLOR="#FF0000">.</FONT>Append( input[<FONT COLOR="#FF0000">0</FONT>] );
+ 249:     OutputStream<FONT COLOR="#FF0000">.</FONT>Append( input[<FONT COLOR="#FF0000">0</FONT>] );
+ 250: <FONT COLOR="#0000FF">#else</FONT>
+ 251:     <FONT COLOR="#0000FF">float</FONT> z0 = mul(input[<FONT COLOR="#FF0000">0</FONT>]<FONT COLOR="#FF0000">.</FONT>Position<FONT COLOR="#FF0000">.</FONT>xyz, (float3x3)g_mWorldView)<FONT COLOR="#FF0000">.</FONT>z + g_mWorldView<FONT COLOR="#FF0000">.</FONT>_43 - g_fZmid;
+ 252:     <FONT COLOR="#0000FF">float</FONT> z1 = mul(input[<FONT COLOR="#FF0000">1</FONT>]<FONT COLOR="#FF0000">.</FONT>Position<FONT COLOR="#FF0000">.</FONT>xyz, (float3x3)g_mWorldView)<FONT COLOR="#FF0000">.</FONT>z + g_mWorldView<FONT COLOR="#FF0000">.</FONT>_43 - g_fZmid;
+ 253:     <FONT COLOR="#0000FF">float</FONT> z2 = mul(input[<FONT COLOR="#FF0000">2</FONT>]<FONT COLOR="#FF0000">.</FONT>Position<FONT COLOR="#FF0000">.</FONT>xyz, (float3x3)g_mWorldView)<FONT COLOR="#FF0000">.</FONT>z + g_mWorldView<FONT COLOR="#FF0000">.</FONT>_43 - g_fZmid;
+ 254: 
+ 255: 	<FONT COLOR="#0000FF">if</FONT>(z0 &lt;= <FONT COLOR="#FF0000">0.0</FONT>)
+ 256: 	{
+ 257:         OutputStream<FONT COLOR="#FF0000">.</FONT>Append( input[<FONT COLOR="#FF0000">0</FONT>] );
+ 258: 		<FONT COLOR="#0000FF">if</FONT>(z1 &lt;= <FONT COLOR="#FF0000">0.0</FONT>)
+ 259: 		{
+ 260: 	        OutputStream<FONT COLOR="#FF0000">.</FONT>Append( input[<FONT COLOR="#FF0000">1</FONT>] );
+ 261: 			<FONT COLOR="#0000FF">if</FONT>(z2 &lt;= <FONT COLOR="#FF0000">0.0</FONT>)
+ 262: 			{
+ 263: 		        OutputStream<FONT COLOR="#FF0000">.</FONT>Append( input[<FONT COLOR="#FF0000">2</FONT>] );
+ 264: 			}<FONT COLOR="#0000FF">else</FONT>{
+ 265: 		        OutputStream<FONT COLOR="#FF0000">.</FONT>Append( InterpolateVertex(input[<FONT COLOR="#FF0000">1</FONT>], input[<FONT COLOR="#FF0000">2</FONT>], z1/(z1-z2)) );
+ 266: 		        
+ 267: OutputStream<FONT COLOR="#FF0000">.</FONT>RestartStrip();
+ 268: 		        OutputStream<FONT COLOR="#FF0000">.</FONT>Append( InterpolateVertex(input[<FONT COLOR="#FF0000">1</FONT>], input[<FONT COLOR="#FF0000">2</FONT>], z1/(z1-z2)) );
+ 269: 		        OutputStream<FONT COLOR="#FF0000">.</FONT>Append( InterpolateVertex(input[<FONT COLOR="#FF0000">2</FONT>], input[<FONT COLOR="#FF0000">0</FONT>], z2/(z2-z0)) );
+ 270: 		        OutputStream<FONT COLOR="#FF0000">.</FONT>Append( input[<FONT COLOR="#FF0000">0</FONT>] );
+ 271: 			}
+ 272: 		}<FONT COLOR="#0000FF">else</FONT>{
+ 273: 	        OutputStream<FONT COLOR="#FF0000">.</FONT>Append( InterpolateVertex(input[<FONT COLOR="#FF0000">0</FONT>], input[<FONT COLOR="#FF0000">1</FONT>], z0/(z0-z1)) );
+ 274: 			<FONT COLOR="#0000FF">if</FONT>(z2 &lt;= <FONT COLOR="#FF0000">0.0</FONT>)
+ 275: 			{
+ 276: 				OutputStream<FONT COLOR="#FF0000">.</FONT>Append( InterpolateVertex(input[<FONT COLOR="#FF0000">1</FONT>], input[<FONT COLOR="#FF0000">2</FONT>], z1/(z1-z2)) );
+ 277: OutputStream<FONT COLOR="#FF0000">.</FONT>RestartStrip();
+ 278: 		        
+ 279: 				OutputStream<FONT COLOR="#FF0000">.</FONT>Append( input[<FONT COLOR="#FF0000">0</FONT>] );
+ 280: 				OutputStream<FONT COLOR="#FF0000">.</FONT>Append( InterpolateVertex(input[<FONT COLOR="#FF0000">1</FONT>], input[<FONT COLOR="#FF0000">2</FONT>], z1/(z1-z2)) );
+ 281: 				OutputStream<FONT COLOR="#FF0000">.</FONT>Append( input[<FONT COLOR="#FF0000">2</FONT>] );
+ 282: 			}<FONT COLOR="#0000FF">else</FONT>{
+ 283: 				OutputStream<FONT COLOR="#FF0000">.</FONT>Append( InterpolateVertex(input[<FONT COLOR="#FF0000">2</FONT>], input[<FONT COLOR="#FF0000">0</FONT>], z2/(z2-z0)) );
+ 284: 			}
+ 285: 		}
+ 286:     OutputStream<FONT COLOR="#FF0000">.</FONT>RestartStrip();
+ 287: 	}<FONT COLOR="#0000FF">else</FONT>
+ 288: 	<FONT COLOR="#0000FF">if</FONT>(z1 &lt;= <FONT COLOR="#FF0000">0.0</FONT>)
+ 289: 	{
+ 290:         OutputStream<FONT COLOR="#FF0000">.</FONT>Append( InterpolateVertex(input[<FONT COLOR="#FF0000">0</FONT>], input[<FONT COLOR="#FF0000">1</FONT>], z0/(z0-z1)) );
+ 291: 		OutputStream<FONT COLOR="#FF0000">.</FONT>Append( input[<FONT COLOR="#FF0000">1</FONT>] );
+ 292: 		<FONT COLOR="#0000FF">if</FONT>(z2 &lt;= <FONT COLOR="#FF0000">0.0</FONT>)
+ 293: 		{
+ 294: 			OutputStream<FONT COLOR="#FF0000">.</FONT>Append( input[<FONT COLOR="#FF0000">2</FONT>] );
+ 295: OutputStream<FONT COLOR="#FF0000">.</FONT>RestartStrip();
+ 296: 
+ 297: 	        OutputStream<FONT COLOR="#FF0000">.</FONT>Append( InterpolateVertex(input[<FONT COLOR="#FF0000">0</FONT>], input[<FONT COLOR="#FF0000">1</FONT>], z0/(z0-z1)) );
+ 298: 			OutputStream<FONT COLOR="#FF0000">.</FONT>Append( input[<FONT COLOR="#FF0000">2</FONT>] );
+ 299: 	        OutputStream<FONT COLOR="#FF0000">.</FONT>Append( InterpolateVertex(input[<FONT COLOR="#FF0000">2</FONT>], input[<FONT COLOR="#FF0000">0</FONT>], z2/(z2-z0)) );
+ 300: 		}<FONT COLOR="#0000FF">else</FONT>{
+ 301: 	        OutputStream<FONT COLOR="#FF0000">.</FONT>Append( InterpolateVertex(input[<FONT COLOR="#FF0000">1</FONT>], input[<FONT COLOR="#FF0000">2</FONT>], z1/(z1-z2)) );
+ 302: 		}
+ 303:     OutputStream<FONT COLOR="#FF0000">.</FONT>RestartStrip();
+ 304: 	}<FONT COLOR="#0000FF">else</FONT>
+ 305: 	<FONT COLOR="#0000FF">if</FONT>(z2 &lt;= <FONT COLOR="#FF0000">0.0</FONT>)
+ 306: 	{
+ 307:         OutputStream<FONT COLOR="#FF0000">.</FONT>Append( InterpolateVertex(input[<FONT COLOR="#FF0000">1</FONT>], input[<FONT COLOR="#FF0000">2</FONT>], z1/(z1-z2)) );
+ 308:         OutputStream<FONT COLOR="#FF0000">.</FONT>Append( input[<FONT COLOR="#FF0000">2</FONT>] );
+ 309:         OutputStream<FONT COLOR="#FF0000">.</FONT>Append( InterpolateVertex(input[<FONT COLOR="#FF0000">2</FONT>], input[<FONT COLOR="#FF0000">0</FONT>], z2/(z2-z0)) );
+ 310:     OutputStream<FONT COLOR="#FF0000">.</FONT>RestartStrip();
+ 311: 	}<FONT COLOR="#0000FF">else</FONT>{
+ 312: <FONT COLOR="#008040">//        OutputStream.Append( input[0] );</FONT>
+ 313: <FONT COLOR="#008040">//        OutputStream.Append( input[0] );</FONT>
+ 314: <FONT COLOR="#008040">//        OutputStream.Append( input[0] );</FONT>
+ 315: 	}
+ 316: <FONT COLOR="#0000FF">#endif</FONT>
+ 317: }
+ 318: 
+ 319: [maxvertexcount(<FONT COLOR="#FF0000">6</FONT>)]
+ 320: <FONT COLOR="#0000FF">void</FONT> PartialSortBackGS( triangle GS_SORT_IN input[<FONT COLOR="#FF0000">3</FONT>], inout TriangleStream&lt;GS_SORT_IN&gt; OutputStream )
+ 321: {
+ 322: <FONT COLOR="#0000FF">#if</FONT> <FONT COLOR="#FF0000">0</FONT>
+ 323:     OutputStream<FONT COLOR="#FF0000">.</FONT>Append( input[<FONT COLOR="#FF0000">0</FONT>] );
+ 324:     OutputStream<FONT COLOR="#FF0000">.</FONT>Append( input[<FONT COLOR="#FF0000">1</FONT>] );
+ 325:     OutputStream<FONT COLOR="#FF0000">.</FONT>Append( input[<FONT COLOR="#FF0000">2</FONT>] );
+ 326: <FONT COLOR="#0000FF">#elif</FONT> <FONT COLOR="#FF0000">0</FONT>
+ 327:     <FONT COLOR="#0000FF">float</FONT> z0 = mul(input[<FONT COLOR="#FF0000">0</FONT>]<FONT COLOR="#FF0000">.</FONT>Position<FONT COLOR="#FF0000">.</FONT>xyz, (float3x3)g_mWorldView)<FONT COLOR="#FF0000">.</FONT>z + g_mWorldView<FONT COLOR="#FF0000">.</FONT>_43 - g_fZmid;
+ 328:     <FONT COLOR="#0000FF">float</FONT> z1 = mul(input[<FONT COLOR="#FF0000">1</FONT>]<FONT COLOR="#FF0000">.</FONT>Position<FONT COLOR="#FF0000">.</FONT>xyz, (float3x3)g_mWorldView)<FONT COLOR="#FF0000">.</FONT>z + g_mWorldView<FONT COLOR="#FF0000">.</FONT>_43 - g_fZmid;
+ 329:     <FONT COLOR="#0000FF">float</FONT> z2 = mul(input[<FONT COLOR="#FF0000">2</FONT>]<FONT COLOR="#FF0000">.</FONT>Position<FONT COLOR="#FF0000">.</FONT>xyz, (float3x3)g_mWorldView)<FONT COLOR="#FF0000">.</FONT>z + g_mWorldView<FONT COLOR="#FF0000">.</FONT>_43 - g_fZmid;
+ 330: 
+ 331: 	<FONT COLOR="#0000FF">if</FONT>(<FONT COLOR="#FF0000">0</FONT> &lt; z0 &amp;&amp; <FONT COLOR="#FF0000">0</FONT> &lt; z1 &amp;&amp; <FONT COLOR="#FF0000">0</FONT> &lt; z2)
+ 332: 	{
+ 333: 		OutputStream<FONT COLOR="#FF0000">.</FONT>Append( input[<FONT COLOR="#FF0000">0</FONT>] );
+ 334: 		OutputStream<FONT COLOR="#FF0000">.</FONT>Append( input[<FONT COLOR="#FF0000">1</FONT>] );
+ 335:         OutputStream<FONT COLOR="#FF0000">.</FONT>Append( input[<FONT COLOR="#FF0000">2</FONT>] );
+ 336: 	}<FONT COLOR="#0000FF">else</FONT>{
+ 337: 		OutputStream<FONT COLOR="#FF0000">.</FONT>Append( input[<FONT COLOR="#FF0000">0</FONT>] );
+ 338: 		OutputStream<FONT COLOR="#FF0000">.</FONT>Append( input[<FONT COLOR="#FF0000">0</FONT>] );
+ 339: 		OutputStream<FONT COLOR="#FF0000">.</FONT>Append( input[<FONT COLOR="#FF0000">0</FONT>] );
+ 340: 	}
+ 341: <FONT COLOR="#0000FF">#else</FONT>
+ 342:     <FONT COLOR="#0000FF">float</FONT> z0 = mul(input[<FONT COLOR="#FF0000">0</FONT>]<FONT COLOR="#FF0000">.</FONT>Position<FONT COLOR="#FF0000">.</FONT>xyz, (float3x3)g_mWorldView)<FONT COLOR="#FF0000">.</FONT>z + g_mWorldView<FONT COLOR="#FF0000">.</FONT>_43 - g_fZmid;
+ 343:     <FONT COLOR="#0000FF">float</FONT> z1 = mul(input[<FONT COLOR="#FF0000">1</FONT>]<FONT COLOR="#FF0000">.</FONT>Position<FONT COLOR="#FF0000">.</FONT>xyz, (float3x3)g_mWorldView)<FONT COLOR="#FF0000">.</FONT>z + g_mWorldView<FONT COLOR="#FF0000">.</FONT>_43 - g_fZmid;
+ 344:     <FONT COLOR="#0000FF">float</FONT> z2 = mul(input[<FONT COLOR="#FF0000">2</FONT>]<FONT COLOR="#FF0000">.</FONT>Position<FONT COLOR="#FF0000">.</FONT>xyz, (float3x3)g_mWorldView)<FONT COLOR="#FF0000">.</FONT>z + g_mWorldView<FONT COLOR="#FF0000">.</FONT>_43 - g_fZmid;
+ 345: 
+ 346: 	<FONT COLOR="#0000FF">if</FONT>(<FONT COLOR="#FF0000">0</FONT> &lt; z0)
+ 347: 	{
+ 348:         OutputStream<FONT COLOR="#FF0000">.</FONT>Append( input[<FONT COLOR="#FF0000">0</FONT>] );
+ 349: 		<FONT COLOR="#0000FF">if</FONT>(<FONT COLOR="#FF0000">0</FONT> &lt; z1)
+ 350: 		{
+ 351: 	        OutputStream<FONT COLOR="#FF0000">.</FONT>Append( input[<FONT COLOR="#FF0000">1</FONT>] );
+ 352: 			<FONT COLOR="#0000FF">if</FONT>(<FONT COLOR="#FF0000">0</FONT> &lt; z2)
+ 353: 			{
+ 354: 		        OutputStream<FONT COLOR="#FF0000">.</FONT>Append( input[<FONT COLOR="#FF0000">2</FONT>] );
+ 355: 			}<FONT COLOR="#0000FF">else</FONT>{
+ 356: 		        OutputStream<FONT COLOR="#FF0000">.</FONT>Append( InterpolateVertex(input[<FONT COLOR="#FF0000">1</FONT>], input[<FONT COLOR="#FF0000">2</FONT>], z1/(z1-z2)) );
+ 357: OutputStream<FONT COLOR="#FF0000">.</FONT>RestartStrip();
+ 358: 		        
+ 359: 		        OutputStream<FONT COLOR="#FF0000">.</FONT>Append( InterpolateVertex(input[<FONT COLOR="#FF0000">1</FONT>], input[<FONT COLOR="#FF0000">2</FONT>], z1/(z1-z2)) );
+ 360: 		        OutputStream<FONT COLOR="#FF0000">.</FONT>Append( InterpolateVertex(input[<FONT COLOR="#FF0000">2</FONT>], input[<FONT COLOR="#FF0000">0</FONT>], z2/(z2-z0)) );
+ 361: 		        OutputStream<FONT COLOR="#FF0000">.</FONT>Append( input[<FONT COLOR="#FF0000">0</FONT>] );
+ 362: 			}
+ 363: 		}<FONT COLOR="#0000FF">else</FONT>
+ 364: 		{
+ 365: 	        OutputStream<FONT COLOR="#FF0000">.</FONT>Append( InterpolateVertex(input[<FONT COLOR="#FF0000">0</FONT>], input[<FONT COLOR="#FF0000">1</FONT>], z0/(z0-z1)) );
+ 366: 			<FONT COLOR="#0000FF">if</FONT>(<FONT COLOR="#FF0000">0</FONT> &lt; z2)
+ 367: 			{
+ 368: 				OutputStream<FONT COLOR="#FF0000">.</FONT>Append( InterpolateVertex(input[<FONT COLOR="#FF0000">1</FONT>], input[<FONT COLOR="#FF0000">2</FONT>], z1/(z1-z2)) );
+ 369: OutputStream<FONT COLOR="#FF0000">.</FONT>RestartStrip();
+ 370: 		        
+ 371: 				OutputStream<FONT COLOR="#FF0000">.</FONT>Append( input[<FONT COLOR="#FF0000">0</FONT>] );
+ 372: 				OutputStream<FONT COLOR="#FF0000">.</FONT>Append( InterpolateVertex(input[<FONT COLOR="#FF0000">1</FONT>], input[<FONT COLOR="#FF0000">2</FONT>], z1/(z1-z2)) );
+ 373: 				OutputStream<FONT COLOR="#FF0000">.</FONT>Append( input[<FONT COLOR="#FF0000">2</FONT>] );
+ 374: 			}<FONT COLOR="#0000FF">else</FONT>{
+ 375: 				OutputStream<FONT COLOR="#FF0000">.</FONT>Append( InterpolateVertex(input[<FONT COLOR="#FF0000">2</FONT>], input[<FONT COLOR="#FF0000">0</FONT>], z2/(z2-z0)) );
+ 376: 			}
+ 377: 		}
+ 378:     OutputStream<FONT COLOR="#FF0000">.</FONT>RestartStrip();
+ 379: 	}<FONT COLOR="#0000FF">else</FONT>
+ 380: 	<FONT COLOR="#0000FF">if</FONT>(<FONT COLOR="#FF0000">0</FONT> &lt; z1)
+ 381: 	{
+ 382:         OutputStream<FONT COLOR="#FF0000">.</FONT>Append( InterpolateVertex(input[<FONT COLOR="#FF0000">0</FONT>], input[<FONT COLOR="#FF0000">1</FONT>], z0/(z0-z1)) );
+ 383: 		OutputStream<FONT COLOR="#FF0000">.</FONT>Append( input[<FONT COLOR="#FF0000">1</FONT>] );
+ 384: 		<FONT COLOR="#0000FF">if</FONT>(<FONT COLOR="#FF0000">0</FONT> &lt; z2)
+ 385: 		{
+ 386: 			OutputStream<FONT COLOR="#FF0000">.</FONT>Append( input[<FONT COLOR="#FF0000">2</FONT>] );
+ 387: OutputStream<FONT COLOR="#FF0000">.</FONT>RestartStrip();
+ 388: 
+ 389: 	        OutputStream<FONT COLOR="#FF0000">.</FONT>Append( InterpolateVertex(input[<FONT COLOR="#FF0000">0</FONT>], input[<FONT COLOR="#FF0000">1</FONT>], z0/(z0-z1)) );
+ 390: 			OutputStream<FONT COLOR="#FF0000">.</FONT>Append( input[<FONT COLOR="#FF0000">2</FONT>] );
+ 391: 	        OutputStream<FONT COLOR="#FF0000">.</FONT>Append( InterpolateVertex(input[<FONT COLOR="#FF0000">2</FONT>], input[<FONT COLOR="#FF0000">0</FONT>], z2/(z2-z0)) );
+ 392: 		}<FONT COLOR="#0000FF">else</FONT>{
+ 393: 	        OutputStream<FONT COLOR="#FF0000">.</FONT>Append( InterpolateVertex(input[<FONT COLOR="#FF0000">1</FONT>], input[<FONT COLOR="#FF0000">2</FONT>], z1/(z1-z2)) );
+ 394: 		}
+ 395:     OutputStream<FONT COLOR="#FF0000">.</FONT>RestartStrip();
+ 396: 	}<FONT COLOR="#0000FF">else</FONT>
+ 397: 	<FONT COLOR="#0000FF">if</FONT>(<FONT COLOR="#FF0000">0</FONT> &lt; z2)
+ 398: 	{
+ 399:         OutputStream<FONT COLOR="#FF0000">.</FONT>Append( InterpolateVertex(input[<FONT COLOR="#FF0000">1</FONT>], input[<FONT COLOR="#FF0000">2</FONT>], z1/(z1-z2)) );
+ 400:         OutputStream<FONT COLOR="#FF0000">.</FONT>Append( input[<FONT COLOR="#FF0000">2</FONT>] );
+ 401:         OutputStream<FONT COLOR="#FF0000">.</FONT>Append( InterpolateVertex(input[<FONT COLOR="#FF0000">2</FONT>], input[<FONT COLOR="#FF0000">0</FONT>], z2/(z2-z0)) );
+ 402:     OutputStream<FONT COLOR="#FF0000">.</FONT>RestartStrip();
+ 403: 	}<FONT COLOR="#0000FF">else</FONT>{
+ 404: <FONT COLOR="#008040">//        OutputStream.Append( input[0] );</FONT>
+ 405: <FONT COLOR="#008040">//        OutputStream.Append( input[0] );</FONT>
+ 406: <FONT COLOR="#008040">//        OutputStream.Append( input[0] );</FONT>
+ 407: 	}
+ 408: <FONT COLOR="#0000FF">#endif</FONT>
+ 409: }
+ 410: 
+ 411: GeometryShader gsStreamOutFront = ConstructGSWithSO( CompileShader( gs_4_0, PartialSortFrontGS() ), <FONT COLOR="#FF0000">&quot;POSITION.xyz; NORMAL.xyz; TEXCOORD0.xy&quot;</FONT> );
+ 412: GeometryShader gsStreamOutBack  = ConstructGSWithSO( CompileShader( gs_4_0, PartialSortBackGS () ), <FONT COLOR="#FF0000">&quot;POSITION.xyz; NORMAL.xyz; TEXCOORD0.xy&quot;</FONT> );
+ 413: 
+ 414: <FONT COLOR="#008040">//--------------------------------------------------------------------------------------</FONT>
+ 415: <FONT COLOR="#008040">// Renders scene with Clipping</FONT>
+ 416: <FONT COLOR="#008040">//--------------------------------------------------------------------------------------</FONT>
+ 417: technique10 TechPartialSortFront
+ 418: {
+ 419:     pass P0
+ 420:     {       
+ 421: 		SetVertexShader( CompileShader( vs_4_0, PartialSortVS() ) );
+ 422: 		SetGeometryShader( gsStreamOutFront );
+ 423:         SetPixelShader( NULL );
+ 424: 
+ 425:         SetDepthStencilState( DisableDepth, <FONT COLOR="#FF0000">0</FONT> );
+ 426:     }
+ 427: }
+ 428: <FONT COLOR="#008040">//--------------------------------------------------------------------------------------</FONT>
+ 429: technique10 TechPartialSortBack
+ 430: {
+ 431:     pass P0
+ 432:     {       
+ 433: 		SetVertexShader( CompileShader( vs_4_0, PartialSortVS() ) );
+ 434: 		SetGeometryShader( gsStreamOutBack );
+ 435:         SetPixelShader( NULL );
+ 436: 
+ 437:         SetDepthStencilState( DisableDepth, <FONT COLOR="#FF0000">0</FONT> );
+ 438:     }
+ 439: }
+ 440: 
+ 441: 
+ 442: <FONT COLOR="#008040">//--------------------------------------------------------------------------------------</FONT>
+ 443: <FONT COLOR="#008040">// BG</FONT>
+ 444: <FONT COLOR="#008040">//--------------------------------------------------------------------------------------</FONT>
+ 445: <FONT COLOR="#0000FF">struct</FONT> VS_OUTPUT_BG
+ 446: {
+ 447:     float4 Position   : SV_Position;   <FONT COLOR="#008040">// vertex position </FONT>
+ 448:     float2 TextureUV  : TEXCOORD0;  <FONT COLOR="#008040">// vertex texture coords </FONT>
+ 449: };
+ 450: <FONT COLOR="#008040">//--------------------------------------------------------------------------------------</FONT>
+ 451: VS_OUTPUT_BG RenderSceneBgVS( float4 vPos : POSITION, 
+ 452:                          float2 vTexCoord0 : TEXCOORD0 )
+ 453: {
+ 454:     VS_OUTPUT_BG Output;
+ 455:     
+ 456:     Output<FONT COLOR="#FF0000">.</FONT>Position = vPos;
+ 457:     Output<FONT COLOR="#FF0000">.</FONT>TextureUV = vTexCoord0; 
+ 458:     
+ 459:     <FONT COLOR="#0000FF">return</FONT> Output;    
+ 460: }
+ 461: <FONT COLOR="#008040">//--------------------------------------------------------------------------------------</FONT>
+ 462: float4 RenderSceneBgPS( VS_OUTPUT_BG In ) : SV_Target
+ 463: { 
+ 464:     <FONT COLOR="#0000FF">return</FONT> g_MeshTexture<FONT COLOR="#FF0000">.</FONT>Sample(MeshTextureSampler, In<FONT COLOR="#FF0000">.</FONT>TextureUV);
+ 465: }
+ 466: <FONT COLOR="#008040">//--------------------------------------------------------------------------------------</FONT>
+ 467: technique10 RenderSceneBg
+ 468: {
+ 469:     pass P0
+ 470:     {       
+ 471: 		SetVertexShader( CompileShader( vs_4_0, RenderSceneBgVS() ) );
+ 472:         SetGeometryShader( NULL );
+ 473:         SetPixelShader( CompileShader( ps_4_0, RenderSceneBgPS() ) );
+ 474:         
+ 475:         SetDepthStencilState( DisableDepth, <FONT COLOR="#FF0000">0</FONT> );
+ 476:         SetRasterizerState( CullNone );  
+ 477:     }
+ 478: }
+ 479: 
+ 480: 
+ 481: <FONT COLOR="#008040">//--------------------------------------------------------------------------------------</FONT>
+ 482: <FONT COLOR="#008040">// SNOW</FONT>
+ 483: <FONT COLOR="#008040">//--------------------------------------------------------------------------------------</FONT>
+ 484: <FONT COLOR="#0000FF">struct</FONT> GS_SNOW_IN
+ 485: {
+ 486:     float4 Pos0   : POSITION;   <FONT COLOR="#008040">// vertex position </FONT>
+ 487:     float4 Pos1   : TEXCOORD0;
+ 488:     float4 Pos2   : TEXCOORD2;
+ 489:     float4 Pos3   : TEXCOORD1;
+ 490: };
+ 491: <FONT COLOR="#0000FF">struct</FONT> GS_OUTPUT_SNOW
+ 492: {
+ 493:     float4 Position   : SV_Position;   <FONT COLOR="#008040">// vertex position </FONT>
+ 494:     float2 TextureUV  : TEXCOORD0;  <FONT COLOR="#008040">// vertex texture coords </FONT>
+ 495: };
+ 496: <FONT COLOR="#008040">//--------------------------------------------------------------------------------------</FONT>
+ 497: GS_SNOW_IN RenderSceneSnowVS( float3 vPos : POSITION, 
+ 498:                          float3 vBinormal : BINORMAL,
+ 499:                          float3 vTangent : TANGENT )
+ 500: {
+ 501:     GS_SNOW_IN Output;
+ 502:     <FONT COLOR="#0000FF">const</FONT> <FONT COLOR="#0000FF">float</FONT> SCALE = <FONT COLOR="#FF0000">0.05</FONT>;
+ 503:     
+ 504:     Output<FONT COLOR="#FF0000">.</FONT>Pos0 = mul(float4(vPos, <FONT COLOR="#FF0000">1.0</FONT>), g_mWorldViewProjection);
+ 505:     vPos += vBinormal * SCALE;
+ 506:     Output<FONT COLOR="#FF0000">.</FONT>Pos1 = mul(float4(vPos, <FONT COLOR="#FF0000">1.0</FONT>), g_mWorldViewProjection);
+ 507:     vPos += vTangent * SCALE;
+ 508:     Output<FONT COLOR="#FF0000">.</FONT>Pos3 = mul(float4(vPos, <FONT COLOR="#FF0000">1.0</FONT>), g_mWorldViewProjection);
+ 509:     vPos -= vBinormal * SCALE;
+ 510:     Output<FONT COLOR="#FF0000">.</FONT>Pos2 = mul(float4(vPos, <FONT COLOR="#FF0000">1.0</FONT>), g_mWorldViewProjection);
+ 511:     
+ 512:     <FONT COLOR="#0000FF">return</FONT> Output;    
+ 513: }
+ 514: <FONT COLOR="#008040">//--------------------------------------------------------------------------------------</FONT>
+ 515: [maxvertexcount(<FONT COLOR="#FF0000">4</FONT>)]
+ 516: <FONT COLOR="#0000FF">void</FONT> RenderSceneSnowGS( point GS_SNOW_IN input[<FONT COLOR="#FF0000">1</FONT>], inout TriangleStream&lt;GS_OUTPUT_SNOW&gt; OutputStream )
+ 517: {
+ 518: 	GS_OUTPUT_SNOW output;
+ 519: 	
+ 520: 	output<FONT COLOR="#FF0000">.</FONT>Position = input[<FONT COLOR="#FF0000">0</FONT>]<FONT COLOR="#FF0000">.</FONT>Pos0;
+ 521: 	output<FONT COLOR="#FF0000">.</FONT>TextureUV = float2(<FONT COLOR="#FF0000">0</FONT>,<FONT COLOR="#FF0000">0</FONT>);
+ 522:     OutputStream<FONT COLOR="#FF0000">.</FONT>Append( output );
+ 523:     
+ 524: 	output<FONT COLOR="#FF0000">.</FONT>Position = input[<FONT COLOR="#FF0000">0</FONT>]<FONT COLOR="#FF0000">.</FONT>Pos1;
+ 525: 	output<FONT COLOR="#FF0000">.</FONT>TextureUV = float2(<FONT COLOR="#FF0000">0</FONT>,<FONT COLOR="#FF0000">1</FONT>);
+ 526:     OutputStream<FONT COLOR="#FF0000">.</FONT>Append( output );
+ 527: 	
+ 528: 	output<FONT COLOR="#FF0000">.</FONT>Position = input[<FONT COLOR="#FF0000">0</FONT>]<FONT COLOR="#FF0000">.</FONT>Pos2;
+ 529: 	output<FONT COLOR="#FF0000">.</FONT>TextureUV = float2(<FONT COLOR="#FF0000">1</FONT>,<FONT COLOR="#FF0000">0</FONT>);
+ 530:     OutputStream<FONT COLOR="#FF0000">.</FONT>Append( output );
+ 531: 	
+ 532: 	output<FONT COLOR="#FF0000">.</FONT>Position = input[<FONT COLOR="#FF0000">0</FONT>]<FONT COLOR="#FF0000">.</FONT>Pos3;
+ 533: 	output<FONT COLOR="#FF0000">.</FONT>TextureUV = float2(<FONT COLOR="#FF0000">1</FONT>,<FONT COLOR="#FF0000">1</FONT>);
+ 534:     OutputStream<FONT COLOR="#FF0000">.</FONT>Append( output );
+ 535: 
+ 536:     OutputStream<FONT COLOR="#FF0000">.</FONT>RestartStrip();
+ 537: }
+ 538: <FONT COLOR="#008040">//--------------------------------------------------------------------------------------</FONT>
+ 539: float4 RenderSceneSnowPS( GS_OUTPUT_SNOW In ) : SV_Target
+ 540: { 
+ 541: 	<FONT COLOR="#0000FF">float</FONT> tex = g_MeshTexture<FONT COLOR="#FF0000">.</FONT>Sample(MeshTextureSampler, In<FONT COLOR="#FF0000">.</FONT>TextureUV)<FONT COLOR="#FF0000">.</FONT>r;
+ 542: 	clip(tex - <FONT COLOR="#FF0000">0.9</FONT> );
+ 543: 
+ 544:     <FONT COLOR="#0000FF">return</FONT> float4(tex,tex,tex,<FONT COLOR="#FF0000">1</FONT>);
+ 545: }
+ 546: <FONT COLOR="#008040">//--------------------------------------------------------------------------------------</FONT>
+ 547: technique10 RenderSceneSnow
+ 548: {
+ 549:     pass P0
+ 550:     {       
+ 551: 		SetVertexShader( CompileShader( vs_4_0, RenderSceneSnowVS() ) );
+ 552:         SetGeometryShader( CompileShader( gs_4_0, RenderSceneSnowGS() ) );
+ 553:         SetPixelShader( CompileShader( ps_4_0, RenderSceneSnowPS() ) );
+ 554:         
+ 555:         SetDepthStencilState( NoWriteDepth, <FONT COLOR="#FF0000">0</FONT> );
+ 556:         SetRasterizerState( CullNone );  
+ 557:     }
+ 558: }
+ 559: <FONT COLOR="#008040">//--------------------------------------------------------------------------------------</FONT>
+ 560: VS_OUTPUT RenderSceneDepthVS( float4 vPos : POSITION, 
+ 561:                          float3 vNormal : NORMAL,
+ 562:                          float2 vTexCoord0 : TEXCOORD0 )
+ 563: {
+ 564:     VS_OUTPUT Output;
+ 565:     
+ 566:     Output<FONT COLOR="#FF0000">.</FONT>Position = mul(vPos, g_mWorldViewProjection);
+ 567:     Output<FONT COLOR="#FF0000">.</FONT>Diffuse = <FONT COLOR="#FF0000">0</FONT>;   
+ 568:     Output<FONT COLOR="#FF0000">.</FONT>TextureUV<FONT COLOR="#FF0000">.</FONT>r = Output<FONT COLOR="#FF0000">.</FONT>Position<FONT COLOR="#FF0000">.</FONT>z;
+ 569:     Output<FONT COLOR="#FF0000">.</FONT>TextureUV<FONT COLOR="#FF0000">.</FONT>g = <FONT COLOR="#FF0000">0</FONT>;
+ 570:     
+ 571:     <FONT COLOR="#0000FF">return</FONT> Output;    
+ 572: }
+ 573: 
+ 574: float4 RenderSceneDepthPS( VS_OUTPUT In ) : SV_Target
+ 575: { 
+ 576:     <FONT COLOR="#0000FF">return</FONT> In<FONT COLOR="#FF0000">.</FONT>TextureUV<FONT COLOR="#FF0000">.</FONT>rrrr;
+ 577: }
+ 578: 
+ 579: technique10 RenderSceneDepth
+ 580: {
+ 581:     pass P0
+ 582:     {       
+ 583: 		SetVertexShader( CompileShader( vs_4_0, RenderSceneDepthVS() ) );
+ 584:         SetGeometryShader( NULL );
+ 585:         SetPixelShader( CompileShader( ps_4_0, RenderSceneDepthPS() ) );
+ 586:         
+ 587:         SetBlendState( DisableAlphaBlending, float4( <FONT COLOR="#FF0000">0.0</FONT>f, <FONT COLOR="#FF0000">0.0</FONT>f, <FONT COLOR="#FF0000">0.0</FONT>f, <FONT COLOR="#FF0000">0.0</FONT>f ), <FONT COLOR="#FF0000">0xFFFFFFFF</FONT> );
+ 588:         SetDepthStencilState( EnableDepth, <FONT COLOR="#FF0000">0</FONT> );
+ 589:         SetRasterizerState( CullNone );  
+ 590:     }
+ 591: }
+ 592: <FONT COLOR="#008040">//--------------------------------------------------------------------------------------</FONT>
+ 593: VS_OUTPUT RenderSnowMapVS( float4 vPos : POSITION,
+ 594:                          float2 vTexCoord0 : TEXCOORD0 )
+ 595: {
+ 596:     VS_OUTPUT Output = (VS_OUTPUT)<FONT COLOR="#FF0000">0</FONT>;
+ 597:     <FONT COLOR="#0000FF">const</FONT> <FONT COLOR="#0000FF">float</FONT> SNOWMAP_INV = <FONT COLOR="#FF0000">1.0</FONT>/<FONT COLOR="#FF0000">256.0</FONT>;
+ 598:     
+ 599:     <FONT COLOR="#0000FF">float</FONT> bias = g_MeshTexture<FONT COLOR="#FF0000">.</FONT>SampleLevel(MeshTextureSampler, vTexCoord0, <FONT COLOR="#FF0000">0</FONT>)<FONT COLOR="#FF0000">.</FONT>r * <FONT COLOR="#FF0000">2</FONT>;<FONT COLOR="#008040">//  * 2ÇÕÅAéÀâeçsóÒÇÃ(far-near)ÇÃï‚ê≥</FONT>
+ 600:     
+ 601:     <FONT COLOR="#0000FF">float</FONT> bn = g_MeshTexture<FONT COLOR="#FF0000">.</FONT>SampleLevel(MeshTextureSampler, vTexCoord0+float2(<FONT COLOR="#FF0000">0</FONT>,-SNOWMAP_INV), <FONT COLOR="#FF0000">0</FONT>)<FONT COLOR="#FF0000">.</FONT>r * <FONT COLOR="#FF0000">2</FONT>;
+ 602:     <FONT COLOR="#0000FF">float</FONT> bs = g_MeshTexture<FONT COLOR="#FF0000">.</FONT>SampleLevel(MeshTextureSampler, vTexCoord0+float2(<FONT COLOR="#FF0000">0</FONT>, SNOWMAP_INV), <FONT COLOR="#FF0000">0</FONT>)<FONT COLOR="#FF0000">.</FONT>r * <FONT COLOR="#FF0000">2</FONT>;
+ 603:     <FONT COLOR="#0000FF">float</FONT> be = g_MeshTexture<FONT COLOR="#FF0000">.</FONT>SampleLevel(MeshTextureSampler, vTexCoord0+float2(-SNOWMAP_INV,<FONT COLOR="#FF0000">0</FONT>), <FONT COLOR="#FF0000">0</FONT>)<FONT COLOR="#FF0000">.</FONT>r * <FONT COLOR="#FF0000">2</FONT>;
+ 604:     <FONT COLOR="#0000FF">float</FONT> bw = g_MeshTexture<FONT COLOR="#FF0000">.</FONT>SampleLevel(MeshTextureSampler, vTexCoord0+float2( SNOWMAP_INV,<FONT COLOR="#FF0000">0</FONT>), <FONT COLOR="#FF0000">0</FONT>)<FONT COLOR="#FF0000">.</FONT>r * <FONT COLOR="#FF0000">2</FONT>;
+ 605:     
+ 606:     
+ 607:     vPos<FONT COLOR="#FF0000">.</FONT>y -= bias * <FONT COLOR="#FF0000">0.99</FONT>f;
+ 608:     Output<FONT COLOR="#FF0000">.</FONT>Position = mul(vPos, g_mWorldViewProjection);
+ 609:     Output<FONT COLOR="#FF0000">.</FONT>Diffuse<FONT COLOR="#FF0000">.</FONT>rgb = <FONT COLOR="#FF0000">1</FONT>;
+ 610:     Output<FONT COLOR="#FF0000">.</FONT>Diffuse<FONT COLOR="#FF0000">.</FONT>a = (vPos<FONT COLOR="#FF0000">.</FONT>y &lt; -<FONT COLOR="#FF0000">5.0</FONT>) ? <FONT COLOR="#FF0000">0</FONT>: g_fBaseValue;   
+ 611:     
+ 612:     Output<FONT COLOR="#FF0000">.</FONT>Diffuse<FONT COLOR="#FF0000">.</FONT>a = (g_fCompValue &lt; (bn-bias)*(bn-bias)) ? <FONT COLOR="#FF0000">0</FONT> : Output<FONT COLOR="#FF0000">.</FONT>Diffuse<FONT COLOR="#FF0000">.</FONT>a;   
+ 613:     Output<FONT COLOR="#FF0000">.</FONT>Diffuse<FONT COLOR="#FF0000">.</FONT>a = (g_fCompValue &lt; (bs-bias)*(bs-bias)) ? <FONT COLOR="#FF0000">0</FONT> : Output<FONT COLOR="#FF0000">.</FONT>Diffuse<FONT COLOR="#FF0000">.</FONT>a;   
+ 614:     Output<FONT COLOR="#FF0000">.</FONT>Diffuse<FONT COLOR="#FF0000">.</FONT>a = (g_fCompValue &lt; (be-bias)*(be-bias)) ? <FONT COLOR="#FF0000">0</FONT> : Output<FONT COLOR="#FF0000">.</FONT>Diffuse<FONT COLOR="#FF0000">.</FONT>a;   
+ 615:     Output<FONT COLOR="#FF0000">.</FONT>Diffuse<FONT COLOR="#FF0000">.</FONT>a = (g_fCompValue &lt; (bw-bias)*(bw-bias)) ? <FONT COLOR="#FF0000">0</FONT> : Output<FONT COLOR="#FF0000">.</FONT>Diffuse<FONT COLOR="#FF0000">.</FONT>a;   
+ 616:     
+ 617:     <FONT COLOR="#0000FF">return</FONT> Output;    
+ 618: }
+ 619: 
+ 620: float4 RenderSnowMapPS( VS_OUTPUT In ) : SV_Target
+ 621: {
+ 622: 	clip(In<FONT COLOR="#FF0000">.</FONT>Diffuse<FONT COLOR="#FF0000">.</FONT>a - <FONT COLOR="#FF0000">0.99</FONT>);
+ 623:     <FONT COLOR="#0000FF">return</FONT> In<FONT COLOR="#FF0000">.</FONT>Diffuse;
+ 624: }
+ 625: 
+ 626: technique10 RenderSnowMap
+ 627: {
+ 628:     pass P0
+ 629:     {       
+ 630: 		SetVertexShader( CompileShader( vs_4_0, RenderSnowMapVS() ) );
+ 631:         SetGeometryShader( NULL );
+ 632:         SetPixelShader( CompileShader( ps_4_0, RenderSnowMapPS() ) );
+ 633:         
+ 634:         SetBlendState( SrcAlphaBlending, float4( <FONT COLOR="#FF0000">0.0</FONT>f, <FONT COLOR="#FF0000">0.0</FONT>f, <FONT COLOR="#FF0000">0.0</FONT>f, <FONT COLOR="#FF0000">0.0</FONT>f ), <FONT COLOR="#FF0000">0xFFFFFFFF</FONT> );
+ 635:         SetDepthStencilState( EnableDepth, <FONT COLOR="#FF0000">0</FONT> );
+ 636:         SetRasterizerState( CullNone );  
+ 637:     }
+ 638: }
+</PRE>

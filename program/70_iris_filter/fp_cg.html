@@ -1,0 +1,363 @@
+<HTML>
+<HEAD>
+<TITLE>fp.cg</TITLE>
+<meta name="GENERATOR" content="cpp2html 2.1 by Niisaka">
+<meta http-equiv="Content-Type" content="text/html">
+<meta http-equiv="Content-Style-Type" content="text/css">
+<STYLE TYPE="text/css">
+<!--
+SPAN.comment { color:#008000; font-weight:normal; font-style:normal;}
+SPAN.keyword { color:#0000FF; font-weight:normal; font-style:normal;}
+SPAN.string { color:#600000; font-weight:normal; font-style:normal;}
+SPAN.linenum { color:#A0A0A0; font-weight:normal; font-style:normal;}
+-->
+</STYLE>
+</HEAD>
+<BODY TEXT="#000000" BGCOLOR="#FFFFFF">
+<PRE><SPAN CLASS="linenum">0001:</SPAN> <SPAN CLASS="comment">// ---------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0002:</SPAN> <SPAN CLASS="comment">// 頂点プログラム出力データ</SPAN>
+<SPAN CLASS="linenum">0003:</SPAN> <SPAN CLASS="comment">// ---------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0004:</SPAN> <SPAN CLASS="keyword">struct</SPAN> vert2frag
+<SPAN CLASS="linenum">0005:</SPAN> {
+<SPAN CLASS="linenum">0006:</SPAN>     float4 hpos     : HPOS; <SPAN CLASS="comment">// 頂点座標</SPAN>
+<SPAN CLASS="linenum">0007:</SPAN>     float4 tcoords  : TEX0; <SPAN CLASS="comment">// テクスチャ座標</SPAN>
+<SPAN CLASS="linenum">0008:</SPAN> };
+<SPAN CLASS="linenum">0009:</SPAN> <SPAN CLASS="comment">// ---------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0010:</SPAN> <SPAN CLASS="comment">// フラグメントプログラム</SPAN>
+<SPAN CLASS="linenum">0011:</SPAN> <SPAN CLASS="comment">// ---------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0012:</SPAN> fragout main(vert2frag I
+<SPAN CLASS="linenum">0013:</SPAN>             , uniform texobj2D SrcMap : texunit0
+<SPAN CLASS="linenum">0014:</SPAN>     )
+<SPAN CLASS="linenum">0015:</SPAN> {
+<SPAN CLASS="linenum">0016:</SPAN>     fragout O;
+<SPAN CLASS="linenum">0017:</SPAN>     
+<SPAN CLASS="linenum">0018:</SPAN>     float3 col = {0,0,0};
+<SPAN CLASS="linenum">0019:</SPAN>     
+<SPAN CLASS="linenum">0020:</SPAN>     float2 shift00 = { ( 0.0f+0.5f)/256.0f, ( 0.0f+0.5f)/256.0f};
+<SPAN CLASS="linenum">0021:</SPAN>     float2 shift01 = { ( 1.0f+0.5f)/256.0f, ( 0.0f+0.5f)/256.0f};
+<SPAN CLASS="linenum">0022:</SPAN>     float2 shift02 = { ( 0.0f+0.5f)/256.0f, ( 1.0f+0.5f)/256.0f};
+<SPAN CLASS="linenum">0023:</SPAN>     float2 shift03 = { (-1.0f+0.5f)/256.0f, ( 0.0f+0.5f)/256.0f};
+<SPAN CLASS="linenum">0024:</SPAN>     float2 shift04 = { ( 0.0f+0.5f)/256.0f, (-1.0f+0.5f)/256.0f};
+<SPAN CLASS="linenum">0025:</SPAN>     float2 shift05 = { ( 1.0f+0.5f)/256.0f, ( 1.0f+0.5f)/256.0f};
+<SPAN CLASS="linenum">0026:</SPAN>     float2 shift06 = { (-1.0f+0.5f)/256.0f, ( 1.0f+0.5f)/256.0f};
+<SPAN CLASS="linenum">0027:</SPAN>     float2 shift07 = { ( 1.0f+0.5f)/256.0f, (-1.0f+0.5f)/256.0f};
+<SPAN CLASS="linenum">0028:</SPAN>     float2 shift08 = { (-1.0f+0.5f)/256.0f, (-1.0f+0.5f)/256.0f};
+<SPAN CLASS="linenum">0029:</SPAN>     float2 shift09 = { ( 0.0f+0.5f)/256.0f, ( 2.0f+0.5f)/256.0f};
+<SPAN CLASS="linenum">0030:</SPAN>     float2 shift10 = { ( 0.0f+0.5f)/256.0f, (-2.0f+0.5f)/256.0f};
+<SPAN CLASS="linenum">0031:</SPAN>     float2 shift11 = { ( 0.0f+0.5f)/256.0f, ( 3.0f+0.5f)/256.0f};
+<SPAN CLASS="linenum">0032:</SPAN>     float2 shift12 = { ( 0.0f+0.5f)/256.0f, (-3.0f+0.5f)/256.0f};
+<SPAN CLASS="linenum">0033:</SPAN>     float2 shift13 = { ( 1.0f+0.5f)/256.0f, ( 2.0f+0.5f)/256.0f};
+<SPAN CLASS="linenum">0034:</SPAN>     float2 shift14 = { ( 1.0f+0.5f)/256.0f, (-2.0f+0.5f)/256.0f};
+<SPAN CLASS="linenum">0035:</SPAN>     float2 shift15 = { (-1.0f+0.5f)/256.0f, ( 2.0f+0.5f)/256.0f};
+<SPAN CLASS="linenum">0036:</SPAN>     float2 shift16 = { (-1.0f+0.5f)/256.0f, (-2.0f+0.5f)/256.0f};
+<SPAN CLASS="linenum">0037:</SPAN>     float2 shift17 = { ( 2.0f+0.5f)/256.0f, (-2.0f+0.5f)/256.0f};
+<SPAN CLASS="linenum">0038:</SPAN>     float2 shift18 = { ( 2.0f+0.5f)/256.0f, (-1.0f+0.5f)/256.0f};
+<SPAN CLASS="linenum">0039:</SPAN>     float2 shift19 = { ( 2.0f+0.5f)/256.0f, ( 0.0f+0.5f)/256.0f};
+<SPAN CLASS="linenum">0040:</SPAN>     float2 shift20 = { ( 2.0f+0.5f)/256.0f, ( 1.0f+0.5f)/256.0f};
+<SPAN CLASS="linenum">0041:</SPAN>     float2 shift21 = { ( 2.0f+0.5f)/256.0f, ( 2.0f+0.5f)/256.0f};
+<SPAN CLASS="linenum">0042:</SPAN>     float2 shift22 = { (-2.0f+0.5f)/256.0f, (-2.0f+0.5f)/256.0f};
+<SPAN CLASS="linenum">0043:</SPAN>     float2 shift23 = { (-2.0f+0.5f)/256.0f, (-1.0f+0.5f)/256.0f};
+<SPAN CLASS="linenum">0044:</SPAN>     float2 shift24 = { (-2.0f+0.5f)/256.0f, ( 0.0f+0.5f)/256.0f};
+<SPAN CLASS="linenum">0045:</SPAN>     float2 shift25 = { (-2.0f+0.5f)/256.0f, ( 1.0f+0.5f)/256.0f};
+<SPAN CLASS="linenum">0046:</SPAN>     float2 shift26 = { (-2.0f+0.5f)/256.0f, ( 2.0f+0.5f)/256.0f};
+<SPAN CLASS="linenum">0047:</SPAN>     float2 shift27 = { ( 0.0f+0.5f)/256.0f, ( 4.0f+0.5f)/256.0f};
+<SPAN CLASS="linenum">0048:</SPAN>     float2 shift28 = { ( 0.0f+0.5f)/256.0f, (-4.0f+0.5f)/256.0f};
+<SPAN CLASS="linenum">0049:</SPAN>     float2 shift29 = { ( 1.0f+0.5f)/256.0f, ( 3.0f+0.5f)/256.0f};
+<SPAN CLASS="linenum">0050:</SPAN>     float2 shift30 = { ( 1.0f+0.5f)/256.0f, (-3.0f+0.5f)/256.0f};
+<SPAN CLASS="linenum">0051:</SPAN>     float2 shift31 = { (-1.0f+0.5f)/256.0f, ( 3.0f+0.5f)/256.0f};
+<SPAN CLASS="linenum">0052:</SPAN>     float2 shift32 = { (-1.0f+0.5f)/256.0f, (-3.0f+0.5f)/256.0f};
+<SPAN CLASS="linenum">0053:</SPAN>     float2 shift33 = { ( 3.0f+0.5f)/256.0f, (-2.0f+0.5f)/256.0f};
+<SPAN CLASS="linenum">0054:</SPAN>     float2 shift34 = { ( 3.0f+0.5f)/256.0f, (-1.0f+0.5f)/256.0f};
+<SPAN CLASS="linenum">0055:</SPAN>     float2 shift35 = { ( 3.0f+0.5f)/256.0f, ( 0.0f+0.5f)/256.0f};
+<SPAN CLASS="linenum">0056:</SPAN>     float2 shift36 = { ( 3.0f+0.5f)/256.0f, ( 1.0f+0.5f)/256.0f};
+<SPAN CLASS="linenum">0057:</SPAN>     float2 shift37 = { ( 3.0f+0.5f)/256.0f, ( 2.0f+0.5f)/256.0f};
+<SPAN CLASS="linenum">0058:</SPAN>     float2 shift38 = { (-3.0f+0.5f)/256.0f, (-2.0f+0.5f)/256.0f};
+<SPAN CLASS="linenum">0059:</SPAN>     float2 shift39 = { (-3.0f+0.5f)/256.0f, (-1.0f+0.5f)/256.0f};
+<SPAN CLASS="linenum">0060:</SPAN>     float2 shift40 = { (-3.0f+0.5f)/256.0f, ( 0.0f+0.5f)/256.0f};
+<SPAN CLASS="linenum">0061:</SPAN>     float2 shift41 = { (-3.0f+0.5f)/256.0f, ( 1.0f+0.5f)/256.0f};
+<SPAN CLASS="linenum">0062:</SPAN>     float2 shift42 = { (-3.0f+0.5f)/256.0f, ( 2.0f+0.5f)/256.0f};
+<SPAN CLASS="linenum">0063:</SPAN>     float2 shift43 = { ( 2.0f+0.5f)/256.0f, ( 3.0f+0.5f)/256.0f};
+<SPAN CLASS="linenum">0064:</SPAN>     float2 shift44 = { ( 1.0f+0.5f)/256.0f, ( 4.0f+0.5f)/256.0f};
+<SPAN CLASS="linenum">0065:</SPAN>     float2 shift45 = { ( 0.0f+0.5f)/256.0f, ( 5.0f+0.5f)/256.0f};
+<SPAN CLASS="linenum">0066:</SPAN>     float2 shift46 = { (-1.0f+0.5f)/256.0f, ( 4.0f+0.5f)/256.0f};
+<SPAN CLASS="linenum">0067:</SPAN>     float2 shift47 = { (-2.0f+0.5f)/256.0f, ( 3.0f+0.5f)/256.0f};
+<SPAN CLASS="linenum">0068:</SPAN>     float2 shift48 = { ( 2.0f+0.5f)/256.0f, (-3.0f+0.5f)/256.0f};
+<SPAN CLASS="linenum">0069:</SPAN>     float2 shift49 = { ( 1.0f+0.5f)/256.0f, (-4.0f+0.5f)/256.0f};
+<SPAN CLASS="linenum">0070:</SPAN>     float2 shift50 = { ( 0.0f+0.5f)/256.0f, (-5.0f+0.5f)/256.0f};
+<SPAN CLASS="linenum">0071:</SPAN>     float2 shift51 = { (-1.0f+0.5f)/256.0f, (-4.0f+0.5f)/256.0f};
+<SPAN CLASS="linenum">0072:</SPAN>     float2 shift52 = { (-2.0f+0.5f)/256.0f, (-3.0f+0.5f)/256.0f};
+<SPAN CLASS="linenum">0073:</SPAN> 
+<SPAN CLASS="linenum">0074:</SPAN>     float3 tex00 = f3tex2D( SrcMap, I.tcoords.xy+shift00 );
+<SPAN CLASS="linenum">0075:</SPAN>     col.x += exp(tex00.x);
+<SPAN CLASS="linenum">0076:</SPAN>     col.y += exp(tex00.y);
+<SPAN CLASS="linenum">0077:</SPAN>     col.z += exp(tex00.z);
+<SPAN CLASS="linenum">0078:</SPAN>     
+<SPAN CLASS="linenum">0079:</SPAN>     float3 tex01 = f3tex2D( SrcMap, I.tcoords.xy+shift01 );
+<SPAN CLASS="linenum">0080:</SPAN>     col.x += exp(tex01.x);
+<SPAN CLASS="linenum">0081:</SPAN>     col.y += exp(tex01.y);
+<SPAN CLASS="linenum">0082:</SPAN>     col.z += exp(tex01.z);
+<SPAN CLASS="linenum">0083:</SPAN>     
+<SPAN CLASS="linenum">0084:</SPAN>     float3 tex02 = f3tex2D( SrcMap, I.tcoords.xy+shift02 );
+<SPAN CLASS="linenum">0085:</SPAN>     col.x += exp(tex02.x);
+<SPAN CLASS="linenum">0086:</SPAN>     col.y += exp(tex02.y);
+<SPAN CLASS="linenum">0087:</SPAN>     col.z += exp(tex02.z);
+<SPAN CLASS="linenum">0088:</SPAN>     
+<SPAN CLASS="linenum">0089:</SPAN>     float3 tex03 = f3tex2D( SrcMap, I.tcoords.xy+shift03 );
+<SPAN CLASS="linenum">0090:</SPAN>     col.x += exp(tex03.x);
+<SPAN CLASS="linenum">0091:</SPAN>     col.y += exp(tex03.y);
+<SPAN CLASS="linenum">0092:</SPAN>     col.z += exp(tex03.z);
+<SPAN CLASS="linenum">0093:</SPAN>     
+<SPAN CLASS="linenum">0094:</SPAN>     float3 tex04 = f3tex2D( SrcMap, I.tcoords.xy+shift04 );
+<SPAN CLASS="linenum">0095:</SPAN>     col.x += exp(tex04.x);
+<SPAN CLASS="linenum">0096:</SPAN>     col.y += exp(tex04.y);
+<SPAN CLASS="linenum">0097:</SPAN>     col.z += exp(tex04.z);
+<SPAN CLASS="linenum">0098:</SPAN>     
+<SPAN CLASS="linenum">0099:</SPAN>     float3 tex05 = f3tex2D( SrcMap, I.tcoords.xy+shift05 );
+<SPAN CLASS="linenum">0100:</SPAN>     col.x += exp(tex05.x);
+<SPAN CLASS="linenum">0101:</SPAN>     col.y += exp(tex05.y);
+<SPAN CLASS="linenum">0102:</SPAN>     col.z += exp(tex05.z);
+<SPAN CLASS="linenum">0103:</SPAN>     
+<SPAN CLASS="linenum">0104:</SPAN>     float3 tex06 = f3tex2D( SrcMap, I.tcoords.xy+shift06 );
+<SPAN CLASS="linenum">0105:</SPAN>     col.x += exp(tex06.x);
+<SPAN CLASS="linenum">0106:</SPAN>     col.y += exp(tex06.y);
+<SPAN CLASS="linenum">0107:</SPAN>     col.z += exp(tex06.z);
+<SPAN CLASS="linenum">0108:</SPAN>     
+<SPAN CLASS="linenum">0109:</SPAN>     float3 tex07 = f3tex2D( SrcMap, I.tcoords.xy+shift07 );
+<SPAN CLASS="linenum">0110:</SPAN>     col.x += exp(tex07.x);
+<SPAN CLASS="linenum">0111:</SPAN>     col.y += exp(tex07.y);
+<SPAN CLASS="linenum">0112:</SPAN>     col.z += exp(tex07.z);
+<SPAN CLASS="linenum">0113:</SPAN>     
+<SPAN CLASS="linenum">0114:</SPAN>     float3 tex08 = f3tex2D( SrcMap, I.tcoords.xy+shift08 );
+<SPAN CLASS="linenum">0115:</SPAN>     col.x += exp(tex08.x);
+<SPAN CLASS="linenum">0116:</SPAN>     col.y += exp(tex08.y);
+<SPAN CLASS="linenum">0117:</SPAN>     col.z += exp(tex08.z);
+<SPAN CLASS="linenum">0118:</SPAN>     
+<SPAN CLASS="linenum">0119:</SPAN>     float3 tex09 = f3tex2D( SrcMap, I.tcoords.xy+shift09 );
+<SPAN CLASS="linenum">0120:</SPAN>     col.x += exp(tex09.x);
+<SPAN CLASS="linenum">0121:</SPAN>     col.y += exp(tex09.y);
+<SPAN CLASS="linenum">0122:</SPAN>     col.z += exp(tex09.z);
+<SPAN CLASS="linenum">0123:</SPAN>     
+<SPAN CLASS="linenum">0124:</SPAN>     float3 tex10 = f3tex2D( SrcMap, I.tcoords.xy+shift10 );
+<SPAN CLASS="linenum">0125:</SPAN>     col.x += exp(tex10.x);
+<SPAN CLASS="linenum">0126:</SPAN>     col.y += exp(tex10.y);
+<SPAN CLASS="linenum">0127:</SPAN>     col.z += exp(tex10.z);
+<SPAN CLASS="linenum">0128:</SPAN>     
+<SPAN CLASS="linenum">0129:</SPAN>     float3 tex11 = f3tex2D( SrcMap, I.tcoords.xy+shift11 );
+<SPAN CLASS="linenum">0130:</SPAN>     col.x += exp(tex11.x);
+<SPAN CLASS="linenum">0131:</SPAN>     col.y += exp(tex11.y);
+<SPAN CLASS="linenum">0132:</SPAN>     col.z += exp(tex11.z);
+<SPAN CLASS="linenum">0133:</SPAN>     
+<SPAN CLASS="linenum">0134:</SPAN>     float3 tex12 = f3tex2D( SrcMap, I.tcoords.xy+shift12 );
+<SPAN CLASS="linenum">0135:</SPAN>     col.x += exp(tex12.x);
+<SPAN CLASS="linenum">0136:</SPAN>     col.y += exp(tex12.y);
+<SPAN CLASS="linenum">0137:</SPAN>     col.z += exp(tex12.z);
+<SPAN CLASS="linenum">0138:</SPAN>     
+<SPAN CLASS="linenum">0139:</SPAN>     float3 tex13 = f3tex2D( SrcMap, I.tcoords.xy+shift13 );
+<SPAN CLASS="linenum">0140:</SPAN>     col.x += exp(tex13.x);
+<SPAN CLASS="linenum">0141:</SPAN>     col.y += exp(tex13.y);
+<SPAN CLASS="linenum">0142:</SPAN>     col.z += exp(tex13.z);
+<SPAN CLASS="linenum">0143:</SPAN>     
+<SPAN CLASS="linenum">0144:</SPAN>     float3 tex14 = f3tex2D( SrcMap, I.tcoords.xy+shift14 );
+<SPAN CLASS="linenum">0145:</SPAN>     col.x += exp(tex14.x);
+<SPAN CLASS="linenum">0146:</SPAN>     col.y += exp(tex14.y);
+<SPAN CLASS="linenum">0147:</SPAN>     col.z += exp(tex14.z);
+<SPAN CLASS="linenum">0148:</SPAN>     
+<SPAN CLASS="linenum">0149:</SPAN>     float3 tex15 = f3tex2D( SrcMap, I.tcoords.xy+shift15 );
+<SPAN CLASS="linenum">0150:</SPAN>     col.x += exp(tex15.x);
+<SPAN CLASS="linenum">0151:</SPAN>     col.y += exp(tex15.y);
+<SPAN CLASS="linenum">0152:</SPAN>     col.z += exp(tex15.z);
+<SPAN CLASS="linenum">0153:</SPAN>     
+<SPAN CLASS="linenum">0154:</SPAN>     float3 tex16 = f3tex2D( SrcMap, I.tcoords.xy+shift16 );
+<SPAN CLASS="linenum">0155:</SPAN>     col.x += exp(tex16.x);
+<SPAN CLASS="linenum">0156:</SPAN>     col.y += exp(tex16.y);
+<SPAN CLASS="linenum">0157:</SPAN>     col.z += exp(tex16.z);
+<SPAN CLASS="linenum">0158:</SPAN>     
+<SPAN CLASS="linenum">0159:</SPAN>     float3 tex17 = f3tex2D( SrcMap, I.tcoords.xy+shift17 );
+<SPAN CLASS="linenum">0160:</SPAN>     col.x += exp(tex17.x);
+<SPAN CLASS="linenum">0161:</SPAN>     col.y += exp(tex17.y);
+<SPAN CLASS="linenum">0162:</SPAN>     col.z += exp(tex17.z);
+<SPAN CLASS="linenum">0163:</SPAN>     
+<SPAN CLASS="linenum">0164:</SPAN>     float3 tex18 = f3tex2D( SrcMap, I.tcoords.xy+shift18 );
+<SPAN CLASS="linenum">0165:</SPAN>     col.x += exp(tex18.x);
+<SPAN CLASS="linenum">0166:</SPAN>     col.y += exp(tex18.y);
+<SPAN CLASS="linenum">0167:</SPAN>     col.z += exp(tex18.z);
+<SPAN CLASS="linenum">0168:</SPAN>     
+<SPAN CLASS="linenum">0169:</SPAN>     float3 tex19 = f3tex2D( SrcMap, I.tcoords.xy+shift19 );
+<SPAN CLASS="linenum">0170:</SPAN>     col.x += exp(tex19.x);
+<SPAN CLASS="linenum">0171:</SPAN>     col.y += exp(tex19.y);
+<SPAN CLASS="linenum">0172:</SPAN>     col.z += exp(tex19.z);
+<SPAN CLASS="linenum">0173:</SPAN>     
+<SPAN CLASS="linenum">0174:</SPAN>     float3 tex20 = f3tex2D( SrcMap, I.tcoords.xy+shift20 );
+<SPAN CLASS="linenum">0175:</SPAN>     col.x += exp(tex20.x);
+<SPAN CLASS="linenum">0176:</SPAN>     col.y += exp(tex20.y);
+<SPAN CLASS="linenum">0177:</SPAN>     col.z += exp(tex20.z);
+<SPAN CLASS="linenum">0178:</SPAN>     
+<SPAN CLASS="linenum">0179:</SPAN>     float3 tex21 = f3tex2D( SrcMap, I.tcoords.xy+shift21 );
+<SPAN CLASS="linenum">0180:</SPAN>     col.x += exp(tex21.x);
+<SPAN CLASS="linenum">0181:</SPAN>     col.y += exp(tex21.y);
+<SPAN CLASS="linenum">0182:</SPAN>     col.z += exp(tex21.z);
+<SPAN CLASS="linenum">0183:</SPAN>     
+<SPAN CLASS="linenum">0184:</SPAN>     float3 tex22 = f3tex2D( SrcMap, I.tcoords.xy+shift22 );
+<SPAN CLASS="linenum">0185:</SPAN>     col.x += exp(tex22.x);
+<SPAN CLASS="linenum">0186:</SPAN>     col.y += exp(tex22.y);
+<SPAN CLASS="linenum">0187:</SPAN>     col.z += exp(tex22.z);
+<SPAN CLASS="linenum">0188:</SPAN>     
+<SPAN CLASS="linenum">0189:</SPAN>     float3 tex23 = f3tex2D( SrcMap, I.tcoords.xy+shift23 );
+<SPAN CLASS="linenum">0190:</SPAN>     col.x += exp(tex23.x);
+<SPAN CLASS="linenum">0191:</SPAN>     col.y += exp(tex23.y);
+<SPAN CLASS="linenum">0192:</SPAN>     col.z += exp(tex23.z);
+<SPAN CLASS="linenum">0193:</SPAN>     
+<SPAN CLASS="linenum">0194:</SPAN>     float3 tex24 = f3tex2D( SrcMap, I.tcoords.xy+shift24 );
+<SPAN CLASS="linenum">0195:</SPAN>     col.x += exp(tex24.x);
+<SPAN CLASS="linenum">0196:</SPAN>     col.y += exp(tex24.y);
+<SPAN CLASS="linenum">0197:</SPAN>     col.z += exp(tex24.z);
+<SPAN CLASS="linenum">0198:</SPAN>     
+<SPAN CLASS="linenum">0199:</SPAN>     float3 tex25 = f3tex2D( SrcMap, I.tcoords.xy+shift25 );
+<SPAN CLASS="linenum">0200:</SPAN>     col.x += exp(tex25.x);
+<SPAN CLASS="linenum">0201:</SPAN>     col.y += exp(tex25.y);
+<SPAN CLASS="linenum">0202:</SPAN>     col.z += exp(tex25.z);
+<SPAN CLASS="linenum">0203:</SPAN>     
+<SPAN CLASS="linenum">0204:</SPAN>     float3 tex26 = f3tex2D( SrcMap, I.tcoords.xy+shift26 );
+<SPAN CLASS="linenum">0205:</SPAN>     col.x += exp(tex26.x);
+<SPAN CLASS="linenum">0206:</SPAN>     col.y += exp(tex26.y);
+<SPAN CLASS="linenum">0207:</SPAN>     col.z += exp(tex26.z);
+<SPAN CLASS="linenum">0208:</SPAN>     
+<SPAN CLASS="linenum">0209:</SPAN>     float3 tex27 = f3tex2D( SrcMap, I.tcoords.xy+shift27 );
+<SPAN CLASS="linenum">0210:</SPAN>     col.x += exp(tex27.x);
+<SPAN CLASS="linenum">0211:</SPAN>     col.y += exp(tex27.y);
+<SPAN CLASS="linenum">0212:</SPAN>     col.z += exp(tex27.z);
+<SPAN CLASS="linenum">0213:</SPAN>     
+<SPAN CLASS="linenum">0214:</SPAN>     float3 tex28 = f3tex2D( SrcMap, I.tcoords.xy+shift28 );
+<SPAN CLASS="linenum">0215:</SPAN>     col.x += exp(tex28.x);
+<SPAN CLASS="linenum">0216:</SPAN>     col.y += exp(tex28.y);
+<SPAN CLASS="linenum">0217:</SPAN>     col.z += exp(tex28.z);
+<SPAN CLASS="linenum">0218:</SPAN>     
+<SPAN CLASS="linenum">0219:</SPAN>     float3 tex29 = f3tex2D( SrcMap, I.tcoords.xy+shift29 );
+<SPAN CLASS="linenum">0220:</SPAN>     col.x += exp(tex29.x);
+<SPAN CLASS="linenum">0221:</SPAN>     col.y += exp(tex29.y);
+<SPAN CLASS="linenum">0222:</SPAN>     col.z += exp(tex29.z);
+<SPAN CLASS="linenum">0223:</SPAN>     
+<SPAN CLASS="linenum">0224:</SPAN>     float3 tex30 = f3tex2D( SrcMap, I.tcoords.xy+shift30 );
+<SPAN CLASS="linenum">0225:</SPAN>     col.x += exp(tex30.x);
+<SPAN CLASS="linenum">0226:</SPAN>     col.y += exp(tex30.y);
+<SPAN CLASS="linenum">0227:</SPAN>     col.z += exp(tex30.z);
+<SPAN CLASS="linenum">0228:</SPAN>     
+<SPAN CLASS="linenum">0229:</SPAN>     float3 tex31 = f3tex2D( SrcMap, I.tcoords.xy+shift31 );
+<SPAN CLASS="linenum">0230:</SPAN>     col.x += exp(tex31.x);
+<SPAN CLASS="linenum">0231:</SPAN>     col.y += exp(tex31.y);
+<SPAN CLASS="linenum">0232:</SPAN>     col.z += exp(tex31.z);
+<SPAN CLASS="linenum">0233:</SPAN>     
+<SPAN CLASS="linenum">0234:</SPAN>     float3 tex32 = f3tex2D( SrcMap, I.tcoords.xy+shift32 );
+<SPAN CLASS="linenum">0235:</SPAN>     col.x += exp(tex32.x);
+<SPAN CLASS="linenum">0236:</SPAN>     col.y += exp(tex32.y);
+<SPAN CLASS="linenum">0237:</SPAN>     col.z += exp(tex32.z);
+<SPAN CLASS="linenum">0238:</SPAN>     
+<SPAN CLASS="linenum">0239:</SPAN>     float3 tex33 = f3tex2D( SrcMap, I.tcoords.xy+shift33 );
+<SPAN CLASS="linenum">0240:</SPAN>     col.x += exp(tex33.x);
+<SPAN CLASS="linenum">0241:</SPAN>     col.y += exp(tex33.y);
+<SPAN CLASS="linenum">0242:</SPAN>     col.z += exp(tex33.z);
+<SPAN CLASS="linenum">0243:</SPAN>     
+<SPAN CLASS="linenum">0244:</SPAN>     float3 tex34 = f3tex2D( SrcMap, I.tcoords.xy+shift34 );
+<SPAN CLASS="linenum">0245:</SPAN>     col.x += exp(tex34.x);
+<SPAN CLASS="linenum">0246:</SPAN>     col.y += exp(tex34.y);
+<SPAN CLASS="linenum">0247:</SPAN>     col.z += exp(tex34.z);
+<SPAN CLASS="linenum">0248:</SPAN>     
+<SPAN CLASS="linenum">0249:</SPAN>     float3 tex35 = f3tex2D( SrcMap, I.tcoords.xy+shift35 );
+<SPAN CLASS="linenum">0250:</SPAN>     col.x += exp(tex35.x);
+<SPAN CLASS="linenum">0251:</SPAN>     col.y += exp(tex35.y);
+<SPAN CLASS="linenum">0252:</SPAN>     col.z += exp(tex35.z);
+<SPAN CLASS="linenum">0253:</SPAN>     
+<SPAN CLASS="linenum">0254:</SPAN>     float3 tex36 = f3tex2D( SrcMap, I.tcoords.xy+shift36 );
+<SPAN CLASS="linenum">0255:</SPAN>     col.x += exp(tex36.x);
+<SPAN CLASS="linenum">0256:</SPAN>     col.y += exp(tex36.y);
+<SPAN CLASS="linenum">0257:</SPAN>     col.z += exp(tex36.z);
+<SPAN CLASS="linenum">0258:</SPAN>     
+<SPAN CLASS="linenum">0259:</SPAN>     float3 tex37 = f3tex2D( SrcMap, I.tcoords.xy+shift37 );
+<SPAN CLASS="linenum">0260:</SPAN>     col.x += exp(tex37.x);
+<SPAN CLASS="linenum">0261:</SPAN>     col.y += exp(tex37.y);
+<SPAN CLASS="linenum">0262:</SPAN>     col.z += exp(tex37.z);
+<SPAN CLASS="linenum">0263:</SPAN>     
+<SPAN CLASS="linenum">0264:</SPAN>     float3 tex38 = f3tex2D( SrcMap, I.tcoords.xy+shift38 );
+<SPAN CLASS="linenum">0265:</SPAN>     col.x += exp(tex38.x);
+<SPAN CLASS="linenum">0266:</SPAN>     col.y += exp(tex38.y);
+<SPAN CLASS="linenum">0267:</SPAN>     col.z += exp(tex38.z);
+<SPAN CLASS="linenum">0268:</SPAN>     
+<SPAN CLASS="linenum">0269:</SPAN>     float3 tex39 = f3tex2D( SrcMap, I.tcoords.xy+shift39 );
+<SPAN CLASS="linenum">0270:</SPAN>     col.x += exp(tex39.x);
+<SPAN CLASS="linenum">0271:</SPAN>     col.y += exp(tex39.y);
+<SPAN CLASS="linenum">0272:</SPAN>     col.z += exp(tex39.z);
+<SPAN CLASS="linenum">0273:</SPAN>     
+<SPAN CLASS="linenum">0274:</SPAN>     float3 tex40 = f3tex2D( SrcMap, I.tcoords.xy+shift40 );
+<SPAN CLASS="linenum">0275:</SPAN>     col.x += exp(tex40.x);
+<SPAN CLASS="linenum">0276:</SPAN>     col.y += exp(tex40.y);
+<SPAN CLASS="linenum">0277:</SPAN>     col.z += exp(tex40.z);
+<SPAN CLASS="linenum">0278:</SPAN>     
+<SPAN CLASS="linenum">0279:</SPAN>     float3 tex41 = f3tex2D( SrcMap, I.tcoords.xy+shift41 );
+<SPAN CLASS="linenum">0280:</SPAN>     col.x += exp(tex41.x);
+<SPAN CLASS="linenum">0281:</SPAN>     col.y += exp(tex41.y);
+<SPAN CLASS="linenum">0282:</SPAN>     col.z += exp(tex41.z);
+<SPAN CLASS="linenum">0283:</SPAN>     
+<SPAN CLASS="linenum">0284:</SPAN>     float3 tex42 = f3tex2D( SrcMap, I.tcoords.xy+shift42 );
+<SPAN CLASS="linenum">0285:</SPAN>     col.x += exp(tex42.x);
+<SPAN CLASS="linenum">0286:</SPAN>     col.y += exp(tex42.y);
+<SPAN CLASS="linenum">0287:</SPAN>     col.z += exp(tex42.z);
+<SPAN CLASS="linenum">0288:</SPAN>     
+<SPAN CLASS="linenum">0289:</SPAN>     float3 tex43 = f3tex2D( SrcMap, I.tcoords.xy+shift43 );
+<SPAN CLASS="linenum">0290:</SPAN>     col.x += exp(tex43.x);
+<SPAN CLASS="linenum">0291:</SPAN>     col.y += exp(tex43.y);
+<SPAN CLASS="linenum">0292:</SPAN>     col.z += exp(tex43.z);
+<SPAN CLASS="linenum">0293:</SPAN>     
+<SPAN CLASS="linenum">0294:</SPAN>     float3 tex44 = f3tex2D( SrcMap, I.tcoords.xy+shift44 );
+<SPAN CLASS="linenum">0295:</SPAN>     col.x += exp(tex44.x);
+<SPAN CLASS="linenum">0296:</SPAN>     col.y += exp(tex44.y);
+<SPAN CLASS="linenum">0297:</SPAN>     col.z += exp(tex44.z);
+<SPAN CLASS="linenum">0298:</SPAN>     
+<SPAN CLASS="linenum">0299:</SPAN>     float3 tex45 = f3tex2D( SrcMap, I.tcoords.xy+shift45 );
+<SPAN CLASS="linenum">0300:</SPAN>     col.x += exp(tex45.x);
+<SPAN CLASS="linenum">0301:</SPAN>     col.y += exp(tex45.y);
+<SPAN CLASS="linenum">0302:</SPAN>     col.z += exp(tex45.z);
+<SPAN CLASS="linenum">0303:</SPAN>     
+<SPAN CLASS="linenum">0304:</SPAN>     float3 tex46 = f3tex2D( SrcMap, I.tcoords.xy+shift46 );
+<SPAN CLASS="linenum">0305:</SPAN>     col.x += exp(tex46.x);
+<SPAN CLASS="linenum">0306:</SPAN>     col.y += exp(tex46.y);
+<SPAN CLASS="linenum">0307:</SPAN>     col.z += exp(tex46.z);
+<SPAN CLASS="linenum">0308:</SPAN>     
+<SPAN CLASS="linenum">0309:</SPAN>     float3 tex47 = f3tex2D( SrcMap, I.tcoords.xy+shift47 );
+<SPAN CLASS="linenum">0310:</SPAN>     col.x += exp(tex47.x);
+<SPAN CLASS="linenum">0311:</SPAN>     col.y += exp(tex47.y);
+<SPAN CLASS="linenum">0312:</SPAN>     col.z += exp(tex47.z);
+<SPAN CLASS="linenum">0313:</SPAN>     
+<SPAN CLASS="linenum">0314:</SPAN>     float3 tex48 = f3tex2D( SrcMap, I.tcoords.xy+shift48 );
+<SPAN CLASS="linenum">0315:</SPAN>     col.x += exp(tex48.x);
+<SPAN CLASS="linenum">0316:</SPAN>     col.y += exp(tex48.y);
+<SPAN CLASS="linenum">0317:</SPAN>     col.z += exp(tex48.z);
+<SPAN CLASS="linenum">0318:</SPAN>     
+<SPAN CLASS="linenum">0319:</SPAN>     float3 tex49 = f3tex2D( SrcMap, I.tcoords.xy+shift49 );
+<SPAN CLASS="linenum">0320:</SPAN>     col.x += exp(tex49.x);
+<SPAN CLASS="linenum">0321:</SPAN>     col.y += exp(tex49.y);
+<SPAN CLASS="linenum">0322:</SPAN>     col.z += exp(tex49.z);
+<SPAN CLASS="linenum">0323:</SPAN>     
+<SPAN CLASS="linenum">0324:</SPAN>     float3 tex50 = f3tex2D( SrcMap, I.tcoords.xy+shift50 );
+<SPAN CLASS="linenum">0325:</SPAN>     col.x += exp(tex50.x);
+<SPAN CLASS="linenum">0326:</SPAN>     col.y += exp(tex50.y);
+<SPAN CLASS="linenum">0327:</SPAN>     col.z += exp(tex50.z);
+<SPAN CLASS="linenum">0328:</SPAN>     
+<SPAN CLASS="linenum">0329:</SPAN>     float3 tex51 = f3tex2D( SrcMap, I.tcoords.xy+shift51 );
+<SPAN CLASS="linenum">0330:</SPAN>     col.x += exp(tex51.x);
+<SPAN CLASS="linenum">0331:</SPAN>     col.y += exp(tex51.y);
+<SPAN CLASS="linenum">0332:</SPAN>     col.z += exp(tex51.z);
+<SPAN CLASS="linenum">0333:</SPAN>     
+<SPAN CLASS="linenum">0334:</SPAN>     float3 tex52 = f3tex2D( SrcMap, I.tcoords.xy+shift52 );
+<SPAN CLASS="linenum">0335:</SPAN>     col.x += exp(tex52.x);
+<SPAN CLASS="linenum">0336:</SPAN>     col.y += exp(tex52.y);
+<SPAN CLASS="linenum">0337:</SPAN>     col.z += exp(tex52.z);
+<SPAN CLASS="linenum">0338:</SPAN>     
+<SPAN CLASS="linenum">0339:</SPAN>     O.col.x = log(col.x/53.0f);
+<SPAN CLASS="linenum">0340:</SPAN>     O.col.y = log(col.y/53.0f);
+<SPAN CLASS="linenum">0341:</SPAN>     O.col.z = log(col.z/53.0f);
+<SPAN CLASS="linenum">0342:</SPAN>     
+<SPAN CLASS="linenum">0343:</SPAN>     <SPAN CLASS="keyword">return</SPAN> O;
+<SPAN CLASS="linenum">0344:</SPAN> } 
+<SPAN CLASS="linenum">0345:</SPAN> </PRE>
+</BODY>
+</HTML>

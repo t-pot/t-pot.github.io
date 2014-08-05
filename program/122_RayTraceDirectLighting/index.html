@@ -1,0 +1,315 @@
+<head>
+	<title>t-pot『Ray Tracing : Explicit Direct Lighting』</title>
+	<link rel="stylesheet" type="text/css" href="../if.css">
+</head>
+<meta http-equiv=Content-Type content="text/html; charset=shift_jis">
+<body>
+
+
+<div class="contents">
+<center>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<h1>レイトレース：直接照明</h1><br>
+<h3>～ Ray Tracing : Explicit Direct Lighting ～</h3>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<image src = "title.png">
+<br>
+<hr>
+<br>
+<p>
+下の画像をクリックすると、飛ばすレイの数を指数関数的に増やした場合の変化をアニメーションとして見れます<br>
+(最初のほうの色がおかしいのはgifの変換のせいです)。<br>
+<a href="anim.gif"><image src = "title.png" width = "10%" height = "10%"></a>
+</p>
+<hr>
+</center>
+<div>
+
+
+<h2>■はじめに</h2>
+
+
+<p>
+<a href="http://if.dynsite.net/t-pot/program/121_RayTraceThinLens/index.html">前回</a>のネタを<a href="http://groups.yahoo.co.jp/group/rend-algo/">rend-algo</a>で宣伝したところ、
+<a href="http://lucille.sourceforge.net/blog/">藤田さん</a>から<a href="http://groups.yahoo.co.jp/group/rend-algo/message/334">「遅っせーよ(意訳)」</a>というコメントをいただきました。
+ということで、高速化を少し頑張ろうと思い、拡散反射光に関して光源からの寄与を直接評価する直接照明の技法を取り入れて見ました。
+</p>
+<p>
+今回のプログラムは、次のものです。
+</p>
+<ul style = "LIST-STYLE-TYPE:none">
+<li><a href="src.zip">src.zip (レイトレース:MFC, DirectX9.0c)</a>
+</ul>
+
+<p>
+まぁ、いつものように適当にファイルが入っています。
+/p>
+<table>
+<tr><td><a href="render_cpp.html">render.cpp</a></td><td>レイトレ用の描画関数群</td></tr>
+<tr><td><a href="render_h.html">render.h</a></td><td>レイトレ用の描画関数群</td></tr>
+<tr><td><a href="prim_cpp.html">prim.cpp</a></td><td>オブジェクトのデータのための関数</td></tr>
+<tr><td><a href="prim_h.html">prim.h</a></td><td>オブジェクトのデータのための関数</td></tr>
+<tr><td><a href="ShapeData_cpp.html">ShapeData.cpp</a></td><td>オブジェクトの実データ</td></tr>
+<tr><td><a href="mainDlg_cpp.html">mainDlg.cpp</a></td><td>ダイアログを管理するクラスのメソッドが書かれたファイル</td></tr>
+<tr><td><a href="mainDlg_h.html">mainDlg.h</a></td><td>ダイアログを管理するクラスのヘッダ</td></tr>
+<tr><td><a href="main_h.html">main.h</a></td><td>メイン関数</td></tr>
+<tr><td><a href="main_cpp.html">main.cpp</a></td><td>メイン関数</td></tr>
+<tr><td><a href="StdAfx_h.html">StdAfx.h</a></td><td>標準のシステム インクルード ファイルとか</td></tr>
+<tr><td><a href="StdAfx_cpp.html">StdAfx.cpp</a></td>標準インクルードファイルを含むソース ファイル<td></td></tr>
+<tr><td><a href="resource_h.html">resource.h</a></td><td>アイコンなどのＩＤが描いてあるヘッダ</td></tr>
+
+<tr><td><a href="my_include_h.html">common/my_include_h.html</a></td><td>ヘッダファイルの寄せ集め</td></tr>
+<tr><td><a href="my_types_h.html">common/my_types_h.html</a></td><td>環境の依存性をなくすためのオレ様型定義</td></tr>
+<tr><td><a href="CThread_h.html">common/system/CThread.h</a></td><td>work pile マルチスレッド</td></tr>
+<tr><td><a href="CThread_cpp.html">common/system/CThread.cpp</a></td><td>work pile マルチスレッド</td></tr>
+<tr><td><a href="CBitmap_h.html">common/graphics/CBitmap.h</a></td><td>BMP保存用の関数</td></tr>
+<tr><td><a href="CBitmap_cpp.html">common/graphics/CBitmap.cpp</a></td><td>BMP保存用の関数</td></tr>
+<tr><td><a href="CRand_h.html">common/math/CRand.h</a></td><td>MTによる乱数</td></tr>
+<tr><td><a href="CColor_h.html">common/math/CColor.h</a></td><td>色を統一的に処理する(予定の)ための色クラス</td></tr>
+</table>
+
+<p>
+あと、実行ファイル、リソースファイル、プロジェクトファイルが入っています。
+</p>
+
+
+<h2>■何やってるの？</h2>
+
+
+<p>
+今回は、拡散反射の評価方法が今までと違います。<br>
+今までは、拡散反射する面にあたったら、当たった面の法線を基準に２πsrの範囲でランダムに向きを選んで、
+レイを（反射係数を出力に乗算して）別の方向に飛ばしていました。<br>
+今回は、拡散反射面にレイがあったら、レイを２つに分岐させます。
+１つは、光源方向に飛ばし、もうひとつは、今までと同じようにランダムに飛ばします。
+ただし、２つめのレイは直接光源に飛ぶものは無視します。
+<p>
+<img src="howto.png">
+</p>
+今回のモデルは、光源が３つの３角形からなっています。
+１つめのレイは３角形の面積に応じてどちらの光源に飛ばすのか選択し、
+さらに３角形の何所を目指して飛ぶのかランダムに決定して飛ばします。<br>
+反射面から光源へ向けてレイを飛ばしたときに、他の物体と交差したら、その寄与を０とし、
+交差せずに光源に届いたら、光源の寄与を追加します。<br>
+光源の何所に向けるのかはランダムに決まるので、このレイの結果もランダムなのですが、
+結果がランダムになるのは半影の部分なので、ほとんどの場所で１発目のレイで寄与が求まります(被写界深度の効果は１発では決まりません)。
+</p>
+<p>
+レイの寄与ですが、立体角の定義が役に立ちます。<br>
+立体角は、物体を１[m]はなれたところから見たときの面積です。
+つまり、光源の面積を反射面までの距離で割れば、光源が反射面の視界を覆う立体角がわかります（この計算は近似的なものです。曲がった空間への射影を考えなくてはならないので、正確な結果を得るためには、光源の３角形を細かく分割して、それぞれを射影したときの面積を計算するなどしなくてはなりません）。<br>
+半天球の立体角は２πsrなので、
+</p>
+<pre class="CodeBlock">
+光源からの光の強さ = (光源が覆う立体角 / ２π) * V(反射面, 光源の点) * 光源のつよさ
+                   = (光源の面積 * cosθ / ２πd<sup>2</sup>) * V(反射面, 光源の点) * 光源のつよさ
+</pre>
+<p>
+になります。ここで、θは光源へ飛ばしたレイと光源の法線ベクトルのなす角度で、dは反射面から光源上の点までの距離です。V(x,x')は可視関数で、xからx'へレイを飛ばしたときに何もぶつからずに飛べれば1、さえぎられれば0となる関数です。
+</p>
+<p>
+まぁ、プログラムでは、次のようになっています。
+</p>
+<pre class="CodeBlock">
+render.cpp
+<font color="deepskyblue">0505:</font>             D3DXVECTOR4 lp;
+<font color="deepskyblue">0506:</font>             D3DXVECTOR3 ln;
+<font color="deepskyblue">0507:</font>             <font color="cyan">// 光源から１点を選ぶ</font>
+<font color="deepskyblue">0508:</font>             LIGHT_DATA *pData = choiceEmmisivePoint( &amp;lp, &amp;ln );
+<font color="deepskyblue">0509:</font>             D3DXVECTOR4 vr = lp-p; vr.w = 0;
+<font color="deepskyblue">0510:</font>             <font color="blue">float</font> d2 = D3DXVec3Dot((D3DXVECTOR3 *)&amp;vr,(D3DXVECTOR3 *)&amp;vr); <font color="cyan">// 反射点から光源までの距離の２乗</font>
+<font color="deepskyblue">0511:</font>             D3DXVec4Normalize(&amp;vr, &amp;vr);     <font color="cyan">// 反射点から光源を見る方向</font>
+<font color="deepskyblue">0512:</font> 
+<font color="deepskyblue">0513:</font>             <font color="cyan">// その点が見えるかどうか調べる</font>
+<font color="deepskyblue">0514:</font>             CPrimitive *pTObj = NULL;
+<font color="deepskyblue">0515:</font>             D3DXVECTOR4 tp, tn;<font color="cyan">// 交点の位置と法線</font>
+<font color="deepskyblue">0516:</font>             <font color="blue">float</font> tt = CPrimitive::INFINTY_DIST;
+<font color="deepskyblue">0517:</font>             pos = p + 0.01f*(vr);
+<font color="deepskyblue">0518:</font>             tt = pShpereS   -&gt;IsAcross( tt, &amp;tn, &amp;tp, &amp;pTObj, &amp;pos, &amp;vr );
+<font color="deepskyblue">0519:</font>             tt = pShpereT   -&gt;IsAcross( tt, &amp;tn, &amp;tp, &amp;pTObj, &amp;pos, &amp;vr );
+<font color="deepskyblue">0520:</font>             tt = pRoom      -&gt;IsAcross( tt, &amp;tn, &amp;tp, &amp;pTObj, &amp;pos, &amp;vr );
+<font color="deepskyblue">0521:</font> <font color="cyan">//          tt = pBlockSmall-&gt;IsAcross( tt, &amp;tn, &amp;tp, &amp;pTObj, &amp;pos, &amp;vr );</font>
+<font color="deepskyblue">0522:</font>             tt = pBlockTall -&gt;IsAcross( tt, &amp;tn, &amp;tp, &amp;pTObj, &amp;pos, &amp;vr );
+<font color="deepskyblue">0523:</font>             
+<font color="deepskyblue">0524:</font>             <font color="blue">if</font>( pTObj &amp;&amp; 1.0f == pTObj-&gt;m_material.emmisive )
+<font color="deepskyblue">0525:</font>             {
+<font color="deepskyblue">0526:</font>                 <font color="cyan">// 直接光と間接光の強さの割合を見える面積で求める</font>
+<font color="deepskyblue">0527:</font>                 <font color="blue">float</font> prob;
+<font color="deepskyblue">0528:</font>                 prob = -g_fTotalArea * D3DXVec3Dot((D3DXVECTOR3 *)&amp;vr, (D3DXVECTOR3 *)&amp;ln)/d2;
+<font color="deepskyblue">0529:</font>                 prob /= 2.0f*D3DX_PI;<font color="cyan">// 光源が半球を囲んだときの立体角は2πsr</font>
+<font color="deepskyblue">0530:</font>                 <font color="blue">if</font>(prob&lt;0)prob=0;
+<font color="deepskyblue">0531:</font>                 <font color="blue">if</font>(1&lt;prob)prob=1;
+<font color="deepskyblue">0532:</font> 
+<font color="deepskyblue">0533:</font>                 <font color="blue">float</font> rn = D3DXVec3Dot((D3DXVECTOR3 *)&amp;vr, (D3DXVECTOR3 *)&amp;n);
+<font color="deepskyblue">0534:</font>                 rn = max( 0, rn );
+<font color="deepskyblue">0535:</font>                 diffuse_color.x = prob * pTObj-&gt;m_material.COLOR_DIF[0] * rn;
+<font color="deepskyblue">0536:</font>                 diffuse_color.y = prob * pTObj-&gt;m_material.COLOR_DIF[1] * rn;
+<font color="deepskyblue">0537:</font>                 diffuse_color.z = prob * pTObj-&gt;m_material.COLOR_DIF[2] * rn;
+<font color="deepskyblue">0538:</font>             }
+<font color="deepskyblue">0539:</font>             
+</pre>
+
+<p>
+２つめのレイの寄与は、今までの計算のうち、光源に届かないものの寄与になりますが、
+これは、今までと同じようにレイを飛ばして、レイが光源に直接あたった場合にその強さを0にします。<br>
+具体的には、関数にフラグ GETCOLOR_FLAG_DISABLE_EMMISIVE を追加して、
+このフラグがたっているときには、光源にレイがあたったときにその強さを０にします。
+</p>
+<pre class="CodeBlock">
+render.cpp
+<font color="deepskyblue">0540:</font>             <font color="cyan">// --- ロシアンルーレットで別のレイも飛ばす</font>
+<font color="deepskyblue">0541:</font>             
+<font color="deepskyblue">0542:</font>             <font color="cyan">// 等方的にレイを飛ばす</font>
+<font color="deepskyblue">0543:</font>             <font color="blue">float</font> theta =      D3DX_PI * (<font color="blue">float</font>)frand();
+<font color="deepskyblue">0544:</font>             <font color="blue">float</font> phi   = 2.0f*D3DX_PI * (<font color="blue">float</font>)frand();
+<font color="deepskyblue">0545:</font>             dir.x = sinf(theta) * cosf(phi);
+<font color="deepskyblue">0546:</font>             dir.y = sinf(theta) * sinf(phi);
+<font color="deepskyblue">0547:</font>             dir.z = cosf(theta);
+<font color="deepskyblue">0548:</font>             <font color="blue">float</font> dn = D3DXVec3Dot((D3DXVECTOR3 *)&amp;dir, (D3DXVECTOR3 *)&amp;n);
+<font color="deepskyblue">0549:</font>             <font color="blue">if</font>(dn&lt;0){
+<font color="deepskyblue">0550:</font>                 <font color="cyan">// 法線と反対向きに飛ぶつもりなら、方向を反対にする</font>
+<font color="deepskyblue">0551:</font>                 dn = -dn;
+<font color="deepskyblue">0552:</font>                 dir.x *= -1;
+<font color="deepskyblue">0553:</font>                 dir.y *= -1;
+<font color="deepskyblue">0554:</font>                 dir.z *= -1;
+<font color="deepskyblue">0555:</font>             }
+<font color="deepskyblue">0556:</font> 
+<font color="deepskyblue">0557:</font>             D3DXVECTOR3 c;
+<font color="deepskyblue">0558:</font>             pos = p + 0.01f*(dir);
+<font color="deepskyblue">0559:</font>             GetColor( &amp;c, &amp;pos, &amp;dir, depth, GETCOLOR_FLAG_DISABLE_EMMISIVE );
+<font color="deepskyblue">0560:</font>             <font color="cyan">// プリミティブの色や拡散光の余弦側を適用</font>
+<font color="deepskyblue">0561:</font>             diffuse_color.x += c.x * dn;
+<font color="deepskyblue">0562:</font>             diffuse_color.y += c.y * dn;
+<font color="deepskyblue">0563:</font>             diffuse_color.z += c.z * dn;
+<font color="deepskyblue">0564:</font> 
+<font color="deepskyblue">0565:</font>             diffuse_color.x *= pObj-&gt;m_material.COLOR_DIF[0] * 0.5f*D3DX_PI;
+<font color="deepskyblue">0566:</font>             diffuse_color.y *= pObj-&gt;m_material.COLOR_DIF[1] * 0.5f*D3DX_PI;
+<font color="deepskyblue">0567:</font>             diffuse_color.z *= pObj-&gt;m_material.COLOR_DIF[2] * 0.5f*D3DX_PI;
+</pre>
+
+<p>
+GETCOLOR_FLAG_DISABLE_EMMISIVE が立っているときには、放射する面（光源)にあたったときに、色を黒で返します。
+</p>
+
+<pre class="CodeBlock">
+render.cpp
+<font color="deepskyblue">0614:</font>     <font color="cyan">// -----------------------------------------------------------------------</font>
+<font color="deepskyblue">0615:</font>     <font color="cyan">// 放射</font>
+<font color="deepskyblue">0616:</font>     <font color="cyan">// -----------------------------------------------------------------------</font>
+<font color="deepskyblue">0617:</font>     D3DXVECTOR3 emmisive_color;
+<font color="deepskyblue">0618:</font>     <font color="blue">if</font>(flag &amp; GETCOLOR_FLAG_DISABLE_EMMISIVE)
+<font color="deepskyblue">0619:</font>     {
+<font color="deepskyblue">0620:</font>         emmisive_color = D3DXVECTOR3(0,0,0);
+<font color="deepskyblue">0621:</font>     }<font color="blue">else</font>{
+<font color="deepskyblue">0622:</font>         emmisive_color = *(D3DXVECTOR3*)&amp;pObj-&gt;m_material.COLOR_DIF;
+<font color="deepskyblue">0623:</font>     }
+</pre>
+
+
+<h2>■ワークパイルパターンによるマルチスレッド</h2>
+
+
+<p>
+<a href="http://lucille.sourceforge.net/blog/">藤田さん</a>から、
+前回の方法のマルチスレッド化ではスレッドを作成するオーバーヘッドがかかるので、<a href="http://lucille.sourceforge.net/blog/archives/000079.html">ワークパイルの手法</a>を使うほうが良いよと教えていただきました。<br>
+ワークパイルパターンとは、スレッドを複数常に立ち上げておき、各スレッドでは仕事があるかを常に監視して、仕事あまっていたらその仕事を受けとって処理します。
+</p>
+<p>
+起動されたスレッドのフローチャートを書いてみると、次のようなものでしょうか。<br>
+とりあえず、終了処理が必要になることを考えて、終了条件が成立していたら終わって、そうでなければ処理をすることにします。<br>
+終了条件が成立しなければ、仕事があるか調べて、あれば仕事をします。<br>
+なければ（仕事がないのにCPUを100%消費しないように）少し休みます。<br>
+これが１ループになって、終了条件が満たされるまで回りつづけます。
+</p>
+<img src="flow.png">
+<p>
+実際の関数では、ラップしたクラスを作ってます。<br>
+こんな感じです。
+</p>
+<pre class="CodeBlock">
+render.cpp
+<font color="deepskyblue">0179:</font> <font color="cyan">// ---------------------------------------------------------------------------</font>
+<font color="deepskyblue">0180:</font> <font color="cyan">// スレッド処理</font>
+<font color="deepskyblue">0181:</font> <font color="cyan">// ---------------------------------------------------------------------------</font>
+<font color="deepskyblue">0185:</font> <font color="blue">unsigned</font> <font color="blue">int</font> WINAPI workthread ( LPVOID pParam )
+<font color="deepskyblue">0186:</font> {
+<font color="deepskyblue">0187:</font>     MySystem::CThreadMgr  *pSender = (MySystem::CThreadMgr *)pParam;
+<font color="deepskyblue">0188:</font>     MySystem::CThreadData *ptr;
+<font color="deepskyblue">0189:</font>     
+<font color="deepskyblue">0190:</font>     <font color="blue">while</font>( pSender-&gt;IsEnable() )
+<font color="deepskyblue">0191:</font>     {
+<font color="deepskyblue">0192:</font>         <font color="blue">while</font>( NULL != (ptr = pSender-&gt;GetWork()) )
+<font color="deepskyblue">0193:</font>         {
+<font color="deepskyblue">0194:</font>             <font color="cyan">// --- ここからスレッドデータごとの処理</font>
+<font color="deepskyblue">0195:</font> 
+<font color="deepskyblue">0196:</font>             rect *pRect = (rect *)ptr-&gt;GetData();
+<font color="deepskyblue">0197:</font> 
+<font color="deepskyblue">0198:</font>             <font color="blue">for</font>( s32 y = pRect-&gt;top; y &lt; pRect-&gt;bottom; y++ )
+<font color="deepskyblue">0199:</font>             {
+<font color="deepskyblue">0200:</font>                 <font color="blue">for</font>( s32 x = pRect-&gt;left; x &lt; pRect-&gt;right; x++ )
+<font color="deepskyblue">0201:</font>                 {
+<font color="deepskyblue">0202:</font>                     D3DXVECTOR3 col;
+<font color="deepskyblue">0203:</font> 
+<font color="deepskyblue">0204:</font>                     GetColor(&amp;col, ((<font color="blue">float</font>)x+0.5f)/(<font color="blue">float</font>)RENDER_WIDTH
+<font color="deepskyblue">0205:</font>                                  , ((<font color="blue">float</font>)y+0.5f)/(<font color="blue">float</font>)RENDER_HEIGHT);
+<font color="deepskyblue">0206:</font>                     <font color="blue">int</font> no = 4*(y*RENDER_WIDTH+x);
+<font color="deepskyblue">0207:</font>                     s_total[no+0]+=col.x;<font color="cyan">// R</font>
+<font color="deepskyblue">0208:</font>                     s_total[no+1]+=col.y;<font color="cyan">// G</font>
+<font color="deepskyblue">0209:</font>                     s_total[no+2]+=col.z;<font color="cyan">// B</font>
+<font color="deepskyblue">0210:</font>                 }
+<font color="deepskyblue">0211:</font>             }
+<font color="deepskyblue">0212:</font> 
+<font color="deepskyblue">0213:</font>             <font color="cyan">// --- ここまでスレッドデータごとの処理</font>
+<font color="deepskyblue">0214:</font> 
+<font color="deepskyblue">0215:</font>             <font color="cyan">// 終わったら、そのスレッドデータを殺す</font>
+<font color="deepskyblue">0216:</font>             ptr-&gt;Finish( );
+<font color="deepskyblue">0217:</font>         }
+<font color="deepskyblue">0218:</font>         Sleep(10);
+<font color="deepskyblue">0219:</font>     }
+<font color="deepskyblue">0220:</font> 
+<font color="deepskyblue">0221:</font>     <font color="blue">return</font> 0;
+<font color="deepskyblue">0222:</font> }
+</pre>
+
+<p>
+あっ、仕事がなくなるまで終了判定をとおらないや。やべっ！
+</p>
+
+<p>
+MySystem::CThreadMgr というのがありますが、こいつは仕事を管理するスレッドの管理人です。<br>
+メインの関数は、CThreadMgr に仕事を与えます。
+CThreadMgr は、仕事を溜め込んで、各スレッドから仕事の要求が着たら、まだ実行されていない仕事を割り当てます。<br>
+CThreadMgr が溜め込める仕事の量は、初期化時に指定できるようにしてあります。
+</p>
+<img src="thread.png">
+
+<p>
+こちらだと、スレッドに関するオーバーヘッドがほとんど無いので、細かい仕事も割り振れていい感じですね。
+</p>
+
+
+<h2>■最後に</h2>
+
+
+<p>
+確かに１次散乱の収束は早いのですが、被写界深度や鏡面反射による散乱など他のパスに関する寄与は少ないので、
+最終的な結果ができるまでの時間はほとんど変わらないんですよね。<br>
+他の経路に関しても効率の良い計算方法を考えないと。
+</p>
+
+
+</div>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<center>
+<hr>
+<p><a href="../index.html">もどる</a></p>
+<p><a href="mailto:imagire@gmail.com">imagire@gmail.com</a></p>
+</center>
+
+</body>
+</html>

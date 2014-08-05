@@ -1,0 +1,261 @@
+<HTML>
+<HEAD>
+<TITLE>main.fx</TITLE>
+<meta name="GENERATOR" content="cpp2html 2.1 by Niisaka">
+<meta http-equiv="Content-Type" content="text/html">
+<meta http-equiv="Content-Style-Type" content="text/css">
+<STYLE TYPE="text/css">
+<!--
+SPAN.comment { color:#008000; font-weight:normal; font-style:normal;}
+SPAN.keyword { color:#0000FF; font-weight:normal; font-style:normal;}
+SPAN.string { color:#600000; font-weight:normal; font-style:normal;}
+SPAN.linenum { color:#A0A0A0; font-weight:normal; font-style:normal;}
+-->
+</STYLE>
+</HEAD>
+<BODY TEXT="#000000" BGCOLOR="#FFFFFF">
+<PRE><SPAN CLASS="linenum">0001:</SPAN> <SPAN CLASS="comment">//--------------------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0002:</SPAN> <SPAN CLASS="comment">// File: main.fx</SPAN>
+<SPAN CLASS="linenum">0003:</SPAN> <SPAN CLASS="comment">//</SPAN>
+<SPAN CLASS="linenum">0004:</SPAN> <SPAN CLASS="comment">// The effect file for the main sample.  </SPAN>
+<SPAN CLASS="linenum">0005:</SPAN> <SPAN CLASS="comment">// </SPAN>
+<SPAN CLASS="linenum">0006:</SPAN> <SPAN CLASS="comment">// Copyright (c) Takashi Imagire. All rights reserved.</SPAN>
+<SPAN CLASS="linenum">0007:</SPAN> <SPAN CLASS="comment">//--------------------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0008:</SPAN> 
+<SPAN CLASS="linenum">0009:</SPAN> 
+<SPAN CLASS="linenum">0010:</SPAN> <SPAN CLASS="comment">//--------------------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0011:</SPAN> <SPAN CLASS="comment">// Global variables</SPAN>
+<SPAN CLASS="linenum">0012:</SPAN> <SPAN CLASS="comment">//--------------------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0013:</SPAN> <SPAN CLASS="keyword">float</SPAN>    g_fTime;                   <SPAN CLASS="comment">// App's time in seconds</SPAN>
+<SPAN CLASS="linenum">0014:</SPAN> <SPAN CLASS="keyword">float</SPAN>    g_fRadius = 5.0;           <SPAN CLASS="comment">// </SPAN>
+<SPAN CLASS="linenum">0015:</SPAN> float4x4 g_mWorld;                  <SPAN CLASS="comment">// World matrix for object</SPAN>
+<SPAN CLASS="linenum">0016:</SPAN> float4x4 g_mWorldViewProjection;    <SPAN CLASS="comment">// World * View * Projection matrix</SPAN>
+<SPAN CLASS="linenum">0017:</SPAN> float4x4 g_mShadowViewProjection;
+<SPAN CLASS="linenum">0018:</SPAN> float4x4 g_mShadowMatrix;
+<SPAN CLASS="linenum">0019:</SPAN> float4   g_Offset[12];
+<SPAN CLASS="linenum">0020:</SPAN> float4   g_vLightDir;
+<SPAN CLASS="linenum">0021:</SPAN> 
+<SPAN CLASS="linenum">0022:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0023:</SPAN> <SPAN CLASS="comment">// Texture samplers</SPAN>
+<SPAN CLASS="linenum">0024:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0025:</SPAN> texture Texture;
+<SPAN CLASS="linenum">0026:</SPAN> sampler Sampler = 
+<SPAN CLASS="linenum">0027:</SPAN> sampler_state
+<SPAN CLASS="linenum">0028:</SPAN> {
+<SPAN CLASS="linenum">0029:</SPAN>     Texture = &lt;Texture&gt;;
+<SPAN CLASS="linenum">0030:</SPAN>     MinFilter = LINEAR;
+<SPAN CLASS="linenum">0031:</SPAN>     MagFilter = LINEAR;
+<SPAN CLASS="linenum">0032:</SPAN>     MipFilter = LINEAR;
+<SPAN CLASS="linenum">0033:</SPAN> 
+<SPAN CLASS="linenum">0034:</SPAN>     AddressU = Clamp;
+<SPAN CLASS="linenum">0035:</SPAN>     AddressV = Clamp;
+<SPAN CLASS="linenum">0036:</SPAN> };
+<SPAN CLASS="linenum">0037:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0038:</SPAN> texture ShadowTex;
+<SPAN CLASS="linenum">0039:</SPAN> sampler ShadowSampler = 
+<SPAN CLASS="linenum">0040:</SPAN> sampler_state
+<SPAN CLASS="linenum">0041:</SPAN> {
+<SPAN CLASS="linenum">0042:</SPAN>     Texture = &lt;ShadowTex&gt;;
+<SPAN CLASS="linenum">0043:</SPAN>     MinFilter = LINEAR;
+<SPAN CLASS="linenum">0044:</SPAN>     MagFilter = LINEAR;
+<SPAN CLASS="linenum">0045:</SPAN>     MipFilter = NONE;
+<SPAN CLASS="linenum">0046:</SPAN> 
+<SPAN CLASS="linenum">0047:</SPAN>     AddressU = Clamp;
+<SPAN CLASS="linenum">0048:</SPAN>     AddressV = Clamp;
+<SPAN CLASS="linenum">0049:</SPAN> };
+<SPAN CLASS="linenum">0050:</SPAN> 
+<SPAN CLASS="linenum">0051:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0052:</SPAN> <SPAN CLASS="comment">// Vertex shader output structure</SPAN>
+<SPAN CLASS="linenum">0053:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0054:</SPAN> <SPAN CLASS="keyword">struct</SPAN> VS_OUTPUT
+<SPAN CLASS="linenum">0055:</SPAN> {
+<SPAN CLASS="linenum">0056:</SPAN>     float4 Position  : POSITION;
+<SPAN CLASS="linenum">0057:</SPAN>     float4 Pos       : TEXCOORD0;
+<SPAN CLASS="linenum">0058:</SPAN> };
+<SPAN CLASS="linenum">0059:</SPAN> 
+<SPAN CLASS="linenum">0060:</SPAN> 
+<SPAN CLASS="linenum">0061:</SPAN> 
+<SPAN CLASS="linenum">0062:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0063:</SPAN> <SPAN CLASS="comment">// Name: CreateShadowMapVS</SPAN>
+<SPAN CLASS="linenum">0064:</SPAN> <SPAN CLASS="comment">// Type: Vertex shader                                      </SPAN>
+<SPAN CLASS="linenum">0065:</SPAN> <SPAN CLASS="comment">// Desc: standard transform and lighting.</SPAN>
+<SPAN CLASS="linenum">0066:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0067:</SPAN> VS_OUTPUT CreateShadowMapVS( float4 vPos : POSITION, 
+<SPAN CLASS="linenum">0068:</SPAN>                     float3 vNormal : NORMAL,
+<SPAN CLASS="linenum">0069:</SPAN>                     float2 vTexCoord0 : TEXCOORD0 )
+<SPAN CLASS="linenum">0070:</SPAN> {
+<SPAN CLASS="linenum">0071:</SPAN>     VS_OUTPUT Output;
+<SPAN CLASS="linenum">0072:</SPAN>     float4 pos;
+<SPAN CLASS="linenum">0073:</SPAN>   
+<SPAN CLASS="linenum">0074:</SPAN>     <SPAN CLASS="comment">// tranform vertex position into screen space</SPAN>
+<SPAN CLASS="linenum">0075:</SPAN>     pos = mul(vPos, g_mWorldViewProjection );
+<SPAN CLASS="linenum">0076:</SPAN>     Output.Position = pos;
+<SPAN CLASS="linenum">0077:</SPAN>     
+<SPAN CLASS="linenum">0078:</SPAN>     <SPAN CLASS="comment">// 射影空間の座標値をテクスチャ座標にして渡す</SPAN>
+<SPAN CLASS="linenum">0079:</SPAN>     Output.Pos      = pos;
+<SPAN CLASS="linenum">0080:</SPAN>     
+<SPAN CLASS="linenum">0081:</SPAN>     <SPAN CLASS="keyword">return</SPAN> Output;    
+<SPAN CLASS="linenum">0082:</SPAN> }
+<SPAN CLASS="linenum">0083:</SPAN> 
+<SPAN CLASS="linenum">0084:</SPAN> 
+<SPAN CLASS="linenum">0085:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0086:</SPAN> <SPAN CLASS="comment">// Name: SimplePS</SPAN>
+<SPAN CLASS="linenum">0087:</SPAN> <SPAN CLASS="comment">// Type: Pixel shader</SPAN>
+<SPAN CLASS="linenum">0088:</SPAN> <SPAN CLASS="comment">// Desc: This shader simply outputs the pixel's color </SPAN>
+<SPAN CLASS="linenum">0089:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0090:</SPAN> float4 CreateShadowMapPS( VS_OUTPUT In ) : COLOR
+<SPAN CLASS="linenum">0091:</SPAN> { 
+<SPAN CLASS="linenum">0092:</SPAN>     <SPAN CLASS="keyword">return</SPAN> In.Pos.z / In.Pos.w;
+<SPAN CLASS="linenum">0093:</SPAN> }
+<SPAN CLASS="linenum">0094:</SPAN> 
+<SPAN CLASS="linenum">0095:</SPAN> 
+<SPAN CLASS="linenum">0096:</SPAN> <SPAN CLASS="comment">//--------------------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0097:</SPAN> <SPAN CLASS="comment">// Techniques</SPAN>
+<SPAN CLASS="linenum">0098:</SPAN> <SPAN CLASS="comment">//--------------------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0099:</SPAN> technique CreateShadowMap
+<SPAN CLASS="linenum">0100:</SPAN> {
+<SPAN CLASS="linenum">0101:</SPAN>     pass P0
+<SPAN CLASS="linenum">0102:</SPAN>     {
+<SPAN CLASS="linenum">0103:</SPAN>         VertexShader = compile vs_1_1 CreateShadowMapVS();
+<SPAN CLASS="linenum">0104:</SPAN>         PixelShader  = compile ps_2_0 CreateShadowMapPS();
+<SPAN CLASS="linenum">0105:</SPAN>     }
+<SPAN CLASS="linenum">0106:</SPAN> }
+<SPAN CLASS="linenum">0107:</SPAN> 
+<SPAN CLASS="linenum">0108:</SPAN> 
+<SPAN CLASS="linenum">0109:</SPAN> 
+<SPAN CLASS="linenum">0110:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0111:</SPAN> <SPAN CLASS="comment">// Vertex shader output structure</SPAN>
+<SPAN CLASS="linenum">0112:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0113:</SPAN> <SPAN CLASS="keyword">struct</SPAN> VS_OUTPUT_SHADOW
+<SPAN CLASS="linenum">0114:</SPAN> {
+<SPAN CLASS="linenum">0115:</SPAN>     float4 Position  : POSITION;
+<SPAN CLASS="linenum">0116:</SPAN>     float4 Diffuse   : COLOR0;
+<SPAN CLASS="linenum">0117:</SPAN>     float4 Pos       : TEXCOORD0;
+<SPAN CLASS="linenum">0118:</SPAN>     float4 TextureUV : TEXCOORD1;
+<SPAN CLASS="linenum">0119:</SPAN>     float4 ShadowMap : TEXCOORD2;
+<SPAN CLASS="linenum">0120:</SPAN> };
+<SPAN CLASS="linenum">0121:</SPAN> 
+<SPAN CLASS="linenum">0122:</SPAN> 
+<SPAN CLASS="linenum">0123:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0124:</SPAN> <SPAN CLASS="comment">// Name: ShadowMapVS</SPAN>
+<SPAN CLASS="linenum">0125:</SPAN> <SPAN CLASS="comment">// Type: Vertex shader                                      </SPAN>
+<SPAN CLASS="linenum">0126:</SPAN> <SPAN CLASS="comment">// Desc: standard transform and lighting.</SPAN>
+<SPAN CLASS="linenum">0127:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0128:</SPAN> VS_OUTPUT_SHADOW ShadowMapVS( float4 vPos : POSITION, 
+<SPAN CLASS="linenum">0129:</SPAN>                     float3 vNormal : NORMAL,
+<SPAN CLASS="linenum">0130:</SPAN>                     float2 vTexCoord0 : TEXCOORD0 )
+<SPAN CLASS="linenum">0131:</SPAN> {
+<SPAN CLASS="linenum">0132:</SPAN>     VS_OUTPUT_SHADOW Output;
+<SPAN CLASS="linenum">0133:</SPAN>     float4 pos;
+<SPAN CLASS="linenum">0134:</SPAN>   
+<SPAN CLASS="linenum">0135:</SPAN>     <SPAN CLASS="comment">// tranform vertex position into screen space</SPAN>
+<SPAN CLASS="linenum">0136:</SPAN>     Output.Position  = mul(vPos, g_mWorldViewProjection );
+<SPAN CLASS="linenum">0137:</SPAN>     
+<SPAN CLASS="linenum">0138:</SPAN>     <SPAN CLASS="comment">// ローカル座標系での光源計算</SPAN>
+<SPAN CLASS="linenum">0139:</SPAN>     Output.Diffuse = max( dot(g_vLightDir.xyz, vNormal), 0);
+<SPAN CLASS="linenum">0140:</SPAN>     
+<SPAN CLASS="linenum">0141:</SPAN>     <SPAN CLASS="comment">// 光源を仮想カメラとみなしたときの射影空間へのマッピング</SPAN>
+<SPAN CLASS="linenum">0142:</SPAN>     Output.Pos       = mul(vPos, g_mShadowViewProjection );
+<SPAN CLASS="linenum">0143:</SPAN>     
+<SPAN CLASS="linenum">0144:</SPAN>     <SPAN CLASS="comment">// さらにバイアスを変えて、テクスチャの座標系に対応させる</SPAN>
+<SPAN CLASS="linenum">0145:</SPAN>     Output.ShadowMap = mul(vPos, g_mShadowMatrix );
+<SPAN CLASS="linenum">0146:</SPAN> 
+<SPAN CLASS="linenum">0147:</SPAN>     <SPAN CLASS="comment">// テクスチャ座標を単にコピーする</SPAN>
+<SPAN CLASS="linenum">0148:</SPAN>     Output.TextureUV.xy = vTexCoord0;
+<SPAN CLASS="linenum">0149:</SPAN>     Output.TextureUV.wz = 0;
+<SPAN CLASS="linenum">0150:</SPAN>     
+<SPAN CLASS="linenum">0151:</SPAN>     <SPAN CLASS="keyword">return</SPAN> Output;    
+<SPAN CLASS="linenum">0152:</SPAN> }
+<SPAN CLASS="linenum">0153:</SPAN> 
+<SPAN CLASS="linenum">0154:</SPAN> 
+<SPAN CLASS="linenum">0155:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0156:</SPAN> <SPAN CLASS="comment">// Name: ShadowMapPS</SPAN>
+<SPAN CLASS="linenum">0157:</SPAN> <SPAN CLASS="comment">// Type: Pixel shader</SPAN>
+<SPAN CLASS="linenum">0158:</SPAN> <SPAN CLASS="comment">// Desc: 単純なシャドウマッピング</SPAN>
+<SPAN CLASS="linenum">0159:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0160:</SPAN> float4 ShadowMapPS( VS_OUTPUT_SHADOW In ) : COLOR
+<SPAN CLASS="linenum">0161:</SPAN> { 
+<SPAN CLASS="linenum">0162:</SPAN>     <SPAN CLASS="keyword">float</SPAN> shadow_map = tex2Dproj( ShadowSampler, In.ShadowMap ).x;
+<SPAN CLASS="linenum">0163:</SPAN>     <SPAN CLASS="keyword">float</SPAN> depth = In.Pos.z / In.Pos.w;
+<SPAN CLASS="linenum">0164:</SPAN>     <SPAN CLASS="keyword">float</SPAN> shade = ( shadow_map &lt; depth - 0.003 ) ? 0 : 1 ;
+<SPAN CLASS="linenum">0165:</SPAN>     
+<SPAN CLASS="linenum">0166:</SPAN>     <SPAN CLASS="keyword">const</SPAN> <SPAN CLASS="keyword">float</SPAN> ambient = 0.3;
+<SPAN CLASS="linenum">0167:</SPAN>     
+<SPAN CLASS="linenum">0168:</SPAN>     <SPAN CLASS="keyword">return</SPAN> tex2D( Sampler, In.TextureUV )
+<SPAN CLASS="linenum">0169:</SPAN>              * ((1.0-ambient) * shade * In.Diffuse + ambient);
+<SPAN CLASS="linenum">0170:</SPAN> }
+<SPAN CLASS="linenum">0171:</SPAN> 
+<SPAN CLASS="linenum">0172:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0173:</SPAN> <SPAN CLASS="comment">// Name: ShadowMap12PS</SPAN>
+<SPAN CLASS="linenum">0174:</SPAN> <SPAN CLASS="comment">// Type: Pixel shader</SPAN>
+<SPAN CLASS="linenum">0175:</SPAN> <SPAN CLASS="comment">// Desc: ガウス暈しを用いたソフトシャドウ</SPAN>
+<SPAN CLASS="linenum">0176:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0177:</SPAN> float4 ShadowMap12PS( VS_OUTPUT_SHADOW In ) : COLOR
+<SPAN CLASS="linenum">0178:</SPAN> {
+<SPAN CLASS="linenum">0179:</SPAN>     float2 t = In.ShadowMap.xy / In.ShadowMap.w;
+<SPAN CLASS="linenum">0180:</SPAN>     float2 t0 = t + g_Offset[ 0].xy;
+<SPAN CLASS="linenum">0181:</SPAN>     float2 t1 = t + g_Offset[ 1].xy;
+<SPAN CLASS="linenum">0182:</SPAN>     float2 t2 = t + g_Offset[ 2].xy;
+<SPAN CLASS="linenum">0183:</SPAN>     float2 t3 = t + g_Offset[ 3].xy;
+<SPAN CLASS="linenum">0184:</SPAN>     float2 t4 = t + g_Offset[ 4].xy;
+<SPAN CLASS="linenum">0185:</SPAN>     float2 t5 = t + g_Offset[ 5].xy;
+<SPAN CLASS="linenum">0186:</SPAN>     float2 t6 = t + g_Offset[ 6].xy;
+<SPAN CLASS="linenum">0187:</SPAN>     float2 t7 = t + g_Offset[ 7].xy;
+<SPAN CLASS="linenum">0188:</SPAN>     float2 t8 = t + g_Offset[ 8].xy;
+<SPAN CLASS="linenum">0189:</SPAN>     float2 t9 = t + g_Offset[ 9].xy;
+<SPAN CLASS="linenum">0190:</SPAN>     float2 ta = t + g_Offset[10].xy;
+<SPAN CLASS="linenum">0191:</SPAN>     float2 tb = t + g_Offset[11].xy;
+<SPAN CLASS="linenum">0192:</SPAN>     
+<SPAN CLASS="linenum">0193:</SPAN>     <SPAN CLASS="keyword">float</SPAN> shadow_map0 = tex2D( ShadowSampler, t0 ).x;
+<SPAN CLASS="linenum">0194:</SPAN>     <SPAN CLASS="keyword">float</SPAN> shadow_map1 = tex2D( ShadowSampler, t1 ).x;
+<SPAN CLASS="linenum">0195:</SPAN>     <SPAN CLASS="keyword">float</SPAN> shadow_map2 = tex2D( ShadowSampler, t2 ).x;
+<SPAN CLASS="linenum">0196:</SPAN>     <SPAN CLASS="keyword">float</SPAN> shadow_map3 = tex2D( ShadowSampler, t3 ).x;
+<SPAN CLASS="linenum">0197:</SPAN>     <SPAN CLASS="keyword">float</SPAN> shadow_map4 = tex2D( ShadowSampler, t4 ).x;
+<SPAN CLASS="linenum">0198:</SPAN>     <SPAN CLASS="keyword">float</SPAN> shadow_map5 = tex2D( ShadowSampler, t5 ).x;
+<SPAN CLASS="linenum">0199:</SPAN>     <SPAN CLASS="keyword">float</SPAN> shadow_map6 = tex2D( ShadowSampler, t6 ).x;
+<SPAN CLASS="linenum">0200:</SPAN>     <SPAN CLASS="keyword">float</SPAN> shadow_map7 = tex2D( ShadowSampler, t7 ).x;
+<SPAN CLASS="linenum">0201:</SPAN>     <SPAN CLASS="keyword">float</SPAN> shadow_map8 = tex2D( ShadowSampler, t8 ).x;
+<SPAN CLASS="linenum">0202:</SPAN>     <SPAN CLASS="keyword">float</SPAN> shadow_map9 = tex2D( ShadowSampler, t9 ).x;
+<SPAN CLASS="linenum">0203:</SPAN>     <SPAN CLASS="keyword">float</SPAN> shadow_mapa = tex2D( ShadowSampler, ta ).x;
+<SPAN CLASS="linenum">0204:</SPAN>     <SPAN CLASS="keyword">float</SPAN> shadow_mapb = tex2D( ShadowSampler, tb ).x;
+<SPAN CLASS="linenum">0205:</SPAN>     
+<SPAN CLASS="linenum">0206:</SPAN>     <SPAN CLASS="keyword">float</SPAN> depth = In.Pos.z / In.Pos.w - 0.003;
+<SPAN CLASS="linenum">0207:</SPAN>     <SPAN CLASS="keyword">float</SPAN> shade = (( shadow_map0 &lt; depth ) ? 0 : 1)
+<SPAN CLASS="linenum">0208:</SPAN>                 + (( shadow_map1 &lt; depth ) ? 0 : 1)
+<SPAN CLASS="linenum">0209:</SPAN>                 + (( shadow_map2 &lt; depth ) ? 0 : 1)
+<SPAN CLASS="linenum">0210:</SPAN>                 + (( shadow_map3 &lt; depth ) ? 0 : 1)
+<SPAN CLASS="linenum">0211:</SPAN>                 + (( shadow_map4 &lt; depth ) ? 0 : 1)
+<SPAN CLASS="linenum">0212:</SPAN>                 + (( shadow_map5 &lt; depth ) ? 0 : 1)
+<SPAN CLASS="linenum">0213:</SPAN>                 + (( shadow_map6 &lt; depth ) ? 0 : 1)
+<SPAN CLASS="linenum">0214:</SPAN>                 + (( shadow_map7 &lt; depth ) ? 0 : 1)
+<SPAN CLASS="linenum">0215:</SPAN>                 + (( shadow_map8 &lt; depth ) ? 0 : 1)
+<SPAN CLASS="linenum">0216:</SPAN>                 + (( shadow_map9 &lt; depth ) ? 0 : 1)
+<SPAN CLASS="linenum">0217:</SPAN>                 + (( shadow_mapa &lt; depth ) ? 0 : 1)
+<SPAN CLASS="linenum">0218:</SPAN>                 + (( shadow_mapb &lt; depth ) ? 0 : 1);
+<SPAN CLASS="linenum">0219:</SPAN>                 
+<SPAN CLASS="linenum">0220:</SPAN>     <SPAN CLASS="keyword">const</SPAN> <SPAN CLASS="keyword">float</SPAN> ambient = 0.3;
+<SPAN CLASS="linenum">0221:</SPAN>     
+<SPAN CLASS="linenum">0222:</SPAN>     <SPAN CLASS="keyword">return</SPAN> tex2D( Sampler, In.TextureUV )
+<SPAN CLASS="linenum">0223:</SPAN>              * (((1.0-ambient)/12.0) * shade * In.Diffuse + ambient);
+<SPAN CLASS="linenum">0224:</SPAN> }
+<SPAN CLASS="linenum">0225:</SPAN> 
+<SPAN CLASS="linenum">0226:</SPAN> 
+<SPAN CLASS="linenum">0227:</SPAN> <SPAN CLASS="comment">//--------------------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0228:</SPAN> <SPAN CLASS="comment">// Techniques</SPAN>
+<SPAN CLASS="linenum">0229:</SPAN> <SPAN CLASS="comment">//--------------------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0230:</SPAN> technique ShadowMap
+<SPAN CLASS="linenum">0231:</SPAN> {
+<SPAN CLASS="linenum">0232:</SPAN>     pass P0
+<SPAN CLASS="linenum">0233:</SPAN>     {
+<SPAN CLASS="linenum">0234:</SPAN>         VertexShader = compile vs_1_1 ShadowMapVS();
+<SPAN CLASS="linenum">0235:</SPAN>         PixelShader  = compile ps_2_0 ShadowMap12PS();
+<SPAN CLASS="linenum">0236:</SPAN>     }
+<SPAN CLASS="linenum">0237:</SPAN> }
+<SPAN CLASS="linenum">0238:</SPAN> 
+<SPAN CLASS="linenum">0239:</SPAN> 
+<SPAN CLASS="linenum">0240:</SPAN> 
+<SPAN CLASS="linenum">0241:</SPAN> 
+<SPAN CLASS="linenum">0242:</SPAN> 
+<SPAN CLASS="linenum">0243:</SPAN> </PRE>
+</BODY>
+</HTML>

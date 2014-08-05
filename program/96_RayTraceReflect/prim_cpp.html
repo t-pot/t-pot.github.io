@@ -1,0 +1,261 @@
+<HTML>
+<HEAD>
+<TITLE>prim.cpp</TITLE>
+<meta name="GENERATOR" content="cpp2html 2.1 by Niisaka">
+<meta http-equiv="Content-Type" content="text/html">
+<meta http-equiv="Content-Style-Type" content="text/css">
+<STYLE TYPE="text/css">
+<!--
+SPAN.comment { color:#008000; font-weight:normal; font-style:normal;}
+SPAN.keyword { color:#0000FF; font-weight:normal; font-style:normal;}
+SPAN.string { color:#600000; font-weight:normal; font-style:normal;}
+SPAN.linenum { color:#A0A0A0; font-weight:normal; font-style:normal;}
+-->
+</STYLE>
+</HEAD>
+<BODY TEXT="#000000" BGCOLOR="#FFFFFF">
+<PRE><SPAN CLASS="linenum">0001:</SPAN> <SPAN CLASS="keyword">#include</SPAN> "<SPAN CLASS="string">stdafx.h</SPAN>"
+<SPAN CLASS="linenum">0002:</SPAN> <SPAN CLASS="keyword">#include</SPAN> "<SPAN CLASS="string">math.h</SPAN>"
+<SPAN CLASS="linenum">0003:</SPAN> <SPAN CLASS="keyword">#include</SPAN> "<SPAN CLASS="string">prim.h</SPAN>"
+<SPAN CLASS="linenum">0004:</SPAN> 
+<SPAN CLASS="linenum">0005:</SPAN> <SPAN CLASS="keyword">namespace</SPAN> Render {
+<SPAN CLASS="linenum">0006:</SPAN> 
+<SPAN CLASS="linenum">0007:</SPAN> <SPAN CLASS="comment">// ---------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0008:</SPAN> <SPAN CLASS="comment">// 基本オブジェクト</SPAN>
+<SPAN CLASS="linenum">0009:</SPAN> <SPAN CLASS="comment">// ---------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0010:</SPAN> <SPAN CLASS="keyword">void</SPAN> CPrimitive::Init(OBJ_DATA *pData)
+<SPAN CLASS="linenum">0011:</SPAN> {
+<SPAN CLASS="linenum">0012:</SPAN>     m_type=pData-&gt;type;
+<SPAN CLASS="linenum">0013:</SPAN> 
+<SPAN CLASS="linenum">0014:</SPAN>     <SPAN CLASS="keyword">this</SPAN>-&gt;m_material = pData-&gt;material;
+<SPAN CLASS="linenum">0015:</SPAN> }
+<SPAN CLASS="linenum">0016:</SPAN> <SPAN CLASS="comment">// ---------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0017:</SPAN> D3DXVECTOR3 *CPrimitive::GetColor(D3DXVECTOR3 *dest, <SPAN CLASS="keyword">float</SPAN> LN, <SPAN CLASS="keyword">float</SPAN> HN )
+<SPAN CLASS="linenum">0018:</SPAN> {
+<SPAN CLASS="linenum">0019:</SPAN>     *dest = *(D3DXVECTOR3*)&amp;<SPAN CLASS="keyword">this</SPAN>-&gt;m_material.COLOR_AMB
+<SPAN CLASS="linenum">0020:</SPAN>           + *(D3DXVECTOR3*)&amp;<SPAN CLASS="keyword">this</SPAN>-&gt;m_material.COLOR_DIF * LN
+<SPAN CLASS="linenum">0021:</SPAN>           + *(D3DXVECTOR3*)&amp;<SPAN CLASS="keyword">this</SPAN>-&gt;m_material.COLOR_SPE * powf(HN, <SPAN CLASS="keyword">this</SPAN>-&gt;m_material.speq_power);
+<SPAN CLASS="linenum">0022:</SPAN> 
+<SPAN CLASS="linenum">0023:</SPAN>     <SPAN CLASS="keyword">return</SPAN> dest;
+<SPAN CLASS="linenum">0024:</SPAN> }
+<SPAN CLASS="linenum">0025:</SPAN> <SPAN CLASS="comment">// ---------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0026:</SPAN> <SPAN CLASS="comment">// 球</SPAN>
+<SPAN CLASS="linenum">0027:</SPAN> <SPAN CLASS="comment">// ---------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0028:</SPAN> CSphere::CSphere()
+<SPAN CLASS="linenum">0029:</SPAN> {
+<SPAN CLASS="linenum">0030:</SPAN> }
+<SPAN CLASS="linenum">0031:</SPAN> <SPAN CLASS="comment">// ---------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0032:</SPAN> <SPAN CLASS="keyword">void</SPAN> CSphere::Init(OBJ_DATA *pData)
+<SPAN CLASS="linenum">0033:</SPAN> {
+<SPAN CLASS="linenum">0034:</SPAN>     ((CPrimitive*)<SPAN CLASS="keyword">this</SPAN>)-&gt;Init(pData);
+<SPAN CLASS="linenum">0035:</SPAN> 
+<SPAN CLASS="linenum">0036:</SPAN>     <SPAN CLASS="keyword">this</SPAN>-&gt;center.x = pData-&gt;sphere.center[0];
+<SPAN CLASS="linenum">0037:</SPAN>     <SPAN CLASS="keyword">this</SPAN>-&gt;center.y = pData-&gt;sphere.center[1];
+<SPAN CLASS="linenum">0038:</SPAN>     <SPAN CLASS="keyword">this</SPAN>-&gt;center.z = pData-&gt;sphere.center[2];
+<SPAN CLASS="linenum">0039:</SPAN> 
+<SPAN CLASS="linenum">0040:</SPAN>     radius_sq = pData-&gt;sphere.radius;
+<SPAN CLASS="linenum">0041:</SPAN>     radius_sq *= radius_sq;
+<SPAN CLASS="linenum">0042:</SPAN> }
+<SPAN CLASS="linenum">0043:</SPAN> <SPAN CLASS="comment">// ---------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0044:</SPAN> <SPAN CLASS="keyword">float</SPAN> CSphere::IsAcross(D3DXVECTOR4 *n, D3DXVECTOR4 *p, <SPAN CLASS="keyword">const</SPAN> D3DXVECTOR4 *x, <SPAN CLASS="keyword">const</SPAN> D3DXVECTOR4 *v)
+<SPAN CLASS="linenum">0045:</SPAN> {
+<SPAN CLASS="linenum">0046:</SPAN>     FLOAT t, tp, tn;
+<SPAN CLASS="linenum">0047:</SPAN> 
+<SPAN CLASS="linenum">0048:</SPAN>     <SPAN CLASS="comment">// 線分との判定</SPAN>
+<SPAN CLASS="linenum">0049:</SPAN> 
+<SPAN CLASS="linenum">0050:</SPAN>     D3DXVECTOR4 xc = (*x)-center;
+<SPAN CLASS="linenum">0051:</SPAN>     FLOAT xc2 = D3DXVec3Dot((D3DXVECTOR3 *)&amp;xc, (D3DXVECTOR3 *)&amp;xc);
+<SPAN CLASS="linenum">0052:</SPAN>     FLOAT vxc = D3DXVec3Dot((D3DXVECTOR3 *)v, (D3DXVECTOR3 *)&amp;xc);
+<SPAN CLASS="linenum">0053:</SPAN>     FLOAT D = sqrtf(vxc*vxc-xc2+radius_sq);
+<SPAN CLASS="linenum">0054:</SPAN>     
+<SPAN CLASS="linenum">0055:</SPAN>     <SPAN CLASS="keyword">if</SPAN>(D&lt;0) <SPAN CLASS="keyword">return</SPAN> -INFINTY_DIST;
+<SPAN CLASS="linenum">0056:</SPAN> 
+<SPAN CLASS="linenum">0057:</SPAN>     tp = -vxc+D;
+<SPAN CLASS="linenum">0058:</SPAN>     tn = -vxc-D;
+<SPAN CLASS="linenum">0059:</SPAN> 
+<SPAN CLASS="linenum">0060:</SPAN>     <SPAN CLASS="keyword">if</SPAN>(tn&lt;0){
+<SPAN CLASS="linenum">0061:</SPAN>         <SPAN CLASS="keyword">if</SPAN>(tp&lt;0) <SPAN CLASS="keyword">return</SPAN> -INFINTY_DIST;
+<SPAN CLASS="linenum">0062:</SPAN>         t = tp;
+<SPAN CLASS="linenum">0063:</SPAN>     }<SPAN CLASS="keyword">else</SPAN>{
+<SPAN CLASS="linenum">0064:</SPAN>         t = tn;
+<SPAN CLASS="linenum">0065:</SPAN>     }
+<SPAN CLASS="linenum">0066:</SPAN> 
+<SPAN CLASS="linenum">0067:</SPAN>     *p = (*x)+t*(*v);
+<SPAN CLASS="linenum">0068:</SPAN>     *n = *p-center;
+<SPAN CLASS="linenum">0069:</SPAN>     D3DXVec3Normalize((D3DXVECTOR3*)n, (D3DXVECTOR3*)n);
+<SPAN CLASS="linenum">0070:</SPAN> 
+<SPAN CLASS="linenum">0071:</SPAN>     <SPAN CLASS="keyword">return</SPAN> t;
+<SPAN CLASS="linenum">0072:</SPAN> }
+<SPAN CLASS="linenum">0073:</SPAN> 
+<SPAN CLASS="linenum">0074:</SPAN> <SPAN CLASS="comment">// ---------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0075:</SPAN> <SPAN CLASS="comment">// ３角形</SPAN>
+<SPAN CLASS="linenum">0076:</SPAN> <SPAN CLASS="comment">// ---------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0077:</SPAN> CTriangle::CTriangle()
+<SPAN CLASS="linenum">0078:</SPAN> {
+<SPAN CLASS="linenum">0079:</SPAN> }
+<SPAN CLASS="linenum">0080:</SPAN> <SPAN CLASS="comment">// ---------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0081:</SPAN> <SPAN CLASS="keyword">void</SPAN> CTriangle::Init(OBJ_DATA *pData)
+<SPAN CLASS="linenum">0082:</SPAN> {
+<SPAN CLASS="linenum">0083:</SPAN>     ((CPrimitive*)<SPAN CLASS="keyword">this</SPAN>)-&gt;Init(pData);
+<SPAN CLASS="linenum">0084:</SPAN> 
+<SPAN CLASS="linenum">0085:</SPAN>     <SPAN CLASS="keyword">this</SPAN>-&gt;pos[0] = D3DXVECTOR4( pData-&gt;triangle.x0[0],
+<SPAN CLASS="linenum">0086:</SPAN>                                 pData-&gt;triangle.x0[1],
+<SPAN CLASS="linenum">0087:</SPAN>                                 pData-&gt;triangle.x0[2],
+<SPAN CLASS="linenum">0088:</SPAN>                                 1.0f);
+<SPAN CLASS="linenum">0089:</SPAN>     <SPAN CLASS="keyword">this</SPAN>-&gt;pos[1] = D3DXVECTOR4( pData-&gt;triangle.x1[0],
+<SPAN CLASS="linenum">0090:</SPAN>                                 pData-&gt;triangle.x1[1],
+<SPAN CLASS="linenum">0091:</SPAN>                                 pData-&gt;triangle.x1[2],
+<SPAN CLASS="linenum">0092:</SPAN>                                 1.0f);
+<SPAN CLASS="linenum">0093:</SPAN>     <SPAN CLASS="keyword">this</SPAN>-&gt;pos[2] = D3DXVECTOR4( pData-&gt;triangle.x2[0],
+<SPAN CLASS="linenum">0094:</SPAN>                                 pData-&gt;triangle.x2[1],
+<SPAN CLASS="linenum">0095:</SPAN>                                 pData-&gt;triangle.x2[2],
+<SPAN CLASS="linenum">0096:</SPAN>                                 1.0f);
+<SPAN CLASS="linenum">0097:</SPAN> 
+<SPAN CLASS="linenum">0098:</SPAN>     <SPAN CLASS="comment">// 法線ベクトルの計算</SPAN>
+<SPAN CLASS="linenum">0099:</SPAN>     D3DXVECTOR4 t0 = <SPAN CLASS="keyword">this</SPAN>-&gt;pos[1]-<SPAN CLASS="keyword">this</SPAN>-&gt;pos[0];
+<SPAN CLASS="linenum">0100:</SPAN>     D3DXVECTOR4 t1 = <SPAN CLASS="keyword">this</SPAN>-&gt;pos[2]-<SPAN CLASS="keyword">this</SPAN>-&gt;pos[0];
+<SPAN CLASS="linenum">0101:</SPAN>     D3DXVec3Cross((D3DXVECTOR3*)&amp;normal, (D3DXVECTOR3*)&amp;t1, (D3DXVECTOR3*)&amp;t0);
+<SPAN CLASS="linenum">0102:</SPAN>     D3DXVec3Normalize((D3DXVECTOR3*)&amp;normal, (D3DXVECTOR3*)&amp;normal);
+<SPAN CLASS="linenum">0103:</SPAN>     normal.w = 0;
+<SPAN CLASS="linenum">0104:</SPAN> }
+<SPAN CLASS="linenum">0105:</SPAN> <SPAN CLASS="comment">// ---------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0106:</SPAN> <SPAN CLASS="keyword">float</SPAN> CTriangle::IsAcross(D3DXVECTOR4 *n, D3DXVECTOR4 *p, <SPAN CLASS="keyword">const</SPAN> D3DXVECTOR4 *x, <SPAN CLASS="keyword">const</SPAN> D3DXVECTOR4 *v)
+<SPAN CLASS="linenum">0107:</SPAN> {
+<SPAN CLASS="linenum">0108:</SPAN>     FLOAT t;
+<SPAN CLASS="linenum">0109:</SPAN> 
+<SPAN CLASS="linenum">0110:</SPAN>     <SPAN CLASS="comment">// 線分との判定</SPAN>
+<SPAN CLASS="linenum">0111:</SPAN>     D3DXVECTOR4 xp = <SPAN CLASS="keyword">this</SPAN>-&gt;pos[0]-(*x);
+<SPAN CLASS="linenum">0112:</SPAN> 
+<SPAN CLASS="linenum">0113:</SPAN>     FLOAT xpn = D3DXVec3Dot((D3DXVECTOR3 *)&amp;xp, (D3DXVECTOR3 *)&amp;normal);
+<SPAN CLASS="linenum">0114:</SPAN>     FLOAT vn = D3DXVec3Dot((D3DXVECTOR3 *)v, (D3DXVECTOR3 *)&amp;normal);
+<SPAN CLASS="linenum">0115:</SPAN>     
+<SPAN CLASS="linenum">0116:</SPAN>     <SPAN CLASS="keyword">if</SPAN>(-0.00001f&lt;=vn)<SPAN CLASS="keyword">return</SPAN> -INFINTY_DIST;<SPAN CLASS="comment">// カリングと無限大を外す</SPAN>
+<SPAN CLASS="linenum">0117:</SPAN> 
+<SPAN CLASS="linenum">0118:</SPAN>     t = xpn/vn;
+<SPAN CLASS="linenum">0119:</SPAN>     
+<SPAN CLASS="linenum">0120:</SPAN>     <SPAN CLASS="keyword">if</SPAN>(t&lt;0) <SPAN CLASS="keyword">return</SPAN> -INFINTY_DIST;<SPAN CLASS="comment">// 後ろ向きのレイは無効</SPAN>
+<SPAN CLASS="linenum">0121:</SPAN> 
+<SPAN CLASS="linenum">0122:</SPAN>     *p = (*x)+t*(*v);
+<SPAN CLASS="linenum">0123:</SPAN>     *n = normal;
+<SPAN CLASS="linenum">0124:</SPAN> 
+<SPAN CLASS="linenum">0125:</SPAN>     D3DXVECTOR4 d0, d1;
+<SPAN CLASS="linenum">0126:</SPAN>     D3DXVECTOR3 c;
+<SPAN CLASS="linenum">0127:</SPAN>     d0 = (*p)-<SPAN CLASS="keyword">this</SPAN>-&gt;pos[0];
+<SPAN CLASS="linenum">0128:</SPAN>     d1 = <SPAN CLASS="keyword">this</SPAN>-&gt;pos[1]-<SPAN CLASS="keyword">this</SPAN>-&gt;pos[0];
+<SPAN CLASS="linenum">0129:</SPAN>     D3DXVec3Cross(&amp;c, (D3DXVECTOR3*)&amp;d1, (D3DXVECTOR3*)&amp;d0);
+<SPAN CLASS="linenum">0130:</SPAN>     <SPAN CLASS="keyword">if</SPAN>(D3DXVec3Dot(&amp;c, (D3DXVECTOR3 *)&amp;normal)&gt;0)<SPAN CLASS="keyword">return</SPAN> -INFINTY_DIST;
+<SPAN CLASS="linenum">0131:</SPAN>     d0 = (*p)-<SPAN CLASS="keyword">this</SPAN>-&gt;pos[1];
+<SPAN CLASS="linenum">0132:</SPAN>     d1 = <SPAN CLASS="keyword">this</SPAN>-&gt;pos[2]-<SPAN CLASS="keyword">this</SPAN>-&gt;pos[1];
+<SPAN CLASS="linenum">0133:</SPAN>     D3DXVec3Cross(&amp;c, (D3DXVECTOR3*)&amp;d1, (D3DXVECTOR3*)&amp;d0);
+<SPAN CLASS="linenum">0134:</SPAN>     <SPAN CLASS="keyword">if</SPAN>(D3DXVec3Dot(&amp;c, (D3DXVECTOR3 *)&amp;normal)&gt;0)<SPAN CLASS="keyword">return</SPAN> -INFINTY_DIST;
+<SPAN CLASS="linenum">0135:</SPAN>     d0 = (*p)-<SPAN CLASS="keyword">this</SPAN>-&gt;pos[2];
+<SPAN CLASS="linenum">0136:</SPAN>     d1 = <SPAN CLASS="keyword">this</SPAN>-&gt;pos[0]-<SPAN CLASS="keyword">this</SPAN>-&gt;pos[2];
+<SPAN CLASS="linenum">0137:</SPAN>     D3DXVec3Cross(&amp;c, (D3DXVECTOR3*)&amp;d1, (D3DXVECTOR3*)&amp;d0);
+<SPAN CLASS="linenum">0138:</SPAN>     <SPAN CLASS="keyword">if</SPAN>(D3DXVec3Dot(&amp;c, (D3DXVECTOR3 *)&amp;normal)&gt;0)<SPAN CLASS="keyword">return</SPAN> -INFINTY_DIST;
+<SPAN CLASS="linenum">0139:</SPAN>     
+<SPAN CLASS="linenum">0140:</SPAN>     <SPAN CLASS="keyword">return</SPAN> t;
+<SPAN CLASS="linenum">0141:</SPAN> }
+<SPAN CLASS="linenum">0142:</SPAN> 
+<SPAN CLASS="linenum">0143:</SPAN> 
+<SPAN CLASS="linenum">0144:</SPAN> 
+<SPAN CLASS="linenum">0145:</SPAN> <SPAN CLASS="comment">// ---------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0146:</SPAN> <SPAN CLASS="comment">// ---------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0147:</SPAN> <SPAN CLASS="comment">// オブジェクト</SPAN>
+<SPAN CLASS="linenum">0148:</SPAN> <SPAN CLASS="comment">// ---------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0149:</SPAN> <SPAN CLASS="comment">// ---------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0150:</SPAN> <SPAN CLASS="comment">// コンストラクタ</SPAN>
+<SPAN CLASS="linenum">0151:</SPAN> CMesh::CMesh()
+<SPAN CLASS="linenum">0152:</SPAN> {
+<SPAN CLASS="linenum">0153:</SPAN>     m_num = 0;
+<SPAN CLASS="linenum">0154:</SPAN>     m_ppPrim = NULL;
+<SPAN CLASS="linenum">0155:</SPAN> }
+<SPAN CLASS="linenum">0156:</SPAN> <SPAN CLASS="comment">// ---------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0157:</SPAN> CMesh::~CMesh()
+<SPAN CLASS="linenum">0158:</SPAN> {
+<SPAN CLASS="linenum">0159:</SPAN>     Delete();
+<SPAN CLASS="linenum">0160:</SPAN> }
+<SPAN CLASS="linenum">0161:</SPAN> <SPAN CLASS="comment">// ---------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0162:</SPAN> <SPAN CLASS="keyword">void</SPAN> CMesh::Init(OBJ_DATA *pData, <SPAN CLASS="keyword">int</SPAN> num)
+<SPAN CLASS="linenum">0163:</SPAN> {
+<SPAN CLASS="linenum">0164:</SPAN>     <SPAN CLASS="keyword">this</SPAN>-&gt;m_num = num;
+<SPAN CLASS="linenum">0165:</SPAN>     
+<SPAN CLASS="linenum">0166:</SPAN>     m_ppPrim = <SPAN CLASS="keyword">new</SPAN> CPrimitive*[num];
+<SPAN CLASS="linenum">0167:</SPAN> 
+<SPAN CLASS="linenum">0168:</SPAN>     <SPAN CLASS="keyword">for</SPAN>(<SPAN CLASS="keyword">int</SPAN> i=0;i&lt;num;i++){
+<SPAN CLASS="linenum">0169:</SPAN>         <SPAN CLASS="keyword">switch</SPAN>(pData[i].type){
+<SPAN CLASS="linenum">0170:</SPAN>         <SPAN CLASS="keyword">case</SPAN> OBJ_TYPE_SPHERE:
+<SPAN CLASS="linenum">0171:</SPAN>             m_ppPrim[i] = <SPAN CLASS="keyword">new</SPAN> CSphere();
+<SPAN CLASS="linenum">0172:</SPAN>             ((CSphere*)m_ppPrim[i])-&gt;Init(pData+i);
+<SPAN CLASS="linenum">0173:</SPAN>             <SPAN CLASS="keyword">break</SPAN>;
+<SPAN CLASS="linenum">0174:</SPAN>         <SPAN CLASS="keyword">case</SPAN> OBJ_TYPE_TRIANGLE:
+<SPAN CLASS="linenum">0175:</SPAN>             m_ppPrim[i] = <SPAN CLASS="keyword">new</SPAN> CTriangle();
+<SPAN CLASS="linenum">0176:</SPAN>             ((CTriangle*)m_ppPrim[i])-&gt;Init(pData+i);
+<SPAN CLASS="linenum">0177:</SPAN>             <SPAN CLASS="keyword">break</SPAN>;
+<SPAN CLASS="linenum">0178:</SPAN>         }
+<SPAN CLASS="linenum">0179:</SPAN>     }
+<SPAN CLASS="linenum">0180:</SPAN> }
+<SPAN CLASS="linenum">0181:</SPAN> <SPAN CLASS="comment">// ---------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0182:</SPAN> <SPAN CLASS="keyword">void</SPAN> CMesh::Delete()
+<SPAN CLASS="linenum">0183:</SPAN> {
+<SPAN CLASS="linenum">0184:</SPAN>     <SPAN CLASS="keyword">int</SPAN> i;
+<SPAN CLASS="linenum">0185:</SPAN> 
+<SPAN CLASS="linenum">0186:</SPAN>     <SPAN CLASS="keyword">if</SPAN>(m_ppPrim){
+<SPAN CLASS="linenum">0187:</SPAN>         <SPAN CLASS="keyword">for</SPAN>(i=0;i&lt;m_num;i++){
+<SPAN CLASS="linenum">0188:</SPAN>             <SPAN CLASS="keyword">if</SPAN>(m_ppPrim[i]) {<SPAN CLASS="keyword">delete</SPAN> m_ppPrim[i];m_ppPrim[i]=NULL;}
+<SPAN CLASS="linenum">0189:</SPAN>         }
+<SPAN CLASS="linenum">0190:</SPAN>         <SPAN CLASS="keyword">delete</SPAN>[] m_ppPrim;
+<SPAN CLASS="linenum">0191:</SPAN>         m_ppPrim = NULL;
+<SPAN CLASS="linenum">0192:</SPAN>     }
+<SPAN CLASS="linenum">0193:</SPAN>     m_num = 0;
+<SPAN CLASS="linenum">0194:</SPAN> }
+<SPAN CLASS="linenum">0195:</SPAN> <SPAN CLASS="comment">// ---------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0196:</SPAN> <SPAN CLASS="keyword">float</SPAN> CMesh::IsAcross(<SPAN CLASS="keyword">float</SPAN> dist, D3DXVECTOR4 *n, D3DXVECTOR4 *p, CPrimitive **dest, <SPAN CLASS="keyword">const</SPAN> D3DXVECTOR4 *x, <SPAN CLASS="keyword">const</SPAN> D3DXVECTOR4 *v)
+<SPAN CLASS="linenum">0197:</SPAN> {
+<SPAN CLASS="linenum">0198:</SPAN>     <SPAN CLASS="keyword">float</SPAN> ttmp;
+<SPAN CLASS="linenum">0199:</SPAN>     D3DXVECTOR4 ntmp, ptmp;
+<SPAN CLASS="linenum">0200:</SPAN> 
+<SPAN CLASS="linenum">0201:</SPAN>     <SPAN CLASS="keyword">for</SPAN>(<SPAN CLASS="keyword">int</SPAN> i = 0; i&lt;m_num; i++){
+<SPAN CLASS="linenum">0202:</SPAN>         <SPAN CLASS="keyword">switch</SPAN>(m_ppPrim[i]-&gt;m_type){
+<SPAN CLASS="linenum">0203:</SPAN>         <SPAN CLASS="keyword">case</SPAN> OBJ_TYPE_SPHERE:
+<SPAN CLASS="linenum">0204:</SPAN>             ttmp = ((CSphere*)m_ppPrim[i])-&gt;IsAcross(&amp;ntmp, &amp;ptmp, x, v);
+<SPAN CLASS="linenum">0205:</SPAN>             <SPAN CLASS="keyword">break</SPAN>;
+<SPAN CLASS="linenum">0206:</SPAN>         <SPAN CLASS="keyword">case</SPAN> OBJ_TYPE_TRIANGLE:
+<SPAN CLASS="linenum">0207:</SPAN>             ttmp = ((CTriangle*)m_ppPrim[i])-&gt;IsAcross(&amp;ntmp, &amp;ptmp, x, v);
+<SPAN CLASS="linenum">0208:</SPAN>             <SPAN CLASS="keyword">break</SPAN>;
+<SPAN CLASS="linenum">0209:</SPAN>         }
+<SPAN CLASS="linenum">0210:</SPAN>         <SPAN CLASS="keyword">if</SPAN>(0&lt;=ttmp &amp;&amp; ttmp&lt;dist){
+<SPAN CLASS="linenum">0211:</SPAN>             dist = ttmp;
+<SPAN CLASS="linenum">0212:</SPAN>             *n = ntmp;
+<SPAN CLASS="linenum">0213:</SPAN>             *p = ptmp;
+<SPAN CLASS="linenum">0214:</SPAN>             *dest = m_ppPrim[i];
+<SPAN CLASS="linenum">0215:</SPAN>         }
+<SPAN CLASS="linenum">0216:</SPAN>     }
+<SPAN CLASS="linenum">0217:</SPAN> 
+<SPAN CLASS="linenum">0218:</SPAN>     <SPAN CLASS="keyword">return</SPAN> dist;
+<SPAN CLASS="linenum">0219:</SPAN> }
+<SPAN CLASS="linenum">0220:</SPAN> <SPAN CLASS="comment">// ---------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0221:</SPAN> <SPAN CLASS="keyword">bool</SPAN> CMesh::IsAcross(<SPAN CLASS="keyword">float</SPAN> dist, <SPAN CLASS="keyword">const</SPAN> D3DXVECTOR4 *x, <SPAN CLASS="keyword">const</SPAN> D3DXVECTOR4 *v)
+<SPAN CLASS="linenum">0222:</SPAN> {
+<SPAN CLASS="linenum">0223:</SPAN>     D3DXVECTOR4 ntmp, ptmp;
+<SPAN CLASS="linenum">0224:</SPAN> 
+<SPAN CLASS="linenum">0225:</SPAN>     <SPAN CLASS="keyword">for</SPAN>(<SPAN CLASS="keyword">int</SPAN> i = 0; i&lt;m_num; i++){
+<SPAN CLASS="linenum">0226:</SPAN>         <SPAN CLASS="keyword">float</SPAN> d;
+<SPAN CLASS="linenum">0227:</SPAN>         <SPAN CLASS="keyword">switch</SPAN>(m_ppPrim[i]-&gt;m_type){
+<SPAN CLASS="linenum">0228:</SPAN>         <SPAN CLASS="keyword">case</SPAN> OBJ_TYPE_SPHERE:
+<SPAN CLASS="linenum">0229:</SPAN>             d = ((CSphere*)m_ppPrim[i])-&gt;IsAcross(&amp;ntmp, &amp;ptmp, x, v);
+<SPAN CLASS="linenum">0230:</SPAN>             <SPAN CLASS="keyword">break</SPAN>;
+<SPAN CLASS="linenum">0231:</SPAN>         <SPAN CLASS="keyword">case</SPAN> OBJ_TYPE_TRIANGLE:
+<SPAN CLASS="linenum">0232:</SPAN>             d = ((CTriangle*)m_ppPrim[i])-&gt;IsAcross(&amp;ntmp, &amp;ptmp, x, v);
+<SPAN CLASS="linenum">0233:</SPAN>             <SPAN CLASS="keyword">break</SPAN>;
+<SPAN CLASS="linenum">0234:</SPAN>         }
+<SPAN CLASS="linenum">0235:</SPAN>         <SPAN CLASS="keyword">if</SPAN>(0.001*dist&lt;=d &amp;&amp; d&lt;0.99f*dist) <SPAN CLASS="keyword">return</SPAN> TRUE;
+<SPAN CLASS="linenum">0236:</SPAN>     }
+<SPAN CLASS="linenum">0237:</SPAN> 
+<SPAN CLASS="linenum">0238:</SPAN>     <SPAN CLASS="keyword">return</SPAN> FALSE;
+<SPAN CLASS="linenum">0239:</SPAN> }
+<SPAN CLASS="linenum">0240:</SPAN> 
+<SPAN CLASS="linenum">0241:</SPAN> 
+<SPAN CLASS="linenum">0242:</SPAN> };<SPAN CLASS="comment">// namespace Render</SPAN>
+<SPAN CLASS="linenum">0243:</SPAN> </PRE>
+</BODY>
+</HTML>

@@ -1,0 +1,181 @@
+<HTML>
+<HEAD>
+<TITLE>hlsl.fx</TITLE>
+<meta name="GENERATOR" content="cpp2html 2.1 by Niisaka">
+<meta http-equiv="Content-Type" content="text/html">
+<meta http-equiv="Content-Style-Type" content="text/css">
+<STYLE TYPE="text/css">
+<!--
+SPAN.comment { color:#008000; font-weight:normal; font-style:normal;}
+SPAN.keyword { color:#0000FF; font-weight:normal; font-style:normal;}
+SPAN.string { color:#600000; font-weight:normal; font-style:normal;}
+SPAN.linenum { color:#A0A0A0; font-weight:normal; font-style:normal;}
+-->
+</STYLE>
+</HEAD>
+<BODY TEXT="#000000" BGCOLOR="#FFFFFF">
+<PRE><SPAN CLASS="linenum">0001:</SPAN> <SPAN CLASS="comment">// -------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0002:</SPAN> <SPAN CLASS="comment">// パララクスマッピング</SPAN>
+<SPAN CLASS="linenum">0003:</SPAN> <SPAN CLASS="comment">// </SPAN>
+<SPAN CLASS="linenum">0004:</SPAN> <SPAN CLASS="comment">// Copyright (c) 2003 IMAGIRE Takashi. All rights reserved.</SPAN>
+<SPAN CLASS="linenum">0005:</SPAN> <SPAN CLASS="comment">// -------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0006:</SPAN> 
+<SPAN CLASS="linenum">0007:</SPAN> <SPAN CLASS="comment">// -------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0008:</SPAN> <SPAN CLASS="comment">// グローバル変数</SPAN>
+<SPAN CLASS="linenum">0009:</SPAN> <SPAN CLASS="comment">// -------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0010:</SPAN> 
+<SPAN CLASS="linenum">0011:</SPAN> float4x4 mWVP;      <SPAN CLASS="comment">// 座標変換の行列</SPAN>
+<SPAN CLASS="linenum">0012:</SPAN> 
+<SPAN CLASS="linenum">0013:</SPAN> float4 vLightDir;   <SPAN CLASS="comment">// ライトの方向</SPAN>
+<SPAN CLASS="linenum">0014:</SPAN> float4 vColor;      <SPAN CLASS="comment">// ライト＊メッシュの色</SPAN>
+<SPAN CLASS="linenum">0015:</SPAN> float3 vEyePos;     <SPAN CLASS="comment">// カメラの位置（ローカル座標系）</SPAN>
+<SPAN CLASS="linenum">0016:</SPAN> 
+<SPAN CLASS="linenum">0017:</SPAN> <SPAN CLASS="comment">// -------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0018:</SPAN> <SPAN CLASS="comment">// テクスチャ</SPAN>
+<SPAN CLASS="linenum">0019:</SPAN> <SPAN CLASS="comment">// -------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0020:</SPAN> <SPAN CLASS="comment">// 模様のテクスチャ</SPAN>
+<SPAN CLASS="linenum">0021:</SPAN> texture DecaleTex;
+<SPAN CLASS="linenum">0022:</SPAN> sampler DecaleSamp = sampler_state
+<SPAN CLASS="linenum">0023:</SPAN> {
+<SPAN CLASS="linenum">0024:</SPAN>     Texture = &lt;DecaleTex&gt;;
+<SPAN CLASS="linenum">0025:</SPAN>     MinFilter = LINEAR;
+<SPAN CLASS="linenum">0026:</SPAN>     MagFilter = LINEAR;
+<SPAN CLASS="linenum">0027:</SPAN>     MipFilter = NONE;
+<SPAN CLASS="linenum">0028:</SPAN> 
+<SPAN CLASS="linenum">0029:</SPAN>     AddressU = Clamp;
+<SPAN CLASS="linenum">0030:</SPAN>     AddressV = Clamp;
+<SPAN CLASS="linenum">0031:</SPAN> };
+<SPAN CLASS="linenum">0032:</SPAN> <SPAN CLASS="comment">// -------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0033:</SPAN> <SPAN CLASS="comment">// 法線マップ</SPAN>
+<SPAN CLASS="linenum">0034:</SPAN> texture NormalMap;
+<SPAN CLASS="linenum">0035:</SPAN> sampler NormalSamp = sampler_state
+<SPAN CLASS="linenum">0036:</SPAN> {
+<SPAN CLASS="linenum">0037:</SPAN>     Texture = &lt;NormalMap&gt;;
+<SPAN CLASS="linenum">0038:</SPAN>     MinFilter = LINEAR;
+<SPAN CLASS="linenum">0039:</SPAN>     MagFilter = LINEAR;
+<SPAN CLASS="linenum">0040:</SPAN>     MipFilter = NONE;
+<SPAN CLASS="linenum">0041:</SPAN> 
+<SPAN CLASS="linenum">0042:</SPAN>     AddressU = Wrap;
+<SPAN CLASS="linenum">0043:</SPAN>     AddressV = Wrap;
+<SPAN CLASS="linenum">0044:</SPAN> };
+<SPAN CLASS="linenum">0045:</SPAN> 
+<SPAN CLASS="linenum">0046:</SPAN> <SPAN CLASS="comment">// -------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0047:</SPAN> <SPAN CLASS="comment">// 高さマップ</SPAN>
+<SPAN CLASS="linenum">0048:</SPAN> texture HeightMap;
+<SPAN CLASS="linenum">0049:</SPAN> sampler HeightSamp = sampler_state
+<SPAN CLASS="linenum">0050:</SPAN> {
+<SPAN CLASS="linenum">0051:</SPAN>     Texture = &lt;HeightMap&gt;;
+<SPAN CLASS="linenum">0052:</SPAN>     MinFilter = LINEAR;
+<SPAN CLASS="linenum">0053:</SPAN>     MagFilter = LINEAR;
+<SPAN CLASS="linenum">0054:</SPAN>     MipFilter = NONE;
+<SPAN CLASS="linenum">0055:</SPAN> 
+<SPAN CLASS="linenum">0056:</SPAN>     AddressU = Wrap;
+<SPAN CLASS="linenum">0057:</SPAN>     AddressV = Wrap;
+<SPAN CLASS="linenum">0058:</SPAN> };
+<SPAN CLASS="linenum">0059:</SPAN> 
+<SPAN CLASS="linenum">0060:</SPAN> <SPAN CLASS="comment">// -------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0061:</SPAN> <SPAN CLASS="comment">// 頂点シェーダからピクセルシェーダに渡すデータ</SPAN>
+<SPAN CLASS="linenum">0062:</SPAN> <SPAN CLASS="comment">// -------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0063:</SPAN> <SPAN CLASS="keyword">struct</SPAN> VS_OUTPUT
+<SPAN CLASS="linenum">0064:</SPAN> {
+<SPAN CLASS="linenum">0065:</SPAN>     float4 Pos          : POSITION;
+<SPAN CLASS="linenum">0066:</SPAN>     float4 Color        : COLOR0;       <SPAN CLASS="comment">// 頂点色</SPAN>
+<SPAN CLASS="linenum">0067:</SPAN>     float2 Tex          : TEXCOORD0;    <SPAN CLASS="comment">// デカールテクスチャ座標</SPAN>
+<SPAN CLASS="linenum">0068:</SPAN>     float3 L            : TEXCOORD1;    <SPAN CLASS="comment">// ライトベクトル</SPAN>
+<SPAN CLASS="linenum">0069:</SPAN>     float3 E            : TEXCOORD2;    <SPAN CLASS="comment">// 視線ベクトル</SPAN>
+<SPAN CLASS="linenum">0070:</SPAN> };
+<SPAN CLASS="linenum">0071:</SPAN> <SPAN CLASS="comment">// -------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0072:</SPAN> <SPAN CLASS="comment">// シーンの描画</SPAN>
+<SPAN CLASS="linenum">0073:</SPAN> <SPAN CLASS="comment">// -------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0074:</SPAN> VS_OUTPUT VS(
+<SPAN CLASS="linenum">0075:</SPAN>       float4 Pos      : POSITION,          <SPAN CLASS="comment">// ローカル位置座標</SPAN>
+<SPAN CLASS="linenum">0076:</SPAN>       float3 Normal   : NORMAL,            <SPAN CLASS="comment">// 法線ベクトル</SPAN>
+<SPAN CLASS="linenum">0077:</SPAN>       float3 Tangent  : TANGENT0,          <SPAN CLASS="comment">// 接ベクトル</SPAN>
+<SPAN CLASS="linenum">0078:</SPAN>       float2 Texcoord : TEXCOORD0          <SPAN CLASS="comment">// 法線ベクトル</SPAN>
+<SPAN CLASS="linenum">0079:</SPAN> ){
+<SPAN CLASS="linenum">0080:</SPAN>     VS_OUTPUT Out = (VS_OUTPUT)0;        <SPAN CLASS="comment">// 出力データ</SPAN>
+<SPAN CLASS="linenum">0081:</SPAN>     
+<SPAN CLASS="linenum">0082:</SPAN>     <SPAN CLASS="comment">// 座標変換</SPAN>
+<SPAN CLASS="linenum">0083:</SPAN>     Out.Pos = mul(Pos, mWVP);
+<SPAN CLASS="linenum">0084:</SPAN>     
+<SPAN CLASS="linenum">0085:</SPAN>     <SPAN CLASS="comment">// メッシュの色</SPAN>
+<SPAN CLASS="linenum">0086:</SPAN>     Out.Color = vColor;
+<SPAN CLASS="linenum">0087:</SPAN>     
+<SPAN CLASS="linenum">0088:</SPAN>     <SPAN CLASS="comment">// デカール用のテクスチャ座標</SPAN>
+<SPAN CLASS="linenum">0089:</SPAN>     Out.Tex = Texcoord;
+<SPAN CLASS="linenum">0090:</SPAN> 
+<SPAN CLASS="linenum">0091:</SPAN>     <SPAN CLASS="comment">// 座標系の変換基底</SPAN>
+<SPAN CLASS="linenum">0092:</SPAN>     float3 N = Normal;
+<SPAN CLASS="linenum">0093:</SPAN>     float3 T = Tangent;
+<SPAN CLASS="linenum">0094:</SPAN>     float3 B = cross(N,T);
+<SPAN CLASS="linenum">0095:</SPAN> 
+<SPAN CLASS="linenum">0096:</SPAN>     <SPAN CLASS="comment">// 鏡面反射用のベクトル</SPAN>
+<SPAN CLASS="linenum">0097:</SPAN>     float3 E = vEyePos - Pos.xyz;   <SPAN CLASS="comment">// 視線ベクトル</SPAN>
+<SPAN CLASS="linenum">0098:</SPAN>     Out.E.x = dot(E,T);
+<SPAN CLASS="linenum">0099:</SPAN>     Out.E.y = dot(E,B);
+<SPAN CLASS="linenum">0100:</SPAN>     Out.E.z = dot(E,N);
+<SPAN CLASS="linenum">0101:</SPAN> 
+<SPAN CLASS="linenum">0102:</SPAN>     float3 L = -vLightDir.xyz;      <SPAN CLASS="comment">// ライトベクトル</SPAN>
+<SPAN CLASS="linenum">0103:</SPAN>     Out.L.x = dot(L,T);
+<SPAN CLASS="linenum">0104:</SPAN>     Out.L.y = dot(L,B);
+<SPAN CLASS="linenum">0105:</SPAN>     Out.L.z = dot(L,N);
+<SPAN CLASS="linenum">0106:</SPAN>     
+<SPAN CLASS="linenum">0107:</SPAN>     <SPAN CLASS="keyword">return</SPAN> Out;
+<SPAN CLASS="linenum">0108:</SPAN> }
+<SPAN CLASS="linenum">0109:</SPAN> <SPAN CLASS="comment">// -------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0110:</SPAN> float4 PS( VS_OUTPUT In) : COLOR
+<SPAN CLASS="linenum">0111:</SPAN> {   
+<SPAN CLASS="linenum">0112:</SPAN>     float3 L = normalize(In.L);                     <SPAN CLASS="comment">// ライトベクトル</SPAN>
+<SPAN CLASS="linenum">0113:</SPAN>     float3 E = normalize(In.E);                     <SPAN CLASS="comment">// 視線ベクトル</SPAN>
+<SPAN CLASS="linenum">0114:</SPAN> 
+<SPAN CLASS="linenum">0115:</SPAN>     <SPAN CLASS="keyword">float</SPAN> h = tex2D( HeightSamp, In.Tex );<SPAN CLASS="comment">// 高さマップのサンプリング</SPAN>
+<SPAN CLASS="linenum">0116:</SPAN>     
+<SPAN CLASS="linenum">0117:</SPAN>     float2 Tex = In.Tex + 0.03 * h * E.xy;
+<SPAN CLASS="linenum">0118:</SPAN>     
+<SPAN CLASS="linenum">0119:</SPAN>     float3 N = 2.0f*tex2D( NormalSamp, Tex ).xyz-1.0;<SPAN CLASS="comment">// 法線マップからの法線</SPAN>
+<SPAN CLASS="linenum">0120:</SPAN>     float3 R = reflect(-E, N);      <SPAN CLASS="comment">// 反射ベクトル</SPAN>
+<SPAN CLASS="linenum">0121:</SPAN>     <SPAN CLASS="keyword">float</SPAN> amb = -vLightDir.w;                       <SPAN CLASS="comment">// 環境光の強さ</SPAN>
+<SPAN CLASS="linenum">0122:</SPAN>     
+<SPAN CLASS="linenum">0123:</SPAN>     <SPAN CLASS="keyword">return</SPAN> In.Color * tex2D( DecaleSamp, Tex )  <SPAN CLASS="comment">// 拡散光と環境光には、</SPAN>
+<SPAN CLASS="linenum">0124:</SPAN>                * (max(0, dot(N, L))+amb)            <SPAN CLASS="comment">// 頂点色とテクスチャの色を合成する</SPAN>
+<SPAN CLASS="linenum">0125:</SPAN>              + 0.3f * pow(max(0,dot(R, L)), 8);     <SPAN CLASS="comment">// Phong 鏡面反射光</SPAN>
+<SPAN CLASS="linenum">0126:</SPAN> }
+<SPAN CLASS="linenum">0127:</SPAN> 
+<SPAN CLASS="linenum">0128:</SPAN> <SPAN CLASS="comment">// -------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0129:</SPAN> float4 PS_BUMP( VS_OUTPUT In) : COLOR
+<SPAN CLASS="linenum">0130:</SPAN> {   
+<SPAN CLASS="linenum">0131:</SPAN>     float3 L = normalize(In.L);                     <SPAN CLASS="comment">// ライトベクトル</SPAN>
+<SPAN CLASS="linenum">0132:</SPAN>     float3 E = normalize(In.E);                     <SPAN CLASS="comment">// 視線ベクトル</SPAN>
+<SPAN CLASS="linenum">0133:</SPAN> 
+<SPAN CLASS="linenum">0134:</SPAN>     <SPAN CLASS="keyword">float</SPAN> h = tex2D( HeightSamp, In.Tex );<SPAN CLASS="comment">// 高さマップのサンプリング</SPAN>
+<SPAN CLASS="linenum">0135:</SPAN>     
+<SPAN CLASS="linenum">0136:</SPAN>     float2 Tex = In.Tex;
+<SPAN CLASS="linenum">0137:</SPAN>     
+<SPAN CLASS="linenum">0138:</SPAN>     float3 N = 2.0f*tex2D( NormalSamp, Tex ).xyz-1.0;<SPAN CLASS="comment">// 法線マップからの法線</SPAN>
+<SPAN CLASS="linenum">0139:</SPAN>     float3 R = reflect(-E, N);      <SPAN CLASS="comment">// 反射ベクトル</SPAN>
+<SPAN CLASS="linenum">0140:</SPAN>     <SPAN CLASS="keyword">float</SPAN> amb = -vLightDir.w;                       <SPAN CLASS="comment">// 環境光の強さ</SPAN>
+<SPAN CLASS="linenum">0141:</SPAN>     
+<SPAN CLASS="linenum">0142:</SPAN>     <SPAN CLASS="keyword">return</SPAN> In.Color * tex2D( DecaleSamp, Tex )  <SPAN CLASS="comment">// 拡散光と環境光には、</SPAN>
+<SPAN CLASS="linenum">0143:</SPAN>                * (max(0, dot(N, L))+amb)            <SPAN CLASS="comment">// 頂点色とテクスチャの色を合成する</SPAN>
+<SPAN CLASS="linenum">0144:</SPAN>              + 0.3f * pow(max(0,dot(R, L)), 8);     <SPAN CLASS="comment">// Phong 鏡面反射光</SPAN>
+<SPAN CLASS="linenum">0145:</SPAN> }
+<SPAN CLASS="linenum">0146:</SPAN> 
+<SPAN CLASS="linenum">0147:</SPAN> <SPAN CLASS="comment">// -------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0148:</SPAN> <SPAN CLASS="comment">// テクニック</SPAN>
+<SPAN CLASS="linenum">0149:</SPAN> <SPAN CLASS="comment">// -------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0150:</SPAN> technique TShader
+<SPAN CLASS="linenum">0151:</SPAN> {
+<SPAN CLASS="linenum">0152:</SPAN>     pass P0
+<SPAN CLASS="linenum">0153:</SPAN>     {
+<SPAN CLASS="linenum">0154:</SPAN>         VertexShader = compile vs_1_1 VS();
+<SPAN CLASS="linenum">0155:</SPAN>         PixelShader  = compile ps_2_0 PS();
+<SPAN CLASS="linenum">0156:</SPAN>     }
+<SPAN CLASS="linenum">0157:</SPAN>     pass P1
+<SPAN CLASS="linenum">0158:</SPAN>     {
+<SPAN CLASS="linenum">0159:</SPAN>         VertexShader = compile vs_1_1 VS();
+<SPAN CLASS="linenum">0160:</SPAN>         PixelShader  = compile ps_2_0 PS_BUMP();
+<SPAN CLASS="linenum">0161:</SPAN>     }
+<SPAN CLASS="linenum">0162:</SPAN> }
+<SPAN CLASS="linenum">0163:</SPAN> </PRE>
+</BODY>
+</HTML>

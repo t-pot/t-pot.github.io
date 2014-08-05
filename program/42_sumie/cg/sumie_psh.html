@@ -1,0 +1,73 @@
+<HTML>
+<HEAD>
+<TITLE>sumie.psh</TITLE>
+<meta name="GENERATOR" content="cpp2html 2.1 by Niisaka">
+<meta http-equiv="Content-Type" content="text/html">
+</HEAD>
+<BODY TEXT="#000000" BGCOLOR="#FFFFFF">
+<PRE><FONT COLOR="#40F628">0001:</FONT> <FONT COLOR="#008000">// ----------------------------------------------------------------------------</FONT>
+<FONT COLOR="#40F628">0002:</FONT> <FONT COLOR="#008000">//</FONT>
+<FONT COLOR="#40F628">0003:</FONT> <FONT COLOR="#008000">// sumie.psh</FONT>
+<FONT COLOR="#40F628">0004:</FONT> <FONT COLOR="#008000">//</FONT>
+<FONT COLOR="#40F628">0005:</FONT> <FONT COLOR="#008000">//    Copyright (c) 2002 imagire takashi (imagire@gmail.com) All Rights Reserved.</FONT>
+<FONT COLOR="#40F628">0006:</FONT> <FONT COLOR="#008000">//</FONT>
+<FONT COLOR="#40F628">0007:</FONT> <FONT COLOR="#008000">// ----------------------------------------------------------------------------</FONT>
+<FONT COLOR="#40F628">0008:</FONT> <FONT COLOR="#008000">//</FONT>
+<FONT COLOR="#40F628">0009:</FONT> <FONT COLOR="#008000">// ; Result of Compile</FONT>
+<FONT COLOR="#40F628">0010:</FONT> <FONT COLOR="#008000">// ps.1.1</FONT>
+<FONT COLOR="#40F628">0011:</FONT> <FONT COLOR="#008000">//</FONT>
+<FONT COLOR="#40F628">0012:</FONT> <FONT COLOR="#008000">// def c0, 0.000000 0.000000 0.000000 0.150000</FONT>
+<FONT COLOR="#40F628">0013:</FONT> <FONT COLOR="#008000">//</FONT>
+<FONT COLOR="#40F628">0014:</FONT> <FONT COLOR="#008000">// ; Fetch texture color</FONT>
+<FONT COLOR="#40F628">0015:</FONT> <FONT COLOR="#008000">// tex t0      ; 0:0 0 0  1:0 1 0  2:0 0 0  3:0 0 0</FONT>
+<FONT COLOR="#40F628">0016:</FONT> <FONT COLOR="#008000">// tex t1      ;   0 1 0    0 0 0    0 0 0    0 0 0</FONT>
+<FONT COLOR="#40F628">0017:</FONT> <FONT COLOR="#008000">// tex t2      ;   0 0 0    0 0 0    1 0 0    0 0 1</FONT>
+<FONT COLOR="#40F628">0018:</FONT> <FONT COLOR="#008000">// tex t3</FONT>
+<FONT COLOR="#40F628">0019:</FONT> <FONT COLOR="#008000">//</FONT>
+<FONT COLOR="#40F628">0020:</FONT> <FONT COLOR="#008000">// add r1, t2, -t0</FONT>
+<FONT COLOR="#40F628">0021:</FONT> <FONT COLOR="#008000">// add r1, r1, t3</FONT>
+<FONT COLOR="#40F628">0022:</FONT> <FONT COLOR="#008000">// add r1, r1, -t0</FONT>
+<FONT COLOR="#40F628">0023:</FONT> <FONT COLOR="#008000">// add r1, r1, t1</FONT>
+<FONT COLOR="#40F628">0024:</FONT> <FONT COLOR="#008000">// add r1, r1, -t0</FONT>
+<FONT COLOR="#40F628">0025:</FONT> <FONT COLOR="#008000">// mul r1, c0.w, r1</FONT>
+<FONT COLOR="#40F628">0026:</FONT> <FONT COLOR="#008000">// add r0, r1, t0</FONT>
+<FONT COLOR="#40F628">0027:</FONT> 
+<FONT COLOR="#40F628">0028:</FONT> <FONT COLOR="#008000">// ----------------------------------------------------------------------------</FONT>
+<FONT COLOR="#40F628">0029:</FONT> <FONT COLOR="#008000">// Input</FONT>
+<FONT COLOR="#40F628">0030:</FONT> <FONT COLOR="#008000">// ----------------------------------------------------------------------------</FONT>
+<FONT COLOR="#40F628">0031:</FONT> <FONT COLOR="#0000FF">#pragma</FONT> bind v2f_simple.position  = HPOS;
+<FONT COLOR="#40F628">0032:</FONT> <FONT COLOR="#0000FF">#pragma</FONT> bind v2f_simple.texcoord0 = TEX0;
+<FONT COLOR="#40F628">0033:</FONT> <FONT COLOR="#0000FF">#pragma</FONT> bind v2f_simple.texcoord1 = TEX1;
+<FONT COLOR="#40F628">0034:</FONT> <FONT COLOR="#0000FF">#pragma</FONT> bind v2f_simple.texcoord2 = TEX2;
+<FONT COLOR="#40F628">0035:</FONT> <FONT COLOR="#0000FF">#pragma</FONT> bind v2f_simple.texcoord3 = TEX3;
+<FONT COLOR="#40F628">0036:</FONT> 
+<FONT COLOR="#40F628">0037:</FONT> <FONT COLOR="#0000FF">struct</FONT> v2f_simple : vertex2fragment  {
+<FONT COLOR="#40F628">0038:</FONT>     float4 position;
+<FONT COLOR="#40F628">0039:</FONT>     float4 texcoord0;
+<FONT COLOR="#40F628">0040:</FONT>     float4 texcoord1;
+<FONT COLOR="#40F628">0041:</FONT>     float4 texcoord2;
+<FONT COLOR="#40F628">0042:</FONT>     float4 texcoord3;
+<FONT COLOR="#40F628">0043:</FONT> };
+<FONT COLOR="#40F628">0044:</FONT> 
+<FONT COLOR="#40F628">0045:</FONT> fragout main(v2f_simple I
+<FONT COLOR="#40F628">0046:</FONT>                 , uniform sampler2D tex0
+<FONT COLOR="#40F628">0047:</FONT>                 , uniform sampler2D tex1
+<FONT COLOR="#40F628">0048:</FONT>                 , uniform sampler2D tex2
+<FONT COLOR="#40F628">0049:</FONT>                 , uniform sampler2D tex3
+<FONT COLOR="#40F628">0050:</FONT> ) {
+<FONT COLOR="#40F628">0051:</FONT>     fragout O;
+<FONT COLOR="#40F628">0052:</FONT> 
+<FONT COLOR="#40F628">0053:</FONT>     <FONT COLOR="#008000">// Fetch texture color</FONT>
+<FONT COLOR="#40F628">0054:</FONT>     float4 t0 = tex2D(tex0);
+<FONT COLOR="#40F628">0055:</FONT>     float4 t1 = tex2D(tex1);
+<FONT COLOR="#40F628">0056:</FONT>     float4 t2 = tex2D(tex2);
+<FONT COLOR="#40F628">0057:</FONT>     float4 t3 = tex2D(tex3);
+<FONT COLOR="#40F628">0058:</FONT>     
+<FONT COLOR="#40F628">0059:</FONT>     O.col = 0.15f*(t2-t0+t3-t0+t1-t0)+t0;
+<FONT COLOR="#40F628">0060:</FONT>  
+<FONT COLOR="#40F628">0061:</FONT>     <FONT COLOR="#0000FF">return</FONT> O;
+<FONT COLOR="#40F628">0062:</FONT> } 
+<FONT COLOR="#40F628">0063:</FONT> 
+<FONT COLOR="#40F628">0064:</FONT> </PRE>
+</BODY>
+</HTML>

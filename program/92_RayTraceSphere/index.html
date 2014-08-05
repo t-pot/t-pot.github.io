@@ -1,0 +1,241 @@
+<head>
+	<title>t-pot『Ray Tracing : Intersection with sphere』</title>
+	<link rel="stylesheet" type="text/css" href="../if.css">
+</head>
+<meta http-equiv=Content-Type content="text/html; charset=shift_jis">
+<body>
+
+
+<div class="contents">
+<center>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<h1>レイトレース：玉と視線の交差判定</h1><br>
+<h3>～ Ray Tracing : Intersection with sphere ～</h3>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<image src = "title.png">
+<br>
+<br>
+<hr>
+</center>
+<div>
+
+
+<h2>■はじめに</h2>
+
+
+<p>
+レイトレーシングを行うためには、物体と視線の交差判定ができなくては、話になりません。<br>
+ここでは、よくある物体として玉に関する交差判定を実装してみます。
+</p>
+
+<p>
+今回のプログラムは、次のものです。
+</p>
+<ul style = "LIST-STYLE-TYPE:none">
+<li><a href="src.zip">src.zip (玉と視線の交差判定:MFC, DirectX9)</a>
+</ul>
+
+<p>
+まぁ、いつものように適当にファイルが入っています。<br>
+APP WIZARD から出力されるフレームワークのファイルは紹介を省かせていただきます。
+</p>
+<table>
+<tr><td><a href="render_cpp.html">render.cpp</a></td><td>レイトレ用の描画関数群</td></tr>
+<tr><td><a href="render_h.html">render.h</a></td><td>レイトレ用の描画関数群</td></tr>
+<tr><td><a href="mainDlg_cpp.html">mainDlg.cpp</a></td><td>ダイアログを管理するクラスのメソッドが書かれたファイル</td></tr>
+<tr><td><a href="mainDlg_h.html">mainDlg.h</a></td><td>ダイアログを管理するクラスのヘッダ</td></tr>
+</table>
+
+<p>
+あと、実行ファイル、リソースファイル、プロジェクトファイルが入っています。
+</p>
+
+
+<h2>■何やってるの？</h2>
+
+
+<p>
+交差判定とは、何でしょうか？<br>
+レイトレーシングは、描画しようとするスクリーンから、
+レイと呼ばれる視線を飛ばして、レイが物体と衝突したところで色を算出したり、
+レイを反射させてさらにその先を追いかけて画面をレンダリングする手法です。<br>
+ここで、「レイが物体と衝突した」というのを検出するのが交差判定です。<br>
+交差判定は、基本的には３角ポリゴンとレイの判定ができれば不自由しないのですが、
+ポリゴンをそのまま使うと計算量が莫大になってしまうので、
+球や円柱のような簡単な物体の交差判定を使うことも、まま行われます。<br>
+ということで、簡単に見栄えのよい画像を作るために、最初に球とレイの交差判定を作ります。
+</p>
+<p>
+さて、レイと球の交差判定を幾何学的に定式化してみましょう。<br>
+球は、中心の座標<b>c</b>と、半径rで表現することができます。<br>
+レイは、視点<b>x</b>と、視線<b>v</b>によって、視点から出るベクトル<b>x</b>+t<b>v</b>と書き下せます。<br>
+ここで、太字で書いてあるベクトルは、３次元のつもりで書きますが何次元でもかまいません。
+２次元なら円、３次元なら球になります。<br>
+まぁ、３次元以外は使いませんが…
+</p>
+<image src = "explain.png">
+<p>
+さて、交差判定は、このレイが球に衝突するかどうかを判定する作業ですが、
+レイの方程式
+</p>
+<pre class="CodeBlock">
+<b>X</b>=<b>x</b>+t<b>v</b>
+</pre>
+<p>
+と、円の方程式
+</p>
+<pre class="CodeBlock">
+(<b>X</b>-<b>c</b>)(<b>X</b>-<b>c</b>)=r<sup>2</sup>
+</pre>
+<p>
+を連立して、交点を求める作業ともいえます。<br>
+これらの式を連立すると、レイの移動した量のパラメータtを求める計算になります。<br>
+連立した式は、
+</p>
+<pre class="CodeBlock">
+(<b>x</b>+t<b>v</b>-<b>c</b>)(<b>x</b>+t<b>v</b>-<b>c</b>)=r<sup>2</sup>
+</pre>
+<p>
+この式をtに関する式として変形すると、
+</p>
+<pre class="CodeBlock">
+|<b>v</b>|<sup>2</sup>t<sup>2</sup> + 2<b>v</b>(<b>x</b>-<b>c</b>)t + |<b>x</b>-<b>c</b>|<sup>2</sup>-r<sup>2</sup>=0
+</pre>
+<p>
+になります。<br>
+この式は、解の公式を使えば簡単に解決して、
+球と交差する時のレイに関するtの値は、
+</p>
+<pre class="CodeBlock">
+    -<b>v</b>(<b>x</b>-<b>c</b>)±√D
+t = ---------------
+         |<b>v</b>|<sup>2</sup>
+
+    D = {<b>v</b>(<b>x</b>-<b>c</b>)}<sup>2</sup> - |<b>v</b>|<sup>2</sup>(|<b>x</b>-<b>c</b>|<sup>2</sup>-r<sup>2</sup>)
+</pre>
+<p>
+になります。<br>
+ここで、判別式Dは正でなくてはなりません。
+判別式が負の時は解が虚数になるので、実際の世界では交点が観測されないことになります。<br>
+また、レイとして使えるパラメータtは、正でなくてはなりません。<br>
+解が負のレイは、視線の後ろに交点が存在することになるので、実際は交差しない解になります。
+</p>
+<image src = "positive.png">
+<p>
+実際のプログラムでは、次のようになります。<br>
+このプログラムは、レイが球に衝突したら、黄色（RGB=(1, 0.9, 0.5)）を返し、外れたらBG_COLORを返す関数です。<br>
+最初に判別式を計算して、判別式が負ならレイが外れたとみなして関数を終了します。
+判別式が正の時には、解を計算して、どちらかの解が正ならば衝突したとみなします。<br>
+今回は、ベクトルのライブラリとして DirectX を使いました。デバイスの初期化などの面倒なことは全く必要とせずに使えるので手軽ないいやつです。<br>
+</p>
+<pre class="CodeBlock">
+render.cpp
+<font color="deepskyblue">0112:</font> D3DXVECTOR3 *GetColor(D3DXVECTOR3 *dest, D3DXVECTOR4 *x, D3DXVECTOR4 *v)
+<font color="deepskyblue">0113:</font> {
+<font color="deepskyblue">0114:</font>     <font color="cyan">// 線分と球の判定</font>
+<font color="deepskyblue">0115:</font>     D3DXVECTOR4 center = D3DXVECTOR4(0,1,0,1);          <font color="cyan">// 中心位置</font>
+<font color="deepskyblue">0116:</font>     FLOAT radius_sq = 1.0f*1.0f;
+<font color="deepskyblue">0117:</font> 
+<font color="deepskyblue">0118:</font>     D3DXVECTOR4 xc = (*x)-center;<font color="cyan">// 中心からの相対位置</font>
+<font color="deepskyblue">0119:</font>     FLOAT xc2 = D3DXVec3Dot((D3DXVECTOR3 *)&amp;xc, (D3DXVECTOR3 *)&amp;xc);
+<font color="deepskyblue">0120:</font>     FLOAT vxc = D3DXVec3Dot((D3DXVECTOR3 *)v, (D3DXVECTOR3 *)&amp;xc);
+<font color="deepskyblue">0121:</font>     FLOAT D = vxc*vxc-xc2+radius_sq;<font color="cyan">// 判別式</font>
+<font color="deepskyblue">0122:</font>     
+<font color="deepskyblue">0123:</font>     *dest = D3DXVECTOR3(1,0.9,0.5); <font color="cyan">// 当たったときの色</font>
+<font color="deepskyblue">0124:</font> 
+<font color="deepskyblue">0125:</font>     <font color="blue">if</font>(D&lt;0) {*dest = BG_COLOR; <font color="blue">return</font> dest;} <font color="cyan">// 交点が存在しない外れた</font>
+<font color="deepskyblue">0126:</font>     
+<font color="deepskyblue">0127:</font>     <font color="blue">float</font> tn = -vxc-sqrtf(D);
+<font color="deepskyblue">0128:</font>     <font color="blue">float</font> tp = -vxc+sqrtf(D);
+<font color="deepskyblue">0129:</font> 
+<font color="deepskyblue">0130:</font>     <font color="blue">if</font>(tn&lt;0 &amp;&amp; tp&lt;0) {*dest = BG_COLOR; <font color="blue">return</font> dest;}
+<font color="deepskyblue">0131:</font> 
+<font color="deepskyblue">0132:</font>     <font color="blue">return</font> dest;
+<font color="deepskyblue">0133:</font> }
+</pre>
+<p>
+球は、半径1で中心は(0,1,0)にしました。関数の最初に指定していますが、後々はデータとして分離していきます。<br>
+レイは、関数の引数として位置と視線方向を入力することによって指定します。
+</p>
+
+
+<h2>■レイの飛ばしかた</h2>
+
+
+<p>
+さて、後はレイの飛ばし方が問題になります。<br>
+個人的には、直接カメラの位置や向きを使ってレイを飛ばすのは、しょぼいと思います。<br>
+我々が普通にレンダリングするときには、カメラの位置は気にせず、
+頂点座標はビュー行列や射影行列を使って行うように。<br>
+ここでは、ビュー行列や射影行列を使って、ワールド座標系で飛ばすレイの方向を、スクリーンに打たれるピクセルの位置から求めます。
+</p>
+<p>
+ビュー行列は、ワールド座標系からカメラ座標系への変換行列です。<br>
+射影行列は、カメラ座標系から射影座標系への変換行列です。<br>
+そこで、射影座標系でのピクセルの位置をビュー行列と射影行列の逆行列にかければピクセルのワールド座標系での位置がわかります。<br>
+たとえば、z=0、w=1とした射影座標系の座標値をビュー行列と射影行列の逆行列にかければ、前方クリップ面のワールド座標系での位置が求まります。<br>
+ちなみに、スクリーン座標系から射影座標系への変換は、符号化スケーリングと拡大縮小で求めることができます。<br>
+</p>
+<image src = "ray.png">
+<p>
+また、視点ですが、カメラ座標系での原点(0,0,0,1)は、まさにカメラが置かれた場所なので、
+(0,0,0,1)をビュー行列の逆行列で変換すれば、ワールド座標系でのカメラの位置が求まります。<br>
+後は、それぞれのベクトルの差をとって、規格化すれば、レイの方向ベクトルが求まります。
+</p>
+<p>
+実際のプログラムは次のようになります。<br>
+ここで、cameraは、独自に作ったカメラクラスのオブジェクトで、
+GetViewInverse()や、GetViewProjInverse() は、あらかじめ設定されたビュー行列やビュー射影行列の逆行列を返します。<br>
+この関数によって、0～1の範囲にスケールされたスクリーン行列の点(x,y)として与えられたピクセルの座標値からレイの方向が決定でき、
+球と交差判定の結果、当たった点に色がつきます。
+</p>
+
+<pre class="CodeBlock">
+render.cpp
+<font color="deepskyblue">0135:</font> D3DXVECTOR3 *GetColor(D3DXVECTOR3 *dest, <font color="blue">float</font> x, <font color="blue">float</font> y)
+<font color="deepskyblue">0136:</font> {
+<font color="deepskyblue">0137:</font>     D3DXVECTOR4 ray_start_proj = D3DXVECTOR4(-2*x+1, -2*y+1, 0, 1);<font color="cyan">// 前方クリップ面</font>
+<font color="deepskyblue">0138:</font>     D3DXVECTOR4 ray_eye        = D3DXVECTOR4(0, 0, 0, 1);<font color="cyan">// ビュー空間でのカメラの位置</font>
+<font color="deepskyblue">0139:</font>     D3DXVECTOR4 ray_start;
+<font color="deepskyblue">0140:</font>     D3DXVECTOR4 ray_to;
+<font color="deepskyblue">0141:</font>     D3DXVECTOR4 ray_dir;
+<font color="deepskyblue">0142:</font>     D3DXMATRIX mInv;
+<font color="deepskyblue">0143:</font>     
+<font color="deepskyblue">0144:</font>     <font color="cyan">// 視点を射影空間からワールド座標に変換する</font>
+<font color="deepskyblue">0145:</font>     D3DXVec4Transform( &amp;ray_start, &amp;ray_eye,        camera.GetViewInverse() );
+<font color="deepskyblue">0146:</font>     D3DXVec4Transform( &amp;ray_to,    &amp;ray_start_proj, camera.GetViewProjInverse() );
+<font color="deepskyblue">0147:</font>     D3DXVec4Scale( &amp;ray_to,    &amp;ray_to,    1.0f/ray_to.w   );<font color="cyan">// w=1 の射影空間に落とす</font>
+<font color="deepskyblue">0148:</font>     <font color="cyan">// 向きの計算</font>
+<font color="deepskyblue">0149:</font>     ray_dir = ray_to - ray_start;
+<font color="deepskyblue">0150:</font>     D3DXVec4Normalize(&amp;ray_dir, &amp;ray_dir);
+<font color="deepskyblue">0151:</font>     
+<font color="deepskyblue">0152:</font>     <font color="cyan">// 色計算</font>
+<font color="deepskyblue">0153:</font>     <font color="blue">return</font> GetColor(dest, &amp;ray_start, &amp;ray_dir);
+<font color="deepskyblue">0154:</font> }
+</pre>
+
+
+
+<h2>■最後に</h2>
+
+
+<p>
+ライティングを何も行っていないので淡白な結果ですが、最初はこんなもんでしょう。
+</p>
+
+
+</div>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<center>
+<hr>
+<p><a href="../index.html">もどる</a></p>
+<p><a href="mailto:imagire@gmail.com">imagire@gmail.com</a></p>
+</center>
+
+</body>
+</html>

@@ -1,0 +1,587 @@
+<head>
+	<title>t-pot『炎』</title>
+	<link rel="stylesheet" type="text/css" href="../if.css">
+</head>
+<meta http-equiv=Content-Type content="text/html; charset=shift_jis">
+<body>
+
+
+<div class="contents">
+<center>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<h1>炎</h1><br>
+<h3>～萌えているか～</h3>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<image src = "title.png">
+</center>
+<div>
+
+<h2>■はじめに</h2>
+
+
+<p>
+今回は、猫マップを用いて炎のエフェクトを作ります。<br>
+普通にやるのは<a href="http://isweb39.infoseek.co.jp/computer/monsho/">もんしょさん</a>の所などでやられているので、
+今回は地面に焦げ後をつけてみました。<br>
+上に出ている画像は、左から、
+</p>
+<table>
+<tr><td>1.</td><td>猫マップで作られた火種。</td></tr>
+<tr><td>2.</td><td>環境マップとして３Ｄに張った燃えている部分のテクスチャ。</td></tr>
+<tr><td>3.</td><td>燃えている部分。</td></tr>
+<tr><td>4.</td><td>１６箱サンプリングでぼかして作ったこげ後マップ。</td></tr>
+</table>
+<p>
+です。<br>
+右ドラッグでカメラを回せたり、ホイールでズームが変えられます。<br>
+ソースと実行ファイルは、次のものです。
+</p>
+<ul style = "LIST-STYLE-TYPE:none">
+<li><a href="src.lzh">src.lzh (炎のサンプル:DirectX8.1 & Cg言語)</a>
+</ul>
+
+<p>
+まぁ、いつものように適当にファイルが入っています。<br>
+</p>
+<table>
+<tr><td><a href="BurnV_cg.html">BurnV.cg</a></td><td>炎を作る。</td></tr>
+<tr><td><a href="BurnP_cg.html">BurnP.cg</a></td><td>炎を作る。</td></tr>
+<tr><td><a href="BlackV_cg.html">BlackV.cg</a></td><td>焼け跡の黒い部分を作成する。</td></tr>
+<tr><td><a href="vs_cg.html">vs.cg</a></td><td>地面の描画。</td></tr>
+<tr><td><a href="ps_cg.html">ps.cg</a></td><td>地面の描画。</td></tr>
+
+<tr><td><a href="draw_cpp.html">draw.cpp</a></td><td>メインの描画部分。</td></tr>
+<tr><td><a href="draw_h.html">draw.h</a></td><td>描画の各関数の定義。</td></tr>
+<tr><td><a href="bg_cpp.html">bg.cpp</a></td><td>空の描画。</td></tr>
+<tr><td><a href="load_cpp.html">load.cpp</a></td><td>メッシュのロード。</td></tr>
+<tr><td><a href="load_h.html">load.h</a></td><td>ロードのインターフェイス。</td></tr>
+<tr><td><a href="main_h.html">main.h</a></td><td>基本的な定数など。</td></tr>
+<tr><td><a href="main_cpp.html">main.cpp</a></td><td>描画に関係しないシステム的な部分。</td></tr>
+</table>
+<image src = "fire_bmp.png" width = 64 height=64>fire.bmp (火種の元絵)<br>
+<image src = "t-pot_bmp.png" width = 64 height=64>t-pot.bmp (燃えている場所の元絵)<br>
+<image src = "sky_bmp.jpg" width = 64 height=64>sky.bmp (空)<br>
+<image src = "map_bmp.png" width = 64 height=64>map.bmp (地面)<br>
+<p>
+あと、実行ファイル及び、プロジェクトファイルが入っています。
+</p>
+
+
+<h2>■やってること</h2>
+
+
+<p>
+さて、今回のレンダリングですが、１フレームに６回のレンダリングをしています。
+</p>
+
+<image src = "compose.png">
+
+<p>
+大雑把に説明しましょう。
+</p>
+<p>
+最初に火種を猫マップで作成します。
+</p>
+<p>
+次に、燃える場所を描きこんだマップ（「t-pot」ってかいてあるやつね）を環境マップのように３次元のモデルに張り込みます。
+その張り込んだテクスチャと火種を乗算合成することによって、今回の燃え具合を決定します。
+</p>
+<p>
+次のプロセスは、上に昇る炎を作ることです。今作った燃え具合のテクスチャと、前のフレームの炎の画像を加算合成します。
+ただし、前のフレームの画像は、少し上にずらして色の強さも少々減算します。前のフレームの画像が残りつつ上に上がる効果で、
+あたかも炎が燃え上がる画像が出来ます。
+</p>
+<p>
+今できた炎は少し置いておいて、次に炎の周りのこげ後を作ります。
+こげ跡は、燃える場所を描きこんだマップを１６箱サンプリングして、ぼかした画像を使います。<br>
+このレンダリングは、毎回やることは無いのですが、炎が動的に変化するときを考えて、毎回行いました。
+</p>
+<p>
+次に、今できたこげ跡のテクスチャを通常のレンダリングの結果に減算合成してこげ跡を作ります。
+完全に黒くするより、少し色が残っていたほうが綺麗かなぁと思って、薄く減算しています。
+</p>
+<p>
+最後に合成です。こげ跡のついた地形と炎のテクスチャを２次元的に加算すれば、焼け焦げた景色の出来上がりです。
+</p>
+
+
+<h2>■猫マップ</h2>
+
+<p>
+一つ目のレンダリングが猫マップです。火種のテクスチャーを並び替えて、動きのある火種を作ります。<br>
+レンダリングするサーフェスpCatTextureSurface[id]を２枚用意して、
+レンダリング先と元になるテクスチャを入れ替えながらレンダリングします。
+</p>
+<pre class="CodeBlock">
+draw.c
+<FONT COLOR="deepskyblue">0279:</FONT>     <FONT COLOR="cyan">//-----------------------------------------------------------------------------</FONT>
+<FONT COLOR="deepskyblue">0280:</FONT>     <FONT COLOR="cyan">// CatMap</FONT>
+<FONT COLOR="deepskyblue">0281:</FONT>     <FONT COLOR="cyan">//-----------------------------------------------------------------------------</FONT>
+<FONT COLOR="deepskyblue">0282:</FONT>     {
+<FONT COLOR="deepskyblue">0283:</FONT>         lpD3DDev->SetRenderTarget(pCatTextureSurface[id], NULL);
+<FONT COLOR="deepskyblue">0284:</FONT> 
+<FONT COLOR="deepskyblue">0285:</FONT>         lpD3DDev->SetTextureStageState(0,D3DTSS_COLOROP,    D3DTOP_SELECTARG1);
+<FONT COLOR="deepskyblue">0286:</FONT>         lpD3DDev->SetTextureStageState(0,D3DTSS_COLORARG1,  D3DTA_TEXTURE);
+<FONT COLOR="deepskyblue">0287:</FONT>         lpD3DDev->SetTextureStageState(0, D3DTSS_MAGFILTER, D3DTEXF_POINT );
+<FONT COLOR="deepskyblue">0288:</FONT>         lpD3DDev->SetTextureStageState(0, D3DTSS_MINFILTER, D3DTEXF_POINT );
+<FONT COLOR="deepskyblue">0289:</FONT>         float size = 128.0f;
+<FONT COLOR="deepskyblue">0290:</FONT>         TLVERTEX Vertex[] = {
+<FONT COLOR="deepskyblue">0291:</FONT>             //   x          y     z rhw  tu    tv
+<FONT COLOR="deepskyblue">0292:</FONT>             {0.0f*size, 0.0f*size,0, 1, 0.0f, 0.0f,},
+<FONT COLOR="deepskyblue">0293:</FONT>             {0.5f*size, 0.0f*size,0, 1, 1.0f, 0.5f,},
+<FONT COLOR="deepskyblue">0294:</FONT>             {0.0f*size, 1.0f*size,0, 1, 1.0f, 1.0f,},
+<FONT COLOR="deepskyblue">0295:</FONT> 
+<FONT COLOR="deepskyblue">0296:</FONT>             {0.5f*size, 0.0f*size,0, 1, 0.0f, 0.5f,},
+<FONT COLOR="deepskyblue">0297:</FONT>             {1.0f*size, 0.0f*size,0, 1, 1.0f, 1.0f,},
+<FONT COLOR="deepskyblue">0298:</FONT>             {0.0f*size, 1.0f*size,0, 1, 0.0f, 1.0f,},
+<FONT COLOR="deepskyblue">0299:</FONT> 
+<FONT COLOR="deepskyblue">0300:</FONT>             {0.0f*size, 1.0f*size,0, 1, 0.0f, 0.0f,},
+<FONT COLOR="deepskyblue">0301:</FONT>             {1.0f*size, 0.0f*size,0, 1, 1.0f, 0.0f,},
+<FONT COLOR="deepskyblue">0302:</FONT>             {0.5f*size, 1.0f*size,0, 1, 1.0f, 0.5f,},
+<FONT COLOR="deepskyblue">0303:</FONT> 
+<FONT COLOR="deepskyblue">0304:</FONT>             {0.5f*size, 1.0f*size,0, 1, 0.0f, 0.5f,},
+<FONT COLOR="deepskyblue">0305:</FONT>             {1.0f*size, 0.0f*size,0, 1, 0.0f, 0.0f,},
+<FONT COLOR="deepskyblue">0306:</FONT>             {1.0f*size, 1.0f*size,0, 1, 1.0f, 1.0f,},
+<FONT COLOR="deepskyblue">0307:</FONT>         };
+<FONT COLOR="deepskyblue">0308:</FONT> 
+<FONT COLOR="deepskyblue">0309:</FONT>         if(init){
+<FONT COLOR="deepskyblue">0310:</FONT>             lpD3DDev->SetTexture( 0, pCatSeedTexture);      <FONT COLOR="cyan">// 初期化</FONT>
+<FONT COLOR="deepskyblue">0311:</FONT>         }else{
+<FONT COLOR="deepskyblue">0312:</FONT>             lpD3DDev->SetTexture( 0, pCatTexture[1-id] );   <FONT COLOR="cyan">// それ以外</FONT>
+<FONT COLOR="deepskyblue">0313:</FONT>         }
+<FONT COLOR="deepskyblue">0314:</FONT>         lpD3DDev->SetVertexShader( FVF_TLVERTEX );
+<FONT COLOR="deepskyblue">0315:</FONT>         lpD3DDev->SetPixelShader(0);
+<FONT COLOR="deepskyblue">0316:</FONT>         lpD3DDev->DrawPrimitiveUP( D3DPT_TRIANGLELIST, 4, Vertex, sizeof( TLVERTEX ) );
+<FONT COLOR="deepskyblue">0317:</FONT>     }
+</pre>
+
+<p>
+最初のフレームだけ元絵を使って、後のフレームでは、前の結果のテクスチャを使用します。
+</p>
+
+
+<h2>■火種がはじけた</h2>
+
+<p>
+次に３次元的に燃えている場所を描いたテクスチャをレンダリングします。<br>
+実は地面として描いているテクスチャと燃える場所のテクスチャーのＵＶ値は一致するように画像を描きましたので、
+テクスチャ座標をそのまま出力すれば、レンダリングされます。
+</p>
+
+<pre class="CodeBlock">
+draw.c
+<FONT COLOR="deepskyblue">0372:</FONT>     lpD3DDev->SetRenderTarget(pEnvTextureSurface, lpZbuffer );
+<FONT COLOR="deepskyblue">0373:</FONT>     lpD3DDev->Clear(0,NULL,D3DCLEAR_ZBUFFER, 0,1.0f,0);
+<FONT COLOR="deepskyblue">0374:</FONT>     pVertexProgramContainer->SetShaderActive();
+<FONT COLOR="deepskyblue">0375:</FONT>     pPixelProgramContainer->SetShaderActive();
+<FONT COLOR="deepskyblue">0376:</FONT>     DrawModel(lpD3DDev, mat, 1);
+</pre>
+
+<p>
+モデルの描画も特に変わったことはありません。
+しいていえば、モデルの描画はテクスチャを変えて使いまわすので、
+今回は、テクスチャ０に燃える場所のレジスタ、テスクチャ１はなし（NULL）を指定することぐらいです。
+</p>
+
+<pre class="CodeBlock">
+draw.c
+<FONT COLOR="deepskyblue">0234:</FONT> <FONT COLOR="cyan">//-----------------------------------------------------------------------------</FONT>
+<FONT COLOR="deepskyblue">0235:</FONT> <FONT COLOR="cyan">// Name: DrawModel</FONT>
+<FONT COLOR="deepskyblue">0236:</FONT> <FONT COLOR="cyan">// Desc: モデルの描画</FONT>
+<FONT COLOR="deepskyblue">0237:</FONT> <FONT COLOR="cyan">//    type 0 普通のデーカルのレンダリング</FONT>
+<FONT COLOR="deepskyblue">0238:</FONT> <FONT COLOR="cyan">//    type 1 焦げ跡のテクスチャをマッピングする</FONT>
+<FONT COLOR="deepskyblue">0239:</FONT> <FONT COLOR="cyan">//-----------------------------------------------------------------------------</FONT>
+<FONT COLOR="deepskyblue">0240:</FONT> VOID DrawModel(LPDIRECT3DDEVICE8 lpD3DDev, D3DXMATRIX &mVP, DWORD type)
+<FONT COLOR="deepskyblue">0241:</FONT> {
+<FONT COLOR="deepskyblue">0242:</FONT>     DrawBg(lpD3DDev, mVP, 0==type);
+<FONT COLOR="deepskyblue">0243:</FONT> 
+<FONT COLOR="deepskyblue">0244:</FONT>     D3DXMATRIX m;
+<FONT COLOR="deepskyblue">0245:</FONT>     D3DXMatrixTranspose( &m, &mVP );
+<FONT COLOR="deepskyblue">0246:</FONT>     pVertexProgramContainer->SetShaderConstant( vertex_mat_iter, &m  );
+<FONT COLOR="deepskyblue">0247:</FONT>     
+<FONT COLOR="deepskyblue">0248:</FONT>     lpD3DDev->SetStreamSource(0, mesh.pVB, sizeof(D3D_CUSTOMVERTEX));
+<FONT COLOR="deepskyblue">0249:</FONT>     lpD3DDev->SetIndices(mesh.pIndex,0);
+<FONT COLOR="deepskyblue">0250:</FONT> 
+<FONT COLOR="deepskyblue">0251:</FONT>     switch(type){
+<FONT COLOR="deepskyblue">0252:</FONT>     case 1:
+<FONT COLOR="deepskyblue">0253:</FONT>         pPixelProgramContainer->SetTexture(tex0_iter, pBurnTexture);
+<FONT COLOR="deepskyblue">0254:</FONT>         pPixelProgramContainer->SetTexture(tex1_iter, NULL);
+<FONT COLOR="deepskyblue">0255:</FONT>         break;
+<FONT COLOR="deepskyblue">0256:</FONT>     default:
+<FONT COLOR="deepskyblue">0257:</FONT>         pPixelProgramContainer->SetTexture(tex0_iter, mesh.pTextures[0]);
+<FONT COLOR="deepskyblue">0258:</FONT>         pPixelProgramContainer->SetTexture(tex1_iter, pBlackTexture);
+<FONT COLOR="deepskyblue">0259:</FONT>         break;
+<FONT COLOR="deepskyblue">0260:</FONT>     }
+<FONT COLOR="deepskyblue">0261:</FONT> 
+<FONT COLOR="deepskyblue">0262:</FONT>     lpD3DDev->DrawIndexedPrimitive(D3DPT_TRIANGLELIST, 
+<FONT COLOR="deepskyblue">0263:</FONT>                                     mesh.pSubsetTable[0].VertexStart,
+<FONT COLOR="deepskyblue">0264:</FONT>                                     mesh.pSubsetTable[0].VertexCount,
+<FONT COLOR="deepskyblue">0265:</FONT>                                     mesh.pSubsetTable[0].FaceStart * 3,
+<FONT COLOR="deepskyblue">0266:</FONT>                                     mesh.pSubsetTable[0].FaceCount);
+<FONT COLOR="deepskyblue">0267:</FONT> }
+</pre>
+
+<p>
+頂点シェーダ、ピクセルシェーダは簡単なものです。<br>
+座標変換は普通のワールドから射影空間への変換で、テクスチャ座標はそのままコピーします。
+</p>
+<pre class="CodeBlock">
+vs.cg
+<FONT COLOR="deepskyblue">0005:</FONT> <FONT COLOR="cyan">// ----------------------------------------------------------------------------</FONT>
+<FONT COLOR="deepskyblue">0006:</FONT> <FONT COLOR="cyan">// 入力データ</FONT>
+<FONT COLOR="deepskyblue">0007:</FONT> <FONT COLOR="cyan">// ----------------------------------------------------------------------------</FONT>
+<FONT COLOR="deepskyblue">0008:</FONT> struct appdata  {
+<FONT COLOR="deepskyblue">0009:</FONT>     float4 position  : POSITION;
+<FONT COLOR="deepskyblue">0010:</FONT>     float4 texcoord0 : TEXCOORD0;
+<FONT COLOR="deepskyblue">0011:</FONT> };
+<FONT COLOR="deepskyblue">0012:</FONT> <FONT COLOR="cyan">// ----------------------------------------------------------------------------</FONT>
+<FONT COLOR="deepskyblue">0013:</FONT> <FONT COLOR="cyan">// 頂点シェーダプログラム</FONT>
+<FONT COLOR="deepskyblue">0014:</FONT> <FONT COLOR="cyan">// ----------------------------------------------------------------------------</FONT>
+<FONT COLOR="deepskyblue">0015:</FONT> vf20 main(appdata I
+<FONT COLOR="deepskyblue">0016:</FONT>         , uniform float4x4 worldviewproj_matrix
+<FONT COLOR="deepskyblue">0017:</FONT> ) {
+<FONT COLOR="deepskyblue">0018:</FONT>     vf20 O;
+<FONT COLOR="deepskyblue">0019:</FONT>     
+<FONT COLOR="deepskyblue">0020:</FONT>     <FONT COLOR="cyan">// よくある計算</FONT>
+<FONT COLOR="deepskyblue">0021:</FONT>     O.HPOS = mul(worldviewproj_matrix, I.position);
+<FONT COLOR="deepskyblue">0022:</FONT> 
+<FONT COLOR="deepskyblue">0023:</FONT>     <FONT COLOR="cyan">// テクスチャ座標</FONT>
+<FONT COLOR="deepskyblue">0024:</FONT>     O.TEX0 = I.texcoord0;
+<FONT COLOR="deepskyblue">0025:</FONT>     O.TEX1 = I.texcoord0;
+<FONT COLOR="deepskyblue">0026:</FONT> 
+<FONT COLOR="deepskyblue">0027:</FONT>     return O;
+<FONT COLOR="deepskyblue">0028:</FONT> } 
+</pre>
+
+<p>
+ピクセルシェーダは、テクスチャ０の画像に対して、テクスチャ１の画像を薄く減算しますが、
+今回はテクスチャ１の内容が無いので、テクスチャ１の値がそのまま出力されます。
+</p>
+
+<pre class="CodeBlock">
+ps.cg
+<FONT COLOR="deepskyblue">0001:</FONT> <FONT COLOR="cyan">// ----------------------------------------------------------------------------</FONT>
+<FONT COLOR="deepskyblue">0002:</FONT> <FONT COLOR="cyan">// 入力データ</FONT>
+<FONT COLOR="deepskyblue">0003:</FONT> <FONT COLOR="cyan">// ----------------------------------------------------------------------------</FONT>
+<FONT COLOR="deepskyblue">0004:</FONT> struct myVertexOut  {
+<FONT COLOR="deepskyblue">0005:</FONT>     float4 lightVec : COLOR0;
+<FONT COLOR="deepskyblue">0006:</FONT>     float4 texCoord0 : TEXCOORD0;
+<FONT COLOR="deepskyblue">0007:</FONT>     float4 texCoord1 : TEXCOORD1;
+<FONT COLOR="deepskyblue">0008:</FONT> };
+<FONT COLOR="deepskyblue">0009:</FONT> 
+<FONT COLOR="deepskyblue">0010:</FONT> <FONT COLOR="cyan">// ----------------------------------------------------------------------------</FONT>
+<FONT COLOR="deepskyblue">0011:</FONT> <FONT COLOR="cyan">// 出力データ</FONT>
+<FONT COLOR="deepskyblue">0012:</FONT> <FONT COLOR="cyan">// ----------------------------------------------------------------------------</FONT>
+<FONT COLOR="deepskyblue">0013:</FONT> struct myFragment {
+<FONT COLOR="deepskyblue">0014:</FONT>   float4 col : COLOR;
+<FONT COLOR="deepskyblue">0015:</FONT> };
+<FONT COLOR="deepskyblue">0016:</FONT> 
+<FONT COLOR="deepskyblue">0017:</FONT> <FONT COLOR="cyan">// ----------------------------------------------------------------------------</FONT>
+<FONT COLOR="deepskyblue">0018:</FONT> <FONT COLOR="cyan">// ピクセルシェーダプログラム</FONT>
+<FONT COLOR="deepskyblue">0019:</FONT> <FONT COLOR="cyan">// ----------------------------------------------------------------------------</FONT>
+<FONT COLOR="deepskyblue">0020:</FONT> myFragment main(myVertexOut I
+<FONT COLOR="deepskyblue">0021:</FONT>                 , uniform sampler2D tex0
+<FONT COLOR="deepskyblue">0022:</FONT>                 , uniform sampler2D tex1
+<FONT COLOR="deepskyblue">0023:</FONT> ) {
+<FONT COLOR="deepskyblue">0024:</FONT>     myFragment O;   
+<FONT COLOR="deepskyblue">0025:</FONT> 
+<FONT COLOR="deepskyblue">0026:</FONT>     <FONT COLOR="cyan">// 2つめのテクスチャーを薄くして減算する</FONT>
+<FONT COLOR="deepskyblue">0027:</FONT>     O.col = tex2D(tex0)-0.3f*tex2D(tex1);
+<FONT COLOR="deepskyblue">0028:</FONT> 
+<FONT COLOR="deepskyblue">0029:</FONT>     return O;
+<FONT COLOR="deepskyblue">0030:</FONT> } 
+</pre>
+
+<p>
+ピクセルシェーダは、テクスチャ０の画像に対して、テクスチャ１の画像を薄く減算しますが、
+今回はテクスチャ１の内容が無いので、テクスチャ１の値がそのまま出力されます。
+</p>
+<p>
+実は、この段階では、まだ猫マップの結果は合成しません。<br>
+次の段階で合成します。
+</p>
+
+
+<h2>■炎を昇らせる</h2>
+
+
+<p>
+では、炎のテクスチャを完成させます。<br>
+この段階では、テクスチャを３枚使います。<br>
+１つは前の段階の３次元的な燃えている場所を示したテクスチャ、
+２つめは、猫マップの結果、もう一つが前のフレームの炎のテクスチャーです。<br>
+このレンダリングターゲットも２枚用意して、１フレームごとにテクスチャと役割を切り替えて使います。
+</p>
+
+<pre class="CodeBlock">
+draw.c
+<FONT COLOR="deepskyblue">0378:</FONT>     <FONT COLOR="cyan">//-----------------------------------------------------------------------------</FONT>
+<FONT COLOR="deepskyblue">0379:</FONT>     <FONT COLOR="cyan">// 火の効果の作成</FONT>
+<FONT COLOR="deepskyblue">0380:</FONT>     <FONT COLOR="cyan">//-----------------------------------------------------------------------------</FONT>
+<FONT COLOR="deepskyblue">0381:</FONT>     lpD3DDev->SetRenderTarget(pFireTextureSurface[id], NULL);
+<FONT COLOR="deepskyblue">0382:</FONT>     lpD3DDev->Clear(0,NULL,D3DCLEAR_TARGET, D3DCOLOR_XRGB(0,0,0),1.0f,0);
+<FONT COLOR="deepskyblue">0383:</FONT>         
+<FONT COLOR="deepskyblue">0384:</FONT>     if(!init){
+<FONT COLOR="deepskyblue">0385:</FONT>         lpD3DDev->SetTextureStageState(0,D3DTSS_COLOROP,    D3DTOP_SELECTARG1);
+<FONT COLOR="deepskyblue">0386:</FONT>         lpD3DDev->SetTextureStageState(0,D3DTSS_COLORARG1,  D3DTA_TEXTURE);
+<FONT COLOR="deepskyblue">0387:</FONT>         lpD3DDev->SetTextureStageState(1,D3DTSS_COLOROP,    D3DTOP_SELECTARG1);
+<FONT COLOR="deepskyblue">0388:</FONT>         lpD3DDev->SetTextureStageState(1,D3DTSS_COLORARG1,  D3DTA_TEXTURE);
+<FONT COLOR="deepskyblue">0389:</FONT>         lpD3DDev->SetTextureStageState(0, D3DTSS_MAGFILTER, D3DTEXF_POINT );
+<FONT COLOR="deepskyblue">0390:</FONT>         lpD3DDev->SetTextureStageState(0, D3DTSS_MINFILTER, D3DTEXF_POINT );
+<FONT COLOR="deepskyblue">0391:</FONT>         lpD3DDev->SetTextureStageState(1, D3DTSS_MAGFILTER, D3DTEXF_POINT );
+<FONT COLOR="deepskyblue">0392:</FONT>         lpD3DDev->SetTextureStageState(1, D3DTSS_MINFILTER, D3DTEXF_POINT );
+<FONT COLOR="deepskyblue">0393:</FONT>         lpD3DDev->SetTextureStageState(0,D3DTSS_ADDRESSU,   D3DTADDRESS_CLAMP);
+<FONT COLOR="deepskyblue">0394:</FONT>         lpD3DDev->SetTextureStageState(0,D3DTSS_ADDRESSV,   D3DTADDRESS_CLAMP);
+<FONT COLOR="deepskyblue">0395:</FONT>         lpD3DDev->SetTextureStageState(1,D3DTSS_ADDRESSU,   D3DTADDRESS_CLAMP);
+<FONT COLOR="deepskyblue">0396:</FONT>         lpD3DDev->SetTextureStageState(1,D3DTSS_ADDRESSV,   D3DTADDRESS_CLAMP);
+<FONT COLOR="deepskyblue">0397:</FONT>         TLVERTEX Vertex[] = {
+<FONT COLOR="deepskyblue">0398:</FONT>             // x    y   z   rhw tu tv
+<FONT COLOR="deepskyblue">0399:</FONT>             { -1,  1, 0.1f, 1.f, 0+0.5f/512.0f, 1+0.5f/512.0f,},
+<FONT COLOR="deepskyblue">0400:</FONT>             {  1,  1, 0.1f, 1.f, 1+0.5f/512.0f, 1+0.5f/512.0f,},
+<FONT COLOR="deepskyblue">0401:</FONT>             {  1, -1, 0.1f, 1.f, 1+0.5f/512.0f, 0+0.5f/512.0f,},
+<FONT COLOR="deepskyblue">0402:</FONT>             { -1, -1, 0.1f, 1.f, 0+0.5f/512.0f, 0+0.5f/512.0f,},
+<FONT COLOR="deepskyblue">0403:</FONT>         };
+<FONT COLOR="deepskyblue">0404:</FONT> 
+<FONT COLOR="deepskyblue">0405:</FONT>         pBurnVC->SetShaderActive();
+<FONT COLOR="deepskyblue">0406:</FONT>         pBurnPC->SetShaderActive();
+<FONT COLOR="deepskyblue">0407:</FONT>         pBurnPC->SetTexture(BurnTex0_iter, pFireTexture[1-id]);
+<FONT COLOR="deepskyblue">0408:</FONT>         pBurnPC->SetTexture(BurnTex1_iter, pEnvTexture);
+<FONT COLOR="deepskyblue">0409:</FONT>         pBurnPC->SetTexture(BurnTex2_iter, pCatTexture[id]);
+<FONT COLOR="deepskyblue">0410:</FONT>         lpD3DDev->DrawPrimitiveUP( D3DPT_TRIANGLEFAN, 2, Vertex, sizeof( TLVERTEX ) );
+<FONT COLOR="deepskyblue">0411:</FONT>     }
+</pre>
+
+<p>
+頂点シェーダは２次元的な合成なので、座標変換はせずにそのまま座標をコピー、
+テクスチャ座標は前のフレームの画像を少し上にあげて出力します。上げ具合は適当です。<br>
+なお、作ってみて、上下が入れ替わっていたものがあったので、ここで修正しました。
+</p>
+
+<pre class="CodeBlock">
+BurnV.cg
+<FONT COLOR="deepskyblue">0005:</FONT> <FONT COLOR="cyan">// ----------------------------------------------------------------------------</FONT>
+<FONT COLOR="deepskyblue">0006:</FONT> <FONT COLOR="cyan">// 入力データ</FONT>
+<FONT COLOR="deepskyblue">0007:</FONT> <FONT COLOR="cyan">// ----------------------------------------------------------------------------</FONT>
+<FONT COLOR="deepskyblue">0008:</FONT> struct appdata  {
+<FONT COLOR="deepskyblue">0009:</FONT>     float4 position  : POSITION;
+<FONT COLOR="deepskyblue">0010:</FONT>     float4 texcoord0 : TEXCOORD0;
+<FONT COLOR="deepskyblue">0011:</FONT> };
+<FONT COLOR="deepskyblue">0012:</FONT> <FONT COLOR="cyan">// ----------------------------------------------------------------------------</FONT>
+<FONT COLOR="deepskyblue">0013:</FONT> <FONT COLOR="cyan">// 頂点シェーダプログラムm</FONT>
+<FONT COLOR="deepskyblue">0014:</FONT> <FONT COLOR="cyan">// ----------------------------------------------------------------------------</FONT>
+<FONT COLOR="deepskyblue">0015:</FONT> vf20 main(appdata I
+<FONT COLOR="deepskyblue">0016:</FONT>         , uniform float4x4 worldviewproj_matrix
+<FONT COLOR="deepskyblue">0017:</FONT> ) {
+<FONT COLOR="deepskyblue">0018:</FONT>     vf20 O;
+<FONT COLOR="deepskyblue">0019:</FONT>     
+<FONT COLOR="deepskyblue">0021:</FONT>     O.HPOS = I.position;
+<FONT COLOR="deepskyblue">0022:</FONT> 
+<FONT COLOR="deepskyblue">0023:</FONT>     <FONT COLOR="cyan">// １フレ前の画像</FONT>
+<FONT COLOR="deepskyblue">0024:</FONT>     O.TEX0   = I.texcoord0;
+<FONT COLOR="deepskyblue">0025:</FONT>     O.TEX0.y =1-I.texcoord0.y+4.0f/512.0f;
+<FONT COLOR="deepskyblue">0026:</FONT>     <FONT COLOR="cyan">// 燃えている部分のマップ</FONT>
+<FONT COLOR="deepskyblue">0027:</FONT>     O.TEX1 = I.texcoord0;
+<FONT COLOR="deepskyblue">0028:</FONT>     O.TEX1.y = 1-I.texcoord0.y;
+<FONT COLOR="deepskyblue">0029:</FONT>     <FONT COLOR="cyan">// 猫マップ</FONT>
+<FONT COLOR="deepskyblue">0030:</FONT>     O.TEX2   = I.texcoord0;
+<FONT COLOR="deepskyblue">0031:</FONT> 
+<FONT COLOR="deepskyblue">0032:</FONT>     return O;
+<FONT COLOR="deepskyblue">0033:</FONT> } 
+</pre>
+
+<p>
+ピクセルシェーダはそれぞれのテクスチャーを組み合わせます。<br>
+先ず、前のフレームの画像は、読み込んだ直後に減算します。<br>
+猫マップと燃えあとは、乗算して模様付けした後に前のフレームの画像と合成します。
+</p>
+
+<pre class="CodeBlock">
+BurnP.cg
+<FONT COLOR="deepskyblue">0005:</FONT> fragout main(vf20 I
+<FONT COLOR="deepskyblue">0006:</FONT>             , uniform sampler2D tex0
+<FONT COLOR="deepskyblue">0007:</FONT>             , uniform sampler2D tex1
+<FONT COLOR="deepskyblue">0008:</FONT>             , uniform sampler2D tex2
+<FONT COLOR="deepskyblue">0009:</FONT> ) {
+<FONT COLOR="deepskyblue">0010:</FONT>     fragout O;   
+<FONT COLOR="deepskyblue">0011:</FONT> 
+<FONT COLOR="deepskyblue">0012:</FONT>     float4 LastResult = uclamp(tex2D(tex0)
+<FONT COLOR="deepskyblue">0013:</FONT>             - float4(0.15, 0.15, 0.15, 0.0f));
+<FONT COLOR="deepskyblue">0014:</FONT>     float4 NewPoint   = tex2D(tex1);
+<FONT COLOR="deepskyblue">0015:</FONT>     float4 Fire       = tex2D(tex2);
+<FONT COLOR="deepskyblue">0016:</FONT> 
+<FONT COLOR="deepskyblue">0017:</FONT>     O.col = Fire * NewPoint + LastResult;
+<FONT COLOR="deepskyblue">0018:</FONT> 
+<FONT COLOR="deepskyblue">0019:</FONT>   return O;
+<FONT COLOR="deepskyblue">0020:</FONT> } 
+</pre>
+
+
+<h2>■焦げ跡を作る</h2>
+
+<p>
+１６箱サンプリングでぼかした焦げ跡のテクスチャを作ります。<br>
+テクスチャステージステートの設定を万万やっていますが、４つ設定しているだけで、特にすごい設定をしている訳ではありません。<br>
+基本的には４枚のテクスチャを張るだけです。
+</p>
+
+<pre class="CodeBlock">
+draw.c
+<FONT COLOR="deepskyblue">0319:</FONT>     <FONT COLOR="cyan">//-----------------------------------------------------------------------------</FONT>
+<FONT COLOR="deepskyblue">0320:</FONT>     <FONT COLOR="cyan">// 焦げ跡のテクスチャの生成</FONT>
+<FONT COLOR="deepskyblue">0321:</FONT>     <FONT COLOR="cyan">//-----------------------------------------------------------------------------</FONT>
+<FONT COLOR="deepskyblue">0322:</FONT>     lpD3DDev->SetRenderTarget(pBlackTextureSurface, NULL );
+<FONT COLOR="deepskyblue">0323:</FONT>     lpD3DDev->Clear(0,NULL,D3DCLEAR_TARGET, D3DCOLOR_XRGB(0,0,0),1.0f,0);
+<FONT COLOR="deepskyblue">0324:</FONT>     lpD3DDev->SetTextureStageState(0,D3DTSS_COLOROP,    D3DTOP_SELECTARG1);
+<FONT COLOR="deepskyblue">0325:</FONT>     lpD3DDev->SetTextureStageState(1,D3DTSS_COLOROP,    D3DTOP_ADD);
+<FONT COLOR="deepskyblue">0326:</FONT>     lpD3DDev->SetTextureStageState(2,D3DTSS_COLOROP,    D3DTOP_ADD);
+<FONT COLOR="deepskyblue">0327:</FONT>     lpD3DDev->SetTextureStageState(3,D3DTSS_COLOROP,    D3DTOP_ADD);
+<FONT COLOR="deepskyblue">0328:</FONT>     lpD3DDev->SetTextureStageState(0,D3DTSS_COLORARG1,  D3DTA_TEXTURE);
+<FONT COLOR="deepskyblue">0329:</FONT>     lpD3DDev->SetTextureStageState(1,D3DTSS_COLORARG1,  D3DTA_TEXTURE);
+<FONT COLOR="deepskyblue">0330:</FONT>     lpD3DDev->SetTextureStageState(2,D3DTSS_COLORARG1,  D3DTA_TEXTURE);
+<FONT COLOR="deepskyblue">0331:</FONT>     lpD3DDev->SetTextureStageState(3,D3DTSS_COLORARG1,  D3DTA_TEXTURE);
+<FONT COLOR="deepskyblue">0332:</FONT>     lpD3DDev->SetTextureStageState(1,D3DTSS_COLORARG2,  D3DTA_CURRENT);
+<FONT COLOR="deepskyblue">0333:</FONT>     lpD3DDev->SetTextureStageState(2,D3DTSS_COLORARG2,  D3DTA_CURRENT);
+<FONT COLOR="deepskyblue">0334:</FONT>     lpD3DDev->SetTextureStageState(3,D3DTSS_COLORARG2,  D3DTA_CURRENT);
+<FONT COLOR="deepskyblue">0335:</FONT>     lpD3DDev->SetTextureStageState(0,D3DTSS_ADDRESSU,   D3DTADDRESS_CLAMP);
+<FONT COLOR="deepskyblue">0336:</FONT>     lpD3DDev->SetTextureStageState(1,D3DTSS_ADDRESSU,   D3DTADDRESS_CLAMP);
+<FONT COLOR="deepskyblue">0337:</FONT>     lpD3DDev->SetTextureStageState(2,D3DTSS_ADDRESSU,   D3DTADDRESS_CLAMP);
+<FONT COLOR="deepskyblue">0338:</FONT>     lpD3DDev->SetTextureStageState(3,D3DTSS_ADDRESSU,   D3DTADDRESS_CLAMP);
+<FONT COLOR="deepskyblue">0339:</FONT>     lpD3DDev->SetTextureStageState(0,D3DTSS_ADDRESSV,   D3DTADDRESS_CLAMP);
+<FONT COLOR="deepskyblue">0340:</FONT>     lpD3DDev->SetTextureStageState(1,D3DTSS_ADDRESSV,   D3DTADDRESS_CLAMP);
+<FONT COLOR="deepskyblue">0341:</FONT>     lpD3DDev->SetTextureStageState(2,D3DTSS_ADDRESSV,   D3DTADDRESS_CLAMP);
+<FONT COLOR="deepskyblue">0342:</FONT>     lpD3DDev->SetTextureStageState(3,D3DTSS_ADDRESSV,   D3DTADDRESS_CLAMP);
+<FONT COLOR="deepskyblue">0343:</FONT> 
+<FONT COLOR="deepskyblue">0344:</FONT>     TLVERTEX BlackVertex[] = {
+<FONT COLOR="deepskyblue">0345:</FONT>         // x    y   z   rhw tu tv
+<FONT COLOR="deepskyblue">0346:</FONT>         { -1,  1, 0.1f, 1.f, 0, 0,},
+<FONT COLOR="deepskyblue">0347:</FONT>         {  1,  1, 0.1f, 1.f, 1, 0,},
+<FONT COLOR="deepskyblue">0348:</FONT>         {  1, -1, 0.1f, 1.f, 1, 1,},
+<FONT COLOR="deepskyblue">0349:</FONT>         { -1, -1, 0.1f, 1.f, 0, 1,},
+<FONT COLOR="deepskyblue">0350:</FONT>     };
+<FONT COLOR="deepskyblue">0351:</FONT> 
+<FONT COLOR="deepskyblue">0352:</FONT>     pBlackVC->SetShaderActive();
+<FONT COLOR="deepskyblue">0353:</FONT>     lpD3DDev->SetTexture(0, pBurnTexture);
+<FONT COLOR="deepskyblue">0354:</FONT>     lpD3DDev->SetTexture(1, pBurnTexture);
+<FONT COLOR="deepskyblue">0355:</FONT>     lpD3DDev->SetTexture(2, pBurnTexture);
+<FONT COLOR="deepskyblue">0356:</FONT>     lpD3DDev->SetTexture(3, pBurnTexture);
+<FONT COLOR="deepskyblue">0357:</FONT>     lpD3DDev->DrawPrimitiveUP( D3DPT_TRIANGLEFAN, 2, BlackVertex, sizeof( TLVERTEX ) );
+<FONT COLOR="deepskyblue">0358:</FONT>     lpD3DDev->SetTexture(0, NULL);
+<FONT COLOR="deepskyblue">0359:</FONT>     lpD3DDev->SetTexture(1, NULL);
+<FONT COLOR="deepskyblue">0360:</FONT>     lpD3DDev->SetTexture(2, NULL);
+<FONT COLOR="deepskyblue">0361:</FONT>     lpD3DDev->SetTexture(3, NULL);
+</pre>
+
+<p>
+頂点シェーダで縦横ずらして表示します。
+</p>
+
+<pre class="CodeBlock">
+BlackV.cg
+<FONT COLOR="deepskyblue">0005:</FONT> <FONT COLOR="cyan">// ----------------------------------------------------------------------------</FONT>
+<FONT COLOR="deepskyblue">0006:</FONT> <FONT COLOR="cyan">// Input datas</FONT>
+<FONT COLOR="deepskyblue">0007:</FONT> <FONT COLOR="cyan">// ----------------------------------------------------------------------------</FONT>
+<FONT COLOR="deepskyblue">0008:</FONT> struct appdata  {
+<FONT COLOR="deepskyblue">0009:</FONT>     float4 position  : POSITION;
+<FONT COLOR="deepskyblue">0010:</FONT>     float4 texcoord0 : TEXCOORD0;
+<FONT COLOR="deepskyblue">0011:</FONT> };
+<FONT COLOR="deepskyblue">0012:</FONT> <FONT COLOR="cyan">// ----------------------------------------------------------------------------</FONT>
+<FONT COLOR="deepskyblue">0013:</FONT> <FONT COLOR="cyan">// Vertex shader program</FONT>
+<FONT COLOR="deepskyblue">0014:</FONT> <FONT COLOR="cyan">// ----------------------------------------------------------------------------</FONT>
+<FONT COLOR="deepskyblue">0015:</FONT> vf20 main(appdata I
+<FONT COLOR="deepskyblue">0016:</FONT>         , uniform float4x4 worldviewproj_matrix
+<FONT COLOR="deepskyblue">0017:</FONT> ) {
+<FONT COLOR="deepskyblue">0018:</FONT>     vf20 O;
+<FONT COLOR="deepskyblue">0019:</FONT>     
+<FONT COLOR="deepskyblue">0020:</FONT>     float4 ofset0 = {-1.0f/512.0f, -1.0f/512.0f, 0.0f, 0.0f};
+<FONT COLOR="deepskyblue">0021:</FONT>     float4 ofset1 = {+1.0f/512.0f, -1.0f/512.0f, 0.0f, 0.0f};
+<FONT COLOR="deepskyblue">0022:</FONT>     float4 ofset2 = {-1.0f/512.0f, +1.0f/512.0f, 0.0f, 0.0f};
+<FONT COLOR="deepskyblue">0023:</FONT>     float4 ofset3 = {+1.0f/512.0f, +1.0f/512.0f, 0.0f, 0.0f};
+<FONT COLOR="deepskyblue">0024:</FONT>     
+<FONT COLOR="deepskyblue">0026:</FONT>     O.HPOS = I.position;
+<FONT COLOR="deepskyblue">0027:</FONT> 
+<FONT COLOR="deepskyblue">0028:</FONT>     O.TEX0   = I.texcoord0 + ofset0;
+<FONT COLOR="deepskyblue">0029:</FONT>     O.TEX1   = I.texcoord0 + ofset1;
+<FONT COLOR="deepskyblue">0030:</FONT>     O.TEX2   = I.texcoord0 + ofset2;
+<FONT COLOR="deepskyblue">0031:</FONT>     O.TEX3   = I.texcoord0 + ofset3;
+<FONT COLOR="deepskyblue">0032:</FONT> 
+<FONT COLOR="deepskyblue">0033:</FONT>     return O;
+<FONT COLOR="deepskyblue">0034:</FONT> } 
+</pre>
+<p>
+それぞれ別方向にずらしています。
+</p>
+
+
+<h2>■焦げ跡をつける</h2>
+
+
+<p>
+焦げ跡は、減算してレンダリングするだけです。<br>
+３Ｄの地面のモデルに張ります。燃える場所を３Ｄに起こしたときと同じシェーダを使います。今回は、減算の項も効くのを忘れてはいけません。
+</p>
+
+<pre class="CodeBlock">
+draw.c
+<FONT COLOR="deepskyblue">0416:</FONT>     lpD3DDev->SetRenderTarget(pBackbuffer, lpZbuffer );
+<FONT COLOR="deepskyblue">0417:</FONT>     lpD3DDev->Clear(0,NULL,D3DCLEAR_ZBUFFER, 0,1.0f,0);
+<FONT COLOR="deepskyblue">0418:</FONT> 
+<FONT COLOR="deepskyblue">0419:</FONT>     pVertexProgramContainer->SetShaderActive();
+<FONT COLOR="deepskyblue">0420:</FONT>     pPixelProgramContainer->SetShaderActive();
+<FONT COLOR="deepskyblue">0421:</FONT>     lpD3DDev->SetTextureStageState(1, D3DTSS_MAGFILTER, D3DTEXF_LINEAR );
+<FONT COLOR="deepskyblue">0422:</FONT>     lpD3DDev->SetTextureStageState(1, D3DTSS_MINFILTER, D3DTEXF_LINEAR );
+<FONT COLOR="deepskyblue">0423:</FONT>     DrawModel(lpD3DDev, mat, 0);
+</pre>
+
+
+<h2>■最終合成</h2>
+
+
+<p>
+最後に炎を合成しますが、2次元的に加算で張るだけです。
+</p>
+<pre class="CodeBlock">
+draw.c
+<FONT COLOR="deepskyblue">0427:</FONT>         lpD3DDev->SetTextureStageState(0,D3DTSS_COLOROP,    D3DTOP_SELECTARG1);
+<FONT COLOR="deepskyblue">0428:</FONT>         lpD3DDev->SetTextureStageState(0,D3DTSS_COLORARG1,  D3DTA_TEXTURE);
+<FONT COLOR="deepskyblue">0429:</FONT>         lpD3DDev->SetTextureStageState(1,D3DTSS_COLOROP,    D3DTOP_DISABLE);
+<FONT COLOR="deepskyblue">0430:</FONT>         lpD3DDev->SetRenderState(D3DRS_ALPHABLENDENABLE, TRUE);
+<FONT COLOR="deepskyblue">0431:</FONT>         float size = 512.0f;
+<FONT COLOR="deepskyblue">0432:</FONT>         TLVERTEX Vertex[4] = {
+<FONT COLOR="deepskyblue">0433:</FONT>             // x    y   z rhw tu tv
+<FONT COLOR="deepskyblue">0434:</FONT>             {   0,    0,0, 1, 0, 0,},
+<FONT COLOR="deepskyblue">0435:</FONT>             {size,    0,0, 1, 1, 0,},
+<FONT COLOR="deepskyblue">0436:</FONT>             {size, size,0, 1, 1, 1,},
+<FONT COLOR="deepskyblue">0437:</FONT>             {   0, size,0, 1, 0, 1,},
+<FONT COLOR="deepskyblue">0438:</FONT>         };
+<FONT COLOR="deepskyblue">0439:</FONT>         lpD3DDev->SetTexture( 0, pFireTexture[id] );
+<FONT COLOR="deepskyblue">0440:</FONT>         lpD3DDev->SetVertexShader( FVF_TLVERTEX );
+<FONT COLOR="deepskyblue">0441:</FONT>         lpD3DDev->SetPixelShader(0);
+<FONT COLOR="deepskyblue">0442:</FONT>         lpD3DDev->DrawPrimitiveUP( D3DPT_TRIANGLEFAN, 2, Vertex, sizeof( TLVERTEX ) );
+<FONT COLOR="deepskyblue">0443:</FONT>         lpD3DDev->SetRenderState(D3DRS_ALPHABLENDENABLE, FALSE);
+</pre>
+
+
+
+<h2>■最後に</h2>
+
+
+<p>
+てなわけで、炎を作りました。<br>
+もうこれだけでは目新しくありませんが、マップを用意するだけで燃やせるので、バンバン燃やしていきましょう。
+</p>
+
+</div>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<center>
+<hr>
+<p><a href="../index.html">もどる</a></p>
+<p><a href="mailto:imagire@gmail.com">imagire@gmail.com</a></p>
+</center>
+
+</body>
+</html>

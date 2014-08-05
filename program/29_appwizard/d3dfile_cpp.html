@@ -1,0 +1,825 @@
+<HTML>
+<HEAD>
+<TITLE>d3dfile.cpp</TITLE>
+<meta name="GENERATOR" content="cpp2html 2.0 by Niisaka">
+<meta http-equiv="Content-Type" content="text/html">
+<meta http-equiv="Content-Style-Type" content="text/css">
+<STYLE TYPE="text/css">
+<!--
+SPAN.comment { color:#008000; font-weight:normal; font-style:normal;}
+SPAN.keyword { color:#0000FF; font-weight:normal; font-style:normal;}
+SPAN.string { color:#600000; font-weight:normal; font-style:normal;}
+SPAN.linenum { color:#A0A0A0; font-weight:normal; font-style:normal;}
+-->
+</STYLE>
+</HEAD>
+<BODY TEXT="#000000" BGCOLOR="#FFFFFF">
+<PRE><SPAN CLASS="linenum">0001:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0002:</SPAN> <SPAN CLASS="comment">// File: D3DFile.cpp</SPAN>
+<SPAN CLASS="linenum">0003:</SPAN> <SPAN CLASS="comment">//</SPAN>
+<SPAN CLASS="linenum">0004:</SPAN> <SPAN CLASS="comment">// Desc: Support code for loading DirectX .X files.</SPAN>
+<SPAN CLASS="linenum">0005:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0006:</SPAN> <SPAN CLASS="keyword">#define</SPAN> STRICT
+<SPAN CLASS="linenum">0007:</SPAN> <SPAN CLASS="keyword">#include</SPAN> &lt;tchar.h&gt;
+<SPAN CLASS="linenum">0008:</SPAN> <SPAN CLASS="keyword">#include</SPAN> &lt;stdio.h&gt;
+<SPAN CLASS="linenum">0009:</SPAN> <SPAN CLASS="keyword">#include</SPAN> &lt;d3d8.h&gt;
+<SPAN CLASS="linenum">0010:</SPAN> <SPAN CLASS="keyword">#include</SPAN> &lt;d3dx8.h&gt;
+<SPAN CLASS="linenum">0011:</SPAN> <SPAN CLASS="keyword">#include</SPAN> &lt;dxfile.h&gt;
+<SPAN CLASS="linenum">0012:</SPAN> <SPAN CLASS="keyword">#include</SPAN> &lt;rmxfguid.h&gt;
+<SPAN CLASS="linenum">0013:</SPAN> <SPAN CLASS="keyword">#include</SPAN> &lt;rmxftmpl.h&gt;
+<SPAN CLASS="linenum">0014:</SPAN> <SPAN CLASS="keyword">#include</SPAN> "<SPAN CLASS="string">D3DFile.h</SPAN>"
+<SPAN CLASS="linenum">0015:</SPAN> <SPAN CLASS="keyword">#include</SPAN> "<SPAN CLASS="string">DXUtil.h</SPAN>"
+<SPAN CLASS="linenum">0016:</SPAN> 
+<SPAN CLASS="linenum">0017:</SPAN> 
+<SPAN CLASS="linenum">0018:</SPAN> 
+<SPAN CLASS="linenum">0019:</SPAN> 
+<SPAN CLASS="linenum">0020:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0021:</SPAN> <SPAN CLASS="comment">// Name:</SPAN>
+<SPAN CLASS="linenum">0022:</SPAN> <SPAN CLASS="comment">// Desc:</SPAN>
+<SPAN CLASS="linenum">0023:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0024:</SPAN> CD3DMesh::CD3DMesh( TCHAR* strName )
+<SPAN CLASS="linenum">0025:</SPAN> {
+<SPAN CLASS="linenum">0026:</SPAN>     _tcscpy( m_strName, strName );
+<SPAN CLASS="linenum">0027:</SPAN>     m_pSysMemMesh        = NULL;
+<SPAN CLASS="linenum">0028:</SPAN>     m_pLocalMesh         = NULL;
+<SPAN CLASS="linenum">0029:</SPAN>     m_dwNumMaterials     = 0L;
+<SPAN CLASS="linenum">0030:</SPAN>     m_pMaterials         = NULL;
+<SPAN CLASS="linenum">0031:</SPAN>     m_pTextures          = NULL;
+<SPAN CLASS="linenum">0032:</SPAN>     m_bUseMaterials      = TRUE;
+<SPAN CLASS="linenum">0033:</SPAN> }
+<SPAN CLASS="linenum">0034:</SPAN> 
+<SPAN CLASS="linenum">0035:</SPAN> 
+<SPAN CLASS="linenum">0036:</SPAN> 
+<SPAN CLASS="linenum">0037:</SPAN> 
+<SPAN CLASS="linenum">0038:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0039:</SPAN> <SPAN CLASS="comment">// Name:</SPAN>
+<SPAN CLASS="linenum">0040:</SPAN> <SPAN CLASS="comment">// Desc:</SPAN>
+<SPAN CLASS="linenum">0041:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0042:</SPAN> CD3DMesh::~CD3DMesh()
+<SPAN CLASS="linenum">0043:</SPAN> {
+<SPAN CLASS="linenum">0044:</SPAN>     Destroy();
+<SPAN CLASS="linenum">0045:</SPAN> }
+<SPAN CLASS="linenum">0046:</SPAN> 
+<SPAN CLASS="linenum">0047:</SPAN> 
+<SPAN CLASS="linenum">0048:</SPAN> 
+<SPAN CLASS="linenum">0049:</SPAN> 
+<SPAN CLASS="linenum">0050:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0051:</SPAN> <SPAN CLASS="comment">// Name:</SPAN>
+<SPAN CLASS="linenum">0052:</SPAN> <SPAN CLASS="comment">// Desc:</SPAN>
+<SPAN CLASS="linenum">0053:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0054:</SPAN> HRESULT CD3DMesh::Create( LPDIRECT3DDEVICE8 pd3dDevice, TCHAR* strFilename )
+<SPAN CLASS="linenum">0055:</SPAN> {
+<SPAN CLASS="linenum">0056:</SPAN>     TCHAR        strPath[MAX_PATH];
+<SPAN CLASS="linenum">0057:</SPAN>     CHAR         strPathANSI[MAX_PATH];
+<SPAN CLASS="linenum">0058:</SPAN>     LPD3DXBUFFER pAdjacencyBuffer = NULL;
+<SPAN CLASS="linenum">0059:</SPAN>     LPD3DXBUFFER pMtrlBuffer = NULL;
+<SPAN CLASS="linenum">0060:</SPAN>     HRESULT      hr;
+<SPAN CLASS="linenum">0061:</SPAN> 
+<SPAN CLASS="linenum">0062:</SPAN>     <SPAN CLASS="comment">// Find the path for the file, and convert it to ANSI (for the D3DX API)</SPAN>
+<SPAN CLASS="linenum">0063:</SPAN>     DXUtil_FindMediaFile( strPath, strFilename );
+<SPAN CLASS="linenum">0064:</SPAN>     DXUtil_ConvertGenericStringToAnsi( strPathANSI, strPath );
+<SPAN CLASS="linenum">0065:</SPAN> 
+<SPAN CLASS="linenum">0066:</SPAN>     <SPAN CLASS="comment">// Load the mesh</SPAN>
+<SPAN CLASS="linenum">0067:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( FAILED( hr = D3DXLoadMeshFromX( strPathANSI, D3DXMESH_SYSTEMMEM, pd3dDevice, 
+<SPAN CLASS="linenum">0068:</SPAN>                                         &amp;pAdjacencyBuffer, &amp;pMtrlBuffer, 
+<SPAN CLASS="linenum">0069:</SPAN>                                         &amp;m_dwNumMaterials, &amp;m_pSysMemMesh ) ) )
+<SPAN CLASS="linenum">0070:</SPAN>     {
+<SPAN CLASS="linenum">0071:</SPAN>         <SPAN CLASS="keyword">return</SPAN> hr;
+<SPAN CLASS="linenum">0072:</SPAN>     }
+<SPAN CLASS="linenum">0073:</SPAN> 
+<SPAN CLASS="linenum">0074:</SPAN>     <SPAN CLASS="comment">// Optimize the mesh for performance</SPAN>
+<SPAN CLASS="linenum">0075:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( FAILED( hr = m_pSysMemMesh-&gt;OptimizeInplace(
+<SPAN CLASS="linenum">0076:</SPAN>                         D3DXMESHOPT_COMPACT | D3DXMESHOPT_ATTRSORT | D3DXMESHOPT_VERTEXCACHE,
+<SPAN CLASS="linenum">0077:</SPAN>                         (DWORD*)pAdjacencyBuffer-&gt;GetBufferPointer(), NULL, NULL, NULL ) ) )
+<SPAN CLASS="linenum">0078:</SPAN>     {
+<SPAN CLASS="linenum">0079:</SPAN>         SAFE_RELEASE( pAdjacencyBuffer );
+<SPAN CLASS="linenum">0080:</SPAN>         SAFE_RELEASE( pMtrlBuffer );
+<SPAN CLASS="linenum">0081:</SPAN>         <SPAN CLASS="keyword">return</SPAN> hr;
+<SPAN CLASS="linenum">0082:</SPAN>     }
+<SPAN CLASS="linenum">0083:</SPAN> 
+<SPAN CLASS="linenum">0084:</SPAN>     <SPAN CLASS="comment">// Get material info for the mesh</SPAN>
+<SPAN CLASS="linenum">0085:</SPAN>     <SPAN CLASS="comment">// Get the array of materials out of the buffer</SPAN>
+<SPAN CLASS="linenum">0086:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( pMtrlBuffer &amp;&amp; m_dwNumMaterials &gt; 0 )
+<SPAN CLASS="linenum">0087:</SPAN>     {
+<SPAN CLASS="linenum">0088:</SPAN>         <SPAN CLASS="comment">// Allocate memory for the materials and textures</SPAN>
+<SPAN CLASS="linenum">0089:</SPAN>         D3DXMATERIAL* d3dxMtrls = (D3DXMATERIAL*)pMtrlBuffer-&gt;GetBufferPointer();
+<SPAN CLASS="linenum">0090:</SPAN>         m_pMaterials = <SPAN CLASS="keyword">new</SPAN> D3DMATERIAL8[m_dwNumMaterials];
+<SPAN CLASS="linenum">0091:</SPAN>         m_pTextures  = <SPAN CLASS="keyword">new</SPAN> LPDIRECT3DTEXTURE8[m_dwNumMaterials];
+<SPAN CLASS="linenum">0092:</SPAN> 
+<SPAN CLASS="linenum">0093:</SPAN>         <SPAN CLASS="comment">// Copy each material and create its texture</SPAN>
+<SPAN CLASS="linenum">0094:</SPAN>         <SPAN CLASS="keyword">for</SPAN>( DWORD i=0; i&lt;m_dwNumMaterials; i++ )
+<SPAN CLASS="linenum">0095:</SPAN>         {
+<SPAN CLASS="linenum">0096:</SPAN>             <SPAN CLASS="comment">// Copy the material</SPAN>
+<SPAN CLASS="linenum">0097:</SPAN>             m_pMaterials[i]         = d3dxMtrls[i].MatD3D;
+<SPAN CLASS="linenum">0098:</SPAN>             m_pMaterials[i].Ambient = m_pMaterials[i].Diffuse;
+<SPAN CLASS="linenum">0099:</SPAN>             m_pTextures[i]          = NULL;
+<SPAN CLASS="linenum">0100:</SPAN> 
+<SPAN CLASS="linenum">0101:</SPAN>             <SPAN CLASS="comment">// Create a texture</SPAN>
+<SPAN CLASS="linenum">0102:</SPAN>             <SPAN CLASS="keyword">if</SPAN>( d3dxMtrls[i].pTextureFilename )
+<SPAN CLASS="linenum">0103:</SPAN>             {
+<SPAN CLASS="linenum">0104:</SPAN>                 TCHAR strTexture[MAX_PATH];
+<SPAN CLASS="linenum">0105:</SPAN>                 TCHAR strTextureTemp[MAX_PATH];
+<SPAN CLASS="linenum">0106:</SPAN>                 DXUtil_ConvertAnsiStringToGeneric( strTextureTemp, d3dxMtrls[i].pTextureFilename );
+<SPAN CLASS="linenum">0107:</SPAN>                 DXUtil_FindMediaFile( strTexture, strTextureTemp );
+<SPAN CLASS="linenum">0108:</SPAN> 
+<SPAN CLASS="linenum">0109:</SPAN>                 <SPAN CLASS="keyword">if</SPAN>( FAILED( D3DXCreateTextureFromFile( pd3dDevice, strTexture, 
+<SPAN CLASS="linenum">0110:</SPAN>                                                        &amp;m_pTextures[i] ) ) )
+<SPAN CLASS="linenum">0111:</SPAN>                     m_pTextures[i] = NULL;
+<SPAN CLASS="linenum">0112:</SPAN>             }
+<SPAN CLASS="linenum">0113:</SPAN>         }
+<SPAN CLASS="linenum">0114:</SPAN>     }
+<SPAN CLASS="linenum">0115:</SPAN> 
+<SPAN CLASS="linenum">0116:</SPAN>     SAFE_RELEASE( pAdjacencyBuffer );
+<SPAN CLASS="linenum">0117:</SPAN>     SAFE_RELEASE( pMtrlBuffer );
+<SPAN CLASS="linenum">0118:</SPAN> 
+<SPAN CLASS="linenum">0119:</SPAN>     <SPAN CLASS="keyword">return</SPAN> S_OK;
+<SPAN CLASS="linenum">0120:</SPAN> }
+<SPAN CLASS="linenum">0121:</SPAN> 
+<SPAN CLASS="linenum">0122:</SPAN> 
+<SPAN CLASS="linenum">0123:</SPAN> 
+<SPAN CLASS="linenum">0124:</SPAN> 
+<SPAN CLASS="linenum">0125:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0126:</SPAN> <SPAN CLASS="comment">// Name:</SPAN>
+<SPAN CLASS="linenum">0127:</SPAN> <SPAN CLASS="comment">// Desc:</SPAN>
+<SPAN CLASS="linenum">0128:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0129:</SPAN> HRESULT CD3DMesh::Create( LPDIRECT3DDEVICE8 pd3dDevice,
+<SPAN CLASS="linenum">0130:</SPAN>                           LPDIRECTXFILEDATA pFileData )
+<SPAN CLASS="linenum">0131:</SPAN> {
+<SPAN CLASS="linenum">0132:</SPAN>     LPD3DXBUFFER pMtrlBuffer = NULL;
+<SPAN CLASS="linenum">0133:</SPAN>     LPD3DXBUFFER pAdjacencyBuffer = NULL;
+<SPAN CLASS="linenum">0134:</SPAN>     HRESULT      hr;
+<SPAN CLASS="linenum">0135:</SPAN> 
+<SPAN CLASS="linenum">0136:</SPAN>     <SPAN CLASS="comment">// Load the mesh from the DXFILEDATA object</SPAN>
+<SPAN CLASS="linenum">0137:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( FAILED( hr = D3DXLoadMeshFromXof( pFileData, D3DXMESH_SYSTEMMEM, pd3dDevice,
+<SPAN CLASS="linenum">0138:</SPAN>                                           &amp;pAdjacencyBuffer, &amp;pMtrlBuffer, 
+<SPAN CLASS="linenum">0139:</SPAN>                                           &amp;m_dwNumMaterials, &amp;m_pSysMemMesh ) ) )
+<SPAN CLASS="linenum">0140:</SPAN>     {
+<SPAN CLASS="linenum">0141:</SPAN>         <SPAN CLASS="keyword">return</SPAN> hr;
+<SPAN CLASS="linenum">0142:</SPAN>     }
+<SPAN CLASS="linenum">0143:</SPAN> 
+<SPAN CLASS="linenum">0144:</SPAN>     <SPAN CLASS="comment">// Optimize the mesh for performance</SPAN>
+<SPAN CLASS="linenum">0145:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( FAILED( hr = m_pSysMemMesh-&gt;OptimizeInplace(
+<SPAN CLASS="linenum">0146:</SPAN>                         D3DXMESHOPT_COMPACT | D3DXMESHOPT_ATTRSORT | D3DXMESHOPT_VERTEXCACHE,
+<SPAN CLASS="linenum">0147:</SPAN>                         (DWORD*)pAdjacencyBuffer-&gt;GetBufferPointer(), NULL, NULL, NULL ) ) )
+<SPAN CLASS="linenum">0148:</SPAN>     {
+<SPAN CLASS="linenum">0149:</SPAN>         SAFE_RELEASE( pAdjacencyBuffer );
+<SPAN CLASS="linenum">0150:</SPAN>         SAFE_RELEASE( pMtrlBuffer );
+<SPAN CLASS="linenum">0151:</SPAN>         <SPAN CLASS="keyword">return</SPAN> hr;
+<SPAN CLASS="linenum">0152:</SPAN>     }
+<SPAN CLASS="linenum">0153:</SPAN> 
+<SPAN CLASS="linenum">0154:</SPAN>     <SPAN CLASS="comment">// Get material info for the mesh</SPAN>
+<SPAN CLASS="linenum">0155:</SPAN>     <SPAN CLASS="comment">// Get the array of materials out of the buffer</SPAN>
+<SPAN CLASS="linenum">0156:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( pMtrlBuffer &amp;&amp; m_dwNumMaterials &gt; 0 )
+<SPAN CLASS="linenum">0157:</SPAN>     {
+<SPAN CLASS="linenum">0158:</SPAN>         <SPAN CLASS="comment">// Allocate memory for the materials and textures</SPAN>
+<SPAN CLASS="linenum">0159:</SPAN>         D3DXMATERIAL* d3dxMtrls = (D3DXMATERIAL*)pMtrlBuffer-&gt;GetBufferPointer();
+<SPAN CLASS="linenum">0160:</SPAN>         m_pMaterials = <SPAN CLASS="keyword">new</SPAN> D3DMATERIAL8[m_dwNumMaterials];
+<SPAN CLASS="linenum">0161:</SPAN>         m_pTextures  = <SPAN CLASS="keyword">new</SPAN> LPDIRECT3DTEXTURE8[m_dwNumMaterials];
+<SPAN CLASS="linenum">0162:</SPAN> 
+<SPAN CLASS="linenum">0163:</SPAN>         <SPAN CLASS="comment">// Copy each material and create its texture</SPAN>
+<SPAN CLASS="linenum">0164:</SPAN>         <SPAN CLASS="keyword">for</SPAN>( DWORD i=0; i&lt;m_dwNumMaterials; i++ )
+<SPAN CLASS="linenum">0165:</SPAN>         {
+<SPAN CLASS="linenum">0166:</SPAN>             <SPAN CLASS="comment">// Copy the material</SPAN>
+<SPAN CLASS="linenum">0167:</SPAN>             m_pMaterials[i]         = d3dxMtrls[i].MatD3D;
+<SPAN CLASS="linenum">0168:</SPAN>             m_pMaterials[i].Ambient = m_pMaterials[i].Diffuse;
+<SPAN CLASS="linenum">0169:</SPAN>             m_pTextures[i]          = NULL;
+<SPAN CLASS="linenum">0170:</SPAN> 
+<SPAN CLASS="linenum">0171:</SPAN>             <SPAN CLASS="comment">// Create a texture</SPAN>
+<SPAN CLASS="linenum">0172:</SPAN>             <SPAN CLASS="keyword">if</SPAN>( d3dxMtrls[i].pTextureFilename )
+<SPAN CLASS="linenum">0173:</SPAN>             {
+<SPAN CLASS="linenum">0174:</SPAN>                 TCHAR strTexture[MAX_PATH];
+<SPAN CLASS="linenum">0175:</SPAN>                 TCHAR strTextureTemp[MAX_PATH];
+<SPAN CLASS="linenum">0176:</SPAN>                 DXUtil_ConvertAnsiStringToGeneric( strTextureTemp, d3dxMtrls[i].pTextureFilename );
+<SPAN CLASS="linenum">0177:</SPAN>                 DXUtil_FindMediaFile( strTexture, strTextureTemp );
+<SPAN CLASS="linenum">0178:</SPAN> 
+<SPAN CLASS="linenum">0179:</SPAN>                 <SPAN CLASS="keyword">if</SPAN>( FAILED( D3DXCreateTextureFromFile( pd3dDevice, strTexture, 
+<SPAN CLASS="linenum">0180:</SPAN>                                                        &amp;m_pTextures[i] ) ) )
+<SPAN CLASS="linenum">0181:</SPAN>                     m_pTextures[i] = NULL;
+<SPAN CLASS="linenum">0182:</SPAN>             }
+<SPAN CLASS="linenum">0183:</SPAN>         }
+<SPAN CLASS="linenum">0184:</SPAN>     }
+<SPAN CLASS="linenum">0185:</SPAN> 
+<SPAN CLASS="linenum">0186:</SPAN>     SAFE_RELEASE( pAdjacencyBuffer );
+<SPAN CLASS="linenum">0187:</SPAN>     SAFE_RELEASE( pMtrlBuffer );
+<SPAN CLASS="linenum">0188:</SPAN> 
+<SPAN CLASS="linenum">0189:</SPAN>     <SPAN CLASS="keyword">return</SPAN> S_OK;
+<SPAN CLASS="linenum">0190:</SPAN> }
+<SPAN CLASS="linenum">0191:</SPAN> 
+<SPAN CLASS="linenum">0192:</SPAN> 
+<SPAN CLASS="linenum">0193:</SPAN> 
+<SPAN CLASS="linenum">0194:</SPAN> 
+<SPAN CLASS="linenum">0195:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0196:</SPAN> <SPAN CLASS="comment">// Name:</SPAN>
+<SPAN CLASS="linenum">0197:</SPAN> <SPAN CLASS="comment">// Desc:</SPAN>
+<SPAN CLASS="linenum">0198:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0199:</SPAN> HRESULT CD3DMesh::SetFVF( LPDIRECT3DDEVICE8 pd3dDevice, DWORD dwFVF )
+<SPAN CLASS="linenum">0200:</SPAN> {
+<SPAN CLASS="linenum">0201:</SPAN>     LPD3DXMESH pTempSysMemMesh = NULL;
+<SPAN CLASS="linenum">0202:</SPAN>     LPD3DXMESH pTempLocalMesh  = NULL;
+<SPAN CLASS="linenum">0203:</SPAN> 
+<SPAN CLASS="linenum">0204:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( m_pSysMemMesh )
+<SPAN CLASS="linenum">0205:</SPAN>     {
+<SPAN CLASS="linenum">0206:</SPAN>         <SPAN CLASS="keyword">if</SPAN>( FAILED( m_pSysMemMesh-&gt;CloneMeshFVF( D3DXMESH_SYSTEMMEM, dwFVF,
+<SPAN CLASS="linenum">0207:</SPAN>                                                  pd3dDevice, &amp;pTempSysMemMesh ) ) )
+<SPAN CLASS="linenum">0208:</SPAN>             <SPAN CLASS="keyword">return</SPAN> E_FAIL;
+<SPAN CLASS="linenum">0209:</SPAN>     }
+<SPAN CLASS="linenum">0210:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( m_pLocalMesh )
+<SPAN CLASS="linenum">0211:</SPAN>     {
+<SPAN CLASS="linenum">0212:</SPAN>         <SPAN CLASS="keyword">if</SPAN>( FAILED( m_pLocalMesh-&gt;CloneMeshFVF( 0L, dwFVF, pd3dDevice,
+<SPAN CLASS="linenum">0213:</SPAN>                                                 &amp;pTempLocalMesh ) ) )
+<SPAN CLASS="linenum">0214:</SPAN>         {
+<SPAN CLASS="linenum">0215:</SPAN>             SAFE_RELEASE( pTempSysMemMesh );
+<SPAN CLASS="linenum">0216:</SPAN>             <SPAN CLASS="keyword">return</SPAN> E_FAIL;
+<SPAN CLASS="linenum">0217:</SPAN>         }
+<SPAN CLASS="linenum">0218:</SPAN>     }
+<SPAN CLASS="linenum">0219:</SPAN> 
+<SPAN CLASS="linenum">0220:</SPAN>     SAFE_RELEASE( m_pSysMemMesh );
+<SPAN CLASS="linenum">0221:</SPAN>     SAFE_RELEASE( m_pLocalMesh );
+<SPAN CLASS="linenum">0222:</SPAN> 
+<SPAN CLASS="linenum">0223:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( pTempSysMemMesh ) m_pSysMemMesh = pTempSysMemMesh;
+<SPAN CLASS="linenum">0224:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( pTempLocalMesh )  m_pLocalMesh  = pTempLocalMesh;
+<SPAN CLASS="linenum">0225:</SPAN> 
+<SPAN CLASS="linenum">0226:</SPAN>     <SPAN CLASS="comment">// Compute normals in case the meshes have them</SPAN>
+<SPAN CLASS="linenum">0227:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( m_pSysMemMesh )
+<SPAN CLASS="linenum">0228:</SPAN>         D3DXComputeNormals( m_pSysMemMesh, NULL );
+<SPAN CLASS="linenum">0229:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( m_pLocalMesh )
+<SPAN CLASS="linenum">0230:</SPAN>         D3DXComputeNormals( m_pLocalMesh, NULL );
+<SPAN CLASS="linenum">0231:</SPAN> 
+<SPAN CLASS="linenum">0232:</SPAN>     <SPAN CLASS="keyword">return</SPAN> S_OK;
+<SPAN CLASS="linenum">0233:</SPAN> }
+<SPAN CLASS="linenum">0234:</SPAN> 
+<SPAN CLASS="linenum">0235:</SPAN> 
+<SPAN CLASS="linenum">0236:</SPAN> 
+<SPAN CLASS="linenum">0237:</SPAN> 
+<SPAN CLASS="linenum">0238:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0239:</SPAN> <SPAN CLASS="comment">// Name:</SPAN>
+<SPAN CLASS="linenum">0240:</SPAN> <SPAN CLASS="comment">// Desc:</SPAN>
+<SPAN CLASS="linenum">0241:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0242:</SPAN> HRESULT CD3DMesh::RestoreDeviceObjects( LPDIRECT3DDEVICE8 pd3dDevice )
+<SPAN CLASS="linenum">0243:</SPAN> {
+<SPAN CLASS="linenum">0244:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( NULL == m_pSysMemMesh )
+<SPAN CLASS="linenum">0245:</SPAN>         <SPAN CLASS="keyword">return</SPAN> E_FAIL;
+<SPAN CLASS="linenum">0246:</SPAN> 
+<SPAN CLASS="linenum">0247:</SPAN>     <SPAN CLASS="comment">// Make a local memory version of the mesh. Note: because we are passing in</SPAN>
+<SPAN CLASS="linenum">0248:</SPAN>     <SPAN CLASS="comment">// no flags, the default behavior is to clone into local memory.</SPAN>
+<SPAN CLASS="linenum">0249:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( FAILED( m_pSysMemMesh-&gt;CloneMeshFVF( 0L, m_pSysMemMesh-&gt;GetFVF(),
+<SPAN CLASS="linenum">0250:</SPAN>                                              pd3dDevice, &amp;m_pLocalMesh ) ) )
+<SPAN CLASS="linenum">0251:</SPAN>         <SPAN CLASS="keyword">return</SPAN> E_FAIL;
+<SPAN CLASS="linenum">0252:</SPAN> 
+<SPAN CLASS="linenum">0253:</SPAN>     <SPAN CLASS="keyword">return</SPAN> S_OK;
+<SPAN CLASS="linenum">0254:</SPAN> 
+<SPAN CLASS="linenum">0255:</SPAN> }
+<SPAN CLASS="linenum">0256:</SPAN> 
+<SPAN CLASS="linenum">0257:</SPAN> 
+<SPAN CLASS="linenum">0258:</SPAN> 
+<SPAN CLASS="linenum">0259:</SPAN> 
+<SPAN CLASS="linenum">0260:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0261:</SPAN> <SPAN CLASS="comment">// Name:</SPAN>
+<SPAN CLASS="linenum">0262:</SPAN> <SPAN CLASS="comment">// Desc:</SPAN>
+<SPAN CLASS="linenum">0263:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0264:</SPAN> HRESULT CD3DMesh::InvalidateDeviceObjects()
+<SPAN CLASS="linenum">0265:</SPAN> {
+<SPAN CLASS="linenum">0266:</SPAN>     SAFE_RELEASE( m_pLocalMesh );
+<SPAN CLASS="linenum">0267:</SPAN> 
+<SPAN CLASS="linenum">0268:</SPAN>     <SPAN CLASS="keyword">return</SPAN> S_OK;
+<SPAN CLASS="linenum">0269:</SPAN> }
+<SPAN CLASS="linenum">0270:</SPAN> 
+<SPAN CLASS="linenum">0271:</SPAN> 
+<SPAN CLASS="linenum">0272:</SPAN> 
+<SPAN CLASS="linenum">0273:</SPAN> 
+<SPAN CLASS="linenum">0274:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0275:</SPAN> <SPAN CLASS="comment">// Name:</SPAN>
+<SPAN CLASS="linenum">0276:</SPAN> <SPAN CLASS="comment">// Desc:</SPAN>
+<SPAN CLASS="linenum">0277:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0278:</SPAN> HRESULT CD3DMesh::Destroy()
+<SPAN CLASS="linenum">0279:</SPAN> {
+<SPAN CLASS="linenum">0280:</SPAN>     InvalidateDeviceObjects();
+<SPAN CLASS="linenum">0281:</SPAN>     <SPAN CLASS="keyword">for</SPAN>( UINT i=0; i&lt;m_dwNumMaterials; i++ )
+<SPAN CLASS="linenum">0282:</SPAN>         SAFE_RELEASE( m_pTextures[i] );
+<SPAN CLASS="linenum">0283:</SPAN>     SAFE_DELETE_ARRAY( m_pTextures );
+<SPAN CLASS="linenum">0284:</SPAN>     SAFE_DELETE_ARRAY( m_pMaterials );
+<SPAN CLASS="linenum">0285:</SPAN> 
+<SPAN CLASS="linenum">0286:</SPAN>     SAFE_RELEASE( m_pSysMemMesh );
+<SPAN CLASS="linenum">0287:</SPAN> 
+<SPAN CLASS="linenum">0288:</SPAN>     m_dwNumMaterials = 0L;
+<SPAN CLASS="linenum">0289:</SPAN> 
+<SPAN CLASS="linenum">0290:</SPAN>     <SPAN CLASS="keyword">return</SPAN> S_OK;
+<SPAN CLASS="linenum">0291:</SPAN> }
+<SPAN CLASS="linenum">0292:</SPAN> 
+<SPAN CLASS="linenum">0293:</SPAN> 
+<SPAN CLASS="linenum">0294:</SPAN> 
+<SPAN CLASS="linenum">0295:</SPAN> 
+<SPAN CLASS="linenum">0296:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0297:</SPAN> <SPAN CLASS="comment">// Name:</SPAN>
+<SPAN CLASS="linenum">0298:</SPAN> <SPAN CLASS="comment">// Desc:</SPAN>
+<SPAN CLASS="linenum">0299:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0300:</SPAN> HRESULT CD3DMesh::Render( LPDIRECT3DDEVICE8 pd3dDevice, BOOL bDrawOpaqueSubsets,
+<SPAN CLASS="linenum">0301:</SPAN>                           BOOL bDrawAlphaSubsets )
+<SPAN CLASS="linenum">0302:</SPAN> {
+<SPAN CLASS="linenum">0303:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( NULL == m_pLocalMesh )
+<SPAN CLASS="linenum">0304:</SPAN>         <SPAN CLASS="keyword">return</SPAN> E_FAIL;
+<SPAN CLASS="linenum">0305:</SPAN> 
+<SPAN CLASS="linenum">0306:</SPAN>     <SPAN CLASS="comment">// Frist, draw the subsets without alpha</SPAN>
+<SPAN CLASS="linenum">0307:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( bDrawOpaqueSubsets )
+<SPAN CLASS="linenum">0308:</SPAN>     {
+<SPAN CLASS="linenum">0309:</SPAN>         <SPAN CLASS="keyword">for</SPAN>( DWORD i=0; i&lt;m_dwNumMaterials; i++ )
+<SPAN CLASS="linenum">0310:</SPAN>         {
+<SPAN CLASS="linenum">0311:</SPAN>             <SPAN CLASS="keyword">if</SPAN>( m_bUseMaterials )
+<SPAN CLASS="linenum">0312:</SPAN>             {
+<SPAN CLASS="linenum">0313:</SPAN>                 <SPAN CLASS="keyword">if</SPAN>( m_pMaterials[i].Diffuse.a &lt; 1.0f )
+<SPAN CLASS="linenum">0314:</SPAN>                     <SPAN CLASS="keyword">continue</SPAN>;
+<SPAN CLASS="linenum">0315:</SPAN>                 pd3dDevice-&gt;SetMaterial( &amp;m_pMaterials[i] );
+<SPAN CLASS="linenum">0316:</SPAN>                 pd3dDevice-&gt;SetTexture( 0, m_pTextures[i] );
+<SPAN CLASS="linenum">0317:</SPAN>             }
+<SPAN CLASS="linenum">0318:</SPAN>             m_pLocalMesh-&gt;DrawSubset( i );
+<SPAN CLASS="linenum">0319:</SPAN>         }
+<SPAN CLASS="linenum">0320:</SPAN>     }
+<SPAN CLASS="linenum">0321:</SPAN> 
+<SPAN CLASS="linenum">0322:</SPAN>     <SPAN CLASS="comment">// Then, draw the subsets with alpha</SPAN>
+<SPAN CLASS="linenum">0323:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( bDrawAlphaSubsets &amp;&amp; m_bUseMaterials )
+<SPAN CLASS="linenum">0324:</SPAN>     {
+<SPAN CLASS="linenum">0325:</SPAN>         <SPAN CLASS="keyword">for</SPAN>( DWORD i=0; i&lt;m_dwNumMaterials; i++ )
+<SPAN CLASS="linenum">0326:</SPAN>         {
+<SPAN CLASS="linenum">0327:</SPAN>             <SPAN CLASS="keyword">if</SPAN>( m_pMaterials[i].Diffuse.a == 1.0f )
+<SPAN CLASS="linenum">0328:</SPAN>                 <SPAN CLASS="keyword">continue</SPAN>;
+<SPAN CLASS="linenum">0329:</SPAN> 
+<SPAN CLASS="linenum">0330:</SPAN>             <SPAN CLASS="comment">// Set the material and texture</SPAN>
+<SPAN CLASS="linenum">0331:</SPAN>             pd3dDevice-&gt;SetMaterial( &amp;m_pMaterials[i] );
+<SPAN CLASS="linenum">0332:</SPAN>             pd3dDevice-&gt;SetTexture( 0, m_pTextures[i] );
+<SPAN CLASS="linenum">0333:</SPAN>             m_pLocalMesh-&gt;DrawSubset( i );
+<SPAN CLASS="linenum">0334:</SPAN>         }
+<SPAN CLASS="linenum">0335:</SPAN>     }
+<SPAN CLASS="linenum">0336:</SPAN> 
+<SPAN CLASS="linenum">0337:</SPAN>     <SPAN CLASS="keyword">return</SPAN> S_OK;
+<SPAN CLASS="linenum">0338:</SPAN> }
+<SPAN CLASS="linenum">0339:</SPAN> 
+<SPAN CLASS="linenum">0340:</SPAN> 
+<SPAN CLASS="linenum">0341:</SPAN> 
+<SPAN CLASS="linenum">0342:</SPAN> 
+<SPAN CLASS="linenum">0343:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0344:</SPAN> <SPAN CLASS="comment">// Name:</SPAN>
+<SPAN CLASS="linenum">0345:</SPAN> <SPAN CLASS="comment">// Desc:</SPAN>
+<SPAN CLASS="linenum">0346:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0347:</SPAN> CD3DFrame::CD3DFrame( TCHAR* strName )
+<SPAN CLASS="linenum">0348:</SPAN> {
+<SPAN CLASS="linenum">0349:</SPAN>     _tcscpy( m_strName, strName );
+<SPAN CLASS="linenum">0350:</SPAN>     D3DXMatrixIdentity( &amp;m_mat );
+<SPAN CLASS="linenum">0351:</SPAN>     m_pMesh  = NULL;
+<SPAN CLASS="linenum">0352:</SPAN> 
+<SPAN CLASS="linenum">0353:</SPAN>     m_pChild = NULL;
+<SPAN CLASS="linenum">0354:</SPAN>     m_pNext  = NULL;
+<SPAN CLASS="linenum">0355:</SPAN> }
+<SPAN CLASS="linenum">0356:</SPAN> 
+<SPAN CLASS="linenum">0357:</SPAN> 
+<SPAN CLASS="linenum">0358:</SPAN> 
+<SPAN CLASS="linenum">0359:</SPAN> 
+<SPAN CLASS="linenum">0360:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0361:</SPAN> <SPAN CLASS="comment">// Name:</SPAN>
+<SPAN CLASS="linenum">0362:</SPAN> <SPAN CLASS="comment">// Desc:</SPAN>
+<SPAN CLASS="linenum">0363:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0364:</SPAN> CD3DFrame::~CD3DFrame()
+<SPAN CLASS="linenum">0365:</SPAN> {
+<SPAN CLASS="linenum">0366:</SPAN>     SAFE_DELETE( m_pChild );
+<SPAN CLASS="linenum">0367:</SPAN>     SAFE_DELETE( m_pNext );
+<SPAN CLASS="linenum">0368:</SPAN> }
+<SPAN CLASS="linenum">0369:</SPAN> 
+<SPAN CLASS="linenum">0370:</SPAN> 
+<SPAN CLASS="linenum">0371:</SPAN> 
+<SPAN CLASS="linenum">0372:</SPAN> 
+<SPAN CLASS="linenum">0373:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0374:</SPAN> <SPAN CLASS="comment">// Name:</SPAN>
+<SPAN CLASS="linenum">0375:</SPAN> <SPAN CLASS="comment">// Desc:</SPAN>
+<SPAN CLASS="linenum">0376:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0377:</SPAN> BOOL CD3DFrame::EnumMeshes( BOOL (*EnumMeshCB)(CD3DMesh*,VOID*),
+<SPAN CLASS="linenum">0378:</SPAN>                             VOID* pContext )
+<SPAN CLASS="linenum">0379:</SPAN> {
+<SPAN CLASS="linenum">0380:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( m_pMesh )
+<SPAN CLASS="linenum">0381:</SPAN>         EnumMeshCB( m_pMesh, pContext );
+<SPAN CLASS="linenum">0382:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( m_pChild )
+<SPAN CLASS="linenum">0383:</SPAN>         m_pChild-&gt;EnumMeshes( EnumMeshCB, pContext );
+<SPAN CLASS="linenum">0384:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( m_pNext )
+<SPAN CLASS="linenum">0385:</SPAN>         m_pNext-&gt;EnumMeshes( EnumMeshCB, pContext );
+<SPAN CLASS="linenum">0386:</SPAN> 
+<SPAN CLASS="linenum">0387:</SPAN>     <SPAN CLASS="keyword">return</SPAN> TRUE;
+<SPAN CLASS="linenum">0388:</SPAN> }
+<SPAN CLASS="linenum">0389:</SPAN> 
+<SPAN CLASS="linenum">0390:</SPAN> 
+<SPAN CLASS="linenum">0391:</SPAN> 
+<SPAN CLASS="linenum">0392:</SPAN> 
+<SPAN CLASS="linenum">0393:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0394:</SPAN> <SPAN CLASS="comment">// Name:</SPAN>
+<SPAN CLASS="linenum">0395:</SPAN> <SPAN CLASS="comment">// Desc:</SPAN>
+<SPAN CLASS="linenum">0396:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0397:</SPAN> CD3DMesh* CD3DFrame::FindMesh( TCHAR* strMeshName )
+<SPAN CLASS="linenum">0398:</SPAN> {
+<SPAN CLASS="linenum">0399:</SPAN>     CD3DMesh* pMesh;
+<SPAN CLASS="linenum">0400:</SPAN> 
+<SPAN CLASS="linenum">0401:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( m_pMesh )
+<SPAN CLASS="linenum">0402:</SPAN>         <SPAN CLASS="keyword">if</SPAN>( !lstrcmpi( m_pMesh-&gt;m_strName, strMeshName ) )
+<SPAN CLASS="linenum">0403:</SPAN>             <SPAN CLASS="keyword">return</SPAN> m_pMesh;
+<SPAN CLASS="linenum">0404:</SPAN> 
+<SPAN CLASS="linenum">0405:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( m_pChild )
+<SPAN CLASS="linenum">0406:</SPAN>         <SPAN CLASS="keyword">if</SPAN>( NULL != ( pMesh = m_pChild-&gt;FindMesh( strMeshName ) ) )
+<SPAN CLASS="linenum">0407:</SPAN>             <SPAN CLASS="keyword">return</SPAN> pMesh;
+<SPAN CLASS="linenum">0408:</SPAN> 
+<SPAN CLASS="linenum">0409:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( m_pNext )
+<SPAN CLASS="linenum">0410:</SPAN>         <SPAN CLASS="keyword">if</SPAN>( NULL != ( pMesh = m_pNext-&gt;FindMesh( strMeshName ) ) )
+<SPAN CLASS="linenum">0411:</SPAN>             <SPAN CLASS="keyword">return</SPAN> pMesh;
+<SPAN CLASS="linenum">0412:</SPAN> 
+<SPAN CLASS="linenum">0413:</SPAN>     <SPAN CLASS="keyword">return</SPAN> NULL;
+<SPAN CLASS="linenum">0414:</SPAN> }
+<SPAN CLASS="linenum">0415:</SPAN> 
+<SPAN CLASS="linenum">0416:</SPAN> 
+<SPAN CLASS="linenum">0417:</SPAN> 
+<SPAN CLASS="linenum">0418:</SPAN> 
+<SPAN CLASS="linenum">0419:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0420:</SPAN> <SPAN CLASS="comment">// Name:</SPAN>
+<SPAN CLASS="linenum">0421:</SPAN> <SPAN CLASS="comment">// Desc:</SPAN>
+<SPAN CLASS="linenum">0422:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0423:</SPAN> CD3DFrame* CD3DFrame::FindFrame( TCHAR* strFrameName )
+<SPAN CLASS="linenum">0424:</SPAN> {
+<SPAN CLASS="linenum">0425:</SPAN>     CD3DFrame* pFrame;
+<SPAN CLASS="linenum">0426:</SPAN> 
+<SPAN CLASS="linenum">0427:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( !lstrcmpi( m_strName, strFrameName ) )
+<SPAN CLASS="linenum">0428:</SPAN>         <SPAN CLASS="keyword">return</SPAN> <SPAN CLASS="keyword">this</SPAN>;
+<SPAN CLASS="linenum">0429:</SPAN> 
+<SPAN CLASS="linenum">0430:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( m_pChild )
+<SPAN CLASS="linenum">0431:</SPAN>         <SPAN CLASS="keyword">if</SPAN>( NULL != ( pFrame = m_pChild-&gt;FindFrame( strFrameName ) ) )
+<SPAN CLASS="linenum">0432:</SPAN>             <SPAN CLASS="keyword">return</SPAN> pFrame;
+<SPAN CLASS="linenum">0433:</SPAN> 
+<SPAN CLASS="linenum">0434:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( m_pNext )
+<SPAN CLASS="linenum">0435:</SPAN>         <SPAN CLASS="keyword">if</SPAN>( NULL != ( pFrame = m_pNext-&gt;FindFrame( strFrameName ) ) )
+<SPAN CLASS="linenum">0436:</SPAN>             <SPAN CLASS="keyword">return</SPAN> pFrame;
+<SPAN CLASS="linenum">0437:</SPAN> 
+<SPAN CLASS="linenum">0438:</SPAN>     <SPAN CLASS="keyword">return</SPAN> NULL;
+<SPAN CLASS="linenum">0439:</SPAN> }
+<SPAN CLASS="linenum">0440:</SPAN> 
+<SPAN CLASS="linenum">0441:</SPAN> 
+<SPAN CLASS="linenum">0442:</SPAN> 
+<SPAN CLASS="linenum">0443:</SPAN> 
+<SPAN CLASS="linenum">0444:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0445:</SPAN> <SPAN CLASS="comment">// Name:</SPAN>
+<SPAN CLASS="linenum">0446:</SPAN> <SPAN CLASS="comment">// Desc:</SPAN>
+<SPAN CLASS="linenum">0447:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0448:</SPAN> HRESULT CD3DFrame::Destroy()
+<SPAN CLASS="linenum">0449:</SPAN> {
+<SPAN CLASS="linenum">0450:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( m_pMesh )  m_pMesh-&gt;Destroy();
+<SPAN CLASS="linenum">0451:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( m_pChild ) m_pChild-&gt;Destroy();
+<SPAN CLASS="linenum">0452:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( m_pNext )  m_pNext-&gt;Destroy();
+<SPAN CLASS="linenum">0453:</SPAN> 
+<SPAN CLASS="linenum">0454:</SPAN>     SAFE_DELETE( m_pMesh );
+<SPAN CLASS="linenum">0455:</SPAN>     SAFE_DELETE( m_pNext );
+<SPAN CLASS="linenum">0456:</SPAN>     SAFE_DELETE( m_pChild );
+<SPAN CLASS="linenum">0457:</SPAN> 
+<SPAN CLASS="linenum">0458:</SPAN>     <SPAN CLASS="keyword">return</SPAN> S_OK;
+<SPAN CLASS="linenum">0459:</SPAN> }
+<SPAN CLASS="linenum">0460:</SPAN> 
+<SPAN CLASS="linenum">0461:</SPAN> 
+<SPAN CLASS="linenum">0462:</SPAN> 
+<SPAN CLASS="linenum">0463:</SPAN> 
+<SPAN CLASS="linenum">0464:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0465:</SPAN> <SPAN CLASS="comment">// Name:</SPAN>
+<SPAN CLASS="linenum">0466:</SPAN> <SPAN CLASS="comment">// Desc:</SPAN>
+<SPAN CLASS="linenum">0467:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0468:</SPAN> HRESULT CD3DFrame::RestoreDeviceObjects( LPDIRECT3DDEVICE8 pd3dDevice )
+<SPAN CLASS="linenum">0469:</SPAN> {
+<SPAN CLASS="linenum">0470:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( m_pMesh )  m_pMesh-&gt;RestoreDeviceObjects( pd3dDevice );
+<SPAN CLASS="linenum">0471:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( m_pChild ) m_pChild-&gt;RestoreDeviceObjects( pd3dDevice );
+<SPAN CLASS="linenum">0472:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( m_pNext )  m_pNext-&gt;RestoreDeviceObjects( pd3dDevice );
+<SPAN CLASS="linenum">0473:</SPAN>     <SPAN CLASS="keyword">return</SPAN> S_OK;
+<SPAN CLASS="linenum">0474:</SPAN> }
+<SPAN CLASS="linenum">0475:</SPAN> 
+<SPAN CLASS="linenum">0476:</SPAN> 
+<SPAN CLASS="linenum">0477:</SPAN> 
+<SPAN CLASS="linenum">0478:</SPAN> 
+<SPAN CLASS="linenum">0479:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0480:</SPAN> <SPAN CLASS="comment">// Name:</SPAN>
+<SPAN CLASS="linenum">0481:</SPAN> <SPAN CLASS="comment">// Desc:</SPAN>
+<SPAN CLASS="linenum">0482:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0483:</SPAN> HRESULT CD3DFrame::InvalidateDeviceObjects()
+<SPAN CLASS="linenum">0484:</SPAN> {
+<SPAN CLASS="linenum">0485:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( m_pMesh )  m_pMesh-&gt;InvalidateDeviceObjects();
+<SPAN CLASS="linenum">0486:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( m_pChild ) m_pChild-&gt;InvalidateDeviceObjects();
+<SPAN CLASS="linenum">0487:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( m_pNext )  m_pNext-&gt;InvalidateDeviceObjects();
+<SPAN CLASS="linenum">0488:</SPAN>     <SPAN CLASS="keyword">return</SPAN> S_OK;
+<SPAN CLASS="linenum">0489:</SPAN> }
+<SPAN CLASS="linenum">0490:</SPAN> 
+<SPAN CLASS="linenum">0491:</SPAN> 
+<SPAN CLASS="linenum">0492:</SPAN> 
+<SPAN CLASS="linenum">0493:</SPAN> 
+<SPAN CLASS="linenum">0494:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0495:</SPAN> <SPAN CLASS="comment">// Name:</SPAN>
+<SPAN CLASS="linenum">0496:</SPAN> <SPAN CLASS="comment">// Desc:</SPAN>
+<SPAN CLASS="linenum">0497:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0498:</SPAN> HRESULT CD3DFrame::Render( LPDIRECT3DDEVICE8 pd3dDevice, BOOL bDrawOpaqueSubsets,
+<SPAN CLASS="linenum">0499:</SPAN>                            BOOL bDrawAlphaSubsets, D3DXMATRIX* pmatWorldMatrix )
+<SPAN CLASS="linenum">0500:</SPAN> {
+<SPAN CLASS="linenum">0501:</SPAN>     <SPAN CLASS="comment">// For pure devices, specify the world transform. If the world transform is not</SPAN>
+<SPAN CLASS="linenum">0502:</SPAN>     <SPAN CLASS="comment">// specified on pure devices, this function will fail.</SPAN>
+<SPAN CLASS="linenum">0503:</SPAN> 
+<SPAN CLASS="linenum">0504:</SPAN>     D3DXMATRIX matSavedWorld, matWorld;
+<SPAN CLASS="linenum">0505:</SPAN> 
+<SPAN CLASS="linenum">0506:</SPAN>     <SPAN CLASS="keyword">if</SPAN> ( NULL == pmatWorldMatrix )
+<SPAN CLASS="linenum">0507:</SPAN>         pd3dDevice-&gt;GetTransform( D3DTS_WORLD, &amp;matSavedWorld );
+<SPAN CLASS="linenum">0508:</SPAN>     <SPAN CLASS="keyword">else</SPAN>
+<SPAN CLASS="linenum">0509:</SPAN>         matSavedWorld = *pmatWorldMatrix;
+<SPAN CLASS="linenum">0510:</SPAN> 
+<SPAN CLASS="linenum">0511:</SPAN>     D3DXMatrixMultiply( &amp;matWorld, &amp;m_mat, &amp;matSavedWorld );
+<SPAN CLASS="linenum">0512:</SPAN>     pd3dDevice-&gt;SetTransform( D3DTS_WORLD, &amp;matWorld );
+<SPAN CLASS="linenum">0513:</SPAN> 
+<SPAN CLASS="linenum">0514:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( m_pMesh )
+<SPAN CLASS="linenum">0515:</SPAN>         m_pMesh-&gt;Render( pd3dDevice, bDrawOpaqueSubsets, bDrawAlphaSubsets );
+<SPAN CLASS="linenum">0516:</SPAN> 
+<SPAN CLASS="linenum">0517:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( m_pChild )
+<SPAN CLASS="linenum">0518:</SPAN>         m_pChild-&gt;Render( pd3dDevice, bDrawOpaqueSubsets, bDrawAlphaSubsets, &amp;matWorld );
+<SPAN CLASS="linenum">0519:</SPAN> 
+<SPAN CLASS="linenum">0520:</SPAN>     pd3dDevice-&gt;SetTransform( D3DTS_WORLD, &amp;matSavedWorld );
+<SPAN CLASS="linenum">0521:</SPAN> 
+<SPAN CLASS="linenum">0522:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( m_pNext )
+<SPAN CLASS="linenum">0523:</SPAN>         m_pNext-&gt;Render( pd3dDevice, bDrawOpaqueSubsets, bDrawAlphaSubsets, &amp;matSavedWorld );
+<SPAN CLASS="linenum">0524:</SPAN> 
+<SPAN CLASS="linenum">0525:</SPAN>     <SPAN CLASS="keyword">return</SPAN> S_OK;
+<SPAN CLASS="linenum">0526:</SPAN> }
+<SPAN CLASS="linenum">0527:</SPAN> 
+<SPAN CLASS="linenum">0528:</SPAN> 
+<SPAN CLASS="linenum">0529:</SPAN> 
+<SPAN CLASS="linenum">0530:</SPAN> 
+<SPAN CLASS="linenum">0531:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0532:</SPAN> <SPAN CLASS="comment">// Name:</SPAN>
+<SPAN CLASS="linenum">0533:</SPAN> <SPAN CLASS="comment">// Desc:</SPAN>
+<SPAN CLASS="linenum">0534:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0535:</SPAN> HRESULT CD3DFile::LoadFrame( LPDIRECT3DDEVICE8 pd3dDevice,
+<SPAN CLASS="linenum">0536:</SPAN>                              LPDIRECTXFILEDATA pFileData,
+<SPAN CLASS="linenum">0537:</SPAN>                              CD3DFrame* pParentFrame )
+<SPAN CLASS="linenum">0538:</SPAN> {
+<SPAN CLASS="linenum">0539:</SPAN>     LPDIRECTXFILEDATA   pChildData = NULL;
+<SPAN CLASS="linenum">0540:</SPAN>     LPDIRECTXFILEOBJECT pChildObj = NULL;
+<SPAN CLASS="linenum">0541:</SPAN>     <SPAN CLASS="keyword">const</SPAN> GUID* pGUID;
+<SPAN CLASS="linenum">0542:</SPAN>     DWORD       cbSize;
+<SPAN CLASS="linenum">0543:</SPAN>     CD3DFrame*  pCurrentFrame;
+<SPAN CLASS="linenum">0544:</SPAN>     HRESULT     hr;
+<SPAN CLASS="linenum">0545:</SPAN> 
+<SPAN CLASS="linenum">0546:</SPAN>     <SPAN CLASS="comment">// Get the type of the object</SPAN>
+<SPAN CLASS="linenum">0547:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( FAILED( hr = pFileData-&gt;GetType( &amp;pGUID ) ) )
+<SPAN CLASS="linenum">0548:</SPAN>         <SPAN CLASS="keyword">return</SPAN> hr;
+<SPAN CLASS="linenum">0549:</SPAN> 
+<SPAN CLASS="linenum">0550:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( *pGUID == TID_D3DRMMesh )
+<SPAN CLASS="linenum">0551:</SPAN>     {
+<SPAN CLASS="linenum">0552:</SPAN>         hr = LoadMesh( pd3dDevice, pFileData, pParentFrame );
+<SPAN CLASS="linenum">0553:</SPAN>         <SPAN CLASS="keyword">if</SPAN>( FAILED(hr) )
+<SPAN CLASS="linenum">0554:</SPAN>             <SPAN CLASS="keyword">return</SPAN> hr;
+<SPAN CLASS="linenum">0555:</SPAN>     }
+<SPAN CLASS="linenum">0556:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( *pGUID == TID_D3DRMFrameTransformMatrix )
+<SPAN CLASS="linenum">0557:</SPAN>     {
+<SPAN CLASS="linenum">0558:</SPAN>         D3DXMATRIX* pmatMatrix;
+<SPAN CLASS="linenum">0559:</SPAN>         hr = pFileData-&gt;GetData( NULL, &amp;cbSize, (VOID**)&amp;pmatMatrix );
+<SPAN CLASS="linenum">0560:</SPAN>         <SPAN CLASS="keyword">if</SPAN>( FAILED(hr) )
+<SPAN CLASS="linenum">0561:</SPAN>             <SPAN CLASS="keyword">return</SPAN> hr;
+<SPAN CLASS="linenum">0562:</SPAN> 
+<SPAN CLASS="linenum">0563:</SPAN>         <SPAN CLASS="comment">// Update the parent's matrix with the new one</SPAN>
+<SPAN CLASS="linenum">0564:</SPAN>         pParentFrame-&gt;SetMatrix( pmatMatrix );
+<SPAN CLASS="linenum">0565:</SPAN>     }
+<SPAN CLASS="linenum">0566:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( *pGUID == TID_D3DRMFrame )
+<SPAN CLASS="linenum">0567:</SPAN>     {
+<SPAN CLASS="linenum">0568:</SPAN>         <SPAN CLASS="comment">// Get the frame name</SPAN>
+<SPAN CLASS="linenum">0569:</SPAN>         CHAR  strAnsiName[512] = "<SPAN CLASS="string"></SPAN>";
+<SPAN CLASS="linenum">0570:</SPAN>         TCHAR strName[MAX_PATH];
+<SPAN CLASS="linenum">0571:</SPAN>         DWORD dwNameLength;
+<SPAN CLASS="linenum">0572:</SPAN>         pFileData-&gt;GetName( NULL, &amp;dwNameLength );
+<SPAN CLASS="linenum">0573:</SPAN>         <SPAN CLASS="keyword">if</SPAN>( dwNameLength &gt; 0 )
+<SPAN CLASS="linenum">0574:</SPAN>             pFileData-&gt;GetName( strAnsiName, &amp;dwNameLength );
+<SPAN CLASS="linenum">0575:</SPAN>         DXUtil_ConvertAnsiStringToGeneric( strName, strAnsiName );
+<SPAN CLASS="linenum">0576:</SPAN> 
+<SPAN CLASS="linenum">0577:</SPAN>         <SPAN CLASS="comment">// Create the frame</SPAN>
+<SPAN CLASS="linenum">0578:</SPAN>         pCurrentFrame = <SPAN CLASS="keyword">new</SPAN> CD3DFrame( strName );
+<SPAN CLASS="linenum">0579:</SPAN> 
+<SPAN CLASS="linenum">0580:</SPAN>         pCurrentFrame-&gt;m_pNext = pParentFrame-&gt;m_pChild;
+<SPAN CLASS="linenum">0581:</SPAN>         pParentFrame-&gt;m_pChild = pCurrentFrame;
+<SPAN CLASS="linenum">0582:</SPAN> 
+<SPAN CLASS="linenum">0583:</SPAN>         <SPAN CLASS="comment">// Enumerate child objects</SPAN>
+<SPAN CLASS="linenum">0584:</SPAN>         <SPAN CLASS="keyword">while</SPAN>( SUCCEEDED( pFileData-&gt;GetNextObject( &amp;pChildObj ) ) )
+<SPAN CLASS="linenum">0585:</SPAN>         {
+<SPAN CLASS="linenum">0586:</SPAN>             <SPAN CLASS="comment">// Query the child for its FileData</SPAN>
+<SPAN CLASS="linenum">0587:</SPAN>             hr = pChildObj-&gt;QueryInterface( IID_IDirectXFileData,
+<SPAN CLASS="linenum">0588:</SPAN>                                             (VOID**)&amp;pChildData );
+<SPAN CLASS="linenum">0589:</SPAN>             <SPAN CLASS="keyword">if</SPAN>( SUCCEEDED(hr) )
+<SPAN CLASS="linenum">0590:</SPAN>             {
+<SPAN CLASS="linenum">0591:</SPAN>                 hr = LoadFrame( pd3dDevice, pChildData, pCurrentFrame );
+<SPAN CLASS="linenum">0592:</SPAN>                 pChildData-&gt;Release();
+<SPAN CLASS="linenum">0593:</SPAN>             }
+<SPAN CLASS="linenum">0594:</SPAN> 
+<SPAN CLASS="linenum">0595:</SPAN>             pChildObj-&gt;Release();
+<SPAN CLASS="linenum">0596:</SPAN> 
+<SPAN CLASS="linenum">0597:</SPAN>             <SPAN CLASS="keyword">if</SPAN>( FAILED(hr) )
+<SPAN CLASS="linenum">0598:</SPAN>                 <SPAN CLASS="keyword">return</SPAN> hr;
+<SPAN CLASS="linenum">0599:</SPAN>         }
+<SPAN CLASS="linenum">0600:</SPAN>     }
+<SPAN CLASS="linenum">0601:</SPAN> 
+<SPAN CLASS="linenum">0602:</SPAN>     <SPAN CLASS="keyword">return</SPAN> S_OK;
+<SPAN CLASS="linenum">0603:</SPAN> }
+<SPAN CLASS="linenum">0604:</SPAN> 
+<SPAN CLASS="linenum">0605:</SPAN> 
+<SPAN CLASS="linenum">0606:</SPAN> 
+<SPAN CLASS="linenum">0607:</SPAN> 
+<SPAN CLASS="linenum">0608:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0609:</SPAN> <SPAN CLASS="comment">// Name:</SPAN>
+<SPAN CLASS="linenum">0610:</SPAN> <SPAN CLASS="comment">// Desc:</SPAN>
+<SPAN CLASS="linenum">0611:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0612:</SPAN> HRESULT CD3DFile::LoadMesh( LPDIRECT3DDEVICE8 pd3dDevice,
+<SPAN CLASS="linenum">0613:</SPAN>                             LPDIRECTXFILEDATA pFileData,
+<SPAN CLASS="linenum">0614:</SPAN>                             CD3DFrame* pParentFrame )
+<SPAN CLASS="linenum">0615:</SPAN> {
+<SPAN CLASS="linenum">0616:</SPAN>     <SPAN CLASS="comment">// Currently only allowing one mesh per frame</SPAN>
+<SPAN CLASS="linenum">0617:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( pParentFrame-&gt;m_pMesh )
+<SPAN CLASS="linenum">0618:</SPAN>         <SPAN CLASS="keyword">return</SPAN> E_FAIL;
+<SPAN CLASS="linenum">0619:</SPAN> 
+<SPAN CLASS="linenum">0620:</SPAN>     <SPAN CLASS="comment">// Get the mesh name</SPAN>
+<SPAN CLASS="linenum">0621:</SPAN>     CHAR  strAnsiName[512] = {0};
+<SPAN CLASS="linenum">0622:</SPAN>     TCHAR strName[MAX_PATH];
+<SPAN CLASS="linenum">0623:</SPAN>     DWORD dwNameLength;
+<SPAN CLASS="linenum">0624:</SPAN>     pFileData-&gt;GetName( NULL, &amp;dwNameLength );
+<SPAN CLASS="linenum">0625:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( dwNameLength &gt; 0 )
+<SPAN CLASS="linenum">0626:</SPAN>         pFileData-&gt;GetName( strAnsiName, &amp;dwNameLength );
+<SPAN CLASS="linenum">0627:</SPAN>     DXUtil_ConvertAnsiStringToGeneric( strName, strAnsiName );
+<SPAN CLASS="linenum">0628:</SPAN> 
+<SPAN CLASS="linenum">0629:</SPAN>     <SPAN CLASS="comment">// Create the mesh</SPAN>
+<SPAN CLASS="linenum">0630:</SPAN>     pParentFrame-&gt;m_pMesh = <SPAN CLASS="keyword">new</SPAN> CD3DMesh( strName );
+<SPAN CLASS="linenum">0631:</SPAN>     pParentFrame-&gt;m_pMesh-&gt;Create( pd3dDevice, pFileData );
+<SPAN CLASS="linenum">0632:</SPAN> 
+<SPAN CLASS="linenum">0633:</SPAN>     <SPAN CLASS="keyword">return</SPAN> S_OK;
+<SPAN CLASS="linenum">0634:</SPAN> }
+<SPAN CLASS="linenum">0635:</SPAN> 
+<SPAN CLASS="linenum">0636:</SPAN> 
+<SPAN CLASS="linenum">0637:</SPAN> 
+<SPAN CLASS="linenum">0638:</SPAN> 
+<SPAN CLASS="linenum">0639:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0640:</SPAN> <SPAN CLASS="comment">// Name:</SPAN>
+<SPAN CLASS="linenum">0641:</SPAN> <SPAN CLASS="comment">// Desc:</SPAN>
+<SPAN CLASS="linenum">0642:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0643:</SPAN> HRESULT CD3DFile::CreateFromResource( LPDIRECT3DDEVICE8 pd3dDevice, TCHAR* strResource, TCHAR* strType )
+<SPAN CLASS="linenum">0644:</SPAN> {
+<SPAN CLASS="linenum">0645:</SPAN>     LPDIRECTXFILE           pDXFile   = NULL;
+<SPAN CLASS="linenum">0646:</SPAN>     LPDIRECTXFILEENUMOBJECT pEnumObj  = NULL;
+<SPAN CLASS="linenum">0647:</SPAN>     LPDIRECTXFILEDATA       pFileData = NULL;
+<SPAN CLASS="linenum">0648:</SPAN>     HRESULT hr;
+<SPAN CLASS="linenum">0649:</SPAN> 
+<SPAN CLASS="linenum">0650:</SPAN>     <SPAN CLASS="comment">// Create a x file object</SPAN>
+<SPAN CLASS="linenum">0651:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( FAILED( hr = DirectXFileCreate( &amp;pDXFile ) ) )
+<SPAN CLASS="linenum">0652:</SPAN>         <SPAN CLASS="keyword">return</SPAN> E_FAIL;
+<SPAN CLASS="linenum">0653:</SPAN> 
+<SPAN CLASS="linenum">0654:</SPAN>     <SPAN CLASS="comment">// Register templates for d3drm and patch extensions.</SPAN>
+<SPAN CLASS="linenum">0655:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( FAILED( hr = pDXFile-&gt;RegisterTemplates( (VOID*)D3DRM_XTEMPLATES,
+<SPAN CLASS="linenum">0656:</SPAN>                                                  D3DRM_XTEMPLATE_BYTES ) ) )
+<SPAN CLASS="linenum">0657:</SPAN>     {
+<SPAN CLASS="linenum">0658:</SPAN>         pDXFile-&gt;Release();
+<SPAN CLASS="linenum">0659:</SPAN>         <SPAN CLASS="keyword">return</SPAN> E_FAIL;
+<SPAN CLASS="linenum">0660:</SPAN>     }
+<SPAN CLASS="linenum">0661:</SPAN>     
+<SPAN CLASS="linenum">0662:</SPAN>     CHAR strTypeAnsi[MAX_PATH];
+<SPAN CLASS="linenum">0663:</SPAN>     DXUtil_ConvertGenericStringToAnsi( strTypeAnsi, strType );
+<SPAN CLASS="linenum">0664:</SPAN> 
+<SPAN CLASS="linenum">0665:</SPAN>     DXFILELOADRESOURCE dxlr;
+<SPAN CLASS="linenum">0666:</SPAN>     dxlr.hModule = NULL;
+<SPAN CLASS="linenum">0667:</SPAN>     dxlr.lpName = strResource;
+<SPAN CLASS="linenum">0668:</SPAN>     dxlr.lpType = (TCHAR*) strTypeAnsi;
+<SPAN CLASS="linenum">0669:</SPAN> 
+<SPAN CLASS="linenum">0670:</SPAN>     <SPAN CLASS="comment">// Create enum object</SPAN>
+<SPAN CLASS="linenum">0671:</SPAN>     hr = pDXFile-&gt;CreateEnumObject( (VOID*)&amp;dxlr, DXFILELOAD_FROMRESOURCE, 
+<SPAN CLASS="linenum">0672:</SPAN>                                     &amp;pEnumObj );
+<SPAN CLASS="linenum">0673:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( FAILED(hr) )
+<SPAN CLASS="linenum">0674:</SPAN>     {
+<SPAN CLASS="linenum">0675:</SPAN>         pDXFile-&gt;Release();
+<SPAN CLASS="linenum">0676:</SPAN>         <SPAN CLASS="keyword">return</SPAN> hr;
+<SPAN CLASS="linenum">0677:</SPAN>     }
+<SPAN CLASS="linenum">0678:</SPAN> 
+<SPAN CLASS="linenum">0679:</SPAN>     <SPAN CLASS="comment">// Enumerate top level objects (which are always frames)</SPAN>
+<SPAN CLASS="linenum">0680:</SPAN>     <SPAN CLASS="keyword">while</SPAN>( SUCCEEDED( pEnumObj-&gt;GetNextDataObject( &amp;pFileData ) ) )
+<SPAN CLASS="linenum">0681:</SPAN>     {
+<SPAN CLASS="linenum">0682:</SPAN>         hr = LoadFrame( pd3dDevice, pFileData, <SPAN CLASS="keyword">this</SPAN> );
+<SPAN CLASS="linenum">0683:</SPAN>         pFileData-&gt;Release();
+<SPAN CLASS="linenum">0684:</SPAN>         <SPAN CLASS="keyword">if</SPAN>( FAILED(hr) )
+<SPAN CLASS="linenum">0685:</SPAN>         {
+<SPAN CLASS="linenum">0686:</SPAN>             pEnumObj-&gt;Release();
+<SPAN CLASS="linenum">0687:</SPAN>             pDXFile-&gt;Release();
+<SPAN CLASS="linenum">0688:</SPAN>             <SPAN CLASS="keyword">return</SPAN> E_FAIL;
+<SPAN CLASS="linenum">0689:</SPAN>         }
+<SPAN CLASS="linenum">0690:</SPAN>     }
+<SPAN CLASS="linenum">0691:</SPAN> 
+<SPAN CLASS="linenum">0692:</SPAN>     SAFE_RELEASE( pFileData );
+<SPAN CLASS="linenum">0693:</SPAN>     SAFE_RELEASE( pEnumObj );
+<SPAN CLASS="linenum">0694:</SPAN>     SAFE_RELEASE( pDXFile );
+<SPAN CLASS="linenum">0695:</SPAN> 
+<SPAN CLASS="linenum">0696:</SPAN>     <SPAN CLASS="keyword">return</SPAN> S_OK;
+<SPAN CLASS="linenum">0697:</SPAN> }
+<SPAN CLASS="linenum">0698:</SPAN> 
+<SPAN CLASS="linenum">0699:</SPAN> 
+<SPAN CLASS="linenum">0700:</SPAN> 
+<SPAN CLASS="linenum">0701:</SPAN> 
+<SPAN CLASS="linenum">0702:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0703:</SPAN> <SPAN CLASS="comment">// Name:</SPAN>
+<SPAN CLASS="linenum">0704:</SPAN> <SPAN CLASS="comment">// Desc:</SPAN>
+<SPAN CLASS="linenum">0705:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0706:</SPAN> HRESULT CD3DFile::Create( LPDIRECT3DDEVICE8 pd3dDevice, TCHAR* strFilename )
+<SPAN CLASS="linenum">0707:</SPAN> {
+<SPAN CLASS="linenum">0708:</SPAN>     LPDIRECTXFILE           pDXFile   = NULL;
+<SPAN CLASS="linenum">0709:</SPAN>     LPDIRECTXFILEENUMOBJECT pEnumObj  = NULL;
+<SPAN CLASS="linenum">0710:</SPAN>     LPDIRECTXFILEDATA       pFileData = NULL;
+<SPAN CLASS="linenum">0711:</SPAN>     HRESULT hr;
+<SPAN CLASS="linenum">0712:</SPAN> 
+<SPAN CLASS="linenum">0713:</SPAN>     <SPAN CLASS="comment">// Create a x file object</SPAN>
+<SPAN CLASS="linenum">0714:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( FAILED( hr = DirectXFileCreate( &amp;pDXFile ) ) )
+<SPAN CLASS="linenum">0715:</SPAN>         <SPAN CLASS="keyword">return</SPAN> E_FAIL;
+<SPAN CLASS="linenum">0716:</SPAN> 
+<SPAN CLASS="linenum">0717:</SPAN>     <SPAN CLASS="comment">// Register templates for d3drm and patch extensions.</SPAN>
+<SPAN CLASS="linenum">0718:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( FAILED( hr = pDXFile-&gt;RegisterTemplates( (VOID*)D3DRM_XTEMPLATES,
+<SPAN CLASS="linenum">0719:</SPAN>                                                  D3DRM_XTEMPLATE_BYTES ) ) )
+<SPAN CLASS="linenum">0720:</SPAN>     {
+<SPAN CLASS="linenum">0721:</SPAN>         pDXFile-&gt;Release();
+<SPAN CLASS="linenum">0722:</SPAN>         <SPAN CLASS="keyword">return</SPAN> E_FAIL;
+<SPAN CLASS="linenum">0723:</SPAN>     }
+<SPAN CLASS="linenum">0724:</SPAN> 
+<SPAN CLASS="linenum">0725:</SPAN>     <SPAN CLASS="comment">// Find the path to the file, and convert it to ANSI (for the D3DXOF API)</SPAN>
+<SPAN CLASS="linenum">0726:</SPAN>     TCHAR strPath[MAX_PATH];
+<SPAN CLASS="linenum">0727:</SPAN>     CHAR  strPathANSI[MAX_PATH];
+<SPAN CLASS="linenum">0728:</SPAN>     DXUtil_FindMediaFile( strPath, strFilename );
+<SPAN CLASS="linenum">0729:</SPAN>     DXUtil_ConvertGenericStringToAnsi( strPathANSI, strPath );
+<SPAN CLASS="linenum">0730:</SPAN>     
+<SPAN CLASS="linenum">0731:</SPAN>     <SPAN CLASS="comment">// Create enum object</SPAN>
+<SPAN CLASS="linenum">0732:</SPAN>     hr = pDXFile-&gt;CreateEnumObject( (VOID*)strPathANSI, DXFILELOAD_FROMFILE, 
+<SPAN CLASS="linenum">0733:</SPAN>                                     &amp;pEnumObj );
+<SPAN CLASS="linenum">0734:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( FAILED(hr) )
+<SPAN CLASS="linenum">0735:</SPAN>     {
+<SPAN CLASS="linenum">0736:</SPAN>         pDXFile-&gt;Release();
+<SPAN CLASS="linenum">0737:</SPAN>         <SPAN CLASS="keyword">return</SPAN> hr;
+<SPAN CLASS="linenum">0738:</SPAN>     }
+<SPAN CLASS="linenum">0739:</SPAN> 
+<SPAN CLASS="linenum">0740:</SPAN>     <SPAN CLASS="comment">// Enumerate top level objects (which are always frames)</SPAN>
+<SPAN CLASS="linenum">0741:</SPAN>     <SPAN CLASS="keyword">while</SPAN>( SUCCEEDED( pEnumObj-&gt;GetNextDataObject( &amp;pFileData ) ) )
+<SPAN CLASS="linenum">0742:</SPAN>     {
+<SPAN CLASS="linenum">0743:</SPAN>         hr = LoadFrame( pd3dDevice, pFileData, <SPAN CLASS="keyword">this</SPAN> );
+<SPAN CLASS="linenum">0744:</SPAN>         pFileData-&gt;Release();
+<SPAN CLASS="linenum">0745:</SPAN>         <SPAN CLASS="keyword">if</SPAN>( FAILED(hr) )
+<SPAN CLASS="linenum">0746:</SPAN>         {
+<SPAN CLASS="linenum">0747:</SPAN>             pEnumObj-&gt;Release();
+<SPAN CLASS="linenum">0748:</SPAN>             pDXFile-&gt;Release();
+<SPAN CLASS="linenum">0749:</SPAN>             <SPAN CLASS="keyword">return</SPAN> E_FAIL;
+<SPAN CLASS="linenum">0750:</SPAN>         }
+<SPAN CLASS="linenum">0751:</SPAN>     }
+<SPAN CLASS="linenum">0752:</SPAN> 
+<SPAN CLASS="linenum">0753:</SPAN>     SAFE_RELEASE( pFileData );
+<SPAN CLASS="linenum">0754:</SPAN>     SAFE_RELEASE( pEnumObj );
+<SPAN CLASS="linenum">0755:</SPAN>     SAFE_RELEASE( pDXFile );
+<SPAN CLASS="linenum">0756:</SPAN> 
+<SPAN CLASS="linenum">0757:</SPAN>     <SPAN CLASS="keyword">return</SPAN> S_OK;
+<SPAN CLASS="linenum">0758:</SPAN> }
+<SPAN CLASS="linenum">0759:</SPAN> 
+<SPAN CLASS="linenum">0760:</SPAN> 
+<SPAN CLASS="linenum">0761:</SPAN> 
+<SPAN CLASS="linenum">0762:</SPAN> 
+<SPAN CLASS="linenum">0763:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0764:</SPAN> <SPAN CLASS="comment">// Name:</SPAN>
+<SPAN CLASS="linenum">0765:</SPAN> <SPAN CLASS="comment">// Desc:</SPAN>
+<SPAN CLASS="linenum">0766:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0767:</SPAN> HRESULT CD3DFile::Render( LPDIRECT3DDEVICE8 pd3dDevice, D3DXMATRIX* pmatWorldMatrix )
+<SPAN CLASS="linenum">0768:</SPAN> {
+<SPAN CLASS="linenum">0769:</SPAN> 
+<SPAN CLASS="linenum">0770:</SPAN>     <SPAN CLASS="comment">// For pure devices, specify the world transform. If the world transform is not</SPAN>
+<SPAN CLASS="linenum">0771:</SPAN>     <SPAN CLASS="comment">// specified on pure devices, this function will fail.</SPAN>
+<SPAN CLASS="linenum">0772:</SPAN> 
+<SPAN CLASS="linenum">0773:</SPAN>     <SPAN CLASS="comment">// Set up the world transformation</SPAN>
+<SPAN CLASS="linenum">0774:</SPAN>     D3DXMATRIX matSavedWorld, matWorld;
+<SPAN CLASS="linenum">0775:</SPAN> 
+<SPAN CLASS="linenum">0776:</SPAN>     <SPAN CLASS="keyword">if</SPAN> ( NULL == pmatWorldMatrix )
+<SPAN CLASS="linenum">0777:</SPAN>         pd3dDevice-&gt;GetTransform( D3DTS_WORLD, &amp;matSavedWorld );
+<SPAN CLASS="linenum">0778:</SPAN>     <SPAN CLASS="keyword">else</SPAN>
+<SPAN CLASS="linenum">0779:</SPAN>         matSavedWorld = *pmatWorldMatrix;
+<SPAN CLASS="linenum">0780:</SPAN> 
+<SPAN CLASS="linenum">0781:</SPAN>     D3DXMatrixMultiply( &amp;matWorld, &amp;matSavedWorld, &amp;m_mat );
+<SPAN CLASS="linenum">0782:</SPAN>     pd3dDevice-&gt;SetTransform( D3DTS_WORLD, &amp;matWorld );
+<SPAN CLASS="linenum">0783:</SPAN> 
+<SPAN CLASS="linenum">0784:</SPAN>     <SPAN CLASS="comment">// Render opaque subsets in the meshes</SPAN>
+<SPAN CLASS="linenum">0785:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( m_pChild )
+<SPAN CLASS="linenum">0786:</SPAN>         m_pChild-&gt;Render( pd3dDevice, TRUE, FALSE, &amp;matWorld );
+<SPAN CLASS="linenum">0787:</SPAN> 
+<SPAN CLASS="linenum">0788:</SPAN>     <SPAN CLASS="comment">// Enable alpha blending</SPAN>
+<SPAN CLASS="linenum">0789:</SPAN>     pd3dDevice-&gt;SetRenderState( D3DRS_ALPHABLENDENABLE, TRUE );
+<SPAN CLASS="linenum">0790:</SPAN>     pd3dDevice-&gt;SetRenderState( D3DRS_SRCBLEND,  D3DBLEND_SRCALPHA );
+<SPAN CLASS="linenum">0791:</SPAN>     pd3dDevice-&gt;SetRenderState( D3DRS_DESTBLEND, D3DBLEND_INVSRCALPHA );
+<SPAN CLASS="linenum">0792:</SPAN> 
+<SPAN CLASS="linenum">0793:</SPAN>     <SPAN CLASS="comment">// Render alpha subsets in the meshes</SPAN>
+<SPAN CLASS="linenum">0794:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( m_pChild )
+<SPAN CLASS="linenum">0795:</SPAN>         m_pChild-&gt;Render( pd3dDevice, FALSE, TRUE, &amp;matWorld );
+<SPAN CLASS="linenum">0796:</SPAN> 
+<SPAN CLASS="linenum">0797:</SPAN>     <SPAN CLASS="comment">// Restore state</SPAN>
+<SPAN CLASS="linenum">0798:</SPAN>     pd3dDevice-&gt;SetRenderState( D3DRS_ALPHABLENDENABLE, FALSE );
+<SPAN CLASS="linenum">0799:</SPAN>     pd3dDevice-&gt;SetTransform( D3DTS_WORLD, &amp;matSavedWorld );
+<SPAN CLASS="linenum">0800:</SPAN> 
+<SPAN CLASS="linenum">0801:</SPAN>     <SPAN CLASS="keyword">return</SPAN> S_OK;
+<SPAN CLASS="linenum">0802:</SPAN> }
+<SPAN CLASS="linenum">0803:</SPAN> 
+<SPAN CLASS="linenum">0804:</SPAN> 
+<SPAN CLASS="linenum">0805:</SPAN> 
+<SPAN CLASS="linenum">0806:</SPAN> 
+<SPAN CLASS="linenum">0807:</SPAN> </PRE>
+</BODY>
+</HTML>

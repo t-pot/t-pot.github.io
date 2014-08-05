@@ -1,0 +1,401 @@
+<head>
+	<title>t-pot『動的双放物面環境マッピング』</title>
+	<link rel="stylesheet" type="text/css" href="../if.css">
+</head>
+<meta http-equiv=Content-Type content="text/html; charset=shift_jis">
+<body>
+
+
+<div class="contents">
+<center>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<h1>動的双放物面環境マッピング</h1><br>
+<h3>～2chでリクエストされてたし～</h3>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<image src = "title.png">
+</center>
+<div>
+
+<h2>■はじめに</h2>
+
+
+<p>
+今回は、動的双放物面環境マッピングです。ちまたで (Dynamic) Dual-Paraboloid Environment Mapping と呼ばれているやつです。<br>
+はるか昔に（<a href="http://cgi3.tky.3web.ne.jp/~tkano/">Kanoさん</a>が作られたころですが）、2ch で、”ＩＦ氏がつくってるよ”とか書き込みがされていたのですが、
+そんなリクエストを思い出して作りました。<br>
+ちなみに、上の画像は、上部に小さな絵が張られて醜くなっていますが、
+</p>
+<table>
+<tr><td>１番左</td><td>外側の車のワールド空間＋ｚ軸方向からのマップ</td></tr>
+<tr><td>２番左</td><td>外側の車のワールド空間－ｚ軸方向からのマップ</td></tr>
+<tr><td>２番右</td><td>外側の車のワールド空間＋ｚ軸方向からのマップ</td></tr>
+<tr><td>１番右</td><td>外側の車のワールド空間－ｚ軸方向からのマップ</td></tr>
+</table>
+<p>
+の環境マップテクスチャそのものになっています。
+</p>
+<p>
+<ul style = "LIST-STYLE-TYPE:none">
+<li><a href="src.lzh">src.lzh (動的双放物面環境マッピングのサンプル:DirectX8.1)</a>
+</ul>
+
+<p>
+まぁ、いつものように適当にファイルが入っています。<br>
+</p>
+<table>
+<tr><td><a href="fish_vsh.html">fish.vsh</a></td><td>環境マップ生成頂点シェーダー。</td></tr>
+<tr><td><a href="fish_psh.html">fish.psh</a></td><td>環境マップ生成ピクセルシェーダー。</td></tr>
+<tr><td><a href="dpem_vsh.html">dpem.vsh</a></td><td>環境マップを張る頂点シェーダー。</td></tr>
+<tr><td><a href="dpem_psh.html">dpem.psh</a></td><td>環境マップを張るピクセルシェーダー。</td></tr>
+<tr><td><a href="vs_vsh.html">vs.vsh</a></td><td>普通の頂点シェーダー（地面描画）。</td></tr>
+<tr><td><a href="ps_psh.html">ps.psh</a></td><td>普通のピクセルシェーダー（地面描画）。</td></tr>
+<tr><td><a href="draw_cpp.html">draw.cpp</a></td><td>メインの描画部分。</td></tr>
+<tr><td><a href="draw_h.html">draw.h</a></td><td>描画の各関数の定義。</td></tr>
+<tr><td><a href="bg_cpp.html">bg.cpp</a></td><td>背景の描画。</td></tr>
+<tr><td><a href="main_h.html">main.h</a></td><td>基本的な定数など。</td></tr>
+<tr><td><a href="main_cpp.html">main.cpp</a></td><td>描画に関係しないシステム的な部分。</td></tr>
+<tr><td><a href="load_cpp.html">load.cpp</a></td><td>ロード。</td></tr>
+<tr><td><a href="load_h.html">load.h</a></td><td>ロードのインターフェイス。</td></tr>
+</table>
+<image src = "tile_bmp.jpg" width = 64 height=64>tile.bmp (床デカール)<br>
+<image src = "sky_bmp.jpg" width = 64 height=64>sky.bmp (空デカール)<br>
+<p>
+あと、モデルのファイル、実行ファイル及び、プロジェクトファイルが入っています。
+</p>
+
+
+<h2>■やってること</h2>
+
+
+<p>
+前回の魚眼レンズで不必要なほど詳細にレンダリング方法を解説したのは、
+今回のテクスチャーに使うためでした（そうでなければ、適当にゆがめた方が綺麗な結果が得られます）。<br>
+前回のテクスチャーを視線を前と後ろに向けてレンダリングすると次の２枚のテクスチャーが得られます。
+</p>
+<image src = "circle.png">
+<p>
+ここで、それぞれの赤い色の円の部分を見てください。張り合わせたら丁度重なります。<br>
+つまり、この２枚のテクスチャで全景を覆うことになります。
+</p>
+<p>
+環境マップを行うためには、反射ベクトルを求め、反射ベクトルの対応するテクスチャ座標を計算する必要があります。<br>
+反射ベクトルは、視線ベクトルと法線ベクトルから求められます。
+</p>
+<image src = "r.png">
+<p>
+反射ベクトルのxy平面への射影からxy平面での距離が求まります。<br>
+その原点からの距離からテクスチャ座標を求めます。
+</p>
+<p>
+テクスチャ座標を求めるために、特殊な量を計算しましょう。<br>
+なぜ、計算するかというと、<b>いろいろ計算した結果、その量が必要だったから</b>です。<br>
+まず、下の図を見てください。
+</p>
+<image src = "para.png">
+<p>
+原点を通る（反射）ベクトルとｚ軸のなす角をθとします。<br>
+このθの定義から、tanθ=r<sub>XY</sub>/r<sub>Z</sub>になります。<br>
+r<sub>XY</sub>をθに関して方程式を解きます。<br>
+放物線の方程式と角度の式を連立させると、
+</p>
+<pre class="CodeBlock">
+r<sub>XY</sub>    2r<sub>XY</sub>
+― = ――― = tanθ
+r<sub>Z </sub>   1 - r<sub>XY</sub><sup>2</sup>
+
+<font color="yellow">↓r<sub>XY</sub>で展開して</font>
+
+tanθ r<sub>XY</sub><sup>2</sup> + 2 r<sub>XY</sub> - tanθ = 0
+
+<font color="yellow">↓解の公式</font>
+
+      -1+√(1+tan<sup>2</sup>θ)
+r<sub>XY</sub> = ――――――――
+           tanθ
+
+<font color="yellow">↓倍角の公式</font>
+
+      -1 + 1/cosθ
+r<sub>XY</sub> = ――――――
+         tanθ
+
+<font color="yellow">↓tanの公式</font>
+
+      1 - cosθ
+r<sub>XY</sub> = ――――
+       sinθ
+
+ r<sub>XY</sub>      1 - cosθ    1 - cosθ      1
+――― = ――――― = ――――― = ――――
+ sinθ     sin<sup>2</sup>θ     1 - cos<sup>2</sup>θ   1 + cosθ
+
+</pre>
+<p>
+さて、以上で必要な量の計算は終わりました。いよいよテクスチャ座標を求めましょう。<br>
+テクスチャ座標は、反射ベクトルの大きさ r<sub>XY</sub> をｘ軸、ｙ軸に振った量になります。
+</p>
+<pre class="CodeBlock">
+    1          r<sub>x</sub>            1           r<sub>XY</sub>
+u = - (1 + ――――― r<sub>XY</sub>) = - (1 + r<sub>x</sub> ―――――)
+    2      √(r<sub>x</sub><sup>2</sup>+r<sub>y</sub><sup>2</sup>)        2        √(r<sub>x</sub><sup>2</sup>+r<sub>y</sub><sup>2</sup>)
+    1          r<sub>y</sub>            1           r<sub>XY</sub>
+v = - (1 + ――――― r<sub>XY</sub>) = - (1 + r<sub>y</sub> ―――――)
+    2      √(r<sub>x</sub><sup>2</sup>+r<sub>y</sub><sup>2</sup>)        2        √(r<sub>x</sub><sup>2</sup>+r<sub>y</sub><sup>2</sup>)
+</pre>
+<p>
+r<sub>x</sub>, r<sub>y</sub>は、反射ベクトルのｘ、ｙ成分です。<br>
+0.5を掛けて足すのは、テクセル中心が(0.5,0.5)にあるからです。
+</p>
+<p>
+ここで、最後の項に注目しましょう。
+cosθが反射ベクトルとｚ軸のなす角なので、
+√(r<sub>x</sub><sup>2</sup>+r<sub>y</sub><sup>2</sup>) はsinθに他なりません
+(r<sub>XY</sub>は、放物線の式から求めた値で、sinθとは異なります)。<br>
+ここに、先ほど求めた式を使うと、
+</p>
+<pre class="CodeBlock">
+    1          r<sub>XY</sub>      1         r<sub>x</sub>         1        r<sub>x</sub>
+u = - (1 + r<sub>x</sub> ―――) = - (1 + ―――――) = - (1 + ―――)
+    2          sinθ    2      1 + cosθ    2      1 + r<sub>z</sub>
+    1          r<sub>XY</sub>      1         r<sub>y</sub>         1        r<sub>y</sub>
+v = - (1 + r<sub>y</sub> ―――) = - (1 + ―――――) = - (1 + ―――)
+    2          sinθ    2      1 + cosθ    2      1 + r<sub>z</sub>
+</pre>
+<p>
+この式が実際に使える公式です。<br>
+反射ベクトルの量で、テクスチャ座標が求まりました。<br>
+反射ベクトルのｚ座標が負の時は、反射ベクトルと交差する放物線が別のテクスチャのものになるので、
+ｚを負にした放物線に関するテクスチャー座標を使います。
+</p>
+
+<p>
+反射ベクトルのｚ座標の正負でテクスチャを判定する方法で綺麗につながるのかといえば、綺麗につながります。<br>
+例えば、球をレンダリングすれば分かりやすいでしょうか。<br>
+球をレンダリングすると、次の結果が得られます。
+</p>
+<image src = "ball1.png">
+<p>
+この球に、２枚の画像が張られていることが分かりやすいように２枚のテクスチャーの空の色を変えると、
+</p>
+<image src = "ball2.png">
+<p>
+と、途中で張り合わされていることが明らかになります。<br>
+しかし、途中の継ぎ目は色が同じならば、ほとんど見えません。<br>
+ということで、かなり「使える」方法であることが確認できると思います。
+</p>
+
+
+<h2>■環境マップの作成</h2>
+
+
+<p>
+今回、特別なプログラムは、主に２つのシェーダプログラムで出来ています。<br>
+一つ目は、前回やった環境マップを作るためのシェーダと、もう一つは環境マップを張るためのシェーダです。<br>
+環境マップを張るシェーダは次のようになります。
+</p>
+<pre class="CodeBlock">
+fish.vsh
+<font color="deepskyblue">0001:</font> <font color="cyan">; c0-3   -- world + ビュー 行列</font>
+<font color="deepskyblue">0002:</font> <font color="cyan">; c12    -- {0.0, 0.5, 1.0, 2.0}</font>
+<font color="deepskyblue">0003:</font> <font color="cyan">; c13    -- ライトのベクトル (w成分は環境光の強さ)</font>
+<font color="deepskyblue">0004:</font> <font color="cyan">; c14    -- モデルの色</font>
+<font color="deepskyblue">0005:</font> <font color="cyan">; c15    -- 深度調整</font>
+<font color="deepskyblue">0006:</font> <font color="cyan">;</font>
+<font color="deepskyblue">0007:</font> <font color="cyan">; v0    頂点の座標値</font>
+<font color="deepskyblue">0008:</font> <font color="cyan">; v7    テクスチャ座標</font>
+<font color="deepskyblue">0009:</font> 
+<font color="deepskyblue">0010:</font> vs.1.0
+<font color="deepskyblue">0011:</font> 
+<font color="deepskyblue">0012:</font> <font color="cyan">;座標変換</font>
+<font color="deepskyblue">0013:</font> m4x4 r0,  v0,   c0
+<font color="deepskyblue">0014:</font> 
+<font color="deepskyblue">0015:</font> dp3 r0.w, r0, r0
+<font color="deepskyblue">0016:</font> rsq r1.w, r0.w
+<font color="deepskyblue">0017:</font> mul r0.w, r0.w, r1.w
+<font color="deepskyblue">0018:</font> mov oPos.w, r0.w                <font color="cyan">; oPos.w = r0.w = ||v0||</font>
+<font color="deepskyblue">0019:</font> 
+<font color="deepskyblue">0020:</font> mad oPos.z,  c15.x, r0.w, c15.y <font color="cyan">; oPos.z = z_max*(||v0||-z_min)/(z_max-z_min)</font>
+<font color="deepskyblue">0021:</font> 
+<font color="deepskyblue">0022:</font> add r1.w, r0.w, -r0.z           
+<font color="deepskyblue">0023:</font> dp4 r1.z, r0.xxyy, r0.xxyy
+<font color="deepskyblue">0024:</font> rcp r1.z, r1.z
+<font color="deepskyblue">0025:</font> mul r0, r0, r0.w
+<font color="deepskyblue">0026:</font> mul r0, r0, r1.w
+<font color="deepskyblue">0027:</font> mul r0, r0, c12.w
+<font color="deepskyblue">0028:</font> mul oPos.xy, r0, r1.z           <font color="cyan">; oPos.xy = r0.xy*||v0||*(||v0||-r0.z)/(v0.x^2+v0.y^2)</font>
+<font color="deepskyblue">0029:</font> 
+<font color="deepskyblue">0034:</font> <font color="cyan">; ((L･N) + L.w)*c14 (平行光源のライティング)</font>
+<font color="deepskyblue">0035:</font> dp4 r0.w,   v3,   c13
+<font color="deepskyblue">0036:</font> mul oD0,    r0.w, c14
+<font color="deepskyblue">0037:</font> 
+<font color="deepskyblue">0038:</font> <font color="cyan">; テクスチャーを張る</font>
+<font color="deepskyblue">0039:</font> mov oT0,    v7
+</pre>
+
+<p>
+前回のもの、そのままです（というより、今回のために前回のシェーダを作ってのですが）。<br>
+ピクセルシェーダも使っていますが、普通に表示するだけなので、固定ファンクションでも十分です。
+</p>
+<p>
+重要なのは、ビュー行列です。<br>
+ビュー行列は車の位置（を少し浮かした重心的な場所）を視点として、注目点を視点の前後にしました。<br>
+これらのベクトルからビュー行列を作成し、環境マップを作ります。
+</p>
+<pre class="CodeBlock">
+<font color="deepskyblue">0245:</font>         eye.x = mWorld0._41;
+<font color="deepskyblue">0246:</font>         eye.y = mWorld0._42+0.4f*MeshRadius;
+<font color="deepskyblue">0247:</font>         eye.z = mWorld0._43;
+<font color="deepskyblue">0248:</font>         lookAt.x = eye.x;
+<font color="deepskyblue">0249:</font>         lookAt.y = eye.y;
+<font color="deepskyblue">0250:</font>         if(back){
+<font color="deepskyblue">0251:</font>             lookAt.z = eye.z-1.0f;
+<font color="deepskyblue">0252:</font>         }else{
+<font color="deepskyblue">0253:</font>             lookAt.z = eye.z+1.0f;
+<font color="deepskyblue">0254:</font>         }
+
+<font color="deepskyblue">0273:</font>     D3DXMatrixLookAtLH(&mView, &eye, &lookAt, &up);
+</pre>
+
+
+<h2>■マッピング</h2>
+
+
+<p>
+いよいよ環境マップを張ります。<br>
+簡単なプログラムになっているピクセルシェーダを最初に見ましょう。<br>
+テクスチャの１番目と２番目に表と裏の環境マップをロードします。<br>
+頂点色のα成分にどちらのテクスチャを使うのか0.5以上か以下かで入れておきます。<br>
+後は、cnd 命令でどちらかのテクスチャを引っ張り、適当に強さを調整して頂点色に加算します。
+</p>
+
+<pre class="CodeBlock">
+dpem.psh
+<font color="deepskyblue">0002:</font> ps.1.1
+<font color="deepskyblue">0003:</font> 
+<font color="deepskyblue">0005:</font> def c0, 0.3f, 0.3f, 0.3f, 1.0f
+<font color="deepskyblue">0006:</font> 
+<font color="deepskyblue">0007:</font> <font color="cyan">; テクスチャの色を引っ張ってくる</font>
+<font color="deepskyblue">0008:</font> tex t0          <font color="cyan">; 表のテクスチャ</font>
+<font color="deepskyblue">0009:</font> tex t1          <font color="cyan">; 裏のテクスチャ</font>
+<font color="deepskyblue">0010:</font> 
+<font color="deepskyblue">0011:</font> mov r0.a, v0.a
+<font color="deepskyblue">0012:</font> cnd r0, r0.a, t0, t1    <font color="cyan">; テクスチャの選択</font>
+<font color="deepskyblue">0014:</font> mul r0, r0, c0          <font color="cyan">; 色を薄くする</font>
+<font color="deepskyblue">0015:</font> add r0, v0, r0          <font color="cyan">; 頂点色とテクスチャの色の加算が表示色</font>
+<font color="deepskyblue">0016:</font> 
+</pre>
+<p>
+あっ、mad 命令で１命令削れる。
+</p>
+<p>
+さて、気を取り直して頂点シェーダです。<br>
+頂点シェーダでは、適当なテクスチャ座標やどちらのテクスチャを使うかを出力しなくてはなりません。
+</p>
+<pre class="CodeBlock">
+dpem.vsh
+<font color="deepskyblue">0001:</font> <font color="cyan">; c0-3   -- world + ビュー 行列</font>
+<font color="deepskyblue">0002:</font> <font color="cyan">; c8-11   -- world</font>
+<font color="deepskyblue">0003:</font> <font color="cyan">; c12    -- {1/sqrt(2), 0.5, 1.0, 2.0}</font>
+<font color="deepskyblue">0004:</font> <font color="cyan">; c13    -- ライトのベクトル (w成分は環境光の強さ)</font>
+<font color="deepskyblue">0005:</font> <font color="cyan">; c14    -- モデルの色</font>
+<font color="deepskyblue">****:</font> <font color="cyan">; c16    -- 視点</font>
+<font color="deepskyblue">0006:</font> <font color="cyan">;</font>
+<font color="deepskyblue">0007:</font> <font color="cyan">; v0    頂点の座標値</font>
+<font color="deepskyblue">****:</font> <font color="cyan">; v3    法線ベクトル</font>
+<font color="deepskyblue">0008:</font> <font color="cyan">; v7    テクスチャ座標</font>
+<font color="deepskyblue">0009:</font> 
+<font color="deepskyblue">0010:</font> vs.1.1
+<font color="deepskyblue">0011:</font> 
+<font color="deepskyblue">0012:</font> <font color="cyan">; 通常レンダリング</font>
+<font color="deepskyblue">0013:</font> m4x4   r0,  v0,   c0
+<font color="deepskyblue">0014:</font> m4x4 oPos,  r0,   c4
+<font color="deepskyblue">0015:</font> 
+<font color="deepskyblue">0016:</font> <font color="cyan">; ((L･N) + L.w)*c14 (平行光源のライティング)</font>
+<font color="deepskyblue">0017:</font> dp4 r0.w,   v3,   c13
+<font color="deepskyblue">0018:</font> mul oD0,    r0.w, c14
+<font color="deepskyblue">0019:</font> 
+<font color="deepskyblue">0020:</font> m4x4   r0,  v0,   c8
+<font color="deepskyblue">0021:</font> add    r0, c16,   r0        <font color="cyan">; 視線ベクトル </font>
+<font color="deepskyblue">0022:</font> dp3 r0.w, r0, r0            <font color="cyan">; 規格化</font>
+<font color="deepskyblue">0023:</font> rsq r0.w,  r0.w
+<font color="deepskyblue">0024:</font> mul r0.xyz,  r0.xyz,  r0.w
+<font color="deepskyblue">0025:</font> 
+<font color="deepskyblue">0026:</font> dp3 r1.x,  v3,   c8         <font color="cyan">; ワールド空間での法線</font>
+<font color="deepskyblue">0027:</font> dp3 r1.y,  v3,   c9
+<font color="deepskyblue">0028:</font> dp3 r1.z,  v3,   c10
+<font color="deepskyblue">0032:</font> 
+<font color="deepskyblue">0033:</font> dp3 r1.w, r0, r1
+<font color="deepskyblue">0034:</font> add r1.w, r1.w, r1.w
+<font color="deepskyblue">0035:</font> mad r0.xyz, r1.w, r1.xyz, -r0.xyz<font color="cyan">; 反射ベクトル</font>
+<font color="deepskyblue">0036:</font> 
+<font color="deepskyblue">0037:</font> <font color="yellow">add oD0.w, r0.z,   c12.y</font> <font color="cyan">; nzがｚ軸のどちらを向いているか</font>
+<font color="deepskyblue">0038:</font> 
+<font color="deepskyblue">0039:</font> <font color="cyan">; テクスチャーを張る</font>
+<font color="deepskyblue">0040:</font> add r2.z, c12.z, r0.z
+<font color="deepskyblue">0041:</font> rcp r2.z, r2.z
+<font color="deepskyblue">0042:</font> mul r2.x,  r0, r2.z
+<font color="deepskyblue">0043:</font> mul r2.y, -r0, r2.z
+<font color="deepskyblue">0044:</font> mad oT0.xy, c12.y, r2, c12.y
+<font color="deepskyblue">0045:</font> 
+<font color="deepskyblue">0046:</font> add r2.z, c12.z, -r0.z
+<font color="deepskyblue">0047:</font> rcp r2.z, r2.z
+<font color="deepskyblue">0048:</font> mul r2.xy, -r0, r2.z
+<font color="deepskyblue">0049:</font> mad oT1.xy, c12.y, r2, c12.y
+</pre>
+<p>
+座標変換や頂点色は普通と同じ物です。座標変換は命令数を減らせるので、適当に修正してください。
+今回は、環境マップを作る行列と同じ行列を使いまわしたのでこうなっています。<br>
+テクスチャ座標とどちらのテクスチャを使うのか選択するアルファ値として、反射ベクトルを計算します。<br>
+反射ベクトルは視線ベクトル（＝視点－頂点の位置）と法線ベクトルから計算します。<br>
+どちらのテクスチャを使うかどうかは、反射ベクトルのｚ軸方向が正か負かで決まるので、
+</p>
+<pre class="CodeBlock">
+頂点色のα＝視線ベクトルのZ成分+0.5
+</pre>
+<p>
+で、ピクセルシェーダにどちらの色を渡すか決定します。
+</p>
+<p>
+残るはテクスチャ座標ですが、
+</p>
+<pre class="CodeBlock">
+    1      rx
+u = - (1+―――)
+    2     1+rz
+    1      ry
+v = - (1+―――)
+    2     1+rz
+</pre>
+<p>
+の公式を使って、計算します。<br>
+裏面はｚ軸の正負が反転します。<br>
+また、張り合わせている関係で、一枚（ここでは表面）のｘ軸が反転します。<br>
+これらの向きは実は目で見てあわせました。そんなもんです…
+</p>
+
+
+<h2>■最後に</h2>
+
+
+<p>
+てなわけで、動的双放物面環境マッピングをしました。<br>
+作ってて気が付いたのですが、視線方向からのテクスチャーを作れば１枚のテクスチャーで環境マップが出来ますね。<br>
+視線方向に依存するようになるのですが、球マップよりもゆがみが小さくなるので、悪くない方法だと思います。<br>
+今回やってみて（特に球のモデルにマッピングするときに感じたのですが）、テクスチャーがでこぼこと張られてしまうのが気になります。
+ミップマップなどの適当な方法で綺麗になるのかは分かりませんが、何とかしたいものです。
+</p>
+
+</div>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<center>
+<p><a href="../index.html">もどる</a></p>
+<p><a href="mailto:imagire@gmail.com">imagire@gmail.com</a></p>
+</center>
+
+</body>
+</html>

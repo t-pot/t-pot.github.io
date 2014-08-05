@@ -1,0 +1,615 @@
+<head>
+	<title>t-pot『ハードウェア影マップ』</title>
+	<link rel="stylesheet" type="text/css" href="../if.css">
+</head>
+<meta http-equiv=Content-Type content="text/html; charset=shift_jis">
+<body>
+
+
+<div class="contents">
+<center>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<h1>ハードウェア影マップ</h1><br>
+<h3>～通常の3倍の性能をもつすごいやつ～</h3>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<image src = "title.png">
+</center>
+
+
+<h2>■はじめに</h2>
+
+
+<p>
+まぁ、今まで引き伸ばしていたネタですが、ハードウェア影マップです。<br>
+今までのテクスチャーのα成分を使っていたのとは違って、深度バッファの 24bits を使うので、３倍の解像度を手に入れたことになります。<br>
+また、今回は、円形のテクスチャーを使って、スポットライトの効果を出しています。
+</p>
+<p>
+<ul style = "LIST-STYLE-TYPE:none">
+<li><a href="src.lzh">src.lzh (HW影マップのサンプル:DirectX8.1)</a>
+</ul>
+
+<p>
+まぁ、いつものように適当にファイルが入っています。<br>
+</p>
+<table>
+<tr><td><a href="vs_vsh.html">vs.vsh</a></td><td>深度描画の頂点シェーダー。</td></tr>
+<tr><td><a href="ps_psh.html">ps.psh</a></td><td>深度描画のピクセルシェーダー。</td></tr>
+<tr><td><a href="shadow_vsh.html">shadow.vsh</a></td><td>影作成の頂点シェーダー。</td></tr>
+<tr><td><a href="shadow_psh.html">shadow.psh</a></td><td>影作成のピクセルシェーダー。</td></tr>
+<tr><td><a href="draw_cpp.html">draw.cpp</a></td><td>メインの描画部分。</td></tr>
+<tr><td><a href="draw_h.html">draw.h</a></td><td>描画の各関数の定義。</td></tr>
+<tr><td><a href="bg_cpp.html">bg.cpp</a></td><td>背景の描画。</td></tr>
+<tr><td><a href="main_h.html">main.h</a></td><td>基本的な定数など。</td></tr>
+<tr><td><a href="main_cpp.html">main.cpp</a></td><td>描画に関係しないシステム的な部分。</td></tr>
+<tr><td><a href="load_cpp.html">load.cpp</a></td><td>ロード。</td></tr>
+<tr><td><a href="load_h.html">load.h</a></td><td>ロードのインターフェイス。</td></tr>
+</table>
+<image src = "tile_bmp.jpg" width = 64 height=64>tile.bmp (床デカール)<br>
+<image src = "sky_bmp.jpg" width = 64 height=64>sky.bmp (空デカール)<br>
+<image src = "spotlight_bmp.png" width = 64 height=64>spotlight.bmp (ライトテクスチャー)<br>
+<p>
+あと、モデルのファイル、実行ファイル及び、プロジェクトファイルが入っています。
+</p>
+
+
+<h2>■GeForceFX への対応(2003 Dec. 21 追加)</h2>
+
+<p>
+<a href="http://bbx.hp.infoseek.co.jp/">BBX</a>で、<a href="http://bbx.hp.infoseek.co.jp/cgi-bin/bbx.cgi?log=36&vew=272">「DirectX9　+　GeForce　FX　でシャドウマップ」</a>というタイトルで、このサンプルがGeForceFXで動作しないという報告があがっていました。
+</p>
+<p>
+GeForceFX では、GeForce3,4から、DirectX8で未定義だった部分に関して変更が図られています。<br>
+GeForce3,4では、テクスチャ命令(tex)で読み込まれる方法が「射影テクスチャ参照(HLSLのtex2Dproj)」だったものが、「2D のテクスチャ参照(HLSLのtex2D)」に変更されました。<br>
+正直言って、射影テクスチャ参照だけあれば十分だったので、この変更はいたいところです。<br>
+この対応のために、頂点シェーダのテクスチャ座標の計算を
+</p>
+
+<pre class="CodeBlock">
+shadow.vsh
+<font color="deepskyblue">0024:</font> <font color="cyan">; シャドウバッファ</font>
+<font color="deepskyblue">0025:</font> m4x4 oT1,  v0,   c4    <font color="cyan">; 影マップ</font>
+<font color="deepskyblue">0026:</font> m4x4 oT2,  v0,   c4    <font color="cyan">; ライトテクスチャー</font>
+</pre>
+<p>
+から、
+</p>
+<pre class="CodeBlock">
+shadow.vsh
+<font color="deepskyblue">0027:</font> m4x4 r1, v0, c4
+<font color="deepskyblue">0028:</font> rcp r0.w, r1.w
+<font color="deepskyblue">0029:</font> mul oT1, r1, r0.w
+<font color="deepskyblue">0030:</font> mul oT2, r1, r0.w
+</pre>
+<p>
+に変更する必要があります。<br>
+影の生成部分では問題が無いのですが、ライトテクスチャのサンプリングでは、射影計算を行ってからピクセル単位の補間を行うので、この計算では誤差が生じてしまいます。<br>
+正直言って、射影テクスチャ参照だけあれば十分だったので、この変更はいたいところです。
+</p>
+<p>
+他にも、テクスチャにNULLが設定されていたときのサンプリング結果が、0から1に変更されていました。<br>
+今回は、テクスチャしかない場合と、頂点色しかない場合でピクセルシェーダプログラムをきちんと分けて、推奨されるプログラムに変更しました。
+</p>
+
+<p>
+なお、今回は、DirectX 8のまま対応しましたが、DirectX 9では、行列に掛けるバイアスに関してビット深度分のスケーリングをしなくてよくなったようです。つまり、DirectX 9で実装する場合は、
+</p>
+<pre class="CodeBlock">
+main.cpp
+<font color="deepskyblue">0345:</font>     unsigned int range = 0xFFFFFFFF >> (32 - 24);
+</pre>
+<p>
+を
+</p>
+<pre class="CodeBlock">
+main.cpp
+<font color="deepskyblue">0345:</font>     unsigned int range = 1;
+</pre>
+<p>
+に変更してください。
+</p>
+
+<p>
+なお、今回の変更でも、シャドウバッファのClearが数十回に１回しか行われないなどの、不十分な変更になっています。<br>
+ハードウェアシャドウマップはDirectX 8世代での効果的な影の作成方法なので、DirectX 9世代では、別の方法を考察したほうがよいかもしれません。
+</p>
+
+<p>
+今回の件に関して、はりまお さん、CRAKF さん、非常に参考になりました。ありがとうございました。
+</p>
+
+
+<h2>■実装手順</h2>
+
+
+<p>
+最初にHWシャドウマップをサポートしているかチェックしましょう。<br>
+初期化時にCheckDeviceFormat で、深度バッファをテクスチャーとして使えるかチェックします。
+</p>
+<pre class="CodeBlock">
+main.cpp
+<font color="deepskyblue">0136:</font> <font color="cyan">;//-----------------------------------------------------------------------------</font>
+<font color="deepskyblue">0137:</font> <font color="cyan">;// Name: InitD3D()</font>
+<font color="deepskyblue">0138:</font> <font color="cyan">;// Desc: Direct3D の初期化</font>
+<font color="deepskyblue">0139:</font> <font color="cyan">;//-----------------------------------------------------------------------------</font>
+<font color="deepskyblue">0140:</font> HRESULT InitD3D( HWND hWnd )
+<font color="deepskyblue">0141:</font> {
+<font color="deepskyblue">0142:</font>     <font color="cyan">;// Direct3D オブジェクトを作成</font>
+<font color="deepskyblue">0143:</font>     if (NULL == (s_lpD3D = Direct3DCreate8(D3D_SDK_VERSION))){
+<font color="deepskyblue">0144:</font>         MessageBox(NULL,"Direct3D の作成に失敗しました。",CAPTION,MB_OK | MB_ICONSTOP);
+<font color="deepskyblue">0145:</font>         return E_FAIL;
+<font color="deepskyblue">0146:</font>     }
+<font color="deepskyblue">0147:</font> 
+<font color="deepskyblue">0148:</font>     <font color="cyan">;// 現在の画面モードを取得</font>
+<font color="deepskyblue">0149:</font>     D3DDISPLAYMODE d3ddm;
+<font color="deepskyblue">0150:</font>     if( FAILED( s_lpD3D->GetAdapterDisplayMode( D3DADAPTER_DEFAULT, &d3ddm ) ) ) return E_FAIL;
+<font color="deepskyblue">0151:</font>     <font color="cyan">;// ビデオカードの能力を調べる</font>
+<font color="deepskyblue">0152:</font>     D3DCAPS8 caps;
+<font color="deepskyblue">0153:</font>     s_lpD3D->GetDeviceCaps(D3DADAPTER_DEFAULT, D3DDEVTYPE_HAL, &caps);
+<font color="deepskyblue">0154:</font> 
+          途中略
+<font color="deepskyblue">0184:</font> 
+<font color="deepskyblue">0185:</font>     <font color="cyan">;// ハードウェアシャドウマップのサポートのチェック</font>
+<font color="deepskyblue">0186:</font>     <font color="yellow">if(FAILED(s_lpD3D->CheckDeviceFormat(D3DADAPTER_DEFAULT,D3DDEVTYPE_HAL,D3DFMT_X8R8G8B8,</font>
+<font color="deepskyblue">0187:</font>     <font color="yellow">                                D3DUSAGE_DEPTHSTENCIL, D3DRTYPE_TEXTURE,s_d3dpp.AutoDepthStencilFormat)))</font>
+<font color="deepskyblue">0188:</font>     <font color="yellow">    return -1;</font>
+<font color="deepskyblue">0189:</font>     
+<font color="deepskyblue">0190:</font>     DWORD  vs[] = {D3DCREATE_HARDWARE_VERTEXPROCESSING, D3DCREATE_MIXED_VERTEXPROCESSING, D3DCREATE_SOFTWARE_VERTEXPROCESSING,0 };
+<font color="deepskyblue">0191:</font>     D3DDEVTYPE ps[] = {D3DDEVTYPE_HAL, D3DDEVTYPE_REF, (D3DDEVTYPE)0};
+<font color="deepskyblue">0192:</font>     
+<font color="deepskyblue">0193:</font>     DWORD v = (caps.VertexShaderVersion &lt; D3DVS_VERSION(1,0)) ? 1 : 0;
+<font color="deepskyblue">0194:</font>     DWORD p = (caps.PixelShaderVersion  &lt; D3DPS_VERSION(1,0)) ? 1 : 0;
+<font color="deepskyblue">0195:</font> 
+<font color="deepskyblue">0196:</font>     for(;ps[p];p++){
+<font color="deepskyblue">0197:</font>     for(;vs[v];v++){
+<font color="deepskyblue">0198:</font>         if(SUCCEEDED(s_lpD3D->CreateDevice(D3DADAPTER_DEFAULT, ps[p],hWnd,vs[v],&s_d3dpp,&s_lpD3DDEV))) goto set_up;
+<font color="deepskyblue">0199:</font>     }
+<font color="deepskyblue">0200:</font>     }
+<font color="deepskyblue">0201:</font> set_up:
+<font color="deepskyblue">0202:</font>     return S_OK;
+<font color="deepskyblue">0203:</font> }
+</pre>
+
+<p>
+成功したら、CreateTexture で、テクスチャーを生成します。<br>
+色成分のテクスチャーと深度のテクスチャーの２つを作る必要があります。<br>
+深度バッファのテクスチャーは、D3DFMT_D24S8 の深度のフォーマットを使って作成します。<br>
+また、レンダリングする時は、サーフェスを指定する必要があるので、同時にサーフェスも生成します。<br>
+あと、ライトのテクスチャーもロードします（この部分はnVIDIAのサンプルの丸写しがばればれですな）。
+</p>
+
+<pre class="CodeBlock">
+draw.cpp
+<font color="deepskyblue">0166:</font> <font color="cyan">//-----------------------------------------------------------------------------</font>
+<font color="deepskyblue">0167:</font> <font color="cyan">// Name: InitRenderTexture()</font>
+<font color="deepskyblue">0168:</font> <font color="cyan">// Desc: レンダリングテクスチャー用の下準備</font>
+<font color="deepskyblue">0169:</font> <font color="cyan">//-----------------------------------------------------------------------------</font>
+<font color="deepskyblue">0170:</font> HRESULT InitRenderTexture(LPDIRECT3DDEVICE8 lpD3DDev)
+<font color="deepskyblue">0171:</font> {
+<font color="deepskyblue">0172:</font>     HRESULT hr;
+<font color="deepskyblue">0173:</font>     DWORD i;
+<font color="deepskyblue">0174:</font>     
+          途中略
+<font color="deepskyblue">0202:</font> 
+<font color="deepskyblue">0203:</font>     <font color="cyan">// 描画用テクスチャーを用意する</font>
+<font color="deepskyblue">0204:</font>     if( FAILED(hr = lpD3DDev->GetRenderTarget(&pBackbuffer))) return hr;
+<font color="deepskyblue">0205:</font>     if(FAILED(lpD3DDev->GetDepthStencilSurface(&lpZbuffer))) return hr;
+<font color="deepskyblue">0206:</font>     
+<font color="deepskyblue">0207:</font>     <font color="yellow">if(FAILED(hr = lpD3DDev->CreateTexture(SHADOWMAP_WIDTH, SHADOWMAP_HEIGHT, 1</font>
+<font color="deepskyblue">0208:</font>     <font color="yellow">                    , D3DUSAGE_RENDERTARGET, D3DFMT_A8R8G8B8</font>
+<font color="deepskyblue">0209:</font>     <font color="yellow">                    , D3DPOOL_DEFAULT, &pTextureCol)))</font>
+<font color="deepskyblue">0210:</font>     <font color="yellow">    return hr;</font>
+<font color="deepskyblue">0211:</font>     <font color="orange">if(FAILED(hr = lpD3DDev->CreateTexture(SHADOWMAP_WIDTH, SHADOWMAP_HEIGHT, 1</font>
+<font color="deepskyblue">0212:</font>     <font color="orange">                    , D3DUSAGE_DEPTHSTENCIL, D3DFMT_D24S8</font>
+<font color="deepskyblue">0213:</font>     <font color="orange">                    , D3DPOOL_DEFAULT, &pTextureZ)))</font>
+<font color="deepskyblue">0214:</font>     <font color="orange">    return hr;</font>
+<font color="deepskyblue">0215:</font> 
+<font color="deepskyblue">0216:</font>     <font color="yellow">if(FAILED(pTextureCol->GetSurfaceLevel(0, &pTextureSurfaceCol)))    return E_FAIL;</font>
+<font color="deepskyblue">0217:</font>     <font color="orange">if(FAILED(pTextureZ->GetSurfaceLevel(0, &pTextureSurfaceZ)))        return E_FAIL;</font>
+<font color="deepskyblue">0218:</font> 
+<font color="deepskyblue">0219:</font>     
+<font color="deepskyblue">0220:</font>     if(FAILED(D3DXCreateTextureFromFileEx(lpD3DDev, 
+<font color="deepskyblue">0221:</font>                                           "spotlight.bmp", 
+<font color="deepskyblue">0222:</font>                                           SHADOWMAP_WIDTH,
+<font color="deepskyblue">0223:</font>                                           SHADOWMAP_HEIGHT,
+<font color="deepskyblue">0224:</font>                                           1,
+<font color="deepskyblue">0225:</font>                                           D3DUSAGE_RENDERTARGET,
+<font color="deepskyblue">0226:</font>                                           D3DFMT_A8R8G8B8,
+<font color="deepskyblue">0227:</font>                                           D3DPOOL_DEFAULT,
+<font color="deepskyblue">0228:</font>                                           D3DX_DEFAULT,
+<font color="deepskyblue">0229:</font>                                           D3DX_DEFAULT,
+<font color="deepskyblue">0230:</font>                                           0,
+<font color="deepskyblue">0231:</font>                                           NULL,
+<font color="deepskyblue">0232:</font>                                           NULL,
+<font color="deepskyblue">0233:</font>                                           &pLightTexture))) return hr;
+<font color="deepskyblue">0234:</font> 
+<font color="deepskyblue">0235:</font> 
+<font color="deepskyblue">0236:</font>     <font color="cyan">// シェ－ダーのロード</font>
+<font color="deepskyblue">0237:</font>     if ( FAILED( CPixelShaderMgr::Load(lpD3DDev, "shadow.psh",    &hShadowPixelShader)) ) return hr;
+<font color="deepskyblue">0238:</font>     if ( FAILED(CVertexShaderMgr::Load(lpD3DDev, "shadow.vsh",    &hShadowVertexShader, dwDecl)) ) return hr;
+<font color="deepskyblue">0239:</font>     
+<font color="deepskyblue">0240:</font>     return S_OK;
+<font color="deepskyblue">0241:</font> }
+</pre>
+
+<p>
+SetTextureStageState も初期化時に設定しましょう。<br>
+それぞれのテクスチャーの拡大縮小フィルターを双線形にします。<br>
+特に、影マップの時には、このフィルターを切って最近接テクセルの色にすると、影ががたがたした色になります。
+影マップと、ライトテクスチャーのテクスチャアドレッシング D3DTSS_ADDRESSU(V) は、D3DTADDRESS_CLAMPにして、
+範囲を飛び出たテクセルに関して最外テクセルの色を使うようにしないと遠くのテクスチャーに関する結果がおかしなものになります。
+</p>
+
+<pre class="CodeBlock">
+draw.cpp
+<font color="deepskyblue">0272:</font>     <font color="cyan">// デカール</font>
+<font color="deepskyblue">0273:</font>     lpD3DDev->SetTextureStageState(0, D3DTSS_MINFILTER, D3DTEXF_LINEAR);
+<font color="deepskyblue">0274:</font>     lpD3DDev->SetTextureStageState(0, D3DTSS_MAGFILTER, D3DTEXF_LINEAR);
+<font color="deepskyblue">0275:</font>     lpD3DDev->SetTextureStageState(0, D3DTSS_MIPFILTER, D3DTEXF_NONE);
+<font color="deepskyblue">0276:</font>     
+<font color="deepskyblue">0277:</font>     <font color="cyan">// 影マップ</font>
+<font color="deepskyblue">0278:</font>     lpD3DDev->SetTextureStageState(1, D3DTSS_ADDRESSU, D3DTADDRESS_CLAMP);
+<font color="deepskyblue">0279:</font>     lpD3DDev->SetTextureStageState(1, D3DTSS_ADDRESSV, D3DTADDRESS_CLAMP);
+<font color="deepskyblue">0280:</font>     lpD3DDev->SetTextureStageState(1, D3DTSS_MINFILTER, D3DTEXF_LINEAR);
+<font color="deepskyblue">0281:</font>     lpD3DDev->SetTextureStageState(1, D3DTSS_MAGFILTER, D3DTEXF_LINEAR);
+<font color="deepskyblue">0282:</font>     lpD3DDev->SetTextureStageState(1, D3DTSS_MIPFILTER, D3DTEXF_NONE);
+<font color="deepskyblue">0283:</font> 
+<font color="deepskyblue">0284:</font>     <font color="cyan">// ライトテクスチャー</font>
+<font color="deepskyblue">0285:</font>     lpD3DDev->SetTextureStageState(2, D3DTSS_ADDRESSU, D3DTADDRESS_CLAMP);
+<font color="deepskyblue">0286:</font>     lpD3DDev->SetTextureStageState(2, D3DTSS_ADDRESSV, D3DTADDRESS_CLAMP);
+<font color="deepskyblue">0287:</font>     lpD3DDev->SetTextureStageState(2, D3DTSS_MINFILTER, D3DTEXF_LINEAR);
+<font color="deepskyblue">0288:</font>     lpD3DDev->SetTextureStageState(2, D3DTSS_MAGFILTER, D3DTEXF_LINEAR);
+<font color="deepskyblue">0289:</font>     lpD3DDev->SetTextureStageState(2, D3DTSS_MIPFILTER, D3DTEXF_NONE);
+</pre>
+
+<p>
+では、描画部分です。２パスで描画します。<br>
+</p>
+<p>
+SetRenderTarget で、レンダリング対象をテクスチャーに指定します。
+深度部分は、今回の肝である深度に関するテクスチャーのサーフェスを指定します。<br>
+</p>
+<p>
+次にビューポートを変更します。<br>
+今回は、描画するビューポートとテクスチャーの解像度が同じなので、設定しなくても良いですが、いつもこんな状況ではないので、指定しておきましょう。<br>
+</p>
+<p>
+その後、色成分の書き込みを禁止します。<br>
+深度テクスチャーだけが必要になります。
+レンダリングする量を減らすために、深度だけを更新して速度を稼ぎます。
+</p>
+<p>
+後は、Clear 命令で深度を初期化します。<br>
+その後、シェーダーを設定してモデルを描画します。
+</p>
+<p>
+2パス目は、１パス目で作成した影マップをテクスチャーに指定します。
+また、ライトのテクスチャーも指定します。
+</p>
+
+<pre class="CodeBlock">
+draw.cpp
+<font color="deepskyblue">0469:</font> <font color="cyan">//-----------------------------------------------------------------------------</font>
+<font color="deepskyblue">0470:</font> <font color="cyan">// Name: Render()</font>
+<font color="deepskyblue">0471:</font> <font color="cyan">// Desc: Draws the scene</font>
+<font color="deepskyblue">0472:</font> <font color="cyan">//-----------------------------------------------------------------------------</font>
+<font color="deepskyblue">0473:</font> VOID Render(LPDIRECT3DDEVICE8 lpD3DDev)
+<font color="deepskyblue">0474:</font> {
+<font color="deepskyblue">0475:</font>     <font color="cyan">// ------------------------------------------------------------------------</font>
+<font color="deepskyblue">0476:</font>     <font color="cyan">// 影マップの作成</font>
+<font color="deepskyblue">0477:</font>     <font color="cyan">// ------------------------------------------------------------------------</font>
+<font color="deepskyblue">0478:</font>     <font color="cyan">// テクスチャーにレンダリングする</font>
+<font color="deepskyblue">0479:</font>     <font color="yellow">lpD3DDev->SetRenderTarget(pTextureSurfaceCol, pTextureSurfaceZ);</font>
+<font color="deepskyblue">0480:</font>     <font color="cyan">// ビューポートの変更       x y         w                h      min_z max_z</font>
+<font color="deepskyblue">0481:</font>     <font color="yellow">D3DVIEWPORT8 newViewport = {0,0,SHADOWMAP_WIDTH, SHADOWMAP_HEIGHT, 0, 1};</font>
+<font color="deepskyblue">0482:</font>     <font color="yellow">D3DVIEWPORT8 oldViewport;</font>
+<font color="deepskyblue">0483:</font>     <font color="yellow">lpD3DDev->GetViewport(&oldViewport);</font>
+<font color="deepskyblue">0484:</font>     <font color="yellow">lpD3DDev->SetViewport(&newViewport);</font>
+<font color="deepskyblue">0485:</font>     <font color="cyan">// 高速化のために、深度だけ更新する</font>
+<font color="deepskyblue">0486:</font>     <font color="yellow">lpD3DDev->SetRenderState(D3DRS_COLORWRITEENABLE, 0);</font>
+<font color="deepskyblue">0487:</font>     <font color="cyan">// 深度を初期化する</font>
+<font color="deepskyblue">0488:</font>     <font color="yellow">lpD3DDev->Clear(0, NULL, D3DCLEAR_ZBUFFER, 0x000000, 1.0f, 0L);</font>
+<font color="deepskyblue">0489:</font> 
+<font color="deepskyblue">0490:</font>     <font color="cyan">// シェーダーの設定</font>
+<font color="deepskyblue">0491:</font>     lpD3DDev->SetVertexShader(hVertexShader);
+<font color="deepskyblue">0492:</font>     lpD3DDev->SetPixelShader(hPixelShader);
+<font color="deepskyblue">0493:</font>     
+<font color="deepskyblue">0494:</font>     DrawModel(lpD3DDev, 1);
+<font color="deepskyblue">0495:</font> 
+<font color="deepskyblue">0496:</font>     <font color="cyan">// ------------------------------------------------------------------------</font>
+<font color="deepskyblue">0497:</font>     <font color="cyan">// シーンの作成</font>
+<font color="deepskyblue">0498:</font>     <font color="cyan">// ------------------------------------------------------------------------</font>
+<font color="deepskyblue">0499:</font>     <font color="cyan">// 描画を戻す</font>
+<font color="deepskyblue">0500:</font>     <font color="orange">lpD3DDev->SetRenderTarget(pBackbuffer, lpZbuffer );</font>
+<font color="deepskyblue">0501:</font>     <font color="orange">lpD3DDev->SetViewport(&oldViewport);</font>
+<font color="deepskyblue">0502:</font>     <font color="orange">lpD3DDev->SetRenderState(D3DRS_COLORWRITEENABLE, 0x7);</font>
+<font color="deepskyblue">0503:</font>     <font color="orange">lpD3DDev->Clear(0, NULL, D3DCLEAR_TARGET | D3DCLEAR_ZBUFFER, 0x000000, 1.0f, 0L);</font>
+<font color="deepskyblue">0504:</font> 
+<font color="deepskyblue">0505:</font>     <font color="cyan">// シェーダーの設定</font>
+<font color="deepskyblue">0506:</font>     lpD3DDev->SetVertexShader(hShadowVertexShader); 
+<font color="deepskyblue">0507:</font>     lpD3DDev->SetPixelShader(hShadowPixelShader);   
+<font color="deepskyblue">0508:</font> 
+<font color="deepskyblue">0509:</font>     lpD3DDev->SetTexture( 1, pTextureZ );                   <font color="cyan">// 影マップ</font>
+<font color="deepskyblue">0510:</font>     lpD3DDev->SetTexture( 2, pLightTexture );               <font color="cyan">// ライトテクスチャー</font>
+<font color="deepskyblue">0511:</font>     DrawModel(lpD3DDev, 0);
+<font color="deepskyblue">0512:</font>     
+<font color="deepskyblue">0513:</font>     <font color="cyan">// 他でレンダリングしても問題が出ない設定にする</font>
+<font color="deepskyblue">0514:</font>     lpD3DDev->SetTexture( 0, NULL );
+<font color="deepskyblue">0515:</font>     lpD3DDev->SetTexture( 1, NULL );
+<font color="deepskyblue">0516:</font>     lpD3DDev->SetTexture( 2, NULL );
+<font color="deepskyblue">0517:</font>     lpD3DDev->SetPixelShader(0);
+<font color="deepskyblue">0518:</font> }
+</pre>
+
+
+<h2>■モデル描画</h2>
+
+
+<p>
+モデルの描画部分を見てみましょう。<br>
+</p>
+
+<pre class="CodeBlock">
+draw.cpp
+<font color="deepskyblue">0301:</font> VOID DrawModel(LPDIRECT3DDEVICE8 lpD3DDev, BOOL bShadowMap)
+<font color="deepskyblue">0302:</font> {
+<font color="deepskyblue">0303:</font>     D3DXMATRIX mVP,  mWorld, mView,  mProj;
+<font color="deepskyblue">0304:</font>     D3DXMATRIX mVPL, mLight, mViewL, mProjL;
+<font color="deepskyblue">0305:</font>     D3DXMATRIX  m;
+<font color="deepskyblue">0306:</font>     D3DXVECTOR4 vl;
+<font color="deepskyblue">0307:</font>     DWORD i;
+</pre>
+<p>
+カメラからの行列が必要です。これは、いつものものです。
+</p>
+<pre class="CodeBlock">
+<font color="deepskyblue">0309:</font>     <font color="cyan">// </font>
+<font color="deepskyblue">0310:</font>     <font color="cyan">// 通常レンダリング用の行列を作成</font>
+<font color="deepskyblue">0311:</font>     <font color="cyan">// </font>
+<font color="deepskyblue">0312:</font>     <font color="cyan">// ビュー行列</font>
+<font color="deepskyblue">0313:</font>     D3DXVECTOR3 eye    = D3DXVECTOR3(0.0f,1.4f*MeshRadius,2.5f*MeshRadius);
+<font color="deepskyblue">0314:</font>     D3DXVECTOR3 lookAt = D3DXVECTOR3(0.0f,  0.0f,  0.0f);
+<font color="deepskyblue">0315:</font>     D3DXVECTOR3 up     = D3DXVECTOR3(0.0f,  1.0f,  0.0f);
+<font color="deepskyblue">0316:</font>     D3DXMatrixLookAtLH(&mView, &eye, &lookAt, &up);
+<font color="deepskyblue">0317:</font>     <font color="cyan">// 射影行列</font>
+<font color="deepskyblue">0318:</font>     D3DXMatrixPerspectiveFovLH(&mProj
+<font color="deepskyblue">0319:</font>         , D3DXToRadian(60.0f)                       <font color="cyan">// 視野角</font>
+<font color="deepskyblue">0320:</font>         , (float)WIDTH/(float)HEIGHT                <font color="cyan">// アスペクト比</font>
+<font color="deepskyblue">0321:</font>         , z_min, z_max                              <font color="cyan">// 最近接距離,最遠方距離</font>
+<font color="deepskyblue">0322:</font>         );
+<font color="deepskyblue">0323:</font>     
+<font color="deepskyblue">0324:</font>     mVP = mView * mProj;
+</pre>
+<p>
+ライトからの行列も作ります。
+</p>
+<pre class="CodeBlock">
+<font color="deepskyblue">0326:</font>     <font color="cyan">// </font>
+<font color="deepskyblue">0327:</font>     <font color="cyan">// ライト方向からのレンダリング用の行列を作成</font>
+<font color="deepskyblue">0328:</font>     <font color="cyan">// </font>
+<font color="deepskyblue">0329:</font>     <font color="cyan">// ビュー行列</font>
+<font color="deepskyblue">0330:</font>     D3DXVECTOR3 l_eye    = 30.0f*lightDir;
+<font color="deepskyblue">0331:</font>     D3DXVECTOR3 l_lookAt = D3DXVECTOR3(0.0f,  0.0f,  0.0f);
+<font color="deepskyblue">0332:</font>     D3DXVECTOR3 l_up     = D3DXVECTOR3(0.0f,  1.0f,  0.0f);
+<font color="deepskyblue">0333:</font>     D3DXMatrixLookAtLH(&mViewL, &l_eye, &l_lookAt, &l_up);
+<font color="deepskyblue">0334:</font>     <font color="cyan">// 射影行列</font>
+<font color="deepskyblue">0335:</font>     D3DXMatrixPerspectiveFovLH(&mProjL
+<font color="deepskyblue">0336:</font>         , D3DXToRadian(60.0f)                           <font color="cyan">// 視野角</font>
+<font color="deepskyblue">0337:</font>         , (float)SHADOWMAP_WIDTH/(float)SHADOWMAP_HEIGHT<font color="cyan">// アスペクト比</font>
+<font color="deepskyblue">0338:</font>         , 1.0f, 70.0f                                   <font color="cyan">// 最近接距離,最遠方距離</font>
+<font color="deepskyblue">0339:</font>         );
+<font color="deepskyblue">0340:</font>     mVPL = mViewL * mProjL;
+</pre>
+<p>
+次に、テクスチャー座標系に関する変換行列を用意します。<br>
+射影空間が中心原点なので、左上を中心とするテクスチャー空間に変換するために挿入します。<br>
+また、深度に関しては、0から2<sup>深度バッファの解像度</sup>-1がテクスチャー空間の範囲になります。<br>
+一方、射影空間では０～１が深度の範囲なので拡大して範囲をあわせます。<br>
+また、オフセットもここで追加します。<br>
+ところで気づいたのですが、逆カリングを使うときは、物体のライトから裏のポリゴンに関して影の境界があります。
+その部分の影がちらついてしまいます。従って、オフセットを裏の部分がちらつかないように調整しなくてはなりません。
+</p>
+<pre class="CodeBlock">
+<font color="deepskyblue">0342:</font>     <font color="cyan">// 射影空間から、テクスチャーの空間に変換する</font>
+<font color="deepskyblue">0343:</font>     float fOffsetX = 0.5f + (0.5f / (float)SHADOWMAP_WIDTH);
+<font color="deepskyblue">0344:</font>     float fOffsetY = 0.5f + (0.5f / (float)SHADOWMAP_HEIGHT);
+<font color="deepskyblue">0345:</font>     unsigned int range = 0xFFFFFFFF >> (32 - 24);
+<font color="deepskyblue">0346:</font>     float fBias    = +0.000001f * (float)range;<font color="cyan">// カリングを反対にするので、通常とは逆のオフセット</font>
+<font color="deepskyblue">0347:</font>     D3DXMATRIX mScaleBias( 0.5f,     0.0f,     0.0f,         0.0f,
+<font color="deepskyblue">0348:</font>                            0.0f,    -0.5f,     0.0f,         0.0f,
+<font color="deepskyblue">0349:</font>                            0.0f,     0.0f,     (float)range, 0.0f,
+<font color="deepskyblue">0350:</font>                            fOffsetX, fOffsetY, fBias,        1.0f );
+<font color="deepskyblue">0351:</font> 
+<font color="deepskyblue">0352:</font>     mLight = mVPL * mScaleBias;
+</pre>
+<p>
+次に、逆カリングの設定をします。
+</p>
+<pre class="CodeBlock">
+<font color="deepskyblue">0354:</font>     <font color="cyan">//</font>
+<font color="deepskyblue">0355:</font>     <font color="cyan">// レンダリング状態の設定</font>
+<font color="deepskyblue">0356:</font>     <font color="cyan">// </font>
+<font color="deepskyblue">0357:</font>     if(bShadowMap){
+<font color="deepskyblue">0358:</font>         lpD3DDev->SetRenderState(D3DRS_CULLMODE, D3DCULL_CW);
+<font color="deepskyblue">0359:</font>     }else{
+<font color="deepskyblue">0360:</font>         lpD3DDev->SetRenderState(D3DRS_CULLMODE, D3DCULL_CCW);
+<font color="deepskyblue">0361:</font>     }
+</pre>
+<p>
+いよいよモデルの描画です。
+ワールド行列を作ります。
+</p>
+<pre class="CodeBlock">
+<font color="deepskyblue">0363:</font>     <font color="cyan">//</font>
+<font color="deepskyblue">0364:</font>     <font color="cyan">// 外側もでる描画</font>
+<font color="deepskyblue">0365:</font>     <font color="cyan">//</font>
+<font color="deepskyblue">0366:</font>     int t = timeGetTime()%314159;
+<font color="deepskyblue">0367:</font>     D3DXMatrixTranslation(&m, 1.5f*MeshRadius, 0,0);
+<font color="deepskyblue">0368:</font>     D3DXMatrixRotationY( &mWorld, t/1000.0f );
+<font color="deepskyblue">0370:</font>     mWorld = m * mWorld;
+</pre>
+<p>
+次に、影マップか、バックバッファへの描画かによって、変換する行列を切り替えます。<br>
+バックバッファへの描画かのときは、ライトからのテクスチャー座標への変換行列も設定します。
+</p>
+<pre class="CodeBlock">
+<font color="deepskyblue">0372:</font>     if(bShadowMap){
+<font color="deepskyblue">0373:</font>         m = mWorld * mVPL;
+<font color="deepskyblue">0374:</font>     }else{
+<font color="deepskyblue">0375:</font>         m = mWorld * mLight;
+<font color="deepskyblue">0376:</font>         D3DXMatrixTranspose( &m ,  &m);
+<font color="deepskyblue">0377:</font>         lpD3DDev->SetVertexShaderConstant(4,&m, 4);
+<font color="deepskyblue">0378:</font> 
+<font color="deepskyblue">0379:</font>         m = mWorld * mVP;
+<font color="deepskyblue">0380:</font>     }
+<font color="deepskyblue">0381:</font>     D3DXMatrixTranspose( &m ,  &m);
+<font color="deepskyblue">0382:</font>     lpD3DDev->SetVertexShaderConstant(0,&m, 4);
+</pre>
+<p>
+あとは、ライトの設定をして、
+</p>
+<pre class="CodeBlock">
+<font color="deepskyblue">0384:</font>     D3DXMatrixInverse( &m,  NULL, &mWorld);
+<font color="deepskyblue">0385:</font>     D3DXVec4Transform(&vl, &lightDir, &m);
+<font color="deepskyblue">0386:</font>     D3DXVec4Normalize(&vl, &vl);
+<font color="deepskyblue">0387:</font>     vl[3] = 0.1f;<font color="cyan">// w成分は環境色の強さ</font>
+<font color="deepskyblue">0388:</font>     lpD3DDev->SetVertexShaderConstant(13, &vl, 1);
+</pre>
+<p>
+モデルを描画します。
+</p>
+<pre class="CodeBlock">
+<font color="deepskyblue">0390:</font>     lpD3DDev->SetStreamSource(0, pMeshVB, sizeof(D3D_CUSTOMVERTEX));
+<font color="deepskyblue">0391:</font>     lpD3DDev->SetIndices(pMeshIndex,0);
+<font color="deepskyblue">0392:</font>     
+<font color="deepskyblue">0393:</font>     for(i=0;i&lt;dwNumMaterials;i++){
+<font color="deepskyblue">0394:</font>         <font color="cyan">//色をセット</font>
+<font color="deepskyblue">0395:</font>         D3DXVECTOR4 vl;
+<font color="deepskyblue">0396:</font>         vl.x = pMeshMaterials[i].Diffuse.r;
+<font color="deepskyblue">0397:</font>         vl.y = pMeshMaterials[i].Diffuse.g;
+<font color="deepskyblue">0398:</font>         vl.z = pMeshMaterials[i].Diffuse.b;
+<font color="deepskyblue">0399:</font>         lpD3DDev->SetVertexShaderConstant(14, &vl, 1);
+<font color="deepskyblue">0400:</font> 
+<font color="deepskyblue">0401:</font>         lpD3DDev->SetTexture(0,pMeshTextures[i]);
+<font color="deepskyblue">0402:</font>         lpD3DDev->DrawIndexedPrimitive(D3DPT_TRIANGLELIST, 
+<font color="deepskyblue">0403:</font>                                         pSubsetTable[i].VertexStart,
+<font color="deepskyblue">0404:</font>                                         pSubsetTable[i].VertexCount,
+<font color="deepskyblue">0405:</font>                                         pSubsetTable[i].FaceStart * 3,
+<font color="deepskyblue">0406:</font>                                         pSubsetTable[i].FaceCount);
+<font color="deepskyblue">0407:</font>     }
+          以降略
+</pre>
+
+
+<h2>■シェーダー</h2>
+
+<p>
+さて、合成するときのシェーダーです。<br>
+合成方法を見ましょう。
+</p>
+<image src = "ps.png">
+<p>
+今回の（いままでもそうですが）モデルは、頂点色か、テクスチャーしかないので、
+頂点色とデカールテクスチャーの色を加算で合成します。
+</p>
+<p>
+影マップは、深度テストに合格したピクセルが白くレンダリングされます。<br>
+一部見ると、灰色の部分がありますということは、深度バッファでテストした結果を
+テクセルサンプリングするときに双線形フィルタでサンプリングするようですね。<br>
+この結果に対して、定数を足してます。
+影になる部分が完全に黒にはならないで、薄暗くなります。
+</p>
+<p>
+モデルの色と影の結果を乗算して、影マップによる影をつけます。
+</p>
+<p>
+次にライト方向からテクスチャー座標を算出したライトのテクスチャーの色と今の結果を掛け、最終的な結果を得ます。<br>
+今考えれば、影マップと、ライトテクスチャーを乗算合成した後定数を加算して、影の下限値をつけた後、
+モデルの色をつけたほうが、影が重なったところが真っ黒にならなくて良いですね。
+</p>
+
+<p>
+ピクセルシェーダーでは、今言ったことを計算します。
+</p>
+
+<pre class="CodeBlock">
+<font color="deepskyblue">0001:</font> <font color="cyan">; shadow.psh</font>
+<font color="deepskyblue">0002:</font> <font color="cyan">;</font>
+<font color="deepskyblue">0003:</font> ps.1.1
+<font color="deepskyblue">0004:</font> 
+<font color="deepskyblue">0005:</font> def c0, 0.3f, 0.3f, 0.3f, 0.0f
+<font color="deepskyblue">0006:</font> 
+<font color="deepskyblue">0007:</font> tex t0   <font color="cyan">; デカール</font>
+<font color="deepskyblue">0008:</font> tex t1   <font color="cyan">; 影マップ</font>
+<font color="deepskyblue">0009:</font> tex t2   <font color="cyan">; ライトテクスチャー</font>
+<font color="deepskyblue">0010:</font> 
+<font color="deepskyblue">0011:</font> add r0, t0, v0  <font color="cyan">; モデルの色は頂点+デカール</font>
+<font color="deepskyblue">0012:</font> add t1, t1, c0  <font color="cyan">; 影マップの減衰リミットを決める</font>
+<font color="deepskyblue">0013:</font> mul r0, r0, t1  <font color="cyan">; モデルの色＊影</font>
+<font color="deepskyblue">0014:</font> mul r0, r0, t2  <font color="cyan">; ライトの範囲を反映</font>
+</pre>
+
+<p>
+頂点シェーダーでは、ピクセルシェーダーに送るテクスチャー座標などを設定します。
+</p>
+
+<pre class="CodeBlock">
+<font color="deepskyblue">0001:</font> <font color="cyan">; Shadow.vsh</font>
+<font color="deepskyblue">0002:</font> <font color="cyan">; c0-3   -- world + ビュー + 透視変換行列</font>
+<font color="deepskyblue">0003:</font> <font color="cyan">; c4-7   -- world + ライトビュー + 透視変換行列</font>
+<font color="deepskyblue">0004:</font> <font color="cyan">; c13    -- ライトのベクトル (w成分は環境光の強さ)</font>
+<font color="deepskyblue">0005:</font> <font color="cyan">; c14    -- ライトの色(メッシュの色)</font>
+<font color="deepskyblue">0007:</font> <font color="cyan">;</font>
+<font color="deepskyblue">0008:</font> <font color="cyan">; v0    頂点の座標値</font>
+<font color="deepskyblue">0009:</font> <font color="cyan">; v3    法線ベクトル (w成分は1.0f)</font>
+<font color="deepskyblue">0010:</font> <font color="cyan">; v7    テクスチャ座標</font>
+<font color="deepskyblue">0011:</font> 
+<font color="deepskyblue">0012:</font> vs.1.0
+<font color="deepskyblue">0013:</font> 
+<font color="deepskyblue">0014:</font> <font color="cyan">;座標変換</font>
+<font color="deepskyblue">0015:</font> m4x4 oPos,  v0,   c0
+<font color="deepskyblue">0016:</font> 
+<font color="deepskyblue">0017:</font> <font color="cyan">; ((L･N) + L.w)*c14 (平行光源のライティング)</font>
+<font color="deepskyblue">0018:</font> dp4 r0.w,   v3,   c13
+<font color="deepskyblue">0019:</font> mul oD0,    r0.w, c14
+<font color="deepskyblue">0020:</font> 
+<font color="deepskyblue">0021:</font> <font color="cyan">; デカールテクスチャー</font>
+<font color="deepskyblue">0022:</font> mov oT0,    v7
+<font color="deepskyblue">0023:</font> <font color="cyan">; シャドウバッファ</font>
+<font color="deepskyblue">0024:</font> m4x4 oT1,   v0,   c4    <font color="cyan">; 影マップ</font>
+<font color="deepskyblue">0025:</font> m4x4 oT2,   v0,   c4    <font color="cyan">; ライトテクスチャー</font>
+</pre>
+
+<p>
+座標変換や、頂点色は普通の計算です。<br>
+テクスチャーは、デカールはモデルに設定されたテクスチャー座標を出力します。<br>
+影マップと、ライトのテクスチャーは頂点座標を透視変換して、出力します。<br>
+影マップのテクスチャーには、４次元ベクトルを出力する必要があります。<br>
+出力した深度値と、深度テクスチャーに保存された値とを比較して、描こうとするピクセルの深度がテクスチャーの値よりも小さいときに白色を出力します。<br>
+実は、ライトのテクスチャーには必要ないです（ｘ、ｙ、ｗの３つの座標値に関して出力すれば十分です）。マクロ命令で短く描きたかったので使っただけですので、
+命令数を少なくしたい方は、展開してｚ成分に関する出力を無くしてください。
+</p>
+
+
+<h2>■最後に</h2>
+
+
+<p>
+やっぱり２４bitsあると綺麗ですね。<br>
+ただ、nVIDIA 専用というのがどうも…<br>
+将来、テクスチャーのフォーマットが浮動小数点数を扱えるようになったら、いらなくなるんでしょうね。
+</p>
+
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<center>
+<p><a href="../index.html">もどる</a></p>
+<p><a href="mailto:imagire@gmail.com">imagire@gmail.com</a></p>
+</center>
+
+</body>
+</html>

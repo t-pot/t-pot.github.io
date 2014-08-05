@@ -1,0 +1,209 @@
+<HTML>
+<HEAD>
+<TITLE>main.cpp</TITLE>
+<meta name="GENERATOR" content="cpp2html 2.1 by Niisaka">
+<meta http-equiv="Content-Type" content="text/html">
+</HEAD>
+<BODY TEXT="#000000" BGCOLOR="#FFFFFF">
+<PRE><FONT COLOR="#40F628">0001:</FONT> <FONT COLOR="#008000">// ----------------------------------------------------------------------------</FONT>
+<FONT COLOR="#40F628">0002:</FONT> <FONT COLOR="#008000">//</FONT>
+<FONT COLOR="#40F628">0003:</FONT> <FONT COLOR="#008000">// main.cpp - ウィンドウズメイン部分</FONT>
+<FONT COLOR="#40F628">0004:</FONT> <FONT COLOR="#008000">// </FONT>
+<FONT COLOR="#40F628">0005:</FONT> <FONT COLOR="#008000">// Copyright (c) 2002 IF (imagire@gmail.com)</FONT>
+<FONT COLOR="#40F628">0006:</FONT> <FONT COLOR="#008000">// All Rights Reserved.</FONT>
+<FONT COLOR="#40F628">0007:</FONT> <FONT COLOR="#008000">//</FONT>
+<FONT COLOR="#40F628">0008:</FONT> <FONT COLOR="#008000">// ----------------------------------------------------------------------------</FONT>
+<FONT COLOR="#40F628">0009:</FONT> <FONT COLOR="#0000FF">#define</FONT> STRICT
+<FONT COLOR="#40F628">0010:</FONT> <FONT COLOR="#0000FF">#define</FONT> INITGUID
+<FONT COLOR="#40F628">0011:</FONT> 
+<FONT COLOR="#40F628">0012:</FONT> <FONT COLOR="#0000FF">#include</FONT> &lt;windows.h&gt;
+<FONT COLOR="#40F628">0013:</FONT> <FONT COLOR="#0000FF">#include</FONT> &lt;d3d8.h&gt;
+<FONT COLOR="#40F628">0014:</FONT> <FONT COLOR="#0000FF">#include</FONT> &lt;d3dx8.h&gt;
+<FONT COLOR="#40F628">0015:</FONT> <FONT COLOR="#0000FF">#include</FONT> "<FONT COLOR="#600000">main.h</FONT>"
+<FONT COLOR="#40F628">0016:</FONT> <FONT COLOR="#0000FF">#include</FONT> "<FONT COLOR="#600000">draw.h</FONT>"
+<FONT COLOR="#40F628">0017:</FONT> 
+<FONT COLOR="#40F628">0018:</FONT> <FONT COLOR="#008000">// ----------------------------------------------------------------------------</FONT>
+<FONT COLOR="#40F628">0019:</FONT> <FONT COLOR="#008000">// オブジェクト</FONT>
+<FONT COLOR="#40F628">0020:</FONT> <FONT COLOR="#008000">// ----------------------------------------------------------------------------</FONT>
+<FONT COLOR="#40F628">0021:</FONT> <FONT COLOR="#0000FF">static</FONT> LPDIRECT3D8              s_lpD3D = NULL;
+<FONT COLOR="#40F628">0022:</FONT> <FONT COLOR="#0000FF">static</FONT> LPDIRECT3DDEVICE8        s_lpD3DDEV = NULL;
+<FONT COLOR="#40F628">0023:</FONT> <FONT COLOR="#0000FF">static</FONT> D3DPRESENT_PARAMETERS    s_d3dpp;
+<FONT COLOR="#40F628">0024:</FONT> 
+<FONT COLOR="#40F628">0025:</FONT> <FONT COLOR="#0000FF">static</FONT> <FONT COLOR="#0000FF">bool</FONT>                     s_end;      <FONT COLOR="#008000">// 終了フラグ</FONT>
+<FONT COLOR="#40F628">0026:</FONT> 
+<FONT COLOR="#40F628">0027:</FONT> <FONT COLOR="#008000">// ----------------------------------------------------------------------------</FONT>
+<FONT COLOR="#40F628">0028:</FONT> <FONT COLOR="#008000">// プロトタイプ宣言</FONT>
+<FONT COLOR="#40F628">0029:</FONT> <FONT COLOR="#008000">// ----------------------------------------------------------------------------</FONT>
+<FONT COLOR="#40F628">0030:</FONT> <FONT COLOR="#0000FF">int</FONT> PASCAL WinMain(HINSTANCE hInst,HINSTANCE hPrev,<FONT COLOR="#0000FF">char</FONT> *CmdLine,<FONT COLOR="#0000FF">int</FONT> CmdShow);
+<FONT COLOR="#40F628">0031:</FONT> LRESULT CALLBACK MsgProc(HWND hWnd,UINT msg,WPARAM wParam,LPARAM lParam);
+<FONT COLOR="#40F628">0032:</FONT> HRESULT InitD3D( HWND hWnd );           <FONT COLOR="#008000">// DirectX の初期化</FONT>
+<FONT COLOR="#40F628">0033:</FONT> 
+<FONT COLOR="#40F628">0034:</FONT> <FONT COLOR="#008000">// ----------------------------------------------------------------------------</FONT>
+<FONT COLOR="#40F628">0035:</FONT> <FONT COLOR="#008000">// 外部関数</FONT>
+<FONT COLOR="#40F628">0036:</FONT> <FONT COLOR="#008000">// ----------------------------------------------------------------------------</FONT>
+<FONT COLOR="#40F628">0037:</FONT> 
+<FONT COLOR="#40F628">0038:</FONT> <FONT COLOR="#008000">// ----------------------------------------------------------------------------</FONT>
+<FONT COLOR="#40F628">0039:</FONT> <FONT COLOR="#008000">// 関数</FONT>
+<FONT COLOR="#40F628">0040:</FONT> <FONT COLOR="#008000">// ----------------------------------------------------------------------------</FONT>
+<FONT COLOR="#40F628">0041:</FONT> <FONT COLOR="#008000">// ----------------------------------------------------------------------------</FONT>
+<FONT COLOR="#40F628">0042:</FONT> <FONT COLOR="#008000">// Name: WinMain()</FONT>
+<FONT COLOR="#40F628">0043:</FONT> <FONT COLOR="#008000">// Desc: Windows アプリケーションはここから始まる</FONT>
+<FONT COLOR="#40F628">0044:</FONT> <FONT COLOR="#008000">//-----------------------------------------------------------------------------</FONT>
+<FONT COLOR="#40F628">0045:</FONT> <FONT COLOR="#0000FF">int</FONT> PASCAL WinMain(HINSTANCE hInst,HINSTANCE hPrev,<FONT COLOR="#0000FF">char</FONT> *CmdLine,<FONT COLOR="#0000FF">int</FONT> CmdShow)
+<FONT COLOR="#40F628">0046:</FONT> {
+<FONT COLOR="#40F628">0047:</FONT>     s_end = 0;
+<FONT COLOR="#40F628">0048:</FONT>     
+<FONT COLOR="#40F628">0049:</FONT>     <FONT COLOR="#008000">// ウインドウの作成</FONT>
+<FONT COLOR="#40F628">0050:</FONT>     RECT    rect;
+<FONT COLOR="#40F628">0051:</FONT>     SetRect(&amp;rect, 0, 0, WIDTH, HEIGHT);
+<FONT COLOR="#40F628">0052:</FONT>     DWORD   style = (FULLSCREEN) ? WS_POPUP :(WS_CAPTION|WS_SYSMENU|WS_BORDER|WS_MINIMIZEBOX);
+<FONT COLOR="#40F628">0053:</FONT>     AdjustWindowRect(&amp;rect, style, FALSE);  <FONT COLOR="#008000">// ウィンドウスタイルを設定したときの、ウィンドウの大きさを調べる</FONT>
+<FONT COLOR="#40F628">0054:</FONT>     <FONT COLOR="#0000FF">int</FONT> width  = rect.right - rect.left;
+<FONT COLOR="#40F628">0055:</FONT>     <FONT COLOR="#0000FF">int</FONT> height = rect.bottom - rect.top;    
+<FONT COLOR="#40F628">0056:</FONT>     
+<FONT COLOR="#40F628">0057:</FONT>     WNDCLASS wc;
+<FONT COLOR="#40F628">0058:</FONT>     ZeroMemory(&amp;wc, <FONT COLOR="#0000FF">sizeof</FONT>(WNDCLASS));
+<FONT COLOR="#40F628">0059:</FONT>     wc.hbrBackground    = (HBRUSH)GetStockObject(BLACK_BRUSH);
+<FONT COLOR="#40F628">0060:</FONT>     wc.hCursor          = LoadCursor(NULL, IDC_ARROW);
+<FONT COLOR="#40F628">0061:</FONT>     wc.hInstance        = hInst;
+<FONT COLOR="#40F628">0062:</FONT>     wc.lpfnWndProc      = MsgProc;
+<FONT COLOR="#40F628">0063:</FONT>     wc.lpszClassName    = CAPTION;
+<FONT COLOR="#40F628">0064:</FONT>     <FONT COLOR="#0000FF">if</FONT>(RegisterClass(&amp;wc) == 0) <FONT COLOR="#0000FF">return</FONT> 0; <FONT COLOR="#008000">//ウィンドウ作成に使用できる新しいウィンドウクラスを作成する。</FONT>
+<FONT COLOR="#40F628">0065:</FONT>     
+<FONT COLOR="#40F628">0066:</FONT>     HWND hWnd = CreateWindow(CAPTION        <FONT COLOR="#008000">// 登録されているクラス名</FONT>
+<FONT COLOR="#40F628">0067:</FONT>                             ,CAPTION        <FONT COLOR="#008000">// ウィンドウ名</FONT>
+<FONT COLOR="#40F628">0068:</FONT>                             ,style          <FONT COLOR="#008000">// ウィンドウスタイル</FONT>
+<FONT COLOR="#40F628">0069:</FONT>                             ,CW_USEDEFAULT  <FONT COLOR="#008000">// ウィンドウの横方向の位置</FONT>
+<FONT COLOR="#40F628">0070:</FONT>                             ,CW_USEDEFAULT  <FONT COLOR="#008000">// ウィンドウの縦方向の位置</FONT>
+<FONT COLOR="#40F628">0071:</FONT>                             ,width          <FONT COLOR="#008000">// ウィンドウの幅</FONT>
+<FONT COLOR="#40F628">0072:</FONT>                             ,height         <FONT COLOR="#008000">// ウィンドウの高さ</FONT>
+<FONT COLOR="#40F628">0073:</FONT>                             ,NULL           <FONT COLOR="#008000">// 親ウィンドウまたはオーナーウィンドウのハンドル</FONT>
+<FONT COLOR="#40F628">0074:</FONT>                             ,NULL           <FONT COLOR="#008000">// メニューハンドルまたは子ウィンドウ ID</FONT>
+<FONT COLOR="#40F628">0075:</FONT>                             ,hInst          <FONT COLOR="#008000">// アプリケーションインスタンスのハンドル</FONT>
+<FONT COLOR="#40F628">0076:</FONT>                             ,NULL           <FONT COLOR="#008000">// ウィンドウ作成データ</FONT>
+<FONT COLOR="#40F628">0077:</FONT>                             );
+<FONT COLOR="#40F628">0078:</FONT>     <FONT COLOR="#0000FF">if</FONT>(hWnd == NULL) <FONT COLOR="#0000FF">return</FONT> 0;
+<FONT COLOR="#40F628">0079:</FONT>     
+<FONT COLOR="#40F628">0080:</FONT>     <FONT COLOR="#008000">// Direct3D の初期化</FONT>
+<FONT COLOR="#40F628">0081:</FONT>     <FONT COLOR="#0000FF">if</FONT>(SUCCEEDED(InitD3D(hWnd))){
+<FONT COLOR="#40F628">0082:</FONT>         
+<FONT COLOR="#40F628">0083:</FONT>         <FONT COLOR="#0000FF">if</FONT>(FAILED(InitRender(s_lpD3DDEV))) s_end = <FONT COLOR="#0000FF">true</FONT>;
+<FONT COLOR="#40F628">0084:</FONT>         
+<FONT COLOR="#40F628">0085:</FONT>         ShowWindow(hWnd, SW_SHOW);
+<FONT COLOR="#40F628">0086:</FONT>         UpdateWindow(hWnd);
+<FONT COLOR="#40F628">0087:</FONT>     
+<FONT COLOR="#40F628">0088:</FONT>         <FONT COLOR="#008000">// メインループ</FONT>
+<FONT COLOR="#40F628">0089:</FONT>         MSG msg;
+<FONT COLOR="#40F628">0090:</FONT>         <FONT COLOR="#0000FF">while</FONT> (!s_end)
+<FONT COLOR="#40F628">0091:</FONT>         {
+<FONT COLOR="#40F628">0092:</FONT>             <FONT COLOR="#0000FF">if</FONT> (PeekMessage(&amp;msg, NULL, 0, 0, PM_REMOVE)){
+<FONT COLOR="#40F628">0093:</FONT>                 <FONT COLOR="#008000">// メッセージの処理</FONT>
+<FONT COLOR="#40F628">0094:</FONT>                 TranslateMessage(&amp;msg);
+<FONT COLOR="#40F628">0095:</FONT>                 DispatchMessage(&amp;msg);
+<FONT COLOR="#40F628">0096:</FONT>             }<FONT COLOR="#0000FF">else</FONT>{
+<FONT COLOR="#40F628">0097:</FONT>                 <FONT COLOR="#008000">// Direct3D の描画</FONT>
+<FONT COLOR="#40F628">0098:</FONT>                 <FONT COLOR="#008000">// バックバッファと Z バッファをクリア</FONT>
+<FONT COLOR="#40F628">0099:</FONT>                 s_lpD3DDEV-&gt;Clear(0,NULL,D3DCLEAR_TARGET | D3DCLEAR_ZBUFFER,D3DCOLOR_XRGB(0,0,0),1.0f,0);
+<FONT COLOR="#40F628">0100:</FONT>                 <FONT COLOR="#008000">// シーン開始</FONT>
+<FONT COLOR="#40F628">0101:</FONT>                 s_lpD3DDEV-&gt;BeginScene();
+<FONT COLOR="#40F628">0102:</FONT>                 
+<FONT COLOR="#40F628">0103:</FONT>                 Render(s_lpD3DDEV); <FONT COLOR="#008000">// 描画などの処理</FONT>
+<FONT COLOR="#40F628">0104:</FONT>                 
+<FONT COLOR="#40F628">0105:</FONT>                 <FONT COLOR="#008000">// シーン終了</FONT>
+<FONT COLOR="#40F628">0106:</FONT>                 s_lpD3DDEV-&gt;EndScene();
+<FONT COLOR="#40F628">0107:</FONT>                 <FONT COLOR="#0000FF">if</FONT> (FAILED(s_lpD3DDEV-&gt;Present(NULL,NULL,NULL,NULL)))
+<FONT COLOR="#40F628">0108:</FONT>                     s_lpD3DDEV-&gt;Reset(&amp;s_d3dpp);<FONT COLOR="#008000">// バックバッファをプライマリバッファにコピー</FONT>
+<FONT COLOR="#40F628">0109:</FONT>             }
+<FONT COLOR="#40F628">0110:</FONT>         }
+<FONT COLOR="#40F628">0111:</FONT>     }
+<FONT COLOR="#40F628">0112:</FONT>     
+<FONT COLOR="#40F628">0113:</FONT>     <FONT COLOR="#008000">// 終了</FONT>
+<FONT COLOR="#40F628">0114:</FONT>     CleanRender(s_lpD3DDEV);
+<FONT COLOR="#40F628">0115:</FONT>     RELEASE(s_lpD3DDEV);
+<FONT COLOR="#40F628">0116:</FONT>     RELEASE(s_lpD3D);
+<FONT COLOR="#40F628">0117:</FONT>     
+<FONT COLOR="#40F628">0118:</FONT>     <FONT COLOR="#0000FF">return</FONT> 0;
+<FONT COLOR="#40F628">0119:</FONT> }
+<FONT COLOR="#40F628">0120:</FONT> <FONT COLOR="#008000">// ----------------------------------------------------------------------------</FONT>
+<FONT COLOR="#40F628">0121:</FONT> <FONT COLOR="#008000">// Name: MsgProc()</FONT>
+<FONT COLOR="#40F628">0122:</FONT> <FONT COLOR="#008000">// Desc: メインウインドウのイベントを処理する</FONT>
+<FONT COLOR="#40F628">0123:</FONT> <FONT COLOR="#008000">//-----------------------------------------------------------------------------</FONT>
+<FONT COLOR="#40F628">0124:</FONT> LRESULT CALLBACK MsgProc(HWND hWnd,UINT msg,WPARAM wParam,LPARAM lParam)
+<FONT COLOR="#40F628">0125:</FONT> {
+<FONT COLOR="#40F628">0126:</FONT>     <FONT COLOR="#0000FF">switch</FONT> (msg){
+<FONT COLOR="#40F628">0127:</FONT>     <FONT COLOR="#0000FF">case</FONT> WM_KEYDOWN:                <FONT COLOR="#008000">// 何かキーが押された</FONT>
+<FONT COLOR="#40F628">0128:</FONT>     <FONT COLOR="#0000FF">case</FONT> WM_CLOSE:                  <FONT COLOR="#008000">// ×ボタンを押した</FONT>
+<FONT COLOR="#40F628">0129:</FONT>         s_end = <FONT COLOR="#0000FF">true</FONT>;
+<FONT COLOR="#40F628">0130:</FONT>         <FONT COLOR="#0000FF">return</FONT> 1;
+<FONT COLOR="#40F628">0131:</FONT>         <FONT COLOR="#0000FF">break</FONT>;
+<FONT COLOR="#40F628">0132:</FONT>     <FONT COLOR="#0000FF">default</FONT>:
+<FONT COLOR="#40F628">0133:</FONT>         <FONT COLOR="#0000FF">break</FONT>;
+<FONT COLOR="#40F628">0134:</FONT>     }
+<FONT COLOR="#40F628">0135:</FONT>     <FONT COLOR="#0000FF">return</FONT> DefWindowProc(hWnd,msg,wParam,lParam);
+<FONT COLOR="#40F628">0136:</FONT> }
+<FONT COLOR="#40F628">0137:</FONT> <FONT COLOR="#008000">//-----------------------------------------------------------------------------</FONT>
+<FONT COLOR="#40F628">0138:</FONT> <FONT COLOR="#008000">// Name: InitD3D()</FONT>
+<FONT COLOR="#40F628">0139:</FONT> <FONT COLOR="#008000">// Desc: Direct3D の初期化</FONT>
+<FONT COLOR="#40F628">0140:</FONT> <FONT COLOR="#008000">//-----------------------------------------------------------------------------</FONT>
+<FONT COLOR="#40F628">0141:</FONT> HRESULT InitD3D( HWND hWnd )
+<FONT COLOR="#40F628">0142:</FONT> {
+<FONT COLOR="#40F628">0143:</FONT>     <FONT COLOR="#008000">// Direct3D オブジェクトを作成</FONT>
+<FONT COLOR="#40F628">0144:</FONT>     <FONT COLOR="#0000FF">if</FONT> (NULL == (s_lpD3D = Direct3DCreate8(D3D_SDK_VERSION))){
+<FONT COLOR="#40F628">0145:</FONT>         MessageBox(NULL,"<FONT COLOR="#600000">Direct3D の作成に失敗しました。</FONT>",CAPTION,MB_OK | MB_ICONSTOP);
+<FONT COLOR="#40F628">0146:</FONT>         <FONT COLOR="#0000FF">return</FONT> E_FAIL;
+<FONT COLOR="#40F628">0147:</FONT>     }
+<FONT COLOR="#40F628">0148:</FONT> 
+<FONT COLOR="#40F628">0149:</FONT>     <FONT COLOR="#008000">// 現在の画面モードを取得</FONT>
+<FONT COLOR="#40F628">0150:</FONT>     D3DDISPLAYMODE d3ddm;
+<FONT COLOR="#40F628">0151:</FONT>     <FONT COLOR="#0000FF">if</FONT>( FAILED( s_lpD3D-&gt;GetAdapterDisplayMode( D3DADAPTER_DEFAULT, &amp;d3ddm ) ) ) <FONT COLOR="#0000FF">return</FONT> E_FAIL;
+<FONT COLOR="#40F628">0152:</FONT> 
+<FONT COLOR="#40F628">0153:</FONT>     <FONT COLOR="#008000">// Direct3D 初期化パラメータの設定</FONT>
+<FONT COLOR="#40F628">0154:</FONT>     ZeroMemory(&amp;s_d3dpp, <FONT COLOR="#0000FF">sizeof</FONT>(D3DPRESENT_PARAMETERS));
+<FONT COLOR="#40F628">0155:</FONT> 
+<FONT COLOR="#40F628">0156:</FONT>     s_d3dpp.BackBufferCount = 1;
+<FONT COLOR="#40F628">0157:</FONT>     <FONT COLOR="#0000FF">if</FONT> (FULLSCREEN){
+<FONT COLOR="#40F628">0158:</FONT>         s_d3dpp.Windowed = FALSE;
+<FONT COLOR="#40F628">0159:</FONT>         s_d3dpp.BackBufferWidth = WIDTH;
+<FONT COLOR="#40F628">0160:</FONT>         s_d3dpp.BackBufferHeight = HEIGHT;
+<FONT COLOR="#40F628">0161:</FONT>     }<FONT COLOR="#0000FF">else</FONT>{
+<FONT COLOR="#40F628">0162:</FONT>         s_d3dpp.Windowed = TRUE;
+<FONT COLOR="#40F628">0163:</FONT>         s_d3dpp.BackBufferWidth = WIDTH;
+<FONT COLOR="#40F628">0164:</FONT>         s_d3dpp.BackBufferHeight = HEIGHT;
+<FONT COLOR="#40F628">0165:</FONT>     }
+<FONT COLOR="#40F628">0166:</FONT>     <FONT COLOR="#008000">// ウインドウ : 現在の画面モードを使用</FONT>
+<FONT COLOR="#40F628">0167:</FONT>     s_d3dpp.BackBufferFormat = d3ddm.Format;
+<FONT COLOR="#40F628">0168:</FONT>     s_d3dpp.MultiSampleType = D3DMULTISAMPLE_NONE;
+<FONT COLOR="#40F628">0169:</FONT>     s_d3dpp.SwapEffect = D3DSWAPEFFECT_DISCARD;
+<FONT COLOR="#40F628">0170:</FONT>     s_d3dpp.hDeviceWindow = hWnd;
+<FONT COLOR="#40F628">0171:</FONT>     <FONT COLOR="#008000">// Z バッファの自動作成</FONT>
+<FONT COLOR="#40F628">0172:</FONT>     s_d3dpp.EnableAutoDepthStencil = TRUE;
+<FONT COLOR="#40F628">0173:</FONT>     s_d3dpp.AutoDepthStencilFormat = D3DFMT_D16;
+<FONT COLOR="#40F628">0174:</FONT>  
+<FONT COLOR="#40F628">0175:</FONT>     D3DCAPS8 caps;
+<FONT COLOR="#40F628">0176:</FONT>     s_lpD3D-&gt;GetDeviceCaps(D3DADAPTER_DEFAULT, D3DDEVTYPE_HAL, &amp;caps);
+<FONT COLOR="#40F628">0177:</FONT>     <FONT COLOR="#0000FF">if</FONT>(caps.VertexShaderVersion &lt; D3DVS_VERSION(1,0)){
+<FONT COLOR="#40F628">0178:</FONT>         <FONT COLOR="#008000">//vertex shader 1.0 をhwサポートしない場合はD3DCREATE_SOFTWARE_VERTEXPROCESSINGする必要があります</FONT>
+<FONT COLOR="#40F628">0179:</FONT>         <FONT COLOR="#0000FF">if</FONT>(FAILED(s_lpD3D-&gt;CreateDevice(D3DADAPTER_DEFAULT, D3DDEVTYPE_HAL,hWnd,D3DCREATE_SOFTWARE_VERTEXPROCESSING,&amp;s_d3dpp,&amp;s_lpD3DDEV))){
+<FONT COLOR="#40F628">0180:</FONT>             <FONT COLOR="#0000FF">if</FONT>(FAILED(s_lpD3D-&gt;CreateDevice(D3DADAPTER_DEFAULT, D3DDEVTYPE_REF,hWnd,D3DCREATE_HARDWARE_VERTEXPROCESSING | D3DCREATE_PUREDEVICE,&amp;s_d3dpp,&amp;s_lpD3DDEV))){
+<FONT COLOR="#40F628">0181:</FONT>                 <FONT COLOR="#0000FF">return</FONT> FALSE;
+<FONT COLOR="#40F628">0182:</FONT>             }
+<FONT COLOR="#40F628">0183:</FONT>         }
+<FONT COLOR="#40F628">0184:</FONT>     }<FONT COLOR="#0000FF">else</FONT>{
+<FONT COLOR="#40F628">0185:</FONT>         <FONT COLOR="#008000">// デバイスの作成 - T&amp;L HAL</FONT>
+<FONT COLOR="#40F628">0186:</FONT>         <FONT COLOR="#0000FF">if</FONT> (FAILED(s_lpD3D-&gt;CreateDevice(D3DADAPTER_DEFAULT, D3DDEVTYPE_HAL,hWnd,D3DCREATE_HARDWARE_VERTEXPROCESSING,&amp;s_d3dpp,&amp;s_lpD3DDEV))){
+<FONT COLOR="#40F628">0187:</FONT>             <FONT COLOR="#008000">// 失敗したので HAL で試行</FONT>
+<FONT COLOR="#40F628">0188:</FONT>             <FONT COLOR="#0000FF">if</FONT> (FAILED(s_lpD3D-&gt;CreateDevice(D3DADAPTER_DEFAULT, D3DDEVTYPE_HAL,hWnd,D3DCREATE_SOFTWARE_VERTEXPROCESSING,&amp;s_d3dpp,&amp;s_lpD3DDEV))){
+<FONT COLOR="#40F628">0189:</FONT>                 <FONT COLOR="#008000">// 失敗したので REF で試行</FONT>
+<FONT COLOR="#40F628">0190:</FONT>                 <FONT COLOR="#0000FF">if</FONT> (FAILED(s_lpD3D-&gt;CreateDevice(D3DADAPTER_DEFAULT, D3DDEVTYPE_REF,hWnd,D3DCREATE_SOFTWARE_VERTEXPROCESSING,&amp;s_d3dpp,&amp;s_lpD3DDEV))){
+<FONT COLOR="#40F628">0191:</FONT>                     <FONT COLOR="#008000">// 結局失敗した</FONT>
+<FONT COLOR="#40F628">0192:</FONT>                     MessageBox(NULL,"<FONT COLOR="#600000">Direct3D の初期化に失敗しました。</FONT>",CAPTION,MB_OK | MB_ICONSTOP);
+<FONT COLOR="#40F628">0193:</FONT>                     <FONT COLOR="#0000FF">return</FONT> E_FAIL;
+<FONT COLOR="#40F628">0194:</FONT>                 }
+<FONT COLOR="#40F628">0195:</FONT>             }
+<FONT COLOR="#40F628">0196:</FONT>         }
+<FONT COLOR="#40F628">0197:</FONT>     }
+<FONT COLOR="#40F628">0198:</FONT>     <FONT COLOR="#0000FF">return</FONT> S_OK;
+<FONT COLOR="#40F628">0199:</FONT> }
+<FONT COLOR="#40F628">0200:</FONT> </PRE>
+</BODY>
+</HTML>

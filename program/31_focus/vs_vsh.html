@@ -1,0 +1,40 @@
+<HTML>
+<HEAD>
+<TITLE>vs.vsh</TITLE>
+<meta name="GENERATOR" content="vsh2html 1.0 by Niisaka">
+<meta http-equiv="Content-Type" content="text/html">
+<meta http-equiv="Content-Style-Type" content="text/css">
+<STYLE TYPE="text/css">
+<!--
+SPAN.comment { color:#008000; font-weight:normal; font-style:normal;}
+SPAN.linenum { color:#A0A0A0; font-weight:normal; font-style:normal;}
+-->
+</STYLE>
+</HEAD>
+<BODY TEXT="#000000" BGCOLOR="#FFFFFF">
+<PRE><SPAN CLASS="linenum">0001:</SPAN> <SPAN CLASS="comment">; c0-3   -- world + ビュー + 透視変換行列</SPAN>
+<SPAN CLASS="linenum">0002:</SPAN> <SPAN CLASS="comment">; c12    -- {0.0, 0.5, 1.0, 2.0}    N.B. 今回出番無し</SPAN>
+<SPAN CLASS="linenum">0003:</SPAN> <SPAN CLASS="comment">; c13    -- ライトのベクトル (w成分は環境光の強さ)</SPAN>
+<SPAN CLASS="linenum">0004:</SPAN> <SPAN CLASS="comment">; c14    -- ライトの色(メッシュの色)</SPAN>
+<SPAN CLASS="linenum">0005:</SPAN> <SPAN CLASS="comment">;</SPAN>
+<SPAN CLASS="linenum">0006:</SPAN> <SPAN CLASS="comment">; v0    頂点の座標値</SPAN>
+<SPAN CLASS="linenum">0007:</SPAN> <SPAN CLASS="comment">; v3    法線ベクトル (w成分は1.0f)</SPAN>
+<SPAN CLASS="linenum">0008:</SPAN> <SPAN CLASS="comment">; v7    テクスチャ座標</SPAN>
+<SPAN CLASS="linenum">0009:</SPAN> 
+<SPAN CLASS="linenum">0010:</SPAN> vs.1.0
+<SPAN CLASS="linenum">0011:</SPAN> 
+<SPAN CLASS="linenum">0012:</SPAN> <SPAN CLASS="comment">;座標変換</SPAN>
+<SPAN CLASS="linenum">0013:</SPAN> dp4 oPos.x, v0,   c0
+<SPAN CLASS="linenum">0014:</SPAN> dp4 oPos.y, v0,   c1
+<SPAN CLASS="linenum">0015:</SPAN> dp4 oPos.z, v0,   c2
+<SPAN CLASS="linenum">0016:</SPAN> dp4 oPos.w, v0,   c3
+<SPAN CLASS="linenum">0017:</SPAN> 
+<SPAN CLASS="linenum">0018:</SPAN> <SPAN CLASS="comment">; ((l,n) + l.w)*c14 (平行光源のライティング)</SPAN>
+<SPAN CLASS="linenum">0019:</SPAN> dp4 r0.w,   v3,   c13
+<SPAN CLASS="linenum">0020:</SPAN> mul oD0,    r0.w, c14
+<SPAN CLASS="linenum">0021:</SPAN> 
+<SPAN CLASS="linenum">0022:</SPAN> <SPAN CLASS="comment">; テクスチャーを張る</SPAN>
+<SPAN CLASS="linenum">0023:</SPAN> mov oT0,    v7
+<SPAN CLASS="linenum">0024:</SPAN> </PRE>
+</BODY>
+</HTML>

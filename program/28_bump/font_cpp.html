@@ -1,0 +1,83 @@
+<HTML>
+<HEAD>
+<TITLE>font.cpp</TITLE>
+<meta name="GENERATOR" content="cpp2html 2.0 by Niisaka">
+<meta http-equiv="Content-Type" content="text/html">
+<meta http-equiv="Content-Style-Type" content="text/css">
+<STYLE TYPE="text/css">
+<!--
+SPAN.comment { color:#008000; font-weight:normal; font-style:normal;}
+SPAN.keyword { color:#0000FF; font-weight:normal; font-style:normal;}
+SPAN.string { color:#600000; font-weight:normal; font-style:normal;}
+SPAN.linenum { color:#A0A0A0; font-weight:normal; font-style:normal;}
+-->
+</STYLE>
+</HEAD>
+<BODY TEXT="#000000" BGCOLOR="#FFFFFF">
+<PRE><SPAN CLASS="linenum">0001:</SPAN> <SPAN CLASS="comment">// ----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0002:</SPAN> <SPAN CLASS="comment">//</SPAN>
+<SPAN CLASS="linenum">0003:</SPAN> <SPAN CLASS="comment">// font.cpp - フォント描画部分</SPAN>
+<SPAN CLASS="linenum">0004:</SPAN> <SPAN CLASS="comment">// </SPAN>
+<SPAN CLASS="linenum">0005:</SPAN> <SPAN CLASS="comment">// Copyright (c) 2001 if (if@edokko.com)</SPAN>
+<SPAN CLASS="linenum">0006:</SPAN> <SPAN CLASS="comment">// All Rights Reserved.</SPAN>
+<SPAN CLASS="linenum">0007:</SPAN> <SPAN CLASS="comment">//</SPAN>
+<SPAN CLASS="linenum">0008:</SPAN> <SPAN CLASS="comment">// ----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0009:</SPAN> <SPAN CLASS="keyword">#define</SPAN> STRICT
+<SPAN CLASS="linenum">0010:</SPAN> 
+<SPAN CLASS="linenum">0011:</SPAN> <SPAN CLASS="keyword">#include</SPAN> "<SPAN CLASS="string">main.h</SPAN>"
+<SPAN CLASS="linenum">0012:</SPAN> <SPAN CLASS="keyword">#include</SPAN> "<SPAN CLASS="string">font.h</SPAN>"
+<SPAN CLASS="linenum">0013:</SPAN> 
+<SPAN CLASS="linenum">0014:</SPAN> 
+<SPAN CLASS="linenum">0015:</SPAN> <SPAN CLASS="comment">// ----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0016:</SPAN> <SPAN CLASS="keyword">void</SPAN> CMyFont::Init(LPDIRECT3DDEVICE8 lpD3DDEV, <SPAN CLASS="keyword">int</SPAN> w, <SPAN CLASS="keyword">int</SPAN> h)
+<SPAN CLASS="linenum">0017:</SPAN> {
+<SPAN CLASS="linenum">0018:</SPAN>     HDC     hTextDC = NULL;
+<SPAN CLASS="linenum">0019:</SPAN>     HFONT   hFont = NULL, hOldFont = NULL;
+<SPAN CLASS="linenum">0020:</SPAN>     
+<SPAN CLASS="linenum">0021:</SPAN>     hTextDC = CreateCompatibleDC(NULL);
+<SPAN CLASS="linenum">0022:</SPAN>     hFont = CreateFont( h, w, 0, 0,
+<SPAN CLASS="linenum">0023:</SPAN>                       FW_REGULAR,
+<SPAN CLASS="linenum">0024:</SPAN>                       FALSE,FALSE,FALSE,
+<SPAN CLASS="linenum">0025:</SPAN>                       SHIFTJIS_CHARSET,
+<SPAN CLASS="linenum">0026:</SPAN>                       OUT_DEFAULT_PRECIS,
+<SPAN CLASS="linenum">0027:</SPAN>                       CLIP_DEFAULT_PRECIS,
+<SPAN CLASS="linenum">0028:</SPAN>                       DEFAULT_QUALITY,
+<SPAN CLASS="linenum">0029:</SPAN>                       DEFAULT_PITCH,
+<SPAN CLASS="linenum">0030:</SPAN>                       "<SPAN CLASS="string">ＭＳ ゴシック</SPAN>"
+<SPAN CLASS="linenum">0031:</SPAN>                       );
+<SPAN CLASS="linenum">0032:</SPAN>     <SPAN CLASS="keyword">if</SPAN>(!hFont) <SPAN CLASS="keyword">return</SPAN>;
+<SPAN CLASS="linenum">0033:</SPAN>     hOldFont = (HFONT)SelectObject(hTextDC, hFont);
+<SPAN CLASS="linenum">0034:</SPAN>     
+<SPAN CLASS="linenum">0035:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( FAILED( D3DXCreateFont( lpD3DDEV, hFont, &amp;m_lpFont ) ) ) {
+<SPAN CLASS="linenum">0036:</SPAN>         MessageBox( 0, "<SPAN CLASS="string">D3DXCreateFontIndirect FALSE</SPAN>", "<SPAN CLASS="string">ok</SPAN>", MB_OK);
+<SPAN CLASS="linenum">0037:</SPAN>         <SPAN CLASS="keyword">return</SPAN>;
+<SPAN CLASS="linenum">0038:</SPAN>     }
+<SPAN CLASS="linenum">0039:</SPAN>     SelectObject(hTextDC, hOldFont);
+<SPAN CLASS="linenum">0040:</SPAN>     DeleteObject(hFont);
+<SPAN CLASS="linenum">0041:</SPAN> }
+<SPAN CLASS="linenum">0042:</SPAN> <SPAN CLASS="comment">// ----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0043:</SPAN> <SPAN CLASS="comment">// 表示ルーチン</SPAN>
+<SPAN CLASS="linenum">0044:</SPAN> <SPAN CLASS="keyword">void</SPAN> CMyFont::Print( <SPAN CLASS="keyword">char</SPAN> *str, <SPAN CLASS="keyword">int</SPAN> x, <SPAN CLASS="keyword">int</SPAN> y, D3DCOLOR color )
+<SPAN CLASS="linenum">0045:</SPAN> {
+<SPAN CLASS="linenum">0046:</SPAN>     RECT rect;
+<SPAN CLASS="linenum">0047:</SPAN>     rect.left = x; 
+<SPAN CLASS="linenum">0048:</SPAN>     rect.right = WIDTH;
+<SPAN CLASS="linenum">0049:</SPAN>     rect.top = y;
+<SPAN CLASS="linenum">0050:</SPAN>     rect.bottom = HEIGHT;
+<SPAN CLASS="linenum">0051:</SPAN> 
+<SPAN CLASS="linenum">0052:</SPAN>     <SPAN CLASS="comment">// デバイス上に、整形した ANSI テキストを描画する</SPAN>
+<SPAN CLASS="linenum">0053:</SPAN>     m_lpFont-&gt;DrawText(str, -1, &amp;rect
+<SPAN CLASS="linenum">0054:</SPAN>                     ,DT_LEFT | DT_EXPANDTABS
+<SPAN CLASS="linenum">0055:</SPAN>                     ,color
+<SPAN CLASS="linenum">0056:</SPAN>                     );
+<SPAN CLASS="linenum">0057:</SPAN> }
+<SPAN CLASS="linenum">0058:</SPAN> <SPAN CLASS="comment">// ----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0059:</SPAN> <SPAN CLASS="keyword">void</SPAN> CMyFont::Clean()
+<SPAN CLASS="linenum">0060:</SPAN> {
+<SPAN CLASS="linenum">0061:</SPAN>     RELEASE(m_lpFont);
+<SPAN CLASS="linenum">0062:</SPAN> }
+<SPAN CLASS="linenum">0063:</SPAN> 
+<SPAN CLASS="linenum">0064:</SPAN> 
+<SPAN CLASS="linenum">0065:</SPAN> </PRE>
+</BODY>
+</HTML>

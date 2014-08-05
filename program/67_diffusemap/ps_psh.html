@@ -1,0 +1,44 @@
+<HTML>
+<HEAD>
+<TITLE>ps.psh</TITLE>
+<meta name="GENERATOR" content="vsh2html 1.0 by Niisaka">
+<meta http-equiv="Content-Type" content="text/html">
+<meta http-equiv="Content-Style-Type" content="text/css">
+<STYLE TYPE="text/css">
+<!--
+SPAN.comment { color:#008000; font-weight:normal; font-style:normal;}
+SPAN.linenum { color:#A0A0A0; font-weight:normal; font-style:normal;}
+-->
+</STYLE>
+</HEAD>
+<BODY TEXT="#000000" BGCOLOR="#FFFFFF">
+<PRE><SPAN CLASS="linenum">0001:</SPAN> <SPAN CLASS="comment">; ps.psh</SPAN>
+<SPAN CLASS="linenum">0002:</SPAN> 
+<SPAN CLASS="linenum">0003:</SPAN> ps.1.1
+<SPAN CLASS="linenum">0004:</SPAN> 
+<SPAN CLASS="linenum">0005:</SPAN> <SPAN CLASS="comment">;def c0, 0.80f, 0.80f, 0.80f, 1.0f  ; フレネル スケール</SPAN>
+<SPAN CLASS="linenum">0006:</SPAN> <SPAN CLASS="comment">;def c1, 0.15f, 0.15f, 0.15f, 1.0f  ; フレネル バイアス</SPAN>
+<SPAN CLASS="linenum">0007:</SPAN> <SPAN CLASS="comment">;</SPAN>
+<SPAN CLASS="linenum">0008:</SPAN> <SPAN CLASS="comment">;tex t0 ; 環境マップ</SPAN>
+<SPAN CLASS="linenum">0009:</SPAN> <SPAN CLASS="comment">;tex t1 ; normal</SPAN>
+<SPAN CLASS="linenum">0010:</SPAN> <SPAN CLASS="comment">;tex t2 ; eye</SPAN>
+<SPAN CLASS="linenum">0011:</SPAN> <SPAN CLASS="comment">;</SPAN>
+<SPAN CLASS="linenum">0012:</SPAN> <SPAN CLASS="comment">;dp3_sat r0, t1_bx2, t2_bx2</SPAN>
+<SPAN CLASS="linenum">0013:</SPAN> <SPAN CLASS="comment">;mul r0, 1-r0, 1-r0</SPAN>
+<SPAN CLASS="linenum">0014:</SPAN> <SPAN CLASS="comment">;mul r0, r0, r0     ; (1-N･E)^4</SPAN>
+<SPAN CLASS="linenum">0015:</SPAN> <SPAN CLASS="comment">;mul r0, r0, c0</SPAN>
+<SPAN CLASS="linenum">0016:</SPAN> <SPAN CLASS="comment">;add r0, r0, c1     ; r = s*(1-N･E)^4 + b</SPAN>
+<SPAN CLASS="linenum">0017:</SPAN> <SPAN CLASS="comment">;</SPAN>
+<SPAN CLASS="linenum">0018:</SPAN> <SPAN CLASS="comment">;lrp r0, r0, t0, v0 ; 線形補間で環境マップを張り詰ける</SPAN>
+<SPAN CLASS="linenum">0019:</SPAN> 
+<SPAN CLASS="linenum">0020:</SPAN> def c0, 1.00f, 1.00f, 1.00f, 1.0f   <SPAN CLASS="comment">; 拡散反射係数</SPAN>
+<SPAN CLASS="linenum">0021:</SPAN> def c1, 0.04f, 0.04f, 0.04f, 1.0f   <SPAN CLASS="comment">; 環境反射係数</SPAN>
+<SPAN CLASS="linenum">0022:</SPAN> 
+<SPAN CLASS="linenum">0023:</SPAN> tex t0  <SPAN CLASS="comment">; diffuse マップ</SPAN>
+<SPAN CLASS="linenum">0024:</SPAN> 
+<SPAN CLASS="linenum">0025:</SPAN> mul t0, t0, c0
+<SPAN CLASS="linenum">0026:</SPAN> add t0, t0, c1
+<SPAN CLASS="linenum">0027:</SPAN> mul r0, t0, v0
+<SPAN CLASS="linenum">0028:</SPAN> </PRE>
+</BODY>
+</HTML>

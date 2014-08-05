@@ -1,0 +1,214 @@
+<head>
+	<title>t-pot『Vertex Shader:フォグ』</title>
+	<link rel="stylesheet" type="text/css" href="../if.css">
+</head>
+<meta http-equiv=Content-Type content="text/html; charset=shift_jis">
+<body text=#ffffff>
+
+<div class="contents">
+<center>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<h1>Vertex Shader:フォグ</h1><br>
+<h3>～霧（直訳してどうする）～</h3>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+</center>
+
+
+<h2>■はじめに</h2>
+
+
+<p>
+さて、フォグをやっていなかったのでやっておきます。<br>
+遠くの景色ほど、白くかすんでいきます。これがフォグ（霧）です。<br>
+霧として使うだけでなく、空気感を演出するために使います。
+</p>
+<br>
+<image src = "title.gif">
+<p>
+今回のソースは、次のものです（DirectX8.1用です）。
+</p>
+<ul style = "LIST-STYLE-TYPE:none">
+<li><a href="fog.lzh">fog.lzh (fogのソース)</a>
+</ul>
+
+<p>
+まぁ、いつものように適当にファイルが入っています。<br>
+せっかくなんで、頂点シェーダーで組んでみました。
+</p>
+<table>
+<tr><td><a href="vs_vsh.html">vs.vsh</a></td><td>頂点シェーダープログラム。久しぶりに、ここに新しい要素が入る。</td></tr>
+<tr><td><a href="draw_cpp.html">draw.cpp</a></td><td>メインの描画部分。</td></tr>
+<tr><td><a href="draw_h.html">draw.h</a></td><td>描画の各関数の定義。特に意味無いので出番無し。</td></tr>
+<tr><td><a href="main_h.html">main.h</a></td><td>基本的な定数など。今回も出番無し。</td></tr>
+<tr><td><a href="main_cpp.html">main.cpp</a></td><td>描画に関係しないシステム的な部分。変更が無いので、出番無し。</td></tr>
+<tr><td><a href="load_h.html">load.h</a></td><td>ファイルの読み込み。</td></tr>
+<tr><td><a href="load_cpp.html">load.cpp</a></td><td>ファイルの読み込み。</td></tr>
+<tr><td><a href="bg_cpp.html">bg.cpp</a></td><td>地面＋天円柱の描画。今回説明無し。</td></tr>
+
+</table>
+<image src = "tile_bmp.jpg" width = 64 height=64>tile.bmp (床デカール)
+<image src = "sky_bmp.jpg" width = 64 height=64>sky.bmp (空デカール)
+<p>
+あと、いつもの様に、モデルと、実行ファイル及び、プロジェクトファイルが入っています。
+</p>
+
+
+<h2>■フォグとは</h2>
+
+
+<p>
+<b>あなたの周りは汚れています！！！</b><br>
+いや、掃除してないとかじゃなくて…<br>
+普段は、まったく気にしていませんが、身の周りの空気中には塵が漂っていたり、水が飛んでたりします(あなたがクリーンルームにいたらごめんなさい)。<br>
+空気中にごみがあるので、あなたの目には、途中のごみで散乱された光も飛び込んできます。<Br>
+もちろん、本来入ってくる筈の光も散乱されます。<br>
+<br>
+<image src = "diffuse.gif">
+<br>
+
+塵が多いほど、この散乱の影響は大きくなります。<br>
+塵が多いというのは、光が届くまでの距離が長いということです。
+つまり、遠くにある物体ほど塵の影響を受け、霧が濃くかかります。
+下の図で、使用前、使用後を見比べていただければ、
+遠くに行くほど霞がかかることが確認できると思います。
+<br>
+<br>
+<image src = "prev.gif">使用前
+<image src = "after.gif">使用後
+<BR>
+
+
+<h2>■ソース解説</h2>
+
+
+<p>
+それでは、ソースコードにとっとと入ります。<br>
+今回は、初期化部分とシェーダープログラムにしか新しいことは入りません。<br>
+初期化部分は、下の黄色い部分が追加されます。
+</p>
+<pre class="CodeBlock">
+<font color = deepskyblue>0174:</font> <font color = cyan>//-----------------------------------------------------------------------------</font>
+<font color = deepskyblue>0175:</font> <font color = cyan>// Name: InitRender()</font>
+<font color = deepskyblue>0176:</font> <font color = cyan>// Desc: いろいろと初期化</font>
+<font color = deepskyblue>0177:</font> <font color = cyan>//-----------------------------------------------------------------------------</font>
+<font color = deepskyblue>0178:</font> HRESULT InitRender(LPDIRECT3DDEVICE8 lpD3DDev)
+<font color = deepskyblue>0179:</font> {
+<font color = deepskyblue>0180:</font>     HRESULT hr;
+<font color = deepskyblue>0181:</font> 
+<font color = deepskyblue>0182:</font>     <font color = cyan>// モデルの読み込み</font>
+<font color = deepskyblue>0183:</font>     if ( FAILED(hr = LoadXFile("nsx.x", lpD3DDev)) ) return hr;
+<font color = deepskyblue>0184:</font>     
+<font color = deepskyblue>0185:</font>     <font color = cyan>// バーテックスシェーダーを作成する</font>
+<font color = deepskyblue>0186:</font>     if ( FAILED(hr = LoadVertexShader("vs.vsh", lpD3DDev, &hVertexShader, dwDecl)) ) return hr;
+<font color = deepskyblue>0187:</font> 
+<font color = deepskyblue>0188:</font>     InitBg(lpD3DDev);
+<font color = deepskyblue>0189:</font> 
+<font color = deepskyblue>0190:</font>     lpD3DDev->SetRenderState(D3DRS_LIGHTING, FALSE);
+<font color = deepskyblue>0191:</font> 
+<font color = deepskyblue>0192:</font>     lpD3DDev->SetTextureStageState(0,D3DTSS_COLOROP,    D3DTOP_MODULATE);
+<font color = deepskyblue>0193:</font>     lpD3DDev->SetTextureStageState(0,D3DTSS_COLORARG1,  D3DTA_TEXTURE);
+<font color = deepskyblue>0194:</font>     lpD3DDev->SetTextureStageState(0,D3DTSS_COLORARG2,  D3DTA_DIFFUSE);
+<font color = deepskyblue>0195:</font> 
+<font color = deepskyblue>0196:</font>     lpD3DDev->SetVertexShader(hVertexShader);
+<font color = deepskyblue>0197:</font>     lpD3DDev->SetVertexShaderConstant(12, &D3DXVECTOR4(0.0f, 0.5f, 1.0f, 2.0f), 1);
+<font color = deepskyblue>0198:</font> 
+<font color = deepskyblue>0199:</font>     <font color = cyan>// フォグの設定</font>
+<font color = deepskyblue>0200:</font>     <font color = yellow>float start = 0.0f;</font>
+<font color = deepskyblue>0201:</font>     <font color = yellow>float end   = 1.0f;</font>
+<font color = deepskyblue>0202:</font>     <font color = yellow>lpD3DDev->SetRenderState(D3DRS_FOGENABLE, TRUE);                </font><font color = cyan>// フォグ ブレンディングを有効にする。</font>
+<font color = deepskyblue>0203:</font>     <font color = yellow>lpD3DDev->SetRenderState(D3DRS_FOGCOLOR, 0x00ffffff);           </font><font color = cyan>// フォグの色を設定する。</font>
+<font color = deepskyblue>0204:</font>     <font color = yellow>lpD3DDev->SetRenderState(D3DRS_FOGSTART, *((DWORD *)(&start))); </font><font color = cyan>// 0 からかかりはじめる</font>
+<font color = deepskyblue>0205:</font>     <font color = yellow>lpD3DDev->SetRenderState(D3DRS_FOGEND,   *((DWORD *)(&end)) );  </font><font color = cyan>// 1で完全に見えなくなる</font>
+<font color = deepskyblue>0206:</font>     <font color = cyan>// 頂点シェーダーのフォグに関するパラメータ </font>
+<font color = deepskyblue>0207:</font>     <font color = yellow>float Near =   0.0f;</font>
+<font color = deepskyblue>0208:</font>     <font color = yellow>float Far  = 100.0f;</font>
+<font color = deepskyblue>0209:</font>     <font color = yellow>lpD3DDev->SetVertexShaderConstant(20, &D3DXVECTOR4( -1.0f/(Far-Near), Far/(Far-Near), 0.0f, 0.0f), 1);</font>
+<font color = deepskyblue>0210:</font> 
+<font color = deepskyblue>0211:</font>     return S_OK;
+<font color = deepskyblue>0212:</font> }
+</pre>
+<p>
+D3DRS_FOGENABLE で、フォグを有効にして、D3DRS_FOGCOLOR で、色を設定します。
+この色を変更すると、遠くにかすむときの色が変わります。<br>
+D3DRS_FOGSTART と、D3DRS_FOGEND は、フォグがかかり始める深度です。
+Vertex shader で詳細に設定するので、とりあえず０から１にしました。<br>
+後は、Vertex shader で使う定数の設定です。次に説明します。
+</p>
+<p>
+Vertex shader プログラムです。今まで使っていなかった oFog を使います。<br>
+追加するのは、２行だけです。
+</p>
+
+<pre class="CodeBlock">
+<font color = deepskyblue>0001:</font> <font color = cyan>; c0-3   -- world + ビュー + 透視変換行列</font>
+<font color = deepskyblue>0001:</font> <font color = cyan>; c4-7   -- world + ビュー行列</font>
+<font color = deepskyblue>0004:</font> <font color = cyan>; c13    -- ライトのベクトル (w成分は環境光の強さ)</font>
+<font color = deepskyblue>0005:</font> <font color = cyan>; c14    -- ライトの色(メッシュの色)</font>
+<font color = deepskyblue>0007:</font> <font color = cyan>; c20    -- (-1/(Far-Near), Far/(Far-Near), 0,0) </font>
+<font color = deepskyblue>0009:</font> <font color = cyan>; v0    頂点の座標値</font>
+<font color = deepskyblue>0010:</font> <font color = cyan>; v3    法線ベクトル (w成分は1.0f)</font>
+<font color = deepskyblue>0011:</font> <font color = cyan>; v7    テクスチャ座標</font>
+<font color = deepskyblue>0012:</font> 
+<font color = deepskyblue>0013:</font> vs.1.0
+<font color = deepskyblue>0014:</font> 
+<font color = deepskyblue>0015:</font> <font color = cyan>;座標変換</font>
+<font color = deepskyblue>0016:</font> dp4 oPos.x, v0, c0
+<font color = deepskyblue>0017:</font> dp4 oPos.y, v0, c1
+<font color = deepskyblue>0018:</font> dp4 oPos.z, v0, c2
+<font color = deepskyblue>0019:</font> dp4 oPos.w, v0, c3
+<font color = deepskyblue>0020:</font> 
+<font color = deepskyblue>0021:</font> <font color = cyan>; ランバート diffuse</font>
+<font color = deepskyblue>0022:</font> dp4 r0.w,   v3,  c13            <font color = cyan>; l･n</font>
+<font color = deepskyblue>0023:</font> mul oD0,    c14,  r0.w          <font color = cyan>; ライトの色(メッシュの色付き)をつける</font>
+<font color = deepskyblue>0024:</font> 
+<font color = deepskyblue>0025:</font> <font color = cyan>; テクスチャーを張る</font>
+<font color = deepskyblue>0026:</font> mov oT0, v7
+<font color = deepskyblue>0027:</font> 
+<font color = deepskyblue>0028:</font> <font color = cyan>; フォグの計算</font>
+<font color = deepskyblue>0029:</font> <font color = yellow>dp4 r0.x,   v0, c6</font>
+<font color = deepskyblue>0030:</font> <font color = yellow>mad oFog.x, r0.x, c20.x, c20.y  </font><font color = cyan>; fog = (Far-z)/(Far-Near)</font>
+</pre>
+<p>
+dp4 命令を使って、カメラの向きがｚ軸を向いているビュー空間に変換し、カメラ深度を求めます。<br>
+次に、線形変換をして、フォグの値を調整します。<br>
+フォグの値の調整は、D3DRS_FOGSTART、D3DRS_FOGEND で調整した値。
+すなわち、フォグがかかり始める状態の時に0,フォグが完全にかかった状態の時に1になるように設定します。
+</p>
+
+<image src = "coeff.gif">
+
+<p>
+Near がワールド座標で、フォグがかかり始めるｚ値、Far が完全にフォグがかかるｚ値です。<br>
+ちなみに、値がそれらの範囲を超えた場合には、ハードウェアが自動的にかからない状態、完全にかかった状態にクリップしてくれます。
+</p>
+<p>
+あとは、ハードウェアが画面に書き込むときに、ピクセルごと
+</p>
+<pre class="CodeBlock">
+<image src = "after.gif" width = "100" height="100"> = oFog.x <image src = "prev.gif" width = "100" height="100"> + (1-oFog.x) <image src = "white.gif" width = "100" height="100">
+</pre>
+<p>
+の加工をして、フォグをかけます。
+</p>
+
+
+<h2>■最後に</h2>
+
+
+<p>
+さて、久しぶりに簡単なプログラムでした。<br>
+次は、このフォグを少し変化させてみたいと思います。
+</p>
+
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<center>
+<p><a href="../index.html">もどる</a></p>
+<p><a href="mailto:imagire@gmail.com">imagire@gmail.com</a></p>
+</center>
+</body>
+</html>

@@ -1,0 +1,605 @@
+<head>
+	<title>t-pot『レリーフテクスチャ』</title>
+	<link rel="stylesheet" type="text/css" href="../if.css">
+</head>
+<meta http-equiv=Content-Type content="text/html; charset=shift_jis">
+<body>
+
+
+<div class="contents">
+<center>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<h1>レリーフテクスチャ</h1><br>
+<h3>～ Relief Texture Mapping ～</h3>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<image src = "title.png">
+<br>
+<hr>
+<br>
+<p>
+下の画像をクリックすると、アニメーションが見られます。<br>
+<a href="anim.gif"><image src = "anim.png" width = "10%" height = "10%"></a>
+</p>
+<hr>
+</center>
+<div>
+
+<h2>■はじめに</h2>
+
+
+<p>
+さて、日ごろひそかに注目している方の一人にSFC(慶應義塾大学 湘南・藤沢キャンパス )の<a href="http://web.sfc.keio.ac.jp/~syoyo/">藤田将洋</a>
+さんがいらっしゃいます。<br>
+そちらのページでは、サブサーフェス散乱やシルエットエッジレンダリングのような興味深い研究が公開されています。<br>
+その中でも特に興味を引いた研究はレリーフテクスチャに関しての研究でした。<br>
+レリーフテクスチャはCgのコーディングコンテストの３回目で応募されていた方がいらっしゃったり、
+とても興味深いネタだと思います。<br>
+今回は、DirectX9のパワーを利用して、逆ワーピング法でレリーフテクスチャを実装してみたいと思います。<br>
+ちなみに、上の画像はポリゴンを１枚レンダリングしただけです。
+</p>
+<ul style = "LIST-STYLE-TYPE:none">
+<li><a href="src.zip">src.zip (レリーフテクスチャ:DirectX9)</a>
+</ul>
+
+<p>
+まぁ、いつものように適当にファイルが入っています。<br>
+APP WIZARD から出力されるフレームワークのファイルは紹介を省かせていただきます。
+</p>
+<table>
+<tr><td><a href="hlsl_fx.html">hlsl.fx</a></td><td>シェーダの入ったエフェクトファイル</td></tr>
+<tr><td><a href="main_h.html">main.h</a></td><td>アプリケーションのヘッダ</td></tr>
+<tr><td><a href="main_cpp.html">main.cpp</a></td><td>アプリケーションのソース</td></tr>
+</table>
+<image src = "depth_bmp.png">depth.bmp:深度テクスチャ
+<image src = "color_bmp.png">color.bmp:デカールテクスチャ
+
+<p>
+あと、実行ファイル及び、プロジェクトファイルが入っています。
+</p>
+<p>
+さらに、メッシュからリリーフテクスチャのための画像を作るためのプログラムも作ってみました。<br>
+メッシュを読み込んで色、深度、法線ベクトルを表示します。<br>
+左右のカーソルで見る方向を変えることができます。<br>
+<s>
+手を抜いたので、保存する方法がありませんので、
+「Print Screen」ないし、画面キャプチャで気に入った画像を取り出してください。</s>最低限の機能ですが、現在表示されているテクスチャを保存する機能をつけました。また、中心座標をあわせるように調整しました(2003 Jan. 15日追加)。
+<br>
+MRTを３枚使っているので、動くかどうか保証できません。ご注意ください<br>
+（駄目だったら報告をお願いします）。
+</p>
+<ul style = "LIST-STYLE-TYPE:none">
+<li><a href="tool2.zip">tool2.zip (深度マップや法線マップを作るツール:DirectX9)</a>
+<li><a href="tool.zip">tool.zip (セーブができない古いバージョン)</a>
+<br>
+<p>
+</p>
+<image src = "tool.png">
+
+
+<h2>■レリーフテクスチャとは</h2>
+
+
+<p>
+レリーフテクスチャとは、深度マップを利用して比較的高速に立体的なオブジェクトをレンダリングする方法です。
+</p>
+<image src = "relief.png">
+<p>
+ポリゴンの各ピクセルに関して、深度マップからテクスチャ座標がどれくらいずれるのか算出して、
+ずらしたテクスチャ座標によって、シーンをレンダリングします。<br>
+すれたテクスチャ座標さえ求めることができれば、デカールのマップや法線マップから思うがままにレンダリングできることはすぐに分かると思います。<br>
+レリーフテクスチャは、バンプマップとディスプレースメントマップのちょうど中間的な手法で、
+平面的なポリゴンの板をレンダリングしますが、幾何学的に見た目が正しいレンダリング結果を出力します。
+</p>
+<p>
+今回使用する方法は、逆ワーピング法と呼ばれる方法で、レンダリングするポリゴンの各ピクセルに関して、
+深度情報を考慮に入れたレンダリングするテクスチャ座標を求めて、
+そのテクスチャ座標で各種テクスチャをサンプリングします。<br>
+より具体的には、テクスチャを何枚ものレイヤーに重ねた状況を考えます。
+そのレイヤー群に関して、視点からレイを飛ばして、交差した各ポイントに関して、
+深度テクスチャの値とレイヤーの深度を比較して、レイが交差するか調べ、
+交差したＵＶ値をデカールテクスチャなどのテクスチャ座標としてサンプリングします。
+</p>
+<image src = "how2.png">
+<p>
+これ以外の方法としては、前方ワーピング法と呼ばれる方法があります。
+前方ワーピング法では、深度テクスチャの各テクセルに関して、
+３次元空間に置かれたポリゴンの位置情報と深度からレンダリングターゲットの位置座標を調べて、レンダリングします。
+</p>
+<image src = "warping.png">
+<p>
+前方ワーピング法は、正確な形をレンダリングすることができますが、
+テクスチャ座標からレンダリング先を求めなくてはならないので、
+現在のプログラマブルシェーダのアーキテクチャでは、直接的なハードウェアの支援は難しいものとなっています。<br>
+一方、逆ワーピング法は、比較的ハードウェアによる高速化がしやすくはありますが、
+ポリゴンからはみ出した部分は掛けてしまうので、取り扱いに注意が必要です。
+</p>
+<p>
+実は、はみ出した部分に関する問題の解決法はよく知られていて、
+レリーフテクスチャで６方向を囲んだ立方体のオブジェクトを作って、
+それら全てのテクスチャに対してレリーフテクスチャのマッピングをすれば、
+欠けることなくレンダリングできます。
+</p>
+<image src = "6.png">
+<p>
+レリーフテクスチャは、最前面の深度情報だけを使ってレンダリングするので、
+まさにレリーフのような板を掘り込んだ画像しか作ることができません。<br>
+今回の方法では、テーポットのような丸まったオブジェクトをレンダリングすると、
+手前の部分の曲面は再現できますが、
+奥に回りこんだ部分は再現できずに、奥に伸びた画像になってしまいます。
+</p>
+<image src = "teapot.png">
+<p>
+逆に、前方ワーピング法の場合には、ぺらぺらした板のようにレンダリングされるので、
+斜めから見ると厚みが無い殻のオブジェクトに見えてしまいます。
+</p>
+
+
+<h2>■シェーダ</h2>
+
+
+<p>
+今回は、シェーダを設定して、ポリゴンの板を表示するだけなので、
+シェーダの説明だけにさせてもらいます。<br>
+ちなみに、ポリゴンの板のローカル座標は
+</p>
+<image src = "polygone.png">
+<p>
+のように、z=0平面上においています。テクスチャ座標は、今回、一回り大きめにとりました。
+こうしておくと、傾いたときに切り落とされる部分が少なくなります。
+</p>
+<p>
+頂点シェーダでは、いつもどおり射影空間の座標とテクスチャを出力すると共に、
+特殊な視線ベクトルを出力します。
+</p>
+<pre class="CodeBlock">
+hlsl.fx
+<font color="deepskyblue">0049:</font> <font color="cyan">// -------------------------------------------------------------</font>
+<font color="deepskyblue">0050:</font> <font color="cyan">// 頂点シェーダプログラム</font>
+<font color="deepskyblue">0051:</font> <font color="cyan">// -------------------------------------------------------------</font>
+<font color="deepskyblue">0052:</font> VS_OUTPUT VS (
+<font color="deepskyblue">0053:</font>       float4 Pos    : POSITION          <font color="cyan">// モデルの頂点</font>
+<font color="deepskyblue">0054:</font>     , float4 Normal : NORMAL
+<font color="deepskyblue">0055:</font>     , float4 Tex    : TEXCOORD0
+<font color="deepskyblue">0056:</font> ){
+<font color="deepskyblue">0057:</font>     VS_OUTPUT Out = (VS_OUTPUT)0;        <font color="cyan">// 出力データ</font>
+<font color="deepskyblue">0058:</font>     
+<font color="deepskyblue">0059:</font>     <font color="cyan">// 位置座標</font>
+<font color="deepskyblue">0060:</font>     Out.Pos = mul( Pos, mWVP );
+<font color="deepskyblue">0061:</font>     
+<font color="deepskyblue">0062:</font>     <font color="cyan">// テクスチャ座標</font>
+<font color="deepskyblue">0063:</font>     Out.Tex = Tex;
+<font color="deepskyblue">0064:</font>     
+<font color="deepskyblue">0065:</font>     <font color="cyan">// 視線ベクトル</font>
+<font color="deepskyblue">0066:</font>     Out.Eye = vEyePos - Pos;
+<font color="deepskyblue">0067:</font>     Out.Eye *= <font color="yellow">0.2f</font>/Out.Eye.z;
+<font color="deepskyblue">0068:</font>     Out.Eye.y = -Out.Eye.y;
+<font color="deepskyblue">0069:</font>     
+<font color="deepskyblue">0073:</font>     <font color="blue">return</font> Out;
+<font color="deepskyblue">0074:</font> }
+</pre>
+<p>
+今回の視線ベクトルは、いつもの視点へのベクトルを0.2倍して、ｚ成分で割っています。<br>
+つまり、z成分が0.2の視線方向へのベクトルになっています。<br>
+この後、テクスチャのレイヤーを重ねた空間を考えて、
+それらのレイヤーと視線ベクトルの交点を検索するのですが、
+この視線ベクトルは、手前のレイヤーから、奥のレイヤーまでの視線ベクトル方向の変位ベクトルになります。
+</p>
+<image src = "eye.png">
+<p>
+最後にｙ座標を-1しているのは、視線ベクトルを飛ばす空間を射影空間でなくて、
+（奥行きを仮想的にもった）テクスチャ座標の空間で行なうので、
+射影空間とテクスチャ座標系の間で向きが違うｙ軸をひっくり返しておきます。<br>
+ちなみに、0.2fという視線ベクトルに掛けた値は適当です。<br>
+このスケールの値は、レリーフの厚みになります。<br>
+前述したツールで出力する場合には、テクスチャの幅や高さのワールド座標系での大きさを深度の0～1に落とし込んでいるので、
+視線ベクトルは、テクスチャ座標系でもワールド座標系と同じ傾きで進むと適切なレンダリング結果が得られます。<br>
+すなわち、スケールの値を1.0fにすると、正しい結果が得られます。<br>
+例えば、球の深度や法線マップを使ってレンダリングすると、スケールの値が0.2の時には、
+</p>
+<image src = "02.jpg">
+<p>
+の、斜めから見たときにゆがんだ座標が得られますが、
+スケールの値を1.0fに書き換えてレンダリングすると、
+</p>
+<image src = "10.jpg">
+<p>
+のレンダリング画像が得られます。<br>
+レリーフテクスチャでは、最前面の深度情報しか持っていないので、
+球をレンダリングしたときには、奥行き方向には伸びた、
+「カプセル状」の結果が得られることになります。<br>
+注目するのはカプセルの手前の部分で、この部分が球に見えることが、
+正しいスケールを与えていることの検証になります。<br>
+但し、今回は、奥行き方向に９回のサンプリングしかできなかったので、
+奥に伸ばすとサンプリングしたレイヤーが見えてしまいます。<br>
+この、サンプリング数が少ない問題は、次の世代のGPUを待つという解決方法か、
+レイヤーの位置をずらした画像を、深度情報とともに複数回作成して、
+作成したテクスチャをさらに深度比較しながら合成する方法で解決できます。
+</p>
+<p>
+さて、ピクセルシェーダですが、同じ関数をコピー＆ペーストで実行する荒業を使っています。<br>
+uv は、テクスチャ座標系を検索する座標値になります。
+最初は元のテクスチャ座標を検索して、その後は視線ベクトル方向に少しずつずらして、深度を検索します。<br>
+深度テクスチャは「TexSamp」です。サンプリングしたテクスチャの値と、現在調べているレイヤーの深度値を比較して、
+テクスチャの深度値がレイヤーの深度値「d」よりも前なら（色が明るいなら）、
+視線ベクトルは現在のUV値の点と交差しているので、
+最終的に色をサンプリングするUV値に指定します。<br>
+ちなみに、視線ベクトルは、何度もレイヤーと交差する可能性がありますが、
+一番最初に交差したUV値が一番前面に見えるUV値なので、
+既に衝突したか判定するためのフラグ「ok」を設けて、一度交差したら、
+以降はUV値を上書きしないように設定しています。<br>
+最初、奥から手前にサンプリングして行けば、「OK」はいらないと思ったのですが、
+実際にプログラムしてみたら、命令数が増えてしまったので、今の形にしています。<br>
+ちなみに、プログラムの上限はピクセルシェーダの命令数になります。
+ps.2.0+ではより多くの命令がつかえるので、さらに多くのレイヤーを使って分解能を高くできるでしょう。<br>
+最後に求めたUV値で色テクスチャを読み込んで表示します。<br>
+何所にも衝突しなかったピクセルはアルファ成分に０を代入して透明にして表示しています。<br>
+今回は簡単にテクスチャの色を出力しましたが、とりあえずUV値を色として出力しておいて、
+２パス目で色々な加工をする手もありだと思います。
+</p>
+<pre class="CodeBlock">
+hlsh.fx
+<font color="deepskyblue">0075:</font> <font color="cyan">// -------------------------------------------------------------</font>
+<font color="deepskyblue">0076:</font> <font color="cyan">// ピクセルシェーダプログラム</font>
+<font color="deepskyblue">0077:</font> <font color="cyan">// -------------------------------------------------------------</font>
+<font color="deepskyblue">0078:</font> float4 PS( VS_OUTPUT In ) : COLOR
+<font color="deepskyblue">0079:</font> {
+<font color="deepskyblue">0080:</font>     float4 O = (float4)0;
+<font color="deepskyblue">0081:</font>     
+<font color="deepskyblue">0082:</font>     float4 col;
+<font color="deepskyblue">0083:</font>     float4 num = 9.0f;
+<font color="deepskyblue">0084:</font>     float2 dt = (1.0f/(num-1))*(In.Eye.xyz);
+<font color="deepskyblue">0085:</font>     <font color="blue">float</font>  dd = 1.0/num;
+<font color="deepskyblue">0086:</font>     <font color="blue">float</font>  d = 1.0001 - dd;
+<font color="deepskyblue">0087:</font>     float2 uv = In.Tex.xy;
+<font color="deepskyblue">0088:</font>     float2 st = 0;
+<font color="deepskyblue">0089:</font>     <font color="blue">bool</font> ok = <font color="blue">false</font>;
+<font color="deepskyblue">0090:</font>     
+<font color="deepskyblue">0091:</font>     col = tex2D( TexSamp, uv ); <font color="cyan">// 1</font>
+<font color="deepskyblue">0092:</font>     st = (d&lt;col.x &amp;&amp; !ok) ? uv : st;
+<font color="deepskyblue">0093:</font>     ok = (d&lt;col.x) ? <font color="blue">true</font> : ok;
+<font color="deepskyblue">0094:</font>     uv += dt.xy;
+<font color="deepskyblue">0095:</font>     d -= dd;
+<font color="deepskyblue">0096:</font> 
+<font color="deepskyblue">0097:</font>     col = tex2D( TexSamp, uv ); <font color="cyan">// 2</font>
+<font color="deepskyblue">0098:</font>     st = (d&lt;col.x &amp;&amp; !ok) ? uv : st;
+<font color="deepskyblue">0099:</font>     ok = (d&lt;col.x) ? <font color="blue">true</font> : ok;
+<font color="deepskyblue">0100:</font>     uv += dt.xy;
+<font color="deepskyblue">0101:</font>     d -= dd;
+<font color="deepskyblue">0102:</font> 
+<font color="deepskyblue">0103:</font>     col = tex2D( TexSamp, uv ); <font color="cyan">// 3</font>
+<font color="deepskyblue">0104:</font>     st = (d&lt;col.x &amp;&amp; !ok) ? uv : st;
+<font color="deepskyblue">0105:</font>     ok = (d&lt;col.x) ? <font color="blue">true</font> : ok;
+<font color="deepskyblue">0106:</font>     uv += dt.xy;
+<font color="deepskyblue">0107:</font>     d -= dd;
+<font color="deepskyblue">0108:</font> 
+<font color="deepskyblue">0109:</font>     col = tex2D( TexSamp, uv ); <font color="cyan">// 4</font>
+<font color="deepskyblue">0110:</font>     st = (d&lt;col.x &amp;&amp; !ok) ? uv : st;
+<font color="deepskyblue">0111:</font>     ok = (d&lt;col.x) ? <font color="blue">true</font> : ok;
+<font color="deepskyblue">0112:</font>     uv += dt.xy;
+<font color="deepskyblue">0113:</font>     d -= dd;
+<font color="deepskyblue">0114:</font> 
+<font color="deepskyblue">0115:</font>     col = tex2D( TexSamp, uv ); <font color="cyan">// 5</font>
+<font color="deepskyblue">0116:</font>     st = (d&lt;col.x &amp;&amp; !ok) ? uv : st;
+<font color="deepskyblue">0117:</font>     ok = (d&lt;col.x) ? <font color="blue">true</font> : ok;
+<font color="deepskyblue">0118:</font>     uv += dt.xy;
+<font color="deepskyblue">0119:</font>     d -= dd;
+<font color="deepskyblue">0120:</font> 
+<font color="deepskyblue">0121:</font>     col = tex2D( TexSamp, uv ); <font color="cyan">// 6</font>
+<font color="deepskyblue">0122:</font>     st = (d&lt;col.x &amp;&amp; !ok) ? uv : st;
+<font color="deepskyblue">0123:</font>     ok = (d&lt;col.x) ? <font color="blue">true</font> : ok;
+<font color="deepskyblue">0124:</font>     uv += dt.xy;
+<font color="deepskyblue">0125:</font>     d -= dd;
+<font color="deepskyblue">0126:</font> 
+<font color="deepskyblue">0127:</font>     col = tex2D( TexSamp, uv ); <font color="cyan">// 7</font>
+<font color="deepskyblue">0128:</font>     st = (d&lt;col.x &amp;&amp; !ok) ? uv : st;
+<font color="deepskyblue">0129:</font>     ok = (d&lt;col.x) ? <font color="blue">true</font> : ok;
+<font color="deepskyblue">0130:</font>     uv += dt.xy;
+<font color="deepskyblue">0131:</font>     d -= dd;
+<font color="deepskyblue">0132:</font> 
+<font color="deepskyblue">0133:</font>     col = tex2D( TexSamp, uv ); <font color="cyan">// 8</font>
+<font color="deepskyblue">0134:</font>     st = (d&lt;col.x &amp;&amp; !ok) ? uv : st;
+<font color="deepskyblue">0135:</font>     ok = (d&lt;col.x) ? <font color="blue">true</font> : ok;
+<font color="deepskyblue">0136:</font>     uv += dt.xy;
+<font color="deepskyblue">0137:</font>     d -= dd;
+<font color="deepskyblue">0138:</font> 
+<font color="deepskyblue">0139:</font>     col = tex2D( TexSamp, uv ); <font color="cyan">// 9</font>
+<font color="deepskyblue">0140:</font>     st = (d&lt;col.x &amp;&amp; !ok) ? uv : st;
+<font color="deepskyblue">0141:</font>     ok = (d&lt;col.x) ? <font color="blue">true</font> : ok;
+<font color="deepskyblue">0142:</font> 
+<font color="deepskyblue">0143:</font>     O = (ok)?tex2D( ColorSamp, st):0.0f;
+<font color="deepskyblue">0144:</font> 
+<font color="deepskyblue">0145:</font>     <font color="blue">return</font> O;
+<font color="deepskyblue">0146:</font> }
+</pre>
+
+
+<h2>■より分解能の高いレンダリング</h2>
+
+
+<p>
+ps.2.xを使えば、より精度の高いレンダリングが可能なはずです。<br>
+（ps.2.sw のソフトウェア実行で）分解能をテクスチャの分解能と同じ256段階で実行するプログラムは、次のようになります。
+</p>
+
+<pre class="CodeBlock">
+hlsh.fx(ps_2_sw)
+<font color="deepskyblue">0075:</font> <font color="cyan">// -------------------------------------------------------------</font>
+<font color="deepskyblue">0076:</font> <font color="cyan">// ピクセルシェーダプログラム</font>
+<font color="deepskyblue">0077:</font> <font color="cyan">// -------------------------------------------------------------</font>
+<font color="deepskyblue">0078:</font> float4 PS( VS_OUTPUT In ) : COLOR
+<font color="deepskyblue">0079:</font> {
+<font color="deepskyblue">0080:</font>     float4 O = (float4)0;
+<font color="deepskyblue">0081:</font>     
+<font color="deepskyblue">0082:</font>     float4 col;
+<font color="deepskyblue">0083:</font>     float4 num = 256.0f;
+<font color="deepskyblue">0084:</font>     float2 dt = (1.0f/(num-1))*(In.Eye.xyz);
+<font color="deepskyblue">0085:</font>     <font color="blue">float</font>  dd = 1.0/num;
+<font color="deepskyblue">0086:</font>     <font color="blue">float</font>  d = 1.0000001 - dd;
+<font color="deepskyblue">0087:</font>     float2 uv = In.Tex.xy;
+<font color="deepskyblue">0088:</font>     float2 st = 0;
+<font color="deepskyblue">0089:</font>     <font color="blue">bool</font> ok = <font color="blue">false</font>;
+<font color="deepskyblue">0090:</font>     <font color="blue">float</font> i;
+<font color="deepskyblue">0091:</font>     
+<font color="deepskyblue">0092:</font>     <font color="blue">for</font> ( i = 0; i &lt; 1; i += 1.0f/num ) {
+<font color="deepskyblue">0093:</font>         col = tex2D( TexSamp, uv );
+<font color="deepskyblue">0094:</font>         st = (d&lt;col.x &amp;&amp; !ok) ? uv : st;
+<font color="deepskyblue">0095:</font>         ok = (d&lt;col.x) ? <font color="blue">true</font> : ok;
+<font color="deepskyblue">0096:</font>         uv += dt.xy;
+<font color="deepskyblue">0097:</font>         d -= dd;
+<font color="deepskyblue">0098:</font>     }
+<font color="deepskyblue">0099:</font> 
+<font color="deepskyblue">0100:</font>     O = (ok)?tex2D( ColorSamp, st):0.0f;
+<font color="deepskyblue">0101:</font> 
+<font color="deepskyblue">0102:</font>     <font color="blue">return</font> O;
+<font color="deepskyblue">0103:</font> }
+</pre>
+<p>
+このプログラムは、上のほうにある画像のティーポットのレンダリングに使っています。
+</p>
+
+
+<h2>■六面レリーフマッピング(2003 Jan. 15追加)</h2>
+
+
+<image src = "title2.gif">
+<p>
+6面体を使うと欠けることなくレンダリングできると書きましたが、
+実際に実行してみないと軽んじられるので（ほんとか？）、
+プログラムを組んでみました。<br>
+前出したツールで作った深度マップと法線マップとデカールマップを６面体に張り合わせてそれぞれリリーフテクスチャマッピングを施しました。<br>
+照明計算はランバート拡散です。<br>
+下のファイルが６面使うレリーフテクスチャマッピングのサンプルソースです。
+</p>
+<ul style = "LIST-STYLE-TYPE:none">
+<li><a href="src2.zip">src2.zip (六面レリーフテクスチャ:DirectX9)</a>
+</ul>
+<table>
+<tr><td><a href="hlsl_fx2.html">hlsl.fx</a></td><td>シェーダの入ったエフェクトファイル</td></tr>
+<tr><td><a href="main_h2.html">main.h</a></td><td>アプリケーションのヘッダ</td></tr>
+<tr><td><a href="main_cpp2.html">main.cpp</a></td><td>アプリケーションのソース</td></tr>
+</table>
+<image src = "depth0.PNG" width = "64" height = "64">
+<image src = "depth1.PNG" width = "64" height = "64">
+<image src = "depth2.PNG" width = "64" height = "64">
+<image src = "depth3.PNG" width = "64" height = "64">
+<image src = "depth4.PNG" width = "64" height = "64">
+<image src = "depth5.PNG" width = "64" height = "64">
+depth0.bmp～depth5.bmp:深度マップ<br>
+<image src = "color0.PNG" width = "64" height = "64">
+<image src = "color1.PNG" width = "64" height = "64">
+<image src = "color2.PNG" width = "64" height = "64">
+<image src = "color3.PNG" width = "64" height = "64">
+<image src = "color4.PNG" width = "64" height = "64">
+<image src = "color5.PNG" width = "64" height = "64">
+color0.bmp～color5.bmp:デカールテクスチャ<br>
+<image src = "normal0.PNG" width = "64" height = "64">
+<image src = "normal1.PNG" width = "64" height = "64">
+<image src = "normal2.PNG" width = "64" height = "64">
+<image src = "normal3.PNG" width = "64" height = "64">
+<image src = "normal4.PNG" width = "64" height = "64">
+<image src = "normal5.PNG" width = "64" height = "64">
+normal0.bmp～normal5.bmp:法線マップ<br>
+<p>
+どのくらい上の画像がすごいか見るために、
+元になった深度マップをそのまま貼り付けた６面体を見てみましょう。
+</p>
+<image src = "original.gif">
+<p>
+ほんとの箱です。<br>
+これがあたかも立体に見えるのですからすごいものです。<br>
+まぁ、よく見るとモデルに穴が開いているので、その部分の点が見えますが、
+それがあっても結構まともに見えています。
+</p>
+<p>
+ただし、上の画像はいい角度を選んで撮影したもので、
+すべての向きでこのようにきれいに見えるわけではありません。<br>
+上ですでに述べていますが、原理的には、直方体しか厳密に再現できません。
+出っ張りがあるモデルは、その部分の（表示している面の法線に対して）後ろの部分が
+埋められてしまいます。<br>
+このモデルの場合には、上から見ると髪の毛が出っ張っているために顔がなくなってしまいます。<br>
+それ以外にもトラのモデルを使えば、足の間が埋まってしまったりします。<br>
+やっぱり遠くから見てごまかすときにしか使えなさそうです。
+</p>
+
+<image src = "up.gif">
+<p>
+あと、上の画像はどれも２５６枚のレイヤーを使っていますが、
+今回zipファイルに保存したソースは１０枚のレイヤーを使ったps.2.0バージョンです（プログラム自体は存在しているので、fxファイルの「#if 0」を「#if 1」に書き換えればすぐに２５６枚のレイヤーで表示できます。あっ、REFで実行するのを忘れずにね）。<br>
+10枚のレイヤーを使った時には次のようになります。
+</p>
+<image src = "10.gif">
+<p>
+やっぱり見れたものではないですね。<br>
+50枚以上のレイヤーは欲しいところです。
+</p>
+<p>
+ちなみにプログラムは次のアセンブラになります。
+</p>
+<pre class="CodeBlock">
+hlsh.fx
+<font color="deepskyblue">0145:</font> PIXELSHADER PS = asm
+<font color="deepskyblue">0146:</font> {
+<font color="deepskyblue">0147:</font>     ps_2_0
+<font color="deepskyblue">0148:</font> 
+<font color="deepskyblue">0149:</font>     <font color="cyan">// c0:ライトベクトル</font>
+<font color="deepskyblue">0150:</font>     def c1, 2.0, 1.0, 0.0, 0.000001
+<font color="deepskyblue">0151:</font>     def c2, 0.1, 5, 100000, 99999<font color="cyan">// 1/num, 5, 100000 100000-1</font>
+<font color="deepskyblue">0152:</font>     
+<font color="deepskyblue">0153:</font>     dcl t0.xy   <font color="cyan">// Depth</font>
+<font color="deepskyblue">0154:</font>     dcl t1.xy   <font color="cyan">// Eye</font>
+<font color="deepskyblue">0155:</font>     dcl_2d s0   <font color="cyan">// Depth</font>
+<font color="deepskyblue">0156:</font>     dcl_2d s1   <font color="cyan">// Color</font>
+<font color="deepskyblue">0157:</font>     dcl_2d s2   <font color="cyan">// Normal</font>
+<font color="deepskyblue">0158:</font>     
+<font color="deepskyblue">0159:</font>     mul r11.xy, t1, -c2.x   <font color="cyan">// r0: dt = (-1.0f/num))*In.Eye;</font>
+<font color="deepskyblue">0160:</font>     mov r11.z,  c2.x
+<font color="deepskyblue">0161:</font>     mov r10.xy, c2.z        <font color="cyan">// r10:st = 100000</font>
+<font color="deepskyblue">0162:</font>     mov r0.xy,  t0
+<font color="deepskyblue">0163:</font>     mov r0.z,   c1.w
+<font color="deepskyblue">0164:</font>     add r2.xyz, r11, r0
+<font color="deepskyblue">0165:</font>     add r4.xyz, r11, r2
+<font color="deepskyblue">0166:</font>     add r6.xyz, r11, r4
+<font color="deepskyblue">0167:</font>     add r8.xyz, r11, r6
+<font color="deepskyblue">0168:</font> 
+<font color="deepskyblue">0169:</font>     texld r1, r0, s0
+<font color="deepskyblue">0170:</font>     texld r3, r2, s0
+<font color="deepskyblue">0171:</font>     texld r5, r4, s0
+<font color="deepskyblue">0172:</font>     texld r7, r6, s0
+<font color="deepskyblue">0173:</font>     texld r9, r8, s0
+<font color="deepskyblue">0174:</font>     
+<font color="deepskyblue">0175:</font>     add r0.w, r1.x, -r0.z       <font color="cyan">// r0.w = depth-uv.z</font>
+<font color="deepskyblue">0176:</font>     cmp r10.xy, r0.w, r0, r10   <font color="cyan">// st = (uv.z&lt;=depth) ? uv : st;</font>
+<font color="deepskyblue">0177:</font>     add r2.w, r3.x, -r2.z       <font color="cyan">// r0.w = depth-uv.z</font>
+<font color="deepskyblue">0178:</font>     cmp r10.xy, r2.w, r2, r10   <font color="cyan">// st = (uv.z&lt;=depth) ? uv : st;</font>
+<font color="deepskyblue">0179:</font>     add r4.w, r5.x, -r4.z       <font color="cyan">// r0.w = depth-uv.z</font>
+<font color="deepskyblue">0180:</font>     cmp r10.xy, r4.w, r4, r10   <font color="cyan">// st = (uv.z&lt;=depth) ? uv : st;</font>
+<font color="deepskyblue">0181:</font>     add r6.w, r7.x, -r6.z       <font color="cyan">// r0.w = depth-uv.z</font>
+<font color="deepskyblue">0182:</font>     cmp r10.xy, r6.w, r6, r10   <font color="cyan">// st = (uv.z&lt;=depth) ? uv : st;</font>
+<font color="deepskyblue">0183:</font>     add r8.w, r9.x, -r8.z       <font color="cyan">// r0.w = depth-uv.z</font>
+<font color="deepskyblue">0184:</font>     cmp r10.xy, r8.w, r8, r10   <font color="cyan">// st = (uv.z&lt;=depth) ? uv : st;</font>
+<font color="deepskyblue">0185:</font> 
+<font color="deepskyblue">0186:</font>     mul r11.xyz, r11, c2.y
+<font color="deepskyblue">0187:</font>     add r0.xyz, r0, r11
+<font color="deepskyblue">0188:</font>     add r2.xyz, r2, r11
+<font color="deepskyblue">0189:</font>     add r4.xyz, r4, r11
+<font color="deepskyblue">0190:</font>     add r6.xyz, r6, r11
+<font color="deepskyblue">0191:</font>     add r8.xyz, r8, r11
+<font color="deepskyblue">0192:</font> 
+<font color="deepskyblue">0193:</font>     texld r1, r0, s0
+<font color="deepskyblue">0194:</font>     texld r3, r2, s0
+<font color="deepskyblue">0195:</font>     texld r5, r4, s0
+<font color="deepskyblue">0196:</font>     texld r7, r6, s0
+<font color="deepskyblue">0197:</font>     texld r9, r8, s0
+<font color="deepskyblue">0198:</font>     
+<font color="deepskyblue">0199:</font>     add r0.w, r1.x, -r0.z       <font color="cyan">// r0.w = depth-uv.z</font>
+<font color="deepskyblue">0200:</font>     cmp r10.xy, r0.w, r0, r10   <font color="cyan">// st = (uv.z&lt;=depth) ? uv : st;</font>
+<font color="deepskyblue">0201:</font>     add r2.w, r3.x, -r2.z       <font color="cyan">// r0.w = depth-uv.z</font>
+<font color="deepskyblue">0202:</font>     cmp r10.xy, r2.w, r2, r10   <font color="cyan">// st = (uv.z&lt;=depth) ? uv : st;</font>
+<font color="deepskyblue">0203:</font>     add r4.w, r5.x, -r4.z       <font color="cyan">// r0.w = depth-uv.z</font>
+<font color="deepskyblue">0204:</font>     cmp r10.xy, r4.w, r4, r10   <font color="cyan">// st = (uv.z&lt;=depth) ? uv : st;</font>
+<font color="deepskyblue">0205:</font>     add r6.w, r7.x, -r6.z       <font color="cyan">// r0.w = depth-uv.z</font>
+<font color="deepskyblue">0206:</font>     cmp r10.xy, r6.w, r6, r10   <font color="cyan">// st = (uv.z&lt;=depth) ? uv : st;</font>
+<font color="deepskyblue">0207:</font>     add r8.w, r9.x, -r8.z       <font color="cyan">// r0.w = depth-uv.z</font>
+<font color="deepskyblue">0208:</font>     cmp r10.xy, r8.w, r8, r10   <font color="cyan">// st = (uv.z&lt;=depth) ? uv : st;</font>
+<font color="deepskyblue">0209:</font> 
+<font color="deepskyblue">0210:</font>     <font color="cyan">// アルファ成分をＳＴ値から求める</font>
+<font color="deepskyblue">0211:</font>     add r0.w, c2.w, -r10.x
+<font color="deepskyblue">0212:</font>     add r1.w, r1.w, -r1.w           <font color="cyan">// 定数レジスタ２つを引数にできないので0を作る</font>
+<font color="deepskyblue">0213:</font>     cmp_pp r11.w, r0.w, c1.y, r1.w  <font color="cyan">// r11.w = O.w = (st.x&lt;=100000-1) ? 1 : 0;</font>
+<font color="deepskyblue">0214:</font> 
+<font color="deepskyblue">0215:</font>     texld r0, r10, s1               <font color="cyan">// Color</font>
+<font color="deepskyblue">0216:</font>     texld r1, r10, s2               <font color="cyan">// Normal</font>
+<font color="deepskyblue">0217:</font> 
+<font color="deepskyblue">0218:</font>     mad r1.xyz, c1.x, r1, -c1.y     <font color="cyan">// n=2*NormalMap-1</font>
+<font color="deepskyblue">0219:</font>     dp3 r1.w, r1, c0                <font color="cyan">// r1.w = NL</font>
+<font color="deepskyblue">0220:</font>     cmp r1.w, r1.w, r1.w, c1.z      <font color="cyan">// r1.w = max(0,NL)</font>
+<font color="deepskyblue">0221:</font>     add r1.w, r1.w, c0.w            <font color="cyan">// r1.w = max(0,NL) + amb</font>
+<font color="deepskyblue">0222:</font>     mul r11.xyz, r0, r1.w           <font color="cyan">// r11 = O.xyz = color*(max(0,NL) + amb)</font>
+<font color="deepskyblue">0223:</font> 
+<font color="deepskyblue">0224:</font>     mov oC0, r11
+<font color="deepskyblue">0225:</font> };
+</pre>
+<p>
+今回のプログラムはHLSLでは１０枚のレイヤーを使うプログラムがコンパイルできなかったので、手でアセンブルしました。<br>
+奥のレイヤーから深度マップの値がそのレイヤーの深度よりも前にあるか比較しながらテクスチャ座標を検索しました。<br>
+ちなみにテクスチャ座標の初期値にほぼありえない大きな値100000を設定しておいて、
+最終的にこの値が変化していないかどうかで視線がモデルを貫いているかどうかチェックします。
+値が変化していないときは、アルファ成分に０を入れて、線形補間で透明にしています。<br>
+今回苦労したのは、順序従属テクスチャでした。
+順序従属テクスチャは、テクスチャ座標に一時レジスタr#を使うときの注意で、
+texld の出力に使うレジスタを別の texld で使うような状況は、
+３つの texld までしか使えないというやつです。<br>
+一時レジスタr#は12個しかないので（それでもps.1.1の６倍だ！）、
+多くのテクスチャを読み込むときにはどうしても前に使ったレジスタを使い回さざる終えなくなります。<br>
+そうすると順序従属テクスチャの制限に引っかっりやすくなります。<br>
+この部分は、あまりやりたくないレジスタの組み合わせのパズルの悪夢が残っていますが、がんばってアセンブルしてパフォーマンスをあげましょう。<br>
+ちなみに、この制限は、D3DPS20CAPSのD3DPS20CAPS_NODEPENDENTREADLIMIT がたっていれば関係ありません。
+おそらくGeForce FX がそうなので、それまで待つのもひとつの手です。<br>
+今回は、５個のtexldを同時にして、１０個の一時レジスタを使うのを２回おこない、後は法線マップやデカールの読み込みにもう一段の順序従属テクスチャ読み込みを使っています。<br>
+あと、最後のほうの部分は、ピクセル単位のランバート拡散なので、難しくないでしょう。
+</p>
+<p>
+それ以外の設定は、各ポリゴンを６面対のモデルのローカル座標系に変換する部分が
+それぞれのテクスチャに応じて違います。<br>
+具体的には、それぞれのポリゴンを、辺の長さの半分だけ動かした後に、
+９０度だけ適当な方向に回せばよいです。<br>
+この方向は、テクスチャを作ったときのビュー行列から求まります。<br>
+あと、前のプログラムでは、テクスチャ座標を少しはみ出して取っていたのですが、
+今回は、ポリゴンとテクスチャ座標をぴったりとあわせてレンダリングします。<br>
+それ以外には、ライトの方向をモデルのローカル座標系で渡すのを忘れないようにしましょう。
+</p>
+
+<pre class="CodeBlock">
+main.cpp
+<font color="deepskyblue">0462:</font>                 <font color="cyan">// 座標変換</font>
+<font color="deepskyblue">0463:</font>                 <font color="blue">switch</font>(i){
+<font color="deepskyblue">0464:</font>                 <font color="blue">case</font> 0:
+<font color="deepskyblue">0465:</font>                     D3DXMatrixRotationY ( &amp;m,+0.0f*D3DX_PI );
+<font color="deepskyblue">0466:</font>                     <font color="blue">break</font>;
+<font color="deepskyblue">0467:</font>                 <font color="blue">case</font> 1:
+<font color="deepskyblue">0468:</font>                     D3DXMatrixRotationY ( &amp;m,+1.0f*D3DX_PI );
+<font color="deepskyblue">0469:</font>                     <font color="blue">break</font>;
+<font color="deepskyblue">0470:</font>                 <font color="blue">case</font> 2:
+<font color="deepskyblue">0471:</font>                     D3DXMatrixRotationY ( &amp;m,+0.5f*D3DX_PI );
+<font color="deepskyblue">0472:</font>                     <font color="blue">break</font>;
+<font color="deepskyblue">0473:</font>                 <font color="blue">case</font> 3:
+<font color="deepskyblue">0474:</font>                     D3DXMatrixRotationY ( &amp;m,-0.5f*D3DX_PI );
+<font color="deepskyblue">0475:</font>                     <font color="blue">break</font>;
+<font color="deepskyblue">0476:</font>                 <font color="blue">case</font> 4:
+<font color="deepskyblue">0477:</font>                     D3DXMatrixRotationX ( &amp;m,-0.5f*D3DX_PI );
+<font color="deepskyblue">0478:</font>                     <font color="blue">break</font>;
+<font color="deepskyblue">0479:</font>                 <font color="blue">case</font> 5:
+<font color="deepskyblue">0480:</font>                     D3DXMatrixRotationX ( &amp;m,+0.5f*D3DX_PI );
+<font color="deepskyblue">0481:</font>                     <font color="blue">break</font>;
+<font color="deepskyblue">0482:</font>                 }
+<font color="deepskyblue">0483:</font>                 D3DXMatrixTranslation ( &amp;mL, 0.0f, 0.0f, -1.0 );
+<font color="deepskyblue">0484:</font>                 mL = mL * m;
+<font color="deepskyblue">0485:</font>                 m = mL * m_mWorld * m_mView * m_mProj;
+<font color="deepskyblue">0486:</font>                 m_pEffect-&gt;SetMatrix( m_hmWVP, &amp;m );
+</pre>
+
+
+<h2>■最後に</h2>
+
+
+<p>
+思った以上に高速にレンダリングできますね。実は実用的なのかもしれません。<br>
+LOD の１つの手法として確立されるのではないでしょうか。<br>
+それにしても、このプログラムを GeForce FX で動かして見たいですね。
+</p>
+
+</div>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<center>
+<hr>
+<p><a href="../index.html">もどる</a></p>
+<p><a href="mailto:imagire@gmail.com">imagire@gmail.com</a></p>
+</center>
+
+</body>
+</html>

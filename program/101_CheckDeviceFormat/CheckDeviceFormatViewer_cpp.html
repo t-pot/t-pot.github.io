@@ -1,0 +1,948 @@
+<HTML>
+<HEAD>
+<TITLE>CheckDeviceFormatViewer.cpp</TITLE>
+<meta name="GENERATOR" content="cpp2html 2.1 by Niisaka">
+<meta http-equiv="Content-Type" content="text/html">
+<meta http-equiv="Content-Style-Type" content="text/css">
+<STYLE TYPE="text/css">
+<!--
+SPAN.comment { color:#008000; font-weight:normal; font-style:normal;}
+SPAN.keyword { color:#0000FF; font-weight:normal; font-style:normal;}
+SPAN.string { color:#600000; font-weight:normal; font-style:normal;}
+SPAN.linenum { color:#A0A0A0; font-weight:normal; font-style:normal;}
+-->
+</STYLE>
+</HEAD>
+<BODY TEXT="#000000" BGCOLOR="#FFFFFF">
+<PRE><SPAN CLASS="linenum">0001:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0002:</SPAN> <SPAN CLASS="comment">// File: CheckDeviceFormatViewer.cpp</SPAN>
+<SPAN CLASS="linenum">0003:</SPAN> <SPAN CLASS="comment">//</SPAN>
+<SPAN CLASS="linenum">0004:</SPAN> <SPAN CLASS="comment">// Desc: DirectX MFC dialog application created by the DirectX AppWizard</SPAN>
+<SPAN CLASS="linenum">0005:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0006:</SPAN> <SPAN CLASS="keyword">#define</SPAN> STRICT
+<SPAN CLASS="linenum">0007:</SPAN> <SPAN CLASS="keyword">#include</SPAN> "<SPAN CLASS="string">stdafx.h</SPAN>"
+<SPAN CLASS="linenum">0008:</SPAN> <SPAN CLASS="keyword">#include</SPAN> "<SPAN CLASS="string">resource.h</SPAN>"
+<SPAN CLASS="linenum">0009:</SPAN> <SPAN CLASS="keyword">#include</SPAN> "<SPAN CLASS="string">CheckDeviceFormatViewer.h</SPAN>"
+<SPAN CLASS="linenum">0010:</SPAN> 
+<SPAN CLASS="linenum">0011:</SPAN> 
+<SPAN CLASS="linenum">0012:</SPAN> 
+<SPAN CLASS="linenum">0013:</SPAN> 
+<SPAN CLASS="linenum">0014:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0015:</SPAN> <SPAN CLASS="comment">// Application globals</SPAN>
+<SPAN CLASS="linenum">0016:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0017:</SPAN> TCHAR*          g_strAppTitle       = _T( "<SPAN CLASS="string">CheckDeviceFormatViewer</SPAN>" );
+<SPAN CLASS="linenum">0018:</SPAN> CApp            g_App;
+<SPAN CLASS="linenum">0019:</SPAN> HINSTANCE       g_hInst = NULL;
+<SPAN CLASS="linenum">0020:</SPAN> CAppForm*       g_AppFormView = NULL;
+<SPAN CLASS="linenum">0021:</SPAN> 
+<SPAN CLASS="linenum">0022:</SPAN> 
+<SPAN CLASS="linenum">0023:</SPAN> 
+<SPAN CLASS="linenum">0024:</SPAN> 
+<SPAN CLASS="linenum">0025:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0026:</SPAN> <SPAN CLASS="comment">// The MFC macros are all listed here</SPAN>
+<SPAN CLASS="linenum">0027:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0028:</SPAN> IMPLEMENT_DYNCREATE( CAppDoc,      CDocument )
+<SPAN CLASS="linenum">0029:</SPAN> IMPLEMENT_DYNCREATE( CAppFrameWnd, CFrameWnd )
+<SPAN CLASS="linenum">0030:</SPAN> IMPLEMENT_DYNCREATE( CAppForm,     CFormView )
+<SPAN CLASS="linenum">0031:</SPAN> 
+<SPAN CLASS="linenum">0032:</SPAN> 
+<SPAN CLASS="linenum">0033:</SPAN> 
+<SPAN CLASS="linenum">0034:</SPAN> 
+<SPAN CLASS="linenum">0035:</SPAN> BEGIN_MESSAGE_MAP( CApp, CWinApp )
+<SPAN CLASS="linenum">0036:</SPAN>     <SPAN CLASS="comment">//{{AFX_MSG_MAP(CApp)</SPAN>
+<SPAN CLASS="linenum">0037:</SPAN>     <SPAN CLASS="comment">//}}AFX_MSG_MAP</SPAN>
+<SPAN CLASS="linenum">0038:</SPAN> END_MESSAGE_MAP()
+<SPAN CLASS="linenum">0039:</SPAN> 
+<SPAN CLASS="linenum">0040:</SPAN> 
+<SPAN CLASS="linenum">0041:</SPAN> 
+<SPAN CLASS="linenum">0042:</SPAN> 
+<SPAN CLASS="linenum">0043:</SPAN> BEGIN_MESSAGE_MAP( CAppForm, CFormView )
+<SPAN CLASS="linenum">0044:</SPAN>     <SPAN CLASS="comment">//{{AFX_MSG_MAP(CAppForm)</SPAN>
+<SPAN CLASS="linenum">0045:</SPAN>     ON_COMMAND(    IDC_VIEWFULLSCREEN, OnToggleFullScreen )
+<SPAN CLASS="linenum">0046:</SPAN>     ON_BN_CLICKED(IDC_CHANGEDEVICE, OnChangeDevice)
+<SPAN CLASS="linenum">0047:</SPAN>     <SPAN CLASS="comment">//}}AFX_MSG_MAP</SPAN>
+<SPAN CLASS="linenum">0048:</SPAN> <SPAN CLASS="comment">//  ON_BN_CLICKED(IDC_BUTTON1, OnBnClickedButtonCheckDeviceFormat)</SPAN>
+<SPAN CLASS="linenum">0049:</SPAN> ON_BN_CLICKED(IDC_BUTTON1, OnBnClickedButtonCheckDeviceFormat)
+<SPAN CLASS="linenum">0050:</SPAN> END_MESSAGE_MAP()
+<SPAN CLASS="linenum">0051:</SPAN> 
+<SPAN CLASS="linenum">0052:</SPAN> 
+<SPAN CLASS="linenum">0053:</SPAN> 
+<SPAN CLASS="linenum">0054:</SPAN> 
+<SPAN CLASS="linenum">0055:</SPAN> BEGIN_MESSAGE_MAP(CAppDoc, CDocument)
+<SPAN CLASS="linenum">0056:</SPAN>     <SPAN CLASS="comment">//{{AFX_MSG_MAP(CAppDoc)</SPAN>
+<SPAN CLASS="linenum">0057:</SPAN>             <SPAN CLASS="comment">// NOTE - the ClassWizard will add and remove mapping macros here.</SPAN>
+<SPAN CLASS="linenum">0058:</SPAN>             <SPAN CLASS="comment">//    DO NOT EDIT what you see in these blocks of generated code!</SPAN>
+<SPAN CLASS="linenum">0059:</SPAN>     <SPAN CLASS="comment">//}}AFX_MSG_MAP</SPAN>
+<SPAN CLASS="linenum">0060:</SPAN> END_MESSAGE_MAP()
+<SPAN CLASS="linenum">0061:</SPAN> 
+<SPAN CLASS="linenum">0062:</SPAN> 
+<SPAN CLASS="linenum">0063:</SPAN> 
+<SPAN CLASS="linenum">0064:</SPAN> 
+<SPAN CLASS="linenum">0065:</SPAN> BEGIN_MESSAGE_MAP(CAppFrameWnd, CFrameWnd)
+<SPAN CLASS="linenum">0066:</SPAN>     <SPAN CLASS="comment">//{{AFX_MSG_MAP(CAppFrameWnd)</SPAN>
+<SPAN CLASS="linenum">0067:</SPAN>     ON_COMMAND(IDM_CHANGEDEVICE, OnChangeDevice)
+<SPAN CLASS="linenum">0068:</SPAN>     <SPAN CLASS="comment">//}}AFX_MSG_MAP</SPAN>
+<SPAN CLASS="linenum">0069:</SPAN> END_MESSAGE_MAP()
+<SPAN CLASS="linenum">0070:</SPAN> 
+<SPAN CLASS="linenum">0071:</SPAN> <SPAN CLASS="keyword">static</SPAN> <SPAN CLASS="keyword">const</SPAN> MyUsage s_usage[] = {
+<SPAN CLASS="linenum">0072:</SPAN>     {D3DUSAGE_RENDERTARGET, "<SPAN CLASS="string">D3DUSAGE_RENDERTARGET</SPAN>"},
+<SPAN CLASS="linenum">0073:</SPAN>     {D3DUSAGE_DEPTHSTENCIL,"<SPAN CLASS="string">D3DUSAGE_DEPTHSTENCIL</SPAN>"},
+<SPAN CLASS="linenum">0074:</SPAN>     {D3DUSAGE_DYNAMIC,"<SPAN CLASS="string">D3DUSAGE_DYNAMIC</SPAN>"},
+<SPAN CLASS="linenum">0075:</SPAN> <SPAN CLASS="comment">// When passed to CheckDeviceFormat, D3DUSAGE_AUTOGENMIPMAP may return</SPAN>
+<SPAN CLASS="linenum">0076:</SPAN> <SPAN CLASS="comment">// D3DOK_NOAUTOGEN if the device doesn't support autogeneration for that format.</SPAN>
+<SPAN CLASS="linenum">0077:</SPAN> <SPAN CLASS="comment">// D3DOK_NOAUTOGEN is a success code, not a failure code... the SUCCEEDED and FAILED macros</SPAN>
+<SPAN CLASS="linenum">0078:</SPAN> <SPAN CLASS="comment">// will return true and false respectively for this code.</SPAN>
+<SPAN CLASS="linenum">0079:</SPAN>     {D3DUSAGE_AUTOGENMIPMAP,"<SPAN CLASS="string">D3DUSAGE_AUTOGENMIPMAP</SPAN>"},
+<SPAN CLASS="linenum">0080:</SPAN>     {D3DUSAGE_DMAP,"<SPAN CLASS="string">D3DUSAGE_DMAP</SPAN>"},
+<SPAN CLASS="linenum">0081:</SPAN>     {0,"<SPAN CLASS="string"></SPAN>"}
+<SPAN CLASS="linenum">0082:</SPAN> };
+<SPAN CLASS="linenum">0083:</SPAN> <SPAN CLASS="keyword">const</SPAN> MyUsage *CAppForm::m_Usages=s_usage;
+<SPAN CLASS="linenum">0084:</SPAN> 
+<SPAN CLASS="linenum">0085:</SPAN> <SPAN CLASS="keyword">static</SPAN> <SPAN CLASS="keyword">const</SPAN> MyFormat s_format[] = {
+<SPAN CLASS="linenum">0086:</SPAN>     {D3DFMT_R8G8B8,"<SPAN CLASS="string">D3DFMT_R8G8B8</SPAN>"},
+<SPAN CLASS="linenum">0087:</SPAN>     {D3DFMT_A8R8G8B8,"<SPAN CLASS="string">D3DFMT_A8R8G8B8</SPAN>"},
+<SPAN CLASS="linenum">0088:</SPAN>     {D3DFMT_X8R8G8B8,"<SPAN CLASS="string">D3DFMT_X8R8G8B8</SPAN>"},
+<SPAN CLASS="linenum">0089:</SPAN>     {D3DFMT_R5G6B5,"<SPAN CLASS="string">D3DFMT_R5G6B5</SPAN>"},
+<SPAN CLASS="linenum">0090:</SPAN>     {D3DFMT_X1R5G5B5,"<SPAN CLASS="string">D3DFMT_X1R5G5B5</SPAN>"},
+<SPAN CLASS="linenum">0091:</SPAN>     {D3DFMT_A1R5G5B5,"<SPAN CLASS="string">D3DFMT_A1R5G5B5</SPAN>"},
+<SPAN CLASS="linenum">0092:</SPAN>     {D3DFMT_A4R4G4B4,"<SPAN CLASS="string">D3DFMT_A4R4G4B4</SPAN>"},
+<SPAN CLASS="linenum">0093:</SPAN>     {D3DFMT_R3G3B2,"<SPAN CLASS="string">D3DFMT_R3G3B2</SPAN>"},
+<SPAN CLASS="linenum">0094:</SPAN>     {D3DFMT_A8,"<SPAN CLASS="string">D3DFMT_A8</SPAN>"},
+<SPAN CLASS="linenum">0095:</SPAN>     {D3DFMT_A8R3G3B2,"<SPAN CLASS="string">D3DFMT_A8R3G3B2</SPAN>"},
+<SPAN CLASS="linenum">0096:</SPAN>     {D3DFMT_X4R4G4B4,"<SPAN CLASS="string">D3DFMT_X4R4G4B4</SPAN>"},
+<SPAN CLASS="linenum">0097:</SPAN>     {D3DFMT_A2B10G10R10,"<SPAN CLASS="string">D3DFMT_A2B10G10R10</SPAN>"},
+<SPAN CLASS="linenum">0098:</SPAN>     {D3DFMT_A8B8G8R8,"<SPAN CLASS="string">D3DFMT_A8B8G8R8</SPAN>"},
+<SPAN CLASS="linenum">0099:</SPAN>     {D3DFMT_X8B8G8R8,"<SPAN CLASS="string">D3DFMT_X8B8G8R8</SPAN>"},
+<SPAN CLASS="linenum">0100:</SPAN>     {D3DFMT_G16R16,"<SPAN CLASS="string">D3DFMT_G16R16</SPAN>"},
+<SPAN CLASS="linenum">0101:</SPAN>     {D3DFMT_A2R10G10B10,"<SPAN CLASS="string">D3DFMT_A2R10G10B10</SPAN>"},
+<SPAN CLASS="linenum">0102:</SPAN>     {D3DFMT_A16B16G16R16,"<SPAN CLASS="string">D3DFMT_A16B16G16R16</SPAN>"},
+<SPAN CLASS="linenum">0103:</SPAN> 
+<SPAN CLASS="linenum">0104:</SPAN>     {D3DFMT_A8P8,"<SPAN CLASS="string">D3DFMT_A8P8</SPAN>"},
+<SPAN CLASS="linenum">0105:</SPAN>     {D3DFMT_P8,"<SPAN CLASS="string">D3DFMT_P8</SPAN>"},
+<SPAN CLASS="linenum">0106:</SPAN> 
+<SPAN CLASS="linenum">0107:</SPAN>     {D3DFMT_L8,"<SPAN CLASS="string">D3DFMT_L8</SPAN>"},
+<SPAN CLASS="linenum">0108:</SPAN>     {D3DFMT_A8L8,"<SPAN CLASS="string">D3DFMT_A8L8</SPAN>"},
+<SPAN CLASS="linenum">0109:</SPAN>     {D3DFMT_A4L4,"<SPAN CLASS="string">D3DFMT_A4L4</SPAN>"},
+<SPAN CLASS="linenum">0110:</SPAN> 
+<SPAN CLASS="linenum">0111:</SPAN>     {D3DFMT_V8U8,"<SPAN CLASS="string">D3DFMT_V8U8</SPAN>"},
+<SPAN CLASS="linenum">0112:</SPAN>     {D3DFMT_L6V5U5,"<SPAN CLASS="string">D3DFMT_L6V5U5</SPAN>"},
+<SPAN CLASS="linenum">0113:</SPAN>     {D3DFMT_X8L8V8U8,"<SPAN CLASS="string">D3DFMT_X8L8V8U8</SPAN>"},
+<SPAN CLASS="linenum">0114:</SPAN>     {D3DFMT_Q8W8V8U8,"<SPAN CLASS="string">D3DFMT_Q8W8V8U8</SPAN>"},
+<SPAN CLASS="linenum">0115:</SPAN>     {D3DFMT_V16U16,"<SPAN CLASS="string">D3DFMT_V16U16</SPAN>"},
+<SPAN CLASS="linenum">0116:</SPAN>     {D3DFMT_A2W10V10U10,"<SPAN CLASS="string">D3DFMT_A2W10V10U10</SPAN>"},
+<SPAN CLASS="linenum">0117:</SPAN> 
+<SPAN CLASS="linenum">0118:</SPAN>     {D3DFMT_UYVY,"<SPAN CLASS="string">D3DFMT_UYVY</SPAN>"},
+<SPAN CLASS="linenum">0119:</SPAN>     {D3DFMT_R8G8_B8G8,"<SPAN CLASS="string">D3DFMT_R8G8_B8G8</SPAN>"},
+<SPAN CLASS="linenum">0120:</SPAN>     {D3DFMT_YUY2,"<SPAN CLASS="string">D3DFMT_YUY2</SPAN>"},
+<SPAN CLASS="linenum">0121:</SPAN>     {D3DFMT_G8R8_G8B8,"<SPAN CLASS="string">D3DFMT_G8R8_G8B8</SPAN>"},
+<SPAN CLASS="linenum">0122:</SPAN>     {D3DFMT_DXT1,"<SPAN CLASS="string">D3DFMT_DXT1</SPAN>"},
+<SPAN CLASS="linenum">0123:</SPAN>     {D3DFMT_DXT2,"<SPAN CLASS="string">D3DFMT_DXT2</SPAN>"},
+<SPAN CLASS="linenum">0124:</SPAN>     {D3DFMT_DXT3,"<SPAN CLASS="string">D3DFMT_DXT3</SPAN>"},
+<SPAN CLASS="linenum">0125:</SPAN>     {D3DFMT_DXT4,"<SPAN CLASS="string">D3DFMT_DXT4</SPAN>"},
+<SPAN CLASS="linenum">0126:</SPAN>     {D3DFMT_DXT5,"<SPAN CLASS="string">D3DFMT_DXT5</SPAN>"},
+<SPAN CLASS="linenum">0127:</SPAN> 
+<SPAN CLASS="linenum">0128:</SPAN>     {D3DFMT_D16_LOCKABLE,"<SPAN CLASS="string">D3DFMT_D16_LOCKABLE</SPAN>"},
+<SPAN CLASS="linenum">0129:</SPAN>     {D3DFMT_D32,"<SPAN CLASS="string">D3DFMT_D32</SPAN>"},
+<SPAN CLASS="linenum">0130:</SPAN>     {D3DFMT_D15S1,"<SPAN CLASS="string">D3DFMT_D15S1</SPAN>"},
+<SPAN CLASS="linenum">0131:</SPAN>     {D3DFMT_D24S8,"<SPAN CLASS="string">D3DFMT_D24S8</SPAN>"},
+<SPAN CLASS="linenum">0132:</SPAN>     {D3DFMT_D24X8,"<SPAN CLASS="string">D3DFMT_D24X8</SPAN>"},
+<SPAN CLASS="linenum">0133:</SPAN>     {D3DFMT_D24X4S4,"<SPAN CLASS="string">D3DFMT_D24X4S4</SPAN>"},
+<SPAN CLASS="linenum">0134:</SPAN>     {D3DFMT_D16,"<SPAN CLASS="string">D3DFMT_D16</SPAN>"},
+<SPAN CLASS="linenum">0135:</SPAN> 
+<SPAN CLASS="linenum">0136:</SPAN>     {D3DFMT_D32F_LOCKABLE,"<SPAN CLASS="string">D3DFMT_D32F_LOCKABLE</SPAN>"},
+<SPAN CLASS="linenum">0137:</SPAN>     {D3DFMT_D24FS8,"<SPAN CLASS="string">D3DFMT_D24FS8</SPAN>"},
+<SPAN CLASS="linenum">0138:</SPAN> 
+<SPAN CLASS="linenum">0139:</SPAN> 
+<SPAN CLASS="linenum">0140:</SPAN>     {D3DFMT_L16,"<SPAN CLASS="string">D3DFMT_L16</SPAN>"},
+<SPAN CLASS="linenum">0141:</SPAN> 
+<SPAN CLASS="linenum">0142:</SPAN>     {D3DFMT_Q16W16V16U16,"<SPAN CLASS="string">D3DFMT_Q16W16V16U16</SPAN>"},
+<SPAN CLASS="linenum">0143:</SPAN> 
+<SPAN CLASS="linenum">0144:</SPAN>     {D3DFMT_MULTI2_ARGB8,"<SPAN CLASS="string">D3DFMT_MULTI2_ARGB8</SPAN>"},
+<SPAN CLASS="linenum">0145:</SPAN> 
+<SPAN CLASS="linenum">0146:</SPAN>     <SPAN CLASS="comment">// Floating point surface formats</SPAN>
+<SPAN CLASS="linenum">0147:</SPAN>     <SPAN CLASS="comment">// s10e5 formats (16-bits per channel)</SPAN>
+<SPAN CLASS="linenum">0148:</SPAN>     {D3DFMT_R16F,"<SPAN CLASS="string">D3DFMT_R16F</SPAN>"},
+<SPAN CLASS="linenum">0149:</SPAN>     {D3DFMT_G16R16F,"<SPAN CLASS="string">D3DFMT_G16R16F</SPAN>"},
+<SPAN CLASS="linenum">0150:</SPAN>     {D3DFMT_A16B16G16R16F,"<SPAN CLASS="string">D3DFMT_A16B16G16R16F</SPAN>"},
+<SPAN CLASS="linenum">0151:</SPAN> 
+<SPAN CLASS="linenum">0152:</SPAN>     <SPAN CLASS="comment">// IEEE s23e8 formats (32-bits per channel)</SPAN>
+<SPAN CLASS="linenum">0153:</SPAN>     {D3DFMT_R32F,"<SPAN CLASS="string">D3DFMT_R32F</SPAN>"},
+<SPAN CLASS="linenum">0154:</SPAN>     {D3DFMT_G32R32F,"<SPAN CLASS="string">D3DFMT_G32R32F</SPAN>"},
+<SPAN CLASS="linenum">0155:</SPAN>     {D3DFMT_A32B32G32R32F,"<SPAN CLASS="string">D3DFMT_A32B32G32R32F</SPAN>"},
+<SPAN CLASS="linenum">0156:</SPAN> 
+<SPAN CLASS="linenum">0157:</SPAN>     {D3DFMT_CxV8U8,"<SPAN CLASS="string">D3DFMT_CxV8U8</SPAN>"},
+<SPAN CLASS="linenum">0158:</SPAN> 
+<SPAN CLASS="linenum">0159:</SPAN> 
+<SPAN CLASS="linenum">0160:</SPAN>     {D3DFMT_FORCE_DWORD,"<SPAN CLASS="string">D3DFMT_FORCE_DWORD</SPAN>"},
+<SPAN CLASS="linenum">0161:</SPAN> };
+<SPAN CLASS="linenum">0162:</SPAN> <SPAN CLASS="keyword">const</SPAN> MyFormat *CAppForm::m_Formats = (<SPAN CLASS="keyword">const</SPAN> MyFormat*)s_format;
+<SPAN CLASS="linenum">0163:</SPAN> 
+<SPAN CLASS="linenum">0164:</SPAN> 
+<SPAN CLASS="linenum">0165:</SPAN> 
+<SPAN CLASS="linenum">0166:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0167:</SPAN> <SPAN CLASS="comment">// Name: CAppForm()</SPAN>
+<SPAN CLASS="linenum">0168:</SPAN> <SPAN CLASS="comment">// Desc: Constructor for the dialog resource form.  Paired with ~CAppForm()</SPAN>
+<SPAN CLASS="linenum">0169:</SPAN> <SPAN CLASS="comment">//       Member variables should be initialized to a known state here.  </SPAN>
+<SPAN CLASS="linenum">0170:</SPAN> <SPAN CLASS="comment">//       The application window has not yet been created and no Direct3D device </SPAN>
+<SPAN CLASS="linenum">0171:</SPAN> <SPAN CLASS="comment">//       has been created, so any initialization that depends on a window or </SPAN>
+<SPAN CLASS="linenum">0172:</SPAN> <SPAN CLASS="comment">//       Direct3D should be deferred to a later stage. </SPAN>
+<SPAN CLASS="linenum">0173:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0174:</SPAN> CAppForm::CAppForm()
+<SPAN CLASS="linenum">0175:</SPAN>          :CFormView( IDD_FORMVIEW )
+<SPAN CLASS="linenum">0176:</SPAN>          , m_bCheckRenderTarget(TRUE)
+<SPAN CLASS="linenum">0177:</SPAN>          , m_bCheckDepthStencil(FALSE)
+<SPAN CLASS="linenum">0178:</SPAN>          , m_bCheckDynamic(FALSE)
+<SPAN CLASS="linenum">0179:</SPAN>          , m_bCheckAutoGenMipmap(FALSE)
+<SPAN CLASS="linenum">0180:</SPAN>          , m_bCheckDMap(FALSE)
+<SPAN CLASS="linenum">0181:</SPAN>          , m_iResourceType(0)
+<SPAN CLASS="linenum">0182:</SPAN> {
+<SPAN CLASS="linenum">0183:</SPAN>     <SPAN CLASS="comment">//{{AFX_DATA_INIT(CAppForm)</SPAN>
+<SPAN CLASS="linenum">0184:</SPAN>         <SPAN CLASS="comment">// NOTE: the ClassWizard will add member initialization here</SPAN>
+<SPAN CLASS="linenum">0185:</SPAN>     <SPAN CLASS="comment">//}}AFX_DATA_INIT</SPAN>
+<SPAN CLASS="linenum">0186:</SPAN> 
+<SPAN CLASS="linenum">0187:</SPAN>     g_AppFormView          = <SPAN CLASS="keyword">this</SPAN>;
+<SPAN CLASS="linenum">0188:</SPAN>     m_hwndRenderWindow     = NULL;
+<SPAN CLASS="linenum">0189:</SPAN>     m_hwndRenderFullScreen = NULL;
+<SPAN CLASS="linenum">0190:</SPAN>     m_hWndTopLevelParent   = NULL;
+<SPAN CLASS="linenum">0191:</SPAN> 
+<SPAN CLASS="linenum">0192:</SPAN>     <SPAN CLASS="comment">// Override some CD3DApplication defaults:</SPAN>
+<SPAN CLASS="linenum">0193:</SPAN>     m_dwCreationWidth           = 500;
+<SPAN CLASS="linenum">0194:</SPAN>     m_dwCreationHeight          = 375;
+<SPAN CLASS="linenum">0195:</SPAN>     m_strWindowTitle            = TEXT( "<SPAN CLASS="string">CheckDeviceFormatViewer</SPAN>" );
+<SPAN CLASS="linenum">0196:</SPAN>     m_d3dEnumeration.AppUsesDepthBuffer   = TRUE;
+<SPAN CLASS="linenum">0197:</SPAN>     m_bStartFullscreen          = <SPAN CLASS="keyword">false</SPAN>;
+<SPAN CLASS="linenum">0198:</SPAN>     m_bShowCursorWhenFullscreen = <SPAN CLASS="keyword">false</SPAN>;
+<SPAN CLASS="linenum">0199:</SPAN> 
+<SPAN CLASS="linenum">0200:</SPAN>     m_pFont                     = NULL;
+<SPAN CLASS="linenum">0201:</SPAN>     m_bLoadingApp               = TRUE;
+<SPAN CLASS="linenum">0202:</SPAN> 
+<SPAN CLASS="linenum">0203:</SPAN>     ZeroMemory( &amp;m_UserInput, <SPAN CLASS="keyword">sizeof</SPAN>(m_UserInput) );
+<SPAN CLASS="linenum">0204:</SPAN>     m_fWorldRotX                = 0.0f;
+<SPAN CLASS="linenum">0205:</SPAN>     m_fWorldRotY                = 0.0f;
+<SPAN CLASS="linenum">0206:</SPAN> 
+<SPAN CLASS="linenum">0207:</SPAN>     <SPAN CLASS="keyword">for</SPAN>(m_nFormat=0; <SPAN CLASS="keyword">this</SPAN>-&gt;m_Formats[m_nFormat].val!=D3DFMT_FORCE_DWORD; m_nFormat++);
+<SPAN CLASS="linenum">0208:</SPAN>     m_pbResult = <SPAN CLASS="keyword">new</SPAN> BOOL[m_nFormat];
+<SPAN CLASS="linenum">0209:</SPAN>     <SPAN CLASS="keyword">for</SPAN>(<SPAN CLASS="keyword">int</SPAN> i=0; i&lt;m_nFormat; i++) m_pbResult[i] = FALSE;
+<SPAN CLASS="linenum">0210:</SPAN> }
+<SPAN CLASS="linenum">0211:</SPAN> 
+<SPAN CLASS="linenum">0212:</SPAN> 
+<SPAN CLASS="linenum">0213:</SPAN> 
+<SPAN CLASS="linenum">0214:</SPAN> 
+<SPAN CLASS="linenum">0215:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0216:</SPAN> <SPAN CLASS="comment">// Name: CAppForm::OneTimeSceneInit()</SPAN>
+<SPAN CLASS="linenum">0217:</SPAN> <SPAN CLASS="comment">// Desc: Paired with FinalCleanup().</SPAN>
+<SPAN CLASS="linenum">0218:</SPAN> <SPAN CLASS="comment">//       The window has been created and the IDirect3D9 interface has been</SPAN>
+<SPAN CLASS="linenum">0219:</SPAN> <SPAN CLASS="comment">//       created, but the device has not been created yet.  Here you can</SPAN>
+<SPAN CLASS="linenum">0220:</SPAN> <SPAN CLASS="comment">//       perform application-related initialization and cleanup that does</SPAN>
+<SPAN CLASS="linenum">0221:</SPAN> <SPAN CLASS="comment">//       not depend on a device.</SPAN>
+<SPAN CLASS="linenum">0222:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0223:</SPAN> HRESULT CAppForm::OneTimeSceneInit()
+<SPAN CLASS="linenum">0224:</SPAN> {
+<SPAN CLASS="linenum">0225:</SPAN>     <SPAN CLASS="comment">// TODO: perform one time initialization</SPAN>
+<SPAN CLASS="linenum">0226:</SPAN> 
+<SPAN CLASS="linenum">0227:</SPAN>     m_bLoadingApp = FALSE;
+<SPAN CLASS="linenum">0228:</SPAN> 
+<SPAN CLASS="linenum">0229:</SPAN>     <SPAN CLASS="keyword">return</SPAN> S_OK;
+<SPAN CLASS="linenum">0230:</SPAN> }
+<SPAN CLASS="linenum">0231:</SPAN> 
+<SPAN CLASS="linenum">0232:</SPAN> 
+<SPAN CLASS="linenum">0233:</SPAN> 
+<SPAN CLASS="linenum">0234:</SPAN> 
+<SPAN CLASS="linenum">0235:</SPAN> 
+<SPAN CLASS="linenum">0236:</SPAN> 
+<SPAN CLASS="linenum">0237:</SPAN> 
+<SPAN CLASS="linenum">0238:</SPAN> 
+<SPAN CLASS="linenum">0239:</SPAN> 
+<SPAN CLASS="linenum">0240:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0241:</SPAN> <SPAN CLASS="comment">// Name: ConfirmDevice()</SPAN>
+<SPAN CLASS="linenum">0242:</SPAN> <SPAN CLASS="comment">// Desc: Called during device initialization, this code checks the display device</SPAN>
+<SPAN CLASS="linenum">0243:</SPAN> <SPAN CLASS="comment">//       for some minimum set of capabilities</SPAN>
+<SPAN CLASS="linenum">0244:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0245:</SPAN> HRESULT CAppForm::ConfirmDevice( D3DCAPS9* pCaps, DWORD dwBehavior,
+<SPAN CLASS="linenum">0246:</SPAN>                                           D3DFORMAT Format )
+<SPAN CLASS="linenum">0247:</SPAN> {
+<SPAN CLASS="linenum">0248:</SPAN>     UNREFERENCED_PARAMETER( pCaps );
+<SPAN CLASS="linenum">0249:</SPAN>     UNREFERENCED_PARAMETER( dwBehavior );
+<SPAN CLASS="linenum">0250:</SPAN>     UNREFERENCED_PARAMETER( Format );
+<SPAN CLASS="linenum">0251:</SPAN>     BOOL bCapsAcceptable;
+<SPAN CLASS="linenum">0252:</SPAN> 
+<SPAN CLASS="linenum">0253:</SPAN>     <SPAN CLASS="comment">// TODO: Perform checks to see if these display caps are acceptable.</SPAN>
+<SPAN CLASS="linenum">0254:</SPAN>     bCapsAcceptable = TRUE;
+<SPAN CLASS="linenum">0255:</SPAN> 
+<SPAN CLASS="linenum">0256:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( bCapsAcceptable )         
+<SPAN CLASS="linenum">0257:</SPAN>         <SPAN CLASS="keyword">return</SPAN> S_OK;
+<SPAN CLASS="linenum">0258:</SPAN>     <SPAN CLASS="keyword">else</SPAN>
+<SPAN CLASS="linenum">0259:</SPAN>         <SPAN CLASS="keyword">return</SPAN> E_FAIL;
+<SPAN CLASS="linenum">0260:</SPAN> }
+<SPAN CLASS="linenum">0261:</SPAN> 
+<SPAN CLASS="linenum">0262:</SPAN> 
+<SPAN CLASS="linenum">0263:</SPAN> 
+<SPAN CLASS="linenum">0264:</SPAN> 
+<SPAN CLASS="linenum">0265:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0266:</SPAN> <SPAN CLASS="comment">// Name: CAppForm::InitDeviceObjects()</SPAN>
+<SPAN CLASS="linenum">0267:</SPAN> <SPAN CLASS="comment">// Desc: Paired with DeleteDeviceObjects()</SPAN>
+<SPAN CLASS="linenum">0268:</SPAN> <SPAN CLASS="comment">//       The device has been created.  Resources that are not lost on</SPAN>
+<SPAN CLASS="linenum">0269:</SPAN> <SPAN CLASS="comment">//       Reset() can be created here -- resources in D3DPOOL_MANAGED,</SPAN>
+<SPAN CLASS="linenum">0270:</SPAN> <SPAN CLASS="comment">//       D3DPOOL_SCRATCH, or D3DPOOL_SYSTEMMEM.  Image surfaces created via</SPAN>
+<SPAN CLASS="linenum">0271:</SPAN> <SPAN CLASS="comment">//       CreateOffScreenPlainSurface are never lost and can be created here.  Vertex</SPAN>
+<SPAN CLASS="linenum">0272:</SPAN> <SPAN CLASS="comment">//       shaders and pixel shaders can also be created here as they are not</SPAN>
+<SPAN CLASS="linenum">0273:</SPAN> <SPAN CLASS="comment">//       lost on Reset().</SPAN>
+<SPAN CLASS="linenum">0274:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0275:</SPAN> HRESULT CAppForm::InitDeviceObjects()
+<SPAN CLASS="linenum">0276:</SPAN> {
+<SPAN CLASS="linenum">0277:</SPAN>     <SPAN CLASS="comment">// TODO: create device objects</SPAN>
+<SPAN CLASS="linenum">0278:</SPAN>     HRESULT hr;
+<SPAN CLASS="linenum">0279:</SPAN> 
+<SPAN CLASS="linenum">0280:</SPAN>     <SPAN CLASS="comment">// Initialize the font</SPAN>
+<SPAN CLASS="linenum">0281:</SPAN>     HDC hDC = ::GetDC( NULL );
+<SPAN CLASS="linenum">0282:</SPAN>     <SPAN CLASS="keyword">int</SPAN> nHeight = -MulDiv( 12, GetDeviceCaps(hDC, LOGPIXELSY), 72 );
+<SPAN CLASS="linenum">0283:</SPAN>     ::ReleaseDC( NULL, hDC );
+<SPAN CLASS="linenum">0284:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( FAILED( hr = D3DXCreateFont( m_pd3dDevice, nHeight, 0, FW_BOLD, 0, FALSE, DEFAULT_CHARSET, 
+<SPAN CLASS="linenum">0285:</SPAN>                          OUT_DEFAULT_PRECIS, DEFAULT_QUALITY, DEFAULT_PITCH | FF_DONTCARE, 
+<SPAN CLASS="linenum">0286:</SPAN>                          TEXT("<SPAN CLASS="string">Arial</SPAN>"), &amp;m_pFont ) ) )
+<SPAN CLASS="linenum">0287:</SPAN>         <SPAN CLASS="keyword">return</SPAN> DXTRACE_ERR( "<SPAN CLASS="string">D3DXCreateFont</SPAN>", hr );
+<SPAN CLASS="linenum">0288:</SPAN>     <SPAN CLASS="keyword">return</SPAN> S_OK;
+<SPAN CLASS="linenum">0289:</SPAN> }
+<SPAN CLASS="linenum">0290:</SPAN> 
+<SPAN CLASS="linenum">0291:</SPAN> 
+<SPAN CLASS="linenum">0292:</SPAN> 
+<SPAN CLASS="linenum">0293:</SPAN> 
+<SPAN CLASS="linenum">0294:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0295:</SPAN> <SPAN CLASS="comment">// Name: CAppForm::RestoreDeviceObjects()</SPAN>
+<SPAN CLASS="linenum">0296:</SPAN> <SPAN CLASS="comment">// Desc: Paired with InvalidateDeviceObjects()</SPAN>
+<SPAN CLASS="linenum">0297:</SPAN> <SPAN CLASS="comment">//       The device exists, but may have just been Reset().  Resources in</SPAN>
+<SPAN CLASS="linenum">0298:</SPAN> <SPAN CLASS="comment">//       D3DPOOL_DEFAULT and any other device state that persists during</SPAN>
+<SPAN CLASS="linenum">0299:</SPAN> <SPAN CLASS="comment">//       rendering should be set here.  Render states, matrices, textures,</SPAN>
+<SPAN CLASS="linenum">0300:</SPAN> <SPAN CLASS="comment">//       etc., that don't change during rendering can be set once here to</SPAN>
+<SPAN CLASS="linenum">0301:</SPAN> <SPAN CLASS="comment">//       avoid redundant state setting during Render() or FrameMove().</SPAN>
+<SPAN CLASS="linenum">0302:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0303:</SPAN> HRESULT CAppForm::RestoreDeviceObjects()
+<SPAN CLASS="linenum">0304:</SPAN> {
+<SPAN CLASS="linenum">0305:</SPAN>     <SPAN CLASS="comment">// TODO: setup render states</SPAN>
+<SPAN CLASS="linenum">0306:</SPAN> 
+<SPAN CLASS="linenum">0307:</SPAN>     <SPAN CLASS="comment">// Setup a material</SPAN>
+<SPAN CLASS="linenum">0308:</SPAN>     D3DMATERIAL9 mtrl;
+<SPAN CLASS="linenum">0309:</SPAN>     D3DUtil_InitMaterial( mtrl, 1.0f, 0.0f, 0.0f );
+<SPAN CLASS="linenum">0310:</SPAN>     m_pd3dDevice-&gt;SetMaterial( &amp;mtrl );
+<SPAN CLASS="linenum">0311:</SPAN> 
+<SPAN CLASS="linenum">0312:</SPAN>     <SPAN CLASS="comment">// Set up the textures</SPAN>
+<SPAN CLASS="linenum">0313:</SPAN>     m_pd3dDevice-&gt;SetTextureStageState( 0, D3DTSS_COLOROP,   D3DTOP_MODULATE );
+<SPAN CLASS="linenum">0314:</SPAN>     m_pd3dDevice-&gt;SetTextureStageState( 0, D3DTSS_COLORARG1, D3DTA_TEXTURE );
+<SPAN CLASS="linenum">0315:</SPAN>     m_pd3dDevice-&gt;SetTextureStageState( 0, D3DTSS_COLORARG2, D3DTA_DIFFUSE );
+<SPAN CLASS="linenum">0316:</SPAN>     m_pd3dDevice-&gt;SetTextureStageState( 0, D3DTSS_ALPHAOP,   D3DTOP_MODULATE );
+<SPAN CLASS="linenum">0317:</SPAN>     m_pd3dDevice-&gt;SetTextureStageState( 0, D3DTSS_ALPHAARG1, D3DTA_TEXTURE );
+<SPAN CLASS="linenum">0318:</SPAN>     m_pd3dDevice-&gt;SetTextureStageState( 0, D3DTSS_ALPHAARG2, D3DTA_DIFFUSE );
+<SPAN CLASS="linenum">0319:</SPAN>     m_pd3dDevice-&gt;SetSamplerState( 0, D3DSAMP_MINFILTER, D3DTEXF_LINEAR );
+<SPAN CLASS="linenum">0320:</SPAN>     m_pd3dDevice-&gt;SetSamplerState( 0, D3DSAMP_MAGFILTER, D3DTEXF_LINEAR );
+<SPAN CLASS="linenum">0321:</SPAN> 
+<SPAN CLASS="linenum">0322:</SPAN>     <SPAN CLASS="comment">// Set miscellaneous render states</SPAN>
+<SPAN CLASS="linenum">0323:</SPAN>     m_pd3dDevice-&gt;SetRenderState( D3DRS_DITHERENABLE,   FALSE );
+<SPAN CLASS="linenum">0324:</SPAN>     m_pd3dDevice-&gt;SetRenderState( D3DRS_SPECULARENABLE, FALSE );
+<SPAN CLASS="linenum">0325:</SPAN>     m_pd3dDevice-&gt;SetRenderState( D3DRS_ZENABLE,        TRUE );
+<SPAN CLASS="linenum">0326:</SPAN>     m_pd3dDevice-&gt;SetRenderState( D3DRS_AMBIENT,        0x000F0F0F );
+<SPAN CLASS="linenum">0327:</SPAN> 
+<SPAN CLASS="linenum">0328:</SPAN>     <SPAN CLASS="comment">// Set the world matrix</SPAN>
+<SPAN CLASS="linenum">0329:</SPAN>     D3DXMATRIX matIdentity;
+<SPAN CLASS="linenum">0330:</SPAN>     D3DXMatrixIdentity( &amp;matIdentity );
+<SPAN CLASS="linenum">0331:</SPAN>     m_pd3dDevice-&gt;SetTransform( D3DTS_WORLD,  &amp;matIdentity );
+<SPAN CLASS="linenum">0332:</SPAN> 
+<SPAN CLASS="linenum">0333:</SPAN>     <SPAN CLASS="comment">// Set up our view matrix. A view matrix can be defined given an eye point,</SPAN>
+<SPAN CLASS="linenum">0334:</SPAN>     <SPAN CLASS="comment">// a point to lookat, and a direction for which way is up. Here, we set the</SPAN>
+<SPAN CLASS="linenum">0335:</SPAN>     <SPAN CLASS="comment">// eye five units back along the z-axis and up three units, look at the</SPAN>
+<SPAN CLASS="linenum">0336:</SPAN>     <SPAN CLASS="comment">// origin, and define "up" to be in the y-direction.</SPAN>
+<SPAN CLASS="linenum">0337:</SPAN>     D3DXMATRIX matView;
+<SPAN CLASS="linenum">0338:</SPAN>     D3DXVECTOR3 vFromPt   = D3DXVECTOR3( 0.0f, 0.0f, -5.0f );
+<SPAN CLASS="linenum">0339:</SPAN>     D3DXVECTOR3 vLookatPt = D3DXVECTOR3( 0.0f, 0.0f, 0.0f );
+<SPAN CLASS="linenum">0340:</SPAN>     D3DXVECTOR3 vUpVec    = D3DXVECTOR3( 0.0f, 1.0f, 0.0f );
+<SPAN CLASS="linenum">0341:</SPAN>     D3DXMatrixLookAtLH( &amp;matView, &amp;vFromPt, &amp;vLookatPt, &amp;vUpVec );
+<SPAN CLASS="linenum">0342:</SPAN>     m_pd3dDevice-&gt;SetTransform( D3DTS_VIEW, &amp;matView );
+<SPAN CLASS="linenum">0343:</SPAN> 
+<SPAN CLASS="linenum">0344:</SPAN>     <SPAN CLASS="comment">// Set the projection matrix</SPAN>
+<SPAN CLASS="linenum">0345:</SPAN>     D3DXMATRIX matProj;
+<SPAN CLASS="linenum">0346:</SPAN>     FLOAT fAspect = ((FLOAT)m_d3dsdBackBuffer.Width) / m_d3dsdBackBuffer.Height;
+<SPAN CLASS="linenum">0347:</SPAN>     D3DXMatrixPerspectiveFovLH( &amp;matProj, D3DX_PI/4, fAspect, 1.0f, 100.0f );
+<SPAN CLASS="linenum">0348:</SPAN>     m_pd3dDevice-&gt;SetTransform( D3DTS_PROJECTION, &amp;matProj );
+<SPAN CLASS="linenum">0349:</SPAN> 
+<SPAN CLASS="linenum">0350:</SPAN>     <SPAN CLASS="comment">// Set up lighting states</SPAN>
+<SPAN CLASS="linenum">0351:</SPAN>     D3DLIGHT9 light;
+<SPAN CLASS="linenum">0352:</SPAN>     D3DUtil_InitLight( light, D3DLIGHT_DIRECTIONAL, -1.0f, -1.0f, 2.0f );
+<SPAN CLASS="linenum">0353:</SPAN>     m_pd3dDevice-&gt;SetLight( 0, &amp;light );
+<SPAN CLASS="linenum">0354:</SPAN>     m_pd3dDevice-&gt;LightEnable( 0, TRUE );
+<SPAN CLASS="linenum">0355:</SPAN>     m_pd3dDevice-&gt;SetRenderState( D3DRS_LIGHTING, TRUE );
+<SPAN CLASS="linenum">0356:</SPAN> 
+<SPAN CLASS="linenum">0357:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( m_pFont )
+<SPAN CLASS="linenum">0358:</SPAN>         m_pFont-&gt;OnResetDevice();
+<SPAN CLASS="linenum">0359:</SPAN> 
+<SPAN CLASS="linenum">0360:</SPAN>     <SPAN CLASS="keyword">return</SPAN> S_OK;
+<SPAN CLASS="linenum">0361:</SPAN> }
+<SPAN CLASS="linenum">0362:</SPAN> 
+<SPAN CLASS="linenum">0363:</SPAN> 
+<SPAN CLASS="linenum">0364:</SPAN> 
+<SPAN CLASS="linenum">0365:</SPAN> 
+<SPAN CLASS="linenum">0366:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0367:</SPAN> <SPAN CLASS="comment">// Name: CAppForm::FrameMove()</SPAN>
+<SPAN CLASS="linenum">0368:</SPAN> <SPAN CLASS="comment">// Desc: Called once per frame, the call is the entry point for animating</SPAN>
+<SPAN CLASS="linenum">0369:</SPAN> <SPAN CLASS="comment">//       the scene.</SPAN>
+<SPAN CLASS="linenum">0370:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0371:</SPAN> HRESULT CAppForm::FrameMove()
+<SPAN CLASS="linenum">0372:</SPAN> {
+<SPAN CLASS="linenum">0373:</SPAN>     <SPAN CLASS="comment">// TODO: update world</SPAN>
+<SPAN CLASS="linenum">0374:</SPAN> 
+<SPAN CLASS="linenum">0375:</SPAN>     <SPAN CLASS="comment">// Update user input state</SPAN>
+<SPAN CLASS="linenum">0376:</SPAN>     UpdateInput( &amp;m_UserInput );
+<SPAN CLASS="linenum">0377:</SPAN> 
+<SPAN CLASS="linenum">0378:</SPAN>     <SPAN CLASS="comment">// Update the world state according to user input</SPAN>
+<SPAN CLASS="linenum">0379:</SPAN>     D3DXMATRIX matWorld;
+<SPAN CLASS="linenum">0380:</SPAN>     D3DXMATRIX matRotY;
+<SPAN CLASS="linenum">0381:</SPAN>     D3DXMATRIX matRotX;
+<SPAN CLASS="linenum">0382:</SPAN> 
+<SPAN CLASS="linenum">0383:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( m_UserInput.bRotateLeft &amp;&amp; !m_UserInput.bRotateRight )
+<SPAN CLASS="linenum">0384:</SPAN>         m_fWorldRotY += m_fElapsedTime;
+<SPAN CLASS="linenum">0385:</SPAN>     <SPAN CLASS="keyword">else</SPAN> <SPAN CLASS="keyword">if</SPAN>( m_UserInput.bRotateRight &amp;&amp; !m_UserInput.bRotateLeft )
+<SPAN CLASS="linenum">0386:</SPAN>         m_fWorldRotY -= m_fElapsedTime;
+<SPAN CLASS="linenum">0387:</SPAN> 
+<SPAN CLASS="linenum">0388:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( m_UserInput.bRotateUp &amp;&amp; !m_UserInput.bRotateDown )
+<SPAN CLASS="linenum">0389:</SPAN>         m_fWorldRotX += m_fElapsedTime;
+<SPAN CLASS="linenum">0390:</SPAN>     <SPAN CLASS="keyword">else</SPAN> <SPAN CLASS="keyword">if</SPAN>( m_UserInput.bRotateDown &amp;&amp; !m_UserInput.bRotateUp )
+<SPAN CLASS="linenum">0391:</SPAN>         m_fWorldRotX -= m_fElapsedTime;
+<SPAN CLASS="linenum">0392:</SPAN> 
+<SPAN CLASS="linenum">0393:</SPAN>     D3DXMatrixRotationX( &amp;matRotX, m_fWorldRotX );
+<SPAN CLASS="linenum">0394:</SPAN>     D3DXMatrixRotationY( &amp;matRotY, m_fWorldRotY );
+<SPAN CLASS="linenum">0395:</SPAN> 
+<SPAN CLASS="linenum">0396:</SPAN>     D3DXMatrixMultiply( &amp;matWorld, &amp;matRotX, &amp;matRotY );
+<SPAN CLASS="linenum">0397:</SPAN>     m_pd3dDevice-&gt;SetTransform( D3DTS_WORLD, &amp;matWorld );
+<SPAN CLASS="linenum">0398:</SPAN> 
+<SPAN CLASS="linenum">0399:</SPAN>     <SPAN CLASS="keyword">return</SPAN> S_OK;
+<SPAN CLASS="linenum">0400:</SPAN> }
+<SPAN CLASS="linenum">0401:</SPAN> 
+<SPAN CLASS="linenum">0402:</SPAN> 
+<SPAN CLASS="linenum">0403:</SPAN> 
+<SPAN CLASS="linenum">0404:</SPAN> 
+<SPAN CLASS="linenum">0405:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0406:</SPAN> <SPAN CLASS="comment">// Name: UpdateInput()</SPAN>
+<SPAN CLASS="linenum">0407:</SPAN> <SPAN CLASS="comment">// Desc: Update the user input.  Called once per frame </SPAN>
+<SPAN CLASS="linenum">0408:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0409:</SPAN> <SPAN CLASS="keyword">void</SPAN> CAppForm::UpdateInput( UserInput* pUserInput )
+<SPAN CLASS="linenum">0410:</SPAN> {
+<SPAN CLASS="linenum">0411:</SPAN>     pUserInput-&gt;bRotateUp    = ( m_bActive &amp;&amp; (GetAsyncKeyState( VK_UP )    &amp; 0x8000) == 0x8000 );
+<SPAN CLASS="linenum">0412:</SPAN>     pUserInput-&gt;bRotateDown  = ( m_bActive &amp;&amp; (GetAsyncKeyState( VK_DOWN )  &amp; 0x8000) == 0x8000 );
+<SPAN CLASS="linenum">0413:</SPAN>     pUserInput-&gt;bRotateLeft  = ( m_bActive &amp;&amp; (GetAsyncKeyState( VK_LEFT )  &amp; 0x8000) == 0x8000 );
+<SPAN CLASS="linenum">0414:</SPAN>     pUserInput-&gt;bRotateRight = ( m_bActive &amp;&amp; (GetAsyncKeyState( VK_RIGHT ) &amp; 0x8000) == 0x8000 );
+<SPAN CLASS="linenum">0415:</SPAN> }
+<SPAN CLASS="linenum">0416:</SPAN> 
+<SPAN CLASS="linenum">0417:</SPAN> 
+<SPAN CLASS="linenum">0418:</SPAN> 
+<SPAN CLASS="linenum">0419:</SPAN> 
+<SPAN CLASS="linenum">0420:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0421:</SPAN> <SPAN CLASS="comment">// Name: CAppForm::Render()</SPAN>
+<SPAN CLASS="linenum">0422:</SPAN> <SPAN CLASS="comment">// Desc: Called once per frame, the call is the entry point for 3d</SPAN>
+<SPAN CLASS="linenum">0423:</SPAN> <SPAN CLASS="comment">//       rendering. This function sets up render states, clears the</SPAN>
+<SPAN CLASS="linenum">0424:</SPAN> <SPAN CLASS="comment">//       viewport, and renders the scene.</SPAN>
+<SPAN CLASS="linenum">0425:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0426:</SPAN> HRESULT CAppForm::Render()
+<SPAN CLASS="linenum">0427:</SPAN> {
+<SPAN CLASS="linenum">0428:</SPAN>     <SPAN CLASS="comment">// Clear the viewport</SPAN>
+<SPAN CLASS="linenum">0429:</SPAN>     m_pd3dDevice-&gt;Clear( 0L, NULL, D3DCLEAR_TARGET|D3DCLEAR_ZBUFFER,
+<SPAN CLASS="linenum">0430:</SPAN>                          0x000000ff, 1.0f, 0L );
+<SPAN CLASS="linenum">0431:</SPAN> 
+<SPAN CLASS="linenum">0432:</SPAN>     <SPAN CLASS="comment">// Begin the scene</SPAN>
+<SPAN CLASS="linenum">0433:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( SUCCEEDED( m_pd3dDevice-&gt;BeginScene() ) )
+<SPAN CLASS="linenum">0434:</SPAN>     {
+<SPAN CLASS="linenum">0435:</SPAN>         <SPAN CLASS="comment">// TODO: render world</SPAN>
+<SPAN CLASS="linenum">0436:</SPAN>         
+<SPAN CLASS="linenum">0437:</SPAN>         <SPAN CLASS="comment">// Render stats and help text  </SPAN>
+<SPAN CLASS="linenum">0438:</SPAN>         RenderText();
+<SPAN CLASS="linenum">0439:</SPAN> 
+<SPAN CLASS="linenum">0440:</SPAN>         <SPAN CLASS="comment">// End the scene.</SPAN>
+<SPAN CLASS="linenum">0441:</SPAN>         m_pd3dDevice-&gt;EndScene();
+<SPAN CLASS="linenum">0442:</SPAN>     }
+<SPAN CLASS="linenum">0443:</SPAN> 
+<SPAN CLASS="linenum">0444:</SPAN>     <SPAN CLASS="keyword">return</SPAN> S_OK;
+<SPAN CLASS="linenum">0445:</SPAN> }
+<SPAN CLASS="linenum">0446:</SPAN> 
+<SPAN CLASS="linenum">0447:</SPAN> 
+<SPAN CLASS="linenum">0448:</SPAN> 
+<SPAN CLASS="linenum">0449:</SPAN> 
+<SPAN CLASS="linenum">0450:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0451:</SPAN> <SPAN CLASS="comment">// Name: RenderText()</SPAN>
+<SPAN CLASS="linenum">0452:</SPAN> <SPAN CLASS="comment">// Desc: Renders stats and help text to the scene.</SPAN>
+<SPAN CLASS="linenum">0453:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0454:</SPAN> HRESULT CAppForm::RenderText()
+<SPAN CLASS="linenum">0455:</SPAN> {
+<SPAN CLASS="linenum">0456:</SPAN>     D3DCOLOR fontColor        = D3DCOLOR_ARGB(255,255,255,0);
+<SPAN CLASS="linenum">0457:</SPAN>     TCHAR szMsg[MAX_PATH] = TEXT("<SPAN CLASS="string"></SPAN>");
+<SPAN CLASS="linenum">0458:</SPAN>     RECT rct;
+<SPAN CLASS="linenum">0459:</SPAN>     ZeroMemory( &amp;rct, <SPAN CLASS="keyword">sizeof</SPAN>(rct) );       
+<SPAN CLASS="linenum">0460:</SPAN> 
+<SPAN CLASS="linenum">0461:</SPAN>     rct.left   = 2;
+<SPAN CLASS="linenum">0462:</SPAN>     rct.right  = m_d3dsdBackBuffer.Width - 20;
+<SPAN CLASS="linenum">0463:</SPAN> 
+<SPAN CLASS="linenum">0464:</SPAN>     <SPAN CLASS="comment">// Output display stats</SPAN>
+<SPAN CLASS="linenum">0465:</SPAN>     INT nNextLine = 40; 
+<SPAN CLASS="linenum">0466:</SPAN> 
+<SPAN CLASS="linenum">0467:</SPAN>     lstrcpy( szMsg, m_strDeviceStats );
+<SPAN CLASS="linenum">0468:</SPAN>     nNextLine -= 20; rct.top = nNextLine; rct.bottom = rct.top + 20;    
+<SPAN CLASS="linenum">0469:</SPAN>     m_pFont-&gt;DrawText( NULL, szMsg, -1, &amp;rct, DT_NOCLIP, fontColor );
+<SPAN CLASS="linenum">0470:</SPAN> 
+<SPAN CLASS="linenum">0471:</SPAN>     lstrcpy( szMsg, m_strFrameStats );
+<SPAN CLASS="linenum">0472:</SPAN>     nNextLine -= 20; rct.top = nNextLine; rct.bottom = rct.top + 20;    
+<SPAN CLASS="linenum">0473:</SPAN>     m_pFont-&gt;DrawText( NULL, szMsg, -1, &amp;rct, DT_NOCLIP, fontColor );
+<SPAN CLASS="linenum">0474:</SPAN> <SPAN CLASS="keyword">#if</SPAN> 0
+<SPAN CLASS="linenum">0475:</SPAN>     <SPAN CLASS="comment">// Output statistics &amp; help</SPAN>
+<SPAN CLASS="linenum">0476:</SPAN>     nNextLine = m_d3dsdBackBuffer.Height; 
+<SPAN CLASS="linenum">0477:</SPAN>     wsprintf( szMsg, TEXT("<SPAN CLASS="string">Arrow keys: Up=%d Down=%d Left=%d Right=%d</SPAN>"), 
+<SPAN CLASS="linenum">0478:</SPAN>               m_UserInput.bRotateUp, m_UserInput.bRotateDown, m_UserInput.bRotateLeft, m_UserInput.bRotateRight );
+<SPAN CLASS="linenum">0479:</SPAN>     nNextLine -= 20; rct.top = nNextLine; rct.bottom = rct.top + 20;    
+<SPAN CLASS="linenum">0480:</SPAN>     m_pFont-&gt;DrawText( NULL, szMsg, -1, &amp;rct, DT_NOCLIP, fontColor );
+<SPAN CLASS="linenum">0481:</SPAN>     sprintf( szMsg, TEXT("<SPAN CLASS="string">World State: %0.3f, %0.3f</SPAN>"), 
+<SPAN CLASS="linenum">0482:</SPAN>                     m_fWorldRotX, m_fWorldRotY );
+<SPAN CLASS="linenum">0483:</SPAN>     nNextLine -= 20; rct.top = nNextLine; rct.bottom = rct.top + 20;    
+<SPAN CLASS="linenum">0484:</SPAN>     m_pFont-&gt;DrawText( NULL, szMsg, -1, &amp;rct, DT_NOCLIP, fontColor );
+<SPAN CLASS="linenum">0485:</SPAN>     lstrcpy( szMsg, TEXT("<SPAN CLASS="string">Use arrow keys to update input</SPAN>") );
+<SPAN CLASS="linenum">0486:</SPAN>     nNextLine -= 20; rct.top = nNextLine; rct.bottom = rct.top + 20;    
+<SPAN CLASS="linenum">0487:</SPAN>     m_pFont-&gt;DrawText( NULL, szMsg, -1, &amp;rct, DT_NOCLIP, fontColor );
+<SPAN CLASS="linenum">0488:</SPAN>     lstrcpy( szMsg, TEXT("<SPAN CLASS="string">Press 'F2' to configure display</SPAN>") );
+<SPAN CLASS="linenum">0489:</SPAN>     nNextLine -= 20; rct.top = nNextLine; rct.bottom = rct.top + 20;    
+<SPAN CLASS="linenum">0490:</SPAN>     m_pFont-&gt;DrawText( NULL, szMsg, -1, &amp;rct, DT_NOCLIP, fontColor );
+<SPAN CLASS="linenum">0491:</SPAN> <SPAN CLASS="keyword">#endif</SPAN>
+<SPAN CLASS="linenum">0492:</SPAN>     <SPAN CLASS="keyword">return</SPAN> S_OK;
+<SPAN CLASS="linenum">0493:</SPAN> }
+<SPAN CLASS="linenum">0494:</SPAN> 
+<SPAN CLASS="linenum">0495:</SPAN> 
+<SPAN CLASS="linenum">0496:</SPAN> 
+<SPAN CLASS="linenum">0497:</SPAN> 
+<SPAN CLASS="linenum">0498:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0499:</SPAN> <SPAN CLASS="comment">// Name: DoDataExchange()</SPAN>
+<SPAN CLASS="linenum">0500:</SPAN> <SPAN CLASS="comment">// Desc: DDX/DDV support</SPAN>
+<SPAN CLASS="linenum">0501:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0502:</SPAN> <SPAN CLASS="keyword">void</SPAN> CAppForm::DoDataExchange(CDataExchange* pDX)
+<SPAN CLASS="linenum">0503:</SPAN> {
+<SPAN CLASS="linenum">0504:</SPAN>     CFormView::DoDataExchange(pDX);
+<SPAN CLASS="linenum">0505:</SPAN>     <SPAN CLASS="comment">//{{AFX_DATA_MAP(CAppForm)</SPAN>
+<SPAN CLASS="linenum">0506:</SPAN>     <SPAN CLASS="comment">//}}AFX_DATA_MAP</SPAN>
+<SPAN CLASS="linenum">0507:</SPAN>     DDX_Check(pDX, IDC_CHECK_RENDERTARGET, m_bCheckRenderTarget);
+<SPAN CLASS="linenum">0508:</SPAN>     DDX_Check(pDX, IDC_CHECK_DEPTHSTENCIL, m_bCheckDepthStencil);
+<SPAN CLASS="linenum">0509:</SPAN>     DDX_Check(pDX, IDC_CHECK_DYNAMIC, m_bCheckDynamic);
+<SPAN CLASS="linenum">0510:</SPAN>     DDX_Check(pDX, IDC_CHECK_AUTOGENMIPMAP, m_bCheckAutoGenMipmap);
+<SPAN CLASS="linenum">0511:</SPAN>     DDX_Check(pDX, IDC_CHECK_DMAP, m_bCheckDMap);
+<SPAN CLASS="linenum">0512:</SPAN>     DDX_CBIndex(pDX, IDC_COMBO_RESOURCE_TYPE, m_iResourceType);
+<SPAN CLASS="linenum">0513:</SPAN> }
+<SPAN CLASS="linenum">0514:</SPAN> 
+<SPAN CLASS="linenum">0515:</SPAN> 
+<SPAN CLASS="linenum">0516:</SPAN> 
+<SPAN CLASS="linenum">0517:</SPAN> 
+<SPAN CLASS="linenum">0518:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0519:</SPAN> <SPAN CLASS="comment">// Name: WindowProc()</SPAN>
+<SPAN CLASS="linenum">0520:</SPAN> <SPAN CLASS="comment">// Desc: </SPAN>
+<SPAN CLASS="linenum">0521:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0522:</SPAN> LRESULT CAppForm::WindowProc(UINT message, WPARAM wParam, LPARAM lParam) 
+<SPAN CLASS="linenum">0523:</SPAN> {
+<SPAN CLASS="linenum">0524:</SPAN>     <SPAN CLASS="keyword">return</SPAN> CFormView ::WindowProc(message, wParam, lParam);
+<SPAN CLASS="linenum">0525:</SPAN> }
+<SPAN CLASS="linenum">0526:</SPAN> 
+<SPAN CLASS="linenum">0527:</SPAN> 
+<SPAN CLASS="linenum">0528:</SPAN> 
+<SPAN CLASS="linenum">0529:</SPAN> 
+<SPAN CLASS="linenum">0530:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0531:</SPAN> <SPAN CLASS="comment">// Name: OnChangeDevice()</SPAN>
+<SPAN CLASS="linenum">0532:</SPAN> <SPAN CLASS="comment">// Desc: Needed to enable dlg menu item </SPAN>
+<SPAN CLASS="linenum">0533:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0534:</SPAN> <SPAN CLASS="keyword">void</SPAN> CAppFrameWnd::OnChangeDevice() 
+<SPAN CLASS="linenum">0535:</SPAN> {
+<SPAN CLASS="linenum">0536:</SPAN>     g_AppFormView-&gt;OnChangeDevice();
+<SPAN CLASS="linenum">0537:</SPAN> }
+<SPAN CLASS="linenum">0538:</SPAN> 
+<SPAN CLASS="linenum">0539:</SPAN> 
+<SPAN CLASS="linenum">0540:</SPAN> 
+<SPAN CLASS="linenum">0541:</SPAN> 
+<SPAN CLASS="linenum">0542:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0543:</SPAN> <SPAN CLASS="comment">// Name: CAppForm::InvalidateDeviceObjects()</SPAN>
+<SPAN CLASS="linenum">0544:</SPAN> <SPAN CLASS="comment">// Desc: Invalidates device objects.  Paired with RestoreDeviceObjects()</SPAN>
+<SPAN CLASS="linenum">0545:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0546:</SPAN> HRESULT CAppForm::InvalidateDeviceObjects()
+<SPAN CLASS="linenum">0547:</SPAN> {
+<SPAN CLASS="linenum">0548:</SPAN>     <SPAN CLASS="comment">// TODO: Cleanup any objects created in RestoreDeviceObjects()</SPAN>
+<SPAN CLASS="linenum">0549:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( m_pFont )
+<SPAN CLASS="linenum">0550:</SPAN>         m_pFont-&gt;OnLostDevice();
+<SPAN CLASS="linenum">0551:</SPAN> 
+<SPAN CLASS="linenum">0552:</SPAN>     <SPAN CLASS="keyword">return</SPAN> S_OK;
+<SPAN CLASS="linenum">0553:</SPAN> }
+<SPAN CLASS="linenum">0554:</SPAN> 
+<SPAN CLASS="linenum">0555:</SPAN> 
+<SPAN CLASS="linenum">0556:</SPAN> 
+<SPAN CLASS="linenum">0557:</SPAN> 
+<SPAN CLASS="linenum">0558:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0559:</SPAN> <SPAN CLASS="comment">// Name: CAppForm::DeleteDeviceObjects()</SPAN>
+<SPAN CLASS="linenum">0560:</SPAN> <SPAN CLASS="comment">// Desc: Paired with InitDeviceObjects()</SPAN>
+<SPAN CLASS="linenum">0561:</SPAN> <SPAN CLASS="comment">//       Called when the app is exiting, or the device is being changed,</SPAN>
+<SPAN CLASS="linenum">0562:</SPAN> <SPAN CLASS="comment">//       this function deletes any device dependent objects.  </SPAN>
+<SPAN CLASS="linenum">0563:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0564:</SPAN> HRESULT CAppForm::DeleteDeviceObjects()
+<SPAN CLASS="linenum">0565:</SPAN> {
+<SPAN CLASS="linenum">0566:</SPAN>     <SPAN CLASS="comment">// TODO: Cleanup any objects created in InitDeviceObjects()</SPAN>
+<SPAN CLASS="linenum">0567:</SPAN>     SAFE_RELEASE( m_pFont );
+<SPAN CLASS="linenum">0568:</SPAN> 
+<SPAN CLASS="linenum">0569:</SPAN>     <SPAN CLASS="keyword">return</SPAN> S_OK;
+<SPAN CLASS="linenum">0570:</SPAN> }
+<SPAN CLASS="linenum">0571:</SPAN> 
+<SPAN CLASS="linenum">0572:</SPAN> 
+<SPAN CLASS="linenum">0573:</SPAN> 
+<SPAN CLASS="linenum">0574:</SPAN> 
+<SPAN CLASS="linenum">0575:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0576:</SPAN> <SPAN CLASS="comment">// Name: CAppForm::FinalCleanup()</SPAN>
+<SPAN CLASS="linenum">0577:</SPAN> <SPAN CLASS="comment">// Desc: Paired with OneTimeSceneInit()</SPAN>
+<SPAN CLASS="linenum">0578:</SPAN> <SPAN CLASS="comment">//       Called before the app exits, this function gives the app the chance</SPAN>
+<SPAN CLASS="linenum">0579:</SPAN> <SPAN CLASS="comment">//       to cleanup after itself.</SPAN>
+<SPAN CLASS="linenum">0580:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0581:</SPAN> HRESULT CAppForm::FinalCleanup()
+<SPAN CLASS="linenum">0582:</SPAN> {
+<SPAN CLASS="linenum">0583:</SPAN>     <SPAN CLASS="comment">// TODO: Perform any final cleanup needed</SPAN>
+<SPAN CLASS="linenum">0584:</SPAN>     <SPAN CLASS="keyword">return</SPAN> S_OK;
+<SPAN CLASS="linenum">0585:</SPAN> }
+<SPAN CLASS="linenum">0586:</SPAN> 
+<SPAN CLASS="linenum">0587:</SPAN> 
+<SPAN CLASS="linenum">0588:</SPAN> 
+<SPAN CLASS="linenum">0589:</SPAN> 
+<SPAN CLASS="linenum">0590:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0591:</SPAN> <SPAN CLASS="comment">// Name: InitInstance()</SPAN>
+<SPAN CLASS="linenum">0592:</SPAN> <SPAN CLASS="comment">// Desc: This is the main entry point for the application. The MFC window stuff</SPAN>
+<SPAN CLASS="linenum">0593:</SPAN> <SPAN CLASS="comment">//       is initialized here. See also the main initialization routine for the</SPAN>
+<SPAN CLASS="linenum">0594:</SPAN> <SPAN CLASS="comment">//       CAppForm class, which is called indirectly from here.</SPAN>
+<SPAN CLASS="linenum">0595:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0596:</SPAN> BOOL CApp::InitInstance()
+<SPAN CLASS="linenum">0597:</SPAN> {
+<SPAN CLASS="linenum">0598:</SPAN>     <SPAN CLASS="comment">// Asscociate the MFC app with the frame window and doc/view classes</SPAN>
+<SPAN CLASS="linenum">0599:</SPAN>     AddDocTemplate( <SPAN CLASS="keyword">new</SPAN> CSingleDocTemplate( IDR_MAINFRAME,
+<SPAN CLASS="linenum">0600:</SPAN>                                             RUNTIME_CLASS(CAppDoc),
+<SPAN CLASS="linenum">0601:</SPAN>                                             RUNTIME_CLASS(CAppFrameWnd),
+<SPAN CLASS="linenum">0602:</SPAN>                                             RUNTIME_CLASS(CAppForm) ) );
+<SPAN CLASS="linenum">0603:</SPAN> 
+<SPAN CLASS="linenum">0604:</SPAN>     <SPAN CLASS="comment">// Dispatch commands specified on the command line (req'd by MFC). This</SPAN>
+<SPAN CLASS="linenum">0605:</SPAN>     <SPAN CLASS="comment">// also initializes the the CAppDoc, CAppFrameWnd, and CAppForm classes.</SPAN>
+<SPAN CLASS="linenum">0606:</SPAN>     CCommandLineInfo cmdInfo;
+<SPAN CLASS="linenum">0607:</SPAN>     ParseCommandLine( cmdInfo );
+<SPAN CLASS="linenum">0608:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( !ProcessShellCommand( cmdInfo ) )
+<SPAN CLASS="linenum">0609:</SPAN>         <SPAN CLASS="keyword">return</SPAN> FALSE;
+<SPAN CLASS="linenum">0610:</SPAN> 
+<SPAN CLASS="linenum">0611:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( !g_AppFormView-&gt;IsReady() )
+<SPAN CLASS="linenum">0612:</SPAN>         <SPAN CLASS="keyword">return</SPAN> FALSE;
+<SPAN CLASS="linenum">0613:</SPAN> 
+<SPAN CLASS="linenum">0614:</SPAN>     g_AppFormView-&gt;GetParentFrame()-&gt;RecalcLayout();
+<SPAN CLASS="linenum">0615:</SPAN>     g_AppFormView-&gt;ResizeParentToFit( FALSE ); 
+<SPAN CLASS="linenum">0616:</SPAN>     
+<SPAN CLASS="linenum">0617:</SPAN>     m_pMainWnd-&gt;SetWindowText( g_strAppTitle );
+<SPAN CLASS="linenum">0618:</SPAN>     m_pMainWnd-&gt;UpdateWindow();
+<SPAN CLASS="linenum">0619:</SPAN> 
+<SPAN CLASS="linenum">0620:</SPAN>     <SPAN CLASS="keyword">return</SPAN> TRUE;
+<SPAN CLASS="linenum">0621:</SPAN> }
+<SPAN CLASS="linenum">0622:</SPAN> 
+<SPAN CLASS="linenum">0623:</SPAN> 
+<SPAN CLASS="linenum">0624:</SPAN> 
+<SPAN CLASS="linenum">0625:</SPAN> 
+<SPAN CLASS="linenum">0626:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0627:</SPAN> <SPAN CLASS="comment">// Name: LoadFrame()</SPAN>
+<SPAN CLASS="linenum">0628:</SPAN> <SPAN CLASS="comment">// Desc: Uses idle time to render the 3D scene.</SPAN>
+<SPAN CLASS="linenum">0629:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0630:</SPAN> BOOL CAppFrameWnd::LoadFrame(UINT nIDResource, DWORD dwDefaultStyle, CWnd* pParentWnd, CCreateContext* pContext) 
+<SPAN CLASS="linenum">0631:</SPAN> {
+<SPAN CLASS="linenum">0632:</SPAN>     BOOL bResult = CFrameWnd::LoadFrame(nIDResource, dwDefaultStyle, pParentWnd, pContext);
+<SPAN CLASS="linenum">0633:</SPAN>     
+<SPAN CLASS="linenum">0634:</SPAN>     LoadAccelTable( MAKEINTRESOURCE(IDR_MAIN_ACCEL) );
+<SPAN CLASS="linenum">0635:</SPAN> 
+<SPAN CLASS="linenum">0636:</SPAN>     <SPAN CLASS="keyword">return</SPAN> bResult;
+<SPAN CLASS="linenum">0637:</SPAN> }
+<SPAN CLASS="linenum">0638:</SPAN> 
+<SPAN CLASS="linenum">0639:</SPAN> 
+<SPAN CLASS="linenum">0640:</SPAN> 
+<SPAN CLASS="linenum">0641:</SPAN> 
+<SPAN CLASS="linenum">0642:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0643:</SPAN> <SPAN CLASS="comment">// Name: OnIdle()</SPAN>
+<SPAN CLASS="linenum">0644:</SPAN> <SPAN CLASS="comment">// Desc: Uses idle time to render the 3D scene.</SPAN>
+<SPAN CLASS="linenum">0645:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0646:</SPAN> BOOL CApp::OnIdle( LONG )
+<SPAN CLASS="linenum">0647:</SPAN> {
+<SPAN CLASS="linenum">0648:</SPAN>     <SPAN CLASS="comment">// Do not render if the app is minimized</SPAN>
+<SPAN CLASS="linenum">0649:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( m_pMainWnd-&gt;IsIconic() )
+<SPAN CLASS="linenum">0650:</SPAN>         <SPAN CLASS="keyword">return</SPAN> FALSE;
+<SPAN CLASS="linenum">0651:</SPAN> 
+<SPAN CLASS="linenum">0652:</SPAN>     TCHAR strStatsPrev[200];
+<SPAN CLASS="linenum">0653:</SPAN> 
+<SPAN CLASS="linenum">0654:</SPAN>     lstrcpy(strStatsPrev, g_AppFormView-&gt;PstrFrameStats());
+<SPAN CLASS="linenum">0655:</SPAN> 
+<SPAN CLASS="linenum">0656:</SPAN>     <SPAN CLASS="comment">// Update and render a frame</SPAN>
+<SPAN CLASS="linenum">0657:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( g_AppFormView-&gt;IsReady() )
+<SPAN CLASS="linenum">0658:</SPAN>     {
+<SPAN CLASS="linenum">0659:</SPAN>         g_AppFormView-&gt;CheckForLostFullscreen();
+<SPAN CLASS="linenum">0660:</SPAN>         g_AppFormView-&gt;RenderScene();
+<SPAN CLASS="linenum">0661:</SPAN>     }
+<SPAN CLASS="linenum">0662:</SPAN> 
+<SPAN CLASS="linenum">0663:</SPAN>     <SPAN CLASS="comment">// Keep requesting more idle time</SPAN>
+<SPAN CLASS="linenum">0664:</SPAN>     <SPAN CLASS="keyword">return</SPAN> TRUE;
+<SPAN CLASS="linenum">0665:</SPAN> }
+<SPAN CLASS="linenum">0666:</SPAN> 
+<SPAN CLASS="linenum">0667:</SPAN> 
+<SPAN CLASS="linenum">0668:</SPAN> 
+<SPAN CLASS="linenum">0669:</SPAN> 
+<SPAN CLASS="linenum">0670:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0671:</SPAN> <SPAN CLASS="comment">// Name: PreCreateWindow()</SPAN>
+<SPAN CLASS="linenum">0672:</SPAN> <SPAN CLASS="comment">// Desc: Change the window style (so it cannot maximize or be sized) before</SPAN>
+<SPAN CLASS="linenum">0673:</SPAN> <SPAN CLASS="comment">//       the main frame window is created.</SPAN>
+<SPAN CLASS="linenum">0674:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0675:</SPAN> BOOL CAppFrameWnd::PreCreateWindow( CREATESTRUCT&amp; cs )
+<SPAN CLASS="linenum">0676:</SPAN> {
+<SPAN CLASS="linenum">0677:</SPAN>     cs.style = WS_OVERLAPPED|WS_CAPTION|WS_SYSMENU|WS_MINIMIZEBOX;
+<SPAN CLASS="linenum">0678:</SPAN> 
+<SPAN CLASS="linenum">0679:</SPAN>     <SPAN CLASS="keyword">return</SPAN> CFrameWnd::PreCreateWindow( cs );
+<SPAN CLASS="linenum">0680:</SPAN> }
+<SPAN CLASS="linenum">0681:</SPAN> 
+<SPAN CLASS="linenum">0682:</SPAN> 
+<SPAN CLASS="linenum">0683:</SPAN> 
+<SPAN CLASS="linenum">0684:</SPAN> 
+<SPAN CLASS="linenum">0685:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0686:</SPAN> <SPAN CLASS="comment">// Name: ~CAppForm()</SPAN>
+<SPAN CLASS="linenum">0687:</SPAN> <SPAN CLASS="comment">// Desc: Destructor for the dialog resource form. Shuts down the app</SPAN>
+<SPAN CLASS="linenum">0688:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0689:</SPAN> CAppForm::~CAppForm()
+<SPAN CLASS="linenum">0690:</SPAN> {
+<SPAN CLASS="linenum">0691:</SPAN>     Cleanup3DEnvironment();
+<SPAN CLASS="linenum">0692:</SPAN>     SAFE_RELEASE( m_pD3D );
+<SPAN CLASS="linenum">0693:</SPAN>     FinalCleanup();
+<SPAN CLASS="linenum">0694:</SPAN> 
+<SPAN CLASS="linenum">0695:</SPAN>     SAFE_DELETE_ARRAY(m_pbResult);
+<SPAN CLASS="linenum">0696:</SPAN> }
+<SPAN CLASS="linenum">0697:</SPAN> 
+<SPAN CLASS="linenum">0698:</SPAN> 
+<SPAN CLASS="linenum">0699:</SPAN> 
+<SPAN CLASS="linenum">0700:</SPAN> 
+<SPAN CLASS="linenum">0701:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0702:</SPAN> <SPAN CLASS="comment">// Name: OnToggleFullScreen()</SPAN>
+<SPAN CLASS="linenum">0703:</SPAN> <SPAN CLASS="comment">// Desc: Called when user toggles the fullscreen mode</SPAN>
+<SPAN CLASS="linenum">0704:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0705:</SPAN> <SPAN CLASS="keyword">void</SPAN> CAppForm::OnToggleFullScreen()
+<SPAN CLASS="linenum">0706:</SPAN> {
+<SPAN CLASS="linenum">0707:</SPAN>     ToggleFullscreen();
+<SPAN CLASS="linenum">0708:</SPAN> }
+<SPAN CLASS="linenum">0709:</SPAN> 
+<SPAN CLASS="linenum">0710:</SPAN> 
+<SPAN CLASS="linenum">0711:</SPAN> 
+<SPAN CLASS="linenum">0712:</SPAN> 
+<SPAN CLASS="linenum">0713:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0714:</SPAN> <SPAN CLASS="comment">// Name: OnChangeDevice()</SPAN>
+<SPAN CLASS="linenum">0715:</SPAN> <SPAN CLASS="comment">// Desc: Use hit the "Change Device.." button. Display the dialog for the user</SPAN>
+<SPAN CLASS="linenum">0716:</SPAN> <SPAN CLASS="comment">//       to select a new device/mode, and call Change3DEnvironment to</SPAN>
+<SPAN CLASS="linenum">0717:</SPAN> <SPAN CLASS="comment">//       use the new device/mode.</SPAN>
+<SPAN CLASS="linenum">0718:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0719:</SPAN> VOID CAppForm::OnChangeDevice()
+<SPAN CLASS="linenum">0720:</SPAN> {
+<SPAN CLASS="linenum">0721:</SPAN>     Pause(<SPAN CLASS="keyword">true</SPAN>);
+<SPAN CLASS="linenum">0722:</SPAN> 
+<SPAN CLASS="linenum">0723:</SPAN>     UserSelectNewDevice();
+<SPAN CLASS="linenum">0724:</SPAN> 
+<SPAN CLASS="linenum">0725:</SPAN>     <SPAN CLASS="comment">// Update UI</SPAN>
+<SPAN CLASS="linenum">0726:</SPAN>     UpdateUIForDeviceCapabilites();
+<SPAN CLASS="linenum">0727:</SPAN> 
+<SPAN CLASS="linenum">0728:</SPAN>     Pause(<SPAN CLASS="keyword">false</SPAN>);
+<SPAN CLASS="linenum">0729:</SPAN> }
+<SPAN CLASS="linenum">0730:</SPAN> 
+<SPAN CLASS="linenum">0731:</SPAN> 
+<SPAN CLASS="linenum">0732:</SPAN> 
+<SPAN CLASS="linenum">0733:</SPAN> 
+<SPAN CLASS="linenum">0734:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0735:</SPAN> <SPAN CLASS="comment">// Name: AdjustWindowForChange()</SPAN>
+<SPAN CLASS="linenum">0736:</SPAN> <SPAN CLASS="comment">// Desc: Adjusts the window properties for windowed or fullscreen mode</SPAN>
+<SPAN CLASS="linenum">0737:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0738:</SPAN> HRESULT CAppForm::AdjustWindowForChange()
+<SPAN CLASS="linenum">0739:</SPAN> {
+<SPAN CLASS="linenum">0740:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( m_bWindowed )
+<SPAN CLASS="linenum">0741:</SPAN>     {
+<SPAN CLASS="linenum">0742:</SPAN>         ::ShowWindow( m_hwndRenderFullScreen, SW_HIDE );
+<SPAN CLASS="linenum">0743:</SPAN>         CD3DApplication::m_hWnd = m_hwndRenderWindow;
+<SPAN CLASS="linenum">0744:</SPAN>     }
+<SPAN CLASS="linenum">0745:</SPAN>     <SPAN CLASS="keyword">else</SPAN>
+<SPAN CLASS="linenum">0746:</SPAN>     {
+<SPAN CLASS="linenum">0747:</SPAN>         <SPAN CLASS="keyword">if</SPAN>( ::IsIconic( m_hwndRenderFullScreen ) )
+<SPAN CLASS="linenum">0748:</SPAN>             ::ShowWindow( m_hwndRenderFullScreen, SW_RESTORE );
+<SPAN CLASS="linenum">0749:</SPAN>         ::ShowWindow( m_hwndRenderFullScreen, SW_SHOW );
+<SPAN CLASS="linenum">0750:</SPAN>         CD3DApplication::m_hWnd = m_hwndRenderFullScreen;
+<SPAN CLASS="linenum">0751:</SPAN>     }
+<SPAN CLASS="linenum">0752:</SPAN> 
+<SPAN CLASS="linenum">0753:</SPAN>     <SPAN CLASS="keyword">return</SPAN> S_OK;
+<SPAN CLASS="linenum">0754:</SPAN> }
+<SPAN CLASS="linenum">0755:</SPAN> 
+<SPAN CLASS="linenum">0756:</SPAN> 
+<SPAN CLASS="linenum">0757:</SPAN> 
+<SPAN CLASS="linenum">0758:</SPAN> 
+<SPAN CLASS="linenum">0759:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0760:</SPAN> <SPAN CLASS="comment">// Name: FullScreenWndProc()</SPAN>
+<SPAN CLASS="linenum">0761:</SPAN> <SPAN CLASS="comment">// Desc: The WndProc funtion used when the app is in fullscreen mode. This is</SPAN>
+<SPAN CLASS="linenum">0762:</SPAN> <SPAN CLASS="comment">//       needed simply to trap the ESC key.</SPAN>
+<SPAN CLASS="linenum">0763:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0764:</SPAN> LRESULT CALLBACK FullScreenWndProc( HWND hWnd, UINT msg, WPARAM wParam,
+<SPAN CLASS="linenum">0765:</SPAN>                                     LPARAM lParam )
+<SPAN CLASS="linenum">0766:</SPAN> {
+<SPAN CLASS="linenum">0767:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( msg == WM_CLOSE )
+<SPAN CLASS="linenum">0768:</SPAN>     {
+<SPAN CLASS="linenum">0769:</SPAN>         <SPAN CLASS="comment">// User wants to exit, so go back to windowed mode and exit for real</SPAN>
+<SPAN CLASS="linenum">0770:</SPAN>         g_AppFormView-&gt;OnToggleFullScreen();
+<SPAN CLASS="linenum">0771:</SPAN>         g_App.GetMainWnd()-&gt;PostMessage( WM_CLOSE, 0, 0 );
+<SPAN CLASS="linenum">0772:</SPAN>     }
+<SPAN CLASS="linenum">0773:</SPAN>     <SPAN CLASS="keyword">else</SPAN> <SPAN CLASS="keyword">if</SPAN>( msg == WM_SETCURSOR )
+<SPAN CLASS="linenum">0774:</SPAN>     {
+<SPAN CLASS="linenum">0775:</SPAN>         SetCursor( NULL );
+<SPAN CLASS="linenum">0776:</SPAN>     }
+<SPAN CLASS="linenum">0777:</SPAN>     <SPAN CLASS="keyword">else</SPAN> <SPAN CLASS="keyword">if</SPAN>( msg == WM_KEYUP &amp;&amp; wParam == VK_ESCAPE )
+<SPAN CLASS="linenum">0778:</SPAN>     {
+<SPAN CLASS="linenum">0779:</SPAN>         <SPAN CLASS="comment">// User wants to leave fullscreen mode</SPAN>
+<SPAN CLASS="linenum">0780:</SPAN>         g_AppFormView-&gt;OnToggleFullScreen();
+<SPAN CLASS="linenum">0781:</SPAN>     }
+<SPAN CLASS="linenum">0782:</SPAN> 
+<SPAN CLASS="linenum">0783:</SPAN>     <SPAN CLASS="keyword">return</SPAN> DefWindowProc( hWnd, msg, wParam, lParam );
+<SPAN CLASS="linenum">0784:</SPAN> }
+<SPAN CLASS="linenum">0785:</SPAN> 
+<SPAN CLASS="linenum">0786:</SPAN> 
+<SPAN CLASS="linenum">0787:</SPAN> 
+<SPAN CLASS="linenum">0788:</SPAN> 
+<SPAN CLASS="linenum">0789:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0790:</SPAN> <SPAN CLASS="comment">// Name: CheckForLostFullscreen()</SPAN>
+<SPAN CLASS="linenum">0791:</SPAN> <SPAN CLASS="comment">// Desc: If fullscreen and device was lost (probably due to alt-tab), </SPAN>
+<SPAN CLASS="linenum">0792:</SPAN> <SPAN CLASS="comment">//       automatically switch to windowed mode</SPAN>
+<SPAN CLASS="linenum">0793:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0794:</SPAN> HRESULT CAppForm::CheckForLostFullscreen()
+<SPAN CLASS="linenum">0795:</SPAN> {
+<SPAN CLASS="linenum">0796:</SPAN>     HRESULT hr;
+<SPAN CLASS="linenum">0797:</SPAN> 
+<SPAN CLASS="linenum">0798:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( m_bWindowed )
+<SPAN CLASS="linenum">0799:</SPAN>         <SPAN CLASS="keyword">return</SPAN> S_OK;
+<SPAN CLASS="linenum">0800:</SPAN> 
+<SPAN CLASS="linenum">0801:</SPAN>     <SPAN CLASS="keyword">if</SPAN>( FAILED( hr = m_pd3dDevice-&gt;TestCooperativeLevel() ) )
+<SPAN CLASS="linenum">0802:</SPAN>         ForceWindowed();
+<SPAN CLASS="linenum">0803:</SPAN> 
+<SPAN CLASS="linenum">0804:</SPAN>     <SPAN CLASS="keyword">return</SPAN> S_OK;
+<SPAN CLASS="linenum">0805:</SPAN> }
+<SPAN CLASS="linenum">0806:</SPAN> 
+<SPAN CLASS="linenum">0807:</SPAN> 
+<SPAN CLASS="linenum">0808:</SPAN> 
+<SPAN CLASS="linenum">0809:</SPAN> 
+<SPAN CLASS="linenum">0810:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0811:</SPAN> <SPAN CLASS="comment">// Name: UpdateUIForDeviceCapabilites()</SPAN>
+<SPAN CLASS="linenum">0812:</SPAN> <SPAN CLASS="comment">// Desc: Whenever we get a new device, call this function to enable/disable the</SPAN>
+<SPAN CLASS="linenum">0813:</SPAN> <SPAN CLASS="comment">//       appropiate UI controls to match the device's capabilities.</SPAN>
+<SPAN CLASS="linenum">0814:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0815:</SPAN> VOID CAppForm::UpdateUIForDeviceCapabilites()
+<SPAN CLASS="linenum">0816:</SPAN> {
+<SPAN CLASS="linenum">0817:</SPAN>     <SPAN CLASS="comment">// TODO: Check the capabilities of the device and update the UI as needed</SPAN>
+<SPAN CLASS="linenum">0818:</SPAN>     DWORD dwCaps = m_d3dCaps.RasterCaps;
+<SPAN CLASS="linenum">0819:</SPAN>     UNREFERENCED_PARAMETER( dwCaps );
+<SPAN CLASS="linenum">0820:</SPAN> }
+<SPAN CLASS="linenum">0821:</SPAN> 
+<SPAN CLASS="linenum">0822:</SPAN> 
+<SPAN CLASS="linenum">0823:</SPAN> 
+<SPAN CLASS="linenum">0824:</SPAN> 
+<SPAN CLASS="linenum">0825:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0826:</SPAN> <SPAN CLASS="comment">// Name: OnInitialUpdate()</SPAN>
+<SPAN CLASS="linenum">0827:</SPAN> <SPAN CLASS="comment">// Desc: When the AppForm object is created, this function is called to</SPAN>
+<SPAN CLASS="linenum">0828:</SPAN> <SPAN CLASS="comment">//       initialize it. Here we getting access ptrs to some of the controls,</SPAN>
+<SPAN CLASS="linenum">0829:</SPAN> <SPAN CLASS="comment">//       and setting the initial state of some of them as well.</SPAN>
+<SPAN CLASS="linenum">0830:</SPAN> <SPAN CLASS="comment">//-----------------------------------------------------------------------------</SPAN>
+<SPAN CLASS="linenum">0831:</SPAN> VOID CAppForm::OnInitialUpdate()
+<SPAN CLASS="linenum">0832:</SPAN> {
+<SPAN CLASS="linenum">0833:</SPAN>     <SPAN CLASS="comment">// Update the UI</SPAN>
+<SPAN CLASS="linenum">0834:</SPAN>     CFormView::OnInitialUpdate();
+<SPAN CLASS="linenum">0835:</SPAN> 
+<SPAN CLASS="linenum">0836:</SPAN>     <SPAN CLASS="comment">// Get the top level parent hwnd</SPAN>
+<SPAN CLASS="linenum">0837:</SPAN>     m_hWndTopLevelParent = GetTopLevelParent()-&gt;GetSafeHwnd();
+<SPAN CLASS="linenum">0838:</SPAN> 
+<SPAN CLASS="linenum">0839:</SPAN>     <SPAN CLASS="comment">// Save static reference to the render window</SPAN>
+<SPAN CLASS="linenum">0840:</SPAN>     m_hwndRenderWindow = GetDlgItem(IDC_RENDERVIEW)-&gt;GetSafeHwnd();
+<SPAN CLASS="linenum">0841:</SPAN> 
+<SPAN CLASS="linenum">0842:</SPAN>     <SPAN CLASS="comment">// Register a class for a fullscreen window</SPAN>
+<SPAN CLASS="linenum">0843:</SPAN>     WNDCLASS wndClass = { CS_HREDRAW | CS_VREDRAW, FullScreenWndProc, 0, 0, NULL,
+<SPAN CLASS="linenum">0844:</SPAN>                           NULL, NULL, (HBRUSH)GetStockObject(WHITE_BRUSH), NULL,
+<SPAN CLASS="linenum">0845:</SPAN>                           _T("<SPAN CLASS="string">Fullscreen Window</SPAN>") };
+<SPAN CLASS="linenum">0846:</SPAN>     RegisterClass( &amp;wndClass );
+<SPAN CLASS="linenum">0847:</SPAN> 
+<SPAN CLASS="linenum">0848:</SPAN>     <SPAN CLASS="comment">// We create the fullscreen window (not visible) at startup, so it can</SPAN>
+<SPAN CLASS="linenum">0849:</SPAN>     <SPAN CLASS="comment">// be the focus window.  The focus window can only be set at CreateDevice</SPAN>
+<SPAN CLASS="linenum">0850:</SPAN>     <SPAN CLASS="comment">// time, not in a Reset, so ToggleFullscreen wouldn't work unless we have</SPAN>
+<SPAN CLASS="linenum">0851:</SPAN>     <SPAN CLASS="comment">// already set up the fullscreen focus window.</SPAN>
+<SPAN CLASS="linenum">0852:</SPAN>     m_hwndRenderFullScreen = CreateWindow( _T("<SPAN CLASS="string">Fullscreen Window</SPAN>"), NULL,
+<SPAN CLASS="linenum">0853:</SPAN>                                            WS_POPUP, CW_USEDEFAULT,
+<SPAN CLASS="linenum">0854:</SPAN>                                            CW_USEDEFAULT, 100, 100,
+<SPAN CLASS="linenum">0855:</SPAN>                                            m_hWndTopLevelParent, 0L, NULL, 0L );
+<SPAN CLASS="linenum">0856:</SPAN> 
+<SPAN CLASS="linenum">0857:</SPAN>     <SPAN CLASS="comment">// Note that for the MFC samples, the device window and focus window</SPAN>
+<SPAN CLASS="linenum">0858:</SPAN>     <SPAN CLASS="comment">// are not the same.</SPAN>
+<SPAN CLASS="linenum">0859:</SPAN>     CD3DApplication::m_hWnd = m_hwndRenderWindow;
+<SPAN CLASS="linenum">0860:</SPAN>     CD3DApplication::m_hWndFocus = m_hwndRenderFullScreen;
+<SPAN CLASS="linenum">0861:</SPAN>     CD3DApplication::Create( AfxGetInstanceHandle() );
+<SPAN CLASS="linenum">0862:</SPAN> 
+<SPAN CLASS="linenum">0863:</SPAN>     <SPAN CLASS="comment">// TODO: Update the UI as needed</SPAN>
+<SPAN CLASS="linenum">0864:</SPAN> }
+<SPAN CLASS="linenum">0865:</SPAN> 
+<SPAN CLASS="linenum">0866:</SPAN> 
+<SPAN CLASS="linenum">0867:</SPAN> 
+<SPAN CLASS="linenum">0868:</SPAN> 
+<SPAN CLASS="linenum">0869:</SPAN> 
+<SPAN CLASS="linenum">0870:</SPAN> <SPAN CLASS="keyword">void</SPAN> CAppForm::OnBnClickedButtonCheckDeviceFormat()
+<SPAN CLASS="linenum">0871:</SPAN> {
+<SPAN CLASS="linenum">0872:</SPAN>     <SPAN CLASS="keyword">this</SPAN>-&gt;UpdateData();
+<SPAN CLASS="linenum">0873:</SPAN> 
+<SPAN CLASS="linenum">0874:</SPAN>     <SPAN CLASS="comment">// usage の決定</SPAN>
+<SPAN CLASS="linenum">0875:</SPAN>     DWORD usage = 0;
+<SPAN CLASS="linenum">0876:</SPAN>     <SPAN CLASS="keyword">if</SPAN>(m_bCheckRenderTarget)    usage |= D3DUSAGE_RENDERTARGET;
+<SPAN CLASS="linenum">0877:</SPAN>     <SPAN CLASS="keyword">if</SPAN>(m_bCheckDepthStencil)    usage |= D3DUSAGE_DEPTHSTENCIL;
+<SPAN CLASS="linenum">0878:</SPAN>     <SPAN CLASS="keyword">if</SPAN>(m_bCheckDynamic)         usage |= D3DUSAGE_DYNAMIC;
+<SPAN CLASS="linenum">0879:</SPAN>     <SPAN CLASS="keyword">if</SPAN>(m_bCheckAutoGenMipmap)   usage |= D3DUSAGE_AUTOGENMIPMAP;
+<SPAN CLASS="linenum">0880:</SPAN>     <SPAN CLASS="keyword">if</SPAN>(m_bCheckDMap)            usage |= D3DUSAGE_DMAP;
+<SPAN CLASS="linenum">0881:</SPAN> 
+<SPAN CLASS="linenum">0882:</SPAN>     <SPAN CLASS="comment">// リソース タイプの決定</SPAN>
+<SPAN CLASS="linenum">0883:</SPAN>     D3DRESOURCETYPE source_type = D3DRTYPE_TEXTURE;
+<SPAN CLASS="linenum">0884:</SPAN>     <SPAN CLASS="keyword">switch</SPAN>(m_iResourceType){
+<SPAN CLASS="linenum">0885:</SPAN>     <SPAN CLASS="keyword">case</SPAN> 0: source_type = D3DRTYPE_TEXTURE; <SPAN CLASS="keyword">break</SPAN>;
+<SPAN CLASS="linenum">0886:</SPAN>     <SPAN CLASS="keyword">case</SPAN> 1: source_type = D3DRTYPE_VOLUMETEXTURE; <SPAN CLASS="keyword">break</SPAN>;
+<SPAN CLASS="linenum">0887:</SPAN>     <SPAN CLASS="keyword">case</SPAN> 2: source_type = D3DRTYPE_CUBETEXTURE; <SPAN CLASS="keyword">break</SPAN>;
+<SPAN CLASS="linenum">0888:</SPAN>     <SPAN CLASS="keyword">case</SPAN> 3: source_type = D3DRTYPE_SURFACE; <SPAN CLASS="keyword">break</SPAN>;
+<SPAN CLASS="linenum">0889:</SPAN>     <SPAN CLASS="keyword">default</SPAN>: source_type = D3DRTYPE_TEXTURE; <SPAN CLASS="keyword">break</SPAN>;
+<SPAN CLASS="linenum">0890:</SPAN>     }
+<SPAN CLASS="linenum">0891:</SPAN>     
+<SPAN CLASS="linenum">0892:</SPAN>     <SPAN CLASS="comment">// チェック！！</SPAN>
+<SPAN CLASS="linenum">0893:</SPAN>     D3DFORMAT adapterFormat = m_d3dSettings.DisplayMode().Format;
+<SPAN CLASS="linenum">0894:</SPAN> 
+<SPAN CLASS="linenum">0895:</SPAN>     <SPAN CLASS="keyword">char</SPAN> buf[256];
+<SPAN CLASS="linenum">0896:</SPAN>     <SPAN CLASS="keyword">char</SPAN> *strResult = <SPAN CLASS="keyword">new</SPAN> <SPAN CLASS="keyword">char</SPAN>[m_nFormat*256];
+<SPAN CLASS="linenum">0897:</SPAN>     strResult[0] = '<SPAN CLASS="string">\0</SPAN>';
+<SPAN CLASS="linenum">0898:</SPAN> 
+<SPAN CLASS="linenum">0899:</SPAN>     <SPAN CLASS="keyword">for</SPAN>(<SPAN CLASS="keyword">int</SPAN> i = 0; i&lt;m_nFormat; i++){
+<SPAN CLASS="linenum">0900:</SPAN>         HRESULT hr;
+<SPAN CLASS="linenum">0901:</SPAN>         hr = m_pD3D-&gt;CheckDeviceFormat( m_d3dCaps.AdapterOrdinal,
+<SPAN CLASS="linenum">0902:</SPAN>                                         m_d3dCaps.DeviceType,
+<SPAN CLASS="linenum">0903:</SPAN>                                         adapterFormat,
+<SPAN CLASS="linenum">0904:</SPAN>                                         usage,
+<SPAN CLASS="linenum">0905:</SPAN>                                         source_type,
+<SPAN CLASS="linenum">0906:</SPAN>                                         <SPAN CLASS="keyword">this</SPAN>-&gt;m_Formats[i].val );
+<SPAN CLASS="linenum">0907:</SPAN>         <SPAN CLASS="comment">// 結果の解析</SPAN>
+<SPAN CLASS="linenum">0908:</SPAN>         m_pbResult[i] = FALSE;
+<SPAN CLASS="linenum">0909:</SPAN>         <SPAN CLASS="keyword">if</SPAN>(usage &amp; D3DUSAGE_AUTOGENMIPMAP){
+<SPAN CLASS="linenum">0910:</SPAN>             <SPAN CLASS="comment">// こいつだけ返り値が特別</SPAN>
+<SPAN CLASS="linenum">0911:</SPAN>             <SPAN CLASS="keyword">if</SPAN>(hr!=D3DOK_NOAUTOGEN){
+<SPAN CLASS="linenum">0912:</SPAN>                 m_pbResult[i] = TRUE;
+<SPAN CLASS="linenum">0913:</SPAN>             }
+<SPAN CLASS="linenum">0914:</SPAN>         }<SPAN CLASS="keyword">else</SPAN>{
+<SPAN CLASS="linenum">0915:</SPAN>             <SPAN CLASS="comment">// 普通のやつ</SPAN>
+<SPAN CLASS="linenum">0916:</SPAN>             <SPAN CLASS="keyword">if</SPAN>(SUCCEEDED(hr)){
+<SPAN CLASS="linenum">0917:</SPAN>                 m_pbResult[i] = TRUE;
+<SPAN CLASS="linenum">0918:</SPAN>             }
+<SPAN CLASS="linenum">0919:</SPAN>         }
+<SPAN CLASS="linenum">0920:</SPAN>         <SPAN CLASS="comment">// 結果表示</SPAN>
+<SPAN CLASS="linenum">0921:</SPAN>         wsprintf (buf, "<SPAN CLASS="string">%s %s\r\n</SPAN>", m_pbResult[i]?"<SPAN CLASS="string">○</SPAN>":"<SPAN CLASS="string">×</SPAN>", <SPAN CLASS="keyword">this</SPAN>-&gt;m_Formats[i].text);
+<SPAN CLASS="linenum">0922:</SPAN>         lstrcat(strResult, buf);
+<SPAN CLASS="linenum">0923:</SPAN>     }
+<SPAN CLASS="linenum">0924:</SPAN>     
+<SPAN CLASS="linenum">0925:</SPAN>     CEdit *Edit = (CEdit *) GetDlgItem (IDC_EDIT_RESULT);
+<SPAN CLASS="linenum">0926:</SPAN>     Edit-&gt;SetWindowText (strResult);
+<SPAN CLASS="linenum">0927:</SPAN> 
+<SPAN CLASS="linenum">0928:</SPAN>     SAFE_DELETE_ARRAY(strResult);
+<SPAN CLASS="linenum">0929:</SPAN> }
+<SPAN CLASS="linenum">0930:</SPAN> </PRE>
+</BODY>
+</HTML>
