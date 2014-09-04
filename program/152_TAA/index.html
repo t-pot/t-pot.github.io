@@ -1,0 +1,116 @@
+<head>
+	<title>t-pot『DirectX 11: Temporal Anti-Aliasing』</title>
+	<link rel="stylesheet" type="text/css" href="../if.css">
+</head>
+<meta http-equiv=Content-Type content="text/html; charset=UTF-8">
+<body>
+
+
+<div class="contents">
+<center>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<h1>DirectX 11: Temporal Anti-Aliasing</h1><br>
+<h3>～ DirectX 11: Temporal Anti-Aliasing ～</h3>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<!--<image src = "title.png">-->
+<br>
+<hr>
+</center>
+<div>
+
+
+<h2>■はじめに</h2>
+
+
+<p>
+<a href="http://cedec.cesa.or.jp/2014/">CEDEC 2014</a>の<a href="http://cedec.cesa.or.jp/2014/event/developers_night.html">Developers' Night</a>でLTをしたので、そちらの情報の共有になります。
+</p>
+
+<p>
+今年は、<a href="http://s2014.siggraph.org/">SIGGRAPH 2014</a> の <a href="http://advances.realtimerendering.com/s2014/index.html">Advances in Real-Time Rendering in Games</a> を聴講できたのですが、その中で、いろいろな人が Temporal Anti-Aliasing を模索されていました。結果的にも良さそうだったので、試してみました。<br>
+今回は、特に<a href="http://advances.realtimerendering.com/s2014/index.html#_HIGH-QUALITY_TEMPORAL_SUPERSAMPLING">HIGH-QUALITY TEMPORAL SUPERSAMPLING</a> を参考にさせていただきました。
+</p>
+
+<p>
+ソースコードは、GitHubに上げています。
+</p>
+<ul><li><a href="https://github.com/t-pot/TAA">https://github.com/t-pot/TAA</a></li></ul>
+
+
+<hr>
+
+
+<h2>■TAA</h2>
+
+<p>
+Temporal Anti-Aliasing は、「時間的なアンチエイリアス」ということで複数のフレームのレンダリング結果を利用してエイリアシングを除去します。
+複数フレームのレンダリング結果を取っておく手もあるのですが、直前のフレームの結果とブレンディングすることをつなげることで、昔のレンダリング結果の履歴を取りこむこともできます。
+</p>
+<img src="blending.png">
+<p>
+以前の結果を使ってエイリアシングを除去するには、以上の複数フレームの履歴を使うことと、レンダリングする点をずらすことで可能になります。
+レンダリングする位置をサブピクセルとして１ピクセルの幅以内で動かすことで、レンダリング結果が各フレームで微妙に異なるので、重ね合わせるとエイリアシングを除去する効果が生まれます。
+</p>
+<img src="sampling.png">
+
+<p>
+AAをかける前とかける後の結果は以下になります。
+</p>
+<img src="noaa.png">AAなし
+<img src="taa.png">TAA
+<p>差分を取って強調したのが以下です。色が白い部分がそれぞれの画像で異なる部分なので、その部分を注目して見比べてください。</p>
+<img src="diff.png">
+
+<hr>
+<p>
+なお、サンプリングとしては、単純なグリッドでサブピクセルを分割するよりも、別のサンプリングポイントを使って効率化できるということで、そこで紹介されていた、Halton列を実装してみました。確かに少ないサンプリング数でも良いエイリアシング効果が得られます。
+</p>
+
+<img src="Halton_sequence_2_3.png" width = "200">http://en.wikipedia.org/wiki/File:Halton_sequence_2_3.svg
+
+<hr>
+
+<h2>■動的対応</h2>
+
+<p>
+以上の話は静的なシーンには効果的なのですが、画面が動くと残像として以前のフレームの結果が目に付いてしまいます。
+そのため、動きがある部分は、以前のフレームの効果を消して、残像のない結果を作らなくてはなりません。
+動いている部分を検出するには、動きベクトルやIDマップ、色の差分から大きく変化している部分を抽出する方法もありますが、
+今回は、色が大きく変化していたら色を抑制する方法を試しました。
+</p>
+<p>
+具体的には、前のフレームの周囲の色と現在のフレームの色の差分をYCbCr空間に変換し、CbCrの色味の変化が大きな部分は、閾値以内になるように差分を線形に抑制して合成しました。
+</p>
+<img src="clip.png">
+<p>
+結果としては、かなり残像は減るのですが、多少結果が残ったり、新しく大きく動いた部分が明るくなったりしました。
+また、この方法では、結果が少しぼやけてしまうので、本当はバイラテラルフィルタ等でくっきりとした絵を作るべきでしょう。
+</p>
+<img src="dynamic.png">
+
+<p>
+なお、この実装の前に、色の差分から前のフレームとの合成率を変える方法も試したのですが、（ちょっとの時間のプログラミングでは）きれいに抽出することができなかったという感じなので、素敵な抽出方法がありましたら、教えてください。
+</p>
+
+<hr>
+
+<h2>■さいごに</h2>
+
+<p>
+もう少し改良しないと、実際の製品としては使えない感じですね。
+どのような手法が定番になるでしょうか？
+</p>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<center>
+<hr>
+<p><a href="../index.html">もどる</a></p>
+<p><a href="mailto:imagire@gmail.com">imagire@gmail.com</a></p>
+</center>
+
+</body>
+</html>
