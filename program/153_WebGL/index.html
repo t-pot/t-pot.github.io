@@ -1,0 +1,151 @@
+<head>
+	<title>t-pot『WebGL: トーンマッピング』</title>
+	<link rel="stylesheet" type="text/css" href="../if.css">
+</head>
+<meta http-equiv=Content-Type content="text/html; charset=UTF-8">
+<body>
+
+
+<div class="contents">
+<center>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<h1>WebGL: トーンマッピング</h1><br>
+<h3>～ WebGL: Tone-mapping ～</h3>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<a href="http://t-pot.com/WebGL/"><image src = "title.png"></a>
+<br>
+<hr>
+</center>
+<div>
+
+
+<h2>■はじめに</h2>
+
+<p>
+iOSでの対応も進んできて、WebGLが盛り上がってきているかなと感じてるので、プログラミングをしてみました。<br>
+といっても、<a href="http://wgld.org/">wgld.org</a>という、すごいサイトがあったので、あまりできることもなく、
+そちらで取り上げられていない、トーンマッピングをとりあえず実装してみました。
+</p>
+
+
+<p>
+ソースコードは、GitHubに上げています。<br>
+いろいろとまとめているので、あまり見やすくはありません。
+個別の技術については、<a href="http://wgld.org/">wgld.org</a>さんを読むのが大変に勉強になります。
+</p>
+<ul><li><a href="https://github.com/t-pot/WebGL">https://github.com/t-pot/WebGL</a></li></ul>
+
+<p>
+プログラムは下記から実行してください。
+</p>
+<ul><li><a href="http://t-pot.com/WebGL/">http://t-pot.com/WebGL/</a></li></ul>
+
+<hr>
+
+
+<h2>■WebGL</h2>
+
+<p>
+WebGLを始めるのはかなり簡単です。html のサイトに、スクリプトとキャンバスをヘッダとボディに記述しておきます。
+</p>
+<pre>
+&lt;head&gt;&lt;script src="main.js" type="text/javascript"&gt;&lt;/script&gt;&lt;/head&gt;
+&lt;body&gt;&lt;canvas id="canvas"&gt;&lt;/canvas&gt;&lt;/canvas&gt;
+</pre>
+<p>
+次に、JavaScript内で、キャンバスを取得して、取得したオブジェクトから、WebGLのコンテキストを取得します。
+</p>
+<pre>
+var c = document.getElementById('canvas');
+var gl = c.getContext('webgl') || c.getContext('experimental-webgl');
+</pre>
+<p>
+後は、取得したコンテキストを使って、たとえば下記の様な描画関数を呼び出します。
+</p>
+<pre>
+gl.drawElements(gl.TRIANGLES, index_count, gl.UNSIGNED_SHORT, 0);
+</pre>
+
+<p>
+ゲームのメインループは、最初に呼び出されるスクリプトのonload関数内で、一定時間後に処理を行うsetTimeoutを使ったループ処理を書けば、その部分を繰り返し続けます。
+</p>
+<pre>
+(function(){
+    メインループの処理
+    setTimeout(arguments.callee, 1000 / 60);
+})();
+</pre>
+
+<p>
+後は、<a href="http://wgld.org/">wgld.org</a> さんの記事を読んでいけば、非常に短期間に習得できると思います。
+</p>
+
+<p>
+なお、ローカルのファイルで画像等を読み込むには、Chromeの場合、--allow-file-access-from-filesオプションを付けて起動する必要があります。<br>
+開発をする際は、このオプションのショートカットを用意しておくのが便利でしょう。
+</p>
+
+<hr>
+
+<h2>■トーンマッピング</h2>
+
+<p>
+トーンマッピングとは、おおざっぱにいえば、HDRの線形空間で計算した結果をLDRで見れるようにする画像変換です。<br>
+最近のレンダリングは、浮動小数点などの高輝度に対応したバッファにレンダリングして、レンダリング結果の最大輝度などから適切な明るさに調整して画面に表示します。<br>
+(あと、デバイスの特性を修正するガンマ補正も行われます)。
+</p>
+<p>
+今回は、下記の様なシェーダで、固定定数を使って浮動小数点数バッファにレンダリングした結果を0-1の間に輝度を納めて、ガンマ補正の後に出力をします。<br>
+こちらは、HTMLファイル内に記述しています。
+</p>
+<pre>
+		&lt;script id="Tonemapt_fs" type="x-shader/x-fragment"&gt;
+			precision mediump float;
+
+			uniform sampler2D texture;
+			varying vec2 vTexCoord;
+
+			void main(void){
+				vec4 decale = texture2D(texture, vTexCoord);
+				decale.xyz = 1.0 - exp( -0.5 * decale.xyz);
+				// gamma coreect
+				gl_FragColor = vec4(
+								pow(decale.x, 1.0/2.2),
+								pow(decale.y, 1.0/2.2), 
+								pow(decale.z, 1.0/2.2), 
+								decale.w);
+			}
+		&lt;/script&gt;
+</pre>
+
+
+<p>
+同時にテクスチャを読み込む際も、このガンマ補正を打ち消す変換をかけています。
+</p>
+
+<p>
+そして、残念なことに手にいれたばかりのiPhone6で実行したら、浮動小数点数バッファへのレンダリングには対応していなかったので、iPhoneで実行する際には、8ビットのフォーマットでレンダリングするようにしています…
+</p>
+
+<hr>
+
+<h2>■さいごに</h2>
+
+<p>
+簡単で、特別な開発環境もいらないし、かなり複雑なことまでできるので、
+CGの入門には、これからはWebGLが最適だと感じました。
+</p>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<center>
+<hr>
+<p><a href="../index.html">もどる</a></p>
+<p><a href="mailto:imagire@gmail.com">imagire@gmail.com</a></p>
+</center>
+
+</body>
+</html>
