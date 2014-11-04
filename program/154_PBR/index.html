@@ -1,0 +1,127 @@
+<head>
+	<title>t-pot『WebGL: 物理ベースレンダリング』</title>
+	<link rel="stylesheet" type="text/css" href="../if.css">
+</head>
+<meta http-equiv=Content-Type content="text/html; charset=UTF-8">
+<body>
+
+
+<div class="contents">
+<center>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<h1>WebGL: 物理ベースレンダリング</h1><br>
+<h3>～ WebGL: Physically Based Rendering ～</h3>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<a href="http://t-pot.com/PBR/"><image src = "title.png"></a>
+<br>
+<hr>
+</center>
+<div>
+
+
+<h2>■はじめに</h2>
+
+<p>
+3Dのゲームの開発は、今ではほとんどが物理ベースレンダリングに移っているかと思います。<br>
+Unreal Engine を使っている人や、Unity5を使っている人はもちろんのこと、自分でエンジンを作っている人たちも物理ベースレンダリングに移っている事でしょう。<br>
+ここでは、軽いおさらいとして、WebGLで物理ベースレンダリング（主に物理ベースのシェーディング）をしてみました。
+</p>
+
+
+<p>
+プログラムは下記のホスティングされた先から実行してください。
+</p>
+<ul><li><a href="http://t-pot.com/PBR/">http://t-pot.com/PBR/</a></li></ul>
+<p>
+Metallic, rouphness, fresnelのパラメータを変えると、金属具合、表面の粗さ、正面から見た時のフレネル反射率の値が変わります。
+</p>
+
+<p>
+ソースコードは、GitHubに上げています(式は、一部、下記の説明と違っています)。<br>
+</p>
+<ul><li><a href="https://github.com/t-pot/WebGL">https://github.com/t-pot/PBR</a></li></ul>
+
+<hr>
+
+
+<h2>■PBR</h2>
+
+<p>
+物理ベースレンダリングを何を持って物理ベースかという事は人によって範囲が変わってきたりするので、厳密に定義することはできないのですが、おおよそ
+</p>
+<ul>
+  <li>リニアスペースでのライティング</li>
+  <li>エネルギー保存が考慮されたBRDFの利用</li>
+</ul>
+<p>
+リニアスペースでのライティングをすることに付随して、次の点を考慮にいれたレンダリングが行われます。
+</p>
+<ul>
+  <li>トーンマッピング</li>
+  <li>ガンマ補正</li>
+  <li>sRGB色空間でのカラーテクスチャ</li>
+</ul>
+<p>
+こちらは、前回行ったように非常に大きな値を扱うリニアスペースの計算を画面に適切に出るように変換する処理となります。
+</p>
+
+<hr>
+
+<h2>■マイクロファセットシェーディングモデル</h2>
+
+<p>
+BRDFについてですが、エネルギー保存が考慮されたBRDFは多いですが、現在主に使われるものは、マイクロファセットベースのBRDFになります。<br>
+これは、特に鏡面反射について、ざらついて見える面でも詳細に見ると微小な鏡面の集まりとみなして反射計算を行うことです。<br>
+このモデルでは、鏡面反射は、フレネル項F、法線分布関数(Normal Distribution Function)D、幾何減衰項Gに影響を受けます。
+</p>
+<img src="https://chart.googleapis.com/chart?cht=tx&chl=f_s=\frac{FDG}{4(n\cdot v)(n\cdot l)}"><br>
+<p>
+これら、F,D,Gは、いくつかの候補があるのですが、下記の式をよく目にします。
+</p>
+<p>
+Schlickのフレネル項
+</p>
+<img src="https://chart.googleapis.com/chart?cht=tx&chl=F_{Schlick}=F_0+(1-F_0)(1-l\cdot h)^5">
+<p>
+GGXのNDF
+</p>
+<img src="https://chart.googleapis.com/chart?cht=tx&chl=D_{GGX}=\frac{\alpha^2}{\pi((n\cdot h)^2(\alpha^2-1)%2B 1)^2}">
+<p>
+SmithによるG(GGX)
+</p>
+<img src="https://chart.googleapis.com/chart?cht=tx&chl=G_{Smith}=G_1(l)G_1(v),"><br>
+<img src="https://chart.googleapis.com/chart?cht=tx&chl=G_1(x)=\frac{n\cdot x}{(n\cdot x)(1-k)%2Bk}">
+<p>
+ここで、α及びk表面の粗さのパラメータと結びつきます（結び付け方はレンダラによって異なったりします）。<br>
+なお、l, v, n, hは、光源方向、視点方向、面の法線、視点方向と光源方向のハーフベクトルです。
+</p>
+<p>
+以上を拡散反射のBRDFがトータルで光を増やさないようにすると、エネルギー保存則を満たすBRDFの完成です。
+</p>
+<img src="https://chart.googleapis.com/chart?cht=tx&chl=f=(1-m)f_d%2Bmf_s,"><br>
+<img src="https://chart.googleapis.com/chart?cht=tx&chl=f_d=\frac{c_{diff}}{\pi}">
+<p>
+この式では、拡散反射に一番簡単なランバート反射を書きましたが、ここでもオーレンネイヤーなどのマイクロファセットモデルも使われます。
+</p>
+
+<hr>
+
+<h2>■さいごに</h2>
+
+<p>
+ざっくりですが、今時のゲームエンジンで使われているようなPBRについてまとめてみました。
+</p>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<center>
+<hr>
+<p><a href="../index.html">もどる</a></p>
+<p><a href="mailto:imagire@gmail.com">imagire@gmail.com</a></p>
+</center>
+
+</body>
+</html>
