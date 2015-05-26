@@ -1,0 +1,186 @@
+<head>
+	<title>t-pot『アルファブレンディングの調査』</title>
+	<link rel="stylesheet" type="text/css" href="../if.css">
+</head>
+<meta http-equiv=Content-Type content="text/html; charset=UTF-8">
+<body>
+
+
+<div class="contents">
+<center>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<h1>アルファブレンディングの調査</h1><br>
+<h3>～ survey of alpha blending ～</h3>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<!--<image src = "title.png">-->
+<br>
+<hr>
+</center>
+<div>
+
+
+<h2>■はじめに</h2>
+
+<p>
+所用で半透明合成の方法を調べていたら、結構あったので、書き出してみました。<br>
+ただ、まだまだ最近のものも出てきています、ご注意を。
+</p>
+
+<hr>
+
+
+<h2>■一般的な話</h2>
+
+<table>
+<tr><td>・</td><td><a href="http://keithp.com/~keithp/porterduff/p253-porter.pdf">Compositing digital images (Thomas Porter, Tom Duff, 1984)</a></td>
+<td>:</td><td>半透明は後ろから描きましょうと言った論文</td>
+</tr>
+<tr><td>・</td><td><a href="http://cva.stanford.edu/classes/cs99s/papers/akeley-reality-engine-graphics.pdf">RealityEngine Graphics(Kurt Akeley, 1993)</a></td>
+<td>:</td><td>Alpha to Coverage の源論文。RealityEngineでは、不透明度に応じて擬似乱数で描画するサブピクセルを変えているそう。</td>
+</tr>
+<tr><td>・</td><td><a href="http://www.academia.edu/2805683/Survey_on_Order_Independent_Transparency_Techniques">Survey on Order Independent Transparency Techniques</a></td>
+<td>:</td><td>手法のまとめ的論文(Per-Pixel Linked Listがないころ)</td>
+</tr>
+<tr><td>・</td><td><a href="https://rafaeltorchelsen.files.wordpress.com/2012/10/sibtutorial2012.pdf">Transparency and Anti-Aliasing Techniques for Real-Time Rendering(Marilena Maule, Joao L. D. Comba, Rafael Torchelsen, Rui Bastos, 2012)</a></td>
+<td>:</td><td>手法のまとめ的論文</td>
+</tr>
+</table>
+
+<!--
+Transparency with Deferred Shading(CHRISTIAN MAGNERFELT(学士論文), 2012)
+http://www.csc.kth.se/utbildning/kth/kurser/DD143X/dkand12/Group1Marten/final/final_TransparencyWithDeferredShading.pdf
+不透明の後に半透明
+-->
+
+<h2>■ 擬似半透明系</h2>
+
+
+<table>
+<tr><td>・</td><td><a href="http://twvideo01.ubm-us.net/o1/vault/gdc07/slides/S3721i1.pdf">Sort-Independent Alpha Blending(Houman Meshkin, 2007)</a></td>
+<td>:</td><td>順序に依存する項を落として描画。透明度が高いときに良い近似になっている。</td>
+</tr>
+<tr><td>・</td><td><a href="http://www.cse.chalmers.se/~uffe/hair2009.pdf">Hair Self Shadowing and Transparency Depth Ordering Using Occupancy maps(Erik Sintorn, Ulf Assarsson, 2009)</a></td>
+<td>:</td><td>髪のような同じ物が多く重なるときに、透明度を補正して半透明を順序非依存で近似する。</td>
+</tr>
+<tr><td>・</td><td><a href="http://luebke.us/publications/StochasticTransparency_I3D2010.pdf">Stochastic Transparency(Eric Enderton, Erik Sintorn, Peter Shirley, David Luebke, 2010)</a></td>
+<td>:</td><td>フラグメントごとにピクセルのサブサンプリングパターンを変えて不透明描画で擬似半透明描画を行う。</td>
+</tr>
+<!--
+<tr><td>・</td><td><a href="https://research.nvidia.com/publication/local-image-reconstruction-algorithm-stochastic-rendering">A Local Image Reconstruction Algorithm for Stochastic Rendering(Peter Shirley, Timo Aila, Jonathan Cohen, Eric Enderton, Samuli Laine, David Luebke, Morgan McGuire, 2011)</a></td>
+<td>:</td><td>ぼかすときに前後関係や不透明度を見て、それなりの結果を作る</td>
+</tr>
+-->
+<tr><td>・</td><td><a href="https://research.nvidia.com/publication/stratified-sampling-stochastic-transparency">Stratified Sampling for Stochastic Transparency(Samuli Laine, Tero Karras, 2011)</a></td>
+<td>:</td><td>stochastic transparency のノイズを削減。zテストによるカバレッジを考慮。普通のシェーダとしては実行できない。</td>
+</tr>
+<tr><td>・</td><td><a href="http://jcgt.org/published/0002/02/09/">Weighted Blended Order-Independent Transparency(Morgan McGuire, Louis Bavoil, 2013)</a></td>
+<td>:</td><td>深度とalpha値に基づく加重平均で透明度を近似計算。[<a href="https://shikihuiku.wordpress.com/2013/12/20/weighted-blended-order-independent-transparency%E3%81%AB%E3%81%A4%E3%81%84%E3%81%A6/">shikihuikuさん解説</a>]</td>
+</tr>
+</table>
+
+<h2>■ Depth Peeling系</h2>
+
+<table>
+<tr><td>・</td><td><a href="http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.18.9286&rep=rep1&type=pdf">Interactive Order-Independent Transparency (Cass Everitt, 2001)</a></td>
+<td>:</td><td>Depth Peelingの源論文。まだ描画されていない深度の最奥を抽出して、深度のフラグメントを描画する。全体的に奥のほうから描画できるので、半透明を正確に計算できる。</td>
+</tr>
+<tr><td>・</td><td><a href="http://www.jzy3d.org/documentation/DualDepthPeeling.pdf">Order Independent Transparency with Dual Depth Peeling (Louis Bavoil, Kevin Myers, 2008)</a></td>
+<td>:</td><td>手前と奥の両面から攻めるdepth peeling。</td>
+</tr>
+<tr><td>・</td><td><a href="http://highperformancegraphics.net/previous/www_2009/presentations/liu-bucket.pdf">Bucket depth peeling(Fang Liu, Meng-Cheng Huang, Xue-Hui Liu, En-Hua Wu, 2015)</a></td>
+<td>:</td><td>8MRTで32byteの情報を出力できることを利用して、depth peeling を32倍高速化</td>
+</tr>
+</table>
+
+
+<h2>■ 深度に応じた減衰率の作成系</h2>
+
+<table>
+<tr><td>・</td><td><a href="https://software.intel.com/en-us/articles/adaptive-transparency">Adaptive order independent transparency: A fast and practical approach to rendering transparent geometry(Marco Salvi, 2011)</a></td>
+<td>:</td><td>ピクセルごとに距離に応じた減衰率を計算する。重なりが多くなったら、距離差分と減衰率変化の積が小さなデータを削除して、少ないメモリサイズで減衰率変化を計算。</td>
+</tr>
+<tr><td>・</td><td><a href="https://software.intel.com/en-us/articles/multi-layer-alpha-blending">Multi-Layer Alpha Blending(Marco Salvi, Karthik Vaidyanathan, 2014)</a></td>
+<td>:</td><td>色、透過率、深度のリストをピクセルごとに保持。データが増えたら、遠くのデータ２つをまとめてデータ容量を一定以下に抑える。[<a href="https://shikihuiku.wordpress.com/2014/03/07/multi-layer-alpha-blending%E3%81%AB%E3%81%A4%E3%81%84%E3%81%A6/">shikihuikuさん解説</a>]</td>
+</tr>
+<tr><td>・</td><td><a href="http://delivery.acm.org/10.1145/2450000/2448212/p103-maule.pdf?ip=157.109.160.180&id=2448212&acc=ACTIVE%20SERVICE&key=4D4702B0C3E38B35%2E4D4702B0C3E38B35%2E6377EF8B31E92DBE%2E4D4702B0C3E38B35&CFID=513265370&CFTOKEN=94421678&__acm__=1432620511_d74ec32cf5895a07d8e148c589b5b966">Hybrid Transparency(Marilena Maule, João L. D. Comba, Rafael Torchelsen, Rui Bastos, 2013)</a></td>
+<td>:</td><td>前の部分(core)と後ろの部分(tail)に分け、coreは、k-bufferで正確に描画し、tailは、Dual Depth Peelingの論文の重みつき平均で計算。</td>
+</tr>
+</table>
+
+<h2>■ k-buffer系</h2>
+
+<table>
+<tr><td>・</td><td><a href="http://dl.acm.org/citation.cfm?id=808585">The A-buffer, an antialiased hidden surface method(Loren Carpenter, 1984)</a></td>
+<td>:</td><td>1ピクセル内のたくさんの情報を事前に保存しておいて、後からまとめる手法。</td>
+</tr>
+<tr><td>・</td><td><a href="http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.29.4990&rep=rep1&type=pdf">Z<sup>3</sup>: An economical hardware technique for high-quality antialiasing and transparency(Norman P. Jouppi, Chun-Fa Changy, 1999)</a></td>
+<td>:</td><td>ピクセルごとにzと勾配を複数もって、サブサンプリング情報を高圧縮で格納して、同時に複数のフラグメント情報を持つ。</td>
+</tr>
+<tr><td>・</td><td><a href="https://www.sci.utah.edu/publications/SCITechReports/UUSCI-2004-003.pdf">Hardware-assisted visibility sorting for unstructured volume rendering (Steven P. Callahan, Milan Ikits, Joao L. D. Comba, Claudio T. Silva, 2005)</a></td>
+<td>:</td><td>k-bufferでのボリュームレンダリング</td>
+</tr>
+<tr><td>・</td><td><a href="http://www.sci.utah.edu/~csilva/papers/i3d2007.pdf">Multi-fragment effects on the gpu using the k-buffer (Louis Bavoil, Steven P. Callahan, Aaron Lefohn, João L. D. Comba, Cláudio T. Silva, 2007)</a></td>
+<td>:</td><td>k-bufferによる半透明描画</td>
+</tr>
+<tr><td>・</td><td><a href="https://sites.google.com/site/hmcen0921/cudarasterizer">FreePipe: A Programmable, Parallel Rendering Architecture for Efficient Multi-Fragment Effects(Fang Liu, Mengcheng Huang, Xuehui Liu, Enhua Wu, 2010)</a></td>
+<td>:</td><td>アトミック関数を使ったピクセルごとのマルチフラグメントのソートであるmulti-depth テストと、アトミックインクリメントを使ったa-bufferで書き込みのハザードをなくした１ジオメトリパスのアルファソートのシステムを提案。</td>
+</tr>
+<tr><td>・</td><td><a href="http://www.rtvtk.org/~cgribble/research/papers/kerzner13toward%20%28poster%29.pdf">Toward Accurate and Efficient Order-Independent Transparency(Ethan Kerzner, Chris Wyman, Lee Butler, Christiaan Gribble, 2013)</a></td>
+<td>:</td><td>シェーディングの結果を別バッファから参照することにして、A-bufferをコンパクトにした</td>
+</tr>
+<tr><td>・</td><td><a href="http://www.cgrg.cs.uoi.gr/wp-content/uploads/bezier/publications/abasilak-ifudos-i3d2014/k-buffer.pdf">k<sup>+</sup>-buffer: Fragment Synchronized k-buffer(Andreas A. Vasilakis, Ioannis Fudos, 2013)</a></td>
+<td>:</td><td>ジオメトリソートなし、メモリ最大使用量あり、メモリの頻繁な読み書きなし、事前z有効な改良</td>
+</tr>
+<tr><td>・</td><td><a href="http://www.ncbi.nlm.nih.gov/pubmed/23568963">Memory-Hazard-Aware K-Buffer Algorithm for Order-Independent Transparency Rendering(Zhang N, 2013)</a></td>
+<td>:</td><td>エラー補正符号化でメモリの読み書きのハザードを減らした。</td>
+</tr>
+</table>
+
+<h2>■ Per-Pixel Linked List系</h2>
+
+<table>
+<tr><td>・</td><td><a href="http://onlinelibrary.wiley.com/doi/10.1111/j.1467-8659.2010.01725.x/abstract">Real-time concurrent linked list construction on the GPU(Jason C. Yang, Justin Hensley, Holger Grün, Nicolas Thibieroz, 2010)</a></td>
+<td>:</td><td>OpenGL 4.0 や DirectX 11のatomic命令を使ってのper-pixel linked listの効率的な実装。[<a href="http://developer.amd.com/wordpress/media/2013/06/2041_final.pdf">AMD資料</a>]</td>
+</tr>
+<tr><td>・</td><td><a href="http://onlinelibrary.wiley.com/doi/10.1111/j.1467-8659.2010.01720.x/abstract">Fragment-Parallel Composite and Filter (Anjul Patney, Stanley Tzeng, John D. Owens, 2010)</a></td>
+<td>:</td><td>半透明のコンポジットの処理に関して、ピクセルごとに処理を行うのではなく、描画しうるフラグメントを密にフラグメントシェーダに流し込むことによって、GPUの利用率を上げる。</td>
+</tr>
+<tr><td>・</td><td><a href="http://dl.acm.org/citation.cfm?id=2420198">Memory-Efficient Order-Independent Transparency(Marilena Maule, Joao L. D. Comba, Rafael Torchelsen, Rui Bastos, 2012)</a></td>
+<td>:</td><td>ベースアドレスとデータ個数の2つのバッファ（Dynamic Fragment Buffer）についてPrefix sumを使って、per-pixel linked listを高速にGPU実装した論文。</td>
+</tr>
+<tr><td>・</td><td><a href="http://on-demand.gputechconf.com/gtc/2014/presentations/S4385-order-independent-transparency-opengl.pdf">Order Independent Transparency In OpenGL 4.x (Christoph Kubisch, 2014)</a></td>
+<td>:</td><td>手前のk個のフラグメントを保持し、ソートして描画。atomic loop を使うことで、リンクをたどるよりも高速に順序付けが可能。</td>
+</tr>
+<tr><td>・</td><td><a href="http://goanna.cs.rmit.edu.au/~pknowles/bma-preprint.pdf">Backwards Memory Allocation and Improved OIT(P. Knowles, G. Leach, F. Zambetta, 2013)</a></td>
+<td>:</td><td>重なりを最初に計算し、Linked-listに必要なメモリをピクセルごとに計算することで、メモリ効率化を図った。</td>
+</tr>
+</table>
+
+
+<hr>
+
+<h2>■さいごに</h2>
+
+<p>
+いやぁ、いっぱいありますね。<br>
+間違いや重要な欠落がありましたら、教えてください。
+</p>
+</div>
+
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<BR CLEAR=ALL>
+<center>
+<hr>
+<p><a href="../index.html">もどる</a></p>
+<p><a href="mailto:imagire@gmail.com">imagire@gmail.com</a></p>
+</center>
+
+</body>
+</html>
+
+
+
