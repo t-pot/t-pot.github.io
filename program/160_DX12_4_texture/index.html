@@ -218,11 +218,25 @@
     <img src="160_A.png" style="max-width: 550px; width: 100%;" alt="ランダム模様の生成">
 </p>
 <h3>SRVヒープ</h3>
+
 <p>
-  テクスチャリソースを作成したら、SRVヒープにテクスチャリソースのデスクリプターを登録します。<br>
-  テクスチャリソースのデスクリプターは、D3D12_SHADER_RESOURCE_VIEW_DESC構造体で作成します。
-  テクスチャのフォーマットや、テクスチャの型、テクスチャのミップマップレベルなどを指定して、
-  CreateShaderResourceViewメソッドで生成します。
+  テクスチャリソースを作成したら、デスクリプターヒープにSRVヒープを作成します。<br>
+  SRVヒープは、テクスチャリソースのデスクリプターを登録するためのヒープです。
+  タイプをD3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAVに指定して、デスクリプターヒープを1つ作成します。<br>
+  このタイプは、SRV以外に、CBV(Constant Buffer View)、UAV(Unordered Access View)でも使えるヒープです。
+  他の種類は、今回は使いません。今後、出てきたときに説明します。<br>
+  ヒープの生成自体は、RTVヒープと同じように行い、今回は、RTVヒープの直後でSRVヒープを作成しています。
+</p>
+
+<p>
+  [Appliaction.cpp]<br>
+      <img src="160_15_5.png" style="max-width: 668px; width: 100%;" alt="SRVヒープの作成">
+</p>
+<p>
+  SRVヒープにテクスチャリソースのデスクリプターを登録します。<br>
+  テクスチャリソースのデスクリプターは、D3D12_SHADER_RESOURCE_VIEW_DESC構造体で作成します。<br>
+  テクスチャのフォーマットや、テクスチャの型、テクスチャのミップマップレベルなどを指定してCreateShaderResourceViewメソッドで生成します。
+  この時に、テクスチャリソースのCPUハンドル（アドレス）を渡して、その場所にSRVヒープを登録します。
 </p>
 <p>
 [Appliaction.cpp]<br>
