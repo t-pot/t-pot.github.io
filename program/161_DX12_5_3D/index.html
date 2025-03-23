@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <title>t-pot『DirectX 12: 3D描画』</title>
+  <link rel="stylesheet" type="text/css" href="../if.css">
+</head>
+<body>
+
+<div class="contents">
+<div style="text-align: center;">
+<br style="clear: both;">
+<br style="clear: both;">
+<h1>DirectX 12: 3D描画</h1><br>
+<h3>～ DirectX 12: 3D rendering ～</h3>
+<br style="clear: both;">
+<br style="clear: both;">
+<br style="clear: both;">
+<a href="http://t-pot.com/161_DX12_3D/">
+  <!-- <img alt="executed image" src="title.png" style="width: 80%;" /> -->
+  <video src="title.mp4" autoplay muted loop poster="title.png"></video>
+</a>
+<br>
+<hr>
+</div> <!-- center -->
+
+<h2>■はじめに</h2>
+
+<p>
+    今回は3D描画を行います。
+</p>
+
+
+<p>
+ソースコードは、GitHubに上がっているものを見てもらえればと思います。<br>
+</p>
+<ul><li><a href="https://github.com/t-pot/161_DX12_3D">https://github.com/t-pot/161_DX12_3D</a></li></ul>
+
+<hr>
+<h2>■今回の流れ</h2>
+<p>
+今回はポリゴンを3D的に回転させたいと思います。
+3Dで描画するのに「深度バッファーの導入」と「定数バッファーの導入」があります。
+深度バッファーは、現在の主たるレンダリング法であるZバッファー法を使うために必要です。
+定数バッファーは、定数は3D空間での座標変換を行う行列をシェーダーに渡すために使います。
+</p>
+
+<hr>
+<h2>■ 深度バッファーの導入</h2>
+<p>
+Zバッファー法での描画を行うために深度バッファーを導入して、深度バッファーの奥行き値と
+ポリゴンの奥行値を比較して、奥行き値が小さいものを描画するようにします。
+</p>
+<p>
+  深度バッファーを導入して使う処理を実現するには、次の変更を行います。
+</p>
+  
+<p><img src="161_1.png" style="max-width: 1170px; width: 100%;" alt="深度バッファを使うフロー"></p>
+
+<h3>深度バッファー用のオブジェクト</h3>
+<p>
+  深度バッファーはレンダーターゲットと似たようなものです。色情報ではなくて、奥行の情報を記録します。<br>
+  深度バッファーを扱うためのオブジェクトとして、
+  バッファー自体のメモリに関連した「ID3D12Resource」（今回は、「深度ステンシル_」という名称）と、
+  rtvヒープに対応した「ID3D12DescriptorHeap」の「dsvヒープ_」を用意します。<br>
+  深度バッファーは、表示するときには使わないのでフレームバッファーのように複数枚を保持する必要はなく、
+  一枚のバッファーに対して毎フレーム書き込んでいきます。
+</p>
+<p>
+実際に変数を宣言するコードは次のようになります。レンダーターゲットのオブジェクトと近い場所に配置してみました。
+</p>
+<p>
+[Application.h]<br>
+      <img src="161_2.png" style="max-width: 615px; width: 100%;" alt="深度バッファに関連する変数の宣言">
+</p>
+  
+<h3>深度ステンシルビュー（DSV）デスクリプターヒープ</h3>
+<p>
+  深度ステンシルビューデスクリプターヒープは、レンダーターゲットビューの深度版です。
+  CreateDescriptorHeapメソッドで生成します。
+  レンダーターゲットビューとの違いは、D3D12_DESCRIPTOR_HEAP_DESCのTypeメンバーに
+  D3D12_DESCRIPTOR_HEAP_TYPE_DSVを指定して呼び出すという事です。
+  また、枚数は1枚だけしか必要でないので、NumDescriptorsメンバーは1にします。
+</p>
+<p>
+[Application.cpp]<br>
+      <img src="161_3.png" style="max-width: 624px; width: 100%;" alt="dsvヒープの生成">
+</p>
+<h3>深度バッファーと深度ステンシルビューの生成</h3>
+<p>
+  深度バッファーは、テクスチャと同じようにCreateCommittedResourceを使って生成します。
+  CreateCommittedResourceの引数にテクスチャと同じようにヒーププロパティやリソース記述子を指定します。
+  深度バッファーは、テクスチャとフォーマットが違います、今回はDXGI_FORMAT_D32_FLOATを指定します。
+  「D」が付くフォーマットが深度用のフォーマットです（今回は使いませんが、ステンシルバッファーは「S」がついたフォーマットを使います）。<br>
+  他に、CreateCommittedResourceの引数として、クリア値を渡します。
+  D3D12_CLEAR_VALUEで、深度バッファーのフォーマットとクリア値を指定します。
+  フォーマットは、リソース記述子で指定するフォーマットと同じものを指定します。<br>
+  また、引数のD3D12_RESOURCE_STATESの値として、D3D12_RESOURCE_STATE_DEPTH_WRITEを指定します。
+</p>
+<p>
+  [Application.cpp]<br>
+      <img src="161_4.png" style="max-width: 664px; width: 100%;" alt="深度ステンシルの生成">
+</p>
+<p>
+ビューも作成しています。深度バッファー用のビューは、深度ステンシルビューという専用の物です。
+  D3D12_DEPTH_STENCIL_VIEW_DESC構造体を使って、深度バッファーのフォーマットや、
+  深度バッファーのリソースのアドレスを指定して、CreateDepthStencilViewメソッドで生成します。
+  引数としては、深度バッファーのアドレスと、ビューを書き込む先のdsvヒープのアドレス（ハンドル）を指定します。
+</p>
+
+<h3>■ グラフィックスパイプラインステートオブジェクト（PSO）の作成</h3>
+<p>
+深度バッファーの使用を有効にするには、PSOの設定を変更する必要があります。
+pso記述子のDepthStencilStateに深度バッファーのテスト内容の設定を記述します。<br>
+と言っても、「CD3DX12_DEPTH_STENCIL_DESC()」を使うと
+深度バッファーを設定するD3D12_DEPTH_STENCIL_DESCの標準的な設定がされるので、
+先ずは、それを使って深度バッファーのテストを有効にします。
+</p>
+<p>
+  [Application.cpp]<br>
+      <img src="161_5.png" style="max-width: 745px; width: 100%;" alt="PSOの生成">
+</p>
+<p>
+深度バッファーを今まで設定してきていない人は、CD3DX12_DEPTH_STENCIL_DESC()の中身をみて、どのような設定項目があるか勉強しておくと良いでしょう。<br>
+凝ったことをすると、別の設定が必要になるので、書き換えていくことになります。
+</p>
+<p>
+  [d3dx12_core.h]<br>
+      <img src="161_6.png" style="max-width: 815px; width: 100%;" alt="CD3DX12_DEPTH_STENCIL_DESCコンストラクタ">
+</p>
+
+<h3>■ 描画時の設定</h3>
+<p>
+  深度バッファーを使うためには、描画時に深度バッファーを指定する必要があります。<br>
+  描画時に、深度バッファーのアドレスを指定して、描画を行います。<br>
+  具体的には、OMSetRenderTargetsメソッドの引数に深度バッファーのアドレス（ハンドル）を指定します。
+</p>
+<p>
+  [Application.cpp]<br>
+      <img src="161_7.png" style="max-width: 738px; width: 100%;" alt="深度バッファの指定">
+</p>
+<p>
+  また、レンダーターゲットに書き込む前に、深度バッファーをクリアする必要があります。<br>
+  深度バッファーのクリアは、ClearDepthStencilViewメソッドを使います。<br>
+  ClearDepthStencilViewメソッドの呼び出しでは、D3D12_CLEAR_FLAG_DEPTHを指定して、
+  深度バッファーしかクリアしないようにします。<br>
+  次の値は、クリア値です。クリア時に直接値を指定できます。
+</p>
+<p>
+  [Application.cpp]<br>
+      <img src="161_8.png" style="max-width: 827px; width: 100%;" alt="深度バッファのクリア">
+</p>
+
+<hr>
+<h2>■ 定数バッファーの導入</h2>
+<p>
+  Zバッファー法で描画をする際は、オブジェクトの各頂点の位置をスクリーン座標に変換する必要があります。
+  座標の変換は頂点シェーダーで行いますが、実際に行う事は、頂点の位置を座標変換して、
+  クリップ座標系での深度を含んだスクリーンの位置を計算します。
+</p>
+<p>
+  この計算のために、オブジェクトの位置を変換する行列をシェーダーに渡す必要があります。
+  オブジェクト毎に使うパラメーターを渡すには、定数バッファーを使います。
+</p>
+<p>
+  定数バッファーを導入して使う処理を実現するには、次の変更を行います。
+</p>
+<p><img src="161_9.png" style="max-width: 1083px; width: 100%;" alt="定数バッファを使うフロー"></p>
+  
+<h3>頂点シェーダー</h3>
+<p>
+  頂点シェーダーに頂点の位置を変換する行列を受け取るようにします。<br>
+  cbufferという種類の構造体のような定数バッファーというものに、行列のデータを受け取るメンバーを追加します。<br>
+  今回は、4x4の行列を使うのでfloat4x4型のメンバーを追加します。<br>
+  cbufferは、テクスチャと同じように、グローバル変数として宣言します。
+  また、registerキーワードを使って、どのレジスタに割り当てるかを指定します。
+</p>  
+<p>
+  [shaders.hlsl]<br>
+      <img src="161_10.png" style="max-width: 353px; width: 100%;" alt="定数バッファの宣言">
+</p>
+<p>
+  頂点シェーダーでは、定数バッファーに追加した行列を位置に作用（乗算）して座標変換をします。<br>
+  定数バッファー内に追加したメンバーの名前を直接使って、行列を指定します。<br>
+  行列の乗算は、「mul」命令を使います。
+  シェーダーでは、ベクトルを行列の左に書きます。<br>
+  この行列のメモリレイアウトは列優先 (column_major)となっています。
+  一方、この後でてくるDirectxMathの行列のメモリレイアウトは行優先 (row_major)となっているので、
+  転置計算が必要になってきます。
+</p>
+<p>
+[shaders.hlsl]<br>
+    <img src="161_11.png" style="max-width: 498px; width: 100%;" alt="頂点シェーダー">
+</p>
+
+<h3>メンバー変数の追加</h3>
+<p>
+  定数バッファーに関連したメンバーを追加します。<br>
+  定数バッファーは、GPUから見えるメモリに置かれる情報なので、ID3D12Resourceインターフェイスのリソースとして扱われます。<br>
+</p>
+<p>
+  [Application.h]<br>
+    <img src="161_12.png" style="max-width: 573px; width: 100%;" alt="行列のメンバーの宣言">
+</p>
+<p>
+  また、今回は、オブジェクトをくるくる回すので、毎フレーム定数バッファーを書き換えます。<br>
+  これを行うのに、CPUから書き込みやすいメモリ（メインメモリ）に定数バッファーを作成して、
+  CPUが書き込んだら、GPUに転送するという方法を取ります。<br>
+  そのための、CPU側のメモリにGPUから読めるメモリにある定数バッファーと同じだけのマップされた定数バッファーのメモリを用意します。<br>
+  このメモリは、プログラムが側から扱いやすいように「オブジェクト定数バッファ」という構造体を作って、その構造体のポインターとしてマップされたメモリを管理します。<br>
+  新たに定義する構造体ですが、定数バッファーは、256バイトのアライメントである必要があるので、
+  使われていない部分をchar型の配列で埋めておきます。<br>
+  メンバーである行列の型はDirectXMathライブラリの型のXMFLOAT4X4型を使います。
+</p>
+<p>
+  [Application.h]<br>
+     <img src="161_13.png" style="max-width: 591px; width: 100%;" alt="定数バッファオブジェクトの宣言">
+</p>
+
+<p>
+  途中計算を行うための行列もメンバー変数として確保します。具体的には、ビュー行列と射影行列を用意します。<br>
+  これらの行列では、XMMATRIX型を使います。
+  XMFLOAT4X4型はデータを転送するための型で、CPU側で計算を行うときはXMMATRIX型を使います。<br>
+  XMMATRIX型は、SIMD命令をことができる型で高速計算できますが、SIMDレジスタであったりとメモリに情報が存在しているとは限りません。<br>
+  一方、オブジェクト定数バッファは確実にメモリになければらない転送用の型なので、別の型（XMFLOAT4X4）が使われています。
+</p>
+<p>
+なお、回転角度を保持するためのメンバー変数も用意しました。
+</p>
+    
+<p>
+  [Application.h]<br>
+     <img src="161_14.png" style="max-width: 320px; width: 100%;" alt="シーンの変数の宣言">
+</p>
+
+<h3>定数バッファーの生成</h3>
+<p>
+メンバー変数を生成します。
+</p>
+<p>
+  定数バッファーを、CreateCommittedResourceメソッドを使って生成します。<br>
+  定数バッファーは頂点バッファーと同じように、データのサイズでバッファーを確保します。
+</p>
+
+<p>
+  [Application.cpp]<br>
+     <img src="161_15.png" style="max-width: 775px; width: 100%;" alt="定数バッファの生成">
+</p>
+<p>
+  定数バッファーを更新すために、マッピングを行います。<br>
+  マッピングは、ID3D12ResourceのMapメソッドを使います。<br>
+  ただし、毎フレームバッファーの値を更新するので、ここでは値を入れてUnmapするのではなく、Mapして開きっぱなしにします。
+</p>
+
+<p>
+  [Application.cpp]<br>
+     <img src="161_16.png" style="max-width: 722px; width: 100%;" alt="定数バッファのマッピング">
+</p>
+
+<p>
+  一応値を初期化しておきましょう。<br>
+  初期化データは、一次変数（初期化データ）に、行列のデータを準備して、マップされたアドレスにコピーします。
+  XMMATRIXをXMFLOAT4X4型に変換するには、XMStoreFloat4x4関数を使います。<br>
+  格納する行列は、ビュー行列と射影行列の積を取ったものにします。<br>
+  DirectXMathライブラリとシェーダーのメモリレイアウトの行優先と列優先の違いを考慮して、XMMatrixTranspose関数を使って転置してから転送します。
+</p>
+<p>
+  [Application.cpp]<br>
+     <img src="161_17.png" style="max-width: 768px; width: 100%;" alt="定数バッファの初期化">
+</p>
+<p>
+  ビュー行列や射影行列は、XMMatrixLookAtLHやXMMatrixPerspectiveFovLHといった便利関数が
+  DirectXMathライブラリに用意されているので、それを使います。<br>
+  中身がどうなっているのか知らなければ、DirectXMathライブラリのソースコードを見たり、CGの本を調べてみてください。
+</p>
+<p>
+  [Application.cpp]<br>
+     <img src="161_18.png" style="max-width: 880px; width: 100%;" alt="シーンオブジェクトの作成">
+</p>
+
+<h3>定数バッファビューの作成</h3>
+<p>
+定数バッファーをシェーダーと結びつけるためにビューを作成します。<br>
+定数バッファーが使うビューは、CBV（Constant Buffer View）と呼ばれています。<br>
+今回は、既に用意されているヒープ（オブジェクトヒープ_）にCBVを作成します。<br>
+イメージとしては、次の様な感じで、1つのデスクリプターヒープに、テクスチャのSRVと行列のCBVを作成します。<br>
+ルートパラメーターを分けることで、頂点シェーダーから見えるリソース（行列）と、
+ピクセルシェーダーから見えるリソース（テクスチャ）を分離します。
+</p>
+<p>
+     <img src="161_19.png" style="max-width: 1263px; width: 100%;" alt="ルートシグネチャ">
+</p>
+<p>
+コードの修正としては、オブジェクトヒープを作るコードを修正して、デスクリプター数（NumDescriptors）を1から2に増やします。
+</p>
+<p>
+  [Application.cpp]<br>
+     <img src="161_20.png" style="max-width: 677px; width: 100%;" alt="オブジェクトヒープの修正">
+</p>
+<p>
+  また、生成したオブジェクトヒープのアドレスと、SRVの大きさを取得しておきます。
+</p>
+<p>
+  [Application.cpp]<br>
+     <img src="161_21.png" style="max-width: 886px; width: 100%;" alt="オブジェクトヒープハンドルの取得">
+</p>
+<p>
+  取得した情報を使ってSRVの次のメモリアドレスを計算して、そのヒープのハンドルの場所に
+  CreateConstantBufferViewメソッドを使って定数バッファーのビューを作成します。<br>
+  ビューの作成に必要な情報は定数バッファーのGPUでのアドレスとサイズになります。
+</p>
+<p>
+  [Application.cpp]<br>
+     <img src="161_22.png" style="max-width: 681px; width: 100%;" alt="定数バッファビューの作成">
+</p>
+
+<h3>ルートシグネチャーの設定</h3>
+<p>
+ルートシグネチャーの修正をします。
+今回は、ルートパラメーターとデスクリプターレンジがテクスチャ用と定数バッファー用で2つになります。
+それぞれ、配列として確保していたので、配列の数を増やします。<br>
+デスクリプターレンジは、片方がテクスチャー(SRV)用で、もう1つが定数バッファー(CBV)用になります。<br>
+ルートパラメーターは、テクスチャ用がピクセルシェーダーから見られて、行列用が頂点シェーダーから見えるようにします。
+</p>
+<p>
+  [Application.cpp]<br>
+    <img src="161_23.png" style="max-width: 541px; width: 100%;" alt="デスクリプターレンジの設定">
+</p>
+<p>
+また、SRVとCBVのアドレスをルートパラメーターに登録します。<br>
+ルートパラメーター0のデスクリプターテーブルにSRVのアドレスを、ルートパラメーター1のデスクリプターテーブルにCBVのアドレスを登録します。<br>
+この登録は、コマンドリストにデスクリプターヒープを設定する際に行います。
+</p>
+<p>
+  [Application.cpp]<br>
+     <img src="161_24.png" style="max-width: 886px; width: 100%;" alt="定数バッファのバインド">
+</p>
+
+<h3>定数バッファーの更新</h3>
+
+<p>
+  後は、定数バッファーを更新してアニメーションを実現しましょう。
+<br>
+  基本的なアニメーションはUpdate関数の中で行います。</br>
+  アニメーションは簡単な回転で、毎フレーム、角度を少しだけ増やして、2πを超えたら2π減らします。
+</p>
+<p>
+  [Application.cpp]<br>
+     <img src="161_25.png" style="max-width: 671px; width: 100%;" alt="Update関数">
+</p>
+<p>
+  描画時は、Updateで更新された角度を使って、回転行列を計算します。
+  回転行列は、XMMatrixRotationY関数を使って、Y軸を中心に回転させます。<br>
+  この回転行列をワールド行列として、全体の変換行列を計算します。
+  また、初期化時と同様に、XMStoreFloat4x4関数を使って定数バッファーに書き込みます。
+</p>
+<p>
+  [Application.cpp]<br>
+     <img src="161_26.png" style="max-width: 571px; width: 100%;" alt="行列の設定">
+</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<hr>
+<h2>■ さいごに</h2>
+
+<p>
+基本的な3D描画ができました。<br>
+少しづつクオリティを上げていきましょう。
+</p>
+<br style="clear: both;">
+<br style="clear: both;">
+<br style="clear: both;">
+<div style="text-align: center;">
+<hr>
+<p><a href="../index.html">もどる</a></p>
+<p><a href="mailto:imagire@gmail.com">imagire@gmail.com</a></p>
+</div><!-- center -->
+
+</div>  <!-- contents -->
+</body>
+</html>
