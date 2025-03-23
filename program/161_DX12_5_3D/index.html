@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
   <meta charset="utf-8">
-  <title>t-pot『DirectX 12: テクスチャの描画』</title>
+  <title>t-pot『DirectX 12: 3D描画』</title>
   <link rel="stylesheet" type="text/css" href="../if.css">
 </head>
 <body>
@@ -11,13 +11,14 @@
 <div style="text-align: center;">
 <br style="clear: both;">
 <br style="clear: both;">
-<h1>DirectX 12: テクスチャの描画</h1><br>
-<h3>～ DirectX 12: Draw a textured polygone ～</h3>
+<h1>DirectX 12: 3D描画</h1><br>
+<h3>～ DirectX 12: 3D rendering ～</h3>
 <br style="clear: both;">
 <br style="clear: both;">
 <br style="clear: both;">
-<a href="http://t-pot.com/160_DX12_4_texture/">
-  <img alt="executed image" src="title.png" style="width: 80%;" />
+<a href="http://t-pot.com/161_DX12_3D/">
+  <!-- <img alt="executed image" src="title.png" style="width: 80%;" /> -->
+  <video src="title.mp4" autoplay muted loop poster="title.png"></video>
 </a>
 <br>
 <hr>
@@ -26,39 +27,56 @@
 <h2>■はじめに</h2>
 
 <p>
-    今回はポリゴンにテクスチャを貼ってみます。
+    今回は3D描画を行います。
 </p>
 
 
 <p>
 ソースコードは、GitHubに上がっているものを見てもらえればと思います。<br>
 </p>
-<ul><li><a href="https://github.com/t-pot/160_DX12_texture">https://github.com/t-pot/160_DX12_texture</a></li></ul>
+<ul><li><a href="https://github.com/t-pot/161_DX12_3D">https://github.com/t-pot/161_DX12_3D</a></li></ul>
 
 <hr>
-
-
 <h2>■今回の流れ</h2>
 <p>
-今回はポリゴンにランダムな色のテクスチャを貼ってみます。
-テクスチャを貼る際に重要な要素としてはルート署名があります。
-ルート署名でテクスチャのリソースを指定したり、サンプラーを記述します。
+今回はポリゴンを3D的に回転させたいと思います。
+3Dで描画するのに「深度バッファーの導入」と「定数バッファーの導入」があります。
+深度バッファーは、現在の主たるレンダリング法であるZバッファー法を使うために必要です。
+定数バッファーは、定数は3D空間での座標変換を行う行列をシェーダーに渡すために使います。
 </p>
-
-<p>
-今回の流れは大きく変わりません。頂点バッファーを作成した後にテクスチャを作成する処理が追加されます。
-その他は、今までに記載した部分に変更を加えていくことが多いです。
-</p>
-<p>
-太文字の部分が今回の変更点で、色がついている部分が今回の追加部分です。
-</p>
-
-<p><img src="160_1.png" style="max-width: 1701px; width: 100%;" alt="本日のフロー"></p>
 
 <hr>
-<h2>■ テクスチャを読み込むシェーダー</h2>
+<h2>■ 深度バッファーの導入</h2>
+<p>
+Zバッファー法での描画を行うために深度バッファーを導入して、深度バッファーの奥行き値と
+ポリゴンの奥行値を比較して、奥行き値が小さいものを描画するようにします。
+</p>
+<p>
+  3D描画を行う際は、物体の位置をスクリーンでの位置に変換しなくてはなりません。
+</p>
+  
+<p><img src="161_1.png" style="max-width: 1170px; width: 100%;" alt="深度バッファを使うフロー"></p>
 
-<h3>ピクセルシェーダー</h3>
+<hr>
+<h2>■ 定数バッファーの導入</h2>
+<p>
+  Zバッファー法で描画をする際は、オブジェクトの各頂点の位置をスクリーン座標に変換する必要があります。
+  座標の変換は頂点シェーダーで行いますが、実際に行う事は、頂点の位置を座標変換して、
+  クリップ座標系での深度を含んだスクリーンの位置を計算します。
+</p>
+<p>
+  この計算のために、オブジェクトの位置を変換する行列をシェーダーに渡す必要があります。
+  オブジェクト毎に使うパラメーターを渡すには、定数バッファーを使います。
+</p>
+<p>
+  定数バッファーを導入して使う処理を実現するには、次の変更を行います。
+</p>
+<p><img src="161_B.png" style="max-width: 1083px; width: 100%;" alt="定数バッファを使うフロー"></p>
+  
+    
+
+
+  <h3>ピクセルシェーダー</h3>
 <p>
   分かりやすい変更点としては、シェーダーでテクスチャ（画像）を読み込みます。
   テクスチャを読み込むには、テクスチャのオプジェクトで、Sampleメソッドを使います。
@@ -358,12 +376,14 @@
 
 
 
+
+
 <hr>
 <h2>■ さいごに</h2>
 
 <p>
-ランダムな模様なので画像をはったというイメージから遠いですが、テクスチャをはったポリゴンが表示されました。<br>
-次は3D描画でしょうか。
+基本的な3D描画ができました。<br>
+少しづつクオリティを上げていきましょう。
 </p>
 <br style="clear: both;">
 <br style="clear: both;">
