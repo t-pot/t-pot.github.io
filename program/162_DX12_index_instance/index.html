@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <title>t-pot『DirectX 12: 頂点インデックスとインスタンシング』</title>
+  <link rel="stylesheet" type="text/css" href="../if.css">
+</head>
+<body>
+
+<div class="contents">
+<div style="text-align: center;">
+<br style="clear: both;">
+<br style="clear: both;">
+<h1>DirectX 12: 頂点インデックスとインスタンシング</h1><br>
+<h3>～ DirectX 12: index buffer and instancing ～</h3>
+<br style="clear: both;">
+<br style="clear: both;">
+<br style="clear: both;">
+<a href="http://t-pot.com/162_DX12_index_instance/">
+  <!-- <img alt="executed image" src="title.png" style="width: 80%;" /> -->
+  <video src="title.mp4" autoplay muted loop poster="title.png"></video>
+</a>
+<br>
+<hr>
+</div> <!-- center -->
+
+<h2>■はじめに</h2>
+
+<p>
+    今回は複数のオブジェクトを描画します。
+    複数のオブジェクトを描画する方法はいろいろありますが、今回は、インスタンシングを用います。
+    また、インデックスバッファーを導入していなかったので、2ポリゴンを使った四角形を描画します。
+</p>
+
+
+<p>
+ソースコードは、GitHubに上がっているものを見てもらえればと思います。<br>
+</p>
+<ul><li><a href="https://github.com/t-pot/162_DX12_index_instance">https://github.com/t-pot/162_DX12_index_instance</a></li></ul>
+
+<hr>
+<h2>■今回の流れ</h2>
+
+<p>
+今回はポリゴンをたくさん表示します。
+三角形のポリゴンを組み合わせたメッシュ（今回は四角形）を描画するのに、
+標準的に使われているインデックスバッファーを導入します。
+</p>
+<p>
+  また、四角形の板を上下左右手前奥に3個ずつ配置します。
+  同じメッシュを複数表示するには、インスタンシングが使えます。
+  インスタンス毎にワールド行列を定義して、インスタンス毎に異なる位置・向きに配置します。
+</p>
+<p>
+今回のプログラムの前回からの変更点は次の図で太字にした部分です。
+全く新しい部分は、インデックスバッファーの導入になります。
+</p>
+<p><img src="162_1.png" style="max-width: 1170px; width: 100%;" alt="頂点インデックスを使うフロー"></p>
+
+<hr>
+<h2>■ インデックスバッファーによる描画</h2>
+<h3>メッシュの設計</h2>
+<p>
+  今回は、四角形のメッシュを描画します。<br>
+  四角形は、2つの三角形で構成されているので、頂点が6個必要になります。<br>
+  しかし、頂点の座標は、4つの頂点で十分です。<br>
+  頂点の座標を4つだけ用意して、インデックスバッファーを使って、どの頂点を使うかを指定します。
+</p>
+<p><img src="162_2.png" style="max-width: 603px; width: 100%;" alt="メッシュの設計"></p>
+<p>
+  インデックスバッファーで扱う情報は、頂点のインデックス情報です。<br>
+  頂点データの何番目を使ってポリゴンを描画するのかということをしています。<br>
+  三角形のポリゴンを何個か（今回は3つ）表示するのですが、頂点データの何番目の頂点を使うのかということを3つずつ指定して三角形の描画でつかう頂点を指定します。<br>
+  そのため、インデックスバッファーは、2つの三角形を描画するのに、3個のインデックスを持ちます。<br>
+  描画する三角形の頂点の並びは時計回りでしています。この設定は変えることもできますが、今回はそのままにします。
+</p>
+<p>  [Application.cpp]<br>
+<img src="162_3.png" style="max-width: 458px; width: 100%;" alt="インデックスデータ"></p>
+<p>
+  このメッシュを構成する頂点データは次のようになります。
+</p>
+<p>  [Application.cpp]<br>
+<img src="162_4.png" style="max-width: 542px; width: 100%;" alt="頂点データ"></p>
+<p>
+  今回の頂点データは、位置情報と色で構成します。
+</p>
+<p>  [Application.h]<br>
+<img src="162_5.png" style="max-width: 294px; width: 100%;" alt="頂点データ構造体"></p>
+<p>
+  頂点レイアウトは、次の形になります。
+</p>
+<p>  [Application.cpp]<br>
+<img src="162_6.png" style="max-width: 726px; width: 100%;" alt="頂点レイアウトデータ"></p>
+
+<h3>インデックスバッファーの導入</h2>
+
+<p>
+インデックスバッファーは頂点バッファーと似た感じで使います<br>
+格納した情報を管理するのに、ID3D12Resourceインターフェイスのリソース(インデックスバッファ_)を使います。
+</p>
+<p>  [Application.h]<br>
+<img src="162_7.png" style="max-width: 578px; width: 100%;" alt="インデックスバッファリソース"></p>
+<p>
+インデックスバッファーは、頂点バッファーと同じように、CreateCommittedResourceメソッドを使って生成します。<br>
+主な引数は、インデックスバッファー記述子で指定されるデータサイズになります。<br>
+あとは、頂点バッファーと同じ内容の引数になります。
+</p>
+<p>
+    [Application.cpp]<br>
+<img src="162_8.png" style="max-width: 863px; width: 100%;" alt="ヒーププロパティ宣言"><br>
+<img src="162_9.png" style="max-width: 864px; width: 100%;" alt="インデックスバッファの生成">
+</p>
+<p>
+インデックスバッファーの初期化は、マップされたCPUがアクセスできるメモリにデータをコピーすることで行います。<br>
+  マップされたメモリは、ID3D12ResourceのMapメソッドを使って取得します。<br>
+  マップされたメモリに、インデックスバッファーのデータをコピーします。
+</p>
+<p>  [Application.cpp]<br>
+  <img src="162_10.png" style="max-width: 863px; width: 100%;" alt="インデックスバッファのデータのアドレスの取得"><br>
+  <img src="162_11.png" style="max-width: 864px; width: 100%;" alt="インデックスバッファの初期化">
+</p>
+  
+<h3>インデックスバッファビュー</h2>
+
+<p>
+  インデックスバッファーを使うためには、インデックスバッファービューを作成する必要があります。
+インデックスバッファービューは、D3D12_INDEX_BUFFER_VIEW構造体を使って定義します。
+</p>
+<p>
+  [Application.h]<br>
+  <img src="162_12.png" style="max-width: 568px; width: 100%;" alt="インデックスバッファビューのメンバーの宣言">
+</p>
+<p>
+  インデックスバッファービューは、構造体にGPUでのアドレスと、インデックスの型・サイズを指定すれば使えます。
+</p>
+<p>
+  [Application.cpp]<br>
+  <img src="162_13.png" style="max-width: 736px; width: 100%;" alt="インデックスバッファビューの生成">
+</p>
+  
+<h3>インデックスバッファーを使った描画</h2>
+<p>
+描画コマンドの変更が必要になります。<br>
+先ずは、IASetIndexBufferメソッドを使って、インデックスバッファーの指定を追加します。<br>
+また、描画コマンド自体も、DrawIndexedInstancedメソッドに切り替える必要があります。<br>
+DrawIndexedInstancedメソッドの最初の引数は、描画する頂点のインデックス数になります。<br>
+また、その後に「インスタンス数」という値を入れています。これは、同じメッシュを何個描画するかという値です。<br>
+今回は、縦横奥で3つずつの27個の四角形を描画するので、インデックス数は6（2つの三角形で6個の頂点）で、インスタンス数は27になります。
+</p>
+<p>
+  [Application.h]<br>
+  <img src="162_14.png" style="max-width: 609px; width: 100%;" alt="インスタンス数の定義"><br>
+  [Application.cpp]<br>
+  <img src="162_15.png" style="max-width: 659px; width: 100%;" alt="インデックスバッファーを使った描画">
+</p>
+
+<hr>
+<h2>■ インスタンシングでの描画</h2>
+
+<h3>シェーダー</h3>
+<p>
+インスタンシングを使ったシェーダーでは、頂点シェーダーの引数でインスタンスを区別するための情報を受け取ることができます。<br>
+「SV_InstanceID」というセマンティクスを使って、インスタンスのIDを受け取ります。<br>
+このIDは0から始まるインスタンスの通し番号で、インスタンス毎に異なる値が入ります。<br>
+今回は、この値を使って、インスタンス毎に異なるワールド行列「matWorld[]」を指定します。
+</p>
+<p>
+  [shaders.hlsl]<br>
+  <img src="162_16.png" style="max-width: 534px; width: 100%;" alt="頂点シェーダー">
+</p>
+
+<br>
+  インスタンス毎に異なる行列は、定数バッファーで管理します。
+  今回は、定数バッファーをオブジェクト毎に変化しないビュー射影行列と、
+  オブジェクト毎に変化するワールド行列に分けて管理します。<br>
+  register キーワードを使ったリソース バインディングという方法を使って、
+  CPU側で定数バッファーを区別できるようにします。<br>
+  定数バッファーは、b#という形式の仮想レジスタとしてバインドします。
+  シェーダーリソースは、T#、サンプラーはS#という形式でバインドします。<br>
+  この表記は構造体に似ていますが、まとめた塊に名前はついていないので、直接変数名でアクセスします。
+<p>
+  [shaders.hlsl]<br>
+  <img src="162_17.png" style="max-width: 351px; width: 100%;" alt="定数バッファ">
+</p>
+<p>
+  その他の変更点としては、今回はピクセルシェーダーでは、頂点シェーダーから受け取った色を直接出力します。
+</p>
+<p>
+  [shaders.hlsl]<br>
+  <img src="162_18.png" style="max-width: 315px; width: 100%;" alt="ピクセルシェーダー">
+</p>
+<p>
+  ピクセルシェーダーに対応して、頂点シェーダーからピクセルシェーダーに受け渡すデータの構造体も変更します。
+</p>
+<p>
+  [shaders.hlsl]<br>
+  <img src="162_19.png" style="max-width: 280px; width: 100%;" alt="頂点構造体">
+</p>
+
+<h3>シェーダーに渡す定数データ</h3>
+
+<p>
+シェーダープログラムで定数バッファーを別々で関するのに対応して、C++側でも定数バッファーを分けて管理します。<br>
+  今回は、ビュー射影行列を管理する定数バッファー(シーン定数バッファー)と、ワールド行列を管理する定数バッファー(オブジェクト定数バッファー)の2つの構造体に分けます。<br>
+  構造体は256バイトのアライメントである必要があるので、使われていない部分をchar型の配列で埋めておきます。<br>
+</p>
+<p>
+  [Application.h]<br>
+  <img src="162_20.png" style="max-width: 589px; width: 100%;" alt="シーン構造体の宣言"><br>
+  [Application.h]<br>
+  <img src="162_21.png" style="max-width: 584px; width: 100%;" alt="オブジェクト構造体の宣言">
+</p>
+<p>
+ぞれぞれのデータをGPUからアクセスできるように、ID3D12Resourceインターフェイスのリソースとして管理します。
+</p>
+<p>
+  [Application.h]<br>
+  <img src="162_22.png" style="max-width: 580px; width: 100%;" alt="定数バッファのリソースの宣言">
+</p>
+<p>
+シーン定数バッファーは今までに使ってきた定数バッファーと変わりません。<br>
+また、実行中に変化しないので、生成した直後にMapして初期化します。
+</p>
+<p>
+  [Application.cpp]<br>
+  <img src="162_23.png" style="max-width: 853px; width: 100%;" alt="シーン定数バッファの初期化">
+</p>
+<p>
+オブジェクト定数バッファーもCreateCommittedResourceメソッドで生成します。
+</p>
+<p>
+  [Application.cpp]<br>
+  <img src="162_24.png" style="max-width: 922px; width: 100%;" alt="オブジェクト定数バッファの生成">
+</p>
+<p>
+  こちらは、毎フレーム更新するので、Mapして書き込むためのポインターを用意します。<br>
+  仮の値で初期化しますが、毎フレーム更新します。
+</p>
+<p>
+  [Application.cpp]<br>
+  <img src="162_25.png" style="max-width: 788px; width: 100%;" alt="シーン構造体の宣言">
+</p>
+<p>
+  ワールド行列は、描画の直前で更新します。<br>
+  XMMatrixRotation関数を使って回転行列を作成するとともに、
+  XMMatrixTranslation関数を使って、位置を指定します。<br>
+  縦横前後に3つずつ配置します。<br>
+  作成した行列は、オブジェクト定数バッファーのポインターを使って書き込みます。
+</p>
+<p>
+  <img src="162_26.png" style="max-width: 882px; width: 100%;" alt="ワールド行列の更新">
+</p>
+
+<h3>ルートシグネチャ</h3>
+
+<p>
+  シェーダーに渡す定数バッファーを使うために、ルートシグネチャを変更します。<br>
+  今回は、シーン定数バッファーとオブジェクト定数バッファーの2つの定数バッファーを使います。<br>
+  それぞれの定数バッファーは、b0とb1というレジスタに割り当てるので、それぞれに対応した定数バッファービューを用意します。<br>
+  また、テクスチャは使わずに、ピクセルシェーダーでは特に定数を必要としないので、ルートパラメーターは1つだけにします。<br>
+  リソースのバインディングは、b0にシーン定数バッファー、b1にオブジェクト定数バッファーを割り当てましたが、
+  それらは、デスクリプターレンジを使って、ルートパラメータに割り当てます。
+</p>
+<p>
+  <img src="162_27.png" style="max-width: 1518px; width: 100%;" alt="ルートシグネチャの設計">
+</p>
+<p>
+  定数バッファービューを作るコードはまだ説明していません。<br>
+  それらは、定数バッファーを生成した後に、定数バッファービューを作成することができます。<br>
+</p>
+<p>
+  [Application.cpp]<br>
+  <img src="162_28.png" style="max-width: 898px; width: 100%;" alt="オブジェクトヒープハンドル"><br>
+  <img src="162_29.png" style="max-width: 853px; width: 100%;" alt="シーン定数バッファービュー">
+</p>
+<p>
+  オブジェクト定数バッファービューのヒープハンドルは、そのアドレスをCBVの大きさだけずらすことで、
+  シーン定数バッファービューの後ろに配置します。
+</p>
+<p>
+  [Application.cpp]<br>
+  <img src="162_30.png" style="max-width: 789px; width: 100%;" alt="オブジェクト定数バッファービュー">
+</p>
+
+
+<p>
+    作成した定数バッファービューは、オブジェクトヒープを通してデスクリプターヒープの作成に使われます。
+</p>
+<p>
+  [Application.cpp]<br>
+  <img src="162_31.png" style="max-width: 668px; width: 100%;" alt="カメラ位置の調整">
+</p>
+<p>
+    あとは、ディスクリプターレンジCBVで2つ作って、ルートシグネチャに登録します。
+</p>
+<p>
+  [Application.cpp]<br>
+  <img src="162_32.png" style="max-width: 649px; width: 100%;" alt="カメラ位置の調整">
+</p>
+<p>
+  あとは、定数バッファービューを格納したディスクリプターヒープのハンドルをディスクリプターテーブルに登録して、GPUのメモリをCPUからアクセスできるようにします。
+</p>
+<p>
+  [Application.cpp]<br>
+  <img src="162_33.png" style="max-width: 649px; width: 100%;" alt="カメラ位置の調整">
+</p>
+
+
+<hr>
+<h2>■ その他</h2>
+<h3>カメラ</h3>
+
+<p>
+実際にオブジェクトを表示したら画面からはみ出たので、カメラの位置を少し後ろにずらしています(zの値を小さくしています)。
+</p>
+<p>
+  [Application.cpp]<br>
+  <img src="162_34.png" style="max-width: 879px; width: 100%;" alt="カメラ位置の調整">
+</p>
+
+
+
+<hr>
+<h2>■ さいごに</h2>
+
+<p>
+  インデックスバッファーは描画の基本的な考え方の1つで、
+  これで描画の基本的な考え方は、ほぼ網羅できたように思います。
+</p>
+<br style="clear: both;">
+<br style="clear: both;">
+<br style="clear: both;">
+<div style="text-align: center;">
+<hr>
+<p><a href="../index.html">もどる</a></p>
+<p><a href="mailto:imagire@gmail.com">imagire@gmail.com</a></p>
+</div><!-- center -->
+
+</div>  <!-- contents -->
+</body>
+</html>
